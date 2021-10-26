@@ -78,7 +78,7 @@ func (em *eventManager) getBatchForTransfer(ctx context.Context, transfer *fftyp
 	var messages []*fftypes.Message
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("pending", true),
+		fb.Eq("confirmed", nil),
 		fb.Eq("hash", transfer.MessageHash),
 	)
 	messages, _, err := em.database.GetMessages(ctx, filter)

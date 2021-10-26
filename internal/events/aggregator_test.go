@@ -139,20 +139,15 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
-		assert.Len(t, update.SetOperations, 3)
+		assert.Len(t, update.SetOperations, 2)
 
-		assert.Equal(t, "pending", update.SetOperations[0].Field)
+		assert.Equal(t, "confirmed", update.SetOperations[0].Field)
 		v, err := update.SetOperations[0].Value.Value()
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0) /* sortable bool false */, v)
-
-		assert.Equal(t, "confirmed", update.SetOperations[1].Field)
-		v, err = update.SetOperations[1].Value.Value()
 		assert.NoError(t, err)
 		assert.Greater(t, v, int64(0))
 
-		assert.Equal(t, "rejected", update.SetOperations[2].Field)
-		v, err = update.SetOperations[2].Value.Value()
+		assert.Equal(t, "rejected", update.SetOperations[1].Field)
+		v, err = update.SetOperations[1].Value.Value()
 		assert.NoError(t, err)
 		assert.Equal(t, false, v)
 
@@ -951,20 +946,15 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
 		assert.NoError(t, err)
-		assert.Len(t, update.SetOperations, 3)
+		assert.Len(t, update.SetOperations, 2)
 
-		assert.Equal(t, "pending", update.SetOperations[0].Field)
+		assert.Equal(t, "confirmed", update.SetOperations[0].Field)
 		v, err := update.SetOperations[0].Value.Value()
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0) /* sortable bool */, v)
-
-		assert.Equal(t, "confirmed", update.SetOperations[1].Field)
-		v, err = update.SetOperations[1].Value.Value()
 		assert.NoError(t, err)
 		assert.Greater(t, v, int64(0))
 
-		assert.Equal(t, "rejected", update.SetOperations[2].Field)
-		v, err = update.SetOperations[2].Value.Value()
+		assert.Equal(t, "rejected", update.SetOperations[1].Field)
+		v, err = update.SetOperations[1].Value.Value()
 		assert.NoError(t, err)
 		assert.Equal(t, true, v)
 

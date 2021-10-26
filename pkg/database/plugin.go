@@ -574,7 +574,6 @@ var MessageQueryFactory = &queryFields{
 	"hash":      &Bytes32Field{},
 	"pins":      &FFNameArrayField{},
 	"rejected":  &BoolField{},
-	"pending":   &SortableBoolField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"txtype":    &StringField{},

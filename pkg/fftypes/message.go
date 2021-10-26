@@ -72,7 +72,6 @@ type Message struct {
 	BatchID   *UUID         `json:"batch,omitempty"`
 	Local     bool          `json:"local,omitempty"`
 	Rejected  bool          `json:"rejected,omitempty"`
-	Pending   SortableBool  `json:"pending"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 	Pins      FFNameArray   `json:"pins,omitempty"`
@@ -147,7 +146,6 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 		m.Header.Created = Now()
 	}
 	m.Confirmed = nil
-	m.Pending = true
 	if m.Data == nil {
 		m.Data = DataRefs{}
 	}

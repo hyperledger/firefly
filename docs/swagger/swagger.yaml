@@ -70,8 +70,6 @@ paths:
                     type: object
                   local:
                     type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
@@ -486,8 +484,6 @@ paths:
                                 type: object
                               local:
                                 type: boolean
-                              pending:
-                                type: boolean
                               pins:
                                 items:
                                   type: string
@@ -625,8 +621,6 @@ paths:
                               type: object
                             local:
                               type: boolean
-                            pending:
-                              type: boolean
                             pins:
                               items:
                                 type: string
@@ -730,8 +724,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -850,8 +842,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -1235,11 +1225,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: pending
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pins
         schema:
           type: string
@@ -1399,11 +1384,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: pending
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pins
         schema:
           type: string
@@ -1512,8 +1492,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -2068,11 +2046,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: pending
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pins
         schema:
           type: string
@@ -2182,8 +2155,6 @@ paths:
                           type: string
                       type: object
                     local:
-                      type: boolean
-                    pending:
                       type: boolean
                     pins:
                       items:
@@ -2300,8 +2271,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -2717,8 +2686,6 @@ paths:
                     type: object
                   local:
                     type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
@@ -2767,8 +2734,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -2906,8 +2871,6 @@ paths:
                     type: object
                   local:
                     type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
@@ -2956,8 +2919,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -3122,8 +3083,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -3503,8 +3462,6 @@ paths:
                     type: object
                   local:
                     type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
@@ -3636,8 +3593,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -4867,8 +4822,6 @@ paths:
                       type: object
                     local:
                       type: boolean
-                    pending:
-                      type: boolean
                     pins:
                       items:
                         type: string
@@ -5100,8 +5053,6 @@ paths:
                           type: string
                       type: object
                     local:
-                      type: boolean
-                    pending:
                       type: boolean
                     pins:
                       items:
@@ -5498,8 +5449,6 @@ paths:
                           type: string
                       type: object
                     local:
-                      type: boolean
-                    pending:
                       type: boolean
                     pins:
                       items:
@@ -7098,8 +7047,6 @@ paths:
                     type: object
                   local:
                     type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
@@ -7169,8 +7116,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:
@@ -7253,8 +7198,6 @@ paths:
                         type: string
                     type: object
                   local:
-                    type: boolean
-                  pending:
                     type: boolean
                   pins:
                     items:

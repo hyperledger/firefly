@@ -157,7 +157,6 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 
 	if immediateConfirm {
 		s.msg.Confirmed = fftypes.Now()
-		s.msg.Pending = false
 		// msg.Header.Key = "" // there is no on-chain signing assurance with this message
 	}
 

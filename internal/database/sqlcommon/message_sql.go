@@ -44,7 +44,6 @@ var (
 		"hash",
 		"pins",
 		"rejected",
-		"pending",
 		"confirmed",
 		"tx_type",
 		"batch_id",
@@ -117,7 +116,6 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 				Set("hash", message.Hash).
 				Set("pins", message.Pins).
 				Set("rejected", message.Rejected).
-				Set("pending", message.Pending).
 				Set("confirmed", message.Confirmed).
 				Set("tx_type", message.Header.TxType).
 				Set("batch_id", message.BatchID).
@@ -148,7 +146,6 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 					message.Hash,
 					message.Pins,
 					message.Rejected,
-					message.Pending,
 					message.Confirmed,
 					message.Header.TxType,
 					message.BatchID,
@@ -291,7 +288,6 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Hash,
 		&msg.Pins,
 		&msg.Rejected,
-		&msg.Pending,
 		&msg.Confirmed,
 		&msg.Header.TxType,
 		&msg.BatchID,
@@ -370,7 +366,10 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterFieldMap,
-		[]interface{}{"pending", "confirmed", "created"}) // put unconfirmed messages first, then order by confirmed
+		[]interface{}{
+			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
+			"created",
+		})
 	if err != nil {
 		return nil, nil, err
 	}
