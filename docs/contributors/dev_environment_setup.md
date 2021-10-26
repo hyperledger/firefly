@@ -31,7 +31,7 @@ You will need a few prerequisites set up on your machine before you can build Fi
 
 ### Installing GO and setting up your `GOPATH`
 
-We recommend following the [instructions on golang.org](https://golang.org/doc/install) to install Go, rather than installing Go from another package magager such as `brew`. Although it is possible to install Go any way you'd like, setting up your `GOPATH` may be differ from the following instructions.
+We recommend following the [instructions on golang.org](https://golang.org/doc/install) to install Go, rather than installing Go from another package magager such as `brew`. Although it is possible to install Go any way you'd like, setting up your `GOPATH` may differ from the following instructions.
 
 After installing Go, you will need to add a few environment variables to your shell run commands file. This is usually a hidden file in your home directory called `.bashrc` or `.zshrc`, depending on which shell you're using.
 

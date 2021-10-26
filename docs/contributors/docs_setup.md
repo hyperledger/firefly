@@ -8,7 +8,6 @@ nav_order: 6
 # Contributing to Documentation
 
 ## Table of contents
-
 {: .no_toc .text-delta }
 
 1. TOC

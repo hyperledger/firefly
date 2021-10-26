@@ -45,7 +45,7 @@ If you looking to make your first open source contribution the [FireFly document
 Here are some detailed instructions on [Contributing to Documentation](./docs_setup.html)
 
 ### Go experience
-If you have some experience in Go and really want to jump into FireFly, the [FireFly Core](https://github.com/hyperledger/firefly/issues)
+If you have some experience in Go and really want to jump into FireFly, the [FireFly Core](https://github.com/hyperledger/firefly/issues) is the heart of the project.
 
 Here are some detailed instructions on [Setting up a FireFly Core Development Environment](./dev_environment_setup.html).
 
@@ -56,10 +56,10 @@ If you don't have a lot of experience with Go, but are interested in learning, t
 If you have some experience in TypeScript, there are several FireFly microservices that are written in TypeScript. The [Data Exchange](https://github.com/hyperledger/firefly-dataexchange-https/issues) is used for private messaging between FireFly nodes, and the [Tokens Connector](https://github.com/hyperledger/firefly-tokens-erc1155/issues) is used to abstract token contract specifics from the FireFly Core.
 
 ### React/TypeScript experience
-If you want to do some frontend development, the [FireFly UI](https://github.com/hyperledger/firefly-ui/issues) is written in TypeScript and React
+If you want to do some frontend development, the [FireFly UI](https://github.com/hyperledger/firefly-ui/issues) is written in TypeScript and React.
 
 ### Go and blockchain experience
-If you already have some experience with blockchain and want to work on some backend components, the blockchain connectors, [firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect/issues) (for Ethereum) and [firefly-fabconnect](https://github.com/hyperledger/firefly-fabconnect/issues) for Fabric are great places to get involved.
+If you already have some experience with blockchain and want to work on some backend components, the blockchain connectors, [firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect/issues) (for Ethereum) and [firefly-fabconnect](https://github.com/hyperledger/firefly-fabconnect/issues) (for Fabric) are great places to get involved.
 
 ## 📝 Make changes
 To contribute to the repository, please [fork the repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo) that you want to change. Then clone your fork locally on your machine and make your changes. As you commit your changes, push them to your fork. More information on making commits below.
