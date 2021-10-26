@@ -1,0 +1,65 @@
+{{- if .Values.config.postgresMigrationJob -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "firefly.fullname" . }}-{{ .Values.core.image.tag }}-migrations"
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 12000
+  template:
+    spec:
+      containers:
+      - name: migration
+        image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default .Chart.AppVersion }}"
+        command:
+        - sh
+        - -ce
+        - |
+          # Install deps
+          apk add postgresql-client curl jq
+
+          # Extract the database name from the end of the PSQL URL, and check it's there
+          DB_NAME=`echo ${PSQL_URL} | sed 's/^.*\///'`
+          COLONS=`echo -n $DB_NAME | sed 's/[^:]//g'`
+          echo "Database name: '${DB_NAME}'"
+          if [ -z "${DB_NAME}" ] || [ -n "${COLONS}" ]
+          then
+            echo "Postgres URL does not appear to contain a database name"
+            exit 1
+          fi
+
+          # Build a URL that doesn't have the database name
+          PSQL_URL_NO_DB=`echo ${PSQL_URL} | sed "s/\/${DB_NAME}//"`
+
+          # Check we can connect to the PSQL Server
+          while ! psql -c "SELECT 1;" ${PSQL_URL_NO_DB}; do
+            echo "Waiting for database..."
+            sleep 1
+          done
+
+          # Create the database if it doesn't exist
+          if ! psql -c "SELECT datname FROM pg_database WHERE datname = 'firefly';" ${PSQL_URL_NO_DB} | grep firefly
+          then
+            psql -c "CREATE DATABASE firefly;" `echo ${PSQL_URL_NO_DB} | sed 's/\/firefly//'`
+          fi
+
+          # Wait for the database itself to be available
+          while ! psql -c "SELECT 1;" ${PSQL_URL}; do
+            echo "Waiting for database..."
+            sleep 1
+          done
+
+          # Download the latest migration tool
+          MIGRATE_RELEASE=$(curl -sL https://api.github.com/repos/golang-migrate/migrate/releases/latest | jq -r '.name')
+          curl -sL https://github.com/golang-migrate/migrate/releases/download/${MIGRATE_RELEASE}/migrate.linux-amd64.tar.gz | tar xz
+
+          # Do the migrations
+          ./migrate -database ${PSQL_URL} -path db/migrations/postgres up
+        env:
+        - name: PSQL_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "firefly.fullname" . }}-config
+              key: psql_url
+      restartPolicy: Never
+{{- end }}

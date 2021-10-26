@@ -25,6 +25,9 @@ config:
   # Whether or not to apply schema migrations automatically on startup, not recommended for production
   postgresAutomigrate: false
 
+  # Whether to create a migration job to perform migrations each time a new tag is pushed for the FireFly image (supports DB creation)
+  postgresMigrationJob: false
+
   # The URL of the HTTPS DataExchange for the node to use for the dataexchange plugin i.e. private messaging, only needed if `dataexchange.enabled` is set to false
   dataexchangeUrl: ""
 
@@ -63,6 +66,9 @@ config:
 
   # The long prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. FireFly or Kaleido
   ethconnectPrefixLong: ""
+
+  # Whether to use a Job to perform auto-registration of the FireFly runtime
+  registrationJob: false
 
   # The following values can be used to override the templating of specific plugin sections, in the case where
   # the user wants greater control to template the sections using global values, additional helpers, etc. OR if they
