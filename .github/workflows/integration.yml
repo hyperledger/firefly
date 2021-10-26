@@ -14,11 +14,12 @@ jobs:
       matrix:
         blockchain-provider: [geth, fabric]
         database-type: [sqlite3, postgres]
-        test-suite: [TestEthereumE2ESuite]
-        include:
-          # Only when the blockchain provider is set to "fabric", use a different test suite
-          - blockchain-provider: fabric
+        test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
+        exclude:
+          - blockchain-provider: geth
             test-suite: TestFabricE2ESuite
+          - blockchain-provider: fabric
+            test-suite: TestEthereumE2ESuite
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
