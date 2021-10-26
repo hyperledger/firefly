@@ -26,14 +26,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, sq.Sqlizer, *database.FilterInfo, error) {
+func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []interface{}, preconditions ...sq.Sqlizer) (sq.SelectBuilder, sq.Sqlizer, *database.FilterInfo, error) {
 	fi, err := filter.Finalize()
 	if err != nil {
 		return sel, nil, nil, err
 	}
 	if len(fi.Sort) == 0 {
 		for _, s := range defaultSort {
-			fi.Sort = append(fi.Sort, &database.SortField{Field: s, Descending: true})
+			switch v := s.(type) {
+			case string:
+				fi.Sort = append(fi.Sort, &database.SortField{Field: v, Descending: true})
+			case *database.SortField:
+				fi.Sort = append(fi.Sort, v)
+			default:
+				panic(fmt.Sprintf("unknown sort type: %v", v))
+			}
 		}
 	}
 	fop, err := s.filterSelectFinalized(ctx, tableName, fi, typeMap, preconditions...)
