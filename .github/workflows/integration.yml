@@ -32,11 +32,17 @@ jobs:
       - name: Update manifest to latest commit for every service
         run: ./manifestgen.sh head
 
+      - name: Pull latests FireFly build
+        run: | 
+          docker pull ghcr.io/hyperledger/firefly:head
+          docker tag ghcr.io/hyperledger/firefly:head hyperledger/firefly
+
       - name: Run E2E tests
         env:
           TEST_SUITE: ${{ matrix.test-suite }}
           BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
           DATABASE_TYPE: ${{matrix.database-type}}
+          BUILD_FIREFLY: false
         run: ./test/e2e/run.sh
 
       - name: Archive container logs
