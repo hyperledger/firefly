@@ -146,13 +146,14 @@ func TestSQLQueryFactoryDefaultSort(t *testing.T) {
 		&database.SortField{
 			Field:      "sequence",
 			Descending: true,
+			Nulls:      database.NullsLast,
 		},
 	})
 	assert.NoError(t, err)
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (namespace = ?) ORDER BY seq DESC", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (namespace = ?) ORDER BY seq DESC NULLS LAST", sqlFilter)
 	assert.Equal(t, "ns1", args[0])
 }
 

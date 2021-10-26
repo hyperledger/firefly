@@ -52,7 +52,13 @@ func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.S
 		if sf.Descending {
 			direction = " DESC"
 		}
-		sort[i] = fmt.Sprintf("%s%s", s.mapField(tableName, sf.Field, typeMap), direction)
+		nulls := ""
+		if sf.Nulls == database.NullsFirst {
+			nulls = " NULLS FIRST"
+		} else if sf.Nulls == database.NullsLast {
+			nulls = " NULLS LAST"
+		}
+		sort[i] = fmt.Sprintf("%s%s%s", s.mapField(tableName, sf.Field, typeMap), direction, nulls)
 	}
 	sortString = strings.Join(sort, ", ")
 	sel = sel.OrderBy(sortString)
