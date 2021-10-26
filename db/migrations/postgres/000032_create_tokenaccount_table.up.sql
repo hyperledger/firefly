@@ -2,7 +2,7 @@ BEGIN;
 DROP TABLE IF EXISTS tokenaccount;
 
 CREATE TABLE tokenaccount (
-  seq              INTEGER         PRIMARY KEY AUTOINCREMENT,
+  seq              SERIAL          PRIMARY KEY,
   pool_protocol_id VARCHAR(1024)   NOT NULL,
   token_index      VARCHAR(1024),
   identity         VARCHAR(1024)   NOT NULL,
