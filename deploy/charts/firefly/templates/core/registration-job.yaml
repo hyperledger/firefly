@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "firefly.fullname" . }}-{{ .Values.core.image.tag }}-registration"
+  name: "{{ template "firefly.fullname" . }}-{{ .Values.config.organizationName | lower }}-registration"
 spec:
   backoffLimit: 5
   activeDeadlineSeconds: 12000
