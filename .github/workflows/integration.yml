@@ -1,6 +1,8 @@
 name: Latest Integration Test
 
 on:
+  push:
+    branches: [scheduled-e2e]
   schedule:
     # * is a special character in YAML so you have to quote this string
     - cron:  '0 0 * * *'
