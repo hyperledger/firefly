@@ -15,7 +15,7 @@ spec:
         - sh
         - -ce
         - |
-{{ (.Files.Glob "scripts/ff-db-migrations.sh") | indent 10 }}
+{{ .Files.Get "scripts/ff-db-migrations.sh" | indent 10 }}
         env:
         - name: PSQL_URL
           valueFrom:
