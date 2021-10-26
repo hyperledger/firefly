@@ -146,10 +146,10 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Greater(t, v, int64(0))
 
-		assert.Equal(t, "rejected", update.SetOperations[1].Field)
+		assert.Equal(t, "state", update.SetOperations[1].Field)
 		v, err = update.SetOperations[1].Value.Value()
 		assert.NoError(t, err)
-		assert.Equal(t, false, v)
+		assert.Equal(t, "confirmed", v)
 
 		return true
 	})).Return(nil)
@@ -953,10 +953,10 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Greater(t, v, int64(0))
 
-		assert.Equal(t, "rejected", update.SetOperations[1].Field)
+		assert.Equal(t, "state", update.SetOperations[1].Field)
 		v, err = update.SetOperations[1].Value.Value()
 		assert.NoError(t, err)
-		assert.Equal(t, true, v)
+		assert.Equal(t, "rejected", v)
 
 		return true
 	})).Return(nil)

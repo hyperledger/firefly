@@ -68,14 +68,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -482,14 +480,12 @@ paths:
                                   type:
                                     type: string
                                 type: object
-                              local:
-                                type: boolean
                               pins:
                                 items:
                                   type: string
                                 type: array
-                              rejected:
-                                type: boolean
+                              state:
+                                type: string
                             type: object
                           type: array
                         tx:
@@ -619,14 +615,12 @@ paths:
                                 type:
                                   type: string
                               type: object
-                            local:
-                              type: boolean
                             pins:
                               items:
                                 type: string
                               type: array
-                            rejected:
-                              type: boolean
+                            state:
+                              type: string
                           type: object
                         type: array
                       tx:
@@ -723,14 +717,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -841,14 +833,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -1215,11 +1205,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: local
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
         schema:
           type: string
@@ -1230,12 +1215,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: rejected
+        name: sequence
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: sequence
+        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1374,11 +1359,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: local
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
         schema:
           type: string
@@ -1389,12 +1369,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: rejected
+        name: sequence
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: sequence
+        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1491,14 +1471,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2036,11 +2014,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: local
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
         schema:
           type: string
@@ -2051,12 +2024,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: rejected
+        name: sequence
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: sequence
+        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -2154,14 +2127,12 @@ paths:
                         type:
                           type: string
                       type: object
-                    local:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -2208,26 +2179,8 @@ paths:
                   data:
                     items:
                       properties:
-                        blob:
-                          properties:
-                            hash: {}
-                            public:
-                              type: string
-                          type: object
-                        datatype:
-                          properties:
-                            name:
-                              type: string
-                            version:
-                              type: string
-                          type: object
                         hash: {}
                         id: {}
-                        validator:
-                          type: string
-                        value:
-                          format: byte
-                          type: string
                       type: object
                     type: array
                   group:
@@ -2270,14 +2223,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2684,14 +2635,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -2733,14 +2682,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2869,14 +2816,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -2918,14 +2863,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -3020,26 +2963,8 @@ paths:
                   data:
                     items:
                       properties:
-                        blob:
-                          properties:
-                            hash: {}
-                            public:
-                              type: string
-                          type: object
-                        datatype:
-                          properties:
-                            name:
-                              type: string
-                            version:
-                              type: string
-                          type: object
                         hash: {}
                         id: {}
-                        validator:
-                          type: string
-                        value:
-                          format: byte
-                          type: string
                       type: object
                     type: array
                   group:
@@ -3082,14 +3007,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -3398,26 +3321,8 @@ paths:
                   data:
                     items:
                       properties:
-                        blob:
-                          properties:
-                            hash: {}
-                            public:
-                              type: string
-                          type: object
-                        datatype:
-                          properties:
-                            name:
-                              type: string
-                            version:
-                              type: string
-                          type: object
                         hash: {}
                         id: {}
-                        validator:
-                          type: string
-                        value:
-                          format: byte
-                          type: string
                       type: object
                     type: array
                   group:
@@ -3460,14 +3365,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -3592,14 +3495,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -4751,26 +4652,8 @@ paths:
                     data:
                       items:
                         properties:
-                          blob:
-                            properties:
-                              hash: {}
-                              public:
-                                type: string
-                            type: object
-                          datatype:
-                            properties:
-                              name:
-                                type: string
-                              version:
-                                type: string
-                            type: object
                           hash: {}
                           id: {}
-                          validator:
-                            type: string
-                          value:
-                            format: byte
-                            type: string
                         type: object
                       type: array
                     group:
@@ -4820,14 +4703,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    local:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      type: string
                   type: object
                 messageHash: {}
                 namespace:
@@ -4983,26 +4864,8 @@ paths:
                     data:
                       items:
                         properties:
-                          blob:
-                            properties:
-                              hash: {}
-                              public:
-                                type: string
-                            type: object
-                          datatype:
-                            properties:
-                              name:
-                                type: string
-                              version:
-                                type: string
-                            type: object
                           hash: {}
                           id: {}
-                          validator:
-                            type: string
-                          value:
-                            format: byte
-                            type: string
                         type: object
                       type: array
                     group:
@@ -5052,14 +4915,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    local:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      type: string
                   type: object
                 messageHash: {}
                 namespace:
@@ -5379,26 +5240,8 @@ paths:
                     data:
                       items:
                         properties:
-                          blob:
-                            properties:
-                              hash: {}
-                              public:
-                                type: string
-                            type: object
-                          datatype:
-                            properties:
-                              name:
-                                type: string
-                              version:
-                                type: string
-                            type: object
                           hash: {}
                           id: {}
-                          validator:
-                            type: string
-                          value:
-                            format: byte
-                            type: string
                         type: object
                       type: array
                     group:
@@ -5448,14 +5291,12 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    local:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      type: string
                   type: object
                 messageHash: {}
                 namespace:
@@ -7045,14 +6886,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -7115,14 +6954,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -7197,14 +7034,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:

@@ -80,6 +80,7 @@ func (s *messageSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessag
 func (s *messageSender) setDefaults() {
 	s.msg.Header.ID = fftypes.NewUUID()
 	s.msg.Header.Namespace = s.namespace
+	s.msg.State = fftypes.MessageStateReady
 	if s.msg.Header.Type == "" {
 		s.msg.Header.Type = fftypes.MessageTypePrivate
 	}
@@ -161,7 +162,7 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	if err := s.mgr.database.InsertMessageLocal(ctx, &s.msg.Message); err != nil {
+	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, false, false); err != nil {
 		return err
 	}
 
