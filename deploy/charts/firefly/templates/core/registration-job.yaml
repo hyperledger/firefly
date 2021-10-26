@@ -17,6 +17,8 @@ spec:
         - |
 {{ .Files.Get  "scripts/ff-registration.sh" | indent 10 }}
         env:
+        - name: FF_URL
+          value: "http://{{ include "firefly.fullname" . }}:{{ .Values.core.service.httpPort }}"
         - name: PSQL_URL
           valueFrom:
             secretKeyRef:
