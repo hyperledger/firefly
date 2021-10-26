@@ -38,9 +38,9 @@ spec:
           done
 
           # Create the database if it doesn't exist
-          if ! psql -c "SELECT datname FROM pg_database WHERE datname = 'firefly';" ${PSQL_URL_NO_DB} | grep firefly
+          if ! psql -c "SELECT datname FROM pg_database WHERE datname = '${DB_NAME}';" ${PSQL_URL_NO_DB} | grep ${DB_NAME}
           then
-            psql -c "CREATE DATABASE firefly;" `echo ${PSQL_URL_NO_DB} | sed 's/\/firefly//'`
+            psql -c "CREATE DATABASE ${DB_NAME};" ${PSQL_URL_NO_DB}
           fi
 
           # Wait for the database itself to be available
