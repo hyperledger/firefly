@@ -4,13 +4,22 @@ on:
   push:
     branches: [scheduled-e2e]
   schedule:
-    # * is a special character in YAML so you have to quote this string
     - cron:  '0 0 * * *'
   workflow_dispatch:
 
 jobs:
   e2e-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        blockchain-provider: [geth, fabric]
+        database-type: [sqlite3, postgres]
+        test-suite: [TestEthereumE2ESuite]
+        include:
+          # Only when the blockchain provider is set to "fabric", use a different test suite
+          - blockchain-provider: fabric
+            test-suite: TestFabricE2ESuite
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
 
@@ -23,6 +32,10 @@ jobs:
         run: ./manifestgen.sh head
 
       - name: Run E2E tests
+        env:
+          TEST_SUITE: ${{ matrix.test-suite }}
+          BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
+          DATABASE_TYPE: ${{matrix.database-type}}
         run: ./test/e2e/run.sh
 
       - name: Archive container logs
