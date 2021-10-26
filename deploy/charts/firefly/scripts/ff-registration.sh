@@ -7,7 +7,7 @@ while ! STATUS=$(curl ${FF_URL}/api/v1/status); do
   sleep 5
 done
 
-if [ `echo $STATUS | jq -r .registered` != "true" ]; then
+if [ `echo $STATUS | jq -r .org.registered` != "true" ]; then
 
   echo "Registering organization"
   HTTP_CODE=`curl --silent --output /dev/stderr --write-out "%{http_code}" \
@@ -17,6 +17,10 @@ if [ `echo $STATUS | jq -r .registered` != "true" ]; then
     echo "Failed to register with code ${HTTP_CODE}"
     exit 1
   fi
+
+fi
+
+if [ `echo $STATUS | jq -r .registered` != "true" ]; then
 
   echo "Registering node"
   HTTP_CODE=`curl --silent --output /dev/stderr --write-out "%{http_code}" \
