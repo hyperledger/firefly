@@ -35,7 +35,9 @@ var getMsgByID = &oapispec.Route{
 		{Name: "msgid", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "data", IsBool: true, Description: i18n.MsgTBD},
+		// Confusing using 'data' for this one, as we cannot use it on the collection one
+		{Name: "data", IsBool: true, Description: i18n.MsgTBD, Deprecated: true},
+		{Name: "fetchdata", IsBool: true, Description: i18n.MsgFetchDataDesc},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
@@ -43,7 +45,9 @@ var getMsgByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} }, // can include full values
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"], strings.EqualFold(r.QP["data"], "true"))
-		return output, err
+		if strings.EqualFold(r.QP["data"], "true") || strings.EqualFold(r.QP["fetchdata"], "true") {
+			return r.Or.GetMessageByIDWithData(r.Ctx, r.PP["ns"], r.PP["msgid"])
+		}
+		return r.Or.GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"])
 	},
 }
