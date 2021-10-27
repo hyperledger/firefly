@@ -446,10 +446,13 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		}
 	}
 	// This message is now confirmed
+	state := fftypes.MessageStateConfirmed
+	if !valid {
+		state = fftypes.MessageStateRejected
+	}
 	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
-		Set("pending", false).           // the sequence is locked
 		Set("confirmed", fftypes.Now()). // the timestamp of the aggregator provides ordering
-		Set("rejected", !valid)          // mark if the message was not accepted
+		Set("state", state)              // mark if the message was confirmed or rejected
 	err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
 	if err != nil {
 		return false, err

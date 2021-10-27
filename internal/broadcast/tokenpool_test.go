@@ -101,7 +101,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
-	mdi.On("InsertMessageLocal", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false, false).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
 	assert.EqualError(t, err, "pop")
@@ -133,7 +133,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
-	mdi.On("InsertMessageLocal", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false, false).Return(nil)
 
 	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)

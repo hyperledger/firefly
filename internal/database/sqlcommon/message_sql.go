@@ -43,12 +43,10 @@ var (
 		"datahash",
 		"hash",
 		"pins",
-		"rejected",
-		"pending",
+		"state",
 		"confirmed",
 		"tx_type",
 		"batch_id",
-		"local",
 	}
 	msgFilterFieldMap = map[string]string{
 		"type":   "mtype",
@@ -58,16 +56,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) InsertMessageLocal(ctx context.Context, message *fftypes.Message) (err error) {
-	message.Local = true
-	return s.upsertMessageCommon(ctx, message, false, false, true /* local insert */)
-}
-
 func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error) {
-	return s.upsertMessageCommon(ctx, message, allowExisting, allowHashUpdate, false /* not local */)
-}
-
-func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate, isLocal bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -116,12 +105,10 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 				Set("datahash", message.Header.DataHash).
 				Set("hash", message.Hash).
 				Set("pins", message.Pins).
-				Set("rejected", message.Rejected).
-				Set("pending", message.Pending).
+				Set("state", message.State).
 				Set("confirmed", message.Confirmed).
 				Set("tx_type", message.Header.TxType).
 				Set("batch_id", message.BatchID).
-				// Intentionally does NOT include the "local" column
 				Where(sq.Eq{"id": message.Header.ID}),
 			func() {
 				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, message.Sequence)
@@ -147,12 +134,10 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 					message.Header.DataHash,
 					message.Hash,
 					message.Pins,
-					message.Rejected,
-					message.Pending,
+					message.State,
 					message.Confirmed,
 					message.Header.TxType,
 					message.BatchID,
-					isLocal,
 				),
 			func() {
 				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
@@ -290,12 +275,10 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Header.DataHash,
 		&msg.Hash,
 		&msg.Pins,
-		&msg.Rejected,
-		&msg.Pending,
+		&msg.State,
 		&msg.Confirmed,
 		&msg.Header.TxType,
 		&msg.BatchID,
-		&msg.Local,
 		// Must be added to the list of columns in all selects
 		&msg.Sequence,
 	)
@@ -370,7 +353,10 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterFieldMap,
-		[]string{"pending", "confirmed", "created"}) // put unconfirmed messages first, then order by confirmed
+		[]interface{}{
+			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
+			"created",
+		})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -383,7 +369,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 		cols[i] = fmt.Sprintf("m.%s", col)
 	}
 	cols[len(msgColumns)] = "m.seq"
-	query, fop, fi, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterFieldMap, []string{"sequence"},
+	query, fop, fi, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterFieldMap, []interface{}{"sequence"},
 		sq.Eq{"md.data_id": dataID})
 	if err != nil {
 		return nil, nil, err
@@ -394,7 +380,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 }
 
 func (s *SQLCommon) GetMessageRefs(ctx context.Context, filter database.Filter) ([]*fftypes.MessageRef, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn, "hash").From("messages"), filter, msgFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn, "hash").From("messages"), filter, msgFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

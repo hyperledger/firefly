@@ -186,7 +186,7 @@ func (s *SQLCommon) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID)
 }
 
 func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filter) (message []*fftypes.TokenTransfer, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From("tokentransfer"), filter, tokenTransferFilterFieldMap, []string{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From("tokentransfer"), filter, tokenTransferFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
