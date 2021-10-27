@@ -4598,7 +4598,7 @@ paths:
   /namespaces/{ns}/tokens/{type}/pools/{name}/burn:
     post:
       description: 'TODO: Description'
-      operationId: postTokenBurn
+      operationId: postTokenBurnByType
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -4815,7 +4815,7 @@ paths:
   /namespaces/{ns}/tokens/{type}/pools/{name}/mint:
     post:
       description: 'TODO: Description'
-      operationId: postTokenMint
+      operationId: postTokenMintByType
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -5196,7 +5196,7 @@ paths:
           description: ""
     post:
       description: 'TODO: Description'
-      operationId: postTokenTransfer
+      operationId: postTokenTransferByType
       parameters:
       - description: 'TODO: Description'
         in: path

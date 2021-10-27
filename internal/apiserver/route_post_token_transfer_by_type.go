@@ -26,9 +26,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postTokenMint = &oapispec.Route{
-	Name:   "postTokenMint",
-	Path:   "namespaces/{ns}/tokens/{type}/pools/{name}/mint",
+var postTokenTransferByType = &oapispec.Route{
+	Name:   "postTokenTransferByType",
+	Path:   "namespaces/{ns}/tokens/{type}/pools/{name}/transfers",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -41,12 +41,12 @@ var postTokenMint = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.TokenTransferInput{} },
-	JSONInputMask:   []string{"Type", "LocalID", "PoolProtocolID", "TokenIndex", "From", "ProtocolID", "MessageHash", "Connector", "TX", "Created"},
+	JSONInputMask:   []string{"Type", "LocalID", "PoolProtocolID", "ProtocolID", "MessageHash", "Connector", "Namespace", "TX", "Created"},
 	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().MintTokens(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
+		return r.Or.Assets().TransferTokensByType(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
 	},
 }

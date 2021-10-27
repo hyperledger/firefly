@@ -124,7 +124,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
-	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
+	_, err := am.MintTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.NoError(t, err)
 }
 
@@ -135,7 +135,7 @@ func TestMintTokensBadPlugin(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 
-	_, err := am.MintTokens(context.Background(), "", "", "", &fftypes.TokenTransferInput{}, false)
+	_, err := am.MintTokensByType(context.Background(), "", "", "", &fftypes.TokenTransferInput{}, false)
 	assert.Regexp(t, "FF10272", err)
 }
 
@@ -151,7 +151,7 @@ func TestMintTokensBadPool(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
+	_, err := am.MintTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -167,7 +167,7 @@ func TestMintTokensIdentityFail(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 
-	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
+	_, err := am.MintTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -189,7 +189,7 @@ func TestMintTokensFail(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
-	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
+	_, err := am.MintTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -209,7 +209,7 @@ func TestMintTokensOperationFail(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
 
-	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
+	_, err := am.MintTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -239,7 +239,7 @@ func TestMintTokensConfirm(t *testing.T) {
 		}).
 		Return(&fftypes.TokenTransfer{}, nil)
 
-	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, true)
+	_, err := am.MintTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", mint, true)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -266,7 +266,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
-	_, err := am.BurnTokens(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
+	_, err := am.BurnTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -286,7 +286,7 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 
-	_, err := am.BurnTokens(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
+	_, err := am.BurnTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -316,7 +316,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 		}).
 		Return(&fftypes.TokenTransfer{}, nil)
 
-	_, err := am.BurnTokens(context.Background(), "ns1", "magic-tokens", "pool1", burn, true)
+	_, err := am.BurnTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", burn, true)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -348,7 +348,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -373,7 +373,7 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -386,7 +386,7 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.Regexp(t, "FF10280", err)
 
 	mim.AssertExpectations(t)
@@ -443,7 +443,7 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(fmt.Errorf("pop"))
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -488,7 +488,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *hash, *transfer.MessageHash)
 
@@ -525,7 +525,7 @@ func TestTransferTokensWithBroadcastMessageFail(t *testing.T) {
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.EqualError(t, err, "pop")
 
 	mbm.AssertExpectations(t)
@@ -574,7 +574,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mpm.On("NewMessage", "ns1", transfer.Message).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *hash, *transfer.MessageHash)
 
@@ -612,7 +612,7 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.Regexp(t, "FF10287", err)
 
 	mim.AssertExpectations(t)
@@ -649,7 +649,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 		}).
 		Return(&fftypes.TokenTransfer{}, nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, true)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, true)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -781,7 +781,7 @@ func TestTransferTokensWithBroadcastMessageConfirm(t *testing.T) {
 		Return(mms)
 	mms.On("SendAndWait", context.Background()).Return(nil)
 
-	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, true)
+	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, true)
 	assert.NoError(t, err)
 	assert.Nil(t, transfer.Message)
 	assert.Equal(t, *hash, *transfer.MessageHash)

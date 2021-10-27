@@ -20,8 +20,8 @@ type Manager struct {
 	mock.Mock
 }
 
-// BurnTokens provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
-func (_m *Manager) BurnTokens(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+// BurnTokensByType provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
+func (_m *Manager) BurnTokensByType(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, connector, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
@@ -350,8 +350,8 @@ func (_m *Manager) GetTokenTransfersByPool(ctx context.Context, ns string, conne
 	return r0, r1, r2
 }
 
-// MintTokens provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
-func (_m *Manager) MintTokens(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+// MintTokensByType provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
+func (_m *Manager) MintTokensByType(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, connector, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
@@ -417,8 +417,8 @@ func (_m *Manager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, p
 	return r0
 }
 
-// TransferTokens provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
-func (_m *Manager) TransferTokens(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+// TransferTokensByType provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
+func (_m *Manager) TransferTokensByType(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, connector, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer

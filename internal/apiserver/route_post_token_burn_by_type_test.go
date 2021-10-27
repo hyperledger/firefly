@@ -28,18 +28,18 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostTokenTransfer(t *testing.T) {
+func TestPostTokenBurnByType(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
 	input := fftypes.TokenTransferInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/tok1/pools/pool1/transfers", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/tok1/pools/pool1/burn", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("TransferTokens", mock.Anything, "ns1", "tok1", "pool1", mock.AnythingOfType("*fftypes.TokenTransferInput"), false).
+	mam.On("BurnTokensByType", mock.Anything, "ns1", "tok1", "pool1", mock.AnythingOfType("*fftypes.TokenTransferInput"), false).
 		Return(&fftypes.TokenTransfer{}, nil)
 	r.ServeHTTP(res, req)
 
