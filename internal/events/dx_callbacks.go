@@ -188,7 +188,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 			var messages []*fftypes.Message
 			for _, data := range data {
 				fb := database.MessageQueryFactory.NewFilter(ctx)
-				filter := fb.And(fb.Eq("pending", true))
+				filter := fb.And(fb.Eq("confirmed", nil))
 				messages, _, err = em.database.GetMessagesForData(ctx, data.ID, filter)
 				if err != nil {
 					return err
@@ -297,7 +297,6 @@ func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.
 
 			// Persist the message - immediately considered confirmed as this is an unpinned receive
 			message.Confirmed = fftypes.Now()
-			message.Pending = false
 			if ok, err := em.persistReceivedMessage(ctx, 0, message, "message", message.Header.ID); err != nil || !ok {
 				return err
 			}

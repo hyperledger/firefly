@@ -66,6 +66,7 @@ GEM
       rb-inotify (~> 0.9, >= 0.9.7)
 
 PLATFORMS
+  ruby
   universal-darwin-20
   x86_64-linux
 

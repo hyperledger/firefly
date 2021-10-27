@@ -133,10 +133,20 @@ type FilterBuilder interface {
 	NotIContains(name string, value driver.Value) Filter
 }
 
+// NullBehavior specifies whether to sort nulls first or last in a query
+type NullBehavior int
+
+const (
+	NullsDefault NullBehavior = iota
+	NullsFirst
+	NullsLast
+)
+
 // SortField is field+direction for sorting
 type SortField struct {
 	Field      string
 	Descending bool
+	Nulls      NullBehavior
 }
 
 // FilterInfo is the structure returned by Finalize to the plugin, to serialize this filter

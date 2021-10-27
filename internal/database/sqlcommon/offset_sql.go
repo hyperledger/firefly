@@ -148,7 +148,7 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (mes
 
 	cols := append([]string{}, offsetColumns...)
 	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("offsets"), filter, offsetFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("offsets"), filter, offsetFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

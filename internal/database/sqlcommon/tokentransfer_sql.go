@@ -34,6 +34,7 @@ var (
 		"pool_protocol_id",
 		"token_index",
 		"connector",
+		"namespace",
 		"key",
 		"from_key",
 		"to_key",
@@ -83,6 +84,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("pool_protocol_id", transfer.PoolProtocolID).
 				Set("token_index", transfer.TokenIndex).
 				Set("connector", transfer.Connector).
+				Set("namespace", transfer.Namespace).
 				Set("key", transfer.Key).
 				Set("from_key", transfer.From).
 				Set("to_key", transfer.To).
@@ -108,6 +110,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.PoolProtocolID,
 					transfer.TokenIndex,
 					transfer.Connector,
+					transfer.Namespace,
 					transfer.Key,
 					transfer.From,
 					transfer.To,
@@ -137,6 +140,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.PoolProtocolID,
 		&transfer.TokenIndex,
 		&transfer.Connector,
+		&transfer.Namespace,
 		&transfer.Key,
 		&transfer.From,
 		&transfer.To,
@@ -182,7 +186,7 @@ func (s *SQLCommon) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID)
 }
 
 func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filter) (message []*fftypes.TokenTransfer, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From("tokentransfer"), filter, tokenTransferFilterFieldMap, []string{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From("tokentransfer"), filter, tokenTransferFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}

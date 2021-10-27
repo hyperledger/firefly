@@ -251,7 +251,7 @@ func (s *SQLCommon) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (
 }
 
 func (s *SQLCommon) GetGroups(ctx context.Context, filter database.Filter) (group []*fftypes.Group, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From("groups"), filter, groupFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From("groups"), filter, groupFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Setting up a local development environment
+title: Setting up a FireFly Core Development Environment
 parent: Contributors
-nav_order: 1
+nav_order: 4
 ---
 
-# Setting up a local development environment
+# Setting up a FireFly Core Development Environment
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -23,10 +23,26 @@ This guide will walk you through setting up your machine for contributing to Fir
 
 You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0.
 
-- Go (1.16 or newer)
+- [Go (1.16 or newer)](https://golang.org/dl/)
 - make
-- GCC (?)
-- There are probably more that I'm forgetting...
+- GCC
+- openssl
+
+
+### Installing GO and setting up your `GOPATH`
+
+We recommend following the [instructions on golang.org](https://golang.org/doc/install) to install Go, rather than installing Go from another package magager such as `brew`. Although it is possible to install Go any way you'd like, setting up your `GOPATH` may differ from the following instructions.
+
+After installing Go, you will need to add a few environment variables to your shell run commands file. This is usually a hidden file in your home directory called `.bashrc` or `.zshrc`, depending on which shell you're using.
+
+
+Add the following lines to your `.bashrc` or `.zshrc` file:
+```
+export GOPATH=$HOME/go
+export GOROOT="/usr/local/go"
+export PATH="$PATH:${GOPATH}/bin:${GOROOT}/bin"
+```
+
 
 The [FireFly CLI](https://github.com/hyperledger/firefly-cli) is the recommended path for running a local development stack. It has its [own set of prerequisites](https://github.com/hyperledger/firefly-cli#prerequisites) as well.
 
@@ -61,14 +77,41 @@ Now that you have both FireFly and the FireFly CLI installed, it's time to creat
 
 Essentially what we are going to do is have docker-compose run everything in the FireFly network _except_ one FireFly core process. We'll run this FireFly core process on our host machine, and configure it to connect to the rest of the microservices running in docker-compose. This means we could launch FireFly from Visual Studio Code or some other IDE and use a debugger to see what's going on inside FireFly as it's running.
 
-To do this, we're going to add `--external 1` to the end of our command to create the new stack:
+We'll call this stack `dev`. We're also going to add `--external 1` to the end of our command to create the new stack:
 
 ```
-ff init --external 1
+ff init dev --external 1
 ```
 
-This tells the CLI that we want to manage one of the FireFly core processes outside the docker-compose stack. For convenience, the CLI will still generate a config file for this process though. At a certain point in the startup process, the CLI will pause and wait for up to two minutes for you to start the other FireFly node. It will also print out the command line which can be copied and pasted into another terminal window to run FireFly.
+This tells the CLI that we want to manage one of the FireFly core processes outside the docker-compose stack. For convenience, the CLI will still generate a config file for this process though.
 
-> **NOTE**: The first time you run FireFly with a fresh database, it will need a directory of database migrations to apply to the empty database. If you run FireFly from the `firefly` project directory you cloned from GitHub, it will automatically find these and apply them. If you run it from somewhere else, you will have to point FireFly to the migrations on your own.
+### Start the stack
+
+To start your new stack simply run:
+
+```
+ff start dev
+```
+
+At a certain point in the startup process, the CLI will pause and wait for up to two minutes for you to start the other FireFly node. There are two different ways you can run the extenral FireFly core process.
+
+### 1) From another terminal
+The CLI will print out the command line which can be copied and pasted into another terminal window to run FireFly. *This command should be run from the `firefly` core project directory.* Here is an example of the command that the CLI will tell you to run:
+
+```
+./firefly -f ~/.stacks/firefly/dev/configs/firefly_core_0.yml
+```
+
+> **NOTE**: The first time you run FireFly with a fresh database, it will need a directory of database migrations to apply to the empty database. If you run FireFly from the `firefly` project directory you cloned from GitHub, it will automatically find these and apply them. If you run it from some other directory, you will have to point FireFly to the migrations on your own.
+
+
+### 2) Using an IDE
+
+If you named your stack `dev` there is a `launch.json` file for Visual Studio code already in the project directory. If you have the project open in Visual Studio Code, you can either press the F5 key to run it, or go to the "Run and Debug" view in Visual Studio code, and click "Run FireFly Core". 
+
+![Launch config](../images/launch_config.png "Launch config")
 
 Now you should have a full FireFly stack up and running, and be able to debug FireFly using your IDE. Happy hacking!
+
+
+> **NOTE**: Because `firefly-ui` is a separate repo, unless you also start a UI dev server for the external FireFly core, the default UI path will not load. This is expected, and if you're just working on FireFly core itself, you don't need to worry about it.`

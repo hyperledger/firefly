@@ -47,6 +47,20 @@ var (
 	MessageTypeTransferPrivate MessageType = ffEnum("messagetype", "transfer_private")
 )
 
+// MessageState is the current transmission/confirmation state of a message
+type MessageState = FFEnum
+
+var (
+	// MessageStateReady is a message created locally which is ready to send
+	MessageStateReady MessageState = ffEnum("messagestate", "ready")
+	// MessageStatePending is a message that has been received but is awaiting aggregation/confirmation
+	MessageStatePending MessageState = ffEnum("messagestate", "pending")
+	// MessageStateConfirmed is a message that has completed all required confirmations (blockchain if pinned, token transfer if transfer coupled, etc)
+	MessageStateConfirmed MessageState = ffEnum("messagestate", "confirmed")
+	// MessageStateRejected is a message that has completed confirmation, but has been rejected by FireFly
+	MessageStateRejected MessageState = ffEnum("messagestate", "rejected")
+)
+
 // MessageHeader contains all fields that contribute to the hash
 // The order of the serialization mut not change, once released
 type MessageHeader struct {
@@ -70,9 +84,7 @@ type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	BatchID   *UUID         `json:"batch,omitempty"`
-	Local     bool          `json:"local,omitempty"`
-	Rejected  bool          `json:"rejected,omitempty"`
-	Pending   SortableBool  `json:"pending"`
+	State     MessageState  `json:"state,omitempty" ffenum:"messagestate"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 	Pins      FFNameArray   `json:"pins,omitempty"`
@@ -147,7 +159,6 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 		m.Header.Created = Now()
 	}
 	m.Confirmed = nil
-	m.Pending = true
 	if m.Data == nil {
 		m.Data = DataRefs{}
 	}

@@ -41,6 +41,19 @@ if [ -z "${STACK_FILE}" ]; then
   STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
 fi
 
+
+if [ -z "${BLOCKCHAIN_PROVIDER}" ]; then
+  BLOCKCHAIN_PROVIDER=geth
+fi
+
+if [ -z "${TOKENS_PROVIDER}" ]; then
+  TOKENS_PROVIDER=erc1155
+fi
+
+if [ -z "${TEST_SUITE}" ]; then
+  TEST_SUITE=TestEthereumE2ESuite
+fi
+
 cd $CWD
 
 if [ "$CREATE_STACK" == "true" ]; then
@@ -54,12 +67,12 @@ if [ "$BUILD_FIREFLY" == "true" ]; then
 fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]; then
-  go install github.com/hyperledger/firefly-cli/ff@v0.0.35
+  go install github.com/hyperledger/firefly-cli/ff@v0.0.36
   checkOk $?
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --database $DATABASE_TYPE $STACK_NAME 2 --manifest ../../manifest.json
+  $CLI init --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --tokens-provider $TOKENS_PROVIDER --manifest ../../manifest.json
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3
@@ -74,5 +87,5 @@ checkOk $?
 
 export STACK_FILE
 
-go clean -testcache && go test -v .
+go clean -testcache && go test -v . -run $TEST_SUITE
 checkOk $?

@@ -76,7 +76,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 			send(pm.ctx)
 		}).
 		Return(retMsg, nil).Once()
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -134,7 +134,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
 	}, nil).Once()
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
 	mdi.On("InsertEvent", pm.ctx, mock.Anything).Return(nil).Once()
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
@@ -234,7 +234,7 @@ func TestSendMessageFail(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil)
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(fmt.Errorf("pop"))
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
@@ -544,7 +544,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(fmt.Errorf("pop")).Once()
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -614,7 +614,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
@@ -680,7 +680,7 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
 	}, nil).Once()
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
 	mdi.On("InsertEvent", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
@@ -761,7 +761,7 @@ func TestRequestReplySuccess(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
 
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{

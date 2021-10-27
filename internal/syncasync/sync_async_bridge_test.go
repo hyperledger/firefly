@@ -110,7 +110,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 		msgSent := &fftypes.Message{}
 		msgSent.Header.ID = requestID
 		msgSent.Confirmed = fftypes.Now()
-		msgSent.Rejected = false
+		msgSent.State = fftypes.MessageStateConfirmed
 		gmid.ReturnArguments = mock.Arguments{
 			msgSent, nil,
 		}
@@ -157,7 +157,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 		msgSent := &fftypes.Message{}
 		msgSent.Header.ID = requestID
 		msgSent.Confirmed = fftypes.Now()
-		msgSent.Rejected = false
+		msgSent.State = fftypes.MessageStateConfirmed
 		gmid.ReturnArguments = mock.Arguments{
 			msgSent, nil,
 		}
