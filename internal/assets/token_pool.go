@@ -101,8 +101,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		tx.ID,
 		"",
 		fftypes.OpTypeTokenCreatePool,
-		fftypes.OpStatusPending,
-		"")
+		fftypes.OpStatusPending)
 	addTokenPoolCreateInputs(op, pool)
 
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {

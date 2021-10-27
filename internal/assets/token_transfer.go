@@ -222,8 +222,7 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 		tx.ID,
 		"",
 		fftypes.OpTypeTokenTransfer,
-		fftypes.OpStatusPending,
-		"")
+		fftypes.OpStatusPending)
 	addTokenTransferInputs(op, &s.transfer.TokenTransfer)
 
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
