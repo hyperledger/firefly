@@ -36,23 +36,29 @@ The tooling is designed to be a helper, but not to hide or abstract things away 
 
 ## The runtimes you will get
 
+The CLI includes a number of options (viewable via `ff help init`) to control the runtimes that will be created
+within your stack. By default, it will include the following:
+
 - Blockchain: a shared blockchain ledger
   - For development, you get a single shared node
-  - An Ethereum blockchain using the [Ganache CLI](https://github.com/trufflesuite/ganache-cli) EVM is the default option
+  - An Ethereum blockchain using [Go Ethereum](https://geth.ethereum.org) is the default option
     - Adding a block explorer UI option is an enhancement tracked in #108
 - Blockchain connector: one per member
   - The transaction and events interface for your blockchain node
   - An instance of [firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect) is the default option
 - Shared storage: one per member
   - An [IPFS](https://ipfs.io/) node is the default option
-  - Any data you upload, will only be available to other nodes within the stack
+  - Any data you upload will only be available to other nodes within the stack
     - These storage nodes are automatically joined together into a private network
 - Data exchange: one per member
-  - An instance [HTTPS data exchange](https://github.com/hyperledger/firefly-dataexchange-https) is the default option
+  - An instance of [firefly-dataexchange-https](https://github.com/hyperledger/firefly-dataexchange-https) is the default option
   - Uses Mutual TLS for authentication and transport encryption
   - Automatically generates a self-signed certificate for each member
 - Database: one per member
-  - A [PostgreSQL](https://www.postgresql.org/) relational database is the default option
+  - A [SQLite](https://www.sqlite.org) relational database is the default option
+- Token connector: one per member
+  - The token service for your node
+  - A instance of [firefly-tokens-erc1155](https://github.com/kaleido-io/firefly-tokens-erc1155) is the default option
 
 ## Check your `ff` CLI is healthy
 
