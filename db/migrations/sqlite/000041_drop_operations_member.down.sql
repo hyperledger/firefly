@@ -1,1 +1,1 @@
-ALTER TABLE operations ADD COLUMN member VARCHAR(64);
+ALTER TABLE operations ADD COLUMN member VARCHAR(1024);
