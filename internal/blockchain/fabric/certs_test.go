@@ -80,5 +80,5 @@ func TestClient(t *testing.T) {
 
 	certStr = base64.StdEncoding.EncodeToString([]byte(badCert))
 	_, err = getDNFromCertString(certStr)
-	assert.EqualError(err, "asn1: syntax error: data truncated")
+	assert.Contains([]string{"x509: malformed certificate", "asn1: syntax error: data truncated"}, err.Error())
 }
