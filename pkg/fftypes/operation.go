@@ -63,7 +63,6 @@ func NewTXOperation(plugin Named, namespace string, tx *UUID, backendID string, 
 		BackendID:   backendID,
 		Transaction: tx,
 		Type:        opType,
-		Member:      member,
 		Status:      opStatus,
 		Created:     Now(),
 	}
@@ -75,7 +74,6 @@ type Operation struct {
 	Namespace   string     `json:"namespace"`
 	Transaction *UUID      `json:"tx"`
 	Type        OpType     `json:"type" ffenum:"optype"`
-	Member      string     `json:"member,omitempty"`
 	Status      OpStatus   `json:"status"`
 	Error       string     `json:"error,omitempty"`
 	Plugin      string     `json:"plugin"`

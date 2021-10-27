@@ -642,7 +642,6 @@ var OperationQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"tx":        &UUIDField{},
 	"type":      &StringField{},
-	"member":    &StringField{},
 	"namespace": &StringField{},
 	"status":    &StringField{},
 	"error":     &StringField{},

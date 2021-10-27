@@ -1,0 +1,1 @@
+ALTER TABLE operations ADD COLUMN member VARCHAR(64);

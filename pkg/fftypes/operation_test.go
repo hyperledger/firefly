@@ -37,7 +37,6 @@ func TestNewPendingMessageOp(t *testing.T) {
 		Plugin:      "fake",
 		BackendID:   "testBackend",
 		Type:        OpTypePublicStorageBatchBroadcast,
-		Member:      "member",
 		Status:      OpStatusPending,
 		Created:     op.Created,
 	}, *op)

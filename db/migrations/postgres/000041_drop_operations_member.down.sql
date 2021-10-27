@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE operations ADD COLUMN member VARCHAR(64);
+COMMIT;
