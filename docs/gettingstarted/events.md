@@ -93,7 +93,7 @@ the full data.
     },
     "hash": "1b6808d2b95b418e54e7bd34593bfa36a002b841ac42f89d00586dac61e8df43",
     "batchID": "16ffc02c-8cb0-4e2f-8b58-a707ad1d1eae",
-    "pending": false,
+    "state": "confirmed",
     "confirmed": "2021-07-02T04:37:47.6548399Z",
     "data": [
       {
