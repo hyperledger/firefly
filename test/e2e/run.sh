@@ -67,7 +67,7 @@ if [ "$BUILD_FIREFLY" == "true" ]; then
 fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]; then
-  go install github.com/hyperledger/firefly-cli/ff@v0.0.35
+  go install github.com/hyperledger/firefly-cli/ff@v0.0.36
   checkOk $?
 fi
 
