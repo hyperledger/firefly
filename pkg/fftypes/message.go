@@ -55,9 +55,9 @@ var (
 	MessageStateReady MessageState = ffEnum("messagestate", "ready")
 	// MessageStatePending is a message that has been received but is awaiting aggregation/confirmation
 	MessageStatePending MessageState = ffEnum("messagestate", "pending")
-	// MessageStateConfirmed is a message that has been confirmed by the blockchain
+	// MessageStateConfirmed is a message that has completed all required confirmations (blockchain if pinned, token transfer if transfer coupled, etc)
 	MessageStateConfirmed MessageState = ffEnum("messagestate", "confirmed")
-	// MessageStateRejected is a message that has been confirmed by the blockchain but rejected by FireFly
+	// MessageStateRejected is a message that has completed confirmation, but has been rejected by FireFly
 	MessageStateRejected MessageState = ffEnum("messagestate", "rejected")
 )
 
@@ -84,7 +84,7 @@ type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	BatchID   *UUID         `json:"batch,omitempty"`
-	State     MessageState  `json:"state,omitempty"`
+	State     MessageState  `json:"state,omitempty" ffenum:"messagestate"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 	Pins      FFNameArray   `json:"pins,omitempty"`

@@ -4708,6 +4708,11 @@ paths:
                         type: string
                       type: array
                     state:
+                      enum:
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
                       type: string
                   type: object
                 messageHash: {}
@@ -4920,6 +4925,11 @@ paths:
                         type: string
                       type: array
                     state:
+                      enum:
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
                       type: string
                   type: object
                 messageHash: {}
@@ -5296,6 +5306,11 @@ paths:
                         type: string
                       type: array
                     state:
+                      enum:
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
                       type: string
                   type: object
                 messageHash: {}
