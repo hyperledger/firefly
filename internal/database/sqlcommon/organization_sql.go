@@ -177,7 +177,7 @@ func (s *SQLCommon) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (
 
 func (s *SQLCommon) GetOrganizations(ctx context.Context, filter database.Filter) (message []*fftypes.Organization, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(organizationColumns...).From("orgs"), filter, organizationFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(organizationColumns...).From("orgs"), filter, organizationFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

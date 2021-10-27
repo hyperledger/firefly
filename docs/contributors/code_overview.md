@@ -2,7 +2,7 @@
 layout: default
 title: FireFly Code Overview
 parent: Contributors
-nav_order: 2
+nav_order: 1
 ---
 
 # Firefly Code Overview

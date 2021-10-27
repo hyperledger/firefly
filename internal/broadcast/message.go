@@ -69,6 +69,7 @@ func (s *broadcastSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmess
 func (s *broadcastSender) setDefaults() {
 	s.msg.Header.ID = fftypes.NewUUID()
 	s.msg.Header.Namespace = s.namespace
+	s.msg.State = fftypes.MessageStateReady
 	if s.msg.Header.Type == "" {
 		s.msg.Header.Type = fftypes.MessageTypeBroadcast
 	}
@@ -147,7 +148,7 @@ func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (e
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return s.mgr.database.InsertMessageLocal(ctx, &s.msg.Message)
+	return s.mgr.database.UpsertMessage(ctx, &s.msg.Message, false, false)
 }
 
 func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {

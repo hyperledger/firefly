@@ -1620,20 +1620,6 @@ func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	return r0
 }
 
-// InsertMessageLocal provides a mock function with given fields: ctx, message
-func (_m *Plugin) InsertMessageLocal(ctx context.Context, message *fftypes.Message) error {
-	ret := _m.Called(ctx, message)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
-		r0 = rf(ctx, message)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // InsertNextPin provides a mock function with given fields: ctx, nextpin
 func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) error {
 	ret := _m.Called(ctx, nextpin)

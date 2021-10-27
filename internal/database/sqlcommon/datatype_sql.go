@@ -167,7 +167,7 @@ func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name, version str
 
 func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*fftypes.Datatype, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

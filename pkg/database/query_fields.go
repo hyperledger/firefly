@@ -311,35 +311,3 @@ func (f *boolField) Scan(src interface{}) (err error) {
 func (f *boolField) Value() (driver.Value, error)         { return f.b, nil }
 func (f *boolField) String() string                       { return fmt.Sprintf("%t", f.b) }
 func (f *BoolField) getSerialization() FieldSerialization { return &boolField{} }
-
-type SortableBoolField struct{}
-type sortableBoolField struct{ b fftypes.SortableBool }
-
-func (f *sortableBoolField) Scan(src interface{}) (err error) {
-	switch tv := src.(type) {
-	case int:
-		f.b = tv != 0
-	case int32:
-		f.b = tv != 0
-	case int64:
-		f.b = tv != 0
-	case uint:
-		f.b = tv != 0
-	case uint32:
-		f.b = tv != 0
-	case uint64:
-		f.b = tv != 0
-	case bool:
-		f.b = fftypes.SortableBool(tv)
-	case string:
-		f.b = fftypes.SortableBool(strings.EqualFold(tv, "true"))
-	case nil:
-		f.b = false
-	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b)
-	}
-	return nil
-}
-func (f *sortableBoolField) Value() (driver.Value, error)         { return f.b.Value() }
-func (f *sortableBoolField) String() string                       { return fmt.Sprintf("%t", f.b) }
-func (f *SortableBoolField) getSerialization() FieldSerialization { return &sortableBoolField{} }

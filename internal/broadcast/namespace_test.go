@@ -70,7 +70,7 @@ func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdi.On("InsertMessageLocal", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false, false).Return(nil)
 	buff := strings.Builder{}
 	buff.Grow(4097)
 	for i := 0; i < 4097; i++ {

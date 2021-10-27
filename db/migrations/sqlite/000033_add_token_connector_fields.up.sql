@@ -1,4 +1,3 @@
-DELETE FROM tokenaccount;
 ALTER TABLE tokenaccount ADD COLUMN connector VARCHAR(64);
 ALTER TABLE tokentransfer ADD COLUMN connector VARCHAR(64);
 

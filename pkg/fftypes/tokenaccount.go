@@ -20,6 +20,7 @@ type TokenAccount struct {
 	PoolProtocolID string  `json:"poolProtocolId,omitempty"`
 	TokenIndex     string  `json:"tokenIndex,omitempty"`
 	Connector      string  `json:"connector,omitempty"`
+	Namespace      string  `json:"namespace,omitempty"`
 	Key            string  `json:"key,omitempty"`
 	Balance        BigInt  `json:"balance"`
 	Updated        *FFTime `json:"updated,omitempty"`
@@ -37,6 +38,7 @@ type TokenBalanceChange struct {
 	PoolProtocolID string
 	TokenIndex     string
 	Connector      string
+	Namespace      string
 	Key            string
 	Amount         BigInt
 }

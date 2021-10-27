@@ -39,6 +39,7 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 		Type:           fftypes.TokenTransferTypeTransfer,
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
+		Connector:      "erc1155",
 		Key:            "0x12345",
 		From:           "0x1",
 		To:             "0x2",
@@ -47,12 +48,16 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	fromBalance := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
+		Connector:      "erc1155",
+		Namespace:      "ns1",
 		Key:            "0x1",
 	}
 	fromBalance.Amount.Int().SetInt64(-1)
 	toBalance := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
+		Connector:      "erc1155",
+		Namespace:      "ns1",
 		Key:            "0x2",
 	}
 	toBalance.Amount.Int().SetInt64(1)
@@ -170,6 +175,7 @@ func TestTokensTransferredWithMessage(t *testing.T) {
 		Type:           fftypes.TokenTransferTypeTransfer,
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
+		Connector:      "erc1155",
 		Key:            "0x12345",
 		From:           "0x1",
 		To:             "0x2",
@@ -179,12 +185,16 @@ func TestTokensTransferredWithMessage(t *testing.T) {
 	fromBalance := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
+		Connector:      "erc1155",
+		Namespace:      "ns1",
 		Key:            "0x1",
 	}
 	fromBalance.Amount.Int().SetInt64(-1)
 	toBalance := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
+		Connector:      "erc1155",
+		Namespace:      "ns1",
 		Key:            "0x2",
 	}
 	toBalance.Amount.Int().SetInt64(1)

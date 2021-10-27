@@ -30,6 +30,7 @@ type TokenTransfer struct {
 	PoolProtocolID string            `json:"poolProtocolId,omitempty"`
 	TokenIndex     string            `json:"tokenIndex,omitempty"`
 	Connector      string            `json:"connector,omitempty"`
+	Namespace      string            `json:"namespace,omitempty"`
 	Key            string            `json:"key,omitempty"`
 	From           string            `json:"from,omitempty"`
 	To             string            `json:"to,omitempty"`

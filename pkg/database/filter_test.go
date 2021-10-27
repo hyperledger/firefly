@@ -201,26 +201,6 @@ func TestBuildMessageBoolConvert(t *testing.T) {
 	assert.Equal(t, "( masked == false ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == false )", f.String())
 }
 
-func TestBuildMessageSortableBoolConvert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background())
-	f, err := fb.And(
-		fb.Eq("pending", false),
-		fb.Eq("pending", true),
-		fb.Eq("pending", "false"),
-		fb.Eq("pending", "true"),
-		fb.Eq("pending", "True"),
-		fb.Eq("pending", ""),
-		fb.Eq("pending", int(111)),
-		fb.Eq("pending", int32(222)),
-		fb.Eq("pending", int64(333)),
-		fb.Eq("pending", uint(444)),
-		fb.Eq("pending", uint32(555)),
-		fb.Eq("pending", uint64(666)),
-		fb.Eq("pending", nil),
-	).Finalize()
-	assert.NoError(t, err)
-	assert.Equal(t, "( pending == 0 ) && ( pending == 1 ) && ( pending == 0 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 0 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 0 )", f.String())
-}
 func TestBuildMessageJSONConvert(t *testing.T) {
 	fb := TransactionQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
@@ -260,12 +240,6 @@ func TestBuildMessageFailBypes32Convert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("group", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*group", err)
-}
-
-func TestBuildMessageFailSortableBoolConvert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background())
-	_, err := fb.Lt("pending", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*pending", err)
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
@@ -334,5 +308,4 @@ func TestStringsForTypes(t *testing.T) {
 	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
 	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: fftypes.FFNameArray{"t1", "t2"}}).String())
 	assert.Equal(t, "true", (&boolField{b: true}).String())
-	assert.Equal(t, "true", (&sortableBoolField{b: true}).String())
 }
