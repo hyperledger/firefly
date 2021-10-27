@@ -20,7 +20,7 @@ if [ `echo $STATUS | jq -r .org.registered` != "true" ]; then
 
 fi
 
-if [ `echo $STATUS | jq -r .registered` != "true" ]; then
+if [ `echo $STATUS | jq -r .node.registered` != "true" ]; then
 
   echo "Registering node"
   HTTP_CODE=`curl --silent --output /dev/stderr --write-out "%{http_code}" \
