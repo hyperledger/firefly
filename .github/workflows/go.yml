@@ -28,9 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
         blockchain-provider: [geth, fabric]
         database-type: [sqlite3]
-        test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
         exclude:
           - blockchain-provider: geth
             test-suite: TestFabricE2ESuite
@@ -56,5 +56,5 @@ jobs:
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: container-logs
+          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}
           path: containerlogs/logs.txt
