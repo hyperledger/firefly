@@ -68,10 +68,6 @@ type iMessageCollection interface {
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
 
-	// InsertMessageLocal - sets a boolean flag on inserting a new message (cannot be an update) to state it is local.
-	// Only time this flag is ever set. Subsequent updates can affect other fields, but not the local flag. Important to stop infinite message propagation.
-	InsertMessageLocal(ctx context.Context, message *fftypes.Message) (err error)
-
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
@@ -573,13 +569,11 @@ var MessageQueryFactory = &queryFields{
 	"created":   &TimeField{},
 	"hash":      &Bytes32Field{},
 	"pins":      &FFNameArrayField{},
-	"rejected":  &BoolField{},
-	"pending":   &SortableBoolField{},
+	"state":     &StringField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"txtype":    &StringField{},
 	"batch":     &UUIDField{},
-	"local":     &BoolField{},
 }
 
 // BatchQueryFactory filter fields for batches
@@ -648,7 +642,6 @@ var OperationQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"tx":        &UUIDField{},
 	"type":      &StringField{},
-	"member":    &StringField{},
 	"namespace": &StringField{},
 	"status":    &StringField{},
 	"error":     &StringField{},

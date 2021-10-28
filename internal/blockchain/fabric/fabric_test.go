@@ -513,7 +513,7 @@ func TestResolveSignerBadECertReturned(t *testing.T) {
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
 	_, err := e.ResolveSigningKey(context.Background(), "signer001")
-	assert.EqualError(t, err, "FF10286: Failed to decode certificate: asn1: syntax error: data truncated")
+	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
 func TestResolveSignerBadCACertReturned(t *testing.T) {
@@ -531,7 +531,7 @@ func TestResolveSignerBadCACertReturned(t *testing.T) {
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
 	_, err := e.ResolveSigningKey(context.Background(), "signer001")
-	assert.EqualError(t, err, "FF10286: Failed to decode certificate: asn1: syntax error: data truncated")
+	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
 func TestGetUserNameWithMatches(t *testing.T) {

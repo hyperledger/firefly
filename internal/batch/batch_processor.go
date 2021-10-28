@@ -166,7 +166,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	for _, w := range newWork {
 		if w.msg != nil {
 			w.msg.BatchID = batch.ID
-			w.msg.Local = false
+			w.msg.State = "" // state should always be set by receivers when loading the batch
 			batch.Payload.Messages = append(batch.Payload.Messages, w.msg)
 		}
 		batch.Payload.Data = append(batch.Payload.Data, w.data...)

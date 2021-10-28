@@ -61,3 +61,25 @@ func TestGetMessagesWithCount(t *testing.T) {
 	assert.Equal(t, int64(0), resWithCount.Count)
 	assert.Equal(t, int64(10), resWithCount.Total)
 }
+
+func TestGetMessagesWithCountAndData(t *testing.T) {
+	o, r := newTestAPIServer()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages?count&fetchdata", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	var ten int64 = 10
+	o.On("GetMessagesWithData", mock.Anything, "mynamespace", mock.Anything).
+		Return([]*fftypes.MessageInOut{}, &database.FilterResult{
+			TotalCount: &ten,
+		}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
+	var resWithCount filterResultsWithCount
+	err := json.NewDecoder(res.Body).Decode(&resWithCount)
+	assert.NoError(t, err)
+	assert.NotNil(t, resWithCount.Items)
+	assert.Equal(t, int64(0), resWithCount.Count)
+	assert.Equal(t, int64(10), resWithCount.Total)
+}

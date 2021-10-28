@@ -81,13 +81,13 @@ func TestBroadcastMessageGood(t *testing.T) {
 	defer cancel()
 
 	msg := &fftypes.MessageInOut{}
-	bm.database.(*databasemocks.Plugin).On("InsertMessageLocal", mock.Anything, &msg.Message).Return(nil)
+	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, &msg.Message, false, false).Return(nil)
 
 	broadcast := broadcastSender{
 		mgr: bm,
 		msg: msg,
 	}
-	err := broadcast.sendInternal(context.Background(), false)
+	err := broadcast.sendInternal(context.Background(), methodSend)
 	assert.NoError(t, err)
 
 	bm.Start()
@@ -112,7 +112,7 @@ func TestBroadcastMessageBad(t *testing.T) {
 		mgr: bm,
 		msg: msg,
 	}
-	err := broadcast.sendInternal(context.Background(), false)
+	err := broadcast.sendInternal(context.Background(), methodSend)
 	assert.Regexp(t, "FF10144", err)
 
 }

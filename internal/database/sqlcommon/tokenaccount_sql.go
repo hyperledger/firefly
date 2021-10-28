@@ -160,7 +160,7 @@ func (s *SQLCommon) GetTokenAccount(ctx context.Context, protocolID, tokenIndex,
 }
 
 func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenAccountColumns...).From("tokenaccount"), filter, tokenAccountFilterFieldMap, []string{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenAccountColumns...).From("tokenaccount"), filter, tokenAccountFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}

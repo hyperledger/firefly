@@ -1,0 +1,53 @@
+name: Latest Integration Test
+
+on:
+  push:
+    branches: [scheduled-e2e]
+  schedule:
+    - cron:  '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  e2e-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
+        blockchain-provider: [geth, fabric]
+        database-type: [sqlite3, postgres]
+        exclude:
+          - blockchain-provider: geth
+            test-suite: TestFabricE2ESuite
+          - blockchain-provider: fabric
+            test-suite: TestEthereumE2ESuite
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      
+      - name: Update manifest to latest commit for every service
+        run: ./manifestgen.sh head
+
+      - name: Pull latests FireFly build
+        run: | 
+          docker pull ghcr.io/hyperledger/firefly:head
+          docker tag ghcr.io/hyperledger/firefly:head hyperledger/firefly
+
+      - name: Run E2E tests
+        env:
+          TEST_SUITE: ${{ matrix.test-suite }}
+          BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
+          DATABASE_TYPE: ${{ matrix.database-type }}
+          BUILD_FIREFLY: false
+        run: ./test/e2e/run.sh
+
+      - name: Archive container logs
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}
+          path: containerlogs/logs.txt

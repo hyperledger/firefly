@@ -34,7 +34,6 @@ var (
 		"tx_id",
 		"optype",
 		"opstatus",
-		"member",
 		"plugin",
 		"backend_id",
 		"created",
@@ -83,7 +82,6 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Set("tx_id", operation.Transaction).
 				Set("optype", operation.Type).
 				Set("opstatus", operation.Status).
-				Set("member", operation.Member).
 				Set("plugin", operation.Plugin).
 				Set("backend_id", operation.BackendID).
 				Set("created", operation.Created).
@@ -108,7 +106,6 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 					operation.Transaction,
 					string(operation.Type),
 					string(operation.Status),
-					operation.Member,
 					operation.Plugin,
 					operation.BackendID,
 					operation.Created,
@@ -136,7 +133,6 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Transaction,
 		&op.Type,
 		&op.Status,
-		&op.Member,
 		&op.Plugin,
 		&op.BackendID,
 		&op.Created,
@@ -178,7 +174,7 @@ func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (ope
 
 func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
