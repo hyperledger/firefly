@@ -206,4 +206,5 @@ var (
 	MsgFailedToDecodeCertificate   = ffm("FF10286", "Failed to decode certificate: %s", 500)
 	MsgInvalidMessageType          = ffm("FF10287", "Invalid message type - allowed types are %s", 400)
 	MsgNoUUID                      = ffm("FF10288", "Field '%s' must not be a UUID", 400)
+	MsgFieldNotSpecified           = ffm("FF10289", "Field '%s' must be specified", 400)
 )
