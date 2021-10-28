@@ -437,11 +437,13 @@ func (am *assetManager) getTokenConnectorName(ctx context.Context, ns string) (s
 }
 
 func (am *assetManager) getTokenPoolName(ctx context.Context, ns string) (string, error) {
-	tokenPools, _, err := am.GetTokenPools(ctx, ns, database.TokenPoolQueryFactory.NewFilter(context.Background()).And())
+	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
+	f.Limit(1).Count(true)
+	tokenPools, fr, err := am.GetTokenPools(ctx, ns, f)
 	if err != nil {
 		return "", err
 	}
-	if len(tokenPools) != 1 {
+	if *fr.TotalCount != 1 {
 		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "pool")
 	}
 	return tokenPools[0].Name, nil

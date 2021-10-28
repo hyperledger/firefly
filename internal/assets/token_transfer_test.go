@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -127,6 +128,343 @@ func TestMintTokensSuccess(t *testing.T) {
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.NoError(t, err)
+}
+
+func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = ""
+	mint.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, &mint.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.NoError(t, err)
+}
+
+func TestMintTokenUnknownConnectorNoConnectors(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = ""
+	mint.Pool = "pool1"
+
+	am.tokens = make(map[string]tokens.Plugin)
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestMintTokenUnknownConnectorMultipleConnectors(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = ""
+	mint.Pool = "pool1"
+
+	am.tokens["magic-tokens"] = nil
+	am.tokens["magic-tokens2"] = nil
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestMintTokenUnknownConnectorBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = ""
+	mint.Pool = "pool1"
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.MintTokens(context.Background(), "", mint, false)
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestMintTokenUnknownPoolSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{
+		{
+			Name: "pool1",
+		},
+	}
+	totalCount := int64(1)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, &mint.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.NoError(t, err)
+}
+
+func TestMintTokenUnknownPoolNoPools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{}
+	totalCount := int64(0)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestMintTokenUnknownPoolMultiplePools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{
+		{
+			Name: "pool1",
+		},
+		{
+			Name: "pool2",
+		},
+	}
+	totalCount := int64(2)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestMintTokenUnknownPoolBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = ""
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.MintTokens(context.Background(), "", mint, false)
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestMintTokensNoPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestMintTokensBadPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestMintTokensIdentityFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestMintTokensFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, &mint.TokenTransfer).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestMintTokensOperationFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestMintTokensConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{}
+	mint.Amount.Int().SetInt64(5)
+	mint.Connector = "magic-tokens"
+	mint.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, &mint.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send(context.Background())
+		}).
+		Return(&fftypes.TokenTransfer{}, nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, true)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	msa.AssertExpectations(t)
+	mti.AssertExpectations(t)
 }
 
 func TestMintTokensByTypeSuccess(t *testing.T) {
@@ -299,6 +637,265 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
+func TestBurnTokensUnknownConnectorSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = ""
+	burn.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("BurnTokens", context.Background(), mock.Anything, &burn.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
+	assert.NoError(t, err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestBurnTokenUnknownConnectorNoConnectors(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = ""
+	burn.Pool = "pool1"
+
+	am.tokens = make(map[string]tokens.Plugin)
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestBurnTokenUnknownConnectorMultipleConnectors(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = ""
+	burn.Pool = "pool1"
+
+	am.tokens["magic-tokens"] = nil
+	am.tokens["magic-tokens2"] = nil
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestBurnTokenUnknownConnectorBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = ""
+	burn.Pool = "pool1"
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "", burn, false)
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestBurnTokensIdentityFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = "magic-tokens"
+	burn.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestBurnTokensConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = "magic-tokens"
+	burn.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("BurnTokens", context.Background(), mock.Anything, &burn.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send(context.Background())
+		}).
+		Return(&fftypes.TokenTransfer{}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, true)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	msa.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestBurnTokenUnknownPoolSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = "magic-tokens"
+	burn.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{
+		{
+			Name: "pool1",
+		},
+	}
+	totalCount := int64(1)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("BurnTokens", context.Background(), mock.Anything, &burn.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
+	assert.NoError(t, err)
+}
+
+func TestBurnTokenUnknownPoolNoPools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = "magic-tokens"
+	burn.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{}
+	totalCount := int64(0)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestBurnTokenUnknownPoolMultiplePools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = "magic-tokens"
+	burn.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{
+		{
+			Name: "pool1",
+		},
+		{
+			Name: "pool2",
+		},
+	}
+	totalCount := int64(2)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestBurnTokenUnknownPoolBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransferInput{}
+	burn.Amount.Int().SetInt64(5)
+	burn.Connector = "magic-tokens"
+	burn.Pool = ""
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "", burn, false)
+	assert.Regexp(t, "FF10131", err)
+}
+
 func TestBurnTokensByTypeSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -407,6 +1004,694 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+}
+
+func TestTransferTokensUnknownConnectorSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = ""
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.NoError(t, err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestTransferTokenUnknownConnectorNoConnectors(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = ""
+	transfer.Pool = "pool1"
+
+	am.tokens = make(map[string]tokens.Plugin)
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestTransferTokenUnknownConnectorMultipleConnectors(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = ""
+	transfer.Pool = "pool1"
+
+	am.tokens["magic-tokens"] = nil
+	am.tokens["magic-tokens2"] = nil
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestTransferTokenUnknownConnectorBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = ""
+	transfer.Pool = "pool1"
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "", transfer, false)
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestTransferTokenUnknownPoolSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{
+		{
+			Name: "pool1",
+		},
+	}
+	totalCount := int64(1)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.NoError(t, err)
+}
+
+func TestTransferTokenUnknownPoolNoPools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{}
+	totalCount := int64(0)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestTransferTokenUnknownPoolMultiplePools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = ""
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	f.Limit(1).Count(true)
+	tokenPools := []*fftypes.TokenPool{
+		{
+			Name: "pool1",
+		},
+		{
+			Name: "pool2",
+		},
+	}
+	totalCount := int64(2)
+	filterResult := &database.FilterResult{
+		TotalCount: &totalCount,
+	}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+		info, _ := f.Finalize()
+		return info.Count && info.Limit == 1
+	}))).Return(tokenPools, filterResult, nil)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10291", err)
+}
+
+func TestTransferTokenUnknownPoolBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = ""
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "", transfer, false)
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestTransferTokensIdentityFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestTransferTokensNoFromOrTo(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{}
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10280", err)
+
+	mim.AssertExpectations(t)
+}
+
+func TestTransferTokensTransactionFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.EqualError(t, err, "pop")
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastMessage(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	hash := fftypes.NewRandB32()
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Hash: hash,
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.NoError(t, err)
+	assert.Equal(t, *hash, *transfer.MessageHash)
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastMessageFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.EqualError(t, err, "pop")
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.EqualError(t, err, "pop")
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestTransferTokensWithPrivateMessage(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	hash := fftypes.NewRandB32()
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Type: fftypes.MessageTypeTransferPrivate,
+				},
+				Hash: hash,
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mpm := am.messaging.(*privatemessagingmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mpm.On("NewMessage", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.NoError(t, err)
+	assert.Equal(t, *hash, *transfer.MessageHash)
+
+	mpm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestTransferTokensWithInvalidMessage(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Type: fftypes.MessageTypeDefinition,
+				},
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10287", err)
+
+	mim.AssertExpectations(t)
+}
+
+func TestTransferTokensConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send(context.Background())
+		}).
+		Return(&fftypes.TokenTransfer{}, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, true)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	msa.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	hash := fftypes.NewRandB32()
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Hash: hash,
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("SendAndWait", context.Background()).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send(context.Background())
+		}).
+		Return(&transfer.TokenTransfer, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, true)
+	assert.NoError(t, err)
+	assert.Equal(t, *hash, *transfer.MessageHash)
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	msa.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastConfirmTransferFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	hash := fftypes.NewRandB32()
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Hash: hash,
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+	transfer.Connector = "magic-tokens"
+	transfer.Pool = "pool1"
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send(context.Background())
+		}).
+		Return(nil, fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, true)
+	assert.EqualError(t, err, "pop")
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	msa.AssertExpectations(t)
 }
 
 func TestTransferTokensByTypeSuccess(t *testing.T) {
