@@ -628,5 +628,5 @@ func TestWebsocketSendAfterClose(t *testing.T) {
 	connection.wsConn.Close()
 	<-connection.senderDone
 	err = connection.send(map[string]string{"foo": "bar"})
-	assert.Regexp(t, "FF10160", err)
+	assert.Regexp(t, "FF10290", err)
 }
