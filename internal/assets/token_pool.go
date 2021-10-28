@@ -74,7 +74,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	}
 
 	if waitConfirm {
-		return am.syncasync.SendConfirmTokenPool(ctx, pool.Namespace, pool.ID, func(ctx context.Context) error {
+		return am.syncasync.WaitForTokenPool(ctx, pool.Namespace, pool.ID, func(ctx context.Context) error {
 			_, err := am.createTokenPoolInternal(ctx, pool, false)
 			return err
 		})

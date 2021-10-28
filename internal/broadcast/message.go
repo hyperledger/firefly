@@ -46,24 +46,35 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 }
 
 type broadcastSender struct {
-	mgr          *broadcastManager
-	namespace    string
-	msg          *fftypes.MessageInOut
-	resolved     bool
-	sendCallback sysmessaging.BeforeSendCallback
+	mgr       *broadcastManager
+	namespace string
+	msg       *fftypes.MessageInOut
+	resolved  bool
+}
+
+// sendMethod is the specific operation requested of the broadcastSender.
+// To minimize duplication and group database operations, there is a single internal flow with subtle differences for each method.
+type sendMethod int
+
+const (
+	// methodPrepare requests that the message be validated and sealed, but not sent (i.e. no database writes are performed)
+	methodPrepare sendMethod = iota
+	// methodSend requests that the message be sent and pinned to the blockchain, but does not wait for confirmation
+	methodSend
+	// methodSendAndWait requests that the message be sent and waits until it is pinned and confirmed by the blockchain
+	methodSendAndWait
+)
+
+func (s *broadcastSender) Prepare(ctx context.Context) error {
+	return s.resolveAndSend(ctx, methodPrepare)
 }
 
 func (s *broadcastSender) Send(ctx context.Context) error {
-	return s.resolveAndSend(ctx, false)
+	return s.resolveAndSend(ctx, methodSend)
 }
 
 func (s *broadcastSender) SendAndWait(ctx context.Context) error {
-	return s.resolveAndSend(ctx, true)
-}
-
-func (s *broadcastSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
-	s.sendCallback = cb
-	return s
+	return s.resolveAndSend(ctx, methodSendAndWait)
 }
 
 func (s *broadcastSender) setDefaults() {
@@ -78,14 +89,14 @@ func (s *broadcastSender) setDefaults() {
 	}
 }
 
-func (s *broadcastSender) resolveAndSend(ctx context.Context, waitConfirm bool) error {
+func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod) error {
 	sent := false
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin)
 	var dataToPublish []*fftypes.DataAndBlob
 	err := s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		if !s.resolved {
-			if dataToPublish, err = s.resolveMessage(ctx); err != nil {
+			if dataToPublish, err = s.resolve(ctx); err != nil {
 				return err
 			}
 			s.resolved = true
@@ -94,9 +105,9 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, waitConfirm bool) 
 		// For the simple case where we have no data to publish and aren't waiting for blockchain confirmation,
 		// insert the local message immediately within the same DB transaction.
 		// Otherwise, break out of the DB transaction (since those operations could take multiple seconds).
-		if len(dataToPublish) == 0 && !waitConfirm {
+		if len(dataToPublish) == 0 && method != methodSendAndWait {
 			sent = true
-			return s.sendInternal(ctx, waitConfirm)
+			return s.sendInternal(ctx, method)
 		}
 		return nil
 	})
@@ -111,10 +122,10 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, waitConfirm bool) 
 			return err
 		}
 	}
-	return s.sendInternal(ctx, waitConfirm)
+	return s.sendInternal(ctx, method)
 }
 
-func (s *broadcastSender) resolveMessage(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
+func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
 	// Resolve the sending identity
 	if !s.isRootOrgBroadcast(ctx) {
 		if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.Identity); err != nil {
@@ -128,9 +139,9 @@ func (s *broadcastSender) resolveMessage(ctx context.Context) ([]*fftypes.DataAn
 	return dataToPublish, err
 }
 
-func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (err error) {
-	if waitConfirm {
-		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, s.Send)
+func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
+	if method == methodSendAndWait {
+		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.msg.Header.ID, s.Send)
 		if out != nil {
 			s.msg.Message = *out
 		}
@@ -141,10 +152,8 @@ func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (e
 	if err := s.msg.Seal(ctx); err != nil {
 		return err
 	}
-	if s.sendCallback != nil {
-		if err := s.sendCallback(ctx); err != nil {
-			return err
-		}
+	if method == methodPrepare {
+		return nil
 	}
 
 	// Store the message - this asynchronously triggers the next step in process

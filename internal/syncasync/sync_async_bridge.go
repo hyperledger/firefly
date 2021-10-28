@@ -34,15 +34,18 @@ import (
 type Bridge interface {
 	// Init is required as there's a bi-directional relationship between sysmessaging and syncasync bridge
 	Init(sysevents sysmessaging.SystemEvents)
-	// Request performs a request/reply exchange taking a message as input, and returning a message as a response
-	// The input message must have a tag, and a group, to be routed appropriately.
-	RequestReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.MessageInOut, error)
-	// SendConfirm blocks until the message is confirmed (or rejected), but does not look for a reply.
-	SendConfirm(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Message, error)
-	// SendConfirmTokenPool blocks until the token pool is confirmed (or rejected)
-	SendConfirmTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error)
-	// SendConfirmTokenTransfer blocks until the token transfer is confirmed
-	SendConfirmTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error)
+
+	// The following "WaitFor*" methods all wait for a particular type of event callback, and block until it is received.
+	// To use them, invoke the appropriate method, and pass a "send" callback that is expected to trigger the relevant event.
+
+	// WaitForReply waits for a reply to the message with the supplied ID
+	WaitForReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.MessageInOut, error)
+	// WaitForMessage waits for a message with the supplied ID
+	WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Message, error)
+	// WaitForTokenPool waits for a token pool with the supplied ID
+	WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error)
+	// WaitForTokenTransfer waits for a token transfer with the supplied ID
+	WaitForTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error)
 }
 
 type RequestSender func(ctx context.Context) error
@@ -328,7 +331,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftyp
 	}
 }
 
-func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.MessageInOut, error) {
+func (sa *syncAsyncBridge) WaitForReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.MessageInOut, error) {
 	reply, err := sa.sendAndWait(ctx, ns, id, messageReply, send)
 	if err != nil {
 		return nil, err
@@ -336,7 +339,7 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, id *ffty
 	return reply.(*fftypes.MessageInOut), err
 }
 
-func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Message, error) {
+func (sa *syncAsyncBridge) WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Message, error) {
 	reply, err := sa.sendAndWait(ctx, ns, id, messageConfirm, send)
 	if err != nil {
 		return nil, err
@@ -344,7 +347,7 @@ func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, ns string, id *fftyp
 	return reply.(*fftypes.Message), err
 }
 
-func (sa *syncAsyncBridge) SendConfirmTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error) {
+func (sa *syncAsyncBridge) WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error) {
 	reply, err := sa.sendAndWait(ctx, ns, id, tokenPoolConfirm, send)
 	if err != nil {
 		return nil, err
@@ -352,7 +355,7 @@ func (sa *syncAsyncBridge) SendConfirmTokenPool(ctx context.Context, ns string, 
 	return reply.(*fftypes.TokenPool), err
 }
 
-func (sa *syncAsyncBridge) SendConfirmTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error) {
+func (sa *syncAsyncBridge) WaitForTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error) {
 	reply, err := sa.sendAndWait(ctx, ns, id, tokenTransferConfirm, send)
 	if err != nil {
 		return nil, err

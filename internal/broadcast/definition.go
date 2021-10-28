@@ -92,6 +92,10 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def f
 		resolved:  true,
 	}
 	sender.setDefaults()
-	err = sender.sendInternal(ctx, waitConfirm)
+	if waitConfirm {
+		err = sender.SendAndWait(ctx)
+	} else {
+		err = sender.Send(ctx)
+	}
 	return &in.Message, err
 }

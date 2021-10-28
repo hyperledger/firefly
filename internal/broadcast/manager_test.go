@@ -87,7 +87,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 		mgr: bm,
 		msg: msg,
 	}
-	err := broadcast.sendInternal(context.Background(), false)
+	err := broadcast.sendInternal(context.Background(), methodSend)
 	assert.NoError(t, err)
 
 	bm.Start()
@@ -112,7 +112,7 @@ func TestBroadcastMessageBad(t *testing.T) {
 		mgr: bm,
 		msg: msg,
 	}
-	err := broadcast.sendInternal(context.Background(), false)
+	err := broadcast.sendInternal(context.Background(), methodSend)
 	assert.Regexp(t, "FF10144", err)
 
 }
