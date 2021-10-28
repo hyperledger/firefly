@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -33,13 +34,18 @@ var getMsgs = &oapispec.Route{
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams:     nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchdata", IsBool: true, Description: i18n.MsgFetchDataDesc},
+	},
 	FilterFactory:   database.MessageQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		if strings.EqualFold(r.QP["fetchdata"], "true") {
+			return filterResult(r.Or.GetMessagesWithData(r.Ctx, r.PP["ns"], r.Filter))
+		}
 		return filterResult(r.Or.GetMessages(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

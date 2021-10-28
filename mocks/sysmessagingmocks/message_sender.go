@@ -5,7 +5,6 @@ package sysmessagingmocks
 import (
 	context "context"
 
-	sysmessaging "github.com/hyperledger/firefly/internal/sysmessaging"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,17 +13,15 @@ type MessageSender struct {
 	mock.Mock
 }
 
-// BeforeSend provides a mock function with given fields: cb
-func (_m *MessageSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
-	ret := _m.Called(cb)
+// Prepare provides a mock function with given fields: ctx
+func (_m *MessageSender) Prepare(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
-	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(sysmessaging.BeforeSendCallback) sysmessaging.MessageSender); ok {
-		r0 = rf(cb)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(sysmessaging.MessageSender)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0

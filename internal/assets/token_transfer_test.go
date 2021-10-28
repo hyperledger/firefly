@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -119,10 +118,10 @@ func TestMintTokensSuccess(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, &mint.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.NoError(t, err)
@@ -183,11 +182,11 @@ func TestMintTokensFail(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.EqualError(t, err, "pop")
@@ -204,10 +203,10 @@ func TestMintTokensOperationFail(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.EqualError(t, err, "pop")
@@ -228,11 +227,11 @@ func TestMintTokensConfirm(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, &mint.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
@@ -261,10 +260,10 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("BurnTokens", context.Background(), mock.Anything, &burn.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
 	_, err := am.BurnTokens(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
 	assert.NoError(t, err)
@@ -305,11 +304,11 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("BurnTokens", context.Background(), mock.Anything, &burn.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
@@ -343,10 +342,10 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.NoError(t, err)
@@ -481,11 +480,12 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
@@ -518,13 +518,12 @@ func TestTransferTokensWithBroadcastMessageFail(t *testing.T) {
 	}
 	transfer.Amount.Int().SetInt64(5)
 
-	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
 	mms := &sysmessagingmocks.MessageSender{}
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
@@ -532,7 +531,40 @@ func TestTransferTokensWithBroadcastMessageFail(t *testing.T) {
 
 	mbm.AssertExpectations(t)
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	assert.EqualError(t, err, "pop")
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
@@ -570,11 +602,12 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mpm.On("NewMessage", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("Send", context.Background()).Return(nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
@@ -612,16 +645,13 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 	}
 	transfer.Amount.Int().SetInt64(5)
 
-	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.Regexp(t, "FF10287", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestTransferTokensConfirm(t *testing.T) {
@@ -644,11 +674,11 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
@@ -664,7 +694,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestTransferTokensBeforeSendCallback(t *testing.T) {
+func TestTransferPrepare(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -677,73 +707,13 @@ func TestTransferTokensBeforeSendCallback(t *testing.T) {
 	}
 	transfer.Amount.Int().SetInt64(5)
 
-	mdi := am.database.(*databasemocks.Plugin)
-	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
-	}), false).Return(nil)
-
 	sender := am.NewTransfer("ns1", "magic-tokens", "pool1", transfer)
 
-	called := false
-	sender.BeforeSend(func(ctx context.Context) error {
-		called = true
-		return nil
-	})
-
-	err := sender.Send(context.Background())
+	err := sender.Prepare(context.Background())
 	assert.NoError(t, err)
-	assert.True(t, called)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mti.AssertExpectations(t)
 }
 
-func TestTransferTokensBeforeSendCallbackFail(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	transfer := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{
-			Type: fftypes.TokenTransferTypeTransfer,
-			From: "A",
-			To:   "B",
-		},
-	}
-	transfer.Amount.Int().SetInt64(5)
-
-	mdi := am.database.(*databasemocks.Plugin)
-	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
-	}), false).Return(nil)
-
-	sender := am.NewTransfer("ns1", "magic-tokens", "pool1", transfer)
-
-	called := false
-	sender.BeforeSend(func(ctx context.Context) error {
-		called = true
-		return fmt.Errorf("pop")
-	})
-
-	err := sender.Send(context.Background())
-	assert.EqualError(t, err, "pop")
-	assert.True(t, called)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mti.AssertExpectations(t)
-}
-
-func TestTransferTokensWithBroadcastMessageConfirm(t *testing.T) {
+func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -771,6 +741,7 @@ func TestTransferTokensWithBroadcastMessageConfirm(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
 	mms := &sysmessagingmocks.MessageSender{}
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
@@ -779,17 +750,17 @@ func TestTransferTokensWithBroadcastMessageConfirm(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
-	mms.On("BeforeSend", mock.Anything).
-		Run(func(args mock.Arguments) {
-			cb := args[0].(sysmessaging.BeforeSendCallback)
-			cb(context.Background())
-		}).
-		Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("SendAndWait", context.Background()).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send(context.Background())
+		}).
+		Return(&transfer.TokenTransfer, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, true)
 	assert.NoError(t, err)
-	assert.Nil(t, transfer.Message)
 	assert.Equal(t, *hash, *transfer.MessageHash)
 
 	mbm.AssertExpectations(t)
@@ -797,4 +768,61 @@ func TestTransferTokensWithBroadcastMessageConfirm(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
 	mms.AssertExpectations(t)
+	msa.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastConfirmTransferFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	hash := fftypes.NewRandB32()
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Hash: hash,
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send(context.Background())
+		}).
+		Return(nil, fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, true)
+	assert.EqualError(t, err, "pop")
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	msa.AssertExpectations(t)
 }

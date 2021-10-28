@@ -54,7 +54,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
-	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -111,7 +111,7 @@ func TestBroadcastRootOrg(t *testing.T) {
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
-	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -207,13 +207,13 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 		},
 	}
-	msa.On("SendConfirm", ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForMessage", ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(ctx)
 		}).
 		Return(replyMsg, nil)
-	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -278,7 +278,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 		return true
 	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -409,56 +409,45 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
-func TestBeforeSendCallback(t *testing.T) {
+func TestBroadcastPrepare(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	id1 := fftypes.NewUUID()
-	message := bm.NewBroadcast("ns1", &fftypes.MessageInOut{
+	ctx := context.Background()
+	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		var fn = a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+	}, []*fftypes.DataAndBlob{}, nil)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+
+	msg := &fftypes.MessageInOut{
 		Message: fftypes.Message{
-			Data: fftypes.DataRefs{
-				{ID: id1, Hash: fftypes.NewRandB32()},
+			Header: fftypes.MessageHeader{
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
 			},
 		},
-	})
+		InlineData: fftypes.InlineData{
+			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+		},
+	}
+	sender := bm.NewBroadcast("ns1", msg)
+	err := sender.Prepare(ctx)
 
-	called := false
-	message.BeforeSend(func(ctx context.Context) error {
-		called = true
-		return nil
-	})
-
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("InsertMessageLocal", bm.ctx, mock.Anything).Return(nil)
-
-	err := message.(*broadcastSender).sendInternal(bm.ctx, false)
 	assert.NoError(t, err)
-	assert.True(t, called)
-}
+	assert.NotNil(t, msg.Data[0].ID)
+	assert.NotNil(t, msg.Data[0].Hash)
+	assert.Equal(t, "ns1", msg.Header.Namespace)
 
-func TestBeforeSendCallbackFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-
-	id1 := fftypes.NewUUID()
-	message := bm.NewBroadcast("ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Data: fftypes.DataRefs{
-				{ID: id1, Hash: fftypes.NewRandB32()},
-			},
-		},
-	})
-
-	called := false
-	message.BeforeSend(func(ctx context.Context) error {
-		called = true
-		return fmt.Errorf("pop")
-	})
-
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("InsertMessageLocal", bm.ctx, mock.Anything).Return(nil)
-
-	err := message.(*broadcastSender).sendInternal(bm.ctx, false)
-	assert.EqualError(t, err, "pop")
-	assert.True(t, called)
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }

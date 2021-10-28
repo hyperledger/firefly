@@ -14,38 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package e2e
 
 import (
-	"database/sql/driver"
-	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
-// SortableBool is a boolean, which is stored as a SMALLINT in databases where
-// sorting/indexing by a BOOLEAN type is not consistently supported. TRUE>FALSE
-type SortableBool bool
-
-func (sb SortableBool) Value() (driver.Value, error) {
-	if sb {
-		return int64(1), nil
-	}
-	return int64(0), nil
-}
-
-func (sb *SortableBool) Scan(src interface{}) error {
-	switch src := src.(type) {
-	case int64:
-		*sb = src > 0
-		return nil
-	case bool:
-		*sb = SortableBool(src)
-		return nil
-	case string:
-		*sb = SortableBool(strings.EqualFold("true", src))
-		return nil
-	default:
-		*sb = false
-		return nil
-	}
-
+func TestFabricE2ESuite(t *testing.T) {
+	suite.Run(t, new(OnChainOffChainTestSuite))
 }

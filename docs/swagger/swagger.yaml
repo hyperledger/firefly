@@ -68,16 +68,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -484,16 +480,12 @@ paths:
                                   type:
                                     type: string
                                 type: object
-                              local:
-                                type: boolean
-                              pending:
-                                type: boolean
                               pins:
                                 items:
                                   type: string
                                 type: array
-                              rejected:
-                                type: boolean
+                              state:
+                                type: string
                             type: object
                           type: array
                         tx:
@@ -623,16 +615,12 @@ paths:
                                 type:
                                   type: string
                               type: object
-                            local:
-                              type: boolean
-                            pending:
-                              type: boolean
                             pins:
                               items:
                                 type: string
                               type: array
-                            rejected:
-                              type: boolean
+                            state:
+                              type: string
                           type: object
                         type: array
                       tx:
@@ -729,16 +717,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -849,16 +833,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -1225,17 +1205,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: local
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: pending
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1245,12 +1215,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: rejected
+        name: sequence
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: sequence
+        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1389,17 +1359,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: local
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: pending
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1409,12 +1369,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: rejected
+        name: sequence
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: sequence
+        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1511,16 +1471,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2004,6 +1960,11 @@ paths:
         schema:
           example: default
           type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: fetchdata
+        schema:
+          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header
@@ -2058,17 +2019,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: local
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: pending
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -2078,12 +2029,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: rejected
+        name: sequence
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: sequence
+        name: state
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -2181,16 +2132,12 @@ paths:
                         type:
                           type: string
                       type: object
-                    local:
-                      type: boolean
-                    pending:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -2214,9 +2161,15 @@ paths:
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - deprecated: true
+        description: 'TODO: Description'
         in: query
         name: data
+        schema:
+          type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: fetchdata
         schema:
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
@@ -2237,26 +2190,8 @@ paths:
                   data:
                     items:
                       properties:
-                        blob:
-                          properties:
-                            hash: {}
-                            public:
-                              type: string
-                          type: object
-                        datatype:
-                          properties:
-                            name:
-                              type: string
-                            version:
-                              type: string
-                          type: object
                         hash: {}
                         id: {}
-                        validator:
-                          type: string
-                        value:
-                          format: byte
-                          type: string
                       type: object
                     type: array
                   group:
@@ -2299,16 +2234,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2530,8 +2461,6 @@ paths:
                     input:
                       additionalProperties: {}
                       type: object
-                    member:
-                      type: string
                     namespace:
                       type: string
                     output:
@@ -2715,16 +2644,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -2766,16 +2691,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2904,16 +2825,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -2955,16 +2872,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -3059,26 +2972,8 @@ paths:
                   data:
                     items:
                       properties:
-                        blob:
-                          properties:
-                            hash: {}
-                            public:
-                              type: string
-                          type: object
-                        datatype:
-                          properties:
-                            name:
-                              type: string
-                            version:
-                              type: string
-                          type: object
                         hash: {}
                         id: {}
-                        validator:
-                          type: string
-                        value:
-                          format: byte
-                          type: string
                       type: object
                     type: array
                   group:
@@ -3121,16 +3016,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -3177,11 +3068,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: input
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: member
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3269,8 +3155,6 @@ paths:
                     input:
                       additionalProperties: {}
                       type: object
-                    member:
-                      type: string
                     namespace:
                       type: string
                     output:
@@ -3329,8 +3213,6 @@ paths:
                   input:
                     additionalProperties: {}
                     type: object
-                  member:
-                    type: string
                   namespace:
                     type: string
                   output:
@@ -3439,26 +3321,8 @@ paths:
                   data:
                     items:
                       properties:
-                        blob:
-                          properties:
-                            hash: {}
-                            public:
-                              type: string
-                          type: object
-                        datatype:
-                          properties:
-                            name:
-                              type: string
-                            version:
-                              type: string
-                          type: object
                         hash: {}
                         id: {}
-                        validator:
-                          type: string
-                        value:
-                          format: byte
-                          type: string
                       type: object
                     type: array
                   group:
@@ -3501,16 +3365,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -3635,16 +3495,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -4663,6 +4519,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: poolprotocolid
         schema:
           type: string
@@ -4721,6 +4582,8 @@ paths:
                     connector:
                       type: string
                     key:
+                      type: string
+                    namespace:
                       type: string
                     poolProtocolId:
                       type: string
@@ -4789,26 +4652,8 @@ paths:
                     data:
                       items:
                         properties:
-                          blob:
-                            properties:
-                              hash: {}
-                              public:
-                                type: string
-                            type: object
-                          datatype:
-                            properties:
-                              name:
-                                type: string
-                              version:
-                                type: string
-                            type: object
                           hash: {}
                           id: {}
-                          validator:
-                            type: string
-                          value:
-                            format: byte
-                            type: string
                         type: object
                       type: array
                     group:
@@ -4858,18 +4703,21 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    local:
-                      type: boolean
-                    pending:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      enum:
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
                   type: object
                 messageHash: {}
+                namespace:
+                  type: string
                 poolProtocolId:
                   type: string
                 protocolId:
@@ -4907,6 +4755,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4940,6 +4790,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5017,26 +4869,8 @@ paths:
                     data:
                       items:
                         properties:
-                          blob:
-                            properties:
-                              hash: {}
-                              public:
-                                type: string
-                            type: object
-                          datatype:
-                            properties:
-                              name:
-                                type: string
-                              version:
-                                type: string
-                            type: object
                           hash: {}
                           id: {}
-                          validator:
-                            type: string
-                          value:
-                            format: byte
-                            type: string
                         type: object
                       type: array
                     group:
@@ -5086,18 +4920,21 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    local:
-                      type: boolean
-                    pending:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      enum:
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
                   type: object
                 messageHash: {}
+                namespace:
+                  type: string
                 poolProtocolId:
                   type: string
                 protocolId:
@@ -5135,6 +4972,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5168,6 +5007,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5256,6 +5097,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: poolprotocolid
         schema:
           type: string
@@ -5325,6 +5171,8 @@ paths:
                       type: string
                     localId: {}
                     messageHash: {}
+                    namespace:
+                      type: string
                     poolProtocolId:
                       type: string
                     protocolId:
@@ -5402,26 +5250,8 @@ paths:
                     data:
                       items:
                         properties:
-                          blob:
-                            properties:
-                              hash: {}
-                              public:
-                                type: string
-                            type: object
-                          datatype:
-                            properties:
-                              name:
-                                type: string
-                              version:
-                                type: string
-                            type: object
                           hash: {}
                           id: {}
-                          validator:
-                            type: string
-                          value:
-                            format: byte
-                            type: string
                         type: object
                       type: array
                     group:
@@ -5471,18 +5301,21 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    local:
-                      type: boolean
-                    pending:
-                      type: boolean
                     pins:
                       items:
                         type: string
                       type: array
-                    rejected:
-                      type: boolean
+                    state:
+                      enum:
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
                   type: object
                 messageHash: {}
+                namespace:
+                  type: string
                 poolProtocolId:
                   type: string
                 protocolId:
@@ -5520,6 +5353,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5553,6 +5388,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5605,6 +5442,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5667,6 +5509,8 @@ paths:
                     connector:
                       type: string
                     key:
+                      type: string
+                    namespace:
                       type: string
                     poolProtocolId:
                       type: string
@@ -5978,6 +5822,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: poolprotocolid
         schema:
           type: string
@@ -6047,6 +5896,8 @@ paths:
                       type: string
                     localId: {}
                     messageHash: {}
+                    namespace:
+                      type: string
                     poolProtocolId:
                       type: string
                     protocolId:
@@ -6109,6 +5960,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -7048,16 +6901,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -7120,16 +6969,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:
@@ -7204,16 +7049,12 @@ paths:
                       type:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
                   pins:
                     items:
                       type: string
                     type: array
-                  rejected:
-                    type: boolean
+                  state:
+                    type: string
                 type: object
           description: Success
         default:

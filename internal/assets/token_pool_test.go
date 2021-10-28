@@ -157,7 +157,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil).Times(1)
-	msa.On("SendConfirmTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())

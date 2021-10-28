@@ -150,7 +150,7 @@ func addOutput(ctx context.Context, route *Route, output interface{}, op *openap
 	}
 }
 
-func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, example string, description i18n.MessageKey, msgArgs ...interface{}) {
+func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, example string, description i18n.MessageKey, deprecated bool, msgArgs ...interface{}) {
 	required := false
 	if in == "path" {
 		required = true
@@ -168,6 +168,7 @@ func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, exampl
 			In:          in,
 			Name:        name,
 			Required:    required,
+			Deprecated:  deprecated,
 			Description: i18n.Expand(ctx, description, msgArgs...),
 			Schema: &openapi3.SchemaRef{
 				Value: &openapi3.Schema{
@@ -213,28 +214,28 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		if p.ExampleFromConf != "" {
 			example = config.GetString(p.ExampleFromConf)
 		}
-		addParam(ctx, op, "path", p.Name, p.Default, example, p.Description)
+		addParam(ctx, op, "path", p.Name, p.Default, example, p.Description, false)
 	}
 	for _, q := range route.QueryParams {
 		example := q.Example
 		if q.ExampleFromConf != "" {
 			example = config.GetString(q.ExampleFromConf)
 		}
-		addParam(ctx, op, "query", q.Name, q.Default, example, q.Description)
+		addParam(ctx, op, "query", q.Name, q.Default, example, q.Description, q.Deprecated)
 	}
-	addParam(ctx, op, "header", "Request-Timeout", config.GetString(config.APIRequestTimeout), "", i18n.MsgRequestTimeoutDesc)
+	addParam(ctx, op, "header", "Request-Timeout", config.GetString(config.APIRequestTimeout), "", i18n.MsgRequestTimeoutDesc, false)
 	if route.FilterFactory != nil {
 		fields := route.FilterFactory.NewFilter(ctx).Fields()
 		sort.Strings(fields)
 		for _, field := range fields {
-			addParam(ctx, op, "query", field, "", "", i18n.MsgFilterParamDesc)
+			addParam(ctx, op, "query", field, "", "", i18n.MsgFilterParamDesc, false)
 		}
-		addParam(ctx, op, "query", "sort", "", "", i18n.MsgFilterSortDesc)
-		addParam(ctx, op, "query", "ascending", "", "", i18n.MsgFilterAscendingDesc)
-		addParam(ctx, op, "query", "descending", "", "", i18n.MsgFilterDescendingDesc)
-		addParam(ctx, op, "query", "skip", "", "", i18n.MsgFilterSkipDesc, config.GetUint(config.APIMaxFilterSkip))
-		addParam(ctx, op, "query", "limit", "", config.GetString(config.APIDefaultFilterLimit), i18n.MsgFilterLimitDesc, config.GetUint(config.APIMaxFilterLimit))
-		addParam(ctx, op, "query", "count", "", "", i18n.MsgFilterCountDesc)
+		addParam(ctx, op, "query", "sort", "", "", i18n.MsgFilterSortDesc, false)
+		addParam(ctx, op, "query", "ascending", "", "", i18n.MsgFilterAscendingDesc, false)
+		addParam(ctx, op, "query", "descending", "", "", i18n.MsgFilterDescendingDesc, false)
+		addParam(ctx, op, "query", "skip", "", "", i18n.MsgFilterSkipDesc, false, config.GetUint(config.APIMaxFilterSkip))
+		addParam(ctx, op, "query", "limit", "", config.GetString(config.APIDefaultFilterLimit), i18n.MsgFilterLimitDesc, false, config.GetUint(config.APIMaxFilterLimit))
+		addParam(ctx, op, "query", "count", "", "", i18n.MsgFilterCountDesc, false)
 	}
 	switch route.Method {
 	case http.MethodGet:

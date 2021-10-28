@@ -18,10 +18,8 @@ package sysmessaging
 
 import "context"
 
-type BeforeSendCallback func(ctx context.Context) error
-
 type MessageSender interface {
+	Prepare(ctx context.Context) error
 	Send(ctx context.Context) error
 	SendAndWait(ctx context.Context) error
-	BeforeSend(cb BeforeSendCallback) MessageSender
 }

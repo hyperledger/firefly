@@ -108,6 +108,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 
 	// Create a private send message referring to the data
 	msg := &fftypes.Message{
+		State: fftypes.MessageStateReady,
 		Header: fftypes.MessageHeader{
 			Group:     group.Hash,
 			Namespace: group.Namespace, // Must go into the same ordering context as the message itself
@@ -126,7 +127,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	err = msg.Seal(ctx)
 	if err == nil {
 		// Store the message - this asynchronously triggers the next step in process
-		err = gm.database.InsertMessageLocal(ctx, msg)
+		err = gm.database.UpsertMessage(ctx, msg, false, false)
 	}
 	if err == nil {
 		log.L(ctx).Infof("Created new group %s", group.Hash)
