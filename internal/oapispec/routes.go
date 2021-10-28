@@ -91,6 +91,8 @@ type QueryParam struct {
 	ExampleFromConf config.RootKey
 	// Description is a message key to a translatable description of the parameter
 	Description i18n.MessageKey
+	// Deprecated whether this param is deprecated
+	Deprecated bool
 }
 
 // FormParam is a description of a multi-part form parameter

@@ -75,31 +75,29 @@ func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fft
 	return msg, err
 }
 
-func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInOut, error) {
+func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error) {
+	return or.getMessageByID(ctx, ns, id)
+}
+
+func (or *orchestrator) fetchMessageData(ctx context.Context, msg *fftypes.Message) (*fftypes.MessageInOut, error) {
+	msgI := &fftypes.MessageInOut{
+		Message: *msg,
+	}
+	// Lookup the full data
+	data, _, err := or.data.GetMessageData(ctx, msg, true)
+	if err != nil {
+		return nil, err
+	}
+	msgI.SetInlineData(data)
+	return msgI, err
+}
+
+func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, ns, id string) (*fftypes.MessageInOut, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil {
 		return nil, err
 	}
-	msgI := &fftypes.MessageInOut{
-		Message: *msg,
-	}
-	if withValues {
-		// Lookup the full data
-		data, _, err := or.data.GetMessageData(ctx, msg, true)
-		if err != nil {
-			return nil, err
-		}
-		msgI.SetInlineData(data)
-	} else {
-		// Just put the data refs into the serialized struct
-		msgI.InlineData = make(fftypes.InlineData, len(msg.Data))
-		for i, dr := range msg.Data {
-			msgI.InlineData[i] = &fftypes.DataRefOrValue{
-				DataRef: *dr,
-			}
-		}
-	}
-	return msgI, err
+	return or.fetchMessageData(ctx, msg)
 }
 
 func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
@@ -168,6 +166,21 @@ func (or *orchestrator) GetTransactions(ctx context.Context, ns string, filter d
 func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetMessages(ctx, filter)
+}
+
+func (or *orchestrator) GetMessagesWithData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.MessageInOut, *database.FilterResult, error) {
+	filter = or.scopeNS(ns, filter)
+	msgs, fr, err := or.database.GetMessages(ctx, filter)
+	if err != nil {
+		return nil, nil, err
+	}
+	msgsData := make([]*fftypes.MessageInOut, len(msgs))
+	for i, msg := range msgs {
+		if msgsData[i], err = or.fetchMessageData(ctx, msg); err != nil {
+			return nil, nil, err
+		}
+	}
+	return msgsData, fr, err
 }
 
 func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error) {

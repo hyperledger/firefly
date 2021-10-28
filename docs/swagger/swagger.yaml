@@ -1960,6 +1960,11 @@ paths:
         schema:
           example: default
           type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: fetchdata
+        schema:
+          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header
@@ -2156,9 +2161,15 @@ paths:
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - deprecated: true
+        description: 'TODO: Description'
         in: query
         name: data
+        schema:
+          type: string
+      - description: Fetch the data and include it in the messages returned
+        in: query
+        name: fetchdata
         schema:
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
