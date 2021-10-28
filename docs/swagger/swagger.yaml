@@ -2450,8 +2450,6 @@ paths:
                     input:
                       additionalProperties: {}
                       type: object
-                    member:
-                      type: string
                     namespace:
                       type: string
                     output:
@@ -3063,11 +3061,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: member
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
         schema:
           type: string
@@ -3151,8 +3144,6 @@ paths:
                     input:
                       additionalProperties: {}
                       type: object
-                    member:
-                      type: string
                     namespace:
                       type: string
                     output:
@@ -3211,8 +3202,6 @@ paths:
                   input:
                     additionalProperties: {}
                     type: object
-                  member:
-                    type: string
                   namespace:
                     type: string
                   output:

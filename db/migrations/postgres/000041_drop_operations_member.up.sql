@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE operations DROP COLUMN member;
+COMMIT;
