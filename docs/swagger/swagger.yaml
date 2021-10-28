@@ -4759,8 +4759,6 @@ paths:
                   messageHash: {}
                   namespace:
                     type: string
-                  pool:
-                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4795,8 +4793,6 @@ paths:
                   localId: {}
                   messageHash: {}
                   namespace:
-                    type: string
-                  pool:
                     type: string
                   poolProtocolId:
                     type: string
@@ -4982,8 +4978,6 @@ paths:
                   messageHash: {}
                   namespace:
                     type: string
-                  pool:
-                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5018,8 +5012,6 @@ paths:
                   localId: {}
                   messageHash: {}
                   namespace:
-                    type: string
-                  pool:
                     type: string
                   poolProtocolId:
                     type: string
@@ -5184,8 +5176,6 @@ paths:
                     localId: {}
                     messageHash: {}
                     namespace:
-                      type: string
-                    pool:
                       type: string
                     poolProtocolId:
                       type: string
@@ -5371,8 +5361,6 @@ paths:
                   messageHash: {}
                   namespace:
                     type: string
-                  pool:
-                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5407,8 +5395,6 @@ paths:
                   localId: {}
                   messageHash: {}
                   namespace:
-                    type: string
-                  pool:
                     type: string
                   poolProtocolId:
                     type: string
@@ -5694,8 +5680,6 @@ paths:
                   messageHash: {}
                   namespace:
                     type: string
-                  pool:
-                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5730,8 +5714,6 @@ paths:
                   localId: {}
                   messageHash: {}
                   namespace:
-                    type: string
-                  pool:
                     type: string
                   poolProtocolId:
                     type: string
@@ -5938,8 +5920,6 @@ paths:
                   messageHash: {}
                   namespace:
                     type: string
-                  pool:
-                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5974,8 +5954,6 @@ paths:
                   localId: {}
                   messageHash: {}
                   namespace:
-                    type: string
-                  pool:
                     type: string
                   poolProtocolId:
                     type: string
@@ -6340,8 +6318,6 @@ paths:
                     messageHash: {}
                     namespace:
                       type: string
-                    pool:
-                      type: string
                     poolProtocolId:
                       type: string
                     protocolId:
@@ -6514,8 +6490,6 @@ paths:
                   messageHash: {}
                   namespace:
                     type: string
-                  pool:
-                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -6550,8 +6524,6 @@ paths:
                   localId: {}
                   messageHash: {}
                   namespace:
-                    type: string
-                  pool:
                     type: string
                   poolProtocolId:
                     type: string
@@ -6615,8 +6587,6 @@ paths:
                   localId: {}
                   messageHash: {}
                   namespace:
-                    type: string
-                  pool:
                     type: string
                   poolProtocolId:
                     type: string
