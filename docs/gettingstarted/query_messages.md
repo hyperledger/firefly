@@ -70,7 +70,7 @@ are complete.
     },
     "hash": "bf2ca94db8c31bae3cae974bb626fa822c6eee5f572d274d72281e72537b30b3",
     "batch": "f7ac773d-885a-4d73-ac6b-c09f5346a051", // the batch ID that pinned this message to the chain
-    "pending": false, // message is now confirmed
+    "state": "confirmed", // message is now confirmed
     "confirmed": "2021-07-02T03:09:49.9207211Z", // timestamp when this node confirmed the message
     "data": [
       {

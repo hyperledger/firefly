@@ -100,8 +100,7 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
     "datahash": "24b2d583b87eda952fa00e02c6de4f78110df63218eddf568f0240be3d02c866"
   },
   "hash": "423ad7d99fd30ff679270ad2b6b35cdd85d48db30bafb71464ca1527ce114a60", // hash of the header
-  "local": true, // we sent this message
-  "pending": true, // it is not yet confirmed
+  "state": "ready", // this message is stored locally but not yet confirmed
   "data": [
     // one item of data was stored
     {

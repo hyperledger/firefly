@@ -19,6 +19,7 @@ package privatemessaging
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
@@ -49,10 +50,10 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 }
 
 func (pm *privateMessaging) resolveOrg(ctx context.Context, orgInput string) (org *fftypes.Organization, err error) {
+	orgInput = strings.TrimPrefix(orgInput, fftypes.FireflyOrgDIDPrefix)
 	orgID, err := fftypes.ParseUUID(ctx, orgInput)
 	if err == nil {
 		org, err = pm.database.GetOrganizationByID(ctx, orgID)
-
 	} else {
 		org, err = pm.database.GetOrganizationByName(ctx, orgInput)
 		if err == nil && org == nil {

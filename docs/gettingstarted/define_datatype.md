@@ -87,8 +87,7 @@ datatype will be created (unless it conflicts with another definition with the s
     "datahash": "56bd677e3e070ba62f547237edd7a90df5deaaf1a42e7d6435ec66a587c14370"
   },
   "hash": "5b6593720243831ba9e4ad002c550e95c63704b2c9dbdf31135d7d9207f8cae8",
-  "local": true,
-  "pending": true,
+  "state": "ready", // this message is stored locally but not yet confirmed
   "data": [
     {
       "id": "7539a0ab-78d8-4d42-b283-7e316b3afed3", // this data object in the ff_system namespace, contains the schema

@@ -17,7 +17,6 @@
 package privatemessaging
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -71,7 +70,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		},
 	}
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("SendConfirm", pm.ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForMessage", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(pm.ctx)
@@ -303,7 +302,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 		},
 	}
 
-	err := message.resolveMessage(pm.ctx)
+	err := message.resolve(pm.ctx)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -327,66 +326,61 @@ func TestSealFail(t *testing.T) {
 		},
 	})
 
-	err := message.(*messageSender).sendInternal(pm.ctx, false)
+	err := message.(*messageSender).sendInternal(pm.ctx, methodSend)
 	assert.Regexp(t, "FF10145", err)
 
 }
 
-func TestBeforeSendCallback(t *testing.T) {
+func TestMessagePrepare(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	id1 := fftypes.NewUUID()
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*fftypes.Identity)
+		identity.Author = "localorg"
+		identity.Key = "localkey"
+	}).Return(nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
+		ID: fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
+		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
+	}, nil, nil).Once()
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
+		{Hash: fftypes.NewRandB32()},
+	}, nil, nil).Once()
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+	}, nil)
+
 	message := pm.NewMessage("ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Data: fftypes.DataRefs{
-				{ID: id1, Hash: fftypes.NewRandB32()},
+				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+			},
+		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "localorg"},
 			},
 		},
 	})
 
-	called := false
-	message.BeforeSend(func(ctx context.Context) error {
-		called = true
-		return nil
-	})
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil)
-
-	err := message.(*messageSender).sendInternal(pm.ctx, false)
+	err := message.Prepare(pm.ctx)
 	assert.NoError(t, err)
-	assert.True(t, called)
 
-}
-
-func TestBeforeSendCallbackFail(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	id1 := fftypes.NewUUID()
-	message := pm.NewMessage("ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Data: fftypes.DataRefs{
-				{ID: id1, Hash: fftypes.NewRandB32()},
-			},
-		},
-	})
-
-	called := false
-	message.BeforeSend(func(ctx context.Context) error {
-		called = true
-		return fmt.Errorf("pop")
-	})
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil)
-
-	err := message.(*messageSender).sendInternal(pm.ctx, false)
-	assert.EqualError(t, err, "pop")
-	assert.True(t, called)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 
 }
 
@@ -576,6 +570,33 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 
 }
 
+func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				TxType: fftypes.TransactionTypeNone,
+				Group:  fftypes.NewRandB32(),
+			},
+		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	}, true)
+	assert.Regexp(t, "pop", err)
+
+	mim.AssertExpectations(t)
+
+}
+
 func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -694,7 +715,7 @@ func TestRequestReplyMissingTag(t *testing.T) {
 	defer cancel()
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{})
 	assert.Regexp(t, "FF10261", err)
@@ -705,7 +726,7 @@ func TestRequestReplyInvalidCID(t *testing.T) {
 	defer cancel()
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -727,7 +748,7 @@ func TestRequestReplySuccess(t *testing.T) {
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(pm.ctx)

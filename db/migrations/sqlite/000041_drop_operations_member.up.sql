@@ -1,0 +1,1 @@
+ALTER TABLE operations DROP COLUMN member;

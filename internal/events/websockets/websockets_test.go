@@ -606,3 +606,27 @@ func TestDispatchAutoAck(t *testing.T) {
 	assert.NoError(t, err)
 	cbs.AssertExpectations(t)
 }
+
+func TestWebsocketSendAfterClose(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	ws, wsc, cancel := newTestWebsockets(t, cbs)
+	defer cancel()
+
+	subscribedConn := make(chan string, 1)
+	cbs.On("EphemeralSubscription",
+		mock.MatchedBy(func(s string) bool {
+			subscribedConn <- s
+			return true
+		}),
+		"ns1", mock.Anything, mock.Anything).Return(nil)
+
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","namespace":"ns1","ephemeral":true}`))
+	assert.NoError(t, err)
+
+	connID := <-subscribedConn
+	connection := ws.connections[connID]
+	connection.wsConn.Close()
+	<-connection.senderDone
+	err = connection.send(map[string]string{"foo": "bar"})
+	assert.Regexp(t, "FF10290", err)
+}

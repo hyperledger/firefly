@@ -67,25 +67,37 @@ func (am *assetManager) NewTransfer(ns, connector, poolName string, transfer *ff
 }
 
 type transferSender struct {
-	mgr          *assetManager
-	namespace    string
-	connector    string
-	poolName     string
-	transfer     *fftypes.TokenTransferInput
-	sendCallback sysmessaging.BeforeSendCallback
+	mgr       *assetManager
+	namespace string
+	connector string
+	poolName  string
+	transfer  *fftypes.TokenTransferInput
+	resolved  bool
+}
+
+// sendMethod is the specific operation requested of the transferSender.
+// To minimize duplication and group database operations, there is a single internal flow with subtle differences for each method.
+type sendMethod int
+
+const (
+	// methodPrepare requests that the transfer be validated and prepared, but not sent (i.e. no database writes are performed)
+	methodPrepare sendMethod = iota
+	// methodSend requests that the transfer be sent to the blockchain, but does not wait for confirmation
+	methodSend
+	// methodSendAndWait requests that the transfer be sent and waits until it is confirmed by the blockchain
+	methodSendAndWait
+)
+
+func (s *transferSender) Prepare(ctx context.Context) error {
+	return s.resolveAndSend(ctx, methodPrepare)
 }
 
 func (s *transferSender) Send(ctx context.Context) error {
-	return s.resolveAndSend(ctx, false)
+	return s.resolveAndSend(ctx, methodSend)
 }
 
 func (s *transferSender) SendAndWait(ctx context.Context) error {
-	return s.resolveAndSend(ctx, true)
-}
-
-func (s *transferSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
-	s.sendCallback = cb
-	return s
+	return s.resolveAndSend(ctx, methodSendAndWait)
 }
 
 func (s *transferSender) setDefaults() {
@@ -286,38 +298,60 @@ func (am *assetManager) TransferTokensByType(ctx context.Context, ns, connector,
 	return &transfer.TokenTransfer, err
 }
 
-func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (err error) {
+func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
+	var messageSender sysmessaging.MessageSender
+	if !s.resolved {
+		if messageSender, err = s.resolve(ctx); err != nil {
+			return err
+		}
+		s.resolved = true
+	}
+
+	if messageSender != nil {
+		if method == methodSendAndWait {
+			if err = s.sendInternal(ctx, method); err != nil {
+				return err
+			}
+			return messageSender.SendAndWait(ctx)
+		}
+
+		if err := messageSender.Send(ctx); err != nil {
+			return err
+		}
+	}
+	return s.sendInternal(ctx, method)
+}
+
+func (s *transferSender) resolve(ctx context.Context) (sender sysmessaging.MessageSender, err error) {
+	// Resolve the attached message
+	if s.transfer.Message != nil {
+		if sender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message); err != nil {
+			return nil, err
+		}
+		if err = sender.Prepare(ctx); err != nil {
+			return nil, err
+		}
+		s.transfer.MessageHash = s.transfer.Message.Hash
+	}
+	return sender, nil
+}
+
+func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) error {
+	if method == methodSendAndWait {
+		out, err := s.mgr.syncasync.WaitForTokenTransfer(ctx, s.namespace, s.transfer.LocalID, s.Send)
+		if out != nil {
+			s.transfer.TokenTransfer = *out
+		}
+		return err
+	}
+
 	plugin, err := s.mgr.selectTokenPlugin(ctx, s.connector)
 	if err != nil {
 		return err
 	}
 
-	var messageSender sysmessaging.MessageSender
-	if s.transfer.Message != nil {
-		if messageSender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message); err != nil {
-			return err
-		}
-	}
-
-	switch {
-	case waitConfirm && messageSender != nil:
-		// prepare the message, send the transfer async, then send the message and wait
-		return messageSender.
-			BeforeSend(func(ctx context.Context) error {
-				s.transfer.MessageHash = s.transfer.Message.Hash
-				s.transfer.Message = nil
-				return s.Send(ctx)
-			}).
-			SendAndWait(ctx)
-	case waitConfirm:
-		// no message - just send the transfer and wait
-		return s.sendSync(ctx)
-	case messageSender != nil:
-		// send the message async and then move on to the transfer
-		if err := messageSender.Send(ctx); err != nil {
-			return err
-		}
-		s.transfer.MessageHash = s.transfer.Message.Hash
+	if method == methodPrepare {
+		return nil
 	}
 
 	tx := &fftypes.Transaction{
@@ -341,8 +375,7 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 		tx.ID,
 		"",
 		fftypes.OpTypeTokenTransfer,
-		fftypes.OpStatusPending,
-		"")
+		fftypes.OpStatusPending)
 	addTokenTransferInputs(op, &s.transfer.TokenTransfer)
 
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
@@ -362,12 +395,6 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 		return err
 	}
 
-	if s.sendCallback != nil {
-		if err := s.sendCallback(ctx); err != nil {
-			return err
-		}
-	}
-
 	switch s.transfer.Type {
 	case fftypes.TokenTransferTypeMint:
 		return plugin.MintTokens(ctx, op.ID, &s.transfer.TokenTransfer)
@@ -378,14 +405,6 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 	default:
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}
-}
-
-func (s *transferSender) sendSync(ctx context.Context) error {
-	out, err := s.mgr.syncasync.SendConfirmTokenTransfer(ctx, s.namespace, s.transfer.LocalID, s.Send)
-	if out != nil {
-		s.transfer.TokenTransfer = *out
-	}
-	return err
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {
