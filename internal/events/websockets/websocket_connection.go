@@ -223,6 +223,9 @@ func (wc *websocketConnection) protocolError(err error) {
 }
 
 func (wc *websocketConnection) send(msg interface{}) error {
+	if wc.closed {
+		return i18n.NewError(wc.ctx, i18n.MsgWSClosed)
+	}
 	select {
 	case wc.sendMessages <- msg:
 		return nil
