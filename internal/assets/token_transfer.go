@@ -75,11 +75,16 @@ type transferSender struct {
 	resolved  bool
 }
 
+// sendMethod is the specific operation requested of the transferSender.
+// To minimize duplication and group database operations, there is a single internal flow with subtle differences for each method.
 type sendMethod int
 
 const (
+	// methodPrepare requests that the transfer be validated and prepared, but not sent (i.e. no database writes are performed)
 	methodPrepare sendMethod = iota
+	// methodSend requests that the transfer be sent to the blockchain, but does not wait for confirmation
 	methodSend
+	// methodSendAndWait requests that the transfer be sent and waits until it is confirmed by the blockchain
 	methodSendAndWait
 )
 

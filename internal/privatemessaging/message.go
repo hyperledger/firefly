@@ -56,6 +56,8 @@ func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fft
 	return pm.syncasync.WaitForReply(ctx, ns, in.Header.ID, message.Send)
 }
 
+// sendMethod is the specific operation requested of the messageSender.
+// To minimize duplication and group database operations, there is a single internal flow with subtle differences for each method.
 type messageSender struct {
 	mgr       *privateMessaging
 	namespace string
@@ -66,9 +68,13 @@ type messageSender struct {
 type sendMethod int
 
 const (
+	// methodPrepare requests that the message be validated and sealed, but not sent (i.e. no database writes are performed)
 	methodPrepare sendMethod = iota
+	// methodSend requests that the message be sent and pinned to the blockchain, but does not wait for confirmation
 	methodSend
+	// methodSendAndWait requests that the message be sent and waits until it is pinned and confirmed by the blockchain
 	methodSendAndWait
+	// methodSendImmediate requests that the message be sent immediately, with no blockchain pinning
 	methodSendImmediate
 )
 
