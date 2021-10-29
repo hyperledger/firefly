@@ -35,7 +35,7 @@ import (
 )
 
 type Manager interface {
-	// CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	CreateTokenPoolByType(ctx context.Context, ns, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPoolsByType(ctx context.Context, ns, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
@@ -148,4 +148,28 @@ func (am *assetManager) Start() error {
 
 func (am *assetManager) WaitStop() {
 	// No go routines
+}
+
+func (am *assetManager) getTokenConnectorName(ctx context.Context, ns string) (string, error) {
+	tokenConnectors, err := am.GetTokenConnectors(ctx, ns)
+	if err != nil {
+		return "", err
+	}
+	if len(tokenConnectors) != 1 {
+		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "connector")
+	}
+	return tokenConnectors[0].Name, nil
+}
+
+func (am *assetManager) getTokenPoolName(ctx context.Context, ns string) (string, error) {
+	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
+	f.Limit(1).Count(true)
+	tokenPools, fr, err := am.GetTokenPools(ctx, ns, f)
+	if err != nil {
+		return "", err
+	}
+	if *fr.TotalCount != 1 {
+		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "pool")
+	}
+	return tokenPools[0].Name, nil
 }

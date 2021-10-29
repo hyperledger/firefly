@@ -424,27 +424,3 @@ func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in
 		return nil, i18n.NewError(ctx, i18n.MsgInvalidMessageType, allowedTypes)
 	}
 }
-
-func (am *assetManager) getTokenConnectorName(ctx context.Context, ns string) (string, error) {
-	tokenConnectors, err := am.GetTokenConnectors(ctx, ns)
-	if err != nil {
-		return "", err
-	}
-	if len(tokenConnectors) != 1 {
-		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "connector")
-	}
-	return tokenConnectors[0].Name, nil
-}
-
-func (am *assetManager) getTokenPoolName(ctx context.Context, ns string) (string, error) {
-	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
-	f.Limit(1).Count(true)
-	tokenPools, fr, err := am.GetTokenPools(ctx, ns, f)
-	if err != nil {
-		return "", err
-	}
-	if *fr.TotalCount != 1 {
-		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "pool")
-	}
-	return tokenPools[0].Name, nil
-}
