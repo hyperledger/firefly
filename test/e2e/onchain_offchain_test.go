@@ -74,6 +74,9 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	defer suite.testState.done()
 
+	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
+	received2, changes2 := wsReader(suite.T(), suite.testState.ws2)
+
 	var resp *resty.Response
 	value := fftypes.Byteable(`"Hello"`)
 	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
@@ -113,10 +116,17 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
+	<-received1
+	<-changes1 // also expect database change events
+	<-received2
+	<-changes2 // also expect database change events
 }
 
 func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	defer suite.testState.done()
+
+	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
+	received2, changes2 := wsReader(suite.T(), suite.testState.ws2)
 
 	var resp *resty.Response
 	value := fftypes.Byteable(`{"foo":"bar"}`)
@@ -166,6 +176,10 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
+	<-received1
+	<-changes1 // also expect database change events
+	<-received2
+	<-changes2 // also expect database change events
 }
 
 func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
