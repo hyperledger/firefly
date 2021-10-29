@@ -206,5 +206,7 @@ var (
 	MsgFailedToDecodeCertificate   = ffm("FF10286", "Failed to decode certificate: %s", 500)
 	MsgInvalidMessageType          = ffm("FF10287", "Invalid message type - allowed types are %s", 400)
 	MsgNoUUID                      = ffm("FF10288", "Field '%s' must not be a UUID", 400)
-	MsgTokenTransferFailed         = ffm("FF10289", "Token transfer with ID '%s' failed. Please check the FireFly logs for more information")
+	MsgFetchDataDesc               = ffm("FF10289", "Fetch the data and include it in the messages returned", 400)
+	MsgWSClosed                    = ffm("FF10290", "Websocket closed")
+	MsgTokenTransferFailed         = ffm("FF10291", "Token transfer with ID '%s' failed. Please check the FireFly logs for more information")
 )

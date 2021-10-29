@@ -31,8 +31,8 @@ func TestGetMessageByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345", false).
-		Return(&fftypes.MessageInOut{}, nil)
+	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345").
+		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -44,7 +44,7 @@ func TestGetMessageByIDWithData(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345", true).
+	o.On("GetMessageByIDWithData", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.MessageInOut{}, nil)
 	r.ServeHTTP(res, req)
 

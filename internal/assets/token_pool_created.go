@@ -78,8 +78,7 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPo
 				transaction.ID,
 				"",
 				fftypes.OpTypeTokenAnnouncePool,
-				fftypes.OpStatusPending,
-				pool.Key)
+				fftypes.OpStatusPending)
 
 			valid, err = am.txhelper.PersistTransaction(ctx, transaction)
 			if valid && err == nil {

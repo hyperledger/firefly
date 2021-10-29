@@ -101,7 +101,7 @@ ui:
   path: ./frontend
 org:
   name: {{ .Values.config.organizationName }}
-  identity: {{ .Values.config.organizationIdentity }}
+  key: {{ .Values.config.organizationKey }}
 {{- if .Values.config.blockchainOverride }}
 blockchain:
   {{- toYaml (tpl .Values.config.blockchainOverride .) | nindent 2 }}

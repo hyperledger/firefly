@@ -247,8 +247,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		tx.ID,
 		"",
 		fftypes.OpTypeTokenTransfer,
-		fftypes.OpStatusPending,
-		"")
+		fftypes.OpStatusPending)
 	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
 
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {

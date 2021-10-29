@@ -83,11 +83,11 @@ func TestGetTransactions(t *testing.T) {
 
 func TestGetMessageByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetMessageByID(context.Background(), "", "", false)
+	_, err := or.GetMessageByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err)
 }
 
-func TestGetMessageByIDOkNoValues(t *testing.T) {
+func TestGetMessageByIDNoValuesOk(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -101,17 +101,15 @@ func TestGetMessageByIDOkNoValues(t *testing.T) {
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.MatchedBy(func(u *fftypes.UUID) bool { return u.Equals(msgID) })).Return(msg, nil)
 
-	msgI, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), false)
+	msgI, err := or.GetMessageByID(context.Background(), "ns1", msgID.String())
 	assert.NoError(t, err)
-	assert.NotNil(t, msgI.InlineData[0].ID)
-	assert.NotNil(t, msgI.InlineData[0].Hash)
-	assert.Nil(t, msgI.InlineData[0].Value)
-	assert.NotNil(t, msgI.InlineData[1].ID)
-	assert.NotNil(t, msgI.InlineData[1].Hash)
-	assert.Nil(t, msgI.InlineData[1].Value)
+	assert.NotNil(t, msgI.Data[0].ID)
+	assert.NotNil(t, msgI.Data[0].Hash)
+	assert.NotNil(t, msgI.Data[1].ID)
+	assert.NotNil(t, msgI.Data[1].Hash)
 }
 
-func TestGetMessageByIDOkWithValues(t *testing.T) {
+func TestGetMessageByIDWithDataOk(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -129,7 +127,7 @@ func TestGetMessageByIDOkWithValues(t *testing.T) {
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.Byteable("{}")},
 	}, true, nil)
 
-	msgI, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), true)
+	msgI, err := or.GetMessageByIDWithData(context.Background(), "ns1", msgID.String())
 	assert.NoError(t, err)
 	assert.NotNil(t, msgI.InlineData[0].ID)
 	assert.NotNil(t, msgI.InlineData[0].Hash)
@@ -139,7 +137,16 @@ func TestGetMessageByIDOkWithValues(t *testing.T) {
 	assert.NotNil(t, msgI.InlineData[1].Value)
 }
 
-func TestGetMessageByIDValuesFail(t *testing.T) {
+func TestGetMessageByIDWithDataMsgFail(t *testing.T) {
+	or := newTestOrchestrator()
+	msgID := fftypes.NewUUID()
+	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	_, err := or.GetMessageByIDWithData(context.Background(), "ns1", msgID.String())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetMessageByIDWithDataFail(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -154,9 +161,10 @@ func TestGetMessageByIDValuesFail(t *testing.T) {
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
 	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
 
-	_, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), true)
+	_, err := or.GetMessageByIDWithData(context.Background(), "ns1", msgID.String())
 	assert.EqualError(t, err, "pop")
 }
+
 func TestGetMessages(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
@@ -165,6 +173,51 @@ func TestGetMessages(t *testing.T) {
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetMessages(context.Background(), "ns1", f)
 	assert.NoError(t, err)
+}
+
+func TestGetMessagesWithDataFailMsg(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", fftypes.NewUUID()))
+	_, _, err := or.GetMessagesWithData(context.Background(), "ns1", f)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetMessagesWithDataOk(t *testing.T) {
+	or := newTestOrchestrator()
+	u := fftypes.NewUUID()
+	msgID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: msgID,
+		},
+		Data: fftypes.DataRefs{},
+	}
+	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil)
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
+	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := or.GetMessagesWithData(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetMessagesWithDataFail(t *testing.T) {
+	or := newTestOrchestrator()
+	u := fftypes.NewUUID()
+	msgID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: msgID,
+		},
+		Data: fftypes.DataRefs{},
+	}
+	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil)
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
+	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, true, fmt.Errorf("pop"))
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := or.GetMessagesWithData(context.Background(), "ns1", f)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestGetMessagesForData(t *testing.T) {
