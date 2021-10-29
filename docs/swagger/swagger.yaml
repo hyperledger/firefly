@@ -4709,7 +4709,7 @@ paths:
                       type: array
                     state:
                       enum:
-                      - notready
+                      - staged
                       - ready
                       - pending
                       - confirmed
@@ -4927,7 +4927,7 @@ paths:
                       type: array
                     state:
                       enum:
-                      - notready
+                      - staged
                       - ready
                       - pending
                       - confirmed
@@ -5309,7 +5309,7 @@ paths:
                       type: array
                     state:
                       enum:
-                      - notready
+                      - staged
                       - ready
                       - pending
                       - confirmed

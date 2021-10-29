@@ -146,7 +146,7 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 					return err
 				}
 				if msg != nil {
-					if msg.State == fftypes.MessageStateNotReady {
+					if msg.State == fftypes.MessageStateStaged {
 						// Message can now be sent
 						msg.State = fftypes.MessageStateReady
 						if err := em.database.UpsertMessage(ctx, msg, true, false); err != nil {

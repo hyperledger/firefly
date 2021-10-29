@@ -266,7 +266,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return err
 		}
 		if s.transfer.Message != nil {
-			s.transfer.Message.State = fftypes.MessageStateNotReady
+			s.transfer.Message.State = fftypes.MessageStateStaged
 			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, false, false)
 		}
 		return err

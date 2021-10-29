@@ -262,7 +262,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	}
 	messages := []*fftypes.Message{{
 		BatchID: fftypes.NewUUID(),
-		State:   fftypes.MessageStateNotReady,
+		State:   fftypes.MessageStateStaged,
 	}}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(2)

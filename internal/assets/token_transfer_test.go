@@ -487,7 +487,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.State == fftypes.MessageStateNotReady
+		return msg.State == fftypes.MessageStateStaged
 	}), false, false).Return(nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
@@ -576,7 +576,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mpm.On("NewMessage", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.State == fftypes.MessageStateNotReady
+		return msg.State == fftypes.MessageStateStaged
 	}), false, false).Return(nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
@@ -721,7 +721,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.State == fftypes.MessageStateNotReady
+		return msg.State == fftypes.MessageStateStaged
 	}), false, false).Return(nil)
 	msa.On("WaitForMessage", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
