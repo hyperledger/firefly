@@ -169,3 +169,17 @@ func TestSQLQueryFactoryDefaultSortBadType(t *testing.T) {
 		s.filterSelect(context.Background(), "", sel, f, nil, []interface{}{100})
 	})
 }
+
+func TestSQLQueryFactorySelectDistinct(t *testing.T) {
+
+	s, _ := newMockProvider().init()
+	sel := squirrel.Select("name").From("mytable")
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
+	f := fb.And().Distinct(true)
+	sel, _, _, err := s.filterSelect(context.Background(), "", sel, f, nil, []interface{}{"name"})
+	assert.NoError(t, err)
+
+	sqlFilter, _, err := sel.ToSql()
+	assert.NoError(t, err)
+	assert.Equal(t, "SELECT DISTINCT name FROM mytable WHERE (1=1) ORDER BY name DESC", sqlFilter)
+}

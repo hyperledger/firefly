@@ -70,6 +70,9 @@ func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.S
 			sel = sel.Limit(fi.Limit)
 		}
 	}
+	if fi.Distinct {
+		sel = sel.Distinct()
+	}
 	return sel, fop, fi, err
 }
 
