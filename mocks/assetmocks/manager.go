@@ -66,8 +66,8 @@ func (_m *Manager) BurnTokensByType(ctx context.Context, ns string, connector st
 	return r0, r1
 }
 
-// CreateTokenPool provides a mock function with given fields: ctx, ns, connector, pool, waitConfirm
-func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+// CreateTokenPoolByType provides a mock function with given fields: ctx, ns, connector, pool, waitConfirm
+func (_m *Manager) CreateTokenPoolByType(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	ret := _m.Called(ctx, ns, connector, pool, waitConfirm)
 
 	var r0 *fftypes.TokenPool

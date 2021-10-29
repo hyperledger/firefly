@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostTokenPool(t *testing.T) {
+func TestPostTokenPoolByType(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
@@ -39,7 +39,7 @@ func TestPostTokenPool(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("CreateTokenPool", mock.Anything, "ns1", "tok1", mock.AnythingOfType("*fftypes.TokenPool"), false).
+	mam.On("CreateTokenPoolByType", mock.Anything, "ns1", "tok1", mock.AnythingOfType("*fftypes.TokenPool"), false).
 		Return(&fftypes.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 

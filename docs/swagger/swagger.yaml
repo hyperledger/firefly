@@ -4282,7 +4282,7 @@ paths:
           description: ""
     post:
       description: 'TODO: Description'
-      operationId: postTokenPool
+      operationId: postTokenPoolByType
       parameters:
       - description: 'TODO: Description'
         in: path

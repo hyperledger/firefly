@@ -31,18 +31,18 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestCreateTokenPoolBadNamespace(t *testing.T) {
+func TestCreateTokenPoolByTypeBadNamespace(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
 	mdm := am.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "test", &fftypes.TokenPool{}, false)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "test", &fftypes.TokenPool{}, false)
 	assert.EqualError(t, err, "pop")
 }
 
-func TestCreateTokenPoolIdentityFail(t *testing.T) {
+func TestCreateTokenPoolByTypeIdentityFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -51,11 +51,11 @@ func TestCreateTokenPoolIdentityFail(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "test", &fftypes.TokenPool{}, false)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "test", &fftypes.TokenPool{}, false)
 	assert.EqualError(t, err, "pop")
 }
 
-func TestCreateTokenPoolBadConnector(t *testing.T) {
+func TestCreateTokenPoolByTypeBadConnector(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -64,11 +64,11 @@ func TestCreateTokenPoolBadConnector(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "bad", &fftypes.TokenPool{}, false)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "bad", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "FF10272", err)
 }
 
-func TestCreateTokenPoolFail(t *testing.T) {
+func TestCreateTokenPoolByTypeFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -84,11 +84,11 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
 }
 
-func TestCreateTokenPoolTransactionFail(t *testing.T) {
+func TestCreateTokenPoolByTypeTransactionFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -99,11 +99,11 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
 }
 
-func TestCreateTokenPoolOperationFail(t *testing.T) {
+func TestCreateTokenPoolByTypeOperationFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -117,11 +117,11 @@ func TestCreateTokenPoolOperationFail(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
 }
 
-func TestCreateTokenPoolSuccess(t *testing.T) {
+func TestCreateTokenPoolByTypeSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -137,11 +137,11 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.NoError(t, err)
 }
 
-func TestCreateTokenPoolConfirm(t *testing.T) {
+func TestCreateTokenPoolByTypeConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -164,7 +164,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 		}).
 		Return(nil, nil)
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, true)
+	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, true)
 	assert.NoError(t, err)
 }
 
