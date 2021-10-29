@@ -4,7 +4,7 @@ config:
   preInit: true
 
   organizationName: "firefly-os"
-  organizationIdentity: "0xeb7284ce905e0665b7d42cabe31c76c45da1d331"
+  organizationKey: "0xeb7284ce905e0665b7d42cabe31c76c45da1d331"
   fireflyContractAddress: "0xeb7284ce905e0665b7d42cabe31c76c45da1d254"
 
   ethconnectUrl: "http://ethconnect.firefly-os"

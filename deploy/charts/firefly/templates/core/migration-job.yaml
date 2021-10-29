@@ -1,0 +1,26 @@
+{{- if .Values.config.postgresMigrationJob -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "firefly.fullname" . }}-{{ .Values.core.image.tag }}-migrations"
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 12000
+  template:
+    spec:
+      containers:
+      - name: migration
+        image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default .Chart.AppVersion }}"
+        command:
+        - sh
+        - -ce
+        - |
+{{ .Files.Get "scripts/ff-db-migrations.sh" | indent 10 }}
+        env:
+        - name: PSQL_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "firefly.fullname" . }}-config
+              key: psql_url
+      restartPolicy: Never
+{{- end }}
