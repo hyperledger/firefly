@@ -13,8 +13,8 @@ config:
   # The name of the organization the FireFly node belongs to
   organizationName: ""
 
-  # The blockchain identity of the organization e.g. the Ethereum account address
-  organizationIdentity: ""
+  # The blockchain signing key of the organization e.g. the Ethereum account address
+  organizationKey: ""
 
   # The Ethereum address of the pre-deployed FireFly smart contract
   fireflyContractAddress: "/instances/contractAddress"

@@ -18,7 +18,7 @@ for simple, private messaging using HTTPS backed with mTLS.
 $ helm install acme-firefly ./deploy/charts/firefly \
   --set dataexchange.tlsSecret.name=acme-dx-tls \
   --set config.organizationName=acme \
-  --set config.organizationIdentity="0xeb7284ce905e0665b7d42cabe31c76c45da1d331" \
+  --set config.organizationKey="0xeb7284ce905e0665b7d42cabe31c76c45da1d331" \
   --set config.fireflyContractAddress="0xeb7284ce905e0665b7d42cabe31c76c45da1d254"
 ```
 

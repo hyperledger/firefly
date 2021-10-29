@@ -9,7 +9,7 @@ spec:
   template:
     spec:
       containers:
-      - name: migration
+      - name: registration
         image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default .Chart.AppVersion }}"
         command:
         - sh
@@ -19,10 +19,5 @@ spec:
         env:
         - name: FF_URL
           value: "http://{{ include "firefly.fullname" . }}:{{ .Values.core.service.httpPort }}"
-        - name: PSQL_URL
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "firefly.fullname" . }}-config
-              key: psql_url
       restartPolicy: Never
 {{- end }}

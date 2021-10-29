@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Install deps
 apk add postgresql-client curl jq
 
@@ -15,7 +17,7 @@ fi
 PSQL_URL_NO_DB=`echo ${PSQL_URL} | sed "s/\/${DB_NAME}//"`
 
 # Check we can connect to the PSQL Server
-while ! psql -c "SELECT 1;" ${PSQL_URL_NO_DB}; do
+until psql -c "SELECT 1;" ${PSQL_URL_NO_DB}; do
   echo "Waiting for database..."
   sleep 1
 done
@@ -27,7 +29,7 @@ then
 fi
 
 # Wait for the database itself to be available
-while ! psql -c "SELECT 1;" ${PSQL_URL}; do
+until psql -c "SELECT 1;" ${PSQL_URL}; do
   echo "Waiting for database..."
   sleep 1
 done

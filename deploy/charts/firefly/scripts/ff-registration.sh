@@ -2,7 +2,7 @@
 
 apk add curl jq
 
-while ! STATUS=$(curl ${FF_URL}/api/v1/status); do
+until STATUS=$(curl ${FF_URL}/api/v1/status); do
   echo "Waiting for FireFly..."
   sleep 5
 done
