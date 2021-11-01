@@ -363,15 +363,15 @@ type iTokenPoolCollection interface {
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
 }
 
-type iTokenAccountCollection interface {
-	// UpdateTokenAccountBalances - Move some token balance from one account to another
-	UpdateTokenAccountBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error
+type iTokenBalanceCollection interface {
+	// UpdateTokenBalances - Move some token balance from one account to another
+	UpdateTokenBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error
 
-	// GetTokenAccount - Get a token account by pool and account identity
-	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
+	// GetTokenBalance - Get a token balance by pool and account identity
+	GetTokenBalance(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenBalance, error)
 
-	// GetTokenAccounts - Get token accounts
-	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
+	// GetTokenBalances - Get token balances
+	GetTokenBalances(ctx context.Context, filter Filter) ([]*fftypes.TokenBalance, *FilterResult, error)
 }
 
 type iTokenTransferCollection interface {
@@ -439,7 +439,7 @@ type PeristenceInterface interface {
 	iBlobCollection
 	iConfigRecordCollection
 	iTokenPoolCollection
-	iTokenAccountCollection
+	iTokenBalanceCollection
 	iTokenTransferCollection
 }
 
@@ -510,7 +510,7 @@ const (
 	CollectionNextpins      OtherCollection = "nextpins"
 	CollectionNonces        OtherCollection = "nonces"
 	CollectionOffsets       OtherCollection = "offsets"
-	CollectionTokenAccounts OtherCollection = "tokenaccounts"
+	CollectionTokenBalances OtherCollection = "tokenbalances"
 )
 
 // Callbacks are the methods for passing data from plugin to core
@@ -766,8 +766,8 @@ var TokenPoolQueryFactory = &queryFields{
 	"connector":  &StringField{},
 }
 
-// TokenAccountQueryFactory filter fields for token accounts
-var TokenAccountQueryFactory = &queryFields{
+// TokenBalanceQueryFactory filter fields for token accounts
+var TokenBalanceQueryFactory = &queryFields{
 	"poolprotocolid": &StringField{},
 	"tokenindex":     &StringField{},
 	"connector":      &StringField{},

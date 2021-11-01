@@ -112,7 +112,7 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 				return err
 			}
-			if err := em.database.UpdateTokenAccountBalances(ctx, transfer); err != nil {
+			if err := em.database.UpdateTokenBalances(ctx, transfer); err != nil {
 				log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.ProtocolID, err)
 				return err
 			}

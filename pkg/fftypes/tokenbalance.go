@@ -16,17 +16,20 @@
 
 package fftypes
 
-import (
-	"testing"
+type TokenBalance struct {
+	PoolProtocolID string  `json:"poolProtocolId,omitempty"`
+	TokenIndex     string  `json:"tokenIndex,omitempty"`
+	Connector      string  `json:"connector,omitempty"`
+	Namespace      string  `json:"namespace,omitempty"`
+	Key            string  `json:"key,omitempty"`
+	Balance        BigInt  `json:"balance"`
+	Updated        *FFTime `json:"updated,omitempty"`
+}
 
-	"github.com/stretchr/testify/assert"
-)
+func TokenBalanceIdentifier(protocolID, tokenIndex, identity string) string {
+	return protocolID + ":" + tokenIndex + ":" + identity
+}
 
-func TestTokenAccountIdentifier(t *testing.T) {
-	account := &TokenAccount{
-		PoolProtocolID: "123",
-		TokenIndex:     "1",
-		Key:            "0x00",
-	}
-	assert.Equal(t, "123:1:0x00", account.Identifier())
+func (t *TokenBalance) Identifier() string {
+	return TokenBalanceIdentifier(t.PoolProtocolID, t.TokenIndex, t.Key)
 }

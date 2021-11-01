@@ -5419,10 +5419,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/accounts:
+  /namespaces/{ns}/tokens/balances:
     get:
       description: 'TODO: Description'
-      operationId: getTokenAccounts
+      operationId: getTokenBalances
       parameters:
       - description: 'TODO: Description'
         in: path
