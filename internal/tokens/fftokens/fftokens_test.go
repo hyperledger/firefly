@@ -356,11 +356,11 @@ func TestEvents(t *testing.T) {
 	fromServer <- `{"id":"3","event":"receipt","data":{"id":"abc"}}`
 
 	// receipt: success
-	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
+	mcb.On("TokenOpUpdate", h, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
 	fromServer <- `{"id":"4","event":"receipt","data":{"id":"` + opID.String() + `","success":true}}`
 
 	// receipt: failure
-	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
+	mcb.On("TokenOpUpdate", h, opID, fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
 	fromServer <- `{"id":"5","event":"receipt","data":{"id":"` + opID.String() + `","success":false}}`
 
 	// token-pool: missing data

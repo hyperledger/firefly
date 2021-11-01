@@ -20,21 +20,13 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func retrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	input := &op.Input
-	transfer.LocalID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
+func (em *eventManager) loadTransferOperation(ctx context.Context, transfer *fftypes.TokenTransfer) error {
 	transfer.LocalID = nil
 
 	// Find a matching operation within this transaction
@@ -45,11 +37,10 @@ func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, 
 	)
 	operations, _, err := em.database.GetOperations(ctx, filter)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if len(operations) > 0 {
-		err = retrieveTokenTransferInputs(ctx, operations[0], transfer)
-		if err != nil {
+		if err = txcommon.RetrieveTokenTransferInputs(ctx, operations[0], transfer); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
 		}
 	}
@@ -57,7 +48,10 @@ func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, 
 	if transfer.LocalID == nil {
 		transfer.LocalID = fftypes.NewUUID()
 	}
+	return nil
+}
 
+func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
 	transaction := &fftypes.Transaction{
 		ID:     transfer.TX.ID,
 		Status: fftypes.OpStatusSucceeded,
@@ -73,8 +67,7 @@ func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, 
 	return em.txhelper.PersistTransaction(ctx, transaction)
 }
 
-func (em *eventManager) getBatchForTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) (*fftypes.UUID, error) {
-	// Find the messages assocated with that data
+func (em *eventManager) getMessageForTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) (*fftypes.Message, error) {
 	var messages []*fftypes.Message
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
@@ -85,7 +78,7 @@ func (em *eventManager) getBatchForTransfer(ctx context.Context, transfer *fftyp
 	if err != nil || len(messages) == 0 {
 		return nil, err
 	}
-	return messages[0].BatchID, nil
+	return messages[0], nil
 }
 
 func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
@@ -105,6 +98,9 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			transfer.Namespace = pool.Namespace
 
 			if transfer.TX.ID != nil {
+				if err := em.loadTransferOperation(ctx, transfer); err != nil {
+					return err
+				}
 				if valid, err := em.persistTokenTransaction(ctx, pool.Namespace, transfer, protocolTxID, additionalInfo); err != nil || !valid {
 					return err
 				}
@@ -145,9 +141,21 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 
 			if transfer.MessageHash != nil {
-				if batchID, err = em.getBatchForTransfer(ctx, transfer); err != nil {
-					log.L(ctx).Errorf("Failed to lookup batch for token transfer '%s': %s", transfer.ProtocolID, err)
+				msg, err := em.getMessageForTransfer(ctx, transfer)
+				if err != nil {
 					return err
+				}
+				if msg != nil {
+					if msg.State == fftypes.MessageStateStaged {
+						// Message can now be sent
+						msg.State = fftypes.MessageStateReady
+						if err := em.database.UpsertMessage(ctx, msg, true, false); err != nil {
+							return err
+						}
+					} else {
+						// Message was already received - aggregator will need to be rewound
+						batchID = msg.BatchID
+					}
 				}
 			}
 
