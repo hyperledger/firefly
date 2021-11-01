@@ -43,36 +43,18 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 		Key:            "0x12345",
 		From:           "0x1",
 		To:             "0x2",
+		Amount:         *fftypes.NewBigInt(1),
 	}
-	transfer.Amount.Int().SetInt64(1)
-	fromBalance := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "0",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		Key:            "0x1",
-	}
-	fromBalance.Amount.Int().SetInt64(-1)
-	toBalance := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "0",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		Key:            "0x2",
-	}
-	toBalance.Amount.Int().SetInt64(1)
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
 	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(4)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(3)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
-	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(3)
-	mdi.On("AddTokenAccountBalance", em.ctx, fromBalance).Return(fmt.Errorf("pop")).Once()
-	mdi.On("AddTokenAccountBalance", em.ctx, fromBalance).Return(nil).Times(2)
-	mdi.On("AddTokenAccountBalance", em.ctx, toBalance).Return(fmt.Errorf("pop")).Once()
-	mdi.On("AddTokenAccountBalance", em.ctx, toBalance).Return(nil).Once()
+	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
@@ -99,12 +81,12 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 		Key:            "0x12345",
 		From:           "0x1",
 		To:             "0x2",
+		Amount:         *fftypes.NewBigInt(1),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
 	}
-	transfer.Amount.Int().SetInt64(1)
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
 	}
@@ -151,8 +133,8 @@ func TestTokensTransferredAddBalanceIgnore(t *testing.T) {
 		Key:            "0x12345",
 		From:           "0x1",
 		To:             "0x2",
+		Amount:         *fftypes.NewBigInt(1),
 	}
-	transfer.Amount.Int().SetInt64(1)
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(nil, nil)
 
@@ -180,24 +162,8 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 		From:           "0x1",
 		To:             "0x2",
 		MessageHash:    fftypes.NewRandB32(),
+		Amount:         *fftypes.NewBigInt(1),
 	}
-	transfer.Amount.Int().SetInt64(1)
-	fromBalance := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "0",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		Key:            "0x1",
-	}
-	fromBalance.Amount.Int().SetInt64(-1)
-	toBalance := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "0",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		Key:            "0x2",
-	}
-	toBalance.Amount.Int().SetInt64(1)
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
 	}
@@ -207,8 +173,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("AddTokenAccountBalance", em.ctx, fromBalance).Return(nil).Times(2)
-	mdi.On("AddTokenAccountBalance", em.ctx, toBalance).Return(nil).Times(2)
+	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(messages, nil, nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -239,24 +204,8 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		From:           "0x1",
 		To:             "0x2",
 		MessageHash:    fftypes.NewRandB32(),
+		Amount:         *fftypes.NewBigInt(1),
 	}
-	transfer.Amount.Int().SetInt64(1)
-	fromBalance := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "0",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		Key:            "0x1",
-	}
-	fromBalance.Amount.Int().SetInt64(-1)
-	toBalance := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "0",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		Key:            "0x2",
-	}
-	toBalance.Amount.Int().SetInt64(1)
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
 	}
@@ -267,8 +216,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("AddTokenAccountBalance", em.ctx, fromBalance).Return(nil).Times(2)
-	mdi.On("AddTokenAccountBalance", em.ctx, toBalance).Return(nil).Times(2)
+	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(messages, nil, nil).Times(2)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	mdi.On("UpsertMessage", em.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {

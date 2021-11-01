@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -36,25 +35,25 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new token account
-	operation := &fftypes.TokenBalanceChange{
+	transfer := &fftypes.TokenTransfer{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
 		Namespace:      "ns1",
-		Key:            "0x0",
+		To:             "0x0",
+		Amount:         *fftypes.NewBigInt(10),
 	}
-	operation.Amount.Int().SetInt64(10)
 	account := &fftypes.TokenAccount{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
 		Namespace:      "ns1",
 		Key:            "0x0",
+		Balance:        *fftypes.NewBigInt(10),
 	}
-	account.Balance.Int().SetInt64(10)
 	accountJson, _ := json.Marshal(&account)
 
-	err := s.AddTokenAccountBalance(ctx, operation)
+	err := s.UpdateTokenAccountBalances(ctx, transfer)
 	assert.NoError(t, err)
 
 	// Query back the token account (by pool ID and identity)
@@ -82,8 +81,11 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	accountReadJson, _ = json.Marshal(accounts[0])
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 
-	// Add to the balance
-	err = s.AddTokenAccountBalance(ctx, operation)
+	// Transfer half to a different account
+	transfer.From = "0x0"
+	transfer.To = "0x1"
+	transfer.Amount = *fftypes.NewBigInt(5)
+	err = s.UpdateTokenAccountBalances(ctx, transfer)
 	assert.NoError(t, err)
 
 	// Query back the token account (by pool ID and identity)
@@ -93,123 +95,81 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
 	accountRead.Updated = nil
 	accountReadJson, _ = json.Marshal(&accountRead)
-	account.Balance.Int().SetInt64(20)
+	account.Balance = *fftypes.NewBigInt(5)
+	accountJson, _ = json.Marshal(&account)
+	assert.Equal(t, string(accountJson), string(accountReadJson))
+
+	// Query back the other token account (by pool ID and identity)
+	accountRead, err = s.GetTokenAccount(ctx, "F1", "1", "0x1")
+	assert.NoError(t, err)
+	assert.NotNil(t, accountRead)
+	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
+	accountRead.Updated = nil
+	accountReadJson, _ = json.Marshal(&accountRead)
+	account.Key = "0x1"
+	account.Balance = *fftypes.NewBigInt(5)
 	accountJson, _ = json.Marshal(&account)
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 }
 
-func TestAddTokenAccountBalanceFailBegin(t *testing.T) {
+func TestUpdateTokenAccountBalancesFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.AddTokenAccountBalance(context.Background(), &fftypes.TokenBalanceChange{})
+	err := s.UpdateTokenAccountBalances(context.Background(), &fftypes.TokenTransfer{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestAddTokenAccountBalanceFailSelect(t *testing.T) {
+func TestUpdateTokenAccountBalancesFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.AddTokenAccountBalance(context.Background(), &fftypes.TokenBalanceChange{})
+	err := s.UpdateTokenAccountBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestAddTokenAccountSelectBadExistingValue(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{
-		"balance",
-	}).AddRow(
-		"!not an integer",
-	))
-	err := s.AddTokenAccountBalance(context.Background(), &fftypes.TokenBalanceChange{})
-	assert.Regexp(t, "FF10121", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestAddTokenAccountBalanceFailInsert(t *testing.T) {
+func TestUpdateTokenAccountBalancesFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.AddTokenAccountBalance(context.Background(), &fftypes.TokenBalanceChange{})
+	err := s.UpdateTokenAccountBalances(context.Background(), &fftypes.TokenTransfer{From: "0x0"})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestAddTokenAccountBalanceFailUpdate(t *testing.T) {
+func TestUpdateTokenAccountBalancesFailInsert2(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.UpdateTokenAccountBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateTokenAccountBalancesFailUpdate(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(tokenAccountColumns).AddRow("F1", "1", "", "", "0x0", "0", 0))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.AddTokenAccountBalance(context.Background(), &fftypes.TokenBalanceChange{})
+	err := s.UpdateTokenAccountBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestAddTokenAccountBalanceFailCommit(t *testing.T) {
+func TestUpdateTokenAccountBalancesFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.AddTokenAccountBalance(context.Background(), &fftypes.TokenBalanceChange{})
+	err := s.UpdateTokenAccountBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
 	assert.Regexp(t, "FF10119", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestAddTokenAccountBalanceInsertSuccess(t *testing.T) {
-	s, db := newMockProvider().init()
-	callbacks := &databasemocks.Callbacks{}
-	s.SQLCommon.callbacks = callbacks
-	operation := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "1",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		Key:            "0x0",
-	}
-	operation.Amount.Int().SetInt64(10)
-
-	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	db.ExpectExec("INSERT .*").
-		WithArgs("F1", "1", "erc1155", "ns1", "0x0", sqlmock.AnyArg(), sqlmock.AnyArg()).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	db.ExpectCommit()
-	err := s.AddTokenAccountBalance(context.Background(), operation)
-	assert.NoError(t, err)
-	assert.NoError(t, db.ExpectationsWereMet())
-}
-
-func TestAddTokenAccountBalanceUpdateSuccess(t *testing.T) {
-	s, db := newMockProvider().init()
-	callbacks := &databasemocks.Callbacks{}
-	s.SQLCommon.callbacks = callbacks
-	operation := &fftypes.TokenBalanceChange{
-		PoolProtocolID: "F1",
-		TokenIndex:     "1",
-		Key:            "0x0",
-	}
-	operation.Amount.Int().SetInt64(10)
-
-	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"seq"}).AddRow("1"))
-	db.ExpectExec("UPDATE .*").WillReturnResult(sqlmock.NewResult(1, 1))
-	db.ExpectCommit()
-	err := s.AddTokenAccountBalance(context.Background(), operation)
-	assert.NoError(t, err)
-	assert.NoError(t, db.ExpectationsWereMet())
-}
-
-func TestGetTokenAccountSelectFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetTokenAccount(context.Background(), "F1", "1", "0x0")
-	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

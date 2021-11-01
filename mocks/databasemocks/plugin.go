@@ -19,20 +19,6 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddTokenAccountBalance provides a mock function with given fields: ctx, account
-func (_m *Plugin) AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) error {
-	ret := _m.Called(ctx, account)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenBalanceChange) error); ok {
-		r0 = rf(ctx, account)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Capabilities provides a mock function with given fields:
 func (_m *Plugin) Capabilities() *database.Capabilities {
 	ret := _m.Called()
@@ -1851,6 +1837,20 @@ func (_m *Plugin) UpdateSubscription(ctx context.Context, ns string, name string
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.Update) error); ok {
 		r0 = rf(ctx, ns, name, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateTokenAccountBalances provides a mock function with given fields: ctx, transfer
+func (_m *Plugin) UpdateTokenAccountBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error {
+	ret := _m.Called(ctx, transfer)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenTransfer) error); ok {
+		r0 = rf(ctx, transfer)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -364,8 +364,8 @@ type iTokenPoolCollection interface {
 }
 
 type iTokenAccountCollection interface {
-	// AddTokenAccountBalance - Add a (positive or negative) balance to the account's current balance
-	AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) error
+	// UpdateTokenAccountBalances - Move some token balance from one account to another
+	UpdateTokenAccountBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error
 
 	// GetTokenAccount - Get a token account by pool and account identity
 	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)

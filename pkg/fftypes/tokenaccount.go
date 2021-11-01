@@ -33,12 +33,3 @@ func TokenAccountIdentifier(protocolID, tokenIndex, identity string) string {
 func (t *TokenAccount) Identifier() string {
 	return TokenAccountIdentifier(t.PoolProtocolID, t.TokenIndex, t.Key)
 }
-
-type TokenBalanceChange struct {
-	PoolProtocolID string
-	TokenIndex     string
-	Connector      string
-	Namespace      string
-	Key            string
-	Amount         BigInt
-}
