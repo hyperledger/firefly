@@ -151,7 +151,7 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		replyType = fftypes.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	return ft.callbacks.TokensOpUpdate(ft, operationID, replyType, message, data)
+	return ft.callbacks.TokenOpUpdate(ft, operationID, replyType, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {

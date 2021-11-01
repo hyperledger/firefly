@@ -208,5 +208,6 @@ var (
 	MsgNoUUID                      = ffm("FF10288", "Field '%s' must not be a UUID", 400)
 	MsgFetchDataDesc               = ffm("FF10289", "Fetch the data and include it in the messages returned", 400)
 	MsgWSClosed                    = ffm("FF10290", "Websocket closed")
-	MsgFieldNotSpecified           = ffm("FF10291", "Field '%s' must be specified", 400)
+	MsgTokenTransferFailed         = ffm("FF10291", "Token transfer with ID '%s' failed. Please check the FireFly logs for more information")
+	MsgFieldNotSpecified           = ffm("FF10292", "Field '%s' must be specified", 400)
 )

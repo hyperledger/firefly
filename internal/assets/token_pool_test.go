@@ -162,7 +162,7 @@ func TestCreateTokenPoolUnknownConnectorNoConnectors(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", &fftypes.TokenPool{}, false)
-	assert.Regexp(t, "FF10291", err)
+	assert.Regexp(t, "FF10292", err)
 }
 
 func TestCreateTokenPoolUnknownConnectorMultipleConnectors(t *testing.T) {
@@ -176,7 +176,7 @@ func TestCreateTokenPoolUnknownConnectorMultipleConnectors(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", &fftypes.TokenPool{}, false)
-	assert.Regexp(t, "FF10291", err)
+	assert.Regexp(t, "FF10292", err)
 }
 
 func TestCreateTokenPoolConfirm(t *testing.T) {

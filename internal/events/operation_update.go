@@ -36,5 +36,13 @@ func (em *eventManager) OperationUpdate(plugin fftypes.Named, operationID *fftyp
 	if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
 		return err
 	}
+
+	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
+	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
+		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
+		if err := em.database.InsertEvent(em.ctx, event); err != nil {
+			return err
+		}
+	}
 	return nil
 }

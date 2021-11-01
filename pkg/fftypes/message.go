@@ -51,6 +51,8 @@ var (
 type MessageState = FFEnum
 
 var (
+	// MessageStateStaged is a message created locally which is not ready to send
+	MessageStateStaged MessageState = ffEnum("messagestate", "staged")
 	// MessageStateReady is a message created locally which is ready to send
 	MessageStateReady MessageState = ffEnum("messagestate", "ready")
 	// MessageStatePending is a message that has been received but is awaiting aggregation/confirmation

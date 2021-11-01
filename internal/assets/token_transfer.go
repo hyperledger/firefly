@@ -22,16 +22,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-// Note: the counterpart to below (retrieveTokenTransferInputs) lives in the events package
-func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
-	op.Input = fftypes.JSONObject{
-		"id": transfer.LocalID.String(),
-	}
-}
 
 func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
 	return am.database.GetTokenTransfers(ctx, am.scopeNS(ns, filter))
@@ -299,41 +293,38 @@ func (am *assetManager) TransferTokensByType(ctx context.Context, ns, connector,
 }
 
 func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
-	var messageSender sysmessaging.MessageSender
 	if !s.resolved {
-		if messageSender, err = s.resolve(ctx); err != nil {
+		if err = s.resolve(ctx); err != nil {
 			return err
 		}
 		s.resolved = true
 	}
 
-	if messageSender != nil {
-		if method == methodSendAndWait {
-			if err = s.sendInternal(ctx, method); err != nil {
-				return err
-			}
-			return messageSender.SendAndWait(ctx)
-		}
-
-		if err := messageSender.Send(ctx); err != nil {
-			return err
-		}
+	if method == methodSendAndWait && s.transfer.Message != nil {
+		// Begin waiting for the message, and trigger the transfer.
+		// A successful transfer will trigger the message via the event handler, so we can wait for it all to complete.
+		_, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.transfer.Message.Header.ID, func(ctx context.Context) error {
+			return s.sendInternal(ctx, methodSendAndWait)
+		})
+		return err
 	}
+
 	return s.sendInternal(ctx, method)
 }
 
-func (s *transferSender) resolve(ctx context.Context) (sender sysmessaging.MessageSender, err error) {
+func (s *transferSender) resolve(ctx context.Context) error {
 	// Resolve the attached message
 	if s.transfer.Message != nil {
-		if sender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message); err != nil {
-			return nil, err
+		sender, err := s.buildTransferMessage(ctx, s.namespace, s.transfer.Message)
+		if err != nil {
+			return err
 		}
 		if err = sender.Prepare(ctx); err != nil {
-			return nil, err
+			return err
 		}
 		s.transfer.MessageHash = s.transfer.Message.Hash
 	}
-	return sender, nil
+	return nil
 }
 
 func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) error {
@@ -376,7 +367,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		"",
 		fftypes.OpTypeTokenTransfer,
 		fftypes.OpStatusPending)
-	addTokenTransferInputs(op, &s.transfer.TokenTransfer)
+	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
 
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		pool, err := s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)
@@ -386,8 +377,15 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		s.transfer.PoolProtocolID = pool.ProtocolID
 
 		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
-		if err == nil {
-			err = s.mgr.database.UpsertOperation(ctx, op, false)
+		if err != nil {
+			return err
+		}
+		if err = s.mgr.database.UpsertOperation(ctx, op, false); err != nil {
+			return err
+		}
+		if s.transfer.Message != nil {
+			s.transfer.Message.State = fftypes.MessageStateStaged
+			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, false, false)
 		}
 		return err
 	})
