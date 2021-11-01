@@ -33,3 +33,9 @@ func TokenBalanceIdentifier(protocolID, tokenIndex, identity string) string {
 func (t *TokenBalance) Identifier() string {
 	return TokenBalanceIdentifier(t.PoolProtocolID, t.TokenIndex, t.Key)
 }
+
+// Currently this type is just a filtered view of TokenBalance.
+// If more fields/aggregation become needed, this may need its own table in the database.
+type TokenAccount struct {
+	Key string `json:"key,omitempty"`
+}

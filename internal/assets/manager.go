@@ -45,6 +45,7 @@ type Manager interface {
 
 	GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error)
 	GetTokenBalancesByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error)
+	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 
 	GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 	GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error)
@@ -125,6 +126,10 @@ func (am *assetManager) GetTokenBalancesByPool(ctx context.Context, ns, connecto
 		return nil, nil, err
 	}
 	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
+}
+
+func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+	return am.database.GetTokenAccounts(ctx, am.scopeNS(ns, filter))
 }
 
 func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error) {

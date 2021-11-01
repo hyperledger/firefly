@@ -191,3 +191,28 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter
 
 	return accounts, s.queryRes(ctx, tx, "tokenbalance", fop, fi), err
 }
+
+func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("key").From("tokenbalance"), filter.Distinct(true), tokenBalanceFilterFieldMap, []interface{}{"seq"})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, tx, err := s.query(ctx, query)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var accounts []*fftypes.TokenAccount
+	for rows.Next() {
+		var account fftypes.TokenAccount
+		err := rows.Scan(&account.Key)
+		if err != nil {
+			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
+		}
+		accounts = append(accounts, &account)
+	}
+
+	return accounts, s.queryRes(ctx, tx, "tokenbalance", fop, fi), err
+}
