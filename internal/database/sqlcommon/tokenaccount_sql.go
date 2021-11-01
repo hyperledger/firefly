@@ -43,37 +43,25 @@ var (
 	}
 )
 
-func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+func (s *SQLCommon) addTokenAccountBalance(ctx context.Context, tx *txWrapper, transfer *fftypes.TokenTransfer, key string, negate bool) error {
+	account, err := s.GetTokenAccount(ctx, transfer.PoolProtocolID, transfer.TokenIndex, key)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
-		sq.Select("balance").
-			From("tokenaccount").
-			Where(sq.And{
-				sq.Eq{"pool_protocol_id": account.PoolProtocolID},
-				sq.Eq{"token_index": account.TokenIndex},
-				sq.Eq{"key": account.Key},
-			}),
-	)
-	if err != nil {
-		return err
+	var balance *fftypes.BigInt
+	if account != nil {
+		balance = &account.Balance
+	} else {
+		balance = &fftypes.BigInt{}
 	}
-	existing := rows.Next()
-
-	var balance fftypes.BigInt
-	if existing {
-		if err = rows.Scan(&balance); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenaccount")
-		}
+	if negate {
+		balance.Int().Sub(balance.Int(), transfer.Amount.Int())
+	} else {
+		balance.Int().Add(balance.Int(), transfer.Amount.Int())
 	}
-	balance.Int().Add(balance.Int(), account.Amount.Int())
-	rows.Close()
 
-	if existing {
+	if account != nil {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenaccount").
 				Set("balance", balance).
@@ -92,16 +80,37 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 			sq.Insert("tokenaccount").
 				Columns(tokenAccountColumns...).
 				Values(
-					account.PoolProtocolID,
-					account.TokenIndex,
-					account.Connector,
-					account.Namespace,
-					account.Key,
-					account.Amount,
+					transfer.PoolProtocolID,
+					transfer.TokenIndex,
+					transfer.Connector,
+					transfer.Namespace,
+					key,
+					balance,
 					fftypes.Now(),
 				),
 			nil,
 		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *SQLCommon) UpdateTokenAccountBalances(ctx context.Context, transfer *fftypes.TokenTransfer) (err error) {
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	if transfer.From != "" {
+		if err := s.addTokenAccountBalance(ctx, tx, transfer, transfer.From, true); err != nil {
+			return err
+		}
+	}
+	if transfer.To != "" {
+		if err := s.addTokenAccountBalance(ctx, tx, transfer, transfer.To, false); err != nil {
 			return err
 		}
 	}

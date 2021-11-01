@@ -209,3 +209,10 @@ func TestEquals(t *testing.T) {
 	assert.True(t, i2.Equals(&i1))
 
 }
+
+func TestNewBigInt(t *testing.T) {
+
+	n := NewBigInt(10)
+	assert.Equal(t, int64(10), n.Int().Int64())
+
+}

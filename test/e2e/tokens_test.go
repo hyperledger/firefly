@@ -68,8 +68,9 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
-	transfer := &fftypes.TokenTransferInput{}
-	transfer.Amount.Int().SetInt64(1)
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+	}
 	MintTokens(suite.T(), suite.testState.client1, poolName, transfer, false)
 
 	<-received1
@@ -94,7 +95,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 
 	transfer = &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			To: suite.testState.org2.Identity,
+			To:     suite.testState.org2.Identity,
+			Amount: *fftypes.NewBigInt(1),
 		},
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
@@ -104,7 +106,6 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			},
 		},
 	}
-	transfer.Amount.Int().SetInt64(1)
 	TransferTokens(suite.T(), suite.testState.client1, poolName, transfer, false)
 
 	<-received1 // one event for transfer
@@ -134,8 +135,9 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		suite.testState.org2.Identity: 1,
 	})
 
-	transfer = &fftypes.TokenTransferInput{}
-	transfer.Amount.Int().SetInt64(1)
+	transfer = &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+	}
 	BurnTokens(suite.T(), suite.testState.client2, poolName, transfer, false)
 
 	<-received2
@@ -192,8 +194,9 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
-	transfer := &fftypes.TokenTransferInput{}
-	transfer.Amount.Int().SetInt64(1)
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+	}
 	transferOut := MintTokens(suite.T(), suite.testState.client1, poolName, transfer, true)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeMint, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
@@ -217,6 +220,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		TokenTransfer: fftypes.TokenTransfer{
 			TokenIndex: "1",
 			To:         suite.testState.org2.Identity,
+			Amount:     *fftypes.NewBigInt(1),
 		},
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
@@ -226,7 +230,6 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			},
 		},
 	}
-	transfer.Amount.Int().SetInt64(1)
 	transferOut = TransferTokens(suite.T(), suite.testState.client1, poolName, transfer, true)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
@@ -256,9 +259,9 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	transfer = &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
 			TokenIndex: "1",
+			Amount:     *fftypes.NewBigInt(1),
 		},
 	}
-	transfer.Amount.Int().SetInt64(1)
 	transferOut = BurnTokens(suite.T(), suite.testState.client2, poolName, transfer, true)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeBurn, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)

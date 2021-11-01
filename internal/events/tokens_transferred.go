@@ -112,32 +112,10 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 				return err
 			}
-
-			balance := &fftypes.TokenBalanceChange{
-				PoolProtocolID: transfer.PoolProtocolID,
-				TokenIndex:     transfer.TokenIndex,
-				Connector:      transfer.Connector,
-				Namespace:      transfer.Namespace,
+			if err := em.database.UpdateTokenAccountBalances(ctx, transfer); err != nil {
+				log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.ProtocolID, err)
+				return err
 			}
-
-			if transfer.Type != fftypes.TokenTransferTypeMint {
-				balance.Key = transfer.From
-				balance.Amount.Int().Neg(transfer.Amount.Int())
-				if err := em.database.AddTokenAccountBalance(ctx, balance); err != nil {
-					log.L(ctx).Errorf("Failed to update account '%s' for token transfer '%s': %s", balance.Key, transfer.ProtocolID, err)
-					return err
-				}
-			}
-
-			if transfer.Type != fftypes.TokenTransferTypeBurn {
-				balance.Key = transfer.To
-				balance.Amount.Int().Set(transfer.Amount.Int())
-				if err := em.database.AddTokenAccountBalance(ctx, balance); err != nil {
-					log.L(ctx).Errorf("Failed to update account '%s for token transfer '%s': %s", balance.Key, transfer.ProtocolID, err)
-					return err
-				}
-			}
-
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 
 			if transfer.MessageHash != nil {
