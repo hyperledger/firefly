@@ -49,7 +49,32 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 	return nil
 }
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
+		return nil, err
+	}
+	pool.ID = fftypes.NewUUID()
+	pool.Namespace = ns
+
+	if pool.Connector == "" {
+		connector, err := am.getTokenConnectorName(ctx, ns)
+		if err != nil {
+			return nil, err
+		}
+		pool.Connector = connector
+	}
+
+	if pool.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return nil, err
+		}
+		pool.Key = org.Identity
+	}
+	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
+}
+
+func (am *assetManager) CreateTokenPoolByType(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}

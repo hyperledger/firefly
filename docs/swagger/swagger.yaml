@@ -4282,7 +4282,7 @@ paths:
           description: ""
     post:
       description: 'TODO: Description'
-      operationId: postTokenPool
+      operationId: postTokenPoolByType
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -4598,7 +4598,7 @@ paths:
   /namespaces/{ns}/tokens/{type}/pools/{name}/burn:
     post:
       description: 'TODO: Description'
-      operationId: postTokenBurn
+      operationId: postTokenBurnByType
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -4718,6 +4718,8 @@ paths:
                   type: object
                 messageHash: {}
                 namespace:
+                  type: string
+                pool:
                   type: string
                 poolProtocolId:
                   type: string
@@ -4816,7 +4818,7 @@ paths:
   /namespaces/{ns}/tokens/{type}/pools/{name}/mint:
     post:
       description: 'TODO: Description'
-      operationId: postTokenMint
+      operationId: postTokenMintByType
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -4936,6 +4938,8 @@ paths:
                   type: object
                 messageHash: {}
                 namespace:
+                  type: string
+                pool:
                   type: string
                 poolProtocolId:
                   type: string
@@ -5198,7 +5202,7 @@ paths:
           description: ""
     post:
       description: 'TODO: Description'
-      operationId: postTokenTransfer
+      operationId: postTokenTransferByType
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -5318,6 +5322,8 @@ paths:
                   type: object
                 messageHash: {}
                 namespace:
+                  type: string
+                pool:
                   type: string
                 poolProtocolId:
                   type: string
@@ -5525,6 +5531,214 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/tokens/burn:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenBurn
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount: {}
+                connector:
+                  type: string
+                created: {}
+                from:
+                  type: string
+                key:
+                  type: string
+                localId: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
+                messageHash: {}
+                namespace:
+                  type: string
+                pool:
+                  type: string
+                poolProtocolId:
+                  type: string
+                protocolId:
+                  type: string
+                to:
+                  type: string
+                tokenIndex:
+                  type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
+                type:
+                  enum:
+                  - mint
+                  - burn
+                  - transfer
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/tokens/connectors:
     get:
       description: 'TODO: Description'
@@ -5555,6 +5769,214 @@ paths:
                       type: string
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/mint:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenMint
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount: {}
+                connector:
+                  type: string
+                created: {}
+                from:
+                  type: string
+                key:
+                  type: string
+                localId: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
+                messageHash: {}
+                namespace:
+                  type: string
+                pool:
+                  type: string
+                poolProtocolId:
+                  type: string
+                protocolId:
+                  type: string
+                to:
+                  type: string
+                tokenIndex:
+                  type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
+                type:
+                  enum:
+                  - mint
+                  - burn
+                  - transfer
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -5703,6 +6125,124 @@ paths:
                       type: string
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenPool
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                config:
+                  additionalProperties: {}
+                  type: object
+                connector:
+                  type: string
+                key:
+                  type: string
+                name:
+                  type: string
+                symbol:
+                  type: string
+                type:
+                  enum:
+                  - fungible
+                  - nonfungible
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  id: {}
+                  key:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                  standard:
+                    type: string
+                  symbol:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  id: {}
+                  key:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                  standard:
+                    type: string
+                  symbol:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -5919,6 +6459,213 @@ paths:
                       type: string
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenTransfer
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount: {}
+                connector:
+                  type: string
+                created: {}
+                from:
+                  type: string
+                key:
+                  type: string
+                localId: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
+                messageHash: {}
+                namespace:
+                  type: string
+                pool:
+                  type: string
+                poolProtocolId:
+                  type: string
+                protocolId:
+                  type: string
+                to:
+                  type: string
+                tokenIndex:
+                  type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
+                type:
+                  enum:
+                  - mint
+                  - burn
+                  - transfer
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""

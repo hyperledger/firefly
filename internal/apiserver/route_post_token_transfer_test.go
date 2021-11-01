@@ -35,11 +35,11 @@ func TestPostTokenTransfer(t *testing.T) {
 	input := fftypes.TokenTransferInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/tok1/pools/pool1/transfers", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/transfers", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("TransferTokens", mock.Anything, "ns1", "tok1", "pool1", mock.AnythingOfType("*fftypes.TokenTransferInput"), false).
+	mam.On("TransferTokens", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.TokenTransferInput"), false).
 		Return(&fftypes.TokenTransfer{}, nil)
 	r.ServeHTTP(res, req)
 

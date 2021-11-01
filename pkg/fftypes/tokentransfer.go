@@ -44,4 +44,5 @@ type TokenTransfer struct {
 type TokenTransferInput struct {
 	TokenTransfer
 	Message *MessageInOut `json:"message,omitempty"`
+	Pool    string        `json:"pool,omitempty"`
 }

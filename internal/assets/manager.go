@@ -35,7 +35,8 @@ import (
 )
 
 type Manager interface {
-	CreateTokenPool(ctx context.Context, ns, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPoolByType(ctx context.Context, ns, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPoolsByType(ctx context.Context, ns, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, ns, connector, poolName string) (*fftypes.TokenPool, error)
@@ -47,9 +48,12 @@ type Manager interface {
 	GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error)
 	GetTokenTransfersByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 	NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender
-	MintTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	BurnTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	TransferTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	BurnTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	TransferTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
 	// Bound token callbacks
@@ -144,4 +148,28 @@ func (am *assetManager) Start() error {
 
 func (am *assetManager) WaitStop() {
 	// No go routines
+}
+
+func (am *assetManager) getTokenConnectorName(ctx context.Context, ns string) (string, error) {
+	tokenConnectors, err := am.GetTokenConnectors(ctx, ns)
+	if err != nil {
+		return "", err
+	}
+	if len(tokenConnectors) != 1 {
+		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "connector")
+	}
+	return tokenConnectors[0].Name, nil
+}
+
+func (am *assetManager) getTokenPoolName(ctx context.Context, ns string) (string, error) {
+	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
+	f.Limit(1).Count(true)
+	tokenPools, fr, err := am.GetTokenPools(ctx, ns, f)
+	if err != nil {
+		return "", err
+	}
+	if *fr.TotalCount != 1 {
+		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "pool")
+	}
+	return tokenPools[0].Name, nil
 }

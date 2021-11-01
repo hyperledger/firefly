@@ -28,19 +28,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostTokenMint(t *testing.T) {
+func TestPostTokenPoolByType(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
-	input := fftypes.TokenTransferInput{}
+	input := fftypes.TokenPool{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/mint", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/tok1/pools", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("MintTokens", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.TokenTransferInput"), false).
-		Return(&fftypes.TokenTransfer{}, nil)
+	mam.On("CreateTokenPoolByType", mock.Anything, "ns1", "tok1", mock.AnythingOfType("*fftypes.TokenPool"), false).
+		Return(&fftypes.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

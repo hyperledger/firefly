@@ -20,8 +20,31 @@ type Manager struct {
 	mock.Mock
 }
 
-// BurnTokens provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
-func (_m *Manager) BurnTokens(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+// BurnTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
+func (_m *Manager) BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, ns, transfer, waitConfirm)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenTransferInput, bool) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, ns, transfer, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.TokenTransferInput, bool) error); ok {
+		r1 = rf(ctx, ns, transfer, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BurnTokensByType provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
+func (_m *Manager) BurnTokensByType(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, connector, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
@@ -43,8 +66,31 @@ func (_m *Manager) BurnTokens(ctx context.Context, ns string, connector string, 
 	return r0, r1
 }
 
-// CreateTokenPool provides a mock function with given fields: ctx, ns, connector, pool, waitConfirm
-func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+// CreateTokenPool provides a mock function with given fields: ctx, ns, pool, waitConfirm
+func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, pool, waitConfirm)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenPool, bool) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, ns, pool, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.TokenPool, bool) error); ok {
+		r1 = rf(ctx, ns, pool, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CreateTokenPoolByType provides a mock function with given fields: ctx, ns, connector, pool, waitConfirm
+func (_m *Manager) CreateTokenPoolByType(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	ret := _m.Called(ctx, ns, connector, pool, waitConfirm)
 
 	var r0 *fftypes.TokenPool
@@ -350,8 +396,31 @@ func (_m *Manager) GetTokenTransfersByPool(ctx context.Context, ns string, conne
 	return r0, r1, r2
 }
 
-// MintTokens provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
-func (_m *Manager) MintTokens(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+// MintTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
+func (_m *Manager) MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, ns, transfer, waitConfirm)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenTransferInput, bool) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, ns, transfer, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.TokenTransferInput, bool) error); ok {
+		r1 = rf(ctx, ns, transfer, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MintTokensByType provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
+func (_m *Manager) MintTokensByType(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, connector, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
@@ -417,8 +486,31 @@ func (_m *Manager) TokenPoolCreated(ti tokens.Plugin, pool *fftypes.TokenPool, p
 	return r0
 }
 
-// TransferTokens provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
-func (_m *Manager) TransferTokens(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+// TransferTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
+func (_m *Manager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, ns, transfer, waitConfirm)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenTransferInput, bool) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, ns, transfer, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.TokenTransferInput, bool) error); ok {
+		r1 = rf(ctx, ns, transfer, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TransferTokensByType provides a mock function with given fields: ctx, ns, connector, poolName, transfer, waitConfirm
+func (_m *Manager) TransferTokensByType(ctx context.Context, ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, connector, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
