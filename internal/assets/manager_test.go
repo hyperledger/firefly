@@ -107,6 +107,18 @@ func TestGetTokenBalancesByPoolBadPool(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestGetTokenAccounts(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
+	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
 func TestGetTokenConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()

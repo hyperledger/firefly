@@ -43,7 +43,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 		To:             "0x0",
 		Amount:         *fftypes.NewBigInt(10),
 	}
-	account := &fftypes.TokenBalance{
+	balance := &fftypes.TokenBalance{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
@@ -51,65 +51,74 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 		Key:            "0x0",
 		Balance:        *fftypes.NewBigInt(10),
 	}
-	accountJson, _ := json.Marshal(&account)
+	balanceJson, _ := json.Marshal(&balance)
 
 	err := s.UpdateTokenBalances(ctx, transfer)
 	assert.NoError(t, err)
 
-	// Query back the token account (by pool ID and identity)
-	accountRead, err := s.GetTokenBalance(ctx, "F1", "1", "0x0")
+	// Query back the token balance (by pool ID and identity)
+	balanceRead, err := s.GetTokenBalance(ctx, "F1", "1", "0x0")
 	assert.NoError(t, err)
-	assert.NotNil(t, accountRead)
-	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
-	accountRead.Updated = nil
-	accountReadJson, _ := json.Marshal(&accountRead)
-	assert.Equal(t, string(accountJson), string(accountReadJson))
+	assert.NotNil(t, balanceRead)
+	assert.Greater(t, balanceRead.Updated.UnixNano(), int64(0))
+	balanceRead.Updated = nil
+	balanceReadJson, _ := json.Marshal(&balanceRead)
+	assert.Equal(t, string(balanceJson), string(balanceReadJson))
 
-	// Query back the token account (by query filter)
+	// Query back the token balance (by query filter)
 	fb := database.TokenBalanceQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("poolprotocolid", account.PoolProtocolID),
-		fb.Eq("tokenindex", account.TokenIndex),
-		fb.Eq("key", account.Key),
+		fb.Eq("poolprotocolid", balance.PoolProtocolID),
+		fb.Eq("tokenindex", balance.TokenIndex),
+		fb.Eq("key", balance.Key),
 	)
-	accounts, res, err := s.GetTokenBalances(ctx, filter.Count(true))
+	balances, res, err := s.GetTokenBalances(ctx, filter.Count(true))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(accounts))
+	assert.Equal(t, 1, len(balances))
 	assert.Equal(t, int64(1), *res.TotalCount)
-	assert.Greater(t, accounts[0].Updated.UnixNano(), int64(0))
-	accounts[0].Updated = nil
-	accountReadJson, _ = json.Marshal(accounts[0])
-	assert.Equal(t, string(accountJson), string(accountReadJson))
+	assert.Greater(t, balances[0].Updated.UnixNano(), int64(0))
+	balances[0].Updated = nil
+	balanceReadJson, _ = json.Marshal(balances[0])
+	assert.Equal(t, string(balanceJson), string(balanceReadJson))
 
-	// Transfer half to a different account
+	// Transfer half to a different address
 	transfer.From = "0x0"
 	transfer.To = "0x1"
 	transfer.Amount = *fftypes.NewBigInt(5)
 	err = s.UpdateTokenBalances(ctx, transfer)
 	assert.NoError(t, err)
 
-	// Query back the token account (by pool ID and identity)
-	accountRead, err = s.GetTokenBalance(ctx, "F1", "1", "0x0")
+	// Query back the token balance (by pool ID and identity)
+	balanceRead, err = s.GetTokenBalance(ctx, "F1", "1", "0x0")
 	assert.NoError(t, err)
-	assert.NotNil(t, accountRead)
-	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
-	accountRead.Updated = nil
-	accountReadJson, _ = json.Marshal(&accountRead)
-	account.Balance = *fftypes.NewBigInt(5)
-	accountJson, _ = json.Marshal(&account)
-	assert.Equal(t, string(accountJson), string(accountReadJson))
+	assert.NotNil(t, balanceRead)
+	assert.Greater(t, balanceRead.Updated.UnixNano(), int64(0))
+	balanceRead.Updated = nil
+	balanceReadJson, _ = json.Marshal(&balanceRead)
+	balance.Balance = *fftypes.NewBigInt(5)
+	balanceJson, _ = json.Marshal(&balance)
+	assert.Equal(t, string(balanceJson), string(balanceReadJson))
 
-	// Query back the other token account (by pool ID and identity)
-	accountRead, err = s.GetTokenBalance(ctx, "F1", "1", "0x1")
+	// Query back the other token balance (by pool ID and identity)
+	balanceRead, err = s.GetTokenBalance(ctx, "F1", "1", "0x1")
 	assert.NoError(t, err)
-	assert.NotNil(t, accountRead)
-	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
-	accountRead.Updated = nil
-	accountReadJson, _ = json.Marshal(&accountRead)
-	account.Key = "0x1"
-	account.Balance = *fftypes.NewBigInt(5)
-	accountJson, _ = json.Marshal(&account)
-	assert.Equal(t, string(accountJson), string(accountReadJson))
+	assert.NotNil(t, balanceRead)
+	assert.Greater(t, balanceRead.Updated.UnixNano(), int64(0))
+	balanceRead.Updated = nil
+	balanceReadJson, _ = json.Marshal(&balanceRead)
+	balance.Key = "0x1"
+	balance.Balance = *fftypes.NewBigInt(5)
+	balanceJson, _ = json.Marshal(&balance)
+	assert.Equal(t, string(balanceJson), string(balanceReadJson))
+
+	// Query the list of unique accounts
+	fb2 := database.TokenBalanceQueryFactory.NewFilter(ctx)
+	accounts, fr, err := s.GetTokenAccounts(ctx, fb2.And().Count(true))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), *fr.TotalCount)
+	assert.Equal(t, 2, len(accounts))
+	assert.Equal(t, "0x1", accounts[0].Key)
+	assert.Equal(t, "0x0", accounts[1].Key)
 }
 
 func TestUpdateTokenBalancesFailBegin(t *testing.T) {
@@ -211,6 +220,31 @@ func TestGetTokenBalancesScanFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"poolprotocolid"}).AddRow("only one"))
 	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).Eq("poolprotocolid", "")
 	_, _, err := s.GetTokenBalances(context.Background(), f)
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTokenAccountsQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).And()
+	_, _, err := s.GetTokenAccounts(context.Background(), f)
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTokenAccountsBuildQueryFail(t *testing.T) {
+	s, _ := newMockProvider().init()
+	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).Eq("poolprotocolid", map[bool]bool{true: false})
+	_, _, err := s.GetTokenAccounts(context.Background(), f)
+	assert.Regexp(t, "FF10149.*id", err)
+}
+
+func TestGetTokenAccountsScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"key", "bad"}).AddRow("too many", "columns"))
+	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).And()
+	_, _, err := s.GetTokenAccounts(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
