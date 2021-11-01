@@ -51,6 +51,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	CreateTokenPool(suite.T(), suite.testState.client1, pool, false)
 
 	<-received1
+	<-received1
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
 	assert.Equal(suite.T(), "default", pools[0].Namespace)
@@ -59,6 +60,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
+	<-received2
 	<-received2
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
@@ -183,6 +185,8 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, poolOut.Type)
 	assert.NotEmpty(suite.T(), poolOut.ProtocolID)
 
+	<-received1
+	<-received2
 	<-received1
 	<-received2
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)

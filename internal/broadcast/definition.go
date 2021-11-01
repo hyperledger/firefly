@@ -24,34 +24,34 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
-	return bm.BroadcastDefinition(ctx, def, &fftypes.Identity{ /* resolve to node default */ }, tag, waitConfirm)
+func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+	return bm.BroadcastDefinition(ctx, ns, def, &fftypes.Identity{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	err = bm.identity.ResolveInputIdentity(ctx, signingIdentity)
 	if err != nil {
 		return nil, err
 	}
 
-	return bm.broadcastDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 
 func (bm *broadcastManager) BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	signingIdentity.Author = bm.identity.OrgDID(def)
 
-	return bm.broadcastDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+	return bm.broadcastDefinitionCommon(ctx, fftypes.SystemNamespace, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
 		Validator: fftypes.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
-		Namespace: fftypes.SystemNamespace,
+		Namespace: ns,
 		Created:   fftypes.Now(),
 	}
 	data.Value, err = json.Marshal(&def)
@@ -71,7 +71,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def f
 	in := &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Namespace: fftypes.SystemNamespace,
+				Namespace: ns,
 				Type:      fftypes.MessageTypeDefinition,
 				Identity:  *signingIdentity,
 				Topics:    fftypes.FFNameArray{def.Topic()},
@@ -87,7 +87,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def f
 	// Broadcast the message
 	sender := broadcastSender{
 		mgr:       bm,
-		namespace: fftypes.SystemNamespace,
+		namespace: ns,
 		msg:       in,
 		resolved:  true,
 	}

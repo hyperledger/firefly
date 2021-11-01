@@ -428,7 +428,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed
 	switch {
-	case msg.Header.Namespace == fftypes.SystemNamespace:
+	case msg.Header.Namespace == fftypes.SystemNamespace || msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the system events they depend on.
 		if valid, err = ag.syshandlers.HandleSystemBroadcast(ctx, msg, data); err != nil {
