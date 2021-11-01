@@ -48,4 +48,5 @@ var postTokenPoolByType = &oapispec.Route{
 		r.SuccessStatus = syncRetcode(waitConfirm)
 		return r.Or.Assets().CreateTokenPoolByType(r.Ctx, r.PP["ns"], r.PP["type"], r.Input.(*fftypes.TokenPool), waitConfirm)
 	},
+	Deprecated: true,
 }

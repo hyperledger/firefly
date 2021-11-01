@@ -49,4 +49,5 @@ var postTokenTransferByType = &oapispec.Route{
 		r.SuccessStatus = syncRetcode(waitConfirm)
 		return r.Or.Assets().TransferTokensByType(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
 	},
+	Deprecated: true,
 }

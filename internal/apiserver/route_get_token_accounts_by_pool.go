@@ -44,4 +44,5 @@ var getTokenAccountsByPool = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(r.Or.Assets().GetTokenBalancesByPool(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Filter))
 	},
+	Deprecated: true,
 }
