@@ -59,6 +59,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
+	poolProtocolID := pools[0].ProtocolID
+
 	<-received2
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
@@ -70,26 +72,27 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+		Pool:          poolName,
 	}
-	MintTokens(suite.T(), suite.testState.client1, poolName, transfer, false)
+	MintTokens(suite.T(), suite.testState.client1, transfer, false)
 
 	<-received1
-	transfers := GetTokenTransfers(suite.T(), suite.testState.client1, poolName)
+	transfers := GetTokenTransfers(suite.T(), suite.testState.client1, poolProtocolID)
 	assert.Equal(suite.T(), 1, len(transfers))
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client1, poolName, "", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client1, poolProtocolID, "", map[string]int64{
 		suite.testState.org1.Identity: 1,
 	})
 
 	<-received2
-	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolName)
+	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolProtocolID)
 	assert.Equal(suite.T(), 1, len(transfers))
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client2, poolName, "", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client2, poolProtocolID, "", map[string]int64{
 		suite.testState.org1.Identity: 1,
 	})
 
@@ -98,6 +101,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			To:     suite.testState.org2.Identity,
 			Amount: *fftypes.NewBigInt(1),
 		},
+		Pool: poolName,
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
@@ -106,11 +110,11 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			},
 		},
 	}
-	TransferTokens(suite.T(), suite.testState.client1, poolName, transfer, false)
+	TransferTokens(suite.T(), suite.testState.client1, transfer, false)
 
 	<-received1 // one event for transfer
 	<-received1 // one event for message
-	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolName)
+	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolProtocolID)
 	assert.Equal(suite.T(), 2, len(transfers))
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transfers[0].Type)
@@ -118,48 +122,49 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].MessageHash)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"payment for data"`, data[0].Value.String())
-	validateAccountBalances(suite.T(), suite.testState.client1, poolName, "", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client1, poolProtocolID, "", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 1,
 	})
 
 	<-received2 // one event for transfer
 	<-received2 // one event for message
-	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolName)
+	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolProtocolID)
 	assert.Equal(suite.T(), 2, len(transfers))
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client2, poolName, "", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client2, poolProtocolID, "", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 1,
 	})
 
 	transfer = &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+		Pool:          poolName,
 	}
-	BurnTokens(suite.T(), suite.testState.client2, poolName, transfer, false)
+	BurnTokens(suite.T(), suite.testState.client2, transfer, false)
 
 	<-received2
-	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolName)
+	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolProtocolID)
 	assert.Equal(suite.T(), 3, len(transfers))
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(suite.T(), "", transfers[0].TokenIndex)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client2, poolName, "", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client2, poolProtocolID, "", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 0,
 	})
 
 	<-received1
-	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolName)
+	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolProtocolID)
 	assert.Equal(suite.T(), 3, len(transfers))
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(suite.T(), "", transfers[0].TokenIndex)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client1, poolName, "", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client1, poolProtocolID, "", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 0,
 	})
@@ -185,6 +190,8 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, poolOut.Type)
 	assert.NotEmpty(suite.T(), poolOut.ProtocolID)
 
+	poolProtocolID := poolOut.ProtocolID
+
 	<-received1
 	<-received2
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
@@ -196,23 +203,24 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+		Pool:          poolName,
 	}
-	transferOut := MintTokens(suite.T(), suite.testState.client1, poolName, transfer, true)
+	transferOut := MintTokens(suite.T(), suite.testState.client1, transfer, true)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeMint, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client1, poolName, "1", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client1, poolProtocolID, "1", map[string]int64{
 		suite.testState.org1.Identity: 1,
 	})
 
 	<-received1
 	<-received2
-	transfers := GetTokenTransfers(suite.T(), suite.testState.client2, poolName)
+	transfers := GetTokenTransfers(suite.T(), suite.testState.client2, poolProtocolID)
 	assert.Equal(suite.T(), 1, len(transfers))
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(suite.T(), "1", transfers[0].TokenIndex)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client2, poolName, "1", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client2, poolProtocolID, "1", map[string]int64{
 		suite.testState.org1.Identity: 1,
 	})
 
@@ -222,6 +230,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			To:         suite.testState.org2.Identity,
 			Amount:     *fftypes.NewBigInt(1),
 		},
+		Pool: poolName,
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
@@ -230,14 +239,14 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			},
 		},
 	}
-	transferOut = TransferTokens(suite.T(), suite.testState.client1, poolName, transfer, true)
+	transferOut = TransferTokens(suite.T(), suite.testState.client1, transfer, true)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
 	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transferOut.MessageHash)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"ownership change"`, data[0].Value.String())
-	validateAccountBalances(suite.T(), suite.testState.client1, poolName, "1", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client1, poolProtocolID, "1", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 1,
 	})
@@ -246,12 +255,12 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	<-received1 // one event for message
 	<-received2 // one event for transfer
 	<-received2 // one event for message
-	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolName)
+	transfers = GetTokenTransfers(suite.T(), suite.testState.client2, poolProtocolID)
 	assert.Equal(suite.T(), 2, len(transfers))
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(suite.T(), "1", transfers[0].TokenIndex)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client2, poolName, "1", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client2, poolProtocolID, "1", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 1,
 	})
@@ -261,24 +270,25 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			TokenIndex: "1",
 			Amount:     *fftypes.NewBigInt(1),
 		},
+		Pool: poolName,
 	}
-	transferOut = BurnTokens(suite.T(), suite.testState.client2, poolName, transfer, true)
+	transferOut = BurnTokens(suite.T(), suite.testState.client2, transfer, true)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeBurn, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client2, poolName, "1", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client2, poolProtocolID, "1", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 0,
 	})
 
 	<-received2
 	<-received1
-	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolName)
+	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolProtocolID)
 	assert.Equal(suite.T(), 3, len(transfers))
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(suite.T(), "1", transfers[0].TokenIndex)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	validateAccountBalances(suite.T(), suite.testState.client1, poolName, "1", map[string]int64{
+	validateAccountBalances(suite.T(), suite.testState.client1, poolProtocolID, "1", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 0,
 	})
