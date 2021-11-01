@@ -43,4 +43,5 @@ var getTokenPoolsByType = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(r.Or.Assets().GetTokenPoolsByType(r.Ctx, r.PP["ns"], r.PP["type"], r.Filter))
 	},
+	Deprecated: true,
 }

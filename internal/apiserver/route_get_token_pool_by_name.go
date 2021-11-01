@@ -44,4 +44,5 @@ var getTokenPoolByName = &oapispec.Route{
 		output, err = r.Or.Assets().GetTokenPool(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"])
 		return output, err
 	},
+	Deprecated: true,
 }

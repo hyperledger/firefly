@@ -4128,6 +4128,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/{type}/pools:
     get:
+      deprecated: true
       description: 'TODO: Description'
       operationId: getTokenPoolsByType
       parameters:
@@ -4281,6 +4282,7 @@ paths:
         default:
           description: ""
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postTokenPoolByType
       parameters:
@@ -4404,6 +4406,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/{type}/pools/{name}:
     get:
+      deprecated: true
       description: 'TODO: Description'
       operationId: getTokenPoolByName
       parameters:
@@ -4473,6 +4476,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/{type}/pools/{name}/accounts:
     get:
+      deprecated: true
       description: 'TODO: Description'
       operationId: getTokenAccountsByPool
       parameters:
@@ -4597,6 +4601,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/{type}/pools/{name}/burn:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postTokenBurnByType
       parameters:
@@ -4817,6 +4822,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/{type}/pools/{name}/mint:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postTokenMintByType
       parameters:
@@ -5037,6 +5043,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/{type}/pools/{name}/transfers:
     get:
+      deprecated: true
       description: 'TODO: Description'
       operationId: getTokenTransfersByPool
       parameters:
@@ -5201,6 +5208,7 @@ paths:
         default:
           description: ""
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postTokenTransferByType
       parameters:

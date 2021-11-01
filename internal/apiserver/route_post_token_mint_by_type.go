@@ -49,4 +49,5 @@ var postTokenMintByType = &oapispec.Route{
 		r.SuccessStatus = syncRetcode(waitConfirm)
 		return r.Or.Assets().MintTokensByType(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
 	},
+	Deprecated: true,
 }

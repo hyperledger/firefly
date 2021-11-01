@@ -49,4 +49,5 @@ var postTokenBurnByType = &oapispec.Route{
 		r.SuccessStatus = syncRetcode(waitConfirm)
 		return r.Or.Assets().BurnTokensByType(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
 	},
+	Deprecated: true,
 }
