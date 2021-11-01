@@ -112,16 +112,16 @@ func (_m *Manager) CreateTokenPoolByType(ctx context.Context, ns string, connect
 	return r0, r1
 }
 
-// GetTokenAccounts provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+// GetTokenBalances provides a mock function with given fields: ctx, ns, filter
+func (_m *Manager) GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.TokenAccount
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.TokenAccount); ok {
+	var r0 []*fftypes.TokenBalance
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.TokenBalance); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenAccount)
+			r0 = ret.Get(0).([]*fftypes.TokenBalance)
 		}
 	}
 
@@ -144,16 +144,16 @@ func (_m *Manager) GetTokenAccounts(ctx context.Context, ns string, filter datab
 	return r0, r1, r2
 }
 
-// GetTokenAccountsByPool provides a mock function with given fields: ctx, ns, connector, poolName, filter
-func (_m *Manager) GetTokenAccountsByPool(ctx context.Context, ns string, connector string, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+// GetTokenBalancesByPool provides a mock function with given fields: ctx, ns, connector, poolName, filter
+func (_m *Manager) GetTokenBalancesByPool(ctx context.Context, ns string, connector string, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, connector, poolName, filter)
 
-	var r0 []*fftypes.TokenAccount
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, database.AndFilter) []*fftypes.TokenAccount); ok {
+	var r0 []*fftypes.TokenBalance
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, database.AndFilter) []*fftypes.TokenBalance); ok {
 		r0 = rf(ctx, ns, connector, poolName, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenAccount)
+			r0 = ret.Get(0).([]*fftypes.TokenBalance)
 		}
 	}
 

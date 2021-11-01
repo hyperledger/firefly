@@ -42,11 +42,14 @@ type Manager interface {
 	GetTokenPool(ctx context.Context, ns, connector, poolName string) (*fftypes.TokenPool, error)
 	GetTokenPoolByNameOrID(ctx context.Context, ns string, poolNameOrID string) (*fftypes.TokenPool, error)
 	ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error
-	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
-	GetTokenAccountsByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
+
+	GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error)
+	GetTokenBalancesByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error)
+
 	GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 	GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error)
 	GetTokenTransfersByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
+
 	NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender
 	MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
@@ -112,16 +115,16 @@ func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.A
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	return am.database.GetTokenAccounts(ctx, am.scopeNS(ns, filter))
+func (am *assetManager) GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
+	return am.database.GetTokenBalances(ctx, am.scopeNS(ns, filter))
 }
 
-func (am *assetManager) GetTokenAccountsByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+func (am *assetManager) GetTokenBalancesByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
 	pool, err := am.GetTokenPool(ctx, ns, connector, poolName)
 	if err != nil {
 		return nil, nil, err
 	}
-	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
+	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
 }
 
 func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error) {

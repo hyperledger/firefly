@@ -1293,16 +1293,16 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
-// GetTokenAccount provides a mock function with given fields: ctx, protocolID, tokenIndex, identity
-func (_m *Plugin) GetTokenAccount(ctx context.Context, protocolID string, tokenIndex string, identity string) (*fftypes.TokenAccount, error) {
+// GetTokenBalance provides a mock function with given fields: ctx, protocolID, tokenIndex, identity
+func (_m *Plugin) GetTokenBalance(ctx context.Context, protocolID string, tokenIndex string, identity string) (*fftypes.TokenBalance, error) {
 	ret := _m.Called(ctx, protocolID, tokenIndex, identity)
 
-	var r0 *fftypes.TokenAccount
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.TokenAccount); ok {
+	var r0 *fftypes.TokenBalance
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.TokenBalance); ok {
 		r0 = rf(ctx, protocolID, tokenIndex, identity)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenAccount)
+			r0 = ret.Get(0).(*fftypes.TokenBalance)
 		}
 	}
 
@@ -1316,16 +1316,16 @@ func (_m *Plugin) GetTokenAccount(ctx context.Context, protocolID string, tokenI
 	return r0, r1
 }
 
-// GetTokenAccounts provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+// GetTokenBalances provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetTokenBalances(ctx context.Context, filter database.Filter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.TokenAccount
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenAccount); ok {
+	var r0 []*fftypes.TokenBalance
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenBalance); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenAccount)
+			r0 = ret.Get(0).([]*fftypes.TokenBalance)
 		}
 	}
 
@@ -1844,8 +1844,8 @@ func (_m *Plugin) UpdateSubscription(ctx context.Context, ns string, name string
 	return r0
 }
 
-// UpdateTokenAccountBalances provides a mock function with given fields: ctx, transfer
-func (_m *Plugin) UpdateTokenAccountBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error {
+// UpdateTokenBalances provides a mock function with given fields: ctx, transfer
+func (_m *Plugin) UpdateTokenBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error {
 	ret := _m.Called(ctx, transfer)
 
 	var r0 error

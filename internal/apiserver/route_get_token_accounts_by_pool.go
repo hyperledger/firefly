@@ -36,12 +36,12 @@ var getTokenAccountsByPool = &oapispec.Route{
 		{Name: "name", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.TokenAccountQueryFactory,
+	FilterFactory:   database.TokenBalanceQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccount{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.TokenBalance{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenAccountsByPool(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Filter))
+		return filterResult(r.Or.Assets().GetTokenBalancesByPool(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Filter))
 	},
 }

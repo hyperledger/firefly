@@ -429,8 +429,8 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (tra
 	return transfers
 }
 
-func GetTokenAccount(t *testing.T, client *resty.Client, poolName, tokenIndex, key string) (account *fftypes.TokenAccount) {
-	var accounts []*fftypes.TokenAccount
+func GetTokenAccount(t *testing.T, client *resty.Client, poolName, tokenIndex, key string) (account *fftypes.TokenBalance) {
+	var accounts []*fftypes.TokenBalance
 	path := fmt.Sprintf(urlTokenAccounts, poolName)
 	resp, err := client.R().
 		SetQueryParam("tokenIndex", tokenIndex).

@@ -53,8 +53,8 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(3)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
-	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(nil).Once()
+	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
@@ -173,7 +173,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(messages, nil, nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -216,7 +216,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("UpdateTokenAccountBalances", em.ctx, transfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(messages, nil, nil).Times(2)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	mdi.On("UpsertMessage", em.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
