@@ -6431,6 +6431,11 @@ paths:
         schema:
           example: default
           type: string
+      - description: 'TODO: Description'
+        in: query
+        name: fromOrTo
+        schema:
+          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header
