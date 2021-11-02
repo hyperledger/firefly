@@ -193,7 +193,7 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter
 }
 
 func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("key").From("tokenbalance"), filter.Distinct(true), tokenBalanceFilterFieldMap, []interface{}{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("key").Distinct().From("tokenbalance"), filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
