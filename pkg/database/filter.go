@@ -46,9 +46,6 @@ type Filter interface {
 	// Request a count to be returned on the total number that match the query
 	Count(c bool) Filter
 
-	// Select distinct rows
-	Distinct(bool) Filter
-
 	// Finalize completes the filter, and for the plugin to validated output structure to convert
 	Finalize() (*FilterInfo, error)
 
@@ -159,7 +156,6 @@ type FilterInfo struct {
 	Skip     uint64
 	Limit    uint64
 	Count    bool
-	Distinct bool
 	Field    string
 	Op       FilterOp
 	Values   []FieldSerialization
@@ -235,9 +231,6 @@ func (f *FilterInfo) String() string {
 	if f.Count {
 		val.WriteString(" count=true")
 	}
-	if f.Distinct {
-		val.WriteString(" distinct=true")
-	}
 
 	return val.String()
 }
@@ -261,7 +254,6 @@ type filterBuilder struct {
 	count           bool
 	forceAscending  bool
 	forceDescending bool
-	distinct        bool
 }
 
 type baseFilter struct {
@@ -335,7 +327,6 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		Skip:     f.fb.skip,
 		Limit:    f.fb.limit,
 		Count:    f.fb.count,
-		Distinct: f.fb.distinct,
 	}, nil
 }
 
@@ -378,11 +369,6 @@ func (f *baseFilter) Ascending() Filter {
 
 func (f *baseFilter) Descending() Filter {
 	f.fb.forceDescending = true
-	return f
-}
-
-func (f *baseFilter) Distinct(d bool) Filter {
-	f.fb.distinct = true
 	return f
 }
 

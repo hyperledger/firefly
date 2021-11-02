@@ -79,14 +79,6 @@ func TestBuildMessageFilter3(t *testing.T) {
 	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( topics %= 'abc' ) && ( topics %! 'def' ) && ( topics ^= 'ghi' ) && ( topics ^! 'jkl' ) sort=-created,topics,-sequence", f.String())
 }
 
-func TestBuildMessageFilterDistinct(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background())
-	f, err := fb.And().Distinct(true).Finalize()
-
-	assert.NoError(t, err)
-	assert.Equal(t, " distinct=true", f.String())
-}
-
 func TestBuildMessageBadInFilterField(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.And(
