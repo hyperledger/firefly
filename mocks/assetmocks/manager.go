@@ -474,13 +474,13 @@ func (_m *Manager) MintTokensByType(ctx context.Context, ns string, connector st
 	return r0, r1
 }
 
-// NewTransfer provides a mock function with given fields: ns, connector, poolName, transfer
-func (_m *Manager) NewTransfer(ns string, connector string, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
-	ret := _m.Called(ns, connector, poolName, transfer)
+// NewTransfer provides a mock function with given fields: ns, transfer
+func (_m *Manager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
+	ret := _m.Called(ns, transfer)
 
 	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(string, string, string, *fftypes.TokenTransferInput) sysmessaging.MessageSender); ok {
-		r0 = rf(ns, connector, poolName, transfer)
+	if rf, ok := ret.Get(0).(func(string, *fftypes.TokenTransferInput) sysmessaging.MessageSender); ok {
+		r0 = rf(ns, transfer)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(sysmessaging.MessageSender)

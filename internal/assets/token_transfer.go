@@ -48,12 +48,10 @@ func (am *assetManager) GetTokenTransfersByPool(ctx context.Context, ns, connect
 	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
 }
 
-func (am *assetManager) NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
+func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
 	sender := &transferSender{
 		mgr:       am,
 		namespace: ns,
-		connector: connector,
-		poolName:  poolName,
 		transfer:  transfer,
 	}
 	sender.setDefaults()
@@ -63,8 +61,6 @@ func (am *assetManager) NewTransfer(ns, connector, poolName string, transfer *ff
 type transferSender struct {
 	mgr       *assetManager
 	namespace string
-	connector string
-	poolName  string
 	transfer  *fftypes.TokenTransferInput
 	resolved  bool
 }
@@ -96,39 +92,46 @@ func (s *transferSender) SendAndWait(ctx context.Context) error {
 
 func (s *transferSender) setDefaults() {
 	s.transfer.LocalID = fftypes.NewUUID()
-	s.transfer.Connector = s.connector
 }
 
-func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	connector := transfer.Connector
-	if connector == "" {
-		connector, err = am.getTokenConnectorName(ctx, ns)
+func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput) error {
+	if transfer.Connector == "" {
+		connector, err := am.getTokenConnectorName(ctx, ns)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		transfer.Connector = connector
 	}
-	poolName := transfer.Pool
-	if poolName == "" {
-		poolName, err = am.getTokenPoolName(ctx, ns)
+	if transfer.Pool == "" {
+		pool, err := am.getTokenPoolName(ctx, ns)
 		if err != nil {
-			return nil, err
+			return err
 		}
+		transfer.Pool = pool
 	}
-
-	transfer.Type = fftypes.TokenTransferTypeMint
 	if transfer.Key == "" {
 		org, err := am.identity.GetLocalOrganization(ctx)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		transfer.Key = org.Identity
 	}
-	transfer.From = ""
+	if transfer.From == "" {
+		transfer.From = transfer.Key
+	}
 	if transfer.To == "" {
 		transfer.To = transfer.Key
 	}
+	return nil
+}
 
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
+func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
+	transfer.Type = fftypes.TokenTransferTypeMint
+	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
+		return nil, err
+	}
+
+	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -138,58 +141,18 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 }
 
 func (am *assetManager) MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Type = fftypes.TokenTransferTypeMint
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
-	}
-	transfer.From = ""
-	if transfer.To == "" {
-		transfer.To = transfer.Key
-	}
-
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
-	if waitConfirm {
-		err = sender.SendAndWait(ctx)
-	} else {
-		err = sender.Send(ctx)
-	}
-	return &transfer.TokenTransfer, err
+	transfer.Connector = connector
+	transfer.Pool = poolName
+	return am.MintTokens(ctx, ns, transfer, waitConfirm)
 }
 
 func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	connector := transfer.Connector
-	if connector == "" {
-		connector, err = am.getTokenConnectorName(ctx, ns)
-		if err != nil {
-			return nil, err
-		}
-	}
-	poolName := transfer.Pool
-	if poolName == "" {
-		poolName, err = am.getTokenPoolName(ctx, ns)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	transfer.Type = fftypes.TokenTransferTypeBurn
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
+	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
+		return nil, err
 	}
-	if transfer.From == "" {
-		transfer.From = transfer.Key
-	}
-	transfer.To = ""
 
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
+	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -199,63 +162,21 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 }
 
 func (am *assetManager) BurnTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Type = fftypes.TokenTransferTypeBurn
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
-	}
-	if transfer.From == "" {
-		transfer.From = transfer.Key
-	}
-	transfer.To = ""
-
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
-	if waitConfirm {
-		err = sender.SendAndWait(ctx)
-	} else {
-		err = sender.Send(ctx)
-	}
-	return &transfer.TokenTransfer, err
+	transfer.Connector = connector
+	transfer.Pool = poolName
+	return am.BurnTokens(ctx, ns, transfer, waitConfirm)
 }
 
 func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	connector := transfer.Connector
-	if connector == "" {
-		connector, err = am.getTokenConnectorName(ctx, ns)
-		if err != nil {
-			return nil, err
-		}
-	}
-	poolName := transfer.Pool
-	if poolName == "" {
-		poolName, err = am.getTokenPoolName(ctx, ns)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	transfer.Type = fftypes.TokenTransferTypeTransfer
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
-	}
-	if transfer.From == "" {
-		transfer.From = transfer.Key
-	}
-	if transfer.To == "" {
-		transfer.To = transfer.Key
+	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
+		return nil, err
 	}
 	if transfer.From == transfer.To {
 		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
 
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
+	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -265,31 +186,9 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 }
 
 func (am *assetManager) TransferTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Type = fftypes.TokenTransferTypeTransfer
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
-	}
-	if transfer.From == "" {
-		transfer.From = transfer.Key
-	}
-	if transfer.To == "" {
-		transfer.To = transfer.Key
-	}
-	if transfer.From == transfer.To {
-		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
-	}
-
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
-	if waitConfirm {
-		err = sender.SendAndWait(ctx)
-	} else {
-		err = sender.Send(ctx)
-	}
-	return &transfer.TokenTransfer, err
+	transfer.Connector = connector
+	transfer.Pool = poolName
+	return am.TransferTokens(ctx, ns, transfer, waitConfirm)
 }
 
 func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
@@ -336,7 +235,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return err
 	}
 
-	plugin, err := s.mgr.selectTokenPlugin(ctx, s.connector)
+	plugin, err := s.mgr.selectTokenPlugin(ctx, s.transfer.Connector)
 	if err != nil {
 		return err
 	}
@@ -371,7 +270,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err = s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)
+		pool, err = s.mgr.GetTokenPool(ctx, s.namespace, s.transfer.Connector, s.transfer.Pool)
 		if err != nil {
 			return err
 		}
