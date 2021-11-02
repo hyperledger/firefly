@@ -231,13 +231,13 @@ func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: tk, transfer, protocolTxID, additionalInfo
-func (_m *EventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, transfer, protocolTxID, additionalInfo)
+// TokensTransferred provides a mock function with given fields: tk, poolProtocolID, transfer, protocolTxID, additionalInfo
+func (_m *EventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(tk, poolProtocolID, transfer, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, transfer, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
+		r0 = rf(tk, poolProtocolID, transfer, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

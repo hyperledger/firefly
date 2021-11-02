@@ -23,10 +23,11 @@ import (
 )
 
 func TestTokenBalanceIdentifier(t *testing.T) {
+	id := NewUUID()
 	balance := &TokenBalance{
-		PoolProtocolID: "123",
-		TokenIndex:     "1",
-		Key:            "0x00",
+		Pool:       id,
+		TokenIndex: "1",
+		Key:        "0x00",
 	}
-	assert.Equal(t, "123:1:0x00", balance.Identifier())
+	assert.Equal(t, id.String()+":1:0x00", balance.Identifier())
 }

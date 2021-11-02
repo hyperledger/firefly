@@ -243,15 +243,14 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	}
 
 	transfer := &fftypes.TokenTransfer{
-		Type:           t,
-		PoolProtocolID: poolProtocolID,
-		TokenIndex:     tokenIndex,
-		Connector:      ft.configuredName,
-		From:           fromAddress,
-		To:             toAddress,
-		ProtocolID:     txHash,
-		Key:            operatorAddress,
-		MessageHash:    &messageHash,
+		Type:        t,
+		TokenIndex:  tokenIndex,
+		Connector:   ft.configuredName,
+		From:        fromAddress,
+		To:          toAddress,
+		ProtocolID:  txHash,
+		Key:         operatorAddress,
+		MessageHash: &messageHash,
 		TX: fftypes.TransactionRef{
 			ID:   txID,
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -265,7 +264,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokensTransferred(ft, transfer, txHash, tx)
+	return ft.callbacks.TokensTransferred(ft, poolProtocolID, transfer, txHash, tx)
 }
 
 func (ft *FFTokens) eventLoop() {
@@ -339,10 +338,10 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UU
 	return nil
 }
 
-func (ft *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error {
+func (ft *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error {
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
-			PoolID:     mint.PoolProtocolID,
+			PoolID:     poolProtocolID,
 			To:         mint.To,
 			Amount:     mint.Amount.Int().String(),
 			RequestID:  operationID.String(),
@@ -355,10 +354,10 @@ func (ft *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, m
 	return nil
 }
 
-func (ft *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error {
+func (ft *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error {
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&burnTokens{
-			PoolID:     burn.PoolProtocolID,
+			PoolID:     poolProtocolID,
 			TokenIndex: burn.TokenIndex,
 			From:       burn.From,
 			Amount:     burn.Amount.Int().String(),
@@ -372,10 +371,10 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, b
 	return nil
 }
 
-func (ft *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID, transfer *fftypes.TokenTransfer) error {
+func (ft *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error {
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&transferTokens{
-			PoolID:     transfer.PoolProtocolID,
+			PoolID:     poolProtocolID,
 			TokenIndex: transfer.TokenIndex,
 			From:       transfer.From,
 			To:         transfer.To,

@@ -36,16 +36,16 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 
 	// Create a new token transfer entry
 	transfer := &fftypes.TokenTransfer{
-		LocalID:        fftypes.NewUUID(),
-		Type:           fftypes.TokenTransferTypeTransfer,
-		PoolProtocolID: "F1",
-		TokenIndex:     "1",
-		Connector:      "erc1155",
-		Namespace:      "ns1",
-		From:           "0x01",
-		To:             "0x02",
-		ProtocolID:     "12345",
-		MessageHash:    fftypes.NewRandB32(),
+		LocalID:     fftypes.NewUUID(),
+		Type:        fftypes.TokenTransferTypeTransfer,
+		Pool:        fftypes.NewUUID(),
+		TokenIndex:  "1",
+		Connector:   "erc1155",
+		Namespace:   "ns1",
+		From:        "0x01",
+		To:          "0x02",
+		ProtocolID:  "12345",
+		MessageHash: fftypes.NewRandB32(),
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenTransfer,
 			ID:   fftypes.NewUUID(),
@@ -74,7 +74,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	// Query back the token transfer (by query filter)
 	fb := database.TokenTransferQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("poolprotocolid", transfer.PoolProtocolID),
+		fb.Eq("pool", transfer.Pool),
 		fb.Eq("tokenindex", transfer.TokenIndex),
 		fb.Eq("from", transfer.From),
 		fb.Eq("to", transfer.To),

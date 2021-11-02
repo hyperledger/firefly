@@ -46,13 +46,13 @@ func TestGetTokenTransfersFromOrTo(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/transfers?poolprotocolid=F1&fromOrTo=0x1", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/transfers?fromOrTo=0x1", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
 	mam.On("GetTokenTransfers", mock.Anything, "ns1", mock.MatchedBy(func(filter database.AndFilter) bool {
 		info, _ := filter.Finalize()
-		return info.String() == "( poolprotocolid == 'F1' ) && ( ( from == '0x1' ) || ( to == '0x1' ) )"
+		return info.String() == "( ( from == '0x1' ) || ( to == '0x1' ) )"
 	})).Return([]*fftypes.TokenTransfer{}, nil, nil)
 	r.ServeHTTP(res, req)
 

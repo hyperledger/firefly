@@ -128,7 +128,7 @@ func (am *assetManager) GetTokenBalancesByPool(ctx context.Context, ns, connecto
 	if err != nil {
 		return nil, nil, err
 	}
-	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
+	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
 }
 
 func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {

@@ -45,7 +45,7 @@ func (am *assetManager) GetTokenTransfersByPool(ctx context.Context, ns, connect
 	if err != nil {
 		return nil, nil, err
 	}
-	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
+	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
 }
 
 func (am *assetManager) NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
@@ -369,12 +369,12 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		fftypes.OpStatusPending)
 	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
 
+	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err := s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)
+		pool, err = s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)
 		if err != nil {
 			return err
 		}
-		s.transfer.PoolProtocolID = pool.ProtocolID
 
 		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 		if err != nil {
@@ -395,11 +395,11 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	switch s.transfer.Type {
 	case fftypes.TokenTransferTypeMint:
-		return plugin.MintTokens(ctx, op.ID, &s.transfer.TokenTransfer)
+		return plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeTransfer:
-		return plugin.TransferTokens(ctx, op.ID, &s.transfer.TokenTransfer)
+		return plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeBurn:
-		return plugin.BurnTokens(ctx, op.ID, &s.transfer.TokenTransfer)
+		return plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	default:
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}

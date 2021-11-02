@@ -29,7 +29,7 @@ import (
 
 var (
 	tokenBalanceColumns = []string{
-		"pool_protocol_id",
+		"pool_id",
 		"token_index",
 		"connector",
 		"namespace",
@@ -38,13 +38,13 @@ var (
 		"updated",
 	}
 	tokenBalanceFilterFieldMap = map[string]string{
-		"poolprotocolid": "pool_protocol_id",
-		"tokenindex":     "token_index",
+		"pool":       "pool_id",
+		"tokenindex": "token_index",
 	}
 )
 
 func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer *fftypes.TokenTransfer, key string, negate bool) error {
-	account, err := s.GetTokenBalance(ctx, transfer.PoolProtocolID, transfer.TokenIndex, key)
+	account, err := s.GetTokenBalance(ctx, transfer.Pool, transfer.TokenIndex, key)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 				Set("balance", balance).
 				Set("updated", fftypes.Now()).
 				Where(sq.And{
-					sq.Eq{"pool_protocol_id": account.PoolProtocolID},
+					sq.Eq{"pool_id": account.Pool},
 					sq.Eq{"token_index": account.TokenIndex},
 					sq.Eq{"key": account.Key},
 				}),
@@ -80,7 +80,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 			sq.Insert("tokenbalance").
 				Columns(tokenBalanceColumns...).
 				Values(
-					transfer.PoolProtocolID,
+					transfer.Pool,
 					transfer.TokenIndex,
 					transfer.Connector,
 					transfer.Namespace,
@@ -121,7 +121,7 @@ func (s *SQLCommon) UpdateTokenBalances(ctx context.Context, transfer *fftypes.T
 func (s *SQLCommon) tokenBalanceResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenBalance, error) {
 	account := fftypes.TokenBalance{}
 	err := row.Scan(
-		&account.PoolProtocolID,
+		&account.Pool,
 		&account.TokenIndex,
 		&account.Connector,
 		&account.Namespace,
@@ -159,10 +159,10 @@ func (s *SQLCommon) getTokenBalancePred(ctx context.Context, desc string, pred i
 	return account, nil
 }
 
-func (s *SQLCommon) GetTokenBalance(ctx context.Context, protocolID, tokenIndex, key string) (message *fftypes.TokenBalance, err error) {
-	desc := fftypes.TokenBalanceIdentifier(protocolID, tokenIndex, key)
+func (s *SQLCommon) GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex, key string) (message *fftypes.TokenBalance, err error) {
+	desc := fftypes.TokenBalanceIdentifier(poolID, tokenIndex, key)
 	return s.getTokenBalancePred(ctx, desc, sq.And{
-		sq.Eq{"pool_protocol_id": protocolID},
+		sq.Eq{"pool_id": poolID},
 		sq.Eq{"token_index": tokenIndex},
 		sq.Eq{"key": key},
 	})

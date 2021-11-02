@@ -81,21 +81,22 @@ func (em *eventManager) getMessageForTransfer(ctx context.Context, transfer *fft
 	return messages[0], nil
 }
 
-func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	var batchID *fftypes.UUID
 
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// Check that this is from a known pool
-			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.PoolProtocolID)
+			pool, err := em.database.GetTokenPoolByProtocolID(ctx, poolProtocolID)
 			if err != nil {
 				return err
 			}
 			if pool == nil {
-				log.L(ctx).Warnf("Token transfer received for unknown pool '%s' - ignoring: %s", transfer.PoolProtocolID, protocolTxID)
+				log.L(ctx).Infof("Token transfer received for unknown pool '%s' - ignoring: %s", poolProtocolID, protocolTxID)
 				return nil
 			}
 			transfer.Namespace = pool.Namespace
+			transfer.Pool = pool.ID
 
 			if transfer.TX.ID != nil {
 				if err := em.loadTransferOperation(ctx, transfer); err != nil {
