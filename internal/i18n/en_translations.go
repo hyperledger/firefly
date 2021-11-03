@@ -210,4 +210,5 @@ var (
 	MsgWSClosed                    = ffm("FF10290", "Websocket closed")
 	MsgTokenTransferFailed         = ffm("FF10291", "Token transfer with ID '%s' failed. Please check the FireFly logs for more information")
 	MsgFieldNotSpecified           = ffm("FF10292", "Field '%s' must be specified", 400)
+	MsgContractDefinitionExists    = ffm("FF10293", "A contract definition already exists in the namespace: '%s' with name: '%s' and version: '%s'")
 )

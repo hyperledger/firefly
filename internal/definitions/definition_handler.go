@@ -91,6 +91,8 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 		return dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
+	case fftypes.SystemTagDefineContract:
+		return dh.handleContractDefinitionBroadcast(ctx, msg, data)
 	default:
 		l.Debugf("Unknown topic '%s' for system broadcast or definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 	}

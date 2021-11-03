@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
@@ -118,6 +119,11 @@ type Orchestrator interface {
 
 	// Message Routing
 	RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
+
+	// Custom smart contracts
+	AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (output *fftypes.ContractDefinition, err error)
+	GetContractDefinitionByID(ctx context.Context, id string) (output *fftypes.ContractDefinition, err error)
+	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.ContractDefinition, err error)
 }
 
 type orchestrator struct {
@@ -143,6 +149,7 @@ type orchestrator struct {
 	tokens         map[string]tokens.Plugin
 	bc             boundCallbacks
 	preInitMode    bool
+	contracts      *contracts.ContractManager
 }
 
 func NewOrchestrator() Orchestrator {
@@ -431,6 +438,8 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	or.syncasync.Init(or.events)
 
+	or.contracts = contracts.NewContractManager(or.database, or.publicstorage, or.broadcast, or.identity)
+
 	return nil
 }
 
@@ -500,4 +509,16 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (or *orchestrator) AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (output *fftypes.ContractDefinition, err error) {
+	return or.contracts.AddContractDefinition(ctx, ns, cd, waitConfirm)
+}
+
+func (or *orchestrator) GetContractDefinitionByID(ctx context.Context, id string) (output *fftypes.ContractDefinition, err error) {
+	return or.contracts.GetContractDefinitionByID(ctx, id)
+}
+
+func (or *orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.ContractDefinition, err error) {
+	return or.contracts.GetContractDefinitionByNameAndVersion(ctx, ns, name, version)
 }

@@ -391,13 +391,20 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
-// PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
+type iContractCollection interface {
+	// InsertContractDefinition - inserts a new contract definition. Must be unique for namespace, name, version
+	InsertContractDefinition(ctx context.Context, cd *fftypes.ContractDefinition) error
+	GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error)
+	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.ContractDefinition, error)
+}
+
+// PersistenceInterface are the operations that must be implemented by a database interface plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
 // while not trying to become the core database of the application (where full deeply nested
 // rich query is needed).
 //
-// This means that we treat business data as opaque within the stroage, only verifying it against
+// This means that we treat business data as opaque within the storage, only verifying it against
 // a data definition within the Firefly core runtime itself.
 // The data types, indexes and relationships are designed to be simple, and map closely to the
 // REST semantics of the Firefly API itself.
@@ -447,6 +454,7 @@ type PeristenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
+	iContractCollection
 }
 
 // CollectionName represents all collections
@@ -483,10 +491,11 @@ const (
 	CollectionSubscriptions UUIDCollectionNS = "subscriptions"
 	CollectionTransactions  UUIDCollectionNS = "transactions"
 	CollectionTokenPools    UUIDCollectionNS = "tokenpools"
+	CollectionContracts     UUIDCollectionNS = "contracts"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can
-// by identifed by any member of the network at any time, without it first having
+// by identified by any member of the network at any time, without it first having
 // been broadcast.
 type HashCollectionNS CollectionName
 

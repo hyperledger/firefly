@@ -28,6 +28,29 @@ type Orchestrator struct {
 	mock.Mock
 }
 
+// AddContractDefinition provides a mock function with given fields: ctx, ns, cd, waitConfirm
+func (_m *Orchestrator) AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (*fftypes.ContractDefinition, error) {
+	ret := _m.Called(ctx, ns, cd, waitConfirm)
+
+	var r0 *fftypes.ContractDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractDefinition, bool) *fftypes.ContractDefinition); ok {
+		r0 = rf(ctx, ns, cd, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractDefinition, bool) error); ok {
+		r1 = rf(ctx, ns, cd, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Assets provides a mock function with given fields:
 func (_m *Orchestrator) Assets() assets.Manager {
 	ret := _m.Called()
@@ -290,6 +313,52 @@ func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.An
 	}
 
 	return r0, r1, r2
+}
+
+// GetContractDefinitionByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.ContractDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractDefinition); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractDefinitionByNameAndVersion provides a mock function with given fields: ctx, ns, name, version
+func (_m *Orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.ContractDefinition, error) {
+	ret := _m.Called(ctx, ns, name, version)
+
+	var r0 *fftypes.ContractDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.ContractDefinition); ok {
+		r0 = rf(ctx, ns, name, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, ns, name, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetData provides a mock function with given fields: ctx, ns, filter

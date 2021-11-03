@@ -97,4 +97,7 @@ var routes = []*oapispec.Route{
 	postTokenTransfer,
 	postTokenTransferByType,
 	getTokenConnectors,
+
+	postNewContractDefinition,
+	getContractDefinition,
 }

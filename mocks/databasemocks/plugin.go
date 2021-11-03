@@ -312,6 +312,52 @@ func (_m *Plugin) GetConfigRecords(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
+// GetContractDefinitionByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.ContractDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractDefinition); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractDefinitionByNameAndVersion provides a mock function with given fields: ctx, ns, name, version
+func (_m *Plugin) GetContractDefinitionByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.ContractDefinition, error) {
+	ret := _m.Called(ctx, ns, name, version)
+
+	var r0 *fftypes.ContractDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.ContractDefinition); ok {
+		r0 = rf(ctx, ns, name, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, ns, name, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetData provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftypes.Data, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -1649,6 +1695,20 @@ func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Blob) error); ok {
 		r0 = rf(ctx, blob)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertContractDefinition provides a mock function with given fields: ctx, cd
+func (_m *Plugin) InsertContractDefinition(ctx context.Context, cd *fftypes.ContractDefinition) error {
+	ret := _m.Called(ctx, cd)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractDefinition) error); ok {
+		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)
 	}

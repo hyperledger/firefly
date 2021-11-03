@@ -1,0 +1,1 @@
+drop table contract_definitions
