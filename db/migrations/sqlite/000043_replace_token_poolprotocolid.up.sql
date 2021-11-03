@@ -15,5 +15,5 @@ UPDATE tokentransfer SET pool_id = pool.id
 ALTER TABLE tokenbalance DROP COLUMN pool_protocol_id;
 ALTER TABLE tokentransfer DROP COLUMN pool_protocol_id;
 
-CREATE UNIQUE INDEX tokenbalance_pool ON tokenbalance(pool_id,token_index,key);
+CREATE UNIQUE INDEX tokenbalance_pool ON tokenbalance(key,pool_id,token_index);
 CREATE INDEX tokentransfer_pool ON tokentransfer(pool_id,token_index);
