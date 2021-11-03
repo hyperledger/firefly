@@ -34,8 +34,11 @@ func (t *TokenBalance) Identifier() string {
 	return TokenBalanceIdentifier(t.Pool, t.TokenIndex, t.Key)
 }
 
-// Currently this type is just a filtered view of TokenBalance.
-// If more fields/aggregation become needed, this may need its own table in the database.
+// Currently these types are just filtered views of TokenBalance.
+// If more fields/aggregation become needed, they might merit a new table in the database.
 type TokenAccount struct {
 	Key string `json:"key,omitempty"`
+}
+type TokenAccountPool struct {
+	Pool *UUID `json:"pool,omitempty"`
 }

@@ -375,6 +375,9 @@ type iTokenBalanceCollection interface {
 
 	// GetTokenAccounts - Get token accounts (all distinct addresses that have a balance)
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
+
+	// GetTokenAccountPools - Get the list of pools referenced by a given account
+	GetTokenAccountPools(ctx context.Context, key string, filter Filter) ([]*fftypes.TokenAccountPool, *FilterResult, error)
 }
 
 type iTokenTransferCollection interface {

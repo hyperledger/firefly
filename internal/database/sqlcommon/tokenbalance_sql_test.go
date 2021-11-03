@@ -112,13 +112,21 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(balanceJson), string(balanceReadJson))
 
 	// Query the list of unique accounts
-	fb2 := database.TokenBalanceQueryFactory.NewFilter(ctx)
-	accounts, fr, err := s.GetTokenAccounts(ctx, fb2.And().Count(true))
+	accounts, _, err := s.GetTokenAccounts(ctx, fb.And())
 	assert.NoError(t, err)
-	assert.Equal(t, int64(2), *fr.TotalCount)
 	assert.Equal(t, 2, len(accounts))
 	assert.Equal(t, "0x1", accounts[0].Key)
 	assert.Equal(t, "0x0", accounts[1].Key)
+
+	// Query the pools for each account
+	pools, _, err := s.GetTokenAccountPools(ctx, "0x0", fb.And())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(pools))
+	assert.Equal(t, *transfer.Pool, *pools[0].Pool)
+	pools, _, err = s.GetTokenAccountPools(ctx, "0x1", fb.And())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(pools))
+	assert.Equal(t, *transfer.Pool, *pools[0].Pool)
 }
 
 func TestUpdateTokenBalancesFailBegin(t *testing.T) {
@@ -245,6 +253,31 @@ func TestGetTokenAccountsScanFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"key", "bad"}).AddRow("too many", "columns"))
 	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).And()
 	_, _, err := s.GetTokenAccounts(context.Background(), f)
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTokenAccountPoolsQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).And()
+	_, _, err := s.GetTokenAccountPools(context.Background(), "0x1", f)
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTokenAccountPoolsBuildQueryFail(t *testing.T) {
+	s, _ := newMockProvider().init()
+	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).Eq("pool", map[bool]bool{true: false})
+	_, _, err := s.GetTokenAccountPools(context.Background(), "0x1", f)
+	assert.Regexp(t, "FF10149.*pool", err)
+}
+
+func TestGetTokenAccountPoolsScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"key", "bad"}).AddRow("too many", "columns"))
+	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).And()
+	_, _, err := s.GetTokenAccountPools(context.Background(), "0x1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

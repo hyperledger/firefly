@@ -193,7 +193,9 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter
 }
 
 func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("key").Distinct().From("tokenbalance"), filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "",
+		sq.Select("key").Distinct().From("tokenbalance"),
+		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -207,12 +209,37 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 	var accounts []*fftypes.TokenAccount
 	for rows.Next() {
 		var account fftypes.TokenAccount
-		err := rows.Scan(&account.Key)
-		if err != nil {
+		if err := rows.Scan(&account.Key); err != nil {
 			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
 		}
 		accounts = append(accounts, &account)
 	}
 
 	return accounts, s.queryRes(ctx, tx, "tokenbalance", fop, fi), err
+}
+
+func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error) {
+	query, fop, fi, err := s.filterSelect(ctx, "",
+		sq.Select("pool_id").Distinct().From("tokenbalance").Where(sq.Eq{"key": key}),
+		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, tx, err := s.query(ctx, query)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var pools []*fftypes.TokenAccountPool
+	for rows.Next() {
+		var pool fftypes.TokenAccountPool
+		if err := rows.Scan(&pool.Pool); err != nil {
+			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
+		}
+		pools = append(pools, &pool)
+	}
+
+	return pools, s.queryRes(ctx, tx, "tokenbalance", fop, fi), err
 }
