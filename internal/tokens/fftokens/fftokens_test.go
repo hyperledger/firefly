@@ -109,6 +109,7 @@ func TestCreateTokenPool(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "new-pool",
 		Type:      "fungible",
+		Key:       "0x123",
 		Config: fftypes.JSONObject{
 			"foo": "bar",
 		},
@@ -122,6 +123,7 @@ func TestCreateTokenPool(t *testing.T) {
 			assert.Equal(t, fftypes.JSONObject{
 				"requestId":  opID.String(),
 				"trackingId": pool.TX.ID.String(),
+				"operator":   "0x123",
 				"type":       "fungible",
 				"config": map[string]interface{}{
 					"foo": "bar",
@@ -168,12 +170,13 @@ func TestMintTokens(t *testing.T) {
 	mint := &fftypes.TokenTransfer{
 		LocalID: fftypes.NewUUID(),
 		To:      "user1",
+		Key:     "0x123",
+		Amount:  *fftypes.NewBigInt(10),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
 	}
-	mint.Amount.Int().SetInt64(10)
 	opID := fftypes.NewUUID()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
@@ -185,6 +188,7 @@ func TestMintTokens(t *testing.T) {
 				"poolId":     "123",
 				"to":         "user1",
 				"amount":     "10",
+				"operator":   "0x123",
 				"requestId":  opID.String(),
 				"trackingId": mint.TX.ID.String(),
 			}, body)
@@ -224,12 +228,13 @@ func TestBurnTokens(t *testing.T) {
 		LocalID:    fftypes.NewUUID(),
 		TokenIndex: "1",
 		From:       "user1",
+		Key:        "0x123",
+		Amount:     *fftypes.NewBigInt(10),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
 	}
-	burn.Amount.Int().SetInt64(10)
 	opID := fftypes.NewUUID()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
@@ -242,6 +247,7 @@ func TestBurnTokens(t *testing.T) {
 				"tokenIndex": "1",
 				"from":       "user1",
 				"amount":     "10",
+				"operator":   "0x123",
 				"requestId":  opID.String(),
 				"trackingId": burn.TX.ID.String(),
 			}, body)
@@ -282,12 +288,13 @@ func TestTransferTokens(t *testing.T) {
 		TokenIndex: "1",
 		From:       "user1",
 		To:         "user2",
+		Key:        "0x123",
+		Amount:     *fftypes.NewBigInt(10),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
 	}
-	transfer.Amount.Int().SetInt64(10)
 	opID := fftypes.NewUUID()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
@@ -301,6 +308,7 @@ func TestTransferTokens(t *testing.T) {
 				"from":       "user1",
 				"to":         "user2",
 				"amount":     "10",
+				"operator":   "0x123",
 				"requestId":  opID.String(),
 				"trackingId": transfer.TX.ID.String(),
 			}, body)

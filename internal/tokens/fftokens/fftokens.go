@@ -60,6 +60,7 @@ type createPool struct {
 	Type       fftypes.TokenType  `json:"type"`
 	RequestID  string             `json:"requestId"`
 	TrackingID string             `json:"trackingId"`
+	Operator   string             `json:"operator"`
 	Config     fftypes.JSONObject `json:"config"`
 }
 
@@ -69,6 +70,8 @@ type mintTokens struct {
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
 	TrackingID string `json:"trackingId"`
+	Operator   string `json:"operator"`
+	Data       string `json:"data,omitempty"`
 }
 
 type burnTokens struct {
@@ -78,6 +81,8 @@ type burnTokens struct {
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
 	TrackingID string `json:"trackingId"`
+	Operator   string `json:"operator"`
+	Data       string `json:"data,omitempty"`
 }
 
 type transferTokens struct {
@@ -88,6 +93,7 @@ type transferTokens struct {
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
 	TrackingID string `json:"trackingId"`
+	Operator   string `json:"operator"`
 	Data       string `json:"data,omitempty"`
 }
 
@@ -329,6 +335,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UU
 			Type:       pool.Type,
 			RequestID:  operationID.String(),
 			TrackingID: pool.TX.ID.String(),
+			Operator:   pool.Key,
 			Config:     pool.Config,
 		}).
 		Post("/api/v1/pool")
@@ -346,6 +353,8 @@ func (ft *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, p
 			Amount:     mint.Amount.Int().String(),
 			RequestID:  operationID.String(),
 			TrackingID: mint.TX.ID.String(),
+			Operator:   mint.Key,
+			Data:       mint.MessageHash.String(),
 		}).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
@@ -363,6 +372,8 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, p
 			Amount:     burn.Amount.Int().String(),
 			RequestID:  operationID.String(),
 			TrackingID: burn.TX.ID.String(),
+			Operator:   burn.Key,
+			Data:       burn.MessageHash.String(),
 		}).
 		Post("/api/v1/burn")
 	if err != nil || !res.IsSuccess() {
@@ -381,6 +392,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUI
 			Amount:     transfer.Amount.Int().String(),
 			RequestID:  operationID.String(),
 			TrackingID: transfer.TX.ID.String(),
+			Operator:   transfer.Key,
 			Data:       transfer.MessageHash.String(),
 		}).
 		Post("/api/v1/transfer")
