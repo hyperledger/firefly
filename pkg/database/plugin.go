@@ -394,6 +394,7 @@ type iTokenTransferCollection interface {
 type iContractCollection interface {
 	// InsertContractDefinition - inserts a new contract definition. Must be unique for namespace, name, version
 	InsertContractDefinition(ctx context.Context, cd *fftypes.ContractDefinition) error
+	GetContractDefinitions(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractDefinition, *FilterResult, error)
 	GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error)
 	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.ContractDefinition, error)
 }
@@ -806,4 +807,12 @@ var TokenTransferQueryFactory = &queryFields{
 	"protocolid":  &StringField{},
 	"messagehash": &Bytes32Field{},
 	"created":     &TimeField{},
+}
+
+// ContractDefinition filter fields for contract definitions
+var ContractDefinitionQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"version":   &StringField{},
 }

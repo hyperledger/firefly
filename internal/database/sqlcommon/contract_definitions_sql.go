@@ -38,10 +38,7 @@ var (
 		"ffabi",
 		"onchain_location",
 	}
-	// contractDefinitionsFilterFieldMap = map[string]string{
-	// 	"onchain_location": "onchain_location",
-	// 	"data_id":          "data_id",
-	// }
+	contractDefinitionsFilterFieldMap = map[string]string{}
 )
 
 func (s *SQLCommon) InsertContractDefinition(ctx context.Context, cd *fftypes.ContractDefinition) (err error) {
@@ -152,6 +149,32 @@ func (s *SQLCommon) getContractPred(ctx context.Context, desc string, pred inter
 	}
 
 	return cd, nil
+}
+
+func (s *SQLCommon) GetContractDefinitions(ctx context.Context, ns string, filter database.Filter) (contractDefinitions []*fftypes.ContractDefinition, res *database.FilterResult, err error) {
+
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractDefinitionsColumns...).From("contract_definitions").Where(sq.Eq{"namespace": ns}), filter, contractDefinitionsFilterFieldMap, []interface{}{"sequence"})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, tx, err := s.query(ctx, query)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	cds := []*fftypes.ContractDefinition{}
+	for rows.Next() {
+		cd, err := s.contractDefinitionResult(ctx, rows)
+		if err != nil {
+			return nil, nil, err
+		}
+		cds = append(cds, cd)
+	}
+
+	return cds, s.queryRes(ctx, tx, "contract_definitions", fop, fi), err
+
 }
 
 func (s *SQLCommon) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error) {

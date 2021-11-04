@@ -25,13 +25,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractDefinition = &oapispec.Route{
-	Name:   "getContractDefinition",
-	Path:   "namespaces/{ns}/contracts/definitions/{definitionId}",
+var getContractDefinitionNameVersion = &oapispec.Route{
+	Name:   "getContractDefinitionByNameAndVersion",
+	Path:   "namespaces/{ns}/contracts/definitions/{name}/{version}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "definitionId", Example: "definitionId", Description: i18n.MsgTBD},
+		{Name: "name", Example: "name", Description: i18n.MsgTBD},
+		{Name: "version", Example: "version", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -41,6 +42,6 @@ var getContractDefinition = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.ContractDefinition{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.GetContractDefinitionByID(r.Ctx, r.PP["definitionId"])
+		return r.Or.GetContractDefinitionByNameAndVersion(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
 	},
 }

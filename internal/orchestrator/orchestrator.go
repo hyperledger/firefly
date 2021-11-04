@@ -122,6 +122,7 @@ type Orchestrator interface {
 
 	// Custom smart contracts
 	AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (output *fftypes.ContractDefinition, err error)
+	GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractDefinition, *database.FilterResult, error)
 	GetContractDefinitionByID(ctx context.Context, id string) (output *fftypes.ContractDefinition, err error)
 	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.ContractDefinition, err error)
 }
@@ -513,6 +514,10 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 
 func (or *orchestrator) AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (output *fftypes.ContractDefinition, err error) {
 	return or.contracts.AddContractDefinition(ctx, ns, cd, waitConfirm)
+}
+
+func (or *orchestrator) GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractDefinition, res *database.FilterResult, err error) {
+	return or.contracts.GetContractDefinitions(ctx, ns, filter)
 }
 
 func (or *orchestrator) GetContractDefinitionByID(ctx context.Context, id string) (output *fftypes.ContractDefinition, err error) {

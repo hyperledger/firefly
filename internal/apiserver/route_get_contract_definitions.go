@@ -22,25 +22,25 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractDefinition = &oapispec.Route{
-	Name:   "getContractDefinition",
-	Path:   "namespaces/{ns}/contracts/definitions/{definitionId}",
+var getContractDefinitions = &oapispec.Route{
+	Name:   "getContractDefinitions",
+	Path:   "namespaces/{ns}/contracts/definitions",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "definitionId", Example: "definitionId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.ContractDefinitionQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.ContractDefinition{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.GetContractDefinitionByID(r.Ctx, r.PP["definitionId"])
+		return filterResult(r.Or.GetContractDefinitions(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

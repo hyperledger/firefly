@@ -82,3 +82,12 @@ func (cm *ContractManager) GetContractDefinitionByNameAndVersion(ctx context.Con
 func (cm *ContractManager) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error) {
 	return cm.database.GetContractDefinitionByID(ctx, id)
 }
+
+func (cm *ContractManager) GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractDefinition, *database.FilterResult, error) {
+	filter = cm.scopeNS(ns, filter)
+	return cm.database.GetContractDefinitions(ctx, ns, filter)
+}
+
+func (cm *ContractManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
+	return filter.Condition(filter.Builder().Eq("namespace", ns))
+}
