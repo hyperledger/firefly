@@ -51,6 +51,29 @@ func (_m *Orchestrator) AddContractDefinition(ctx context.Context, ns string, cd
 	return r0, r1
 }
 
+// AddContractInstance provides a mock function with given fields: ctx, ns, cd, waitConfirm
+func (_m *Orchestrator) AddContractInstance(ctx context.Context, ns string, cd *fftypes.ContractInstance, waitConfirm bool) (*fftypes.ContractInstance, error) {
+	ret := _m.Called(ctx, ns, cd, waitConfirm)
+
+	var r0 *fftypes.ContractInstance
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractInstance, bool) *fftypes.ContractInstance); ok {
+		r0 = rf(ctx, ns, cd, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractInstance)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractInstance, bool) error); ok {
+		r1 = rf(ctx, ns, cd, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Assets provides a mock function with given fields:
 func (_m *Orchestrator) Assets() assets.Manager {
 	ret := _m.Called()
@@ -359,6 +382,93 @@ func (_m *Orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Contex
 	}
 
 	return r0, r1
+}
+
+// GetContractDefinitions provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractDefinition, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.ContractDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractDefinition); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ContractDefinition)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetContractInstanceByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
+func (_m *Orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns string, nameOrID string) (*fftypes.ContractInstance, error) {
+	ret := _m.Called(ctx, ns, nameOrID)
+
+	var r0 *fftypes.ContractInstance
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractInstance); ok {
+		r0 = rf(ctx, ns, nameOrID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractInstance)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, nameOrID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractInstances provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractInstance, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.ContractInstance
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractInstance); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ContractInstance)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetData provides a mock function with given fields: ctx, ns, filter

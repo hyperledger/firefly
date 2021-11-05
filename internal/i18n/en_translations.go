@@ -211,4 +211,6 @@ var (
 	MsgTokenTransferFailed         = ffm("FF10291", "Token transfer with ID '%s' failed. Please check the FireFly logs for more information")
 	MsgFieldNotSpecified           = ffm("FF10292", "Field '%s' must be specified", 400)
 	MsgContractDefinitionExists    = ffm("FF10293", "A contract definition already exists in the namespace: '%s' with name: '%s' and version: '%s'")
+	MsgContractDefinitionNotFound  = ffm("FF10294", "Contract definition %s not found")
+	MsgContractInstanceExists      = ffm("FF10295", "A contract instance already exists in the namespace: '%s' with name: '%s'")
 )

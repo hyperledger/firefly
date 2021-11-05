@@ -18,6 +18,7 @@ package contracts
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -75,6 +76,55 @@ func (cm *ContractManager) AddContractDefinition(ctx context.Context, ns string,
 	return cd, nil
 }
 
+func (cm *ContractManager) AddContractInstance(ctx context.Context, ns string, ci *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error) {
+	ci.ID = fftypes.NewUUID()
+	ci.Namespace = ns
+
+	err = ci.Validate(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	existing, err := cm.database.GetContractInstanceByName(ctx, ci.Namespace, ci.Name)
+	if existing != nil && err == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgContractInstanceExists, ci.Namespace, ci.Name)
+	}
+
+	if ci.ContractDefinition.ID != nil {
+		contractDefinition, err := cm.database.GetContractDefinitionByID(ctx, ci.ContractDefinition.ID.String())
+		if err != nil {
+			return nil, i18n.NewError(ctx, i18n.MsgContractDefinitionNotFound, fmt.Sprintf("id: '%s'", ci.ContractDefinition.ID))
+		}
+		ci.ContractDefinition = contractDefinition
+	} else {
+		contractDefinition, err := cm.database.GetContractDefinitionByNameAndVersion(ctx, ns, ci.ContractDefinition.Name, ci.ContractDefinition.Version)
+		if err != nil {
+			return nil, i18n.NewError(ctx, i18n.MsgContractDefinitionNotFound, fmt.Sprintf("namespace: '%s' name: '%s' version: '%s'", ns, ci.ContractDefinition.Name, ci.ContractDefinition.Version))
+		}
+		ci.ContractDefinition = contractDefinition
+	}
+
+	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	identity := &fftypes.Identity{
+		Author: localOrgDID,
+		Key:    cm.identity.GetOrgKey(ctx),
+	}
+
+	// TODO: Do we do anything with this message here?
+	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, ci, identity, fftypes.SystemTagDefineContractInstance, waitConfirm)
+	if err != nil {
+		return nil, err
+	}
+	return ci, nil
+}
+
+func (cm *ContractManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
+	return filter.Condition(filter.Builder().Eq("namespace", ns))
+}
+
 func (cm *ContractManager) GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.ContractDefinition, error) {
 	return cm.database.GetContractDefinitionByNameAndVersion(ctx, ns, name, version)
 }
@@ -88,6 +138,52 @@ func (cm *ContractManager) GetContractDefinitions(ctx context.Context, ns string
 	return cm.database.GetContractDefinitions(ctx, ns, filter)
 }
 
-func (cm *ContractManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
-	return filter.Condition(filter.Builder().Eq("namespace", ns))
+func (cm *ContractManager) GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractInstance, error) {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return nil, err
+	}
+
+	var ci *fftypes.ContractInstance
+
+	instanceID, err := fftypes.ParseUUID(ctx, nameOrID)
+	if err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
+			return nil, err
+		}
+		if ci, err = cm.database.GetContractInstanceByName(ctx, ns, nameOrID); err != nil {
+			return nil, err
+		}
+	} else if ci, err = cm.database.GetContractInstanceByID(ctx, instanceID.String()); err != nil {
+		return nil, err
+	}
+	if ci == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	if err = cm.joinContractDefinition(ctx, ci); err != nil {
+		return nil, err
+	}
+	return ci, nil
+}
+
+func (cm *ContractManager) GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractInstance, *database.FilterResult, error) {
+	filter = cm.scopeNS(ns, filter)
+	instances, res, err := cm.database.GetContractInstances(ctx, ns, filter)
+	if err != nil {
+		return instances, res, err
+	}
+	for _, ci := range instances {
+		if err = cm.joinContractDefinition(ctx, ci); err != nil {
+			return instances, res, err
+		}
+	}
+	return instances, res, nil
+}
+
+func (cm *ContractManager) joinContractDefinition(ctx context.Context, ci *fftypes.ContractInstance) error {
+	cd, err := cm.database.GetContractDefinitionByID(ctx, ci.ContractDefinition.ID.String())
+	if err != nil {
+		return err
+	}
+	ci.ContractDefinition = cd
+	return nil
 }

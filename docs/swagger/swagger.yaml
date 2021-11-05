@@ -844,6 +844,107 @@ paths:
         default:
           description: ""
   /namespaces/{ns}/contracts/definitions:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractDefinitions
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: version
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  ffabi:
+                    properties:
+                      events:
+                        items: {}
+                        type: array
+                      methods:
+                        items: {}
+                        type: array
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  onChainLocation:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
     post:
       description: 'TODO: Description'
       operationId: postNewContractDefinition
@@ -921,7 +1022,7 @@ paths:
   /namespaces/{ns}/contracts/definitions/{definitionId}:
     get:
       description: 'TODO: Description'
-      operationId: getNewContractDefinition
+      operationId: getContractDefinition
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -935,7 +1036,7 @@ paths:
         name: definitionId
         required: true
         schema:
-          example: default
+          example: definitionId
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
@@ -968,6 +1069,338 @@ paths:
                   onChainLocation:
                     type: string
                   version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/definitions/{name}/{version}:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractDefinitionByNameAndVersion
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          example: name
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: version
+        required: true
+        schema:
+          example: version
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  ffabi:
+                    properties:
+                      events:
+                        items: {}
+                        type: array
+                      methods:
+                        items: {}
+                        type: array
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  onChainLocation:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/instances:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractInstances
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  contractDefinition:
+                    properties:
+                      ffabi:
+                        properties:
+                          events:
+                            items: {}
+                            type: array
+                          methods:
+                            items: {}
+                            type: array
+                        type: object
+                      id: {}
+                      message: {}
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      onChainLocation:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  onChainLocation:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewContractInstance
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contractDefinition:
+                  properties:
+                    ffabi:
+                      properties:
+                        events:
+                          items: {}
+                          type: array
+                        methods:
+                          items: {}
+                          type: array
+                      type: object
+                    id: {}
+                    message: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    onChainLocation:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                name:
+                  type: string
+                onChainLocation:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  contractDefinition:
+                    properties:
+                      ffabi:
+                        properties:
+                          events:
+                            items: {}
+                            type: array
+                          methods:
+                            items: {}
+                            type: array
+                        type: object
+                      id: {}
+                      message: {}
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      onChainLocation:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  onChainLocation:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/instances/{id}:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractInstance
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: id
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  contractDefinition:
+                    properties:
+                      ffabi:
+                        properties:
+                          events:
+                            items: {}
+                            type: array
+                          methods:
+                            items: {}
+                            type: array
+                        type: object
+                      id: {}
+                      message: {}
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      onChainLocation:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  onChainLocation:
                     type: string
                 type: object
           description: Success

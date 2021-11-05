@@ -391,12 +391,20 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
-type iContractCollection interface {
+type iContractDefinitionCollection interface {
 	// InsertContractDefinition - inserts a new contract definition. Must be unique for namespace, name, version
 	InsertContractDefinition(ctx context.Context, cd *fftypes.ContractDefinition) error
 	GetContractDefinitions(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractDefinition, *FilterResult, error)
 	GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error)
 	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.ContractDefinition, error)
+}
+
+type iContractInstanceCollection interface {
+	// InsertInstanceDefinition - inserts a new contract instance. Must be unique for namespace, name
+	InsertContractInstance(ctx context.Context, cd *fftypes.ContractInstance) error
+	GetContractInstances(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractInstance, *FilterResult, error)
+	GetContractInstanceByID(ctx context.Context, id string) (*fftypes.ContractInstance, error)
+	GetContractInstanceByName(ctx context.Context, ns, name string) (*fftypes.ContractInstance, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
@@ -455,7 +463,8 @@ type PeristenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
-	iContractCollection
+	iContractDefinitionCollection
+	iContractInstanceCollection
 }
 
 // CollectionName represents all collections
@@ -809,10 +818,17 @@ var TokenTransferQueryFactory = &queryFields{
 	"created":     &TimeField{},
 }
 
-// ContractDefinition filter fields for contract definitions
+// ContractDefinitionQueryFactory filter fields for contract definitions
 var ContractDefinitionQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},
 	"version":   &StringField{},
+}
+
+// ContractInstanceQueryFactory filter fields for contract definitions
+var ContractInstanceQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
 }

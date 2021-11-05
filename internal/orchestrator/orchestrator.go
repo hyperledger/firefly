@@ -125,6 +125,9 @@ type Orchestrator interface {
 	GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractDefinition, *database.FilterResult, error)
 	GetContractDefinitionByID(ctx context.Context, id string) (output *fftypes.ContractDefinition, err error)
 	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.ContractDefinition, err error)
+	AddContractInstance(ctx context.Context, ns string, cd *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error)
+	GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractInstance, res *database.FilterResult, err error)
+	GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error)
 }
 
 type orchestrator struct {
@@ -526,4 +529,16 @@ func (or *orchestrator) GetContractDefinitionByID(ctx context.Context, id string
 
 func (or *orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.ContractDefinition, err error) {
 	return or.contracts.GetContractDefinitionByNameAndVersion(ctx, ns, name, version)
+}
+
+func (or *orchestrator) AddContractInstance(ctx context.Context, ns string, ci *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error) {
+	return or.contracts.AddContractInstance(ctx, ns, ci, waitConfirm)
+}
+
+func (or *orchestrator) GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractInstance, res *database.FilterResult, err error) {
+	return or.contracts.GetContractInstances(ctx, ns, filter)
+}
+
+func (or *orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error) {
+	return or.contracts.GetContractInstanceByNameOrID(ctx, ns, nameOrID)
 }

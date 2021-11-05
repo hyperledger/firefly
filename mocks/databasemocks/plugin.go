@@ -358,6 +358,116 @@ func (_m *Plugin) GetContractDefinitionByNameAndVersion(ctx context.Context, ns 
 	return r0, r1
 }
 
+// GetContractDefinitions provides a mock function with given fields: ctx, ns, filter
+func (_m *Plugin) GetContractDefinitions(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractDefinition, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.ContractDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractDefinition); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ContractDefinition)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetContractInstanceByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetContractInstanceByID(ctx context.Context, id string) (*fftypes.ContractInstance, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.ContractInstance
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractInstance); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractInstance)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractInstanceByName provides a mock function with given fields: ctx, ns, name
+func (_m *Plugin) GetContractInstanceByName(ctx context.Context, ns string, name string) (*fftypes.ContractInstance, error) {
+	ret := _m.Called(ctx, ns, name)
+
+	var r0 *fftypes.ContractInstance
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractInstance); ok {
+		r0 = rf(ctx, ns, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractInstance)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractInstances provides a mock function with given fields: ctx, ns, filter
+func (_m *Plugin) GetContractInstances(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractInstance, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.ContractInstance
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractInstance); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ContractInstance)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetData provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftypes.Data, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -1708,6 +1818,20 @@ func (_m *Plugin) InsertContractDefinition(ctx context.Context, cd *fftypes.Cont
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractDefinition) error); ok {
+		r0 = rf(ctx, cd)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertContractInstance provides a mock function with given fields: ctx, cd
+func (_m *Plugin) InsertContractInstance(ctx context.Context, cd *fftypes.ContractInstance) error {
+	ret := _m.Called(ctx, cd)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractInstance) error); ok {
 		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)
