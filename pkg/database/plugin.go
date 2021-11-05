@@ -804,18 +804,18 @@ var TokenBalanceQueryFactory = &queryFields{
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
-	"localid":     &StringField{},
-	"pool":        &UUIDField{},
-	"tokenindex":  &StringField{},
-	"connector":   &StringField{},
-	"namespace":   &StringField{},
-	"key":         &StringField{},
-	"from":        &StringField{},
-	"to":          &StringField{},
-	"amount":      &Int64Field{},
-	"protocolid":  &StringField{},
-	"messagehash": &Bytes32Field{},
-	"created":     &TimeField{},
+	"localid":        &StringField{},
+	"poolprotocolid": &StringField{},
+	"tokenindex":     &StringField{},
+	"connector":      &StringField{},
+	"namespace":      &StringField{},
+	"key":            &StringField{},
+	"from":           &StringField{},
+	"to":             &StringField{},
+	"amount":         &Int64Field{},
+	"protocolid":     &StringField{},
+	"messagehash":    &Bytes32Field{},
+	"created":        &TimeField{},
 }
 
 // ContractDefinitionQueryFactory filter fields for contract definitions
