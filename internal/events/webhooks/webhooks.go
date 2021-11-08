@@ -338,11 +338,11 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 	} else {
 		// Anything other than JSON, gets returned as a JSON string in base64 encoding
 		buf := &bytes.Buffer{}
-		buf.WriteRune('"')
+		buf.WriteByte('"')
 		b64Encoder := base64.NewEncoder(base64.StdEncoding, buf)
 		_, _ = io.Copy(b64Encoder, resp.RawBody())
 		_ = b64Encoder.Close()
-		buf.WriteRune('"')
+		buf.WriteByte('"')
 		res.Body = buf.Bytes()
 	}
 
