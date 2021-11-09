@@ -33,19 +33,20 @@ import (
 func TestHandleSystemBroadcastTokenPoolSelfOk(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -54,7 +55,7 @@ func TestHandleSystemBroadcastTokenPoolSelfOk(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -86,8 +87,8 @@ func TestHandleSystemBroadcastTokenPoolSelfOk(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolSelfUpdateOpFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "name1",
@@ -107,7 +108,7 @@ func TestHandleSystemBroadcastTokenPoolSelfUpdateOpFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -129,19 +130,20 @@ func TestHandleSystemBroadcastTokenPoolSelfUpdateOpFail(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolSelfGetTXFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -150,7 +152,7 @@ func TestHandleSystemBroadcastTokenPoolSelfGetTXFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -173,19 +175,20 @@ func TestHandleSystemBroadcastTokenPoolSelfGetTXFail(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolSelfTXMismatch(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -194,7 +197,7 @@ func TestHandleSystemBroadcastTokenPoolSelfTXMismatch(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -221,19 +224,20 @@ func TestHandleSystemBroadcastTokenPoolSelfTXMismatch(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolSelfUpdateTXFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -242,7 +246,7 @@ func TestHandleSystemBroadcastTokenPoolSelfUpdateTXFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -267,19 +271,20 @@ func TestHandleSystemBroadcastTokenPoolSelfUpdateTXFail(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolOk(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -288,7 +293,7 @@ func TestHandleSystemBroadcastTokenPoolOk(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -324,19 +329,20 @@ func TestHandleSystemBroadcastTokenPoolOk(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolValidateTxFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -345,7 +351,7 @@ func TestHandleSystemBroadcastTokenPoolValidateTxFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -371,19 +377,20 @@ func TestHandleSystemBroadcastTokenPoolValidateTxFail(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolBadTX(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   nil,
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   nil,
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -392,7 +399,7 @@ func TestHandleSystemBroadcastTokenPoolBadTX(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -421,19 +428,20 @@ func TestHandleSystemBroadcastTokenPoolBadTX(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -442,7 +450,7 @@ func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -478,19 +486,20 @@ func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
+	}
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         pool,
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -499,7 +508,7 @@ func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -532,8 +541,8 @@ func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolOpsFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "name1",
@@ -553,7 +562,7 @@ func TestHandleSystemBroadcastTokenPoolOpsFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
@@ -572,8 +581,8 @@ func TestHandleSystemBroadcastTokenPoolOpsFail(t *testing.T) {
 func TestHandleSystemBroadcastTokenPoolValidateFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool:    fftypes.TokenPool{},
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         &fftypes.TokenPool{},
 		ProtocolTxID: "tx123",
 	}
 	msg := &fftypes.Message{
@@ -582,7 +591,7 @@ func TestHandleSystemBroadcastTokenPoolValidateFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
+	b, err := json.Marshal(&announce)
 	assert.NoError(t, err)
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),

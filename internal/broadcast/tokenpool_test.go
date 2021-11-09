@@ -35,7 +35,7 @@ func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "mypool",
@@ -61,7 +61,7 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "",
 			Name:       "",
@@ -87,7 +87,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "mypool",
@@ -119,7 +119,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "mypool",

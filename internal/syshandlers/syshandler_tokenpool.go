@@ -24,7 +24,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
+func (sh *systemHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
+	pool := announce.Pool
+
 	// Find a matching operation within this transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
@@ -50,8 +52,8 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 		if err != nil {
 			return false, err // retryable
 		}
-		if transaction.ProtocolID != pool.ProtocolTxID {
-			log.L(ctx).Warnf("Ignoring token pool from transaction '%s' - unexpected protocol ID '%s'", pool.TX.ID, pool.ProtocolTxID)
+		if transaction.ProtocolID != announce.ProtocolTxID {
+			log.L(ctx).Warnf("Ignoring token pool from transaction '%s' - unexpected protocol ID '%s'", pool.TX.ID, announce.ProtocolTxID)
 			return false, nil // not retryable
 		}
 
@@ -63,8 +65,8 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 		}
 	} else {
 		// No local announce operation found (broadcast originated from another node)
-		log.L(ctx).Infof("Validating token pool transaction '%s' with protocol ID '%s'", pool.TX.ID, pool.ProtocolTxID)
-		err = sh.assets.ValidateTokenPoolTx(ctx, &pool.TokenPool, pool.ProtocolTxID)
+		log.L(ctx).Infof("Validating token pool transaction '%s' with protocol ID '%s'", pool.TX.ID, announce.ProtocolTxID)
+		err = sh.assets.ValidateTokenPoolTx(ctx, pool, announce.ProtocolTxID)
 		if err != nil {
 			log.L(ctx).Errorf("Failed to validate token pool transaction '%s': %v", pool.TX.ID, err)
 			return false, err // retryable
@@ -78,7 +80,7 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 				Signer:    pool.Key,
 				Reference: pool.ID,
 			},
-			ProtocolID: pool.ProtocolTxID,
+			ProtocolID: announce.ProtocolTxID,
 		}
 		valid, err = sh.txhelper.PersistTransaction(ctx, transaction)
 		if !valid || err != nil {
@@ -86,7 +88,7 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 		}
 	}
 
-	err = sh.database.UpsertTokenPool(ctx, &pool.TokenPool)
+	err = sh.database.UpsertTokenPool(ctx, pool)
 	if err != nil {
 		if err == database.IDMismatch {
 			log.L(ctx).Errorf("Invalid token pool '%s'. ID mismatch with existing record", pool.ID)
@@ -101,18 +103,19 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 func (sh *systemHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
-	var pool fftypes.TokenPoolAnnouncement
-	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &pool)
-	if valid {
-		if err = pool.Validate(ctx, true); err != nil {
-			l.Warnf("Unable to process token pool broadcast %s - validate failed: %s", msg.Header.ID, err)
-			valid = false
-		} else {
-			pool.Message = msg.Header.ID
-			valid, err = sh.persistTokenPool(ctx, &pool)
-			if err != nil {
-				return valid, err
-			}
+	var announce fftypes.TokenPoolAnnouncement
+	if valid = sh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
+		l.Errorf("Unable to process token pool broadcast %s - message malformed: %s", msg.Header.ID, err)
+		return false, nil
+	}
+	pool := announce.Pool
+	if err = pool.Validate(ctx, true); err != nil {
+		l.Warnf("Unable to process token pool broadcast %s - validate failed: %s", msg.Header.ID, err)
+		valid = false
+	} else {
+		announce.Pool.Message = msg.Header.ID
+		if valid, err = sh.persistTokenPool(ctx, &announce); err != nil {
+			return valid, err
 		}
 	}
 

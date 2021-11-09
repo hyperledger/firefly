@@ -44,8 +44,8 @@ type TokenPool struct {
 }
 
 type TokenPoolAnnouncement struct {
-	TokenPool
-	ProtocolTxID string `json:"protocolTxID"`
+	Pool         *TokenPool `json:"pool"`
+	ProtocolTxID string     `json:"protocolTxID"`
 }
 
 func (t *TokenPool) Validate(ctx context.Context, existing bool) (err error) {
@@ -58,10 +58,10 @@ func (t *TokenPool) Validate(ctx context.Context, existing bool) (err error) {
 	return nil
 }
 
-func (t *TokenPool) Topic() string {
-	return namespaceTopic(t.Namespace)
+func (t *TokenPoolAnnouncement) Topic() string {
+	return namespaceTopic(t.Pool.Namespace)
 }
 
-func (t *TokenPool) SetBroadcastMessage(msgID *UUID) {
-	t.Message = msgID
+func (t *TokenPoolAnnouncement) SetBroadcastMessage(msgID *UUID) {
+	t.Pool.Message = msgID
 }

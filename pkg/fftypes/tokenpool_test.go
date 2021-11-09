@@ -51,7 +51,7 @@ func TestTokenPoolDefinition(t *testing.T) {
 		Namespace: "ok",
 		Name:      "ok",
 	}
-	var def Definition = pool
+	var def Definition = &TokenPoolAnnouncement{Pool: pool}
 	assert.Equal(t, "ff_ns_ok", def.Topic())
 
 	id := NewUUID()

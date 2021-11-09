@@ -72,7 +72,7 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenPoolCreated(plugin Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(plugin Plugin, pool *TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// TokensTransferred notifies on a transfer between token accounts.
 	//
@@ -83,4 +83,14 @@ type Callbacks interface {
 // Capabilities the supported featureset of the tokens
 // interface implemented by the plugin, with the specified config
 type Capabilities struct {
+}
+
+// TokenPool is the set of data returned from the connector when a token pool is created.
+type TokenPool struct {
+	Type          fftypes.TokenType
+	ProtocolID    string
+	TransactionID *fftypes.UUID
+	Key           string
+	Connector     string
+	Standard      string
 }

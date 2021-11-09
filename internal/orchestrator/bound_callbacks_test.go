@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +41,7 @@ func TestBoundCallbacks(t *testing.T) {
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
-	pool := &fftypes.TokenPool{}
+	pool := &tokens.TokenPool{}
 	transfer := &fftypes.TokenTransfer{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()

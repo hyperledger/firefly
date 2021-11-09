@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -47,14 +48,11 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 			},
 		},
 	}
-	pool := &fftypes.TokenPool{
-		Type:       fftypes.TokenTypeFungible,
-		ProtocolID: "123",
-		Key:        "0x0",
-		TX: fftypes.TransactionRef{
-			ID:   txID,
-			Type: fftypes.TransactionTypeTokenPool,
-		},
+	pool := &tokens.TokenPool{
+		Type:          fftypes.TokenTypeFungible,
+		ProtocolID:    "123",
+		Key:           "0x0",
+		TransactionID: txID,
 	}
 
 	mti.On("Name").Return("mock-tokens")
@@ -67,7 +65,7 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 		return op.Type == fftypes.OpTypeTokenAnnouncePool
 	}), false).Return(nil)
 	mbm.On("BroadcastTokenPool", am.ctx, "test-ns", mock.MatchedBy(func(pool *fftypes.TokenPoolAnnouncement) bool {
-		return pool.Namespace == "test-ns" && pool.Name == "my-pool" && *pool.ID == *poolID
+		return pool.Pool.Namespace == "test-ns" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
@@ -87,14 +85,11 @@ func TestTokenPoolCreatedOpNotFound(t *testing.T) {
 
 	txID := fftypes.NewUUID()
 	operations := []*fftypes.Operation{}
-	pool := &fftypes.TokenPool{
-		Type:       fftypes.TokenTypeFungible,
-		ProtocolID: "123",
-		Key:        "0x0",
-		TX: fftypes.TransactionRef{
-			ID:   txID,
-			Type: fftypes.TransactionTypeTokenPool,
-		},
+	pool := &tokens.TokenPool{
+		Type:          fftypes.TokenTypeFungible,
+		ProtocolID:    "123",
+		Key:           "0x0",
+		TransactionID: txID,
 	}
 
 	mti.On("Name").Return("mock-tokens")
@@ -122,14 +117,11 @@ func TestTokenPoolMissingID(t *testing.T) {
 			Input: fftypes.JSONObject{},
 		},
 	}
-	pool := &fftypes.TokenPool{
-		Type:       fftypes.TokenTypeFungible,
-		ProtocolID: "123",
-		Key:        "0x0",
-		TX: fftypes.TransactionRef{
-			ID:   txID,
-			Type: fftypes.TransactionTypeTokenPool,
-		},
+	pool := &tokens.TokenPool{
+		Type:          fftypes.TokenTypeFungible,
+		ProtocolID:    "123",
+		Key:           "0x0",
+		TransactionID: txID,
 	}
 
 	mti.On("Name").Return("mock-tokens")
@@ -160,14 +152,11 @@ func TestTokenPoolCreatedMissingNamespace(t *testing.T) {
 			},
 		},
 	}
-	pool := &fftypes.TokenPool{
-		Type:       fftypes.TokenTypeFungible,
-		ProtocolID: "123",
-		Key:        "0x0",
-		TX: fftypes.TransactionRef{
-			ID:   txID,
-			Type: fftypes.TransactionTypeTokenPool,
-		},
+	pool := &tokens.TokenPool{
+		Type:          fftypes.TokenTypeFungible,
+		ProtocolID:    "123",
+		Key:           "0x0",
+		TransactionID: txID,
 	}
 
 	mti.On("Name").Return("mock-tokens")
@@ -200,14 +189,11 @@ func TestTokenPoolCreatedUpsertFail(t *testing.T) {
 			},
 		},
 	}
-	pool := &fftypes.TokenPool{
-		Type:       fftypes.TokenTypeFungible,
-		ProtocolID: "123",
-		Key:        "0x0",
-		TX: fftypes.TransactionRef{
-			ID:   txID,
-			Type: fftypes.TransactionTypeTokenPool,
-		},
+	pool := &tokens.TokenPool{
+		Type:          fftypes.TokenTypeFungible,
+		ProtocolID:    "123",
+		Key:           "0x0",
+		TransactionID: txID,
 	}
 
 	mti.On("Name").Return("mock-tokens")

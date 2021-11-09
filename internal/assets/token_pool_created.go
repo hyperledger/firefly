@@ -25,31 +25,41 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	announce := &fftypes.TokenPoolAnnouncement{
-		TokenPool:    *pool,
-		ProtocolTxID: protocolTxID,
+func (am *assetManager) updatePool(storedPool *fftypes.TokenPool, chainPool *tokens.TokenPool) *fftypes.TokenPool {
+	storedPool.Type = chainPool.Type
+	storedPool.ProtocolID = chainPool.ProtocolID
+	storedPool.Key = chainPool.Key
+	storedPool.Connector = chainPool.Connector
+	storedPool.Standard = chainPool.Standard
+	storedPool.TX = fftypes.TransactionRef{
+		Type: fftypes.TransactionTypeTokenPool,
+		ID:   chainPool.TransactionID,
 	}
-	pool = &announce.TokenPool
+	return storedPool
+}
 
+func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	var newPool *fftypes.TokenPool
 	var valid bool
+
 	err := am.retry.Do(am.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
 		err := am.database.RunAsGroup(am.ctx, func(ctx context.Context) error {
 			// Find a matching operation within this transaction
 			fb := database.OperationQueryFactory.NewFilter(ctx)
 			filter := fb.And(
-				fb.Eq("tx", pool.TX.ID),
+				fb.Eq("tx", pool.TransactionID),
 				fb.Eq("type", fftypes.OpTypeTokenCreatePool),
 			)
 			operations, _, err := am.database.GetOperations(ctx, filter)
 			if err != nil || len(operations) == 0 {
-				log.L(ctx).Debugf("Token pool transaction '%s' ignored, as it did not match an operation submitted by this node", pool.TX.ID)
+				log.L(ctx).Debugf("Token pool transaction '%s' ignored, as it did not match an operation submitted by this node", pool.TransactionID)
 				return nil
 			}
 
-			err = retrieveTokenPoolCreateInputs(ctx, operations[0], pool)
+			newPool = am.updatePool(&fftypes.TokenPool{}, pool)
+			err = retrieveTokenPoolCreateInputs(ctx, operations[0], newPool)
 			if err != nil {
-				log.L(ctx).Errorf("Error retrieving pool info from transaction '%s' (%s) - ignoring: %v", pool.TX.ID, err, operations[0].Input)
+				log.L(ctx).Errorf("Error retrieving pool info from transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, operations[0].Input)
 				return nil
 			}
 
@@ -59,13 +69,13 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPo
 			// enough information to distribute to all other token connectors in the network.
 			// (e.g. details of a newly created token instance or an existing one)
 			transaction := &fftypes.Transaction{
-				ID:     pool.TX.ID,
+				ID:     newPool.TX.ID,
 				Status: fftypes.OpStatusPending,
 				Subject: fftypes.TransactionSubject{
-					Namespace: pool.Namespace,
-					Type:      pool.TX.Type,
-					Signer:    pool.Key,
-					Reference: pool.ID,
+					Namespace: newPool.Namespace,
+					Type:      newPool.TX.Type,
+					Signer:    newPool.Key,
+					Reference: newPool.ID,
 				},
 				ProtocolID: protocolTxID,
 				Info:       additionalInfo,
@@ -74,7 +84,7 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPo
 			// Add a new operation for the announcement
 			op := fftypes.NewTXOperation(
 				tk,
-				pool.Namespace,
+				newPool.Namespace,
 				transaction.ID,
 				"",
 				fftypes.OpTypeTokenAnnouncePool,
@@ -94,6 +104,10 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPo
 	}
 
 	// Announce the details of the new token pool
-	_, err = am.broadcast.BroadcastTokenPool(am.ctx, pool.Namespace, announce, false)
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool:         newPool,
+		ProtocolTxID: protocolTxID,
+	}
+	_, err = am.broadcast.BroadcastTokenPool(am.ctx, newPool.Namespace, announce, false)
 	return err
 }

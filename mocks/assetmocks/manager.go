@@ -537,11 +537,11 @@ func (_m *Manager) Start() error {
 }
 
 // TokenPoolCreated provides a mock function with given fields: ti, pool, protocolTxID, additionalInfo
-func (_m *Manager) TokenPoolCreated(ti tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (_m *Manager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	ret := _m.Called(ti, pool, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, fftypes.JSONObject) error); ok {
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string, fftypes.JSONObject) error); ok {
 		r0 = rf(ti, pool, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
