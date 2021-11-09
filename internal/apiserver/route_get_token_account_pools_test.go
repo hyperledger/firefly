@@ -14,20 +14,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package apiserver
 
 import (
+	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/assetmocks"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestTokenBalanceIdentifier(t *testing.T) {
-	id := NewUUID()
-	balance := &TokenBalance{
-		Pool:       id,
-		TokenIndex: "1",
-		Key:        "0x00",
-	}
-	assert.Equal(t, id.String()+":1:0x00", balance.Identifier())
+func TestGetTokenAccountPools(t *testing.T) {
+	o, r := newTestAPIServer()
+	mam := &assetmocks.Manager{}
+	o.On("Assets").Return(mam)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/accounts/0x1/pools", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	mam.On("GetTokenAccountPools", mock.Anything, "ns1", "0x1", mock.Anything).
+		Return([]*fftypes.TokenAccountPool{}, nil, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

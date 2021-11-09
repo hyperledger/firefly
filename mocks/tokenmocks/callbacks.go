@@ -42,13 +42,13 @@ func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenP
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: plugin, transfer, protocolTxID, additionalInfo
-func (_m *Callbacks) TokensTransferred(plugin tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, transfer, protocolTxID, additionalInfo)
+// TokensTransferred provides a mock function with given fields: plugin, poolProtocolID, transfer, protocolTxID, additionalInfo
+func (_m *Callbacks) TokensTransferred(plugin tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, transfer, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

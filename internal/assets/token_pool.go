@@ -53,6 +53,9 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
+	if err := fftypes.ValidateFFNameField(ctx, pool.Name, "name"); err != nil {
+		return nil, err
+	}
 	pool.ID = fftypes.NewUUID()
 	pool.Namespace = ns
 

@@ -419,10 +419,10 @@ func TransferTokens(t *testing.T, client *resty.Client, transfer *fftypes.TokenT
 	return &transferOut
 }
 
-func GetTokenTransfers(t *testing.T, client *resty.Client, poolProtocolID string) (transfers []*fftypes.TokenTransfer) {
+func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (transfers []*fftypes.TokenTransfer) {
 	path := urlTokenTransfers
 	resp, err := client.R().
-		SetQueryParam("poolprotocolid", poolProtocolID).
+		SetQueryParam("pool", poolID.String()).
 		SetResult(&transfers).
 		Get(path)
 	require.NoError(t, err)
@@ -430,11 +430,11 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolProtocolID string
 	return transfers
 }
 
-func GetTokenBalance(t *testing.T, client *resty.Client, poolProtocolID, tokenIndex, key string) (account *fftypes.TokenBalance) {
+func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex, key string) (account *fftypes.TokenBalance) {
 	var accounts []*fftypes.TokenBalance
 	path := urlTokenBalances
 	resp, err := client.R().
-		SetQueryParam("poolprotocolid", poolProtocolID).
+		SetQueryParam("pool", poolID.String()).
 		SetQueryParam("tokenIndex", tokenIndex).
 		SetQueryParam("key", key).
 		SetResult(&accounts).

@@ -26,30 +26,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getTokenTransfers = &oapispec.Route{
-	Name:   "getTokenTransfers",
-	Path:   "namespaces/{ns}/tokens/transfers",
+var getTokenAccountPools = &oapispec.Route{
+	Name:   "getTokenAccountPools",
+	Path:   "namespaces/{ns}/tokens/accounts/{key}/pools",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "key", Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "fromOrTo", Description: i18n.MsgTBD},
-	},
-	FilterFactory:   database.TokenTransferQueryFactory,
+	QueryParams:     nil,
+	FilterFactory:   database.TokenBalanceQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.TokenTransfer{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccountPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		filter := r.Filter
-		if fromOrTo, ok := r.QP["fromOrTo"]; ok {
-			fb := database.TokenTransferQueryFactory.NewFilter(r.Ctx)
-			filter.Condition(
-				fb.Or().
-					Condition(fb.Eq("from", fromOrTo)).
-					Condition(fb.Eq("to", fromOrTo)))
-		}
-		return filterResult(r.Or.Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], filter))
+		return filterResult(r.Or.Assets().GetTokenAccountPools(r.Ctx, r.PP["ns"], r.PP["key"], r.Filter))
 	},
 }

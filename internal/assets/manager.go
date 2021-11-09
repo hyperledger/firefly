@@ -43,11 +43,12 @@ type Manager interface {
 
 	GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error)
 	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
+	GetTokenAccountPools(ctx context.Context, ns, key string, filter database.AndFilter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error)
 
 	GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 	GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error)
 
-	NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender
+	NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender
 	MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
@@ -128,11 +129,15 @@ func (am *assetManager) GetTokenBalancesByPool(ctx context.Context, ns, connecto
 	if err != nil {
 		return nil, nil, err
 	}
-	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
+	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
 }
 
 func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
 	return am.database.GetTokenAccounts(ctx, am.scopeNS(ns, filter))
+}
+
+func (am *assetManager) GetTokenAccountPools(ctx context.Context, ns, key string, filter database.AndFilter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error) {
+	return am.database.GetTokenAccountPools(ctx, key, am.scopeNS(ns, filter))
 }
 
 func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error) {

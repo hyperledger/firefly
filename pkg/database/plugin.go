@@ -368,13 +368,16 @@ type iTokenBalanceCollection interface {
 	UpdateTokenBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error
 
 	// GetTokenBalance - Get a token balance by pool and account identity
-	GetTokenBalance(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenBalance, error)
+	GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex, identity string) (*fftypes.TokenBalance, error)
 
 	// GetTokenBalances - Get token balances
 	GetTokenBalances(ctx context.Context, filter Filter) ([]*fftypes.TokenBalance, *FilterResult, error)
 
 	// GetTokenAccounts - Get token accounts (all distinct addresses that have a balance)
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
+
+	// GetTokenAccountPools - Get the list of pools referenced by a given account
+	GetTokenAccountPools(ctx context.Context, key string, filter Filter) ([]*fftypes.TokenAccountPool, *FilterResult, error)
 }
 
 type iTokenTransferCollection interface {
@@ -771,27 +774,27 @@ var TokenPoolQueryFactory = &queryFields{
 
 // TokenBalanceQueryFactory filter fields for token accounts
 var TokenBalanceQueryFactory = &queryFields{
-	"poolprotocolid": &StringField{},
-	"tokenindex":     &StringField{},
-	"connector":      &StringField{},
-	"namespace":      &StringField{},
-	"key":            &StringField{},
-	"balance":        &Int64Field{},
-	"updated":        &TimeField{},
+	"pool":       &UUIDField{},
+	"tokenindex": &StringField{},
+	"connector":  &StringField{},
+	"namespace":  &StringField{},
+	"key":        &StringField{},
+	"balance":    &Int64Field{},
+	"updated":    &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
-	"localid":        &StringField{},
-	"poolprotocolid": &StringField{},
-	"tokenindex":     &StringField{},
-	"connector":      &StringField{},
-	"namespace":      &StringField{},
-	"key":            &StringField{},
-	"from":           &StringField{},
-	"to":             &StringField{},
-	"amount":         &Int64Field{},
-	"protocolid":     &StringField{},
-	"messagehash":    &Bytes32Field{},
-	"created":        &TimeField{},
+	"localid":     &StringField{},
+	"pool":        &UUIDField{},
+	"tokenindex":  &StringField{},
+	"connector":   &StringField{},
+	"namespace":   &StringField{},
+	"key":         &StringField{},
+	"from":        &StringField{},
+	"to":          &StringField{},
+	"amount":      &Int64Field{},
+	"protocolid":  &StringField{},
+	"messagehash": &Bytes32Field{},
+	"created":     &TimeField{},
 }

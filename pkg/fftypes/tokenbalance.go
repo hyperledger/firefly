@@ -17,25 +17,28 @@
 package fftypes
 
 type TokenBalance struct {
-	PoolProtocolID string  `json:"poolProtocolId,omitempty"`
-	TokenIndex     string  `json:"tokenIndex,omitempty"`
-	Connector      string  `json:"connector,omitempty"`
-	Namespace      string  `json:"namespace,omitempty"`
-	Key            string  `json:"key,omitempty"`
-	Balance        BigInt  `json:"balance"`
-	Updated        *FFTime `json:"updated,omitempty"`
+	Pool       *UUID   `json:"pool,omitempty"`
+	TokenIndex string  `json:"tokenIndex,omitempty"`
+	Connector  string  `json:"connector,omitempty"`
+	Namespace  string  `json:"namespace,omitempty"`
+	Key        string  `json:"key,omitempty"`
+	Balance    BigInt  `json:"balance"`
+	Updated    *FFTime `json:"updated,omitempty"`
 }
 
-func TokenBalanceIdentifier(protocolID, tokenIndex, identity string) string {
-	return protocolID + ":" + tokenIndex + ":" + identity
+func TokenBalanceIdentifier(pool *UUID, tokenIndex, identity string) string {
+	return pool.String() + ":" + tokenIndex + ":" + identity
 }
 
 func (t *TokenBalance) Identifier() string {
-	return TokenBalanceIdentifier(t.PoolProtocolID, t.TokenIndex, t.Key)
+	return TokenBalanceIdentifier(t.Pool, t.TokenIndex, t.Key)
 }
 
-// Currently this type is just a filtered view of TokenBalance.
-// If more fields/aggregation become needed, this may need its own table in the database.
+// Currently these types are just filtered views of TokenBalance.
+// If more fields/aggregation become needed, they might merit a new table in the database.
 type TokenAccount struct {
 	Key string `json:"key,omitempty"`
+}
+type TokenAccountPool struct {
+	Pool *UUID `json:"pool,omitempty"`
 }

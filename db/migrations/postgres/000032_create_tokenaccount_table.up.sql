@@ -9,6 +9,6 @@ CREATE TABLE tokenaccount (
   balance          VARCHAR(65)
 );
 
-CREATE UNIQUE INDEX tokenaccount_pool ON tokenaccount(pool_protocol_id,token_index,identity);
+CREATE UNIQUE INDEX tokenaccount_pool ON tokenaccount(identity,pool_protocol_id,token_index);
 
 COMMIT;

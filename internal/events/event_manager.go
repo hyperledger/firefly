@@ -65,7 +65,7 @@ type EventManager interface {
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
 
 	// Bound token callbacks
-	TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokensTransferred(tk tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Internal events
 	sysmessaging.SystemEvents
