@@ -93,10 +93,29 @@ func (am *assetManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			if existingPool, err := am.database.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID); err != nil {
 				return err
 			} else if existingPool != nil {
-				if existingPool.State == fftypes.TokenPoolStateConfirmed {
-					return nil // already confirmed
+				updatePool(existingPool, pool)
+
+				switch existingPool.State {
+				case fftypes.TokenPoolStateConfirmed:
+					// Already confirmed
+					return nil
+
+				case fftypes.TokenPoolStateUnknown:
+					// Unknown pool state - should only happen on first run after database migration
+					// Activate the pool, then fall through to immediately confirm
+					tx, err := am.database.GetTransactionByID(ctx, existingPool.TX.ID)
+					if err != nil {
+						return err
+					}
+					if err = am.ActivateTokenPool(ctx, existingPool, tx); err != nil {
+						log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
+						return err
+					}
+					fallthrough
+
+				default:
+					return am.confirmPool(ctx, existingPool, protocolTxID, additionalInfo)
 				}
-				return am.confirmPool(ctx, updatePool(existingPool, pool), protocolTxID, additionalInfo)
 			}
 
 			// See if this pool was submitted locally and needs to be announced

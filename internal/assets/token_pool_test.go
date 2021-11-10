@@ -444,23 +444,6 @@ func TestActivateTokenPool(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestActivateTokenPoolBadNamespace(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	pool := &fftypes.TokenPool{
-		Namespace: "ns1",
-		Connector: "magic-tokens",
-	}
-	tx := &fftypes.Transaction{}
-
-	mdm := am.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(fmt.Errorf("pop"))
-
-	err := am.ActivateTokenPool(context.Background(), pool, tx)
-	assert.EqualError(t, err, "pop")
-}
-
 func TestActivateTokenPoolBadConnector(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()

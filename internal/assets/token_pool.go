@@ -149,9 +149,6 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 }
 
 func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, tx *fftypes.Transaction) error {
-	if err := am.data.VerifyNamespaceExists(ctx, pool.Namespace); err != nil {
-		return err
-	}
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return err

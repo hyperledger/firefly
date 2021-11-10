@@ -138,6 +138,59 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestTokenPoolCreatedMigrate(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+
+	txID := fftypes.NewUUID()
+	chainPool := &tokens.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Key:        "0x0",
+		Connector:  "magic-tokens",
+	}
+	storedPool := &fftypes.TokenPool{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Key:       chainPool.Key,
+		State:     fftypes.TokenPoolStateUnknown,
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   txID,
+		},
+	}
+	storedTX := &fftypes.Transaction{
+		Subject: fftypes.TransactionSubject{
+			Namespace: "ns1",
+			Reference: storedPool.ID,
+			Signer:    storedPool.Key,
+			Type:      fftypes.TransactionTypeTokenPool,
+		},
+	}
+
+	mdi.On("GetTokenPoolByProtocolID", am.ctx, "magic-tokens", "123").Return(storedPool, nil).Times(3)
+	mdi.On("GetTransactionByID", am.ctx, storedPool.TX.ID).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTransactionByID", am.ctx, storedPool.TX.ID).Return(storedTX, nil).Times(3)
+	mdi.On("UpsertTransaction", am.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return *tx.Subject.Reference == *storedTX.Subject.Reference
+	}), false).Return(nil).Once()
+	mdi.On("UpsertTokenPool", am.ctx, storedPool).Return(nil).Once()
+	mdi.On("InsertEvent", am.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
+	})).Return(nil).Once()
+	mti.On("ActivateTokenPool", am.ctx, mock.Anything, storedPool, storedTX).Return(fmt.Errorf("pop")).Once()
+	mti.On("ActivateTokenPool", am.ctx, mock.Anything, storedPool, storedTX).Return(nil).Once()
+
+	info := fftypes.JSONObject{"some": "info"}
+	err := am.TokenPoolCreated(mti, chainPool, "tx1", info)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
 func TestConfirmPoolTxFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
