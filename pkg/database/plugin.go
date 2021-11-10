@@ -387,6 +387,9 @@ type iTokenTransferCollection interface {
 	// GetTokenTransfer - Get a token transfer by ID
 	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
 
+	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
+	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error)
+
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }

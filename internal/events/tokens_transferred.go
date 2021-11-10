@@ -86,6 +86,14 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID strin
 
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			// Check that transfer has not already been recorded
+			if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
+				return err
+			} else if existing != nil {
+				log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
+				return nil
+			}
+
 			// Check that this is from a known pool
 			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.Connector, poolProtocolID)
 			if err != nil {

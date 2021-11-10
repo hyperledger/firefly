@@ -185,6 +185,13 @@ func (s *SQLCommon) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID)
 	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID})
 }
 
+func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error) {
+	return s.getTokenTransferPred(ctx, protocolID, sq.And{
+		sq.Eq{"connector": connector},
+		sq.Eq{"protocol_id": protocolID},
+	})
+}
+
 func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filter) (message []*fftypes.TokenTransfer, fr *database.FilterResult, err error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From("tokentransfer"), filter, tokenTransferFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
