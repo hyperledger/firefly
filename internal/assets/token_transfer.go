@@ -274,6 +274,9 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		if err != nil {
 			return err
 		}
+		if pool.State != fftypes.TokenPoolStateConfirmed {
+			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
+		}
 
 		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 		if err != nil {
