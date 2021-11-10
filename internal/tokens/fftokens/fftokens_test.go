@@ -163,6 +163,66 @@ func TestCreateTokenPoolError(t *testing.T) {
 	assert.Regexp(t, "FF10274", err)
 }
 
+func TestActivateTokenPool(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	opID := fftypes.NewUUID()
+	pool := &fftypes.TokenPool{
+		ProtocolID: "N1",
+	}
+	txInfo := map[string]interface{}{
+		"foo": "bar",
+	}
+	tx := &fftypes.Transaction{
+		Info: txInfo,
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"requestId":   opID.String(),
+				"poolId":      "N1",
+				"transaction": txInfo,
+			}, body)
+
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 202,
+			}
+			return res, nil
+		})
+
+	err := h.ActivateTokenPool(context.Background(), opID, pool, tx)
+	assert.NoError(t, err)
+}
+
+func TestActivateTokenPoolError(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
+	tx := &fftypes.Transaction{}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+
+	err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, tx)
+	assert.Regexp(t, "FF10274", err)
+}
+
 func TestMintTokens(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()

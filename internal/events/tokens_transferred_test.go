@@ -48,8 +48,8 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(3)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(3)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
@@ -100,7 +100,7 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 		},
 	}}
 
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(3)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(3)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operationsBad, nil, nil).Once()
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operationsGood, nil, nil).Once()
@@ -135,7 +135,7 @@ func TestTokensTransferredAddBalanceIgnore(t *testing.T) {
 		Amount:     *fftypes.NewBigInt(1),
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(nil, nil)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
 	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
@@ -155,6 +155,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	transfer := &fftypes.TokenTransfer{
 		Type:        fftypes.TokenTransferTypeTransfer,
 		TokenIndex:  "0",
+		Connector:   "erc1155",
 		Key:         "0x12345",
 		From:        "0x1",
 		To:          "0x2",
@@ -168,7 +169,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 		BatchID: fftypes.NewUUID(),
 	}}
 
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(2)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
@@ -210,7 +211,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		State:   fftypes.MessageStateStaged,
 	}}
 
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(2)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("GetMessages", em.ctx, mock.Anything).Return(messages, nil, nil).Times(2)

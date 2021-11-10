@@ -87,7 +87,7 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID strin
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// Check that this is from a known pool
-			pool, err := em.database.GetTokenPoolByProtocolID(ctx, poolProtocolID)
+			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.Connector, poolProtocolID)
 			if err != nil {
 				return err
 			}

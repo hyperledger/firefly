@@ -20,6 +20,20 @@ type Manager struct {
 	mock.Mock
 }
 
+// ActivateTokenPool provides a mock function with given fields: ctx, pool, tx
+func (_m *Manager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, tx *fftypes.Transaction) error {
+	ret := _m.Called(ctx, pool, tx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, *fftypes.Transaction) error); ok {
+		r0 = rf(ctx, pool, tx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // BurnTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
 func (_m *Manager) BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, transfer, waitConfirm)
@@ -594,20 +608,6 @@ func (_m *Manager) TransferTokensByType(ctx context.Context, ns string, connecto
 	}
 
 	return r0, r1
-}
-
-// ValidateTokenPoolTx provides a mock function with given fields: ctx, pool, protocolTxID
-func (_m *Manager) ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error {
-	ret := _m.Called(ctx, pool, protocolTxID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, string) error); ok {
-		r0 = rf(ctx, pool, protocolTxID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // WaitStop provides a mock function with given fields:

@@ -23,7 +23,7 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error) {
-	if err := pool.Pool.Validate(ctx, false); err != nil {
+	if err := pool.Pool.Validate(ctx); err != nil {
 		return nil, err
 	}
 	if err := bm.data.VerifyNamespaceExists(ctx, pool.Pool.Namespace); err != nil {

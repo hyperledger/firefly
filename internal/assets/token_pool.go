@@ -30,6 +30,7 @@ func addTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
 		"id":        pool.ID.String(),
 		"namespace": pool.Namespace,
 		"name":      pool.Name,
+		"symbol":    pool.Symbol,
 		"config":    pool.Config,
 	}
 }
@@ -45,6 +46,7 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 	if pool.Namespace == "" || pool.Name == "" {
 		return fmt.Errorf("namespace or name missing from inputs")
 	}
+	pool.Symbol = input.GetString("symbol")
 	pool.Config = input.GetObject("config")
 	return nil
 }
@@ -146,6 +148,17 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	return pool, plugin.CreateTokenPool(ctx, op.ID, pool)
 }
 
+func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, tx *fftypes.Transaction) error {
+	if err := am.data.VerifyNamespaceExists(ctx, pool.Namespace); err != nil {
+		return err
+	}
+	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
+	if err != nil {
+		return err
+	}
+	return plugin.ActivateTokenPool(ctx, nil, pool, tx)
+}
+
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
@@ -205,9 +218,4 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolName
 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
 	return pool, nil
-}
-
-func (am *assetManager) ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error {
-	// TODO: validate that the given token pool was created with the given protocolTxId
-	return nil
 }
