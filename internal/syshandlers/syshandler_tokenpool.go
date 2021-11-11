@@ -53,15 +53,7 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, announce *fftype
 		return false, err // retryable
 	}
 
-	// Verify pool has not already been created
-	if existingPool, err := sh.database.GetTokenPoolByID(ctx, pool.ID); err != nil {
-		return false, err // retryable
-	} else if existingPool != nil {
-		log.L(ctx).Warnf("Token pool '%s' already exists - ignoring", pool.ID)
-		return false, nil // not retryable
-	}
-
-	// Create the pool in unconfirmed state
+	// Create the pool in pending state
 	pool.State = fftypes.TokenPoolStatePending
 	err = sh.database.UpsertTokenPool(ctx, pool)
 	if err != nil {
@@ -76,36 +68,44 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, announce *fftype
 	return true, nil
 }
 
-func (sh *systemHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (sh *systemHandlers) rejectPool(ctx context.Context, pool *fftypes.TokenPool) error {
+	event := fftypes.NewEvent(fftypes.EventTypePoolRejected, pool.Namespace, pool.ID)
+	err := sh.database.InsertEvent(ctx, event)
+	return err
+}
+
+func (sh *systemHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	var announce fftypes.TokenPoolAnnouncement
-	if valid = sh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
-		return false, nil // not retryable
+	if valid := sh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
+		return ActionReject, nil
 	}
 
 	pool := announce.Pool
 	pool.Message = msg.Header.ID
-	if err = pool.Validate(ctx); err != nil {
+
+	if err := pool.Validate(ctx); err != nil {
 		log.L(ctx).Warnf("Token pool '%s' rejected - validate failed: %s", pool.ID, err)
-		err = nil // not retryable
-		valid = false
-	} else {
-		valid, err = sh.persistTokenPool(ctx, &announce) // only returns retryable errors
-		if err != nil {
-			log.L(ctx).Warnf("Token pool '%s' rejected - failed to write: %s", pool.ID, err)
-		}
+		return ActionReject, sh.rejectPool(ctx, pool)
 	}
 
-	if err != nil {
-		return false, err
+	// Check if pool has already been confirmed on chain (and confirm the message if so)
+	if existingPool, err := sh.database.GetTokenPoolByID(ctx, pool.ID); err != nil {
+		return ActionRetry, err
+	} else if existingPool != nil && existingPool.State == fftypes.TokenPoolStateConfirmed {
+		return ActionConfirm, nil
+	}
+
+	if valid, err := sh.persistTokenPool(ctx, &announce); err != nil {
+		return ActionRetry, err
 	} else if !valid {
-		event := fftypes.NewEvent(fftypes.EventTypePoolRejected, pool.Namespace, pool.ID)
-		err = sh.database.InsertEvent(ctx, event)
-		return err != nil, err
+		return ActionReject, sh.rejectPool(ctx, pool)
 	}
 
-	if err = sh.assets.ActivateTokenPool(ctx, pool, announce.TX); err != nil {
+	if err := sh.assets.ActivateTokenPool(ctx, pool, announce.TX); err != nil {
 		log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
-		return false, err // retryable
+		return ActionRetry, err
 	}
-	return true, nil
+
+	// Message will remain unconfirmed until pool confirmation triggers a rewind
+	return ActionWait, nil
 }

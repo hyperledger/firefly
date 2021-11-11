@@ -74,6 +74,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		ID:        fftypes.NewUUID(),
 		Key:       chainPool.Key,
 		State:     fftypes.TokenPoolStatePending,
+		Message:   fftypes.NewUUID(),
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
 			ID:   txID,
@@ -87,9 +88,12 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 			Type:      fftypes.TransactionTypeTokenPool,
 		},
 	}
+	storedMessage := &fftypes.Message{
+		BatchID: fftypes.NewUUID(),
+	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil).Times(2)
 	mdi.On("GetTransactionByID", em.ctx, txID).Return(storedTX, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return *tx.Subject.Reference == *storedTX.Subject.Reference
@@ -98,6 +102,8 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil)
+	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(storedMessage, nil).Once()
 
 	info := fftypes.JSONObject{"some": "info"}
 	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)
@@ -171,6 +177,9 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 			Type:      fftypes.TransactionTypeTokenPool,
 		},
 	}
+	storedMessage := &fftypes.Message{
+		BatchID: fftypes.NewUUID(),
+	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "magic-tokens", "123").Return(storedPool, nil).Times(3)
 	mdi.On("GetTransactionByID", em.ctx, storedPool.TX.ID).Return(nil, fmt.Errorf("pop")).Once()
@@ -184,6 +193,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	})).Return(nil).Once()
 	mam.On("ActivateTokenPool", em.ctx, storedPool, storedTX).Return(fmt.Errorf("pop")).Once()
 	mam.On("ActivateTokenPool", em.ctx, storedPool, storedTX).Return(nil).Once()
+	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(storedMessage, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
 	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)

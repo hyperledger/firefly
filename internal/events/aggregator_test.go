@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
@@ -968,7 +969,7 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	defer cancel()
 
 	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
-	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
+	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(syshandlers.ActionReject, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -1011,7 +1012,7 @@ func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
 	defer cancel()
 
 	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
-	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
+	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(syshandlers.ActionRetry, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)

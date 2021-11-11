@@ -86,6 +86,7 @@ func (em *eventManager) findTokenPoolCreateOp(ctx context.Context, tx *fftypes.U
 }
 
 func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) (err error) {
+	var batchID *fftypes.UUID
 	var announcePool *fftypes.TokenPool
 
 	err = em.retry.Do(em.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
@@ -115,6 +116,12 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 					fallthrough
 
 				default:
+					// Confirm the pool and identify its definition message
+					if msg, err := em.database.GetMessageByID(ctx, existingPool.Message); err != nil {
+						return err
+					} else if msg != nil {
+						batchID = msg.BatchID
+					}
 					return em.confirmPool(ctx, existingPool, protocolTxID, additionalInfo)
 				}
 			}
@@ -146,15 +153,23 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		return err != nil, err
 	})
 
-	if err == nil && announcePool != nil {
+	if err == nil {
+		// Initiate a rewind if a batch was potentially completed by the arrival of this transaction
+		if batchID != nil {
+			log.L(em.ctx).Infof("Batch '%s' contains reference to received pool '%s'", batchID, pool.ProtocolID)
+			em.aggregator.offchainBatches <- batchID
+		}
+
 		// Announce the details of the new token pool and the transaction object
 		// Other nodes will pass these details to their own token connector for validation/activation of the pool
-		broadcast := &fftypes.TokenPoolAnnouncement{
-			Pool: announcePool,
-			TX:   poolTransaction(announcePool, fftypes.OpStatusPending, protocolTxID, additionalInfo),
+		if announcePool != nil {
+			broadcast := &fftypes.TokenPoolAnnouncement{
+				Pool: announcePool,
+				TX:   poolTransaction(announcePool, fftypes.OpStatusPending, protocolTxID, additionalInfo),
+			}
+			log.L(em.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
+			_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)
 		}
-		log.L(em.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
-		_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)
 	}
 
 	return err
