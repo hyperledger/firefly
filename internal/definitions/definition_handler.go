@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -31,15 +31,15 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-// SystemHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
-type SystemHandlers interface {
+// DefinitionHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
+type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
+	HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
-type systemHandlers struct {
+type definitionHandlers struct {
 	database  database.Plugin
 	exchange  dataexchange.Plugin
 	data      data.Manager
@@ -49,8 +49,8 @@ type systemHandlers struct {
 	txhelper  txcommon.Helper
 }
 
-func NewSystemHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) SystemHandlers {
-	return &systemHandlers{
+func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) DefinitionHandlers {
+	return &definitionHandlers{
 		database:  di,
 		exchange:  dx,
 		data:      dm,
@@ -61,23 +61,23 @@ func NewSystemHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manag
 	}
 }
 
-func (sh *systemHandlers) GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error) {
+func (sh *definitionHandlers) GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error) {
 	return sh.messaging.GetGroupByID(ctx, id)
 }
 
-func (sh *systemHandlers) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
+func (sh *definitionHandlers) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
 	return sh.messaging.GetGroups(ctx, filter)
 }
 
-func (sh *systemHandlers) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
+func (sh *definitionHandlers) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
 	return sh.messaging.ResolveInitGroup(ctx, msg)
 }
 
-func (sh *systemHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
+func (sh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
 	return sh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (sh *systemHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (sh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch fftypes.SystemTag(msg.Header.Tag) {
@@ -97,7 +97,7 @@ func (sh *systemHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftype
 	return false, nil
 }
 
-func (sh *systemHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
+func (sh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachement, found %d", msg.Header.ID, len(data))

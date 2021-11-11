@@ -859,7 +859,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	cancel()
 	ed.acksNacks = make(chan ackNack, 2)
-	msh := ed.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ed.definitions.(*syshandlersmocks.SystemHandlers)
 	msh.On("SendReply", ed.ctx, mock.Anything, mock.Anything).Return(&fftypes.Message{}, nil)
 
 	event1 := fftypes.NewUUID()

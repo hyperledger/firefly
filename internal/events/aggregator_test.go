@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -64,7 +65,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
@@ -630,7 +631,7 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
@@ -651,7 +652,7 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
@@ -674,7 +675,7 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author2", 0)
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -702,7 +703,7 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -731,7 +732,7 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 	mdi := ag.database.(*databasemocks.Plugin)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
@@ -763,7 +764,7 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -797,7 +798,7 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -936,11 +937,10 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
-	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
-
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+
+	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
@@ -979,11 +979,13 @@ func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
-	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
-
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
+
+	dbm := ag.database.(*databasemocks.Plugin)
+	dbm.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	dbm.On("InsertEvent", ag.ctx, mock.Anything).Return(errors.Errorf("pop"))
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{

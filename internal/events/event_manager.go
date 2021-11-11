@@ -24,13 +24,13 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
-	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -74,7 +74,7 @@ type eventManager struct {
 	publicstorage        publicstorage.Plugin
 	database             database.Plugin
 	identity             identity.Manager
-	syshandlers          syshandlers.SystemHandlers
+	definitions          definitions.DefinitionHandlers
 	data                 data.Manager
 	subManager           *subscriptionManager
 	retry                retry.Retry
@@ -87,7 +87,7 @@ type eventManager struct {
 	internalEvents       *system.Events
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh syshandlers.SystemHandlers, dm data.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh definitions.DefinitionHandlers, dm data.Manager) (EventManager, error) {
 	if pi == nil || di == nil || im == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -98,7 +98,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		publicstorage: pi,
 		database:      di,
 		identity:      im,
-		syshandlers:   sh,
+		definitions:   sh,
 		data:          dm,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),

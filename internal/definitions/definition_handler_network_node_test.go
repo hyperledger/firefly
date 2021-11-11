@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestHandleSystemBroadcastNodeOk(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -55,7 +55,7 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := sh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", mock.Anything, "peer1", node.DX.Endpoint).Return(nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -71,7 +71,7 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeUpsertFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -95,7 +95,7 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -111,7 +111,7 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -137,7 +137,7 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := sh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -153,7 +153,7 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeDupMismatch(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -175,7 +175,7 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x99999"}, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -191,7 +191,7 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -216,7 +216,7 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := sh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -232,7 +232,7 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeGetFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -254,7 +254,7 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -270,7 +270,7 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeBadAuthor(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -291,7 +291,7 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -307,7 +307,7 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeGetOrgNotFound(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -328,7 +328,7 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -344,7 +344,7 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeGetOrgFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -365,7 +365,7 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -381,7 +381,7 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeValidateFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	node := &fftypes.Node{
@@ -400,7 +400,7 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -414,14 +414,14 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHandleSystemBroadcastNodeUnmarshalFail(t *testing.T) {
+func TestHandleDefinitionBroadcastNodeUnmarshalFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	data := &fftypes.Data{
 		Value: fftypes.Byteable(`!json`),
 	}
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -31,19 +31,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestSystemHandlers(t *testing.T) *systemHandlers {
+func newTestSystemHandlers(t *testing.T) *definitionHandlers {
 	mdi := &databasemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
-	return NewSystemHandlers(mdi, mdx, mdm, mbm, mpm, mam).(*systemHandlers)
+	return NewDefinitionHandlers(mdi, mdx, mdm, mbm, mpm, mam).(*definitionHandlers)
 }
 
-func TestHandleSystemBroadcastUnknown(t *testing.T) {
+func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 	sh := newTestSystemHandlers(t)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "uknown",
 		},

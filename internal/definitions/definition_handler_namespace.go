@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -23,39 +23,39 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *systemHandlers) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (sh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
-	var dt fftypes.Datatype
-	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &dt)
+	var ns fftypes.Namespace
+	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
 		return false, nil
 	}
-
-	if err = dt.Validate(ctx, true); err != nil {
-		l.Warnf("Unable to process datatype broadcast %s - validate failed: %s", msg.Header.ID, err)
+	if err := ns.Validate(ctx, true); err != nil {
+		l.Warnf("Unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
 		return false, nil
 	}
 
-	if err = sh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
-		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
-		return false, nil
-	}
-
-	existing, err := sh.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
+	existing, err := sh.database.GetNamespace(ctx, ns.Name)
 	if err != nil {
 		return false, err // We only return database errors
 	}
 	if existing != nil {
-		l.Warnf("Unable to process datatype broadcast %s (%s:%s) - duplicate of %v", msg.Header.ID, dt.Namespace, dt, existing.ID)
-		return false, nil
+		if existing.Type != fftypes.NamespaceTypeLocal {
+			l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
+			return false, nil
+		}
+		// Remove the local definition
+		if err = sh.database.DeleteNamespace(ctx, existing.ID); err != nil {
+			return false, err
+		}
 	}
 
-	if err = sh.database.UpsertDatatype(ctx, &dt, false); err != nil {
+	if err = sh.database.UpsertNamespace(ctx, &ns, false); err != nil {
 		return false, err
 	}
 
-	event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID)
+	event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID)
 	if err = sh.database.InsertEvent(ctx, event); err != nil {
 		return false, err
 	}

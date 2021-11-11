@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestHandleSystemBroadcastTokenPoolSelfOk(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolSelfOk(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -75,7 +75,7 @@ func TestHandleSystemBroadcastTokenPoolSelfOk(t *testing.T) {
 		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolConfirmed
 	})).Return(nil)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.True(t, valid)
 	assert.NoError(t, err)
 	assert.Equal(t, fftypes.OpStatusSucceeded, tx.Status)
@@ -83,7 +83,7 @@ func TestHandleSystemBroadcastTokenPoolSelfOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolSelfUpdateOpFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolSelfUpdateOpFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -119,14 +119,14 @@ func TestHandleSystemBroadcastTokenPoolSelfUpdateOpFail(t *testing.T) {
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
 	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(fmt.Errorf("pop"))
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolSelfGetTXFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolSelfGetTXFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -163,14 +163,14 @@ func TestHandleSystemBroadcastTokenPoolSelfGetTXFail(t *testing.T) {
 	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
 	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(nil, fmt.Errorf("pop"))
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolSelfTXMismatch(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolSelfTXMismatch(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -211,14 +211,14 @@ func TestHandleSystemBroadcastTokenPoolSelfTXMismatch(t *testing.T) {
 		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolRejected
 	})).Return(nil)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolSelfUpdateTXFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolSelfUpdateTXFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -257,14 +257,14 @@ func TestHandleSystemBroadcastTokenPoolSelfUpdateTXFail(t *testing.T) {
 	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(tx, nil)
 	mdi.On("UpsertTransaction", context.Background(), tx, false).Return(fmt.Errorf("pop"))
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolOk(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolOk(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -313,7 +313,7 @@ func TestHandleSystemBroadcastTokenPoolOk(t *testing.T) {
 		return *p.ID == *pool.ID
 	}), "tx123").Return(nil)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.True(t, valid)
 	assert.NoError(t, err)
 
@@ -321,7 +321,7 @@ func TestHandleSystemBroadcastTokenPoolOk(t *testing.T) {
 	mam.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolValidateTxFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolValidateTxFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -360,7 +360,7 @@ func TestHandleSystemBroadcastTokenPoolValidateTxFail(t *testing.T) {
 		return *p.ID == *pool.ID
 	}), "tx123").Return(fmt.Errorf("pop"))
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -368,7 +368,7 @@ func TestHandleSystemBroadcastTokenPoolValidateTxFail(t *testing.T) {
 	mam.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolBadTX(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolBadTX(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -410,7 +410,7 @@ func TestHandleSystemBroadcastTokenPoolBadTX(t *testing.T) {
 		return *p.ID == *pool.ID
 	}), "tx123").Return(nil)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
@@ -418,7 +418,7 @@ func TestHandleSystemBroadcastTokenPoolBadTX(t *testing.T) {
 	mam.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -467,7 +467,7 @@ func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
 		return *p.ID == *pool.ID
 	}), "tx123").Return(nil)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
@@ -475,7 +475,7 @@ func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
 	mam.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -521,7 +521,7 @@ func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
 		return *p.ID == *pool.ID
 	}), "tx123").Return(nil)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -529,7 +529,7 @@ func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
 	mam.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolOpsFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolOpsFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -562,14 +562,14 @@ func TestHandleSystemBroadcastTokenPoolOpsFail(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolValidateFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	pool := &fftypes.TokenPoolAnnouncement{
@@ -593,7 +593,7 @@ func TestHandleSystemBroadcastTokenPoolValidateFail(t *testing.T) {
 		return event.Type == fftypes.EventTypePoolRejected
 	})).Return(nil)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
