@@ -174,23 +174,24 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	protocolID := data.GetString("poolId")
 	standard := data.GetString("standard") // this is optional
 	operatorAddress := data.GetString("operator")
-	poolDataString := data.GetString("data")
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
 
 	if tokenType == "" ||
 		protocolID == "" ||
-		poolDataString == "" ||
 		operatorAddress == "" ||
 		txHash == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
 
+	// We want to process all events, even those not initiated by FireFly.
+	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
+	poolDataString := data.GetString("data")
 	var poolData tokenData
 	if err = json.Unmarshal([]byte(poolDataString), &poolData); err != nil {
-		log.L(ctx).Errorf("TokenPool event is not valid - failed to parse data (%s): %+v", err, data)
-		return nil // move on
+		log.L(ctx).Infof("TokenPool event data could not be parsed - continuing anyway (%s): %+v", err, data)
+		poolData = tokenData{}
 	}
 
 	pool := &tokens.TokenPool{
@@ -236,12 +237,13 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		return nil // move on
 	}
 
-	// We want to process all transfers, even those not initiated by FireFly.
+	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
 	transferDataString := data.GetString("data")
 	var transferData tokenData
 	if err = json.Unmarshal([]byte(transferDataString), &transferData); err != nil {
 		log.L(ctx).Infof("%s event data could not be parsed - continuing anyway (%s): %+v", eventName, err, data)
+		transferData = tokenData{}
 	}
 
 	transfer := &fftypes.TokenTransfer{

@@ -56,6 +56,29 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mti := &tokenmocks.Plugin{}
+
+	pool := &tokens.TokenPool{
+		Type:          fftypes.TokenTypeFungible,
+		ProtocolID:    "123",
+		Key:           "0x0",
+		TransactionID: nil,
+		Connector:     "erc1155",
+	}
+
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil, nil)
+
+	info := fftypes.JSONObject{"some": "info"}
+	err := em.TokenPoolCreated(mti, pool, "tx1", info)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestTokenPoolCreatedConfirm(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()

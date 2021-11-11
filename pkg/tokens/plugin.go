@@ -90,10 +90,22 @@ type Capabilities struct {
 
 // TokenPool is the set of data returned from the connector when a token pool is created.
 type TokenPool struct {
-	Type          fftypes.TokenType
-	ProtocolID    string
+	// Type is the type of tokens (fungible, non-fungible, etc) in this pool
+	Type fftypes.TokenType
+
+	// ProtocolID is the ID assigned to this pool by the connector (must be unique for this connector)
+	ProtocolID string
+
+	// TransactionID is the FireFly-assigned ID to correlate this to a transaction (optional)
+	// Not guaranteed to be set for pool creation events triggered outside of FireFly
 	TransactionID *fftypes.UUID
-	Key           string
-	Connector     string
-	Standard      string
+
+	// Key is the chain-specific identifier for the user that created the pool
+	Key string
+
+	// Connector is the configured name of this connector
+	Connector string
+
+	// Standard is the well-defined token standard that this pool conforms to (optional)
+	Standard string
 }

@@ -459,7 +459,10 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
 
-	// token-pool: invalid uuid
+	// token-pool: invalid uuid (success)
+	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && p.TransactionID == nil
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "7",
 		"event": "token-pool",
@@ -478,7 +481,7 @@ func TestEvents(t *testing.T) {
 
 	// token-pool: success
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && *p.TransactionID == *txID
+		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && txID.Equals(p.TransactionID)
 	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "8",

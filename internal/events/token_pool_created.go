@@ -108,6 +108,10 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 }
 
 func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, pool *tokens.TokenPool) (announcePool *fftypes.TokenPool, err error) {
+	if pool.TransactionID == nil {
+		return nil, nil
+	}
+
 	op, err := em.findTokenPoolCreateOp(ctx, pool.TransactionID)
 	if err != nil {
 		return nil, err
@@ -163,7 +167,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 
 			// Otherwise this event can be ignored
-			log.L(ctx).Debugf("Ignoring token pool transaction '%s' - pool %s is not active", pool.TransactionID, pool.ProtocolID)
+			log.L(ctx).Debugf("Ignoring token pool transaction '%s' - pool %s is not active", protocolTxID, pool.ProtocolID)
 			return nil
 		})
 		return err != nil, err
