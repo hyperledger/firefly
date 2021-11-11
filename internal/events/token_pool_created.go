@@ -85,6 +85,55 @@ func (em *eventManager) findTokenPoolCreateOp(ctx context.Context, tx *fftypes.U
 	return nil, nil
 }
 
+func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPool) (existingPool *fftypes.TokenPool, err error) {
+	if existingPool, err = em.database.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID); err != nil || existingPool == nil {
+		return existingPool, err
+	}
+	updatePool(existingPool, pool)
+
+	if existingPool.State == fftypes.TokenPoolStateUnknown {
+		// Unknown pool state - should only happen on first run after database migration
+		// Activate the pool, then immediately confirm
+		// TODO: can this state eventually be removed?
+		tx, err := em.database.GetTransactionByID(ctx, existingPool.TX.ID)
+		if err != nil {
+			return nil, err
+		}
+		if err = em.assets.ActivateTokenPool(ctx, existingPool, tx); err != nil {
+			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
+			return nil, err
+		}
+	}
+	return existingPool, nil
+}
+
+func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, pool *tokens.TokenPool) (announcePool *fftypes.TokenPool, err error) {
+	op, err := em.findTokenPoolCreateOp(ctx, pool.TransactionID)
+	if err != nil {
+		return nil, err
+	} else if op == nil {
+		return nil, nil
+	}
+	announcePool = updatePool(&fftypes.TokenPool{}, pool)
+
+	if err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op, announcePool); err != nil {
+		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
+		return nil, nil
+	}
+	nextOp := fftypes.NewTXOperation(
+		ti,
+		op.Namespace,
+		op.Transaction,
+		"",
+		fftypes.OpTypeTokenAnnouncePool,
+		fftypes.OpStatusPending)
+	return announcePool, em.database.UpsertOperation(ctx, nextOp, false)
+}
+
+// It is expected that this method might be invoked twice for each pool, depending on the behavior of the connector.
+// It will be at least invoked on the submitter when the pool is first created, to trigger the submitter to announce it.
+// It will be invoked on every node (including the submitter) after the pool is announced+activated, to trigger confirmation of the pool.
+// When received in any other scenario, it should be ignored.
 func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) (err error) {
 	var batchID *fftypes.UUID
 	var announcePool *fftypes.TokenPool
@@ -92,58 +141,25 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 	err = em.retry.Do(em.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// See if this is a confirmation of an unconfirmed pool
-			if existingPool, err := em.database.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID); err != nil {
+			if existingPool, err := em.shouldConfirm(ctx, pool); err != nil {
 				return err
 			} else if existingPool != nil {
-				updatePool(existingPool, pool)
-
-				switch existingPool.State {
-				case fftypes.TokenPoolStateConfirmed:
-					// Already confirmed
-					return nil
-
-				case fftypes.TokenPoolStateUnknown:
-					// Unknown pool state - should only happen on first run after database migration
-					// Activate the pool, then fall through to immediately confirm
-					tx, err := em.database.GetTransactionByID(ctx, existingPool.TX.ID)
-					if err != nil {
-						return err
-					}
-					if err = em.assets.ActivateTokenPool(ctx, existingPool, tx); err != nil {
-						log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
-						return err
-					}
-					fallthrough
-
-				default:
-					// Confirm the pool and identify its definition message
-					if msg, err := em.database.GetMessageByID(ctx, existingPool.Message); err != nil {
-						return err
-					} else if msg != nil {
-						batchID = msg.BatchID
-					}
-					return em.confirmPool(ctx, existingPool, protocolTxID, additionalInfo)
+				if existingPool.State == fftypes.TokenPoolStateConfirmed {
+					return nil // already confirmed
 				}
+				if msg, err := em.database.GetMessageByID(ctx, existingPool.Message); err != nil {
+					return err
+				} else if msg != nil {
+					batchID = msg.BatchID // trigger rewind after completion of database transaction
+				}
+				return em.confirmPool(ctx, existingPool, protocolTxID, additionalInfo)
 			}
 
 			// See if this pool was submitted locally and needs to be announced
-			if op, err := em.findTokenPoolCreateOp(ctx, pool.TransactionID); err != nil {
+			if announcePool, err = em.shouldAnnounce(ctx, ti, pool); err != nil {
 				return err
-			} else if op != nil {
-				announcePool = updatePool(&fftypes.TokenPool{}, pool)
-				if err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op, announcePool); err != nil {
-					log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
-					announcePool = nil
-					return nil
-				}
-				nextOp := fftypes.NewTXOperation(
-					ti,
-					op.Namespace,
-					op.Transaction,
-					"",
-					fftypes.OpTypeTokenAnnouncePool,
-					fftypes.OpStatusPending)
-				return em.database.UpsertOperation(ctx, nextOp, false)
+			} else if announcePool != nil {
+				return nil // trigger announce after completion of database transaction
 			}
 
 			// Otherwise this event can be ignored
