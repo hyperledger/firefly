@@ -416,7 +416,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.definitions, or.data)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging)
 		if err != nil {
 			return err
 		}

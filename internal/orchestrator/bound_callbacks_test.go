@@ -54,7 +54,7 @@ func TestBoundCallbacks(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mei.On("OperationUpdate", mti, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.TokensOpUpdate(mti, opID, fftypes.OpStatusFailed, "error info", info)
+	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
@@ -73,7 +73,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TokenPoolCreated(mti, pool, "tx12345", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TokensTransferred", mti, transfer, "tx12345", info).Return(fmt.Errorf("pop"))
-	err = bc.TokensTransferred(mti, transfer, "tx12345", info)
+	mei.On("TokensTransferred", mti, "N1", transfer, "tx12345", info).Return(fmt.Errorf("pop"))
+	err = bc.TokensTransferred(mti, "N1", transfer, "tx12345", info)
 	assert.EqualError(t, err, "pop")
 }

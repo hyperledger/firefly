@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
@@ -30,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -63,7 +65,7 @@ type EventManager interface {
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
 
 	// Bound token callbacks
-	TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokensTransferred(tk tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Internal events
 	sysmessaging.SystemEvents
@@ -80,6 +82,8 @@ type eventManager struct {
 	retry                retry.Retry
 	txhelper             txcommon.Helper
 	aggregator           *aggregator
+	broadcast            broadcast.Manager
+	messaging            privatemessaging.Manager
 	newEventNotifier     *eventNotifier
 	newPinNotifier       *eventNotifier
 	opCorrelationRetries int
@@ -87,8 +91,8 @@ type eventManager struct {
 	internalEvents       *system.Events
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh definitions.DefinitionHandlers, dm data.Manager) (EventManager, error) {
-	if pi == nil || di == nil || im == nil || dm == nil {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager) (EventManager, error) {
+	if pi == nil || di == nil || im == nil || dm == nil || bm == nil || pm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -98,8 +102,10 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		publicstorage: pi,
 		database:      di,
 		identity:      im,
-		definitions:   sh,
+		definitions:   dh,
 		data:          dm,
+		broadcast:     bm,
+		messaging:     pm,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
@@ -110,13 +116,13 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,
 		newPinNotifier:       newPinNotifier,
-		aggregator:           newAggregator(ctx, di, sh, dm, newPinNotifier),
+		aggregator:           newAggregator(ctx, di, dh, dm, newPinNotifier),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, sh); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh); err != nil {
 		return nil, err
 	}
 

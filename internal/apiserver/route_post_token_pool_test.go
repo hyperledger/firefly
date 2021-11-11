@@ -35,11 +35,11 @@ func TestPostTokenPool(t *testing.T) {
 	input := fftypes.TokenPool{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/tok1/pools", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/pools", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("CreateTokenPool", mock.Anything, "ns1", "tok1", mock.AnythingOfType("*fftypes.TokenPool"), false).
+	mam.On("CreateTokenPool", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.TokenPool"), false).
 		Return(&fftypes.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -14,6 +14,20 @@ type Callbacks struct {
 	mock.Mock
 }
 
+// TokenOpUpdate provides a mock function with given fields: plugin, operationID, txState, errorMessage, opOutput
+func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(plugin, operationID, txState, errorMessage, opOutput)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, operationID, txState, errorMessage, opOutput)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TokenPoolCreated provides a mock function with given fields: plugin, pool, protocolTxID, additionalInfo
 func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	ret := _m.Called(plugin, pool, protocolTxID, additionalInfo)
@@ -28,27 +42,13 @@ func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenP
 	return r0
 }
 
-// TokensOpUpdate provides a mock function with given fields: plugin, operationID, txState, errorMessage, opOutput
-func (_m *Callbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(plugin, operationID, txState, errorMessage, opOutput)
+// TokensTransferred provides a mock function with given fields: plugin, poolProtocolID, transfer, protocolTxID, additionalInfo
+func (_m *Callbacks) TokensTransferred(plugin tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, operationID, txState, errorMessage, opOutput)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TokensTransferred provides a mock function with given fields: plugin, transfer, protocolTxID, additionalInfo
-func (_m *Callbacks) TokensTransferred(plugin tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, transfer, protocolTxID, additionalInfo)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, transfer, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -31,7 +31,7 @@ var (
 	tokenTransferColumns = []string{
 		"type",
 		"local_id",
-		"pool_protocol_id",
+		"pool_id",
 		"token_index",
 		"connector",
 		"namespace",
@@ -47,7 +47,7 @@ var (
 	}
 	tokenTransferFilterFieldMap = map[string]string{
 		"localid":          "local_id",
-		"poolprotocolid":   "pool_protocol_id",
+		"pool":             "pool_id",
 		"tokenindex":       "token_index",
 		"from":             "from_key",
 		"to":               "to_key",
@@ -81,7 +81,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 			sq.Update("tokentransfer").
 				Set("type", transfer.Type).
 				Set("local_id", transfer.LocalID).
-				Set("pool_protocol_id", transfer.PoolProtocolID).
+				Set("pool_id", transfer.Pool).
 				Set("token_index", transfer.TokenIndex).
 				Set("connector", transfer.Connector).
 				Set("namespace", transfer.Namespace).
@@ -107,7 +107,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Values(
 					transfer.Type,
 					transfer.LocalID,
-					transfer.PoolProtocolID,
+					transfer.Pool,
 					transfer.TokenIndex,
 					transfer.Connector,
 					transfer.Namespace,
@@ -137,7 +137,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 	err := row.Scan(
 		&transfer.Type,
 		&transfer.LocalID,
-		&transfer.PoolProtocolID,
+		&transfer.Pool,
 		&transfer.TokenIndex,
 		&transfer.Connector,
 		&transfer.Namespace,

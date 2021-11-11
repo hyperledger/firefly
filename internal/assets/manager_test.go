@@ -67,19 +67,19 @@ func TestStartStop(t *testing.T) {
 	am.WaitStop()
 }
 
-func TestGetTokenAccounts(t *testing.T) {
+func TestGetTokenBalances(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenAccountQueryFactory.NewFilter(context.Background())
+	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
-	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", f)
+	mdi.On("GetTokenBalances", context.Background(), f).Return([]*fftypes.TokenBalance{}, nil, nil)
+	_, _, err := am.GetTokenBalances(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
 
-func TestGetTokenAccountsByPool(t *testing.T) {
+func TestGetTokenBalancesByPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -87,24 +87,48 @@ func TestGetTokenAccountsByPool(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenAccountQueryFactory.NewFilter(context.Background())
+	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(pool, nil)
-	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
-	_, _, err := am.GetTokenAccountsByPool(context.Background(), "ns1", "magic-tokens", "test", f)
+	mdi.On("GetTokenBalances", context.Background(), f).Return([]*fftypes.TokenBalance{}, nil, nil)
+	_, _, err := am.GetTokenBalancesByPool(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.NoError(t, err)
 }
 
-func TestGetTokenAccountsByPoolBadPool(t *testing.T) {
+func TestGetTokenBalancesByPoolBadPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenAccountQueryFactory.NewFilter(context.Background())
+	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
-	_, _, err := am.GetTokenAccountsByPool(context.Background(), "ns1", "magic-tokens", "test", f)
+	_, _, err := am.GetTokenBalancesByPool(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.EqualError(t, err, "pop")
+}
+
+func TestGetTokenAccounts(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
+	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenAccountPools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenAccountPools", context.Background(), "0x1", f).Return([]*fftypes.TokenAccountPool{}, nil, nil)
+	_, _, err := am.GetTokenAccountPools(context.Background(), "ns1", "0x1", f)
+	assert.NoError(t, err)
 }
 
 func TestGetTokenConnectors(t *testing.T) {

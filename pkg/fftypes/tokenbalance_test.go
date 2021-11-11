@@ -22,11 +22,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTokenAccountIdentifier(t *testing.T) {
-	account := &TokenAccount{
-		PoolProtocolID: "123",
-		TokenIndex:     "1",
-		Key:            "0x00",
+func TestTokenBalanceIdentifier(t *testing.T) {
+	id := NewUUID()
+	balance := &TokenBalance{
+		Pool:       id,
+		TokenIndex: "1",
+		Key:        "0x00",
 	}
-	assert.Equal(t, "123:1:0x00", account.Identifier())
+	assert.Equal(t, id.String()+":1:0x00", balance.Identifier())
 }

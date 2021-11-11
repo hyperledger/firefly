@@ -22,16 +22,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-// Note: the counterpart to below (retrieveTokenTransferInputs) lives in the events package
-func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
-	op.Input = fftypes.JSONObject{
-		"id": transfer.LocalID.String(),
-	}
-}
 
 func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
 	return am.database.GetTokenTransfers(ctx, am.scopeNS(ns, filter))
@@ -51,15 +45,13 @@ func (am *assetManager) GetTokenTransfersByPool(ctx context.Context, ns, connect
 	if err != nil {
 		return nil, nil, err
 	}
-	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
+	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
 }
 
-func (am *assetManager) NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
+func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
 	sender := &transferSender{
 		mgr:       am,
 		namespace: ns,
-		connector: connector,
-		poolName:  poolName,
 		transfer:  transfer,
 	}
 	sender.setDefaults()
@@ -69,8 +61,6 @@ func (am *assetManager) NewTransfer(ns, connector, poolName string, transfer *ff
 type transferSender struct {
 	mgr       *assetManager
 	namespace string
-	connector string
-	poolName  string
 	transfer  *fftypes.TokenTransferInput
 	resolved  bool
 }
@@ -102,24 +92,46 @@ func (s *transferSender) SendAndWait(ctx context.Context) error {
 
 func (s *transferSender) setDefaults() {
 	s.transfer.LocalID = fftypes.NewUUID()
-	s.transfer.Connector = s.connector
 }
 
-func (am *assetManager) MintTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
+func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput) error {
+	if transfer.Connector == "" {
+		connector, err := am.getTokenConnectorName(ctx, ns)
+		if err != nil {
+			return err
+		}
+		transfer.Connector = connector
+	}
+	if transfer.Pool == "" {
+		pool, err := am.getTokenPoolName(ctx, ns)
+		if err != nil {
+			return err
+		}
+		transfer.Pool = pool
+	}
+	if transfer.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return err
+		}
+		transfer.Key = org.Identity
+	}
+	if transfer.From == "" {
+		transfer.From = transfer.Key
+	}
+	if transfer.To == "" {
+		transfer.To = transfer.Key
+	}
+	return nil
+}
+
+func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
 	transfer.Type = fftypes.TokenTransferTypeMint
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
-	}
-	transfer.From = ""
-	if transfer.To == "" {
-		transfer.To = transfer.Key
+	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
+		return nil, err
 	}
 
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
+	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -128,21 +140,19 @@ func (am *assetManager) MintTokens(ctx context.Context, ns, connector, poolName 
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) BurnTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
+func (am *assetManager) MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
+	transfer.Connector = connector
+	transfer.Pool = poolName
+	return am.MintTokens(ctx, ns, transfer, waitConfirm)
+}
+
+func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
 	transfer.Type = fftypes.TokenTransferTypeBurn
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
+	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
+		return nil, err
 	}
-	if transfer.From == "" {
-		transfer.From = transfer.Key
-	}
-	transfer.To = ""
 
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
+	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -151,26 +161,22 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns, connector, poolName 
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) TransferTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
+func (am *assetManager) BurnTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
+	transfer.Connector = connector
+	transfer.Pool = poolName
+	return am.BurnTokens(ctx, ns, transfer, waitConfirm)
+}
+
+func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
 	transfer.Type = fftypes.TokenTransferTypeTransfer
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		transfer.Key = org.Identity
-	}
-	if transfer.From == "" {
-		transfer.From = transfer.Key
-	}
-	if transfer.To == "" {
-		transfer.To = transfer.Key
+	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
+		return nil, err
 	}
 	if transfer.From == transfer.To {
 		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
 
-	sender := am.NewTransfer(ns, connector, poolName, transfer)
+	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -179,42 +185,45 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns, connector, poolN
 	return &transfer.TokenTransfer, err
 }
 
+func (am *assetManager) TransferTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
+	transfer.Connector = connector
+	transfer.Pool = poolName
+	return am.TransferTokens(ctx, ns, transfer, waitConfirm)
+}
+
 func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
-	var messageSender sysmessaging.MessageSender
 	if !s.resolved {
-		if messageSender, err = s.resolve(ctx); err != nil {
+		if err = s.resolve(ctx); err != nil {
 			return err
 		}
 		s.resolved = true
 	}
 
-	if messageSender != nil {
-		if method == methodSendAndWait {
-			if err = s.sendInternal(ctx, method); err != nil {
-				return err
-			}
-			return messageSender.SendAndWait(ctx)
-		}
-
-		if err := messageSender.Send(ctx); err != nil {
-			return err
-		}
+	if method == methodSendAndWait && s.transfer.Message != nil {
+		// Begin waiting for the message, and trigger the transfer.
+		// A successful transfer will trigger the message via the event handler, so we can wait for it all to complete.
+		_, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.transfer.Message.Header.ID, func(ctx context.Context) error {
+			return s.sendInternal(ctx, methodSendAndWait)
+		})
+		return err
 	}
+
 	return s.sendInternal(ctx, method)
 }
 
-func (s *transferSender) resolve(ctx context.Context) (sender sysmessaging.MessageSender, err error) {
+func (s *transferSender) resolve(ctx context.Context) error {
 	// Resolve the attached message
 	if s.transfer.Message != nil {
-		if sender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message); err != nil {
-			return nil, err
+		sender, err := s.buildTransferMessage(ctx, s.namespace, s.transfer.Message)
+		if err != nil {
+			return err
 		}
 		if err = sender.Prepare(ctx); err != nil {
-			return nil, err
+			return err
 		}
 		s.transfer.MessageHash = s.transfer.Message.Hash
 	}
-	return sender, nil
+	return nil
 }
 
 func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) error {
@@ -226,7 +235,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return err
 	}
 
-	plugin, err := s.mgr.selectTokenPlugin(ctx, s.connector)
+	plugin, err := s.mgr.selectTokenPlugin(ctx, s.transfer.Connector)
 	if err != nil {
 		return err
 	}
@@ -257,18 +266,25 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		"",
 		fftypes.OpTypeTokenTransfer,
 		fftypes.OpStatusPending)
-	addTokenTransferInputs(op, &s.transfer.TokenTransfer)
+	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
 
+	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err := s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)
+		pool, err = s.mgr.GetTokenPool(ctx, s.namespace, s.transfer.Connector, s.transfer.Pool)
 		if err != nil {
 			return err
 		}
-		s.transfer.PoolProtocolID = pool.ProtocolID
 
 		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
-		if err == nil {
-			err = s.mgr.database.UpsertOperation(ctx, op, false)
+		if err != nil {
+			return err
+		}
+		if err = s.mgr.database.UpsertOperation(ctx, op, false); err != nil {
+			return err
+		}
+		if s.transfer.Message != nil {
+			s.transfer.Message.State = fftypes.MessageStateStaged
+			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, false, false)
 		}
 		return err
 	})
@@ -278,11 +294,11 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	switch s.transfer.Type {
 	case fftypes.TokenTransferTypeMint:
-		return plugin.MintTokens(ctx, op.ID, &s.transfer.TokenTransfer)
+		return plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeTransfer:
-		return plugin.TransferTokens(ctx, op.ID, &s.transfer.TokenTransfer)
+		return plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeBurn:
-		return plugin.BurnTokens(ctx, op.ID, &s.transfer.TokenTransfer)
+		return plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	default:
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}

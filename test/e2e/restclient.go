@@ -43,12 +43,12 @@ var (
 	urlGetData          = "/namespaces/default/data"
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlSubscriptions    = "/namespaces/default/subscriptions"
-	urlTokenPools       = "/namespaces/default/tokens/erc1155/pools"
 	urlDatatypes        = "/namespaces/default/datatypes"
-	urlTokenMint        = "/namespaces/default/tokens/erc1155/pools/%s/mint"
-	urlTokenBurn        = "/namespaces/default/tokens/erc1155/pools/%s/burn"
-	urlTokenTransfers   = "/namespaces/default/tokens/erc1155/pools/%s/transfers"
-	urlTokenAccounts    = "/namespaces/default/tokens/erc1155/pools/%s/accounts"
+	urlTokenPools       = "/namespaces/default/tokens/pools"
+	urlTokenMint        = "/namespaces/default/tokens/mint"
+	urlTokenBurn        = "/namespaces/default/tokens/burn"
+	urlTokenTransfers   = "/namespaces/default/tokens/transfers"
+	urlTokenBalances    = "/namespaces/default/tokens/balances"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -368,9 +368,9 @@ func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (poo
 	return pools
 }
 
-func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
+func MintTokens(t *testing.T, client *resty.Client, mint *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
 	var transferOut fftypes.TokenTransfer
-	path := fmt.Sprintf(urlTokenMint, poolName)
+	path := urlTokenMint
 	resp, err := client.R().
 		SetBody(mint).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -385,9 +385,9 @@ func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftyp
 	return &transferOut
 }
 
-func BurnTokens(t *testing.T, client *resty.Client, poolName string, burn *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
+func BurnTokens(t *testing.T, client *resty.Client, burn *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
 	var transferOut fftypes.TokenTransfer
-	path := fmt.Sprintf(urlTokenBurn, poolName)
+	path := urlTokenBurn
 	resp, err := client.R().
 		SetBody(burn).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -402,9 +402,9 @@ func BurnTokens(t *testing.T, client *resty.Client, poolName string, burn *fftyp
 	return &transferOut
 }
 
-func TransferTokens(t *testing.T, client *resty.Client, poolName string, transfer *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
+func TransferTokens(t *testing.T, client *resty.Client, transfer *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
 	var transferOut fftypes.TokenTransfer
-	path := fmt.Sprintf(urlTokenTransfers, poolName)
+	path := urlTokenTransfers
 	resp, err := client.R().
 		SetBody(transfer).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -419,9 +419,10 @@ func TransferTokens(t *testing.T, client *resty.Client, poolName string, transfe
 	return &transferOut
 }
 
-func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (transfers []*fftypes.TokenTransfer) {
-	path := fmt.Sprintf(urlTokenTransfers, poolName)
+func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (transfers []*fftypes.TokenTransfer) {
+	path := urlTokenTransfers
 	resp, err := client.R().
+		SetQueryParam("pool", poolID.String()).
 		SetResult(&transfers).
 		Get(path)
 	require.NoError(t, err)
@@ -429,10 +430,11 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (tra
 	return transfers
 }
 
-func GetTokenAccount(t *testing.T, client *resty.Client, poolName, tokenIndex, key string) (account *fftypes.TokenAccount) {
-	var accounts []*fftypes.TokenAccount
-	path := fmt.Sprintf(urlTokenAccounts, poolName)
+func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex, key string) (account *fftypes.TokenBalance) {
+	var accounts []*fftypes.TokenBalance
+	path := urlTokenBalances
 	resp, err := client.R().
+		SetQueryParam("pool", poolID.String()).
 		SetQueryParam("tokenIndex", tokenIndex).
 		SetQueryParam("key", key).
 		SetResult(&accounts).

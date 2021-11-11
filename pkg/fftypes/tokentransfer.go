@@ -25,23 +25,24 @@ var (
 )
 
 type TokenTransfer struct {
-	Type           TokenTransferType `json:"type" ffenum:"tokentransfertype"`
-	LocalID        *UUID             `json:"localId,omitempty"`
-	PoolProtocolID string            `json:"poolProtocolId,omitempty"`
-	TokenIndex     string            `json:"tokenIndex,omitempty"`
-	Connector      string            `json:"connector,omitempty"`
-	Namespace      string            `json:"namespace,omitempty"`
-	Key            string            `json:"key,omitempty"`
-	From           string            `json:"from,omitempty"`
-	To             string            `json:"to,omitempty"`
-	Amount         BigInt            `json:"amount"`
-	ProtocolID     string            `json:"protocolId,omitempty"`
-	MessageHash    *Bytes32          `json:"messageHash,omitempty"`
-	Created        *FFTime           `json:"created,omitempty"`
-	TX             TransactionRef    `json:"tx,omitempty"`
+	Type        TokenTransferType `json:"type" ffenum:"tokentransfertype"`
+	LocalID     *UUID             `json:"localId,omitempty"`
+	Pool        *UUID             `json:"pool,omitempty"`
+	TokenIndex  string            `json:"tokenIndex,omitempty"`
+	Connector   string            `json:"connector,omitempty"`
+	Namespace   string            `json:"namespace,omitempty"`
+	Key         string            `json:"key,omitempty"`
+	From        string            `json:"from,omitempty"`
+	To          string            `json:"to,omitempty"`
+	Amount      BigInt            `json:"amount"`
+	ProtocolID  string            `json:"protocolId,omitempty"`
+	MessageHash *Bytes32          `json:"messageHash,omitempty"`
+	Created     *FFTime           `json:"created,omitempty"`
+	TX          TransactionRef    `json:"tx,omitempty"`
 }
 
 type TokenTransferInput struct {
 	TokenTransfer
 	Message *MessageInOut `json:"message,omitempty"`
+	Pool    string        `json:"pool,omitempty"`
 }

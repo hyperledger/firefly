@@ -363,15 +363,21 @@ type iTokenPoolCollection interface {
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
 }
 
-type iTokenAccountCollection interface {
-	// AddTokenAccountBalance - Add a (positive or negative) balance to the account's current balance
-	AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) error
+type iTokenBalanceCollection interface {
+	// UpdateTokenBalances - Move some token balance from one account to another
+	UpdateTokenBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error
 
-	// GetTokenAccount - Get a token account by pool and account identity
-	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
+	// GetTokenBalance - Get a token balance by pool and account identity
+	GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex, identity string) (*fftypes.TokenBalance, error)
 
-	// GetTokenAccounts - Get token accounts
+	// GetTokenBalances - Get token balances
+	GetTokenBalances(ctx context.Context, filter Filter) ([]*fftypes.TokenBalance, *FilterResult, error)
+
+	// GetTokenAccounts - Get token accounts (all distinct addresses that have a balance)
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
+
+	// GetTokenAccountPools - Get the list of pools referenced by a given account
+	GetTokenAccountPools(ctx context.Context, key string, filter Filter) ([]*fftypes.TokenAccountPool, *FilterResult, error)
 }
 
 type iTokenTransferCollection interface {
@@ -439,7 +445,7 @@ type PeristenceInterface interface {
 	iBlobCollection
 	iConfigRecordCollection
 	iTokenPoolCollection
-	iTokenAccountCollection
+	iTokenBalanceCollection
 	iTokenTransferCollection
 }
 
@@ -510,7 +516,7 @@ const (
 	CollectionNextpins      OtherCollection = "nextpins"
 	CollectionNonces        OtherCollection = "nonces"
 	CollectionOffsets       OtherCollection = "offsets"
-	CollectionTokenAccounts OtherCollection = "tokenaccounts"
+	CollectionTokenBalances OtherCollection = "tokenbalances"
 )
 
 // Callbacks are the methods for passing data from plugin to core
@@ -766,29 +772,29 @@ var TokenPoolQueryFactory = &queryFields{
 	"connector":  &StringField{},
 }
 
-// TokenAccountQueryFactory filter fields for token accounts
-var TokenAccountQueryFactory = &queryFields{
-	"poolprotocolid": &StringField{},
-	"tokenindex":     &StringField{},
-	"connector":      &StringField{},
-	"namespace":      &StringField{},
-	"key":            &StringField{},
-	"balance":        &Int64Field{},
-	"updated":        &TimeField{},
+// TokenBalanceQueryFactory filter fields for token accounts
+var TokenBalanceQueryFactory = &queryFields{
+	"pool":       &UUIDField{},
+	"tokenindex": &StringField{},
+	"connector":  &StringField{},
+	"namespace":  &StringField{},
+	"key":        &StringField{},
+	"balance":    &Int64Field{},
+	"updated":    &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
-	"localid":        &StringField{},
-	"poolprotocolid": &StringField{},
-	"tokenindex":     &StringField{},
-	"connector":      &StringField{},
-	"namespace":      &StringField{},
-	"key":            &StringField{},
-	"from":           &StringField{},
-	"to":             &StringField{},
-	"amount":         &Int64Field{},
-	"protocolid":     &StringField{},
-	"messagehash":    &Bytes32Field{},
-	"created":        &TimeField{},
+	"localid":     &StringField{},
+	"pool":        &UUIDField{},
+	"tokenindex":  &StringField{},
+	"connector":   &StringField{},
+	"namespace":   &StringField{},
+	"key":         &StringField{},
+	"from":        &StringField{},
+	"to":          &StringField{},
+	"amount":      &Int64Field{},
+	"protocolid":  &StringField{},
+	"messagehash": &Bytes32Field{},
+	"created":     &TimeField{},
 }

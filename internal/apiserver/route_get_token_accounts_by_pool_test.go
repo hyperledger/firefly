@@ -34,8 +34,8 @@ func TestGetTokenAccountsByPool(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenAccountsByPool", mock.Anything, "ns1", "tok1", "pool1", mock.Anything).
-		Return([]*fftypes.TokenAccount{}, nil, nil)
+	mam.On("GetTokenBalancesByPool", mock.Anything, "ns1", "tok1", "pool1", mock.Anything).
+		Return([]*fftypes.TokenBalance{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

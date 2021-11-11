@@ -122,9 +122,9 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 	return msgData.Value
 }
 
-func validateAccountBalances(t *testing.T, client *resty.Client, poolName, tokenIndex string, balances map[string]int64) {
+func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
 	for key, balance := range balances {
-		account := GetTokenAccount(t, client, poolName, tokenIndex, key)
+		account := GetTokenBalance(t, client, poolID, tokenIndex, key)
 		assert.Equal(t, "erc1155", account.Connector)
 		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}

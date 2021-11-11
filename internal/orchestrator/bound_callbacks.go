@@ -36,7 +36,7 @@ func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState 
 	return bc.ei.OperationUpdate(bc.bi, operationID, txState, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
 	return bc.ei.OperationUpdate(plugin, operationID, txState, errorMessage, opOutput)
 }
 
@@ -60,6 +60,6 @@ func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.T
 	return bc.am.TokenPoolCreated(plugin, pool, protocolTxID, additionalInfo)
 }
 
-func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TokensTransferred(plugin, transfer, protocolTxID, additionalInfo)
+func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.TokensTransferred(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
 }
