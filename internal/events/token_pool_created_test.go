@@ -14,12 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assets
+package events
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
@@ -30,9 +31,9 @@ import (
 )
 
 func TestTokenPoolCreatedIgnore(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
@@ -45,20 +46,20 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 		Connector:     "erc1155",
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "erc1155", "123").Return(nil, nil, nil)
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil, nil)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
 func TestTokenPoolCreatedConfirm(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
@@ -87,28 +88,28 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "erc1155", "123").Return(storedPool, nil).Once()
-	mdi.On("GetTransactionByID", am.ctx, txID).Return(storedTX, nil)
-	mdi.On("UpsertTransaction", am.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
+	mdi.On("GetTransactionByID", em.ctx, txID).Return(storedTX, nil)
+	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return *tx.Subject.Reference == *storedTX.Subject.Reference
 	}), false).Return(nil)
-	mdi.On("UpsertTokenPool", am.ctx, storedPool).Return(nil)
-	mdi.On("InsertEvent", am.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, chainPool, "tx1", info)
+	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
 func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
@@ -129,20 +130,21 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "erc1155", "123").Return(storedPool, nil)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, chainPool, "tx1", info)
+	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
 func TestTokenPoolCreatedMigrate(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
-	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
+	mam := em.assets.(*assetmocks.Manager)
+	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
 	chainPool := &tokens.TokenPool{
@@ -170,31 +172,31 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "magic-tokens", "123").Return(storedPool, nil).Times(3)
-	mdi.On("GetTransactionByID", am.ctx, storedPool.TX.ID).Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTransactionByID", am.ctx, storedPool.TX.ID).Return(storedTX, nil).Times(3)
-	mdi.On("UpsertTransaction", am.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "magic-tokens", "123").Return(storedPool, nil).Times(3)
+	mdi.On("GetTransactionByID", em.ctx, storedPool.TX.ID).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTransactionByID", em.ctx, storedPool.TX.ID).Return(storedTX, nil).Times(3)
+	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return *tx.Subject.Reference == *storedTX.Subject.Reference
 	}), false).Return(nil).Once()
-	mdi.On("UpsertTokenPool", am.ctx, storedPool).Return(nil).Once()
-	mdi.On("InsertEvent", am.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
-	mti.On("ActivateTokenPool", am.ctx, mock.Anything, storedPool, storedTX).Return(fmt.Errorf("pop")).Once()
-	mti.On("ActivateTokenPool", am.ctx, mock.Anything, storedPool, storedTX).Return(nil).Once()
+	mam.On("ActivateTokenPool", em.ctx, storedPool, storedTX).Return(fmt.Errorf("pop")).Once()
+	mam.On("ActivateTokenPool", em.ctx, storedPool, storedTX).Return(nil).Once()
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, chainPool, "tx1", info)
+	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mti.AssertExpectations(t)
+	mam.AssertExpectations(t)
 }
 
 func TestConfirmPoolTxFail(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 
 	txID := fftypes.NewUUID()
 	storedPool := &fftypes.TokenPool{
@@ -208,19 +210,19 @@ func TestConfirmPoolTxFail(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetTransactionByID", am.ctx, txID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTransactionByID", em.ctx, txID).Return(nil, fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.confirmPool(am.ctx, storedPool, "tx1", info)
+	err := em.confirmPool(em.ctx, storedPool, "tx1", info)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
 func TestConfirmPoolUpsertFail(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 
 	txID := fftypes.NewUUID()
 	storedPool := &fftypes.TokenPool{
@@ -242,25 +244,25 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetTransactionByID", am.ctx, txID).Return(storedTX, nil)
-	mdi.On("UpsertTransaction", am.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+	mdi.On("GetTransactionByID", em.ctx, txID).Return(storedTX, nil)
+	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return *tx.Subject.Reference == *storedTX.Subject.Reference
 	}), false).Return(nil)
-	mdi.On("UpsertTokenPool", am.ctx, storedPool).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.confirmPool(am.ctx, storedPool, "tx1", info)
+	err := em.confirmPool(em.ctx, storedPool, "tx1", info)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
 func TestTokenPoolCreatedAnnounce(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
-	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mbm := em.broadcast.(*broadcastmocks.Manager)
 
 	poolID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
@@ -283,18 +285,18 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	}
 
 	mti.On("Name").Return("mock-tokens")
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil).Once()
-	mdi.On("UpsertOperation", am.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
+	mdi.On("UpsertOperation", em.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenAnnouncePool
 	}), false).Return(nil)
-	mbm.On("BroadcastTokenPool", am.ctx, "test-ns", mock.MatchedBy(func(pool *fftypes.TokenPoolAnnouncement) bool {
+	mbm.On("BroadcastTokenPool", em.ctx, "test-ns", mock.MatchedBy(func(pool *fftypes.TokenPoolAnnouncement) bool {
 		return pool.Pool.Namespace == "test-ns" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -303,9 +305,9 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 }
 
 func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
@@ -324,20 +326,20 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 		Connector:     "erc1155",
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
 func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
@@ -358,11 +360,11 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 		Connector:     "erc1155",
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

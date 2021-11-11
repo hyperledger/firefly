@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
@@ -36,8 +35,7 @@ func TestBoundCallbacks(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mti := &tokenmocks.Plugin{}
-	mam := &assetmocks.Manager{}
-	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, am: mam}
+	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
@@ -70,7 +68,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.MessageReceived("peer1", []byte{})
 	assert.EqualError(t, err, "pop")
 
-	mam.On("TokenPoolCreated", mti, pool, "tx12345", info).Return(fmt.Errorf("pop"))
+	mei.On("TokenPoolCreated", mti, pool, "tx12345", info).Return(fmt.Errorf("pop"))
 	err = bc.TokenPoolCreated(mti, pool, "tx12345", info)
 	assert.EqualError(t, err, "pop")
 

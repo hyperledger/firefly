@@ -18,38 +18,12 @@ package assets
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-func addTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
-	op.Input = fftypes.JSONObject{
-		"id":        pool.ID.String(),
-		"namespace": pool.Namespace,
-		"name":      pool.Name,
-		"symbol":    pool.Symbol,
-		"config":    pool.Config,
-	}
-}
-
-func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
-	input := &op.Input
-	pool.ID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
-	if err != nil {
-		return err
-	}
-	pool.Namespace = input.GetString("namespace")
-	pool.Name = input.GetString("name")
-	if pool.Namespace == "" || pool.Name == "" {
-		return fmt.Errorf("namespace or name missing from inputs")
-	}
-	pool.Symbol = input.GetString("symbol")
-	pool.Config = input.GetObject("config")
-	return nil
-}
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
@@ -132,7 +106,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		"",
 		fftypes.OpTypeTokenCreatePool,
 		fftypes.OpStatusPending)
-	addTokenPoolCreateInputs(op, pool)
+	txcommon.AddTokenPoolCreateInputs(op, pool)
 
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		err = am.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)

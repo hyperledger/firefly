@@ -14,12 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assets
+package events
 
 import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -55,28 +56,28 @@ func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus, protocolT
 	}
 }
 
-func (am *assetManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	tx := poolTransaction(pool, fftypes.OpStatusSucceeded, protocolTxID, additionalInfo)
-	if valid, err := am.txhelper.PersistTransaction(ctx, tx); !valid || err != nil {
+	if valid, err := em.txhelper.PersistTransaction(ctx, tx); !valid || err != nil {
 		return err
 	}
 	pool.State = fftypes.TokenPoolStateConfirmed
-	if err := am.database.UpsertTokenPool(ctx, pool); err != nil {
+	if err := em.database.UpsertTokenPool(ctx, pool); err != nil {
 		return err
 	}
 	log.L(ctx).Infof("Token pool confirmed id=%s author=%s", pool.ID, pool.Key)
 	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID)
-	return am.database.InsertEvent(ctx, event)
+	return em.database.InsertEvent(ctx, event)
 }
 
-func (am *assetManager) findTokenPoolCreateOp(ctx context.Context, tx *fftypes.UUID) (*fftypes.Operation, error) {
+func (em *eventManager) findTokenPoolCreateOp(ctx context.Context, tx *fftypes.UUID) (*fftypes.Operation, error) {
 	// Find a matching operation within this transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", tx),
 		fb.Eq("type", fftypes.OpTypeTokenCreatePool),
 	)
-	if operations, _, err := am.database.GetOperations(ctx, filter); err != nil {
+	if operations, _, err := em.database.GetOperations(ctx, filter); err != nil {
 		return nil, err
 	} else if len(operations) > 0 {
 		return operations[0], nil
@@ -84,13 +85,13 @@ func (am *assetManager) findTokenPoolCreateOp(ctx context.Context, tx *fftypes.U
 	return nil, nil
 }
 
-func (am *assetManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) (err error) {
+func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) (err error) {
 	var announcePool *fftypes.TokenPool
 
-	err = am.retry.Do(am.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
-		err := am.database.RunAsGroup(am.ctx, func(ctx context.Context) error {
+	err = em.retry.Do(em.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
+		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// See if this is a confirmation of an unconfirmed pool
-			if existingPool, err := am.database.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID); err != nil {
+			if existingPool, err := em.database.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID); err != nil {
 				return err
 			} else if existingPool != nil {
 				updatePool(existingPool, pool)
@@ -103,27 +104,27 @@ func (am *assetManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				case fftypes.TokenPoolStateUnknown:
 					// Unknown pool state - should only happen on first run after database migration
 					// Activate the pool, then fall through to immediately confirm
-					tx, err := am.database.GetTransactionByID(ctx, existingPool.TX.ID)
+					tx, err := em.database.GetTransactionByID(ctx, existingPool.TX.ID)
 					if err != nil {
 						return err
 					}
-					if err = am.ActivateTokenPool(ctx, existingPool, tx); err != nil {
+					if err = em.assets.ActivateTokenPool(ctx, existingPool, tx); err != nil {
 						log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
 						return err
 					}
 					fallthrough
 
 				default:
-					return am.confirmPool(ctx, existingPool, protocolTxID, additionalInfo)
+					return em.confirmPool(ctx, existingPool, protocolTxID, additionalInfo)
 				}
 			}
 
 			// See if this pool was submitted locally and needs to be announced
-			if op, err := am.findTokenPoolCreateOp(ctx, pool.TransactionID); err != nil {
+			if op, err := em.findTokenPoolCreateOp(ctx, pool.TransactionID); err != nil {
 				return err
 			} else if op != nil {
 				announcePool = updatePool(&fftypes.TokenPool{}, pool)
-				if err = retrieveTokenPoolCreateInputs(ctx, op, announcePool); err != nil {
+				if err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op, announcePool); err != nil {
 					log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
 					announcePool = nil
 					return nil
@@ -135,7 +136,7 @@ func (am *assetManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 					"",
 					fftypes.OpTypeTokenAnnouncePool,
 					fftypes.OpStatusPending)
-				return am.database.UpsertOperation(ctx, nextOp, false)
+				return em.database.UpsertOperation(ctx, nextOp, false)
 			}
 
 			// Otherwise this event can be ignored
@@ -152,8 +153,8 @@ func (am *assetManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			Pool: announcePool,
 			TX:   poolTransaction(announcePool, fftypes.OpStatusPending, protocolTxID, additionalInfo),
 		}
-		log.L(am.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
-		_, err = am.broadcast.BroadcastTokenPool(am.ctx, announcePool.Namespace, broadcast, false)
+		log.L(em.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
+		_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)
 	}
 
 	return err

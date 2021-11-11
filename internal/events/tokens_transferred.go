@@ -67,7 +67,7 @@ func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, 
 	return em.txhelper.PersistTransaction(ctx, transaction)
 }
 
-func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	var batchID *fftypes.UUID
 
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
