@@ -58,6 +58,7 @@ const (
 
 type tokenData struct {
 	TX          *fftypes.UUID    `json:"tx,omitempty"`
+	Message     *fftypes.UUID    `json:"message,omitempty"`
 	MessageHash *fftypes.Bytes32 `json:"messageHash,omitempty"`
 }
 
@@ -251,6 +252,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		To:          toAddress,
 		ProtocolID:  txHash,
 		Key:         operatorAddress,
+		Message:     transferData.Message,
 		MessageHash: transferData.MessageHash,
 		TX: fftypes.TransactionRef{
 			ID:   transferData.TX,
@@ -360,6 +362,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, operationID *fftypes.
 func (ft *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          mint.TX.ID,
+		Message:     mint.Message,
 		MessageHash: mint.MessageHash,
 	})
 	res, err := ft.client.R().SetContext(ctx).
@@ -381,6 +384,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, p
 func (ft *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          burn.TX.ID,
+		Message:     burn.Message,
 		MessageHash: burn.MessageHash,
 	})
 	res, err := ft.client.R().SetContext(ctx).
@@ -403,6 +407,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, p
 func (ft *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          transfer.TX.ID,
+		Message:     transfer.Message,
 		MessageHash: transfer.MessageHash,
 	})
 	res, err := ft.client.R().SetContext(ctx).

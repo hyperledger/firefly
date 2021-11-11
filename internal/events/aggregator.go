@@ -416,11 +416,14 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	if msg.Header.Type == fftypes.MessageTypeTransferBroadcast || msg.Header.Type == fftypes.MessageTypeTransferPrivate {
 		fb := database.TokenTransferQueryFactory.NewFilter(ctx)
 		filter := fb.And(
-			fb.Eq("messagehash", msg.Hash),
+			fb.Eq("message", msg.Header.ID),
 		)
 		if transfers, _, err := ag.database.GetTokenTransfers(ctx, filter); err != nil || len(transfers) == 0 {
-			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Hash)
+			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
 			return false, err
+		} else if !msg.Hash.Equals(transfers[0].MessageHash) {
+			log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
+			return false, nil
 		}
 	}
 

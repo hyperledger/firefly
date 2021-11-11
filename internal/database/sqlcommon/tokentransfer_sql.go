@@ -40,6 +40,7 @@ var (
 		"to_key",
 		"amount",
 		"protocol_id",
+		"message_id",
 		"message_hash",
 		"tx_type",
 		"tx_id",
@@ -52,6 +53,7 @@ var (
 		"from":             "from_key",
 		"to":               "to_key",
 		"protocolid":       "protocol_id",
+		"message":          "message_id",
 		"messagehash":      "message_hash",
 		"transaction.type": "tx_type",
 		"transaction.id":   "tx_id",
@@ -89,6 +91,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("from_key", transfer.From).
 				Set("to_key", transfer.To).
 				Set("amount", transfer.Amount).
+				Set("message_id", transfer.Message).
 				Set("message_hash", transfer.MessageHash).
 				Set("tx_type", transfer.TX.Type).
 				Set("tx_id", transfer.TX.ID).
@@ -116,6 +119,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.To,
 					transfer.Amount,
 					transfer.ProtocolID,
+					transfer.Message,
 					transfer.MessageHash,
 					transfer.TX.Type,
 					transfer.TX.ID,
@@ -146,6 +150,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.To,
 		&transfer.Amount,
 		&transfer.ProtocolID,
+		&transfer.Message,
 		&transfer.MessageHash,
 		&transfer.TX.Type,
 		&transfer.TX.ID,

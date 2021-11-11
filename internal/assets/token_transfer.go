@@ -221,7 +221,8 @@ func (s *transferSender) resolve(ctx context.Context) error {
 		if err = sender.Prepare(ctx); err != nil {
 			return err
 		}
-		s.transfer.MessageHash = s.transfer.Message.Hash
+		s.transfer.TokenTransfer.Message = s.transfer.Message.Header.ID
+		s.transfer.TokenTransfer.MessageHash = s.transfer.Message.Hash
 	}
 	return nil
 }

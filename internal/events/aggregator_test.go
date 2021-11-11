@@ -932,6 +932,37 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeTransferBroadcast,
+		},
+	}
+	msg.Hash = msg.Header.Hash()
+
+	transfers := []*fftypes.TokenTransfer{{
+		Message:     msg.Header.ID,
+		MessageHash: fftypes.NewRandB32(),
+	}}
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
+
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg)
+	assert.NoError(t, err)
+	assert.False(t, dispatched)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()

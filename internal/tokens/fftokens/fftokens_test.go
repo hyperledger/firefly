@@ -479,7 +479,7 @@ func TestEvents(t *testing.T) {
 	// token-pool: success
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && *p.TransactionID == *txID
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "8",
 		"event": "token-pool",
@@ -526,7 +526,7 @@ func TestEvents(t *testing.T) {
 	// token-mint: success
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 2 && t.To == "0x0" && t.TokenIndex == "" && *t.TX.ID == *txID
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "11",
 		"event": "token-mint",
@@ -547,7 +547,7 @@ func TestEvents(t *testing.T) {
 	// token-mint: invalid uuid (success)
 	mcb.On("TokensTransferred", h, "N1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 1 && t.To == "0x0" && t.TokenIndex == "1"
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "12",
 		"event": "token-mint",
@@ -588,7 +588,7 @@ func TestEvents(t *testing.T) {
 	// token-transfer: bad message hash (success)
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == ""
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "14",
 		"event": "token-transfer",
@@ -608,9 +608,10 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"14"},"event":"ack"}`, string(msg))
 
 	// token-transfer: success
+	messageID := fftypes.NewUUID()
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == ""
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && messageID.Equals(t.Message)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "15",
 		"event": "token-transfer",
@@ -620,7 +621,7 @@ func TestEvents(t *testing.T) {
 			"from":     "0x0",
 			"to":       "0x1",
 			"amount":   "2",
-			"data":     fftypes.JSONObject{"tx": txID.String()}.String(),
+			"data":     fftypes.JSONObject{"tx": txID.String(), "message": messageID.String()}.String(),
 			"transaction": fftypes.JSONObject{
 				"transactionHash": "abc",
 			},
@@ -632,7 +633,7 @@ func TestEvents(t *testing.T) {
 	// token-burn: success
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.TokenIndex == "0"
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "16",
 		"event": "token-burn",

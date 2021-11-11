@@ -36,6 +36,7 @@ type TokenTransfer struct {
 	To          string            `json:"to,omitempty"`
 	Amount      BigInt            `json:"amount"`
 	ProtocolID  string            `json:"protocolId,omitempty"`
+	Message     *UUID             `json:"message,omitempty"`
 	MessageHash *Bytes32          `json:"messageHash,omitempty"`
 	Created     *FFTime           `json:"created,omitempty"`
 	TX          TransactionRef    `json:"tx,omitempty"`

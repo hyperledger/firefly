@@ -799,6 +799,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"to":          &StringField{},
 	"amount":      &Int64Field{},
 	"protocolid":  &StringField{},
+	"message":     &UUIDField{},
 	"messagehash": &Bytes32Field{},
 	"created":     &TimeField{},
 }

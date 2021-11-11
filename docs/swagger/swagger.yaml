@@ -4772,6 +4772,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -4806,6 +4807,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -4989,6 +4991,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5023,6 +5026,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5109,6 +5113,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: messagehash
         schema:
           type: string
@@ -5187,6 +5196,7 @@ paths:
                     key:
                       type: string
                     localId: {}
+                    message: {}
                     messageHash: {}
                     namespace:
                       type: string
@@ -5370,6 +5380,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5404,6 +5415,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5894,6 +5906,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5928,6 +5941,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6131,6 +6145,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6165,6 +6180,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6585,6 +6601,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: messagehash
         schema:
           type: string
@@ -6663,6 +6684,7 @@ paths:
                     key:
                       type: string
                     localId: {}
+                    message: {}
                     messageHash: {}
                     namespace:
                       type: string
@@ -6833,6 +6855,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6867,6 +6890,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6929,6 +6953,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string

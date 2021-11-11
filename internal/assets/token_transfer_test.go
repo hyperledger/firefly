@@ -860,6 +860,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	msgID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -870,6 +871,9 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
 			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: msgID,
+				},
 				Hash: hash,
 			},
 			InlineData: fftypes.InlineData{
@@ -904,7 +908,8 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *hash, *transfer.MessageHash)
+	assert.Equal(t, *msgID, *transfer.TokenTransfer.Message)
+	assert.Equal(t, *hash, *transfer.TokenTransfer.MessageHash)
 
 	mbm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -952,6 +957,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	msgID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -963,6 +969,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 		Message: &fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
+					ID:   msgID,
 					Type: fftypes.MessageTypeTransferPrivate,
 				},
 				Hash: hash,
@@ -999,7 +1006,8 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *hash, *transfer.MessageHash)
+	assert.Equal(t, *msgID, *transfer.TokenTransfer.Message)
+	assert.Equal(t, *hash, *transfer.TokenTransfer.MessageHash)
 
 	mpm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -1091,6 +1099,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	msgID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -1101,6 +1110,9 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
 			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: msgID,
+				},
 				Hash: hash,
 			},
 			InlineData: fftypes.InlineData{
@@ -1148,7 +1160,8 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, true)
 	assert.NoError(t, err)
-	assert.Equal(t, *hash, *transfer.MessageHash)
+	assert.Equal(t, *msgID, *transfer.TokenTransfer.Message)
+	assert.Equal(t, *hash, *transfer.TokenTransfer.MessageHash)
 
 	mbm.AssertExpectations(t)
 	mim.AssertExpectations(t)
