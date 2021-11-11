@@ -24,8 +24,8 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
-	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +38,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.PluginAll) (*subscriptionM
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &syshandlersmocks.SystemHandlers{}
+	msh := &definitionsmocks.DefinitionHandlers{}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")

@@ -25,10 +25,9 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,7 +35,7 @@ import (
 func newTestAggregator() (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &syshandlersmocks.SystemHandlers{}
+	msh := &definitionsmocks.DefinitionHandlers{}
 	ctx, cancel := context.WithCancel(context.Background())
 	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"))
 	return ag, cancel
@@ -65,7 +64,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
@@ -631,7 +630,7 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
@@ -652,7 +651,7 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
@@ -675,7 +674,7 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author2", 0)
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -703,7 +702,7 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -732,7 +731,7 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	mdi := ag.database.(*databasemocks.Plugin)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
@@ -764,7 +763,7 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -798,7 +797,7 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
@@ -937,10 +936,11 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
+
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
-
-	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
@@ -964,8 +964,9 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypeDefinition,
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
+			Namespace: "any",
 		},
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
@@ -979,18 +980,17 @@ func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
+
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
-	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
-
-	dbm := ag.database.(*databasemocks.Plugin)
-	dbm.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	dbm.On("InsertEvent", ag.ctx, mock.Anything).Return(errors.Errorf("pop"))
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypeDefinition,
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
+			Namespace: "any",
 		},
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},

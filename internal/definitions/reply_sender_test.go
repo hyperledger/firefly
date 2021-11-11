@@ -29,7 +29,7 @@ import (
 )
 
 func TestSendReplyBroadcastFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 	mms := &sysmessagingmocks.MessageSender{}
 	mbm := sh.broadcast.(*broadcastmocks.Manager)
 	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
@@ -45,7 +45,7 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 }
 
 func TestSendReplyPrivateFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 	mms := &sysmessagingmocks.MessageSender{}
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
@@ -67,7 +67,7 @@ func TestSendReplyPrivateFail(t *testing.T) {
 }
 
 func TestSendReplyPrivateOk(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{

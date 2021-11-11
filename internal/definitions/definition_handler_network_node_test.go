@@ -30,7 +30,7 @@ import (
 )
 
 func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -72,7 +72,7 @@ func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeUpsertFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -112,7 +112,7 @@ func TestHandleDefinitionBroadcastNodeUpsertFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -154,7 +154,7 @@ func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeDupMismatch(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -192,7 +192,7 @@ func TestHandleDefinitionBroadcastNodeDupMismatch(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -233,7 +233,7 @@ func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeGetFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -271,7 +271,7 @@ func TestHandleDefinitionBroadcastNodeGetFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeBadAuthor(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -308,7 +308,7 @@ func TestHandleDefinitionBroadcastNodeBadAuthor(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeGetOrgNotFound(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -345,7 +345,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgNotFound(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeGetOrgFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -382,7 +382,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeValidateFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -415,7 +415,7 @@ func TestHandleDefinitionBroadcastNodeValidateFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNodeUnmarshalFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	data := &fftypes.Data{
 		Value: fftypes.Byteable(`!json`),

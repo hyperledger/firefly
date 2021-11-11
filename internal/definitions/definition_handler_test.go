@@ -31,7 +31,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestSystemHandlers(t *testing.T) *definitionHandlers {
+func newTestDefinitionHandlers(t *testing.T) *definitionHandlers {
 	mdi := &databasemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -42,7 +42,7 @@ func newTestSystemHandlers(t *testing.T) *definitionHandlers {
 }
 
 func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "uknown",
@@ -53,7 +53,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "uknown",
@@ -63,7 +63,7 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "uknown",
@@ -75,7 +75,7 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 func TestPrivateMessagingPassthroughs(t *testing.T) {
 	ctx := context.Background()
 
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("GetGroupByID", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil, nil)

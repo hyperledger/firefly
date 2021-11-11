@@ -29,7 +29,7 @@ import (
 )
 
 func TestHandleDefinitionBroadcastChildOrgOk(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	parentOrg := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -75,7 +75,7 @@ func TestHandleDefinitionBroadcastChildOrgOk(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastChildOrgDupOk(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	parentOrg := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -119,7 +119,7 @@ func TestHandleDefinitionBroadcastChildOrgDupOk(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastChildOrgBadKey(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	parentOrg := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -161,7 +161,7 @@ func TestHandleDefinitionBroadcastChildOrgBadKey(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastOrgDupMismatch(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -196,7 +196,7 @@ func TestHandleDefinitionBroadcastOrgDupMismatch(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastOrgUpsertFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -232,7 +232,7 @@ func TestHandleDefinitionBroadcastOrgUpsertFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastOrgGetOrgFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -265,7 +265,7 @@ func TestHandleDefinitionBroadcastOrgGetOrgFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastOrgAuthorMismatch(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -299,7 +299,7 @@ func TestHandleDefinitionBroadcastOrgAuthorMismatch(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastGetParentFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -334,7 +334,7 @@ func TestHandleDefinitionBroadcastGetParentFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastGetParentNotFound(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -369,7 +369,7 @@ func TestHandleDefinitionBroadcastGetParentNotFound(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastValidateFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -398,7 +398,7 @@ func TestHandleDefinitionBroadcastValidateFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastUnmarshalFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+	sh := newTestDefinitionHandlers(t)
 
 	data := &fftypes.Data{
 		Value: fftypes.Byteable(`!json`),

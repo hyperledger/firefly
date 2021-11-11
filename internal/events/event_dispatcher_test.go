@@ -26,8 +26,8 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
-	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -41,7 +41,7 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mei.On("Capabilities").Return(&events.Capabilities{ChangeEvents: true}).Maybe()
 	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
-	msh := &syshandlersmocks.SystemHandlers{}
+	msh := &definitionsmocks.DefinitionHandlers{}
 	ctx, cancel := context.WithCancel(context.Background())
 	return newEventDispatcher(ctx, mei, mdi, mdm, msh, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx)), func() {
 		cancel()
@@ -859,7 +859,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	cancel()
 	ed.acksNacks = make(chan ackNack, 2)
-	msh := ed.definitions.(*syshandlersmocks.SystemHandlers)
+	msh := ed.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("SendReply", ed.ctx, mock.Anything, mock.Anything).Return(&fftypes.Message{}, nil)
 
 	event1 := fftypes.NewUUID()
