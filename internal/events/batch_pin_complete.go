@@ -40,7 +40,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 	}()
 	log.L(em.ctx).Tracef("BatchPinComplete info: %+v", additionalInfo)
 
-	if batchPin.BatchPaylodRef != "" {
+	if batchPin.BatchPayloadRef != "" {
 		return em.handleBroadcastPinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
 	}
 	return em.handlePrivatePinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
@@ -95,7 +95,7 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	var body io.ReadCloser
 	if err := em.retry.Do(em.ctx, "retrieve data", func(attempt int) (retry bool, err error) {
-		body, err = em.publicstorage.RetrieveData(em.ctx, batchPin.BatchPaylodRef)
+		body, err = em.publicstorage.RetrieveData(em.ctx, batchPin.BatchPayloadRef)
 		return err != nil, err // retry indefinitely (until context closes)
 	}); err != nil {
 		return err

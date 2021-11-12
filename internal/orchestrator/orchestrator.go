@@ -128,6 +128,7 @@ type Orchestrator interface {
 	AddContractInstance(ctx context.Context, ns string, cd *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error)
 	GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractInstance, res *database.FilterResult, err error)
 	GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error)
+	InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, params map[string]interface{}) (interface{}, error)
 }
 
 type orchestrator struct {
@@ -541,4 +542,14 @@ func (or *orchestrator) GetContractInstances(ctx context.Context, ns string, fil
 
 func (or *orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error) {
 	return or.contracts.GetContractInstanceByNameOrID(ctx, ns, nameOrID)
+}
+
+func (or *orchestrator) InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, params map[string]interface{}) (interface{}, error) {
+	ci, err := or.contracts.GetContractInstanceByNameOrID(ctx, ns, contractInstanceNameOrId)
+	if err != nil {
+		return nil, err
+	}
+	signingKey := or.identity.GetOrgKey(ctx)
+	operationID := fftypes.NewUUID()
+	return or.blockchain.InvokeContract(ctx, operationID, signingKey, ci, method, params)
 }

@@ -53,6 +53,29 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 
+// InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, contract, method, params
+func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, contract *fftypes.ContractInstance, method string, params map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, operationID, signingKey, contract, method, params)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.ContractInstance, string, map[string]interface{}) interface{}); ok {
+		r0 = rf(ctx, operationID, signingKey, contract, method, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, string, *fftypes.ContractInstance, string, map[string]interface{}) error); ok {
+		r1 = rf(ctx, operationID, signingKey, contract, method, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Name provides a mock function with given fields:
 func (_m *Plugin) Name() string {
 	ret := _m.Called()

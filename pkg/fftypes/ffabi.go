@@ -17,16 +17,22 @@
 package fftypes
 
 type FFABI struct {
-	Methods []*Method     `json:"methods,omitempty"`
-	Events  []*FFABIEvent `json:"events,omitempty"`
+	Methods []*FFABIMethod
+	Events  []*FFABIEvent
 }
 
-type Method struct {
-	Name   string
-	Params []interface{} // TODO: make these strongly typed
+type FFABIMethod struct {
+	Name    string
+	Params  []*FFABIParam
+	Returns []*FFABIParam
 }
 
 type FFABIEvent struct {
 	Name   string
-	Params []interface{} // TODO: make these strongly typed
+	Params []*FFABIParam
+}
+
+type FFABIParam struct {
+	Name string
+	Type string
 }

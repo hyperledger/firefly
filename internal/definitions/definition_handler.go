@@ -93,11 +93,8 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineContract:
 		return dh.handleContractDefinitionBroadcast(ctx, msg, data)
-<<<<<<< HEAD
-=======
 	case fftypes.SystemTagDefineContractInstance:
 		return dh.handleContractInstanceBroadcast(ctx, msg, data)
->>>>>>> af172add (Add contract instances)
 	default:
 		l.Debugf("Unknown topic '%s' for system broadcast or definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 	}

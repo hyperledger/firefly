@@ -330,12 +330,12 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	batch := &blockchain.BatchPin{
-		Namespace:      ns,
-		TransactionID:  &txnID,
-		BatchID:        &batchID,
-		BatchHash:      &batchHash,
-		BatchPaylodRef: sPayloadRef,
-		Contexts:       contexts,
+		Namespace:       ns,
+		TransactionID:   &txnID,
+		BatchID:         &batchID,
+		BatchHash:       &batchHash,
+		BatchPayloadRef: sPayloadRef,
+		Contexts:        contexts,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -454,7 +454,7 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, method, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, method, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
 	return e.client.R().
 		SetContext(ctx).
 		SetQueryParam(e.prefixShort+"-from", signingKey).
@@ -462,7 +462,8 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, method, signingKey 
 		SetQueryParam(e.prefixShort+"-id", requestID).
 		SetBody(input).
 		SetResult(output).
-		Post(e.instancePath + "/" + method)
+		Post(contractPath + "/" + method)
+	// TODO: ^ Instance path needs to change ^
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
@@ -478,12 +479,26 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		Namespace:  batch.Namespace,
 		UUIDs:      ethHexFormatB32(&uuids),
 		BatchHash:  ethHexFormatB32(batch.BatchHash),
-		PayloadRef: batch.BatchPaylodRef,
+		PayloadRef: batch.BatchPayloadRef,
 		Contexts:   ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, "pinBatch", signingKey, operationID.String(), input, tx)
+	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", signingKey, operationID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return nil
+}
+
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, contract *fftypes.ContractInstance, method string, params map[string]interface{}) (interface{}, error) {
+	tx := &asyncTXSubmission{}
+	res, err := e.invokeContractMethod(ctx, "contracts/"+contract.OnChainLocation, method, signingKey, operationID.String(), params, tx)
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	var result interface{}
+	err = json.Unmarshal(res.Body(), &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

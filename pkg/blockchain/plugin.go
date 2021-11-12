@@ -46,6 +46,8 @@ type Plugin interface {
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
+
+	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, contract *fftypes.ContractInstance, method string, params map[string]interface{}) (interface{}, error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -100,8 +102,8 @@ type BatchPin struct {
 	// BatchHash is the SHA256 hash of the batch
 	BatchHash *fftypes.Bytes32
 
-	// BatchPaylodRef is a string that can be passed to to the storage interface to retrieve the payload. Nil for private messages
-	BatchPaylodRef string
+	// BatchPayloadRef is a string that can be passed to to the storage interface to retrieve the payload. Nil for private messages
+	BatchPayloadRef string
 
 	// Contexts is an array of hashes that allow the FireFly runtimes to identify whether one of the messgages in
 	// that batch is the next message for a sequence that involves that node. If so that means the FireFly runtime must

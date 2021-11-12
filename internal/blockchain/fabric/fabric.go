@@ -103,6 +103,17 @@ type fabBatchPinInput struct {
 }
 
 type fabTxInputHeaders struct {
+	Type          string         `json:"type"`
+	PayloadSchema *PayloadSchema `json:"payloadSchema,omitempty"`
+}
+
+type PayloadSchema struct {
+	Type        string        `json:"type"`
+	PrefixItems []*PrefixItem `json:"prefixItems"`
+}
+
+type PrefixItem struct {
+	Name string `json:"name"`
 	Type string `json:"type"`
 }
 
@@ -116,6 +127,12 @@ type fabTxInput struct {
 	Headers *fabTxInputHeaders `json:"headers"`
 	Func    string             `json:"func"`
 	Args    []string           `json:"args"`
+}
+
+type fabTxNamedInput struct {
+	Headers *fabTxInputHeaders `json:"headers"`
+	Func    string             `json:"func"`
+	Args    map[string]string  `json:"args"`
 }
 
 func newTxInput(pinInput *fabBatchPinInput) *fabTxInput {
@@ -365,12 +382,12 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	batch := &blockchain.BatchPin{
-		Namespace:      ns,
-		TransactionID:  &txnID,
-		BatchID:        &batchID,
-		BatchHash:      &batchHash,
-		BatchPaylodRef: sPayloadRef,
-		Contexts:       contexts,
+		Namespace:       ns,
+		TransactionID:   &txnID,
+		BatchID:         &batchID,
+		BatchHash:       &batchHash,
+		BatchPayloadRef: sPayloadRef,
+		Contexts:        contexts,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -551,7 +568,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 		Namespace:  batch.Namespace,
 		UUIDs:      hexFormatB32(&uuids),
 		BatchHash:  hexFormatB32(batch.BatchHash),
-		PayloadRef: batch.BatchPaylodRef,
+		PayloadRef: batch.BatchPayloadRef,
 		Contexts:   hashes,
 	}
 	input := newTxInput(pinInput)
@@ -560,4 +577,67 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return nil
+}
+
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, contract *fftypes.ContractInstance, method string, params map[string]interface{}) (interface{}, error) {
+	tx := &asyncTXSubmission{}
+
+	// All arguments must be JSON serialized
+	args, err := jsonEncodeParams(params)
+	if err != nil {
+		return nil, err
+	}
+	input := &fabTxNamedInput{
+		Func:    method,
+		Headers: newTxInputHeaders(),
+		Args:    args,
+	}
+
+	// Find the method being called
+	var m *fftypes.FFABIMethod
+	for _, i := range contract.ContractDefinition.FFABI.Methods {
+		if i.Name == method {
+			m = i
+			break
+		}
+	}
+	if m == nil {
+		return nil, fmt.Errorf("method '%s' not found", method)
+	}
+
+	input.Headers.PayloadSchema = &PayloadSchema{
+		Type:        "array",
+		PrefixItems: make([]*PrefixItem, len(m.Params)),
+	}
+
+	// Build the payload schema for the method parameters
+	for i, param := range m.Params {
+		input.Headers.PayloadSchema.PrefixItems[i] = &PrefixItem{
+			Name: param.Name,
+			Type: "string",
+		}
+	}
+
+	res, err := f.invokeContractMethod(ctx, f.defaultChannel, contract.OnChainLocation, signingKey, operationID.String(), input, tx)
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	var result interface{}
+	err = json.Unmarshal(res.Body(), &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func jsonEncodeParams(params map[string]interface{}) (output map[string]string, err error) {
+	output = make(map[string]string, len(params))
+	for field, value := range params {
+		encodedValue, err := json.Marshal(value)
+		if err != nil {
+			return nil, err
+		}
+		output[field] = string(encodedValue)
+	}
+	return
 }

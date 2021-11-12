@@ -1200,6 +1200,29 @@ func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	return r0
 }
 
+// InvokeContract provides a mock function with given fields: ctx, ns, contractInstanceNameOrId, method, params
+func (_m *Orchestrator) InvokeContract(ctx context.Context, ns string, contractInstanceNameOrId string, method string, params map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, ns, contractInstanceNameOrId, method, params)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, map[string]interface{}) interface{}); ok {
+		r0 = rf(ctx, ns, contractInstanceNameOrId, method, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, map[string]interface{}) error); ok {
+		r1 = rf(ctx, ns, contractInstanceNameOrId, method, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // IsPreInit provides a mock function with given fields:
 func (_m *Orchestrator) IsPreInit() bool {
 	ret := _m.Called()
