@@ -24,14 +24,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *definitionHandlers) persistTokenPool(ctx context.Context, pool *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
+func (dh *definitionHandlers) persistTokenPool(ctx context.Context, pool *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
 	// Find a matching operation within this transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", pool.TX.ID),
 		fb.Eq("type", fftypes.OpTypeTokenAnnouncePool),
 	)
-	operations, _, err := sh.database.GetOperations(ctx, filter)
+	operations, _, err := dh.database.GetOperations(ctx, filter)
 	if err != nil {
 		return false, err // retryable
 	}
@@ -41,12 +41,12 @@ func (sh *definitionHandlers) persistTokenPool(ctx context.Context, pool *fftype
 		update := database.OperationQueryFactory.NewUpdate(ctx).
 			Set("status", fftypes.OpStatusSucceeded).
 			Set("output", fftypes.JSONObject{"message": pool.Message})
-		if err := sh.database.UpdateOperation(ctx, operations[0].ID, update); err != nil {
+		if err := dh.database.UpdateOperation(ctx, operations[0].ID, update); err != nil {
 			return false, err // retryable
 		}
 
 		// Validate received info matches the database
-		transaction, err := sh.database.GetTransactionByID(ctx, pool.TX.ID)
+		transaction, err := dh.database.GetTransactionByID(ctx, pool.TX.ID)
 		if err != nil {
 			return false, err // retryable
 		}
@@ -57,14 +57,14 @@ func (sh *definitionHandlers) persistTokenPool(ctx context.Context, pool *fftype
 
 		// Mark transaction completed
 		transaction.Status = fftypes.OpStatusSucceeded
-		err = sh.database.UpsertTransaction(ctx, transaction, false)
+		err = dh.database.UpsertTransaction(ctx, transaction, false)
 		if err != nil {
 			return false, err // retryable
 		}
 	} else {
 		// No local announce operation found (broadcast originated from another node)
 		log.L(ctx).Infof("Validating token pool transaction '%s' with protocol ID '%s'", pool.TX.ID, pool.ProtocolTxID)
-		err = sh.assets.ValidateTokenPoolTx(ctx, &pool.TokenPool, pool.ProtocolTxID)
+		err = dh.assets.ValidateTokenPoolTx(ctx, &pool.TokenPool, pool.ProtocolTxID)
 		if err != nil {
 			log.L(ctx).Errorf("Failed to validate token pool transaction '%s': %v", pool.TX.ID, err)
 			return false, err // retryable
@@ -80,13 +80,13 @@ func (sh *definitionHandlers) persistTokenPool(ctx context.Context, pool *fftype
 			},
 			ProtocolID: pool.ProtocolTxID,
 		}
-		valid, err = sh.txhelper.PersistTransaction(ctx, transaction)
+		valid, err = dh.txhelper.PersistTransaction(ctx, transaction)
 		if !valid || err != nil {
 			return valid, err
 		}
 	}
 
-	err = sh.database.UpsertTokenPool(ctx, &pool.TokenPool)
+	err = dh.database.UpsertTokenPool(ctx, &pool.TokenPool)
 	if err != nil {
 		if err == database.IDMismatch {
 			log.L(ctx).Errorf("Invalid token pool '%s'. ID mismatch with existing record", pool.ID)
@@ -98,18 +98,18 @@ func (sh *definitionHandlers) persistTokenPool(ctx context.Context, pool *fftype
 	return true, nil
 }
 
-func (sh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var pool fftypes.TokenPoolAnnouncement
-	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &pool)
+	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &pool)
 	if valid {
 		if err = pool.Validate(ctx, true); err != nil {
 			l.Warnf("Unable to process token pool broadcast %s - validate failed: %s", msg.Header.ID, err)
 			valid = false
 		} else {
 			pool.Message = msg.Header.ID
-			valid, err = sh.persistTokenPool(ctx, &pool)
+			valid, err = dh.persistTokenPool(ctx, &pool)
 			if err != nil {
 				return valid, err
 			}
@@ -124,6 +124,6 @@ func (sh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg 
 		l.Warnf("Token pool rejected id=%s author=%s", pool.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, pool.Namespace, pool.ID)
 	}
-	err = sh.database.InsertEvent(ctx, event)
+	err = dh.database.InsertEvent(ctx, event)
 	return valid, err
 }

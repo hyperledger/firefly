@@ -23,11 +23,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var dt fftypes.Datatype
-	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &dt)
+	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &dt)
 	if !valid {
 		return false, nil
 	}
@@ -37,12 +37,12 @@ func (sh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, msg *
 		return false, nil
 	}
 
-	if err = sh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
+	if err = dh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
 		return false, nil
 	}
 
-	existing, err := sh.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
+	existing, err := dh.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
 	if err != nil {
 		return false, err // We only return database errors
 	}
@@ -51,12 +51,12 @@ func (sh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, msg *
 		return false, nil
 	}
 
-	if err = sh.database.UpsertDatatype(ctx, &dt, false); err != nil {
+	if err = dh.database.UpsertDatatype(ctx, &dt, false); err != nil {
 		return false, err
 	}
 
 	event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID)
-	if err = sh.database.InsertEvent(ctx, event); err != nil {
+	if err = dh.database.InsertEvent(ctx, event); err != nil {
 		return false, err
 	}
 

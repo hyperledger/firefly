@@ -23,12 +23,12 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *definitionHandlers) SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
+func (dh *definitionHandlers) SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
 	var err error
 	if reply.Header.Group != nil {
-		err = sh.messaging.NewMessage(event.Namespace, reply).Send(ctx)
+		err = dh.messaging.NewMessage(event.Namespace, reply).Send(ctx)
 	} else {
-		err = sh.broadcast.NewBroadcast(event.Namespace, reply).Send(ctx)
+		err = dh.broadcast.NewBroadcast(event.Namespace, reply).Send(ctx)
 	}
 	if err != nil {
 		log.L(ctx).Errorf("Failed to send reply: %s", err)
