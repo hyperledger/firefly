@@ -152,15 +152,16 @@ type SortField struct {
 // FilterInfo is the structure returned by Finalize to the plugin, to serialize this filter
 // into the underlying database mechanism's filter language
 type FilterInfo struct {
-	Sort     []*SortField
-	Skip     uint64
-	Limit    uint64
-	Count    bool
-	Field    string
-	Op       FilterOp
-	Values   []FieldSerialization
-	Value    FieldSerialization
-	Children []*FilterInfo
+	Sort      []*SortField
+	Skip      uint64
+	Limit     uint64
+	Count     bool
+	CountExpr string
+	Field     string
+	Op        FilterOp
+	Values    []FieldSerialization
+	Value     FieldSerialization
+	Children  []*FilterInfo
 }
 
 // FilterResult is has additional info if requested on the query - currently only the total count
