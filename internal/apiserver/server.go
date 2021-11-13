@@ -31,6 +31,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
+
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/websockets"
@@ -40,6 +41,9 @@ import (
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
@@ -61,6 +65,7 @@ type apiServer struct {
 	maxFilterSkip      uint64
 	apiTimeout         time.Duration
 	apiMaxTimeout      time.Duration
+	metricsRegistery   *prometheus.Registry
 }
 
 func InitConfig() {
@@ -413,8 +418,29 @@ func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(r
 	}
 }
 
+func (as *apiServer) configurePrometheusInstrumentation(namespace, subsystem string, r *mux.Router) {
+	if as.metricsRegistery == nil {
+		as.metricsRegistery = prometheus.NewRegistry()
+		as.metricsRegistery.MustRegister(prometheus.NewGoCollector())
+		as.metricsRegistery.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	}
+	instrumentation := muxprom.NewCustomInstrumentation(
+		true,
+		namespace,
+		subsystem,
+		prometheus.DefBuckets,
+		map[string]string{},
+		as.metricsRegistery,
+	)
+	r.Use(instrumentation.Middleware)
+	r.Path("/metrics").Handler(promhttp.InstrumentMetricHandler(as.metricsRegistery,
+		promhttp.HandlerFor(as.metricsRegistery, promhttp.HandlerOpts{})))
+}
+
 func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
+	as.configurePrometheusInstrumentation("apiserver", "rest", r)
+
 	for _, route := range routes {
 		if route.JSONHandler != nil {
 			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(o, route)).
@@ -440,6 +466,8 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 
 func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
+	as.configurePrometheusInstrumentation("apiserver", "admin", r)
+
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {
 			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, route)).
