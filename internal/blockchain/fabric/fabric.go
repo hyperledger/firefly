@@ -125,8 +125,8 @@ type fabIdentity struct {
 	CACert string `json:"caCert"`
 }
 
-var requiredSubscriptions = map[string]string{
-	"BatchPin": "Batch pin",
+var requiredSubscriptions = []string{
+	"BatchPin",
 }
 
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")

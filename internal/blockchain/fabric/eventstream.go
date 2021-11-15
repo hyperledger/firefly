@@ -44,14 +44,13 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID          string      `json:"id"`
-	Description string      `json:"description"`
-	Name        string      `json:"name"`
-	Channel     string      `json:"channel"`
-	Signer      string      `json:"signer"`
-	Stream      string      `json:"stream"`
-	FromBlock   string      `json:"fromBlock"`
-	Filter      eventFilter `json:"filter"`
+	ID        string      `json:"id"`
+	Name      string      `json:"name"`
+	Channel   string      `json:"channel"`
+	Signer    string      `json:"signer"`
+	Stream    string      `json:"stream"`
+	FromBlock string      `json:"fromBlock"`
+	Filter    eventFilter `json:"filter"`
 }
 
 func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
@@ -109,13 +108,12 @@ func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(name, desc, stream, event string) (*subscription, error) {
+func (s *streamManager) createSubscription(name, stream, event string) (*subscription, error) {
 	sub := subscription{
-		Name:        name,
-		Description: desc,
-		Channel:     s.defaultChannel,
-		Signer:      s.signer,
-		Stream:      stream,
+		Name:    name,
+		Channel: s.defaultChannel,
+		Signer:  s.signer,
+		Stream:  stream,
 		Filter: eventFilter{
 			ChaincodeID: s.chaincode,
 			EventFilter: event,
@@ -132,13 +130,13 @@ func (s *streamManager) createSubscription(name, desc, stream, event string) (*s
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscriptions(stream string, subscriptions map[string]string) (subs []*subscription, err error) {
+func (s *streamManager) ensureSubscriptions(stream string, subscriptions []string) (subs []*subscription, err error) {
 	existingSubs, err := s.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
 
-	for eventType, subDesc := range subscriptions {
+	for _, eventType := range subscriptions {
 		var sub *subscription
 		for _, s := range existingSubs {
 			if s.Name == eventType {
@@ -147,7 +145,7 @@ func (s *streamManager) ensureSubscriptions(stream string, subscriptions map[str
 		}
 
 		if sub == nil {
-			if sub, err = s.createSubscription(eventType, subDesc, stream, eventType); err != nil {
+			if sub, err = s.createSubscription(eventType, stream, eventType); err != nil {
 				return nil, err
 			}
 		}

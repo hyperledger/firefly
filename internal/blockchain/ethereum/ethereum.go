@@ -76,8 +76,8 @@ type ethWSCommandPayload struct {
 	Topic string `json:"topic,omitempty"`
 }
 
-var requiredSubscriptions = map[string]string{
-	"BatchPin": "Batch pin",
+var requiredSubscriptions = []string{
+	"BatchPin",
 }
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")

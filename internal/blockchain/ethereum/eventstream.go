@@ -45,11 +45,10 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	Stream      string `json:"stream"`
-	FromBlock   string `json:"fromBlock"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Stream    string `json:"stream"`
+	FromBlock string `json:"fromBlock"`
 }
 
 func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
@@ -107,12 +106,11 @@ func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(name, desc, stream, event string) (*subscription, error) {
+func (s *streamManager) createSubscription(name, stream, event string) (*subscription, error) {
 	sub := subscription{
-		Name:        name,
-		Description: desc,
-		Stream:      stream,
-		FromBlock:   "0",
+		Name:      name,
+		Stream:    stream,
+		FromBlock: "0",
 	}
 	res, err := s.client.R().
 		SetContext(s.ctx).
@@ -125,7 +123,7 @@ func (s *streamManager) createSubscription(name, desc, stream, event string) (*s
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscriptions(stream string, subscriptions map[string]string) (subs []*subscription, err error) {
+func (s *streamManager) ensureSubscriptions(stream string, subscriptions []string) (subs []*subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -136,7 +134,7 @@ func (s *streamManager) ensureSubscriptions(stream string, subscriptions map[str
 		return nil, err
 	}
 
-	for eventType, subDesc := range subscriptions {
+	for _, eventType := range subscriptions {
 		var sub *subscription
 		subName := fmt.Sprintf("%s_%s", eventType, instanceUniqueHash)
 		for _, s := range existingSubs {
@@ -150,7 +148,7 @@ func (s *streamManager) ensureSubscriptions(stream string, subscriptions map[str
 		}
 
 		if sub == nil {
-			if sub, err = s.createSubscription(subName, subDesc, stream, eventType); err != nil {
+			if sub, err = s.createSubscription(subName, stream, eventType); err != nil {
 				return nil, err
 			}
 		}
