@@ -55,26 +55,8 @@ type Ethereum struct {
 	closed chan struct{}
 }
 
-type eventStream struct {
-	ID             string               `json:"id"`
-	Name           string               `json:"name"`
-	ErrorHandling  string               `json:"errorHandling"`
-	BatchSize      uint                 `json:"batchSize"`
-	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
-	Type           string               `json:"type"`
-	WebSocket      eventStreamWebsocket `json:"websocket"`
-}
-
 type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
-}
-
-type subscription struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	Stream      string `json:"stream"`
-	FromBlock   string `json:"fromBlock"`
 }
 
 type asyncTXSubmission struct {
@@ -143,7 +125,18 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	}
 
 	if !ethconnectConf.GetBool(EthconnectConfigSkipEventstreamInit) {
-		if err = e.ensureEventStreams(ethconnectConf); err != nil {
+		streams := streamManager{
+			ctx:          e.ctx,
+			client:       e.client,
+			instancePath: e.instancePath,
+		}
+		batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
+		batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
+		if e.initInfo.stream, err = streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
+			return err
+		}
+		log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
+		if e.initInfo.subs, err = streams.ensureSubscriptions(e.initInfo.stream.ID, requiredSubscriptions); err != nil {
 			return err
 		}
 	}

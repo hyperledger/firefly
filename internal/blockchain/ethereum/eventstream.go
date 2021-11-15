@@ -17,113 +17,126 @@
 package ethereum
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
 )
 
-func (e *Ethereum) getEventStreams() (streams []*eventStream, err error) {
-	res, err := e.client.R().
-		SetContext(e.ctx).
+type streamManager struct {
+	ctx          context.Context
+	client       *resty.Client
+	instancePath string
+}
+
+type eventStream struct {
+	ID             string               `json:"id"`
+	Name           string               `json:"name"`
+	ErrorHandling  string               `json:"errorHandling"`
+	BatchSize      uint                 `json:"batchSize"`
+	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
+	Type           string               `json:"type"`
+	WebSocket      eventStreamWebsocket `json:"websocket"`
+}
+
+type subscription struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
+	Stream      string `json:"stream"`
+	FromBlock   string `json:"fromBlock"`
+}
+
+func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
+	res, err := s.client.R().
+		SetContext(s.ctx).
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return streams, nil
 }
 
-func (e *Ethereum) createEventStream(batchSize, batchTimeout uint) (*eventStream, error) {
+func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
 	stream := eventStream{
-		Name:           e.topic,
+		Name:           topic,
 		ErrorHandling:  "block",
 		BatchSize:      batchSize,
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
+		WebSocket:      eventStreamWebsocket{Topic: topic},
 	}
-	stream.WebSocket.Topic = e.topic
-	res, err := e.client.R().
+	res, err := s.client.R().
+		SetContext(s.ctx).
 		SetBody(&stream).
 		SetResult(&stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &stream, nil
 }
 
-func (e *Ethereum) ensureEventStreams(ethconnectConf config.Prefix) error {
-	existingStreams, err := e.getEventStreams()
+func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+	existingStreams, err := s.getEventStreams()
 	if err != nil {
-		return err
+		return nil, err
 	}
-
 	for _, stream := range existingStreams {
-		if stream.WebSocket.Topic == e.topic {
-			e.initInfo.stream = stream
+		if stream.WebSocket.Topic == topic {
+			return stream, nil
 		}
 	}
-
-	if e.initInfo.stream == nil {
-		e.initInfo.stream, err = e.createEventStream(
-			ethconnectConf.GetUint(EthconnectConfigBatchSize),
-			uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-
-	return e.ensureSubscriptions()
+	return s.createEventStream(topic, batchSize, batchTimeout)
 }
 
-func (e *Ethereum) getSubscriptions() (subs []*subscription, err error) {
-	res, err := e.client.R().
+func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
+	res, err := s.client.R().
+		SetContext(s.ctx).
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return subs, nil
 }
 
-func (e *Ethereum) createSubscription(name, desc, event string) (*subscription, error) {
+func (s *streamManager) createSubscription(name, desc, stream, event string) (*subscription, error) {
 	sub := subscription{
 		Name:        name,
 		Description: desc,
-		Stream:      e.initInfo.stream.ID,
+		Stream:      stream,
 		FromBlock:   "0",
 	}
-	res, err := e.client.R().
-		SetContext(e.ctx).
+	res, err := s.client.R().
+		SetContext(s.ctx).
 		SetBody(&sub).
 		SetResult(&sub).
-		Post(fmt.Sprintf("%s/%s", e.instancePath, event))
+		Post(fmt.Sprintf("%s/%s", s.instancePath, event))
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &sub, nil
 }
 
-func (e *Ethereum) ensureSubscriptions() error {
+func (s *streamManager) ensureSubscriptions(stream string, subscriptions map[string]string) (subs []*subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
-	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(e.instancePath)))[0:16]
+	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(s.instancePath)))[0:16]
 
-	existingSubs, err := e.getSubscriptions()
+	existingSubs, err := s.getSubscriptions()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for eventType, subDesc := range requiredSubscriptions {
+	for eventType, subDesc := range subscriptions {
 		var sub *subscription
 		subName := fmt.Sprintf("%s_%s", eventType, instanceUniqueHash)
 		for _, s := range existingSubs {
@@ -137,13 +150,13 @@ func (e *Ethereum) ensureSubscriptions() error {
 		}
 
 		if sub == nil {
-			if sub, err = e.createSubscription(subName, subDesc, eventType); err != nil {
-				return err
+			if sub, err = s.createSubscription(subName, subDesc, stream, eventType); err != nil {
+				return nil, err
 			}
 		}
 
-		log.L(e.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		e.initInfo.subs = append(e.initInfo.subs, sub)
+		log.L(s.ctx).Infof("%s subscription: %s", eventType, sub.ID)
+		subs = append(subs, sub)
 	}
-	return nil
+	return subs, nil
 }
