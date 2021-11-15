@@ -24,8 +24,8 @@ type FFI struct {
 	Namespace string       `json:"namespace,omitempty"`
 	Name      string       `json:"name,omitempty"`
 	Version   string       `json:"version,omitempty"`
-	Methods   []*FFIMethod `json:"methods"`
-	Events    []*FFIEvent  `json:"events"`
+	Methods   []*FFIMethod `json:"methods,omitempty"`
+	Events    []*FFIEvent  `json:"events,omitempty"`
 }
 
 type FFIMethod struct {

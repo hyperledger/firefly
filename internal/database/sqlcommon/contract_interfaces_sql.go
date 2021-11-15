@@ -33,8 +33,6 @@ var (
 		"namespace",
 		"name",
 		"version",
-		"ffabi",
-		"onchain_location",
 	}
 	contractInterfacesFilterFieldMap = map[string]string{}
 )
@@ -48,7 +46,7 @@ func (s *SQLCommon) InsertContractInterface(ctx context.Context, cd *fftypes.FFI
 
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
-			From("contract_interfaces").
+			From("contractinterfaces").
 			Where(sq.And{sq.Eq{"namespace": cd.Namespace}, sq.Eq{"name": cd.Name}, sq.Eq{"version": cd.Version}}),
 	)
 	if err != nil {
@@ -71,7 +69,7 @@ func (s *SQLCommon) InsertContractInterface(ctx context.Context, cd *fftypes.FFI
 		}
 	} else {
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contract_interfaces").
+			sq.Insert("contractinterfaces").
 				Columns(contractInterfacesColumns...).
 				Values(
 					cd.ID,
@@ -107,7 +105,7 @@ func (s *SQLCommon) contractInterfaceResult(ctx context.Context, row *sql.Rows) 
 func (s *SQLCommon) getContractPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFI, error) {
 	rows, _, err := s.query(ctx,
 		sq.Select(contractInterfacesColumns...).
-			From("contract_interfaces").
+			From("contractinterfaces").
 			Where(pred),
 	)
 	if err != nil {
@@ -130,7 +128,7 @@ func (s *SQLCommon) getContractPred(ctx context.Context, desc string, pred inter
 
 func (s *SQLCommon) GetContractInterfaces(ctx context.Context, ns string, filter database.Filter) (contractInterfaces []*fftypes.FFI, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractInterfacesColumns...).From("contract_interfaces").Where(sq.Eq{"namespace": ns}), filter, contractInterfacesFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractInterfacesColumns...).From("contractinterfaces").Where(sq.Eq{"namespace": ns}), filter, contractInterfacesFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
