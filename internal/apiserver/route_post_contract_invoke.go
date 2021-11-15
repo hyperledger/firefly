@@ -23,11 +23,12 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var postContract = &oapispec.Route{
 	Name:   "postContractInvoke",
-	Path:   "namespaces/{ns}/contracts/instances/{id}/{method}",
+	Path:   "namespaces/{ns}/apis/{id}/invoke/{method}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -39,13 +40,13 @@ var postContract = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
+	JSONInputValue:  func() interface{} { return &fftypes.ContractInvocationRequest{} },
 	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.InvokeContract(r.Ctx, r.PP["ns"], r.PP["id"], r.PP["method"], r.Input.(map[string]interface{}))
+		return r.Or.InvokeContract(r.Ctx, r.PP["ns"], r.PP["id"], r.PP["method"], r.Input.(*fftypes.ContractInvocationRequest))
 	},
 }

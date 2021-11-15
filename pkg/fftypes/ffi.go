@@ -18,34 +18,49 @@ package fftypes
 
 import "context"
 
-type ContractDefinition struct {
-	ID              *UUID  `json:"id,omitempty"`
-	Namespace       string `json:"namespace,omitempty"`
-	Name            string `json:"name,omitempty"`
-	Version         string `json:"version,omitempty"`
-	Message         *UUID  `json:"message,omitempty"`
-	OnChainLocation string `json:"onChainLocation,omitempty"`
-	FFABI           *FFABI `json:"ffabi,omitempty"`
+type FFI struct {
+	ID        *UUID        `json:"id,omitempty"`
+	Message   *UUID        `json:"message,omitempty"`
+	Namespace string       `json:"namespace,omitempty"`
+	Name      string       `json:"name,omitempty"`
+	Version   string       `json:"version,omitempty"`
+	Methods   []*FFIMethod `json:"methods"`
+	Events    []*FFIEvent  `json:"events"`
 }
 
-type ContractDefinitionBroadcast struct {
-	ContractDefinition
+type FFIMethod struct {
+	Name    string
+	Params  []*FFIParam `json:"params"`
+	Returns []*FFIParam `json:"returns"`
 }
 
-func (f *ContractDefinition) Validate(ctx context.Context, existing bool) (err error) {
+type FFIEvent struct {
+	Name   string      `json:"name"`
+	Params []*FFIParam `json:"params"`
+}
+
+type FFIParam struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+func (f *FFI) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, f.Namespace, "namespace"); err != nil {
 		return err
 	}
 	if err = ValidateFFNameField(ctx, f.Name, "name"); err != nil {
 		return err
 	}
+	if err = ValidateFFNameField(ctx, f.Version, "version"); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (f *ContractDefinition) Topic() string {
+func (f *FFI) Topic() string {
 	return namespaceTopic(f.Namespace)
 }
 
-func (f *ContractDefinition) SetBroadcastMessage(msgID *UUID) {
+func (f *FFI) SetBroadcastMessage(msgID *UUID) {
 	f.Message = msgID
 }

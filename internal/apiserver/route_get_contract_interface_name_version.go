@@ -18,7 +18,6 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -26,25 +25,23 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postNewContractDefinition = &oapispec.Route{
-	Name:   "postNewContractDefinition",
-	Path:   "namespaces/{ns}/contracts/definitions",
-	Method: http.MethodPost,
+var getContractInterfaceNameVersion = &oapispec.Route{
+	Name:   "getContractInterfaceByNameAndVersion",
+	Path:   "namespaces/{ns}/contracts/interfaces/{name}/{version}",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "name", Example: "name", Description: i18n.MsgTBD},
+		{Name: "version", Example: "version", Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
-	},
+	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractDefinition{} },
-	JSONInputMask:   []string{"ID", "Message", "Namespace"},
-	JSONOutputValue: func() interface{} { return &fftypes.ContractDefinition{} },
+	JSONInputValue:  nil,
+	JSONInputMask:   nil,
+	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.AddContractDefinition(r.Ctx, r.PP["ns"], r.Input.(*fftypes.ContractDefinition), waitConfirm)
+		return r.Or.GetContractInterfaceByNameAndVersion(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
 	},
 }

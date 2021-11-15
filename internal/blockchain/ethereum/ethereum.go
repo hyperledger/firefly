@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -463,7 +464,6 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, metho
 		SetBody(input).
 		SetResult(output).
 		Post(contractPath + "/" + method)
-	// TODO: ^ Instance path needs to change ^
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
@@ -489,9 +489,15 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, contract *fftypes.ContractInstance, method string, params map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.OnChainLocation, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
+
+	contractAddress, ok := onChainLocation.(string)
+	if !ok {
+		return nil, errors.New("cannot parse onChainLocation")
+	}
+
 	tx := &asyncTXSubmission{}
-	res, err := e.invokeContractMethod(ctx, "contracts/"+contract.OnChainLocation, method, signingKey, operationID.String(), params, tx)
+	res, err := e.invokeContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress), method.Name, signingKey, operationID.String(), params, tx)
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -501,4 +507,12 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 		return nil, err
 	}
 	return result, nil
+}
+
+func (e *Ethereum) ValidateOnChainLocation(ctx context.Context, onChainLocation fftypes.OnChainLocation) error {
+	location, ok := onChainLocation.(string)
+	if !ok || location != "" {
+		return fmt.Errorf("failed to validate on chain location")
+	}
+	return nil
 }

@@ -91,10 +91,8 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 		return dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
-	case fftypes.SystemTagDefineContract:
-		return dh.handleContractDefinitionBroadcast(ctx, msg, data)
-	case fftypes.SystemTagDefineContractInstance:
-		return dh.handleContractInstanceBroadcast(ctx, msg, data)
+	case fftypes.SystemTagDefineContractInterface:
+		return dh.handleContractInterfaceBroadcast(ctx, msg, data)
 	default:
 		l.Debugf("Unknown topic '%s' for system broadcast or definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 	}
@@ -104,7 +102,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
-		l.Warnf("Unable to process system broadcast %s - expecting 1 attachement, found %d", msg.Header.ID, len(data))
+		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))
 		return false
 	}
 	err := json.Unmarshal(data[0].Value, &res)

@@ -2,5 +2,8 @@
   "go.formatFlags": [
     "-s"
   ],
-  "go.lintTool": "golangci-lint"
+  "go.lintTool": "golangci-lint",
+  "cSpell.words": [
+    "fftypes"
+  ]
 }

@@ -23,25 +23,25 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) persistContractDefinition(ctx context.Context, cd *fftypes.ContractDefinitionBroadcast) (valid bool, err error) {
-	err = dh.database.InsertContractDefinition(ctx, &cd.ContractDefinition)
+func (dh *definitionHandlers) persistContractInterface(ctx context.Context, contractInterface *fftypes.FFI) (valid bool, err error) {
+	err = dh.database.InsertContractInterface(ctx, contractInterface)
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (dh *definitionHandlers) persistContractInstance(ctx context.Context, cd *fftypes.ContractInstanceBroadcast) (valid bool, err error) {
-	err = dh.database.InsertContractInstance(ctx, &cd.ContractInstance)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
+// func (dh *definitionHandlers) persistContractInstance(ctx context.Context, cd *fftypes.ContractInstanceBroadcast) (valid bool, err error) {
+// 	err = dh.database.InsertContractInstance(ctx, &cd.ContractInstance)
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	return true, nil
+// }
 
-func (dh *definitionHandlers) handleContractDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
-	var broadcast fftypes.ContractDefinitionBroadcast
+	var broadcast fftypes.FFI
 	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
 		if err = broadcast.Validate(ctx, true); err != nil {
@@ -49,7 +49,7 @@ func (dh *definitionHandlers) handleContractDefinitionBroadcast(ctx context.Cont
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID
-			valid, err = dh.persistContractDefinition(ctx, &broadcast)
+			valid, err = dh.persistContractInterface(ctx, &broadcast)
 			if err != nil {
 				return valid, err
 			}
@@ -68,31 +68,31 @@ func (dh *definitionHandlers) handleContractDefinitionBroadcast(ctx context.Cont
 	return valid, err
 }
 
-func (dh *definitionHandlers) handleContractInstanceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
-	l := log.L(ctx)
-	var broadcast fftypes.ContractInstanceBroadcast
-	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
-	if valid {
-		if err = broadcast.Validate(ctx, true); err != nil {
-			l.Warnf("Unable to process contract instance broadcast %s - validate failed: %s", msg.Header.ID, err)
-			valid = false
-		} else {
-			broadcast.Message = msg.Header.ID
-			valid, err = dh.persistContractInstance(ctx, &broadcast)
-			if err != nil {
-				return valid, err
-			}
-		}
-	}
+// func (dh *definitionHandlers) handleContractInstanceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+// 	l := log.L(ctx)
+// 	var broadcast fftypes.FFI
+// 	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
+// 	if valid {
+// 		if err = broadcast.Validate(ctx, true); err != nil {
+// 			l.Warnf("Unable to process contract instance broadcast %s - validate failed: %s", msg.Header.ID, err)
+// 			valid = false
+// 		} else {
+// 			broadcast.Message = msg.Header.ID
+// 			valid, err = dh.persistContractInstance(ctx, &broadcast)
+// 			if err != nil {
+// 				return valid, err
+// 			}
+// 		}
+// 	}
 
-	var event *fftypes.Event
-	if valid {
-		l.Infof("Contract instance created id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
-	} else {
-		l.Warnf("Contract instance rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
-	}
-	err = dh.database.InsertEvent(ctx, event)
-	return valid, err
-}
+// 	var event *fftypes.Event
+// 	if valid {
+// 		l.Infof("Contract instance created id=%s author=%s", broadcast.ID, msg.Header.Author)
+// 		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
+// 	} else {
+// 		l.Warnf("Contract instance rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
+// 		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
+// 	}
+// 	err = dh.database.InsertEvent(ctx, event)
+// 	return valid, err
+// }

@@ -313,15 +313,15 @@ func (_m *Plugin) GetConfigRecords(ctx context.Context, filter database.Filter) 
 }
 
 // GetContractDefinitionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error) {
+func (_m *Plugin) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.InterfaceDefinition, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractDefinition); ok {
+	var r0 *fftypes.InterfaceDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.InterfaceDefinition); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
 		}
 	}
 
@@ -336,15 +336,15 @@ func (_m *Plugin) GetContractDefinitionByID(ctx context.Context, id string) (*ff
 }
 
 // GetContractDefinitionByNameAndVersion provides a mock function with given fields: ctx, ns, name, version
-func (_m *Plugin) GetContractDefinitionByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.ContractDefinition, error) {
+func (_m *Plugin) GetContractDefinitionByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.InterfaceDefinition, error) {
 	ret := _m.Called(ctx, ns, name, version)
 
-	var r0 *fftypes.ContractDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.ContractDefinition); ok {
+	var r0 *fftypes.InterfaceDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.InterfaceDefinition); ok {
 		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
 		}
 	}
 
@@ -359,15 +359,15 @@ func (_m *Plugin) GetContractDefinitionByNameAndVersion(ctx context.Context, ns 
 }
 
 // GetContractDefinitions provides a mock function with given fields: ctx, ns, filter
-func (_m *Plugin) GetContractDefinitions(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractDefinition, *database.FilterResult, error) {
+func (_m *Plugin) GetContractDefinitions(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.InterfaceDefinition, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.ContractDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractDefinition); ok {
+	var r0 []*fftypes.InterfaceDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.InterfaceDefinition); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractDefinition)
+			r0 = ret.Get(0).([]*fftypes.InterfaceDefinition)
 		}
 	}
 
@@ -1813,11 +1813,11 @@ func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
 }
 
 // InsertContractDefinition provides a mock function with given fields: ctx, cd
-func (_m *Plugin) InsertContractDefinition(ctx context.Context, cd *fftypes.ContractDefinition) error {
+func (_m *Plugin) InsertContractDefinition(ctx context.Context, cd *fftypes.InterfaceDefinition) error {
 	ret := _m.Called(ctx, cd)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractDefinition) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.InterfaceDefinition) error); ok {
 		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)

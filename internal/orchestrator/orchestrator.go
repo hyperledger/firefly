@@ -121,14 +121,14 @@ type Orchestrator interface {
 	RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 
 	// Custom smart contracts
-	AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (output *fftypes.ContractDefinition, err error)
-	GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractDefinition, *database.FilterResult, error)
-	GetContractDefinitionByID(ctx context.Context, id string) (output *fftypes.ContractDefinition, err error)
-	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.ContractDefinition, err error)
-	AddContractInstance(ctx context.Context, ns string, cd *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error)
-	GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractInstance, res *database.FilterResult, err error)
-	GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error)
-	InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, params map[string]interface{}) (interface{}, error)
+	AddContractInterface(ctx context.Context, ns string, cd *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
+	GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
+	GetContractInterfaceByID(ctx context.Context, id string) (output *fftypes.FFI, err error)
+	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.FFI, err error)
+	// AddContractInstance(ctx context.Context, ns string, cd *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
+	// GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.FFI, res *database.FilterResult, err error)
+	// GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.FFI, err error)
+	InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, req *fftypes.ContractInvocationRequest) (interface{}, error)
 }
 
 type orchestrator struct {
@@ -443,7 +443,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	or.syncasync.Init(or.events)
 
-	or.contracts = contracts.NewContractManager(or.database, or.publicstorage, or.broadcast, or.identity)
+	or.contracts = contracts.NewContractManager(or.database, or.publicstorage, or.broadcast, or.identity, or.blockchain)
 
 	return nil
 }
@@ -516,40 +516,34 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 	return nil
 }
 
-func (or *orchestrator) AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (output *fftypes.ContractDefinition, err error) {
-	return or.contracts.AddContractDefinition(ctx, ns, cd, waitConfirm)
+func (or *orchestrator) AddContractInterface(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {
+	return or.contracts.BroadcastContractInterface(ctx, ns, ffi, waitConfirm)
 }
 
-func (or *orchestrator) GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractDefinition, res *database.FilterResult, err error) {
-	return or.contracts.GetContractDefinitions(ctx, ns, filter)
+func (or *orchestrator) GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.FFI, res *database.FilterResult, err error) {
+	return or.contracts.GetContractInterfaces(ctx, ns, filter)
 }
 
-func (or *orchestrator) GetContractDefinitionByID(ctx context.Context, id string) (output *fftypes.ContractDefinition, err error) {
-	return or.contracts.GetContractDefinitionByID(ctx, id)
+func (or *orchestrator) GetContractInterfaceByID(ctx context.Context, id string) (output *fftypes.FFI, err error) {
+	return or.contracts.GetContractInterfaceByID(ctx, id)
 }
 
-func (or *orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.ContractDefinition, err error) {
-	return or.contracts.GetContractDefinitionByNameAndVersion(ctx, ns, name, version)
+func (or *orchestrator) GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.FFI, err error) {
+	return or.contracts.GetContractInterfaceByNameAndVersion(ctx, ns, name, version)
 }
 
-func (or *orchestrator) AddContractInstance(ctx context.Context, ns string, ci *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error) {
-	return or.contracts.AddContractInstance(ctx, ns, ci, waitConfirm)
-}
+// func (or *orchestrator) AddContractInstance(ctx context.Context, ns string, ci *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error) {
+// 	return or.contracts.AddContractInstance(ctx, ns, ci, waitConfirm)
+// }
 
-func (or *orchestrator) GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractInstance, res *database.FilterResult, err error) {
-	return or.contracts.GetContractInstances(ctx, ns, filter)
-}
+// func (or *orchestrator) GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractInstance, res *database.FilterResult, err error) {
+// 	return or.contracts.GetContractInstances(ctx, ns, filter)
+// }
 
-func (or *orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error) {
-	return or.contracts.GetContractInstanceByNameOrID(ctx, ns, nameOrID)
-}
+// func (or *orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error) {
+// 	return or.contracts.GetContractInstanceByNameOrID(ctx, ns, nameOrID)
+// }
 
-func (or *orchestrator) InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, params map[string]interface{}) (interface{}, error) {
-	ci, err := or.contracts.GetContractInstanceByNameOrID(ctx, ns, contractInstanceNameOrId)
-	if err != nil {
-		return nil, err
-	}
-	signingKey := or.identity.GetOrgKey(ctx)
-	operationID := fftypes.NewUUID()
-	return or.blockchain.InvokeContract(ctx, operationID, signingKey, ci, method, params)
+func (or *orchestrator) InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, req *fftypes.ContractInvocationRequest) (interface{}, error) {
+	return or.contracts.InvokeContract(ctx, ns, contractInstanceNameOrId, method, req)
 }

@@ -25,22 +25,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractInstance = &oapispec.Route{
-	Name:   "getContractInstance",
-	Path:   "namespaces/{ns}/contracts/instances/{id}",
+var getContractInterface = &oapispec.Route{
+	Name:   "getContractInterface",
+	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "id", Example: "id", Description: i18n.MsgTBD},
+		{Name: "interfaceId", Example: "interfaceId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONInputMask:   nil,
-	JSONOutputValue: func() interface{} { return &fftypes.ContractInstance{} },
+	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.GetContractInstanceByNameOrID(r.Ctx, r.PP["ns"], r.PP["id"])
+		return r.Or.GetContractInterfaceByID(r.Ctx, r.PP["interfaceId"])
 	},
 }

@@ -163,6 +163,11 @@ type fabIdentity struct {
 	CACert string `json:"caCert"`
 }
 
+type FabricOnChainLocation struct {
+	Channel   string `json:"channel"`
+	Chaincode string `json:"chaincode"`
+}
+
 var requiredSubscriptions = map[string]string{
 	"BatchPin": "Batch pin",
 }
@@ -579,7 +584,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, contract *fftypes.ContractInstance, method string, params map[string]interface{}) (interface{}, error) {
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.OnChainLocation, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
 	tx := &asyncTXSubmission{}
 
 	// All arguments must be JSON serialized
@@ -588,37 +593,30 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		return nil, err
 	}
 	input := &fabTxNamedInput{
-		Func:    method,
+		Func:    method.Name,
 		Headers: newTxInputHeaders(),
 		Args:    args,
 	}
 
-	// Find the method being called
-	var m *fftypes.FFABIMethod
-	for _, i := range contract.ContractDefinition.FFABI.Methods {
-		if i.Name == method {
-			m = i
-			break
-		}
-	}
-	if m == nil {
-		return nil, fmt.Errorf("method '%s' not found", method)
-	}
-
 	input.Headers.PayloadSchema = &PayloadSchema{
 		Type:        "array",
-		PrefixItems: make([]*PrefixItem, len(m.Params)),
+		PrefixItems: make([]*PrefixItem, len(method.Params)),
 	}
 
 	// Build the payload schema for the method parameters
-	for i, param := range m.Params {
+	for i, param := range method.Params {
 		input.Headers.PayloadSchema.PrefixItems[i] = &PrefixItem{
 			Name: param.Name,
 			Type: "string",
 		}
 	}
 
-	res, err := f.invokeContractMethod(ctx, f.defaultChannel, contract.OnChainLocation, signingKey, operationID.String(), input, tx)
+	fabricOnChainLocation, ok := onChainLocation.(FabricOnChainLocation)
+	if !ok {
+		return nil, fmt.Errorf("cannot parse onChainLocation")
+	}
+
+	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, signingKey, operationID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -640,4 +638,18 @@ func jsonEncodeParams(params map[string]interface{}) (output map[string]string, 
 		output[field] = string(encodedValue)
 	}
 	return
+}
+
+func (f *Fabric) ValidateOnChainLocation(ctx context.Context, onChainLocation fftypes.OnChainLocation) error {
+	location, ok := onChainLocation.(FabricOnChainLocation)
+	if !ok {
+		return fmt.Errorf("failed to validate on chain location")
+	}
+	if location.Channel == "" {
+		return fmt.Errorf("failed to validate on chain location: 'channel' not set")
+	}
+	if location.Chaincode == "" {
+		return fmt.Errorf("failed to validate on chain location: 'chaincode' not set")
+	}
+	return nil
 }

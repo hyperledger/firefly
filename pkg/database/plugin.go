@@ -392,19 +392,23 @@ type iTokenTransferCollection interface {
 }
 
 type iContractDefinitionCollection interface {
-	// InsertContractDefinition - inserts a new contract definition. Must be unique for namespace, name, version
-	InsertContractDefinition(ctx context.Context, cd *fftypes.ContractDefinition) error
-	GetContractDefinitions(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractDefinition, *FilterResult, error)
-	GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error)
-	GetContractDefinitionByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.ContractDefinition, error)
+	// InsertContractInterface - inserts a new contract definition. Must be unique for namespace, name, version
+	InsertContractInterface(ctx context.Context, cd *fftypes.FFI) error
+	GetContractInterfaces(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
+	GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error)
+	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 }
 
 type iContractInstanceCollection interface {
 	// InsertInstanceDefinition - inserts a new contract instance. Must be unique for namespace, name
-	InsertContractInstance(ctx context.Context, cd *fftypes.ContractInstance) error
-	GetContractInstances(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractInstance, *FilterResult, error)
-	GetContractInstanceByID(ctx context.Context, id string) (*fftypes.ContractInstance, error)
-	GetContractInstanceByName(ctx context.Context, ns, name string) (*fftypes.ContractInstance, error)
+	// InsertContractInstance(ctx context.Context, cd *fftypes.ContractInstance) error
+	// GetContractInstances(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractInstance, *FilterResult, error)
+	// GetContractInstanceByID(ctx context.Context, id string) (*fftypes.ContractInstance, error)
+	// GetContractInstanceByName(ctx context.Context, ns, name string) (*fftypes.ContractInstance, error)
+}
+
+type iContractMethodCollection interface {
+	GetContractMethodByName(ctx context.Context, ns, contractNameOrID, methodName string) (*fftypes.FFIMethod, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
@@ -465,6 +469,7 @@ type PeristenceInterface interface {
 	iTokenTransferCollection
 	iContractDefinitionCollection
 	iContractInstanceCollection
+	iContractMethodCollection
 }
 
 // CollectionName represents all collections
@@ -494,14 +499,17 @@ const (
 type UUIDCollectionNS CollectionName
 
 const (
-	CollectionBatches       UUIDCollectionNS = "batches"
-	CollectionData          UUIDCollectionNS = "data"
-	CollectionDataTypes     UUIDCollectionNS = "datatypes"
-	CollectionOperations    UUIDCollectionNS = "operations"
-	CollectionSubscriptions UUIDCollectionNS = "subscriptions"
-	CollectionTransactions  UUIDCollectionNS = "transactions"
-	CollectionTokenPools    UUIDCollectionNS = "tokenpools"
-	CollectionContracts     UUIDCollectionNS = "contracts"
+	CollectionBatches            UUIDCollectionNS = "batches"
+	CollectionData               UUIDCollectionNS = "data"
+	CollectionDataTypes          UUIDCollectionNS = "datatypes"
+	CollectionOperations         UUIDCollectionNS = "operations"
+	CollectionSubscriptions      UUIDCollectionNS = "subscriptions"
+	CollectionTransactions       UUIDCollectionNS = "transactions"
+	CollectionTokenPools         UUIDCollectionNS = "tokenpools"
+	CollectionContractInterfaces UUIDCollectionNS = "contract_interfaces"
+	CollectionContractMethods    UUIDCollectionNS = "contract_methods"
+	CollectionContractEvents     UUIDCollectionNS = "contract_events"
+	CollectionContractParams     UUIDCollectionNS = "contract_params"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can
@@ -818,8 +826,8 @@ var TokenTransferQueryFactory = &queryFields{
 	"created":        &TimeField{},
 }
 
-// ContractDefinitionQueryFactory filter fields for contract definitions
-var ContractDefinitionQueryFactory = &queryFields{
+// ContractInterfaceQueryFactory filter fields for contract definitions
+var ContractInterfaceQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},

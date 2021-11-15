@@ -29,20 +29,20 @@ type Orchestrator struct {
 }
 
 // AddContractDefinition provides a mock function with given fields: ctx, ns, cd, waitConfirm
-func (_m *Orchestrator) AddContractDefinition(ctx context.Context, ns string, cd *fftypes.ContractDefinition, waitConfirm bool) (*fftypes.ContractDefinition, error) {
+func (_m *Orchestrator) AddContractDefinition(ctx context.Context, ns string, cd *fftypes.InterfaceDefinition, waitConfirm bool) (*fftypes.InterfaceDefinition, error) {
 	ret := _m.Called(ctx, ns, cd, waitConfirm)
 
-	var r0 *fftypes.ContractDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractDefinition, bool) *fftypes.ContractDefinition); ok {
+	var r0 *fftypes.InterfaceDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.InterfaceDefinition, bool) *fftypes.InterfaceDefinition); ok {
 		r0 = rf(ctx, ns, cd, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractDefinition, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.InterfaceDefinition, bool) error); ok {
 		r1 = rf(ctx, ns, cd, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -339,15 +339,15 @@ func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.An
 }
 
 // GetContractDefinitionByID provides a mock function with given fields: ctx, id
-func (_m *Orchestrator) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.ContractDefinition, error) {
+func (_m *Orchestrator) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.InterfaceDefinition, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractDefinition); ok {
+	var r0 *fftypes.InterfaceDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.InterfaceDefinition); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
 		}
 	}
 
@@ -362,15 +362,15 @@ func (_m *Orchestrator) GetContractDefinitionByID(ctx context.Context, id string
 }
 
 // GetContractDefinitionByNameAndVersion provides a mock function with given fields: ctx, ns, name, version
-func (_m *Orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.ContractDefinition, error) {
+func (_m *Orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.InterfaceDefinition, error) {
 	ret := _m.Called(ctx, ns, name, version)
 
-	var r0 *fftypes.ContractDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.ContractDefinition); ok {
+	var r0 *fftypes.InterfaceDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.InterfaceDefinition); ok {
 		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractDefinition)
+			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
 		}
 	}
 
@@ -385,15 +385,15 @@ func (_m *Orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Contex
 }
 
 // GetContractDefinitions provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractDefinition, *database.FilterResult, error) {
+func (_m *Orchestrator) GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.InterfaceDefinition, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.ContractDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractDefinition); ok {
+	var r0 []*fftypes.InterfaceDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.InterfaceDefinition); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractDefinition)
+			r0 = ret.Get(0).([]*fftypes.InterfaceDefinition)
 		}
 	}
 
