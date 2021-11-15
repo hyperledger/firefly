@@ -20,6 +20,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -42,15 +44,15 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 var (
-	adminConfigPrefix = config.NewPluginConfig("admin")
-	apiConfigPrefix   = config.NewPluginConfig("http")
+	adminConfigPrefix   = config.NewPluginConfig("admin")
+	apiConfigPrefix     = config.NewPluginConfig("http")
+	metricsConfigPrefix = config.NewPluginConfig("metrics")
 )
 
 // Server is the external interface for the API Server
@@ -65,12 +67,14 @@ type apiServer struct {
 	maxFilterSkip      uint64
 	apiTimeout         time.Duration
 	apiMaxTimeout      time.Duration
-	metricsRegistery   *prometheus.Registry
+	metricsEnabled     bool
 }
 
 func InitConfig() {
 	initHTTPConfPrefx(apiConfigPrefix, 5000)
 	initHTTPConfPrefx(adminConfigPrefix, 5001)
+	initHTTPConfPrefx(metricsConfigPrefix, 6000)
+	initMetricsConfPrefix(metricsConfigPrefix)
 }
 
 func NewAPIServer() Server {
@@ -80,6 +84,7 @@ func NewAPIServer() Server {
 		maxFilterSkip:      uint64(config.GetUint(config.APIMaxFilterSkip)),
 		apiTimeout:         config.GetDuration(config.APIRequestTimeout),
 		apiMaxTimeout:      config.GetDuration(config.APIRequestMaxTimeout),
+		metricsEnabled:     config.GetBool(config.MetricsEnabled),
 	}
 }
 
@@ -87,6 +92,7 @@ func NewAPIServer() Server {
 func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (err error) {
 	httpErrChan := make(chan error)
 	adminErrChan := make(chan error)
+	metricsErrChan := make(chan error)
 
 	if !o.IsPreInit() {
 		apiHTTPServer, err := newHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfigPrefix)
@@ -104,14 +110,24 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 		go adminHTTPServer.serveHTTP(ctx)
 	}
 
-	return as.waitForServerStop(httpErrChan, adminErrChan)
+	if as.metricsEnabled {
+		metricsHTTPServer, err := newHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(ctx), metricsErrChan, metricsConfigPrefix)
+		if err != nil {
+			return err
+		}
+		go metricsHTTPServer.serveHTTP(ctx)
+	}
+
+	return as.waitForServerStop(httpErrChan, adminErrChan, metricsErrChan)
 }
 
-func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan chan error) error {
+func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan, metricsErrChan chan error) error {
 	select {
 	case err := <-httpErrChan:
 		return err
 	case err := <-adminErrChan:
+		return err
+	case err := <-metricsErrChan:
 		return err
 	}
 }
@@ -419,22 +435,17 @@ func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(r
 }
 
 func (as *apiServer) configurePrometheusInstrumentation(namespace, subsystem string, r *mux.Router) {
-	if as.metricsRegistery == nil {
-		as.metricsRegistery = prometheus.NewRegistry()
-		as.metricsRegistery.MustRegister(prometheus.NewGoCollector())
-		as.metricsRegistery.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	if as.metricsEnabled {
+		instrumentation := muxprom.NewCustomInstrumentation(
+			true,
+			namespace,
+			subsystem,
+			prometheus.DefBuckets,
+			map[string]string{},
+			metrics.Registry(),
+		)
+		r.Use(instrumentation.Middleware)
 	}
-	instrumentation := muxprom.NewCustomInstrumentation(
-		true,
-		namespace,
-		subsystem,
-		prometheus.DefBuckets,
-		map[string]string{},
-		as.metricsRegistery,
-	)
-	r.Use(instrumentation.Middleware)
-	r.Path("/metrics").Handler(promhttp.InstrumentMetricHandler(as.metricsRegistery,
-		promhttp.HandlerFor(as.metricsRegistery, promhttp.HandlerOpts{})))
 }
 
 func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
@@ -478,6 +489,15 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, publicURL)))
 	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
+
+	return r
+}
+
+func (as *apiServer) createMetricsMuxRouter(ctx context.Context) *mux.Router {
+	r := mux.NewRouter()
+
+	r.Path(config.GetString(config.MetricsPath)).Handler(promhttp.InstrumentMetricHandler(metrics.Registry(),
+		promhttp.HandlerFor(metrics.Registry(), promhttp.HandlerOpts{})))
 
 	return r
 }
