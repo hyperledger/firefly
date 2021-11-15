@@ -91,7 +91,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	if existing {
 
 		// Update the message
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("messages").
 				Set("cid", message.Header.CID).
 				Set("mtype", string(message.Header.Type)).
@@ -423,7 +423,7 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 		return err
 	}
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events filter based update */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events filter based update */)
 	if err != nil {
 		return err
 	}

@@ -49,15 +49,79 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *fftypes.Data, datatype *fftypes.DatatypeRef, blob *fftypes.BlobRef) (int64, error) {
+	return s.updateTx(ctx, tx,
+		sq.Update("data").
+			Set("validator", string(data.Validator)).
+			Set("namespace", data.Namespace).
+			Set("datatype_name", datatype.Name).
+			Set("datatype_version", datatype.Version).
+			Set("hash", data.Hash).
+			Set("created", data.Created).
+			Set("blob_hash", blob.Hash).
+			Set("blob_public", blob.Public).
+			Set("value", data.Value).
+			Where(sq.Eq{
+				"id":   data.ID,
+				"hash": data.Hash,
+			}),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeUpdated, data.Namespace, data.ID)
+		})
+}
+
+func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, datatype *fftypes.DatatypeRef, blob *fftypes.BlobRef) (int64, error) {
+	return s.insertTx(ctx, tx,
+		sq.Insert("data").
+			Columns(dataColumnsWithValue...).
+			Values(
+				data.ID,
+				string(data.Validator),
+				data.Namespace,
+				datatype.Name,
+				datatype.Version,
+				data.Hash,
+				data.Created,
+				blob.Hash,
+				blob.Public,
+				data.Value,
+			),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
+		})
+}
+
+func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	existing := false
-	if allowExisting {
+	datatype := data.Datatype
+	if datatype == nil {
+		datatype = &fftypes.DatatypeRef{}
+	}
+	blob := data.Blob
+	if blob == nil {
+		blob = &fftypes.BlobRef{}
+	}
+
+	// This is a performance critical function, as we stream data into the database for every message, in every batch.
+	//
+	// First attempt the operation based on the optimization passed in.
+	// The expectation is that this will practically hit of the time, as only recovery paths
+	// require us to go down the un-optimized route.
+	optimized := false
+	if optimization == database.UpsertOptimizationNew {
+		_, opErr := s.attemptDataInsert(ctx, tx, data, datatype, blob)
+		optimized = opErr == nil
+	} else if optimization == database.UpsertOptimizationExisting {
+		rowsAffected, opErr := s.attemptDataUpdate(ctx, tx, data, datatype, blob)
+		optimized = opErr == nil && rowsAffected == 1
+	}
+
+	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
 		dataRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash").
@@ -68,8 +132,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 			return err
 		}
 
-		existing = dataRows.Next()
-		if existing && !allowHashUpdate {
+		existing := dataRows.Next()
+		if existing {
 			var hash *fftypes.Bytes32
 			_ = dataRows.Scan(&hash)
 			if !fftypes.SafeHashCompare(hash, data.Hash) {
@@ -79,59 +143,15 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 			}
 		}
 		dataRows.Close()
-	}
 
-	datatype := data.Datatype
-	if datatype == nil {
-		datatype = &fftypes.DatatypeRef{}
-	}
-
-	blob := data.Blob
-	if blob == nil {
-		blob = &fftypes.BlobRef{}
-	}
-
-	if existing {
-		// Update the data
-		if err = s.updateTx(ctx, tx,
-			sq.Update("data").
-				Set("validator", string(data.Validator)).
-				Set("namespace", data.Namespace).
-				Set("datatype_name", datatype.Name).
-				Set("datatype_version", datatype.Version).
-				Set("hash", data.Hash).
-				Set("created", data.Created).
-				Set("blob_hash", blob.Hash).
-				Set("blob_public", blob.Public).
-				Set("value", data.Value).
-				Where(sq.Eq{"id": data.ID}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeUpdated, data.Namespace, data.ID)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("data").
-				Columns(dataColumnsWithValue...).
-				Values(
-					data.ID,
-					string(data.Validator),
-					data.Namespace,
-					datatype.Name,
-					datatype.Version,
-					data.Hash,
-					data.Created,
-					blob.Hash,
-					blob.Public,
-					data.Value,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
-			},
-		); err != nil {
-			return err
+		if existing {
+			if _, err = s.attemptDataUpdate(ctx, tx, data, datatype, blob); err != nil {
+				return err
+			}
+		} else {
+			if _, err = s.attemptDataInsert(ctx, tx, data, datatype, blob); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -271,7 +291,7 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update dat
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

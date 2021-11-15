@@ -77,7 +77,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 	rows.Close()
 
 	if existing {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("tokentransfer").
 				Set("type", transfer.Type).
 				Set("local_id", transfer.LocalID).

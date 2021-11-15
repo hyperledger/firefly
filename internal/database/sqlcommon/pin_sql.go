@@ -149,7 +149,7 @@ func (s *SQLCommon) SetPinDispatched(ctx context.Context, sequence int64) (err e
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.updateTx(ctx, tx, sq.
+	_, err = s.updateTx(ctx, tx, sq.
 		Update("pins").
 		Set("dispatched", true).
 		Where(sq.Eq{
