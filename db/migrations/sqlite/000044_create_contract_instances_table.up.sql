@@ -3,7 +3,7 @@ CREATE TABLE contract_interfaces (
   id                UUID            NOT NULL,
   namespace         VARCHAR(64)     NOT NULL,
   name              VARCHAR(1024)   NOT NULL,
-  version           VARCHAR(64)     NOT NULL,
+  version           VARCHAR(64)     NOT NULL
 );
 
 CREATE UNIQUE INDEX contract_interfaces_id ON contract_interfaces(id);
