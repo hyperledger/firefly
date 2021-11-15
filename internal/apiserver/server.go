@@ -20,8 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hyperledger/firefly/internal/metrics"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -30,6 +28,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"

@@ -48,5 +48,6 @@ require (
 	golang.org/x/sys v0.0.0-20211025112917-711f33c9992c // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7
+	golang.org/x/tools v0.1.7 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
