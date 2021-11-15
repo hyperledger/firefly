@@ -89,7 +89,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 
 	if existing {
 		// Update the subscription
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("subscriptions").
 				// Note we do not update ID
 				Set("namespace", subscription.Namespace).
@@ -247,7 +247,7 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 	}
 	query = query.Where(sq.Eq{"id": subscription.ID})
 
-	err = s.updateTx(ctx, tx, query,
+	_, err = s.updateTx(ctx, tx, query,
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
 		})

@@ -80,7 +80,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 	rows.Close()
 
 	if existing {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("tokenpool").
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).

@@ -33,6 +33,14 @@ var (
 	DeleteRecordNotFound = i18n.NewError(context.Background(), i18n.Msg404NotFound)
 )
 
+type UpsertOptimization int
+
+const (
+	UpsertOptimizationSkip UpsertOptimization = iota
+	UpsertOptimizationNew
+	UpsertOptimizationExisting
+)
+
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
 	PeristenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
@@ -88,9 +96,10 @@ type iMessageCollection interface {
 }
 
 type iDataCollection interface {
-	// UpsertData - Upsert a data record
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
+	// UpsertData - Upsert a data record. A hint can be supplied to whether the data already exists.
+	//              The database will ensure that if a record already exists, the hash of that existing record
+	//              must match the hash of the record that is being inserted.
+	UpsertData(ctx context.Context, data *fftypes.Data, optimizeForExisting bool) (err error)
 
 	// UpdateData - Update data
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)

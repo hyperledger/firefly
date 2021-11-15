@@ -84,7 +84,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 	if existing {
 
 		// Update the batch
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("batches").
 				Set("btype", string(batch.Type)).
 				Set("namespace", batch.Namespace).
@@ -224,7 +224,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update da
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events on filter update */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events on filter update */)
 	if err != nil {
 		return err
 	}
