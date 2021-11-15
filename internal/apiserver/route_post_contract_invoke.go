@@ -28,12 +28,10 @@ import (
 
 var postContract = &oapispec.Route{
 	Name:   "postContractInvoke",
-	Path:   "namespaces/{ns}/apis/{id}/invoke/{method}",
+	Path:   "namespaces/{ns}/contracts/invoke",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "id", Example: "idOrName", Description: i18n.MsgTBD},
-		{Name: "method", Example: "methodName", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
@@ -47,6 +45,6 @@ var postContract = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.InvokeContract(r.Ctx, r.PP["ns"], r.PP["id"], r.PP["method"], r.Input.(*fftypes.ContractInvocationRequest))
+		return r.Or.InvokeContract(r.Ctx, r.PP["ns"], r.Input.(*fftypes.ContractInvocationRequest))
 	},
 }

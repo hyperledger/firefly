@@ -16,68 +16,10 @@
 
 package fftypes
 
-// type InterfaceDefinition struct {
-// 	ID        *UUID  `json:"id,omitempty"`
-// 	Namespace string `json:"namespace,omitempty"`
-// 	Message   *UUID  `json:"message,omitempty"`
-// 	FFI       *FFI   `json:"interface,omitempty"`
-// }
-
-// type InterfaceDefinitionBroadcast struct {
-// 	InterfaceDefinition
-// }
-
-// func (id *InterfaceDefinition) Validate(ctx context.Context, existing bool) (err error) {
-// 	if err = ValidateFFNameField(ctx, id.Namespace, "namespace"); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
-// func (id *InterfaceDefinition) Topic() string {
-// 	return namespaceTopic(id.Namespace)
-// }
-
-// func (id *InterfaceDefinitionBroadcast) SetBroadcastMessage(msgID *UUID) {
-// 	id.Message = msgID
-// }
-
-// type ContractInstance struct {
-// 	ID                 *UUID                `json:"id,omitempty"`
-// 	Namespace          string               `json:"namespace,omitempty"`
-// 	Name               string               `json:"name,omitempty"`
-// 	Message            *UUID                `json:"message,omitempty"`
-// 	OnChainLocation    OnChainLocation      `json:"onChainLocation,omitempty"`
-// 	ContractDefinition *InterfaceDefinition `json:"contractDefinition,omitempty"`
-// }
-
-// type ContractInstanceBroadcast struct {
-// 	ContractInstance
-// }
-
-// func (ci *ContractInstance) Validate(ctx context.Context, existing bool) (err error) {
-// 	if err = ValidateFFNameField(ctx, ci.Namespace, "namespace"); err != nil {
-// 		return err
-// 	}
-// 	if ci.Name != "" {
-// 		if err = ValidateFFNameField(ctx, ci.Name, "name"); err != nil {
-// 			return err
-// 		}
-// 	}
-// 	return nil
-// }
-
-// func (ci *ContractInstance) Topic() string {
-// 	return namespaceTopic(ci.Namespace)
-// }
-
-// func (ci *ContractInstance) SetBroadcastMessage(msgID *UUID) {
-// 	ci.Message = msgID
-// }
-
 type ContractInvocationRequest struct {
+	ContractID      *UUID                  `json:"contractId,omitempty"`
 	OnChainLocation OnChainLocation        `json:"onChainLocation,omitempty"`
-	Method          string                 `json:"method,omitempty"`
+	Method          *FFIMethod             `json:"method,omitempty"`
 	Params          map[string]interface{} `json:"params"`
 }
 

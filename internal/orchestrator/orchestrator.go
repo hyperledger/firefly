@@ -125,10 +125,7 @@ type Orchestrator interface {
 	GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 	GetContractInterfaceByID(ctx context.Context, id string) (output *fftypes.FFI, err error)
 	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.FFI, err error)
-	// AddContractInstance(ctx context.Context, ns string, cd *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
-	// GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.FFI, res *database.FilterResult, err error)
-	// GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.FFI, err error)
-	InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, req *fftypes.ContractInvocationRequest) (interface{}, error)
+	InvokeContract(ctx context.Context, ns string, req *fftypes.ContractInvocationRequest) (interface{}, error)
 }
 
 type orchestrator struct {
@@ -532,18 +529,6 @@ func (or *orchestrator) GetContractInterfaceByNameAndVersion(ctx context.Context
 	return or.contracts.GetContractInterfaceByNameAndVersion(ctx, ns, name, version)
 }
 
-// func (or *orchestrator) AddContractInstance(ctx context.Context, ns string, ci *fftypes.ContractInstance, waitConfirm bool) (output *fftypes.ContractInstance, err error) {
-// 	return or.contracts.AddContractInstance(ctx, ns, ci, waitConfirm)
-// }
-
-// func (or *orchestrator) GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractInstance, res *database.FilterResult, err error) {
-// 	return or.contracts.GetContractInstances(ctx, ns, filter)
-// }
-
-// func (or *orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns, nameOrID string) (output *fftypes.ContractInstance, err error) {
-// 	return or.contracts.GetContractInstanceByNameOrID(ctx, ns, nameOrID)
-// }
-
-func (or *orchestrator) InvokeContract(ctx context.Context, ns, contractInstanceNameOrId, method string, req *fftypes.ContractInvocationRequest) (interface{}, error) {
-	return or.contracts.InvokeContract(ctx, ns, contractInstanceNameOrId, method, req)
+func (or *orchestrator) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractInvocationRequest) (interface{}, error) {
+	return or.contracts.InvokeContract(ctx, ns, req)
 }
