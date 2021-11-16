@@ -161,8 +161,8 @@ func beforeE2ETest(t *testing.T) *testState {
 		httpProtocolClient2 = "https"
 		websocketProtocolClient2 = "wss"
 	}
-	ts.client1.SetHostURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort))
-	ts.client2.SetHostURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort))
+	ts.client1.SetBaseURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort))
+	ts.client2.SetBaseURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort))
 
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")

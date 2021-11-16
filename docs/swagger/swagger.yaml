@@ -341,6 +341,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: node
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: payloadref
         schema:
           type: string
@@ -413,6 +418,7 @@ paths:
                       type: string
                     namespace:
                       type: string
+                    node: {}
                     payload:
                       properties:
                         data:
@@ -548,6 +554,7 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  node: {}
                   payload:
                     properties:
                       data:

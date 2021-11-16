@@ -1964,13 +1964,13 @@ func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRe
 	return r0
 }
 
-// UpsertData provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
-func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowExisting bool, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
+// UpsertData provides a mock function with given fields: ctx, data, optimization
+func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data, bool, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2006,13 +2006,13 @@ func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExi
 	return r0
 }
 
-// UpsertMessage provides a mock function with given fields: ctx, message, allowExisting, allowHashUpdate
-func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting bool, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, message, allowExisting, allowHashUpdate)
+// UpsertMessage provides a mock function with given fields: ctx, message, optimization
+func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, message, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, bool, bool) error); ok {
-		r0 = rf(ctx, message, allowExisting, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, message, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -50,6 +50,7 @@ $(eval $(call makemock, internal/identity,         Manager,        identitymanag
 $(eval $(call makemock, internal/batchpin,         Submitter,      batchpinmocks))
 $(eval $(call makemock, internal/sysmessaging,     SystemEvents,   sysmessagingmocks))
 $(eval $(call makemock, internal/sysmessaging,     MessageSender,  sysmessagingmocks))
+$(eval $(call makemock, internal/sysmessaging,     LocalNodeInfo,  sysmessagingmocks))
 $(eval $(call makemock, internal/syncasync,        Bridge,         syncasyncmocks))
 $(eval $(call makemock, internal/data,             Manager,        datamocks))
 $(eval $(call makemock, internal/batch,            Manager,        batchmocks))

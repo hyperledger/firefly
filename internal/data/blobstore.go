@@ -122,7 +122,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	log.L(ctx).Infof("Uploaded BLOB %.2fkb blobhash=%s hash=%s", float64(written)/1024, data.Blob.Hash, data.Hash)
 
 	err = bs.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		err := bs.database.UpsertData(ctx, data, false, false)
+		err := bs.database.UpsertData(ctx, data, database.UpsertOptimizationNew)
 		if err == nil {
 			err = bs.database.InsertBlob(ctx, &fftypes.Blob{
 				Hash:       hash,

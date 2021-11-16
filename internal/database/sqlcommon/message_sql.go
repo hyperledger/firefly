@@ -56,15 +56,85 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, message *fftypes.Message) (int64, error) {
+	return s.updateTx(ctx, tx,
+		sq.Update("messages").
+			Set("cid", message.Header.CID).
+			Set("mtype", string(message.Header.Type)).
+			Set("author", message.Header.Author).
+			Set("key", message.Header.Key).
+			Set("created", message.Header.Created).
+			Set("namespace", message.Header.Namespace).
+			Set("topics", message.Header.Topics).
+			Set("tag", message.Header.Tag).
+			Set("group_hash", message.Header.Group).
+			Set("datahash", message.Header.DataHash).
+			Set("hash", message.Hash).
+			Set("pins", message.Pins).
+			Set("state", message.State).
+			Set("confirmed", message.Confirmed).
+			Set("tx_type", message.Header.TxType).
+			Set("batch_id", message.BatchID).
+			Where(sq.Eq{
+				"id":   message.Header.ID,
+				"hash": message.Hash,
+			}),
+		func() {
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, -1)
+		})
+}
+
+func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message) (int64, error) {
+	return s.insertTx(ctx, tx,
+		sq.Insert("messages").
+			Columns(msgColumns...).
+			Values(
+				message.Header.ID,
+				message.Header.CID,
+				string(message.Header.Type),
+				message.Header.Author,
+				message.Header.Key,
+				message.Header.Created,
+				message.Header.Namespace,
+				message.Header.Topics,
+				message.Header.Tag,
+				message.Header.Group,
+				message.Header.DataHash,
+				message.Hash,
+				message.Pins,
+				message.State,
+				message.Confirmed,
+				message.Header.TxType,
+				message.BatchID,
+			),
+		func() {
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+		})
+}
+
+func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	existing := false
-	if allowExisting {
+	// This is a performance critical function, as we stream data into the database for every message, in every batch.
+	//
+	// First attempt the operation based on the optimization passed in.
+	// The expectation is that this will practically hit of the time, as only recovery paths
+	// require us to go down the un-optimized route.
+	optimized := false
+	recreateDatarefs := false
+	if optimization == database.UpsertOptimizationNew {
+		_, opErr := s.attemptMessageInsert(ctx, tx, message)
+		optimized = opErr == nil
+	} else if optimization == database.UpsertOptimizationExisting {
+		rowsAffected, opErr := s.attemptMessageUpdate(ctx, tx, message)
+		optimized = opErr == nil && rowsAffected == 1
+	}
+
+	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
 		msgRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash", sequenceColumn).
@@ -75,8 +145,8 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 			return err
 		}
 
-		existing = msgRows.Next()
-		if existing && !allowHashUpdate {
+		existing := msgRows.Next()
+		if existing {
 			var hash *fftypes.Bytes32
 			_ = msgRows.Scan(&hash, &message.Sequence)
 			if !fftypes.SafeHashCompare(hash, message.Hash) {
@@ -84,80 +154,41 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 				log.L(ctx).Errorf("Existing=%s New=%s", hash, message.Hash)
 				return database.HashMismatch
 			}
+			recreateDatarefs = true // non-optimized update path
 		}
 		msgRows.Close()
+
+		if existing {
+			// Update the message
+			if _, err = s.attemptMessageUpdate(ctx, tx, message); err != nil {
+				return err
+			}
+		} else {
+			if message.Sequence, err = s.attemptMessageInsert(ctx, tx, message); err != nil {
+				return err
+			}
+		}
 	}
 
-	if existing {
-
-		// Update the message
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("messages").
-				Set("cid", message.Header.CID).
-				Set("mtype", string(message.Header.Type)).
-				Set("author", message.Header.Author).
-				Set("key", message.Header.Key).
-				Set("created", message.Header.Created).
-				Set("namespace", message.Header.Namespace).
-				Set("topics", message.Header.Topics).
-				Set("tag", message.Header.Tag).
-				Set("group_hash", message.Header.Group).
-				Set("datahash", message.Header.DataHash).
-				Set("hash", message.Hash).
-				Set("pins", message.Pins).
-				Set("state", message.State).
-				Set("confirmed", message.Confirmed).
-				Set("tx_type", message.Header.TxType).
-				Set("batch_id", message.BatchID).
-				Where(sq.Eq{"id": message.Header.ID}),
-			func() {
-				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, message.Sequence)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
-		message.Sequence, err = s.insertTx(ctx, tx,
-			sq.Insert("messages").
-				Columns(msgColumns...).
-				Values(
-					message.Header.ID,
-					message.Header.CID,
-					string(message.Header.Type),
-					message.Header.Author,
-					message.Header.Key,
-					message.Header.Created,
-					message.Header.Namespace,
-					message.Header.Topics,
-					message.Header.Tag,
-					message.Header.Group,
-					message.Header.DataHash,
-					message.Hash,
-					message.Pins,
-					message.State,
-					message.Confirmed,
-					message.Header.TxType,
-					message.BatchID,
-				),
-			func() {
-				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
-			},
-		)
-		if err != nil {
+	// Note the message data refs are not allowed to change, as they are part of the hash.
+	// So the optimization above relies on the fact these are in a transaction, so the
+	// whole message (with datarefs) will have been inserted
+	if !optimized || optimization == database.UpsertOptimizationNew {
+		if err = s.updateMessageDataRefs(ctx, tx, message, recreateDatarefs); err != nil {
 			return err
 		}
 	}
 
-	if err = s.updateMessageDataRefs(ctx, tx, message, existing); err != nil {
-		return err
+	if optimization != database.UpsertOptimizationSkip {
+		message.Sequence = -1 // code that allows the optimization, MUST not rely on a sequence being returned.
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message, existing bool) error {
+func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message, recreateDatarefs bool) error {
 
-	if existing {
+	if recreateDatarefs {
 		if err := s.deleteTx(ctx, tx,
 			sq.Delete("messages_data").
 				Where(sq.And{

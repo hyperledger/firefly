@@ -48,6 +48,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
+		Node:      fftypes.NewUUID(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: msgID1}},
@@ -87,6 +88,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
+		Node:      fftypes.NewUUID(),
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   txid,

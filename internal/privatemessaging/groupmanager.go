@@ -102,7 +102,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	}
 
 	// Write as data to the local store
-	if err = gm.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
+	if err = gm.database.UpsertData(ctx, data, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
 
@@ -127,7 +127,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	err = msg.Seal(ctx)
 	if err == nil {
 		// Store the message - this asynchronously triggers the next step in process
-		err = gm.database.UpsertMessage(ctx, msg, false, false)
+		err = gm.database.UpsertMessage(ctx, msg, database.UpsertOptimizationNew)
 	}
 	if err == nil {
 		log.L(ctx).Infof("Created new group %s", group.Hash)

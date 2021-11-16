@@ -72,7 +72,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns12345", msgID, mock.Anything).Return()
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeUpdated, "ns12345", msgID, mock.Anything).Return()
 
-	err := s.UpsertMessage(ctx, msg, false, false)
+	err := s.UpsertMessage(ctx, msg, database.UpsertOptimizationNew)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back
@@ -87,8 +87,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 
 	// Update the message (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	dataID3 := fftypes.NewUUID()
-	rand3 := fftypes.NewRandB32()
 	cid := fftypes.NewUUID()
 	gid := fftypes.NewRandB32()
 	bid := fftypes.NewUUID()
@@ -115,16 +113,21 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		Confirmed: fftypes.Now(),
 		BatchID:   bid,
 		Data: []*fftypes.DataRef{
-			{ID: dataID2, Hash: rand2},
-			{ID: dataID3, Hash: rand3},
+			{ID: dataID1, Hash: rand1},
+			{ID: dataID2, Hash: rand2}, // Note the data refs cannot change, as it would affect the hash, and the hash is immutable
 		},
 	}
 
-	// Ensure hash change rejected
-	err = s.UpsertMessage(context.Background(), msgUpdated, true, false)
+	// Ensure hash change rejected, on any optimization
+	err = s.UpsertMessage(context.Background(), msgUpdated, database.UpsertOptimizationSkip)
+	assert.Equal(t, database.HashMismatch, err)
+	err = s.UpsertMessage(context.Background(), msgUpdated, database.UpsertOptimizationNew)
+	assert.Equal(t, database.HashMismatch, err)
+	err = s.UpsertMessage(context.Background(), msgUpdated, database.UpsertOptimizationExisting)
 	assert.Equal(t, database.HashMismatch, err)
 
-	err = s.UpsertMessage(context.Background(), msgUpdated, true, true)
+	msgUpdated.Hash = msg.Hash
+	err = s.UpsertMessage(context.Background(), msgUpdated, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
@@ -166,9 +169,9 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, msgUpdated.Sequence, msgRefs[0].Sequence)
 
 	// Check we can get it with a filter on only mesasges with a particular data ref
-	msgs, _, err = s.GetMessagesForData(ctx, dataID3, filter.Count(true))
+	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
-	msgs, _, err = s.GetMessagesForData(ctx, dataID3, filter.Count(false))
+	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(false))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	msgReadJson, _ = json.Marshal(msgs[0])
@@ -208,7 +211,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 func TestUpsertMessageFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{}, true, true)
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -219,7 +222,7 @@ func TestUpsertMessageFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	msgID := fftypes.NewUUID()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -231,7 +234,7 @@ func TestUpsertMessageFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	msgID := fftypes.NewUUID()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -243,7 +246,7 @@ func TestUpsertMessageFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(msgID.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -256,7 +259,7 @@ func TestUpsertMessageFailUpdateRefs(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnResult(driver.ResultNoRows)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10118", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -268,7 +271,7 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
