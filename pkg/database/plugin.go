@@ -74,7 +74,7 @@ type iNamespaceCollection interface {
 type iMessageCollection interface {
 	// UpsertMessage - Upsert a message, with all the embedded data references.
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
+	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -547,6 +547,7 @@ const (
 // providing a building block for a cluster of FireFly servers to directly propgate events to each other.
 //
 type Callbacks interface {
+	// OrderedUUIDCollectionNSEvent emits the sequence on insert, but it will be -1 on update
 	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID, sequence int64)
 	OrderedCollectionEvent(resType OrderedCollection, eventType fftypes.ChangeEventType, sequence int64)
 	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID)
