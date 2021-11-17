@@ -34,9 +34,9 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 		return nil
 	}
 	if status.Node.Registered {
-		log.L(or.ctx).Infof("Node not yet registered")
-	} else {
 		or.node = status.Node.ID
+	} else {
+		log.L(or.ctx).Infof("Node not yet registered")
 	}
 	return or.node
 }
