@@ -21,12 +21,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hyperledger/firefly/internal/metrics"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/hyperledger/firefly/internal/metrics"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
@@ -97,6 +98,21 @@ func TestStartAdminFail(t *testing.T) {
 	InitConfig()
 	adminConfigPrefix.Set(HTTPConfAddress, "...://")
 	config.Set(config.AdminEnabled, true)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // server will immediately shut down
+	as := NewAPIServer()
+	mor := &orchestratormocks.Orchestrator{}
+	mor.On("IsPreInit").Return(true)
+	err := as.Serve(ctx, mor)
+	assert.Regexp(t, "FF10104", err)
+}
+
+func TestStartMetricsFail(t *testing.T) {
+	config.Reset()
+	metrics.Clear()
+	InitConfig()
+	metricsConfigPrefix.Set(HTTPConfAddress, "...://")
+	config.Set(config.MetricsEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
