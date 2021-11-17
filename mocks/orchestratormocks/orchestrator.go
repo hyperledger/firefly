@@ -28,44 +28,21 @@ type Orchestrator struct {
 	mock.Mock
 }
 
-// AddContractDefinition provides a mock function with given fields: ctx, ns, cd, waitConfirm
-func (_m *Orchestrator) AddContractDefinition(ctx context.Context, ns string, cd *fftypes.InterfaceDefinition, waitConfirm bool) (*fftypes.InterfaceDefinition, error) {
+// AddContractInterface provides a mock function with given fields: ctx, ns, cd, waitConfirm
+func (_m *Orchestrator) AddContractInterface(ctx context.Context, ns string, cd *fftypes.FFI, waitConfirm bool) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, ns, cd, waitConfirm)
 
-	var r0 *fftypes.InterfaceDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.InterfaceDefinition, bool) *fftypes.InterfaceDefinition); ok {
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.FFI, bool) *fftypes.FFI); ok {
 		r0 = rf(ctx, ns, cd, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
+			r0 = ret.Get(0).(*fftypes.FFI)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.InterfaceDefinition, bool) error); ok {
-		r1 = rf(ctx, ns, cd, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// AddContractInstance provides a mock function with given fields: ctx, ns, cd, waitConfirm
-func (_m *Orchestrator) AddContractInstance(ctx context.Context, ns string, cd *fftypes.ContractInstance, waitConfirm bool) (*fftypes.ContractInstance, error) {
-	ret := _m.Called(ctx, ns, cd, waitConfirm)
-
-	var r0 *fftypes.ContractInstance
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractInstance, bool) *fftypes.ContractInstance); ok {
-		r0 = rf(ctx, ns, cd, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractInstance)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractInstance, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.FFI, bool) error); ok {
 		r1 = rf(ctx, ns, cd, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -104,6 +81,29 @@ func (_m *Orchestrator) Broadcast() broadcast.Manager {
 	}
 
 	return r0
+}
+
+// CreateContractAPI provides a mock function with given fields: ctx, ns, api, waitConfirm
+func (_m *Orchestrator) CreateContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (*fftypes.ContractAPI, error) {
+	ret := _m.Called(ctx, ns, api, waitConfirm)
+
+	var r0 *fftypes.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractAPI, bool) *fftypes.ContractAPI); ok {
+		r0 = rf(ctx, ns, api, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractAPI)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractAPI, bool) error); ok {
+		r1 = rf(ctx, ns, api, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // CreateSubscription provides a mock function with given fields: ctx, ns, subDef
@@ -338,62 +338,16 @@ func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.An
 	return r0, r1, r2
 }
 
-// GetContractDefinitionByID provides a mock function with given fields: ctx, id
-func (_m *Orchestrator) GetContractDefinitionByID(ctx context.Context, id string) (*fftypes.InterfaceDefinition, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *fftypes.InterfaceDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.InterfaceDefinition); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContractDefinitionByNameAndVersion provides a mock function with given fields: ctx, ns, name, version
-func (_m *Orchestrator) GetContractDefinitionByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.InterfaceDefinition, error) {
-	ret := _m.Called(ctx, ns, name, version)
-
-	var r0 *fftypes.InterfaceDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.InterfaceDefinition); ok {
-		r0 = rf(ctx, ns, name, version)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.InterfaceDefinition)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, name, version)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContractDefinitions provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetContractDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.InterfaceDefinition, *database.FilterResult, error) {
+// GetContractAPIs provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.InterfaceDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.InterfaceDefinition); ok {
+	var r0 []*fftypes.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractAPI); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.InterfaceDefinition)
+			r0 = ret.Get(0).([]*fftypes.ContractAPI)
 		}
 	}
 
@@ -416,22 +370,22 @@ func (_m *Orchestrator) GetContractDefinitions(ctx context.Context, ns string, f
 	return r0, r1, r2
 }
 
-// GetContractInstanceByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
-func (_m *Orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns string, nameOrID string) (*fftypes.ContractInstance, error) {
-	ret := _m.Called(ctx, ns, nameOrID)
+// GetContractInterfaceByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractInstance
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractInstance); ok {
-		r0 = rf(ctx, ns, nameOrID)
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.FFI); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractInstance)
+			r0 = ret.Get(0).(*fftypes.FFI)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, nameOrID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -439,16 +393,39 @@ func (_m *Orchestrator) GetContractInstanceByNameOrID(ctx context.Context, ns st
 	return r0, r1
 }
 
-// GetContractInstances provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetContractInstances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractInstance, *database.FilterResult, error) {
+// GetContractInterfaceByNameAndVersion provides a mock function with given fields: ctx, ns, name, version
+func (_m *Orchestrator) GetContractInterfaceByNameAndVersion(ctx context.Context, ns string, name string, version string) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, ns, name, version)
+
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
+		r0 = rf(ctx, ns, name, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, ns, name, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractInterfaces provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.ContractInstance
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractInstance); ok {
+	var r0 []*fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.FFI); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractInstance)
+			r0 = ret.Get(0).([]*fftypes.FFI)
 		}
 	}
 
@@ -1200,13 +1177,13 @@ func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	return r0
 }
 
-// InvokeContract provides a mock function with given fields: ctx, ns, contractInstanceNameOrId, method, params
-func (_m *Orchestrator) InvokeContract(ctx context.Context, ns string, contractInstanceNameOrId string, method string, params map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(ctx, ns, contractInstanceNameOrId, method, params)
+// InvokeContract provides a mock function with given fields: ctx, ns, req
+func (_m *Orchestrator) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+	ret := _m.Called(ctx, ns, req)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, map[string]interface{}) interface{}); ok {
-		r0 = rf(ctx, ns, contractInstanceNameOrId, method, params)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.InvokeContractRequest) interface{}); ok {
+		r0 = rf(ctx, ns, req)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -1214,8 +1191,8 @@ func (_m *Orchestrator) InvokeContract(ctx context.Context, ns string, contractI
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, map[string]interface{}) error); ok {
-		r1 = rf(ctx, ns, contractInstanceNameOrId, method, params)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.InvokeContractRequest) error); ok {
+		r1 = rf(ctx, ns, req)
 	} else {
 		r1 = ret.Error(1)
 	}

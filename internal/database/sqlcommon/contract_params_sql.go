@@ -36,7 +36,7 @@ var (
 	contractParamsFilterFieldMap = map[string]string{}
 )
 
-func (s *SQLCommon) InsertContractParam(ctx context.Context, ns string, contractID *fftypes.UUID, parent_name, role string, param *fftypes.FFIParam) (err error) {
+func (s *SQLCommon) InsertContractParam(ctx context.Context, ns string, contractID *fftypes.UUID, parentName, role string, param *fftypes.FFIParam) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (s *SQLCommon) getContractParamPred(ctx context.Context, desc string, pred 
 }
 
 func (s *SQLCommon) GetContractParams(ctx context.Context, ns string, filter database.Filter) (methods []*fftypes.FFIMethod, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractMethodsColumns...).From("contract_methods").Where(sq.Eq{"namespace": ns}), filter, contractMethodsFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractMethodsColumns...).From("contract_methods").Where(sq.Eq{"namespace": ns}), filter, contractParamsFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

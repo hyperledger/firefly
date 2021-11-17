@@ -163,7 +163,7 @@ type fabIdentity struct {
 	CACert string `json:"caCert"`
 }
 
-type FabricOnChainLocation struct {
+type Location struct {
 	Channel   string `json:"channel"`
 	Chaincode string `json:"chaincode"`
 }
@@ -611,7 +611,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		}
 	}
 
-	fabricOnChainLocation, ok := onChainLocation.(FabricOnChainLocation)
+	fabricOnChainLocation, ok := onChainLocation.(Location)
 	if !ok {
 		return nil, fmt.Errorf("cannot parse onChainLocation")
 	}
@@ -641,7 +641,7 @@ func jsonEncodeParams(params map[string]interface{}) (output map[string]string, 
 }
 
 func (f *Fabric) ValidateOnChainLocation(ctx context.Context, onChainLocation fftypes.ContractLocation) error {
-	location, ok := onChainLocation.(FabricOnChainLocation)
+	location, ok := onChainLocation.(Location)
 	if !ok {
 		return fmt.Errorf("failed to validate on chain location")
 	}
