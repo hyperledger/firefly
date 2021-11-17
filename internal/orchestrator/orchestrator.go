@@ -125,7 +125,10 @@ type Orchestrator interface {
 	GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 	GetContractInterfaceByID(ctx context.Context, id string) (output *fftypes.FFI, err error)
 	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.FFI, err error)
-	InvokeContract(ctx context.Context, ns string, req *fftypes.ContractInvocationRequest) (interface{}, error)
+	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
+
+	CreateContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (*fftypes.ContractAPI, error)
+	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 }
 
 type orchestrator struct {
@@ -529,6 +532,14 @@ func (or *orchestrator) GetContractInterfaceByNameAndVersion(ctx context.Context
 	return or.contracts.GetContractInterfaceByNameAndVersion(ctx, ns, name, version)
 }
 
-func (or *orchestrator) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractInvocationRequest) (interface{}, error) {
+func (or *orchestrator) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
 	return or.contracts.InvokeContract(ctx, ns, req)
+}
+
+func (or *orchestrator) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractAPI, res *database.FilterResult, err error) {
+	return or.contracts.GetContractAPIs(ctx, ns, filter)
+}
+
+func (or *orchestrator) CreateContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
+	return or.contracts.BroadcastContractAPI(ctx, ns, api, waitConfirm)
 }

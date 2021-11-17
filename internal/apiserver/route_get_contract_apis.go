@@ -18,33 +18,29 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContract = &oapispec.Route{
-	Name:   "postContractInvoke",
-	Path:   "namespaces/{ns}/contracts/invoke",
-	Method: http.MethodPost,
+var getContractAPIs = &oapispec.Route{
+	Name:   "getContractAPIs",
+	Path:   "namespaces/{ns}/apis",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
-	},
-	FilterFactory:   nil,
+	QueryParams:     nil,
+	FilterFactory:   database.ContractInterfaceQueryFactory,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
+	JSONInputValue:  nil,
 	JSONInputMask:   nil,
-	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.InvokeContract(r.Ctx, r.PP["ns"], r.Input.(*fftypes.InvokeContractRequest))
+		return filterResult(r.Or.GetContractAPIs(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

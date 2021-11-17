@@ -9,4 +9,4 @@ CREATE TABLE contractparams (
   role              VARCHAR(64)     NOT NULL
 );
 
-CREATE UNIQUE INDEX contract_params_interface_id_parent_name_name ON contractparams(interface_id,parent_name,name);
+CREATE UNIQUE INDEX contractparams_interface_id_parent_name_name ON contractparams(interface_id,parent_name,name);

@@ -6,5 +6,5 @@ CREATE TABLE contractinterfaces (
   version           VARCHAR(64)     NOT NULL
 );
 
-CREATE UNIQUE INDEX contract_interfaces_id ON contractinterfaces(id);
-CREATE UNIQUE INDEX contract_interfaces_namespace_name_version ON contractinterfaces(namespace,name,version);
+CREATE UNIQUE INDEX contractinterfaces_id ON contractinterfaces(id);
+CREATE UNIQUE INDEX contractinterfaces_namespace_name_version ON contractinterfaces(namespace,name,version);

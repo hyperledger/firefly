@@ -103,4 +103,7 @@ var routes = []*oapispec.Route{
 	getContractInterfaces,
 	getContractInterfaceNameVersion,
 	postContract,
+
+	postNewContractAPI,
+	getContractAPIs,
 }

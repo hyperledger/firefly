@@ -584,7 +584,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.OnChainLocation, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.ContractLocation, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
 	tx := &asyncTXSubmission{}
 
 	// All arguments must be JSON serialized
@@ -640,7 +640,7 @@ func jsonEncodeParams(params map[string]interface{}) (output map[string]string, 
 	return
 }
 
-func (f *Fabric) ValidateOnChainLocation(ctx context.Context, onChainLocation fftypes.OnChainLocation) error {
+func (f *Fabric) ValidateOnChainLocation(ctx context.Context, onChainLocation fftypes.ContractLocation) error {
 	location, ok := onChainLocation.(FabricOnChainLocation)
 	if !ok {
 		return fmt.Errorf("failed to validate on chain location")

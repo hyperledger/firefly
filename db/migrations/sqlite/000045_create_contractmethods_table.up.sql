@@ -6,4 +6,4 @@ CREATE TABLE contractmethods (
   name              VARCHAR(64)     NOT NULL
 );
 
-CREATE UNIQUE INDEX contract_methods_interface_id_name ON contractmethods(interface_id,name);
+CREATE UNIQUE INDEX contractmethods_interface_id_name ON contractmethods(interface_id,name);

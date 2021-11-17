@@ -95,21 +95,21 @@ func (cm *ContractManager) GetContractMethod(ctx context.Context, ns, contractID
 	return nil, nil
 }
 
-func (cm *ContractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractInvocationRequest) (interface{}, error) {
+func (cm *ContractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
 	signingKey := cm.identity.GetOrgKey(ctx)
 	operationID := fftypes.NewUUID()
 	method, err := cm.resolveContractInvocationRequest(ctx, ns, req)
 	if err != nil {
 		return nil, err
 	}
-	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.OnChainLocation, method, req.Params)
+	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, method, req.Params)
 }
 
 func (cm *ContractManager) GetMethod(ctx context.Context, ns, contractInstanceNameOrID, methodName string) (*fftypes.FFIMethod, error) {
 	return cm.database.GetContractMethodByName(ctx, ns, contractInstanceNameOrID, methodName)
 }
 
-func (cm *ContractManager) resolveContractInvocationRequest(ctx context.Context, ns string, req *fftypes.ContractInvocationRequest) (method *fftypes.FFIMethod, err error) {
+func (cm *ContractManager) resolveContractInvocationRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
 	if req.Method == nil {
 		// TODO: more helpful error message here
 		return nil, fmt.Errorf("method nil")
@@ -126,4 +126,36 @@ func (cm *ContractManager) resolveContractInvocationRequest(ctx context.Context,
 		}
 	}
 	return method, nil
+}
+
+func (cm *ContractManager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+	filter = cm.scopeNS(ns, filter)
+	return cm.database.GetContractAPIs(ctx, ns, filter)
+}
+
+func (cm *ContractManager) BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
+	api.ID = fftypes.NewUUID()
+	api.Namespace = ns
+
+	existing, err := cm.database.GetContractAPIByID(ctx, api.ID.String())
+
+	if existing != nil && err == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgContractInterfaceExists, api.Namespace, api.Contract.Name, api.Contract.Version)
+	}
+
+	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	identity := &fftypes.Identity{
+		Author: localOrgDID,
+		Key:    cm.identity.GetOrgKey(ctx),
+	}
+
+	// TODO: Do we do anything with this message here?
+	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, api, identity, fftypes.SystemTagDefineContractAPI, waitConfirm)
+	if err != nil {
+		return nil, err
+	}
+	return api, nil
 }

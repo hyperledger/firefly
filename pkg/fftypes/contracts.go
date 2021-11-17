@@ -16,11 +16,50 @@
 
 package fftypes
 
-type ContractInvocationRequest struct {
-	ContractID      *UUID                  `json:"contractId,omitempty"`
-	OnChainLocation OnChainLocation        `json:"onChainLocation,omitempty"`
-	Method          *FFIMethod             `json:"method,omitempty"`
-	Params          map[string]interface{} `json:"params"`
+import "context"
+
+type InvokeContractRequest struct {
+	ContractID *UUID                  `json:"contractId,omitempty"`
+	Ledger     Ledger                 `json:"ledger,omitempty"`
+	Location   ContractLocation       `json:"location,omitempty"`
+	Method     *FFIMethod             `json:"method,omitempty"`
+	Params     map[string]interface{} `json:"params"`
 }
 
-type OnChainLocation interface{}
+type ContractAPI struct {
+	ID        *UUID               `json:"id,omitempty"`
+	Namespace string              `json:"namespace,omitempty"`
+	Contract  *ContractIdentifier `json:"contract"`
+	Ledger    Ledger              `json:"ledger,omitempty"`
+	Location  ContractLocation    `json:"location,omitempty"`
+	Name      string              `json:"name"`
+	Message   *UUID               `json:"message,omitempty"`
+}
+
+type ContractIdentifier struct {
+	ID      *UUID  `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+
+type ContractLocation interface{}
+
+type Ledger interface{}
+
+func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameField(ctx, c.Namespace, "namespace"); err != nil {
+		return err
+	}
+	if err = ValidateFFNameField(ctx, c.Name, "name"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ContractAPI) Topic() string {
+	return namespaceTopic(c.Namespace)
+}
+
+func (c *ContractAPI) SetBroadcastMessage(msgID *UUID) {
+	c.Message = msgID
+}

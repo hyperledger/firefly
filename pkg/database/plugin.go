@@ -399,16 +399,15 @@ type iContractDefinitionCollection interface {
 	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 }
 
-type iContractInstanceCollection interface {
-	// InsertInstanceDefinition - inserts a new contract instance. Must be unique for namespace, name
-	// InsertContractInstance(ctx context.Context, cd *fftypes.ContractInstance) error
-	// GetContractInstances(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractInstance, *FilterResult, error)
-	// GetContractInstanceByID(ctx context.Context, id string) (*fftypes.ContractInstance, error)
-	// GetContractInstanceByName(ctx context.Context, ns, name string) (*fftypes.ContractInstance, error)
-}
-
 type iContractMethodCollection interface {
 	GetContractMethodByName(ctx context.Context, ns, contractNameOrID, methodName string) (*fftypes.FFIMethod, error)
+}
+
+type iContractAPICollection interface {
+	InsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error
+	GetContractAPIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractAPI, *FilterResult, error)
+	GetContractAPIByID(ctx context.Context, id string) (*fftypes.ContractAPI, error)
+	GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
@@ -468,8 +467,8 @@ type PeristenceInterface interface {
 	iTokenBalanceCollection
 	iTokenTransferCollection
 	iContractDefinitionCollection
-	iContractInstanceCollection
 	iContractMethodCollection
+	iContractAPICollection
 }
 
 // CollectionName represents all collections
@@ -506,10 +505,11 @@ const (
 	CollectionSubscriptions      UUIDCollectionNS = "subscriptions"
 	CollectionTransactions       UUIDCollectionNS = "transactions"
 	CollectionTokenPools         UUIDCollectionNS = "tokenpools"
-	CollectionContractInterfaces UUIDCollectionNS = "contract_interfaces"
-	CollectionContractMethods    UUIDCollectionNS = "contract_methods"
-	CollectionContractEvents     UUIDCollectionNS = "contract_events"
-	CollectionContractParams     UUIDCollectionNS = "contract_params"
+	CollectionContractInterfaces UUIDCollectionNS = "contractinterfaces"
+	CollectionContractMethods    UUIDCollectionNS = "contractmethods"
+	CollectionContractEvents     UUIDCollectionNS = "contractevents"
+	CollectionContractParams     UUIDCollectionNS = "contractparams"
+	CollectionContractAPIs       UUIDCollectionNS = "contractapis"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can

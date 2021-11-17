@@ -31,13 +31,13 @@ func (dh *definitionHandlers) persistContractInterface(ctx context.Context, cont
 	return true, nil
 }
 
-// func (dh *definitionHandlers) persistContractInstance(ctx context.Context, cd *fftypes.ContractInstanceBroadcast) (valid bool, err error) {
-// 	err = dh.database.InsertContractInstance(ctx, &cd.ContractInstance)
-// 	if err != nil {
-// 		return false, err
-// 	}
-// 	return true, nil
-// }
+func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftypes.ContractAPI) (valid bool, err error) {
+	err = dh.database.InsertContractAPI(ctx, api)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
 
 func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
@@ -68,31 +68,31 @@ func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Conte
 	return valid, err
 }
 
-// func (dh *definitionHandlers) handleContractInstanceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
-// 	l := log.L(ctx)
-// 	var broadcast fftypes.FFI
-// 	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
-// 	if valid {
-// 		if err = broadcast.Validate(ctx, true); err != nil {
-// 			l.Warnf("Unable to process contract instance broadcast %s - validate failed: %s", msg.Header.ID, err)
-// 			valid = false
-// 		} else {
-// 			broadcast.Message = msg.Header.ID
-// 			valid, err = dh.persistContractInstance(ctx, &broadcast)
-// 			if err != nil {
-// 				return valid, err
-// 			}
-// 		}
-// 	}
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+	l := log.L(ctx)
+	var broadcast fftypes.ContractAPI
+	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
+	if valid {
+		if err = broadcast.Validate(ctx, true); err != nil {
+			l.Warnf("Unable to process contract API broadcast %s - validate failed: %s", msg.Header.ID, err)
+			valid = false
+		} else {
+			broadcast.Message = msg.Header.ID
+			valid, err = dh.persistContractAPI(ctx, &broadcast)
+			if err != nil {
+				return valid, err
+			}
+		}
+	}
 
-// 	var event *fftypes.Event
-// 	if valid {
-// 		l.Infof("Contract instance created id=%s author=%s", broadcast.ID, msg.Header.Author)
-// 		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
-// 	} else {
-// 		l.Warnf("Contract instance rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-// 		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
-// 	}
-// 	err = dh.database.InsertEvent(ctx, event)
-// 	return valid, err
-// }
+	var event *fftypes.Event
+	if valid {
+		l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
+		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
+	} else {
+		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
+		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
+	}
+	err = dh.database.InsertEvent(ctx, event)
+	return valid, err
+}

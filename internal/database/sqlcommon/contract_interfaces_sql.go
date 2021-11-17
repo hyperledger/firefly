@@ -57,7 +57,7 @@ func (s *SQLCommon) InsertContractInterface(ctx context.Context, cd *fftypes.FFI
 
 	if existing {
 		if err = s.updateTx(ctx, tx,
-			sq.Update("contract_interfaces").
+			sq.Update("contractinterfaces").
 				Set("namespace", cd.Namespace).
 				Set("name", cd.Name).
 				Set("version", cd.Version),
@@ -118,12 +118,12 @@ func (s *SQLCommon) getContractPred(ctx context.Context, desc string, pred inter
 		return nil, nil
 	}
 
-	cd, err := s.contractInterfaceResult(ctx, rows)
+	ffi, err := s.contractInterfaceResult(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return cd, nil
+	return ffi, nil
 }
 
 func (s *SQLCommon) GetContractInterfaces(ctx context.Context, ns string, filter database.Filter) (contractInterfaces []*fftypes.FFI, res *database.FilterResult, err error) {
