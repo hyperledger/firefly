@@ -80,12 +80,12 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 				"hash": message.Hash,
 			}),
 		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, -1)
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, -1 /* not applicable on update */)
 		})
 }
 
-func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message) (int64, error) {
-	return s.insertTx(ctx, tx,
+func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message) (err error) {
+	message.Sequence, err = s.insertTx(ctx, tx,
 		sq.Insert("messages").
 			Columns(msgColumns...).
 			Values(
@@ -110,6 +110,7 @@ func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, mes
 		func() {
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
 		})
+	return err
 }
 
 func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization) (err error) {
@@ -127,7 +128,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	optimized := false
 	recreateDatarefs := false
 	if optimization == database.UpsertOptimizationNew {
-		_, opErr := s.attemptMessageInsert(ctx, tx, message)
+		opErr := s.attemptMessageInsert(ctx, tx, message)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
 		rowsAffected, opErr := s.attemptMessageUpdate(ctx, tx, message)
@@ -164,7 +165,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 				return err
 			}
 		} else {
-			if message.Sequence, err = s.attemptMessageInsert(ctx, tx, message); err != nil {
+			if err = s.attemptMessageInsert(ctx, tx, message); err != nil {
 				return err
 			}
 		}
@@ -177,10 +178,6 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 		if err = s.updateMessageDataRefs(ctx, tx, message, recreateDatarefs); err != nil {
 			return err
 		}
-	}
-
-	if optimization != database.UpsertOptimizationSkip {
-		message.Sequence = -1 // code that allows the optimization, MUST not rely on a sequence being returned.
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
