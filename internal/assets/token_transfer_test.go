@@ -1146,6 +1146,31 @@ func TestTransferTokensByTypeSuccess(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
+func TestTransferTokensPoolNotFound(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From:   "A",
+			To:     "B",
+			Amount: *fftypes.NewBigInt(5),
+		},
+		Pool: "pool1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10109", err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestTransferPrepare(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
