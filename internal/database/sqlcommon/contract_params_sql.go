@@ -29,14 +29,22 @@ import (
 
 var (
 	contractParamsColumns = []string{
-		"contract_id",
+		"interface_id",
+		"parent_name",
 		"namespace",
 		"name",
+		"type",
+		"param_index",
+		"role",
+	}
+	selectContractParamsColumns = []string{
+		"name",
+		"type",
 	}
 	contractParamsFilterFieldMap = map[string]string{}
 )
 
-func (s *SQLCommon) InsertContractParam(ctx context.Context, ns string, contractID *fftypes.UUID, parentName, role string, param *fftypes.FFIParam) (err error) {
+func (s *SQLCommon) InsertContractParam(ctx context.Context, ns string, interfaceID *fftypes.UUID, parentName string, role fftypes.FFIParamRole, index int, param *fftypes.FFIParam) error {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -44,9 +52,14 @@ func (s *SQLCommon) InsertContractParam(ctx context.Context, ns string, contract
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	rows, _, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("contract_methods").
-			Where(sq.And{sq.Eq{"contract_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": param.Name}}),
+		sq.Select("interface_id").
+			From("contractparams").
+			Where(sq.And{
+				sq.Eq{"namespace": ns},
+				sq.Eq{"interface_id": interfaceID},
+				sq.Eq{"name": param.Name},
+				sq.Eq{"role": role},
+			}),
 	)
 	if err != nil {
 		return err
@@ -56,27 +69,35 @@ func (s *SQLCommon) InsertContractParam(ctx context.Context, ns string, contract
 
 	if existing {
 		if err = s.updateTx(ctx, tx,
-			sq.Update("contract_methods").
-				Set("contract_id", contractID).
+			sq.Update("contractparams").
+				Set("interface_id", interfaceID).
+				Set("parent_name", parentName).
 				Set("namespace", ns).
-				Set("name", param.Name),
+				Set("name", param.Name).
+				Set("type", param.Type).
+				Set("param_index", index).
+				Set("role", role),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractInterfaces, fftypes.ChangeEventTypeUpdated, ns, contractID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractParams, fftypes.ChangeEventTypeUpdated, ns, interfaceID)
 			},
 		); err != nil {
 			return err
 		}
 	} else {
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contract_methods").
-				Columns(contractMethodsColumns...).
+			sq.Insert("contractparams").
+				Columns(contractParamsColumns...).
 				Values(
-					contractID,
+					interfaceID,
+					parentName,
 					ns,
 					param.Name,
+					param.Type,
+					index,
+					role,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractInterfaces, fftypes.ChangeEventTypeCreated, ns, contractID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractInterfaces, fftypes.ChangeEventTypeCreated, ns, interfaceID)
 			},
 		); err != nil {
 			return err
@@ -86,24 +107,32 @@ func (s *SQLCommon) InsertContractParam(ctx context.Context, ns string, contract
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) contractParamResult(ctx context.Context, row *sql.Rows) (*fftypes.FFIParam, error) {
-	param := fftypes.FFIParam{}
-	err := row.Scan(
-		nil,
-		nil,
-		&param.Name,
-	)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contract_params")
+func (s *SQLCommon) contractParamResults(ctx context.Context, rows *sql.Rows) ([]*fftypes.FFIParam, error) {
+	params := []*fftypes.FFIParam{}
+
+	for {
+		param := fftypes.FFIParam{}
+		err := rows.Scan(
+			&param.Name,
+			&param.Type,
+		)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractparams")
+		}
+		params = append(params, &param)
+		if !rows.Next() {
+			break
+		}
 	}
-	return &param, nil
+	return params, nil
 }
 
-func (s *SQLCommon) getContractParamPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFIParam, error) {
+func (s *SQLCommon) getContractParamsPred(ctx context.Context, desc string, pred interface{}) ([]*fftypes.FFIParam, error) {
 	rows, _, err := s.query(ctx,
-		sq.Select(contractParamsColumns...).
-			From("contract_params").
-			Where(pred),
+		sq.Select(selectContractParamsColumns...).
+			From("contractparams").
+			Where(pred).
+			OrderBy("param_index"),
 	)
 	if err != nil {
 		return nil, err
@@ -115,16 +144,16 @@ func (s *SQLCommon) getContractParamPred(ctx context.Context, desc string, pred 
 		return nil, nil
 	}
 
-	ci, err := s.contractParamResult(ctx, rows)
+	params, err := s.contractParamResults(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return ci, nil
+	return params, nil
 }
 
 func (s *SQLCommon) GetContractParams(ctx context.Context, ns string, filter database.Filter) (methods []*fftypes.FFIMethod, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractMethodsColumns...).From("contract_methods").Where(sq.Eq{"namespace": ns}), filter, contractParamsFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractParamsColumns...).From("contract_methods").Where(sq.Eq{"namespace": ns}), filter, contractParamsFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -147,6 +176,14 @@ func (s *SQLCommon) GetContractParams(ctx context.Context, ns string, filter dat
 
 }
 
-func (s *SQLCommon) GetContractParamByName(ctx context.Context, ns, contractID, name string) (*fftypes.FFIParam, error) {
-	return s.getContractParamPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"contract_id": contractID}, sq.Eq{"name": name}})
+func (s *SQLCommon) GetContractParamsByMethodName(ctx context.Context, ns, contractID, methodName string) (params, returns []*fftypes.FFIParam, err error) {
+	params, err = s.getContractParamsPred(ctx, ns+":"+contractID+":"+methodName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"parent_name": methodName}, sq.Eq{"role": "param"}})
+	if err != nil {
+		return nil, nil, err
+	}
+	returns, err = s.getContractParamsPred(ctx, ns+":"+contractID+":"+methodName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"parent_name": methodName}, sq.Eq{"role": "return"}})
+	if err != nil {
+		return nil, nil, err
+	}
+	return
 }

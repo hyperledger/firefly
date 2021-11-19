@@ -21,7 +21,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -95,6 +94,10 @@ type ethBatchPinInput struct {
 type ethWSCommandPayload struct {
 	Type  string `json:"type"`
 	Topic string `json:"topic,omitempty"`
+}
+
+type Location struct {
+	Address string `json:"address"`
 }
 
 var requiredSubscriptions = map[string]string{
@@ -489,15 +492,13 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.ContractLocation, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
-
-	contractAddress, ok := onChainLocation.(string)
-	if !ok {
-		return nil, errors.New("cannot parse onChainLocation")
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
+	contractAddress, err := parseContractLocation(location)
+	if err != nil {
+		return nil, err
 	}
-
 	tx := &asyncTXSubmission{}
-	res, err := e.invokeContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress), method.Name, signingKey, operationID.String(), params, tx)
+	res, err := e.invokeContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, signingKey, operationID.String(), params, tx)
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -509,10 +510,18 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	return result, nil
 }
 
-func (e *Ethereum) ValidateOnChainLocation(ctx context.Context, onChainLocation fftypes.ContractLocation) error {
-	location, ok := onChainLocation.(string)
-	if !ok || location != "" {
-		return fmt.Errorf("failed to validate on chain location")
+func (e *Ethereum) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {
+	_, err = parseContractLocation(location)
+	return
+}
+
+func parseContractLocation(location fftypes.Byteable) (*Location, error) {
+	ethLocation := &Location{}
+	if err := json.Unmarshal(location, &ethLocation); err != nil {
+		return nil, fmt.Errorf("failed to validate on chain location")
 	}
-	return nil
+	if ethLocation.Address == "" {
+		return nil, fmt.Errorf("failed to validate on chain location: 'channel' not set")
+	}
+	return ethLocation, nil
 }

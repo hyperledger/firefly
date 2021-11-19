@@ -468,13 +468,13 @@ func (_m *Plugin) GetContractInterfaces(ctx context.Context, ns string, filter d
 	return r0, r1, r2
 }
 
-// GetContractMethodByName provides a mock function with given fields: ctx, ns, contractNameOrID, methodName
-func (_m *Plugin) GetContractMethodByName(ctx context.Context, ns string, contractNameOrID string, methodName string) (*fftypes.FFIMethod, error) {
-	ret := _m.Called(ctx, ns, contractNameOrID, methodName)
+// GetContractMethodByName provides a mock function with given fields: ctx, ns, contractID, methodName
+func (_m *Plugin) GetContractMethodByName(ctx context.Context, ns string, contractID string, methodName string) (*fftypes.FFIMethod, error) {
+	ret := _m.Called(ctx, ns, contractID, methodName)
 
 	var r0 *fftypes.FFIMethod
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFIMethod); ok {
-		r0 = rf(ctx, ns, contractNameOrID, methodName)
+		r0 = rf(ctx, ns, contractID, methodName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.FFIMethod)
@@ -483,12 +483,44 @@ func (_m *Plugin) GetContractMethodByName(ctx context.Context, ns string, contra
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, contractNameOrID, methodName)
+		r1 = rf(ctx, ns, contractID, methodName)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// GetContractParamsByMethodName provides a mock function with given fields: ctx, ns, contractID, methodName
+func (_m *Plugin) GetContractParamsByMethodName(ctx context.Context, ns string, contractID string, methodName string) ([]*fftypes.FFIParam, []*fftypes.FFIParam, error) {
+	ret := _m.Called(ctx, ns, contractID, methodName)
+
+	var r0 []*fftypes.FFIParam
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) []*fftypes.FFIParam); ok {
+		r0 = rf(ctx, ns, contractID, methodName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.FFIParam)
+		}
+	}
+
+	var r1 []*fftypes.FFIParam
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) []*fftypes.FFIParam); ok {
+		r1 = rf(ctx, ns, contractID, methodName)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]*fftypes.FFIParam)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, string) error); ok {
+		r2 = rf(ctx, ns, contractID, methodName)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetData provides a mock function with given fields: ctx, filter
@@ -1856,6 +1888,20 @@ func (_m *Plugin) InsertContractInterface(ctx context.Context, cd *fftypes.FFI) 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
 		r0 = rf(ctx, cd)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertContractParam provides a mock function with given fields: ctx, ns, interfaceID, parentName, role, index, param
+func (_m *Plugin) InsertContractParam(ctx context.Context, ns string, interfaceID *fftypes.UUID, parentName string, role fftypes.FFEnum, index int, param *fftypes.FFIParam) error {
+	ret := _m.Called(ctx, ns, interfaceID, parentName, role, index, param)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string, fftypes.FFEnum, int, *fftypes.FFIParam) error); ok {
+		r0 = rf(ctx, ns, interfaceID, parentName, role, index, param)
 	} else {
 		r0 = ret.Error(0)
 	}

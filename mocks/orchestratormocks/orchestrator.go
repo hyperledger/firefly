@@ -1200,6 +1200,29 @@ func (_m *Orchestrator) InvokeContract(ctx context.Context, ns string, req *ffty
 	return r0, r1
 }
 
+// InvokeContractAPI provides a mock function with given fields: ctx, ns, apiName, methodName, req
+func (_m *Orchestrator) InvokeContractAPI(ctx context.Context, ns string, apiName string, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+	ret := _m.Called(ctx, ns, apiName, methodName, req)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.InvokeContractRequest) interface{}); ok {
+		r0 = rf(ctx, ns, apiName, methodName, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.InvokeContractRequest) error); ok {
+		r1 = rf(ctx, ns, apiName, methodName, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // IsPreInit provides a mock function with given fields:
 func (_m *Orchestrator) IsPreInit() bool {
 	ret := _m.Called()

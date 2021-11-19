@@ -44,6 +44,13 @@ type FFIParam struct {
 	Type string `json:"type"`
 }
 
+type FFIParamRole = FFEnum
+
+var (
+	FFIParamRoleParam  FFIParamRole = ffEnum("paramrole", "param")
+	FFIParamRoleReturn FFIParamRole = ffEnum("paramrole", "return")
+)
+
 func (f *FFI) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, f.Namespace, "namespace"); err != nil {
 		return err

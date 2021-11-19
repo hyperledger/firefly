@@ -98,18 +98,33 @@ func (cm *ContractManager) GetContractMethod(ctx context.Context, ns, contractID
 func (cm *ContractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
 	signingKey := cm.identity.GetOrgKey(ctx)
 	operationID := fftypes.NewUUID()
-	method, err := cm.resolveContractInvocationRequest(ctx, ns, req)
+	method, err := cm.resolveInvokeContractRequest(ctx, ns, req)
 	if err != nil {
 		return nil, err
 	}
 	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, method, req.Params)
 }
 
+func (cm *ContractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
+	if err != nil {
+		return nil, err
+	}
+	req.ContractID = api.Contract.ID
+	req.Method = &fftypes.FFIMethod{
+		Name: methodName,
+	}
+	if api.Location != nil {
+		req.Location = api.Location
+	}
+	return cm.InvokeContract(ctx, ns, req)
+}
+
 func (cm *ContractManager) GetMethod(ctx context.Context, ns, contractInstanceNameOrID, methodName string) (*fftypes.FFIMethod, error) {
 	return cm.database.GetContractMethodByName(ctx, ns, contractInstanceNameOrID, methodName)
 }
 
-func (cm *ContractManager) resolveContractInvocationRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
+func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
 	if req.Method == nil {
 		// TODO: more helpful error message here
 		return nil, fmt.Errorf("method nil")
@@ -120,10 +135,14 @@ func (cm *ContractManager) resolveContractInvocationRequest(ctx context.Context,
 		if req.ContractID.String() == "" {
 			return nil, fmt.Errorf("error resolving contract method - method signature is required if contract ID is absent")
 		}
-		method, err = cm.database.GetContractMethodByName(ctx, ns, req.ContractID.String(), method.Name)
+		params, returns, err := cm.database.GetContractParamsByMethodName(ctx, ns, req.ContractID.String(), method.Name)
+
+		// method, err = cm.database.GetContractMethodByName(ctx, ns, req.ContractID.String(), method.Name)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving contract method")
 		}
+		method.Params = params
+		method.Returns = returns
 	}
 	return method, nil
 }

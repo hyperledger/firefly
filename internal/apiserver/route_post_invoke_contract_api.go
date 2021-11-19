@@ -26,12 +26,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postInvokeContract = &oapispec.Route{
-	Name:   "postContractInvoke",
-	Path:   "namespaces/{ns}/contracts/invoke",
+var postInvokeContractAPI = &oapispec.Route{
+	Name:   "postNewContractAPI",
+	Path:   "namespaces/{ns}/apis/{apiName}/invoke/{methodName}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "apiName", Example: "apiName", Description: i18n.MsgTBD},
+		{Name: "methodName", Example: "methodName", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
@@ -45,6 +47,6 @@ var postInvokeContract = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.InvokeContract(r.Ctx, r.PP["ns"], r.Input.(*fftypes.InvokeContractRequest))
+		return r.Or.InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodName"], r.Input.(*fftypes.InvokeContractRequest))
 	},
 }

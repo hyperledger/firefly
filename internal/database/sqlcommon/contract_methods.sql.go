@@ -29,7 +29,7 @@ import (
 
 var (
 	contractMethodsColumns = []string{
-		"contract_id",
+		"interface_id",
 		"namespace",
 		"name",
 	}
@@ -46,7 +46,7 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("contract_methods").
-			Where(sq.And{sq.Eq{"contract_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": methodName}}),
+			Where(sq.And{sq.Eq{"interface_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": methodName}}),
 	)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 	if existing {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("contract_methods").
-				Set("contract_id", contractID).
+				Set("interface_id", contractID).
 				Set("namespace", ns).
 				Set("name", methodName),
 			func() {
@@ -148,5 +148,5 @@ func (s *SQLCommon) GetContractMethods(ctx context.Context, ns string, filter da
 }
 
 func (s *SQLCommon) GetContractMethodByName(ctx context.Context, ns, contractID, name string) (*fftypes.FFIMethod, error) {
-	return s.getContractMethodPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"contract_id": contractID}, sq.Eq{"name": name}})
+	return s.getContractMethodPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"name": name}})
 }

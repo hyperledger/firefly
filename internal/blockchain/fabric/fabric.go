@@ -584,7 +584,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.ContractLocation, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
 	tx := &asyncTXSubmission{}
 
 	// All arguments must be JSON serialized
@@ -611,8 +611,8 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		}
 	}
 
-	fabricOnChainLocation, ok := onChainLocation.(Location)
-	if !ok {
+	fabricOnChainLocation, err := parseContractLocation(location)
+	if err != nil {
 		return nil, fmt.Errorf("cannot parse onChainLocation")
 	}
 
@@ -640,16 +640,21 @@ func jsonEncodeParams(params map[string]interface{}) (output map[string]string, 
 	return
 }
 
-func (f *Fabric) ValidateOnChainLocation(ctx context.Context, onChainLocation fftypes.ContractLocation) error {
-	location, ok := onChainLocation.(Location)
-	if !ok {
-		return fmt.Errorf("failed to validate on chain location")
+func (f *Fabric) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {
+	_, err = parseContractLocation(location)
+	return
+}
+
+func parseContractLocation(location fftypes.Byteable) (*Location, error) {
+	fabricLocation := &Location{}
+	if err := json.Unmarshal(location, &fabricLocation); err != nil {
+		return nil, fmt.Errorf("failed to validate on chain location")
 	}
-	if location.Channel == "" {
-		return fmt.Errorf("failed to validate on chain location: 'channel' not set")
+	if fabricLocation.Channel == "" {
+		return nil, fmt.Errorf("failed to validate on chain location: 'channel' not set")
 	}
-	if location.Chaincode == "" {
-		return fmt.Errorf("failed to validate on chain location: 'chaincode' not set")
+	if fabricLocation.Chaincode == "" {
+		return nil, fmt.Errorf("failed to validate on chain location: 'chaincode' not set")
 	}
-	return nil
+	return fabricLocation, nil
 }

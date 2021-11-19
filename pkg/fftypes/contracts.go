@@ -20,8 +20,8 @@ import "context"
 
 type InvokeContractRequest struct {
 	ContractID *UUID                  `json:"contractId,omitempty"`
-	Ledger     Ledger                 `json:"ledger,omitempty"`
-	Location   ContractLocation       `json:"location,omitempty"`
+	Ledger     Byteable               `json:"ledger,omitempty"`
+	Location   Byteable               `json:"location,omitempty"`
 	Method     *FFIMethod             `json:"method,omitempty"`
 	Params     map[string]interface{} `json:"params"`
 }
@@ -30,8 +30,8 @@ type ContractAPI struct {
 	ID        *UUID               `json:"id,omitempty"`
 	Namespace string              `json:"namespace,omitempty"`
 	Contract  *ContractIdentifier `json:"contract"`
-	Ledger    Ledger              `json:"ledger,omitempty"`
-	Location  ContractLocation    `json:"location,omitempty"`
+	Ledger    Byteable            `json:"ledger,omitempty"`
+	Location  Byteable            `json:"location,omitempty"`
 	Name      string              `json:"name"`
 	Message   *UUID               `json:"message,omitempty"`
 }
@@ -41,10 +41,6 @@ type ContractIdentifier struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
-
-type ContractLocation interface{}
-
-type Ledger interface{}
 
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, c.Namespace, "namespace"); err != nil {

@@ -129,6 +129,7 @@ type Orchestrator interface {
 
 	CreateContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (*fftypes.ContractAPI, error)
 	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
+	InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error)
 }
 
 type orchestrator struct {
@@ -534,6 +535,10 @@ func (or *orchestrator) GetContractInterfaceByNameAndVersion(ctx context.Context
 
 func (or *orchestrator) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
 	return or.contracts.InvokeContract(ctx, ns, req)
+}
+
+func (or *orchestrator) InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+	return or.contracts.InvokeContractAPI(ctx, ns, apiName, methodName, req)
 }
 
 func (or *orchestrator) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractAPI, res *database.FilterResult, err error) {
