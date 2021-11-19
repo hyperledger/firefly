@@ -175,7 +175,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
-	or.bc.am = or.assets
 	return err
 }
 
@@ -416,7 +415,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data, or.broadcast, or.messaging)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data, or.broadcast, or.messaging, or.assets)
 		if err != nil {
 			return err
 		}

@@ -29,11 +29,11 @@ func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UU
 }
 
 // TokenPoolCreated provides a mock function with given fields: plugin, pool, protocolTxID, additionalInfo
-func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	ret := _m.Called(plugin, pool, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, fftypes.JSONObject) error); ok {
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string, fftypes.JSONObject) error); ok {
 		r0 = rf(plugin, pool, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)

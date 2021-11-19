@@ -43,6 +43,9 @@ type Plugin interface {
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
 	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error
 
+	// ActivateTokenPool activates a pool in order to begin receiving events
+	ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, tx *fftypes.Transaction) error
+
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
 	MintTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
 
@@ -72,7 +75,7 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenPoolCreated(plugin Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(plugin Plugin, pool *TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// TokensTransferred notifies on a transfer between token accounts.
 	//
@@ -83,4 +86,26 @@ type Callbacks interface {
 // Capabilities the supported featureset of the tokens
 // interface implemented by the plugin, with the specified config
 type Capabilities struct {
+}
+
+// TokenPool is the set of data returned from the connector when a token pool is created.
+type TokenPool struct {
+	// Type is the type of tokens (fungible, non-fungible, etc) in this pool
+	Type fftypes.TokenType
+
+	// ProtocolID is the ID assigned to this pool by the connector (must be unique for this connector)
+	ProtocolID string
+
+	// TransactionID is the FireFly-assigned ID to correlate this to a transaction (optional)
+	// Not guaranteed to be set for pool creation events triggered outside of FireFly
+	TransactionID *fftypes.UUID
+
+	// Key is the chain-specific identifier for the user that created the pool
+	Key string
+
+	// Connector is the configured name of this connector
+	Connector string
+
+	// Standard is the well-defined token standard that this pool conforms to (optional)
+	Standard string
 }

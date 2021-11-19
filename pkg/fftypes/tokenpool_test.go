@@ -28,21 +28,21 @@ func TestTokenPoolValidation(t *testing.T) {
 		Namespace: "!wrong",
 		Name:      "ok",
 	}
-	err := pool.Validate(context.Background(), false)
+	err := pool.Validate(context.Background())
 	assert.Regexp(t, "FF10131.*'namespace'", err)
 
 	pool = &TokenPool{
 		Namespace: "ok",
 		Name:      "!wrong",
 	}
-	err = pool.Validate(context.Background(), false)
+	err = pool.Validate(context.Background())
 	assert.Regexp(t, "FF10131.*'name'", err)
 
 	pool = &TokenPool{
 		Namespace: "ok",
 		Name:      "ok",
 	}
-	err = pool.Validate(context.Background(), false)
+	err = pool.Validate(context.Background())
 	assert.NoError(t, err)
 }
 
@@ -51,7 +51,7 @@ func TestTokenPoolDefinition(t *testing.T) {
 		Namespace: "ok",
 		Name:      "ok",
 	}
-	var def Definition = pool
+	var def Definition = &TokenPoolAnnouncement{Pool: pool}
 	assert.Equal(t, "ff_ns_ok", def.Topic())
 
 	id := NewUUID()

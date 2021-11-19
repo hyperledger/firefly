@@ -357,7 +357,7 @@ type iTokenPoolCollection interface {
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by protocol ID
-	GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error)
+	GetTokenPoolByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenPool, error)
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
@@ -386,6 +386,9 @@ type iTokenTransferCollection interface {
 
 	// GetTokenTransfer - Get a token transfer by ID
 	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
+
+	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
+	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
@@ -768,6 +771,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"key":        &StringField{},
 	"symbol":     &StringField{},
 	"message":    &UUIDField{},
+	"state":      &StringField{},
 	"created":    &TimeField{},
 	"connector":  &StringField{},
 }
@@ -795,6 +799,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"to":          &StringField{},
 	"amount":      &Int64Field{},
 	"protocolid":  &StringField{},
+	"message":     &UUIDField{},
 	"messagehash": &Bytes32Field{},
 	"created":     &TimeField{},
 }
