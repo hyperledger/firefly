@@ -26,19 +26,18 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func updatePool(storedPool *fftypes.TokenPool, chainPool *tokens.TokenPool) *fftypes.TokenPool {
-	storedPool.Type = chainPool.Type
-	storedPool.ProtocolID = chainPool.ProtocolID
-	storedPool.Key = chainPool.Key
-	storedPool.Connector = chainPool.Connector
-	storedPool.Standard = chainPool.Standard
-	if chainPool.TransactionID != nil {
-		storedPool.TX = fftypes.TransactionRef{
+func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.TokenPool) {
+	ffPool.Type = pluginPool.Type
+	ffPool.ProtocolID = pluginPool.ProtocolID
+	ffPool.Key = pluginPool.Key
+	ffPool.Connector = pluginPool.Connector
+	ffPool.Standard = pluginPool.Standard
+	if pluginPool.TransactionID != nil {
+		ffPool.TX = fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
-			ID:   chainPool.TransactionID,
+			ID:   pluginPool.TransactionID,
 		}
 	}
-	return storedPool
 }
 
 func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus, protocolTxID string, additionalInfo fftypes.JSONObject) *fftypes.Transaction {
@@ -89,7 +88,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 	if existingPool, err = em.database.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID); err != nil || existingPool == nil {
 		return existingPool, err
 	}
-	updatePool(existingPool, pool)
+	addPoolDetailsFromPlugin(existingPool, pool)
 
 	if existingPool.State == fftypes.TokenPoolStateUnknown {
 		// Unknown pool state - should only happen on first run after database migration
@@ -118,12 +117,14 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, po
 	} else if op == nil {
 		return nil, nil
 	}
-	announcePool = updatePool(&fftypes.TokenPool{}, pool)
 
+	announcePool = &fftypes.TokenPool{}
 	if err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op, announcePool); err != nil {
 		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
 		return nil, nil
 	}
+	addPoolDetailsFromPlugin(announcePool, pool)
+
 	nextOp := fftypes.NewTXOperation(
 		ti,
 		op.Namespace,
