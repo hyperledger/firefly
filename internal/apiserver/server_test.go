@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -61,6 +62,7 @@ func newTestAdminServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 
 func TestStartStopServer(t *testing.T) {
 	config.Reset()
+	metrics.Clear()
 	InitConfig()
 	apiConfigPrefix.Set(HTTPConfPort, 0)
 	adminConfigPrefix.Set(HTTPConfPort, 0)
@@ -77,6 +79,7 @@ func TestStartStopServer(t *testing.T) {
 
 func TestStartAPIFail(t *testing.T) {
 	config.Reset()
+	metrics.Clear()
 	InitConfig()
 	apiConfigPrefix.Set(HTTPConfAddress, "...://")
 	ctx, cancel := context.WithCancel(context.Background())
@@ -90,6 +93,7 @@ func TestStartAPIFail(t *testing.T) {
 
 func TestStartAdminFail(t *testing.T) {
 	config.Reset()
+	metrics.Clear()
 	InitConfig()
 	adminConfigPrefix.Set(HTTPConfAddress, "...://")
 	config.Set(config.AdminEnabled, true)
@@ -375,16 +379,20 @@ func TestWaitForServerStop(t *testing.T) {
 
 	chl1 := make(chan error, 1)
 	chl2 := make(chan error, 1)
+	chl3 := make(chan error, 1)
 	chl1 <- fmt.Errorf("pop1")
 
 	as := &apiServer{}
-	err := as.waitForServerStop(chl1, chl2)
+	err := as.waitForServerStop(chl1, chl2, chl3)
 	assert.EqualError(t, err, "pop1")
 
 	chl2 <- fmt.Errorf("pop2")
-	err = as.waitForServerStop(chl1, chl2)
+	err = as.waitForServerStop(chl1, chl2, chl3)
 	assert.EqualError(t, err, "pop2")
 
+	chl3 <- fmt.Errorf("pop3")
+	err = as.waitForServerStop(chl1, chl2, chl3)
+	assert.EqualError(t, err, "pop3")
 }
 
 func TestGetTimeoutMax(t *testing.T) {

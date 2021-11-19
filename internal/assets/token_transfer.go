@@ -271,7 +271,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err = s.mgr.GetTokenPool(ctx, s.namespace, s.transfer.Connector, s.transfer.Pool)
+		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
 			return err
 		}
