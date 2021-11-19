@@ -123,8 +123,8 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	// This is a performance critical function, as we stream data into the database for every message, in every batch.
 	//
 	// First attempt the operation based on the optimization passed in.
-	// The expectation is that this will practically hit of the time, as only recovery paths
-	// require us to go down the un-optimized route.
+	// The expectation is that the optimization will hit almost all of the time,
+	// as only recovery paths require us to go down the un-optimized route.
 	optimized := false
 	recreateDatarefs := false
 	if optimization == database.UpsertOptimizationNew {
@@ -186,6 +186,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message, recreateDatarefs bool) error {
 
 	if recreateDatarefs {
+		// Delete all the existing references, to replace them with new ones below
 		if err := s.deleteTx(ctx, tx,
 			sq.Delete("messages_data").
 				Where(sq.And{
@@ -197,7 +198,6 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 		}
 	}
 
-	// Run through the ones in the message, finding ones that already exist, and ones that need to be created
 	for msgDataRefIDx, msgDataRef := range message.Data {
 		if msgDataRef.ID == nil {
 			return i18n.NewError(ctx, i18n.MsgNullDataReferenceID, msgDataRefIDx)

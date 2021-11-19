@@ -110,8 +110,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 	// This is a performance critical function, as we stream data into the database for every message, in every batch.
 	//
 	// First attempt the operation based on the optimization passed in.
-	// The expectation is that this will practically hit of the time, as only recovery paths
-	// require us to go down the un-optimized route.
+	// The expectation is that the optimization will hit almost all of the time,
+	// as only recovery paths require us to go down the un-optimized route.
 	optimized := false
 	if optimization == database.UpsertOptimizationNew {
 		_, opErr := s.attemptDataInsert(ctx, tx, data, datatype, blob)
