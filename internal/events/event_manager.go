@@ -75,6 +75,7 @@ type EventManager interface {
 
 type eventManager struct {
 	ctx                  context.Context
+	ni                   sysmessaging.LocalNodeInfo
 	publicstorage        publicstorage.Plugin
 	database             database.Plugin
 	identity             identity.Manager
@@ -94,14 +95,15 @@ type eventManager struct {
 	internalEvents       *system.Events
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh syshandlers.SystemHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) (EventManager, error) {
-	if pi == nil || di == nil || im == nil || dm == nil || bm == nil || pm == nil || am == nil {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh syshandlers.SystemHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) (EventManager, error) {
+	if ni == nil || pi == nil || di == nil || im == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
 	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
+		ni:            ni,
 		publicstorage: pi,
 		database:      di,
 		identity:      im,

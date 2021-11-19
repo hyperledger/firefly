@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,7 +32,9 @@ import (
 
 func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *batchProcessor) {
 	mdi := &databasemocks.Plugin{}
-	bp := newBatchProcessor(context.Background(), mdi, &batchProcessorConf{
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
+	bp := newBatchProcessor(context.Background(), mni, mdi, &batchProcessorConf{
 		namespace:          "ns1",
 		identity:           fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		dispatch:           dispatch,

@@ -254,10 +254,10 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Times(2)
 	mdi.On("GetMessageByID", em.ctx, mock.Anything).Return(message, nil).Times(2)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 	mdi.On("UpsertMessage", em.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
 		return msg.State == fftypes.MessageStateReady
-	}), true, false).Return(nil)
+	}), database.UpsertOptimizationExisting).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()

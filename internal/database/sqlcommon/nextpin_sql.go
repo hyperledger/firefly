@@ -161,7 +161,7 @@ func (s *SQLCommon) UpdateNextPin(ctx context.Context, sequence int64, update da
 	}
 	query = query.Where(sq.Eq{sequenceColumn: sequence})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events for next pins */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events for next pins */)
 	if err != nil {
 		return err
 	}

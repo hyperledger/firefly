@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -63,7 +64,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def f
 	}
 
 	// Write as data to the local store
-	if err = bm.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
+	if err = bm.database.UpsertData(ctx, data, database.UpsertOptimizationNew); err != nil {
 		return nil, err
 	}
 

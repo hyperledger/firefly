@@ -904,7 +904,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mms.On("Prepare", context.Background()).Return(nil)
 	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
 		return msg.State == fftypes.MessageStateStaged
-	}), false, false).Return(nil)
+	}), database.UpsertOptimizationNew).Return(nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
@@ -1002,7 +1002,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mms.On("Prepare", context.Background()).Return(nil)
 	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
 		return msg.State == fftypes.MessageStateStaged
-	}), false, false).Return(nil)
+	}), database.UpsertOptimizationNew).Return(nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
@@ -1144,7 +1144,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mms.On("Prepare", context.Background()).Return(nil)
 	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
 		return msg.State == fftypes.MessageStateStaged
-	}), false, false).Return(nil)
+	}), database.UpsertOptimizationNew).Return(nil)
 	msa.On("WaitForMessage", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)

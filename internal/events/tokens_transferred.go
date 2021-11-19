@@ -122,7 +122,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID strin
 					if msg.State == fftypes.MessageStateStaged {
 						// Message can now be sent
 						msg.State = fftypes.MessageStateReady
-						if err := em.database.UpsertMessage(ctx, msg, true, false); err != nil {
+						if err := em.database.UpsertMessage(ctx, msg, database.UpsertOptimizationExisting); err != nil {
 							return err
 						}
 					} else {

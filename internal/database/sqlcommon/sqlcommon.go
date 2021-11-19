@@ -287,26 +287,26 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 	return nil
 }
 
-func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder, postCommit func()) error {
+func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder, postCommit func()) (int64, error) {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
+		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> update: %s`, sqlQuery)
 	l.Tracef(`SQL-> update args: %+v`, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL update failed: %s sql=[ %s ]`, err, sqlQuery)
-		return i18n.WrapError(ctx, err, i18n.MsgDBUpdateFailed)
+		return -1, i18n.WrapError(ctx, err, i18n.MsgDBUpdateFailed)
 	}
-	ra, _ := res.RowsAffected() // currently only used for debugging
+	ra, _ := res.RowsAffected()
 	l.Debugf(`SQL<- update affected=%d`, ra)
 
 	if postCommit != nil {
 		s.postCommitEvent(tx, postCommit)
 	}
-	return nil
+	return ra, nil
 }
 
 func (s *SQLCommon) postCommitEvent(tx *txWrapper, fn func()) {

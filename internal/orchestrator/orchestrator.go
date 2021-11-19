@@ -143,6 +143,7 @@ type orchestrator struct {
 	tokens         map[string]tokens.Plugin
 	bc             boundCallbacks
 	preInitMode    bool
+	node           *fftypes.UUID
 }
 
 func NewOrchestrator() Orchestrator {
@@ -384,7 +385,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or.database, or.data)
+		or.batch, err = batch.NewBatchManager(ctx, or, or.database, or.data)
 		if err != nil {
 			return err
 		}
@@ -415,7 +416,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data, or.broadcast, or.messaging, or.assets)
+		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.syshandlers, or.data, or.broadcast, or.messaging, or.assets)
 		if err != nil {
 			return err
 		}
