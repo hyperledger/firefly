@@ -178,23 +178,21 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		return err
 	}
 
-	if !fabconnectConf.GetBool(FabconnectConfigSkipEventstreamInit) {
-		streams := streamManager{
-			ctx:            f.ctx,
-			client:         f.client,
-			defaultChannel: f.defaultChannel,
-			chaincode:      f.chaincode,
-			signer:         f.signer,
-		}
-		batchSize := fabconnectConf.GetUint(FabconnectConfigBatchSize)
-		batchTimeout := uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
-		if f.initInfo.stream, err = streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
-			return err
-		}
-		log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
-		if f.initInfo.subs, err = streams.ensureSubscriptions(f.initInfo.stream.ID, requiredSubscriptions); err != nil {
-			return err
-		}
+	streams := streamManager{
+		ctx:            f.ctx,
+		client:         f.client,
+		defaultChannel: f.defaultChannel,
+		chaincode:      f.chaincode,
+		signer:         f.signer,
+	}
+	batchSize := fabconnectConf.GetUint(FabconnectConfigBatchSize)
+	batchTimeout := uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
+	if f.initInfo.stream, err = streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
+		return err
+	}
+	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
+	if f.initInfo.subs, err = streams.ensureSubscriptions(f.initInfo.stream.ID, requiredSubscriptions); err != nil {
+		return err
 	}
 
 	f.closed = make(chan struct{})

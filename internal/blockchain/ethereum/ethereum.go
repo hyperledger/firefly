@@ -124,21 +124,19 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 
-	if !ethconnectConf.GetBool(EthconnectConfigSkipEventstreamInit) {
-		streams := streamManager{
-			ctx:          e.ctx,
-			client:       e.client,
-			instancePath: e.instancePath,
-		}
-		batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
-		batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-		if e.initInfo.stream, err = streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
-			return err
-		}
-		log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-		if e.initInfo.subs, err = streams.ensureSubscriptions(e.initInfo.stream.ID, requiredSubscriptions); err != nil {
-			return err
-		}
+	streams := streamManager{
+		ctx:          e.ctx,
+		client:       e.client,
+		instancePath: e.instancePath,
+	}
+	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
+	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
+	if e.initInfo.stream, err = streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
+		return err
+	}
+	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
+	if e.initInfo.subs, err = streams.ensureSubscriptions(e.initInfo.stream.ID, requiredSubscriptions); err != nil {
+		return err
 	}
 
 	e.closed = make(chan struct{})
