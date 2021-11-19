@@ -36,7 +36,7 @@ func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "mypool",
@@ -44,7 +44,6 @@ func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
 			ProtocolID: "N1",
 			Symbol:     "COIN",
 		},
-		ProtocolTxID: "tx123",
 	}
 
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(fmt.Errorf("pop"))
@@ -62,7 +61,7 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "",
 			Name:       "",
@@ -70,7 +69,6 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 			ProtocolID: "N1",
 			Symbol:     "COIN",
 		},
-		ProtocolTxID: "tx123",
 	}
 
 	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
@@ -88,7 +86,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "mypool",
@@ -96,7 +94,6 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 			ProtocolID: "N1",
 			Symbol:     "COIN",
 		},
-		ProtocolTxID: "tx123",
 	}
 
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
@@ -120,7 +117,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
+		Pool: &fftypes.TokenPool{
 			ID:         fftypes.NewUUID(),
 			Namespace:  "ns1",
 			Name:       "mypool",
@@ -128,7 +125,6 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 			ProtocolID: "N1",
 			Symbol:     "COIN",
 		},
-		ProtocolTxID: "tx123",
 	}
 
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)

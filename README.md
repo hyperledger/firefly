@@ -3,6 +3,7 @@
 [![codecov](https://codecov.io/gh/hyperledger/firefly/branch/main/graph/badge.svg?token=QdEnpMqB1G)](https://codecov.io/gh/hyperledger/firefly)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger/firefly)](https://goreportcard.com/report/github.com/hyperledger/firefly)
 [![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly//)
+![build](https://github.com/hyperledger/firefly/actions/workflows/docker_main.yml/badge.svg?branch=main)
 
 ![Hyperledger FireFly](./images/hyperledger_firefly_logo.png)
 
@@ -108,7 +109,7 @@ Then you update the indexed business objects in your own database, as a result o
 
 ## Hyperledger FireFly project status
 
-A number projects are actively building on Hyperledger FireFly today, and the current feature set and API is sufficient to build many decentralized applications. Some of the microservice components have matured through a number of years (including production adoption), others are new, and some areas are still evolving quickly and subject to flux in the APIs and feature set. 
+A number projects are actively building on Hyperledger FireFly today, and the current feature set and API is sufficient to build many decentralized applications. Some of the microservice components have matured through a number of years (including production adoption), others are new, and some areas are still evolving quickly and subject to flux in the APIs and feature set.
 
 Overall, the community is working hard towards a V1.0 release.
 

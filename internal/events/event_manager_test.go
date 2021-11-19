@@ -23,6 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -50,10 +51,11 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	msh := &syshandlersmocks.SystemHandlers{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
+	mam := &assetmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm)
+	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam)
 	em := emi.(*eventManager)
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -83,7 +85,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -99,9 +101,9 @@ func TestStartStopBadTransports(t *testing.T) {
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mim, msh, mdm, mbm, mpm)
+	mam := &assetmocks.Manager{}
+	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam)
 	assert.Regexp(t, "FF10172", err)
-
 }
 
 func TestEmitSubscriptionEventsNoops(t *testing.T) {

@@ -45,12 +45,12 @@ func TestHandleSystemBroadcastNSOk(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.True(t, valid)
+	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -73,12 +73,12 @@ func TestHandleSystemBroadcastNSEventFail(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -100,12 +100,12 @@ func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -114,12 +114,12 @@ func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
 func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
 
@@ -133,12 +133,12 @@ func TestHandleSystemBroadcastNSBadID(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
 
@@ -149,12 +149,12 @@ func TestHandleSystemBroadcastNSBadData(t *testing.T) {
 		Value: fftypes.Byteable(`!{json`),
 	}
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
 
@@ -173,12 +173,12 @@ func TestHandleSystemBroadcastDuplicate(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -203,12 +203,12 @@ func TestHandleSystemBroadcastDuplicateOverrideLocal(t *testing.T) {
 	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.True(t, valid)
+	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -231,12 +231,12 @@ func TestHandleSystemBroadcastDuplicateOverrideLocalFail(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
 	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -257,12 +257,12 @@ func TestHandleSystemBroadcastDupCheckFail(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)

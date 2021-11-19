@@ -59,12 +59,12 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	<-received1
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
 	<-changes1 // also expect database change events
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Equal(suite.T(), data.Value, val1)
 
-	<-received2
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 	<-changes2 // also expect database change events
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Equal(suite.T(), data.Value, val2)
@@ -116,9 +116,9 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	<-received1
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
 	<-changes1 // also expect database change events
-	<-received2
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 	<-changes2 // also expect database change events
 }
 
@@ -176,9 +176,9 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	<-received1
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
 	<-changes1 // also expect database change events
-	<-received2
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
 	<-changes2 // also expect database change events
 }
 
@@ -222,11 +222,11 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	<-received1
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Regexp(suite.T(), "myfile.txt", string(val1))
 
-	<-received2
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Regexp(suite.T(), "myfile.txt", string(val2))
 
@@ -247,10 +247,10 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	<-received1
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
 	_ = validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 
-	<-received2
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
 	_ = validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 }
 
@@ -291,17 +291,17 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	<-received1 // request
-	<-received2 // request
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate) // request 1
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate) // request 2
 
-	<-received1 // reply
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate) // reply 1
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
 	assert.Equal(suite.T(), float64(200), val1.JSONObject()["status"])
 	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
 	assert.NoError(suite.T(), err)
 	assert.Regexp(suite.T(), "Example YAML", string(decoded1))
 
-	<-received2 // reply
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate) // reply 2
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
 	assert.Equal(suite.T(), float64(200), val2.JSONObject()["status"])
 	decoded2, err := base64.StdEncoding.DecodeString(val2.JSONObject().GetString("body"))

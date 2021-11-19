@@ -272,25 +272,33 @@ func TestTXConcurrency(t *testing.T) {
 
 func TestCountQueryBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	_, err := s.countQuery(context.Background(), nil, "", sq.Insert("wrong"))
+	_, err := s.countQuery(context.Background(), nil, "", sq.Insert("wrong"), "")
 	assert.Regexp(t, "FF10113", err)
 }
 
 func TestCountQueryQueryFailed(t *testing.T) {
 	s, mdb := newMockProvider().init()
-	mdb.ExpectQuery("SELECT COUNT.*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.countQuery(context.Background(), nil, "table1", sq.Eq{"col1": "val1"})
+	mdb.ExpectQuery("^SELECT COUNT\\(\\*\\)").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.countQuery(context.Background(), nil, "table1", sq.Eq{"col1": "val1"}, "")
 	assert.Regexp(t, "FF10115.*pop", err)
 }
 
 func TestCountQueryScanFailTx(t *testing.T) {
 	s, mdb := newMockProvider().init()
 	mdb.ExpectBegin()
-	mdb.ExpectQuery("SELECT COUNT.*").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow("not a number"))
+	mdb.ExpectQuery("^SELECT COUNT\\(\\*\\)").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow("not a number"))
 	ctx, tx, _, err := s.beginOrUseTx(context.Background())
 	assert.NoError(t, err)
-	_, err = s.countQuery(ctx, tx, "table1", sq.Eq{"col1": "val1"})
+	_, err = s.countQuery(ctx, tx, "table1", sq.Eq{"col1": "val1"}, "")
 	assert.Regexp(t, "FF10121", err)
+}
+
+func TestCountQueryWithExpr(t *testing.T) {
+	s, mdb := newMockProvider().init()
+	mdb.ExpectQuery("^SELECT COUNT\\(DISTINCT key\\)").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow(10))
+	_, err := s.countQuery(context.Background(), nil, "table1", sq.Eq{"col1": "val1"}, "DISTINCT key")
+	assert.NoError(t, err)
+	assert.NoError(t, mdb.ExpectationsWereMet())
 }
 
 func TestQueryResSwallowError(t *testing.T) {

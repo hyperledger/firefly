@@ -118,6 +118,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -147,6 +148,7 @@ func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -262,6 +264,7 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 		{
 			Name:       "pool1",
 			ProtocolID: "F1",
+			State:      fftypes.TokenPoolStateConfirmed,
 		},
 	}
 	totalCount := int64(1)
@@ -438,6 +441,7 @@ func TestMintTokensFail(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -467,6 +471,7 @@ func TestMintTokensOperationFail(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -494,6 +499,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -535,6 +541,7 @@ func TestMintTokensByTypeSuccess(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -564,6 +571,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -615,6 +623,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -656,6 +665,7 @@ func TestBurnTokensByTypeSuccess(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -691,6 +701,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -710,6 +721,35 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+}
+
+func TestTransferTokensUnconfirmedPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From:   "A",
+			To:     "B",
+			Amount: *fftypes.NewBigInt(5),
+		},
+		Pool: "pool1",
+	}
+	pool := &fftypes.TokenPool{
+		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStatePending,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10293", err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestTransferTokensIdentityFail(t *testing.T) {
@@ -764,6 +804,7 @@ func TestTransferTokensInvalidType(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -797,6 +838,7 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -818,6 +860,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	msgID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -828,6 +871,9 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
 			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: msgID,
+				},
 				Hash: hash,
 			},
 			InlineData: fftypes.InlineData{
@@ -839,6 +885,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -861,7 +908,8 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *hash, *transfer.MessageHash)
+	assert.Equal(t, *msgID, *transfer.TokenTransfer.Message)
+	assert.Equal(t, *hash, *transfer.TokenTransfer.MessageHash)
 
 	mbm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -909,6 +957,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	msgID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -920,6 +969,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 		Message: &fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
+					ID:   msgID,
 					Type: fftypes.MessageTypeTransferPrivate,
 				},
 				Hash: hash,
@@ -933,6 +983,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -955,7 +1006,8 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *hash, *transfer.MessageHash)
+	assert.Equal(t, *msgID, *transfer.TokenTransfer.Message)
+	assert.Equal(t, *hash, *transfer.TokenTransfer.MessageHash)
 
 	mpm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -1012,6 +1064,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1046,6 +1099,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	msgID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -1056,6 +1110,9 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
 			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: msgID,
+				},
 				Hash: hash,
 			},
 			InlineData: fftypes.InlineData{
@@ -1067,6 +1124,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1102,7 +1160,8 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, true)
 	assert.NoError(t, err)
-	assert.Equal(t, *hash, *transfer.MessageHash)
+	assert.Equal(t, *msgID, *transfer.TokenTransfer.Message)
+	assert.Equal(t, *hash, *transfer.TokenTransfer.MessageHash)
 
 	mbm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -1125,6 +1184,7 @@ func TestTransferTokensByTypeSuccess(t *testing.T) {
 	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1144,6 +1204,31 @@ func TestTransferTokensByTypeSuccess(t *testing.T) {
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+}
+
+func TestTransferTokensPoolNotFound(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From:   "A",
+			To:     "B",
+			Amount: *fftypes.NewBigInt(5),
+		},
+		Pool: "pool1",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "FF10109", err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestTransferPrepare(t *testing.T) {

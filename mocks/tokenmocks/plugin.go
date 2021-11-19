@@ -19,6 +19,20 @@ type Plugin struct {
 	mock.Mock
 }
 
+// ActivateTokenPool provides a mock function with given fields: ctx, operationID, pool, tx
+func (_m *Plugin) ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, tx *fftypes.Transaction) error {
+	ret := _m.Called(ctx, operationID, pool, tx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.Transaction) error); ok {
+		r0 = rf(ctx, operationID, pool, tx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // BurnTokens provides a mock function with given fields: ctx, operationID, poolProtocolID, burn
 func (_m *Plugin) BurnTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error {
 	ret := _m.Called(ctx, operationID, poolProtocolID, burn)

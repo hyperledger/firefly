@@ -45,6 +45,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		From:        "0x01",
 		To:          "0x02",
 		ProtocolID:  "12345",
+		Message:     fftypes.NewUUID(),
 		MessageHash: fftypes.NewRandB32(),
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -69,6 +70,13 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, transferRead)
 	transferReadJson, _ := json.Marshal(&transferRead)
+	assert.Equal(t, string(transferJson), string(transferReadJson))
+
+	// Query back the token transfer (by protocol ID)
+	transferRead, err = s.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID)
+	assert.NoError(t, err)
+	assert.NotNil(t, transferRead)
+	transferReadJson, _ = json.Marshal(&transferRead)
 	assert.Equal(t, string(transferJson), string(transferReadJson))
 
 	// Query back the token transfer (by query filter)

@@ -4206,6 +4206,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: symbol
         schema:
           type: string
@@ -4272,6 +4277,8 @@ paths:
                     protocolId:
                       type: string
                     standard:
+                      type: string
+                    state:
                       type: string
                     symbol:
                       type: string
@@ -4362,6 +4369,8 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -4396,6 +4405,8 @@ paths:
                   protocolId:
                     type: string
                   standard:
+                    type: string
+                  state:
                     type: string
                   symbol:
                     type: string
@@ -4466,6 +4477,8 @@ paths:
                   protocolId:
                     type: string
                   standard:
+                    type: string
+                  state:
                     type: string
                   symbol:
                     type: string
@@ -4766,6 +4779,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -4800,6 +4814,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -4983,6 +4998,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5017,6 +5033,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5103,6 +5120,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: messagehash
         schema:
           type: string
@@ -5181,6 +5203,7 @@ paths:
                     key:
                       type: string
                     localId: {}
+                    message: {}
                     messageHash: {}
                     namespace:
                       type: string
@@ -5364,6 +5387,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5398,6 +5422,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5888,6 +5913,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5922,6 +5948,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6125,6 +6152,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6159,6 +6187,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6247,6 +6276,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: symbol
         schema:
           type: string
@@ -6313,6 +6347,8 @@ paths:
                     protocolId:
                       type: string
                     standard:
+                      type: string
+                    state:
                       type: string
                     symbol:
                       type: string
@@ -6398,6 +6434,8 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -6432,6 +6470,8 @@ paths:
                   protocolId:
                     type: string
                   standard:
+                    type: string
+                  state:
                     type: string
                   symbol:
                     type: string
@@ -6495,6 +6535,8 @@ paths:
                   protocolId:
                     type: string
                   standard:
+                    type: string
+                  state:
                     type: string
                   symbol:
                     type: string
@@ -6562,6 +6604,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: localid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: message
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -6644,6 +6691,7 @@ paths:
                     key:
                       type: string
                     localId: {}
+                    message: {}
                     messageHash: {}
                     namespace:
                       type: string
@@ -6814,6 +6862,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6848,6 +6897,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6910,6 +6960,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string

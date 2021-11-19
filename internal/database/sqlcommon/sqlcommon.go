@@ -19,6 +19,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
@@ -177,7 +178,7 @@ func (s *SQLCommon) query(ctx context.Context, q sq.SelectBuilder) (*sql.Rows, *
 	return s.queryTx(ctx, nil, q)
 }
 
-func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName string, fop sq.Sqlizer) (count int64, err error) {
+func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName string, fop sq.Sqlizer, countExpr string) (count int64, err error) {
 	count = -1
 	l := log.L(ctx)
 	if tx == nil {
@@ -185,7 +186,10 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 		// in the read operations (read after insert for example).
 		tx = getTXFromContext(ctx)
 	}
-	q := sq.Select("COUNT(*)").From(tableName).Where(fop)
+	if countExpr == "" {
+		countExpr = "*"
+	}
+	q := sq.Select(fmt.Sprintf("COUNT(%s)", countExpr)).From(tableName).Where(fop)
 	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
 		return count, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
@@ -214,15 +218,14 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 
 func (s *SQLCommon) queryRes(ctx context.Context, tx *txWrapper, tableName string, fop sq.Sqlizer, fi *database.FilterInfo) *database.FilterResult {
 	fr := &database.FilterResult{}
-	if !fi.Count {
-		return fr
+	if fi.Count {
+		count, err := s.countQuery(ctx, tx, tableName, fop, fi.CountExpr)
+		if err != nil {
+			// Log, but continue
+			log.L(ctx).Warnf("Unable to return count for query: %s", err)
+		}
+		fr.TotalCount = &count // could be -1 if the count extract fails - we still return the result
 	}
-	count, err := s.countQuery(ctx, tx, tableName, fop)
-	if err != nil {
-		// Log, but continue
-		log.L(ctx).Warnf("Unable to return count for query: %s", err)
-	}
-	fr.TotalCount = &count // could be -1 if the count extract fails - we still return the result
 	return fr
 }
 

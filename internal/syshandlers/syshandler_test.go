@@ -43,12 +43,12 @@ func newTestSystemHandlers(t *testing.T) *systemHandlers {
 
 func TestHandleSystemBroadcastUnknown(t *testing.T) {
 	sh := newTestSystemHandlers(t)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: "uknown",
+			Tag: "unknown",
 		},
 	}, []*fftypes.Data{})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
 
@@ -56,7 +56,7 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: "uknown",
+			Tag: "unknown",
 		},
 	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
@@ -66,7 +66,7 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: "uknown",
+			Tag: "unknown",
 		},
 	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)

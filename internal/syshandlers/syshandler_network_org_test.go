@@ -58,7 +58,7 @@ func TestHandleSystemBroadcastChildOrgOk(t *testing.T) {
 	mdi.On("GetOrganizationByName", mock.Anything, "org1").Return(nil, nil)
 	mdi.On("GetOrganizationByID", mock.Anything, org.ID).Return(nil, nil)
 	mdi.On("UpsertOrganization", mock.Anything, mock.Anything, true).Return(nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -68,7 +68,7 @@ func TestHandleSystemBroadcastChildOrgOk(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.True(t, valid)
+	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -102,7 +102,7 @@ func TestHandleSystemBroadcastChildOrgDupOk(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(parentOrg, nil)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(org, nil)
 	mdi.On("UpsertOrganization", mock.Anything, mock.Anything, true).Return(nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -112,7 +112,7 @@ func TestHandleSystemBroadcastChildOrgDupOk(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.True(t, valid)
+	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -144,7 +144,7 @@ func TestHandleSystemBroadcastChildOrgBadKey(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(parentOrg, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -154,7 +154,7 @@ func TestHandleSystemBroadcastChildOrgBadKey(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -179,7 +179,7 @@ func TestHandleSystemBroadcastOrgDupMismatch(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x12345", Parent: "0x9999"}, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -189,7 +189,7 @@ func TestHandleSystemBroadcastOrgDupMismatch(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -216,7 +216,7 @@ func TestHandleSystemBroadcastOrgUpsertFail(t *testing.T) {
 	mdi.On("GetOrganizationByName", mock.Anything, "org1").Return(nil, nil)
 	mdi.On("GetOrganizationByID", mock.Anything, org.ID).Return(nil, nil)
 	mdi.On("UpsertOrganization", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -225,7 +225,7 @@ func TestHandleSystemBroadcastOrgUpsertFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -249,7 +249,7 @@ func TestHandleSystemBroadcastOrgGetOrgFail(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(nil, fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -258,7 +258,7 @@ func TestHandleSystemBroadcastOrgGetOrgFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -282,7 +282,7 @@ func TestHandleSystemBroadcastOrgAuthorMismatch(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x12345", Parent: "0x9999"}, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -292,7 +292,7 @@ func TestHandleSystemBroadcastOrgAuthorMismatch(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -317,7 +317,7 @@ func TestHandleSystemBroadcastGetParentFail(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -327,7 +327,7 @@ func TestHandleSystemBroadcastGetParentFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -352,7 +352,7 @@ func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -362,7 +362,7 @@ func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -383,7 +383,7 @@ func TestHandleSystemBroadcastValidateFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -393,7 +393,7 @@ func TestHandleSystemBroadcastValidateFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
 
@@ -404,7 +404,7 @@ func TestHandleSystemBroadcastUnmarshalFail(t *testing.T) {
 		Value: fftypes.Byteable(`!json`),
 	}
 
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -414,6 +414,6 @@ func TestHandleSystemBroadcastUnmarshalFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
 	}, []*fftypes.Data{data})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
