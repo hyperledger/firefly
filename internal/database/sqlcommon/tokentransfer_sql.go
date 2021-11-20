@@ -40,6 +40,7 @@ var (
 		"to_key",
 		"amount",
 		"protocol_id",
+		"message_id",
 		"message_hash",
 		"tx_type",
 		"tx_id",
@@ -52,6 +53,7 @@ var (
 		"from":             "from_key",
 		"to":               "to_key",
 		"protocolid":       "protocol_id",
+		"message":          "message_id",
 		"messagehash":      "message_hash",
 		"transaction.type": "tx_type",
 		"transaction.id":   "tx_id",
@@ -77,7 +79,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 	rows.Close()
 
 	if existing {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("tokentransfer").
 				Set("type", transfer.Type).
 				Set("local_id", transfer.LocalID).
@@ -89,6 +91,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("from_key", transfer.From).
 				Set("to_key", transfer.To).
 				Set("amount", transfer.Amount).
+				Set("message_id", transfer.Message).
 				Set("message_hash", transfer.MessageHash).
 				Set("tx_type", transfer.TX.Type).
 				Set("tx_id", transfer.TX.ID).
@@ -116,6 +119,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.To,
 					transfer.Amount,
 					transfer.ProtocolID,
+					transfer.Message,
 					transfer.MessageHash,
 					transfer.TX.Type,
 					transfer.TX.ID,
@@ -146,6 +150,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.To,
 		&transfer.Amount,
 		&transfer.ProtocolID,
+		&transfer.Message,
 		&transfer.MessageHash,
 		&transfer.TX.Type,
 		&transfer.TX.ID,
@@ -183,6 +188,13 @@ func (s *SQLCommon) getTokenTransferPred(ctx context.Context, desc string, pred 
 
 func (s *SQLCommon) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
 	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID})
+}
+
+func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error) {
+	return s.getTokenTransferPred(ctx, protocolID, sq.And{
+		sq.Eq{"connector": connector},
+		sq.Eq{"protocol_id": protocolID},
+	})
 }
 
 func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filter) (message []*fftypes.TokenTransfer, fr *database.FilterResult, err error) {

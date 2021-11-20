@@ -70,7 +70,7 @@ func (s *SQLCommon) UpsertNonceNext(ctx context.Context, nonce *fftypes.Nonce) (
 		nonceRows.Close()
 
 		// Update the nonce
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("nonces").
 				Set("nonce", nonce.Nonce).
 				Where(sq.Eq{sequenceColumn: sequence}),

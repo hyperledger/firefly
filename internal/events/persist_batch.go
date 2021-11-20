@@ -121,16 +121,18 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		return false, err // a persistence failure here is considered retryable (so returned)
 	}
 
+	optimization := em.getOptimization(ctx, batch)
+
 	// Insert the data entries
 	for i, data := range batch.Payload.Data {
-		if err = em.persistBatchData(ctx, batch, i, data); err != nil {
+		if err = em.persistBatchData(ctx, batch, i, data, optimization); err != nil {
 			return false, err
 		}
 	}
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
-		if err = em.persistBatchMessage(ctx, batch, i, msg); err != nil {
+		if err = em.persistBatchMessage(ctx, batch, i, msg, optimization); err != nil {
 			return false, err
 		}
 	}
@@ -138,12 +140,25 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	return true, nil
 }
 
-func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data) error {
-	_, err := em.persistReceivedData(ctx, i, data, "batch", batch.ID)
+func (em *eventManager) getOptimization(ctx context.Context, batch *fftypes.Batch) database.UpsertOptimization {
+	localNode := em.ni.GetNodeUUID(ctx)
+	if batch.Node == nil {
+		// This is from a node that hasn't yet completed registration, so we can't optimize
+		return database.UpsertOptimizationSkip
+	} else if localNode != nil && localNode.Equals(batch.Node) {
+		// We sent the batch, so we should already have all the messages and data locally - optimize the DB operations for that
+		return database.UpsertOptimizationExisting
+	}
+	// We didn't send the batch, so all the data should be new - optimize the DB operations for that
+	return database.UpsertOptimizationNew
+}
+
+func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data, optimization database.UpsertOptimization) error {
+	_, err := em.persistReceivedData(ctx, i, data, "batch", batch.ID, optimization)
 	return err
 }
 
-func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context*/, i int, data *fftypes.Data, mType string, mID *fftypes.UUID) (bool, error) {
+func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context*/, i int, data *fftypes.Data, mType string, mID *fftypes.UUID, optimization database.UpsertOptimization) (bool, error) {
 
 	l := log.L(ctx)
 	l.Tracef("%s '%s' data %d: %+v", mType, mID, i, data)
@@ -164,7 +179,7 @@ func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context
 	}
 
 	// Insert the data, ensuring the hash doesn't change
-	if err := em.database.UpsertData(ctx, data, true, false); err != nil {
+	if err := em.database.UpsertData(ctx, data, optimization); err != nil {
 		if err == database.HashMismatch {
 			log.L(ctx).Errorf("Invalid data entry %d in %s '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, mType, mID, data.ID, data.Hash)
 			return false, nil // This is not retryable. skip this data entry
@@ -176,17 +191,17 @@ func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context
 	return true, nil
 }
 
-func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message) error {
+func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message, optimization database.UpsertOptimization) error {
 	if msg != nil && (msg.Header.Author != batch.Author || msg.Header.Key != batch.Key) {
 		log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
 		return nil // skip entry
 	}
 
-	_, err := em.persistReceivedMessage(ctx, i, msg, "batch", batch.ID)
+	_, err := em.persistReceivedMessage(ctx, i, msg, "batch", batch.ID, optimization)
 	return err
 }
 
-func (em *eventManager) persistReceivedMessage(ctx context.Context /* db TX context*/, i int, msg *fftypes.Message, mType string, mID *fftypes.UUID) (bool, error) {
+func (em *eventManager) persistReceivedMessage(ctx context.Context /* db TX context*/, i int, msg *fftypes.Message, mType string, mID *fftypes.UUID, optimization database.UpsertOptimization) (bool, error) {
 	l := log.L(ctx)
 	l.Tracef("%s '%s' message %d: %+v", mType, mID, i, msg)
 
@@ -204,7 +219,7 @@ func (em *eventManager) persistReceivedMessage(ctx context.Context /* db TX cont
 	// Insert the message, ensuring the hash doesn't change.
 	// We do not mark it as confirmed at this point, that's the job of the aggregator.
 	msg.State = fftypes.MessageStatePending
-	if err = em.database.UpsertMessage(ctx, msg, true, false); err != nil {
+	if err = em.database.UpsertMessage(ctx, msg, optimization); err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid message entry %d in %s '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, mType, mID, msg.Header.ID, msg.Hash)
 			return false, nil // This is not retryable. skip this data entry

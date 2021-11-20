@@ -27,6 +27,19 @@ var (
 	TokenTypeNonFungible TokenType = ffEnum("tokentype", "nonfungible")
 )
 
+// TokenPoolState is the current confirmation state of a token pool
+type TokenPoolState = FFEnum
+
+var (
+	// TokenPoolStateUnknown is a token pool that may not yet be activated
+	// (should not be used in the code - only set via database migration for previously-created pools)
+	TokenPoolStateUnknown TokenPoolState = ffEnum("tokenpoolstate", "unknown")
+	// TokenPoolStatePending is a token pool that has been announced but not yet confirmed
+	TokenPoolStatePending TokenPoolState = ffEnum("tokenpoolstate", "pending")
+	// TokenPoolStateConfirmed is a token pool that has been confirmed on chain
+	TokenPoolStateConfirmed TokenPoolState = ffEnum("tokenpoolstate", "confirmed")
+)
+
 type TokenPool struct {
 	ID         *UUID          `json:"id,omitempty"`
 	Type       TokenType      `json:"type" ffenum:"tokentype"`
@@ -38,17 +51,18 @@ type TokenPool struct {
 	Symbol     string         `json:"symbol,omitempty"`
 	Connector  string         `json:"connector,omitempty"`
 	Message    *UUID          `json:"message,omitempty"`
+	State      TokenPoolState `json:"state,omitempty" ffenum:"tokenpoolstate"`
 	Created    *FFTime        `json:"created,omitempty"`
-	Config     JSONObject     `json:"config,omitempty"`
+	Config     JSONObject     `json:"config,omitempty"` // for REST calls only (not stored)
 	TX         TransactionRef `json:"tx,omitempty"`
 }
 
 type TokenPoolAnnouncement struct {
-	TokenPool
-	ProtocolTxID string `json:"protocolTxID"`
+	Pool *TokenPool   `json:"pool"`
+	TX   *Transaction `json:"tx"`
 }
 
-func (t *TokenPool) Validate(ctx context.Context, existing bool) (err error) {
+func (t *TokenPool) Validate(ctx context.Context) (err error) {
 	if err = ValidateFFNameField(ctx, t.Namespace, "namespace"); err != nil {
 		return err
 	}
@@ -58,10 +72,10 @@ func (t *TokenPool) Validate(ctx context.Context, existing bool) (err error) {
 	return nil
 }
 
-func (t *TokenPool) Topic() string {
-	return namespaceTopic(t.Namespace)
+func (t *TokenPoolAnnouncement) Topic() string {
+	return namespaceTopic(t.Pool.Namespace)
 }
 
-func (t *TokenPool) SetBroadcastMessage(msgID *UUID) {
-	t.Message = msgID
+func (t *TokenPoolAnnouncement) SetBroadcastMessage(msgID *UUID) {
+	t.Pool.Message = msgID
 }

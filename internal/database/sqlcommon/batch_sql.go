@@ -42,6 +42,7 @@ var (
 		"confirmed",
 		"tx_type",
 		"tx_id",
+		"node_id",
 	}
 	batchFilterFieldMap = map[string]string{
 		"type":             "btype",
@@ -49,6 +50,7 @@ var (
 		"transaction.type": "tx_type",
 		"transaction.id":   "tx_id",
 		"group":            "group_hash",
+		"node":             "node_id",
 	}
 )
 
@@ -84,7 +86,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 	if existing {
 
 		// Update the batch
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("batches").
 				Set("btype", string(batch.Type)).
 				Set("namespace", batch.Namespace).
@@ -98,6 +100,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 				Set("confirmed", batch.Confirmed).
 				Set("tx_type", batch.Payload.TX.Type).
 				Set("tx_id", batch.Payload.TX.ID).
+				Set("node_id", batch.Node).
 				Where(sq.Eq{"id": batch.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, fftypes.ChangeEventTypeUpdated, batch.Namespace, batch.ID)
@@ -124,6 +127,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 					batch.Confirmed,
 					batch.Payload.TX.Type,
 					batch.Payload.TX.ID,
+					batch.Node,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, fftypes.ChangeEventTypeCreated, batch.Namespace, batch.ID)
@@ -152,6 +156,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 		&batch.Confirmed,
 		&batch.Payload.TX.Type,
 		&batch.Payload.TX.ID,
+		&batch.Node,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "batches")
@@ -224,7 +229,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update da
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events on filter update */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events on filter update */)
 	if err != nil {
 		return err
 	}

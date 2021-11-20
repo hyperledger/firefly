@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -35,13 +36,14 @@ const (
 	msgBatchOffsetName = "ff_msgbatch"
 )
 
-func NewBatchManager(ctx context.Context, di database.Plugin, dm data.Manager) (Manager, error) {
+func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager) (Manager, error) {
 	if di == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	readPageSize := config.GetUint(config.BatchManagerReadPageSize)
 	bm := &batchManager{
 		ctx:                        log.WithLogField(ctx, "role", "batchmgr"),
+		ni:                         ni,
 		database:                   di,
 		data:                       dm,
 		readPageSize:               uint64(readPageSize),
@@ -70,6 +72,7 @@ type Manager interface {
 
 type batchManager struct {
 	ctx                        context.Context
+	ni                         sysmessaging.LocalNodeInfo
 	database                   database.Plugin
 	data                       data.Manager
 	dispatchers                map[fftypes.MessageType]*dispatcher
@@ -162,6 +165,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftyp
 	if !ok {
 		processor = newBatchProcessor(
 			bm.ctx, // Background context, not the call context
+			bm.ni,
 			bm.database,
 			&batchProcessorConf{
 				Options:   dispatcher.batchOptions,

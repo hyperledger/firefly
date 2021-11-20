@@ -112,7 +112,7 @@ func TestInsertTxBadSQL(t *testing.T) {
 
 func TestUpdateTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{}, nil)
+	_, err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{}, nil)
 	assert.Regexp(t, "FF10113", err)
 }
 

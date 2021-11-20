@@ -53,7 +53,7 @@ func newTestEthereum() (*Ethereum, func()) {
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
 		ctx:          ctx,
-		client:       resty.New().SetHostURL("http://localhost:12345"),
+		client:       resty.New().SetBaseURL("http://localhost:12345"),
 		instancePath: "/instances/0x12345",
 		topic:        "topic1",
 		prefixShort:  defaultPrefixShort,

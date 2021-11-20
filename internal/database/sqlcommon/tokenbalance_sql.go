@@ -62,7 +62,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 	}
 
 	if account != nil {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("tokenbalance").
 				Set("balance", balance).
 				Set("updated", fftypes.Now()).

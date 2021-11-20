@@ -72,7 +72,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 	if existing {
 
 		// Update the offset
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("offsets").
 				Set("otype", string(offset.Type)).
 				Set("name", offset.Name).
@@ -186,7 +186,7 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, rowID int64, update databa
 	}
 	query = query.Where(sq.Eq{sequenceColumn: rowID})
 
-	err = s.updateTx(ctx, tx, query, nil /* offsets do not have change events */)
+	_, err = s.updateTx(ctx, tx, query, nil /* offsets do not have change events */)
 	if err != nil {
 		return err
 	}

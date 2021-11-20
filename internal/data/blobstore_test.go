@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,7 +53,7 @@ func TestUploadBlobOk(t *testing.T) {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false, false).Return(nil)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("InsertBlob", mock.Anything, mock.Anything).Return(nil)
 
 	dxID := make(chan fftypes.UUID, 1)
@@ -94,7 +95,7 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false, false).Return(nil)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("InsertBlob", mock.Anything, mock.Anything).Return(nil)
 
 	dxID := make(chan fftypes.UUID, 1)
