@@ -8,7 +8,7 @@ CREATE TABLE subscriptions (
   filter_topics  VARCHAR(256)    NOT NULL,
   filter_tag     VARCHAR(256)    NOT NULL,
   filter_group   VARCHAR(256)    NOT NULL,
-  options        JSONB           NOT NULL,
+  options        BYTEA           NOT NULL,
   created        BIGINT          NOT NULL
 );
 
