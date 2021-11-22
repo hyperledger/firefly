@@ -209,6 +209,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
 	tokenIndex := data.GetString("tokenIndex")
+	uri := data.GetString("uri")
 	poolProtocolID := data.GetString("poolId")
 	operatorAddress := data.GetString("operator")
 	fromAddress := data.GetString("from")
@@ -249,6 +250,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	transfer := &fftypes.TokenTransfer{
 		Type:        t,
 		TokenIndex:  tokenIndex,
+		URI:         uri,
 		Connector:   ft.configuredName,
 		From:        fromAddress,
 		To:          toAddress,

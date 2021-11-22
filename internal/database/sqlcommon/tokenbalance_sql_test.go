@@ -35,9 +35,11 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new token account
+	uri := "firefly://token/1"
 	transfer := &fftypes.TokenTransfer{
 		Pool:       fftypes.NewUUID(),
 		TokenIndex: "1",
+		URI:        uri,
 		Connector:  "erc1155",
 		Namespace:  "ns1",
 		To:         "0x0",
@@ -46,6 +48,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 	balance := &fftypes.TokenBalance{
 		Pool:       transfer.Pool,
 		TokenIndex: "1",
+		URI:        uri,
 		Connector:  "erc1155",
 		Namespace:  "ns1",
 		Key:        "0x0",
@@ -171,7 +174,7 @@ func TestUpdateTokenBalancesFailInsert2(t *testing.T) {
 func TestUpdateTokenBalancesFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(tokenBalanceColumns).AddRow(fftypes.NewUUID().String(), "1", "", "", "0x0", "0", 0))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(tokenBalanceColumns).AddRow(fftypes.NewUUID().String(), "1", "", "", "", "0x0", "0", 0))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpdateTokenBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
