@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hyperledger/firefly/internal/metrics"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -32,6 +31,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
@@ -87,6 +87,21 @@ func TestStartAPIFail(t *testing.T) {
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(false)
+	err := as.Serve(ctx, mor)
+	assert.Regexp(t, "FF10104", err)
+}
+
+func TestStartMetricsFail(t *testing.T) {
+	config.Reset()
+	metrics.Clear()
+	InitConfig()
+	metricsConfigPrefix.Set(HTTPConfAddress, "...://")
+	config.Set(config.MetricsEnabled, true)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // server will immediately shut down
+	as := NewAPIServer()
+	mor := &orchestratormocks.Orchestrator{}
+	mor.On("IsPreInit").Return(true)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
 }
