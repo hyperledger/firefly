@@ -16,19 +16,38 @@
 
 package metrics
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 var registry *prometheus.Registry
+var BatchPinCounter prometheus.Counter
+
+// MetricsBatchPin is the prometheus metric for total number of batch pins submitted
+var MetricsBatchPin = "ff_batchpin_total"
 
 // Registry returns FireFly's customized Prometheus registry
 func Registry() *prometheus.Registry {
 	if registry == nil {
+		initMetricsCollectors()
 		registry = prometheus.NewRegistry()
-		registry.MustRegister(prometheus.NewGoCollector())
-		registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+		registerMetricsCollectors()
 	}
 
 	return registry
+}
+
+func initMetricsCollectors() {
+	BatchPinCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: MetricsBatchPin,
+		Help: "Number of batch pins submitted",
+	})
+}
+
+func registerMetricsCollectors() {
+	registry.MustRegister(prometheus.NewGoCollector())
+	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	registry.MustRegister(BatchPinCounter)
 }
 
 // Clear will reset the Prometheus metrics registry, useful for testing
