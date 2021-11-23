@@ -57,6 +57,10 @@ func (cm *ContractManager) BroadcastContractInterface(ctx context.Context, ns st
 		return nil, i18n.NewError(ctx, i18n.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
 	}
 
+	for _, method := range ffi.Methods {
+		method.ID = fftypes.NewUUID()
+	}
+
 	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)
 	if err != nil {
 		return nil, err
@@ -135,14 +139,11 @@ func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 		if req.ContractID.String() == "" {
 			return nil, fmt.Errorf("error resolving contract method - method signature is required if contract ID is absent")
 		}
-		params, returns, err := cm.database.GetContractParamsByMethodName(ctx, ns, req.ContractID.String(), method.Name)
 
-		// method, err = cm.database.GetContractMethodByName(ctx, ns, req.ContractID.String(), method.Name)
+		method, err = cm.database.GetContractMethodByName(ctx, ns, req.ContractID.String(), method.Name)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving contract method")
 		}
-		method.Params = params
-		method.Returns = returns
 	}
 	return method, nil
 }

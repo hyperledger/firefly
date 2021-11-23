@@ -400,13 +400,8 @@ type iContractDefinitionCollection interface {
 }
 
 type iContractMethodCollection interface {
-	// InsertContractMethod(ctx context.Context, ns, method *fftypes.FFIMethod) error
-	GetContractMethodByName(ctx context.Context, ns, contractID, methodName string) (*fftypes.FFIMethod, error)
-}
-
-type iContractParamCollection interface {
-	InsertContractParam(ctx context.Context, ns string, interfaceID *fftypes.UUID, parentName string, role fftypes.FFIParamRole, index int, param *fftypes.FFIParam) error
-	GetContractParamsByMethodName(ctx context.Context, ns, contractID, methodName string) (params, returns []*fftypes.FFIParam, err error)
+	InsertContractMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error
+	GetContractMethodByName(ctx context.Context, ns, contractID, name string) (*fftypes.FFIMethod, error)
 }
 
 type iContractAPICollection interface {
@@ -474,7 +469,6 @@ type PeristenceInterface interface {
 	iTokenTransferCollection
 	iContractDefinitionCollection
 	iContractMethodCollection
-	iContractParamCollection
 	iContractAPICollection
 }
 

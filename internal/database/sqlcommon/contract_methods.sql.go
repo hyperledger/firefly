@@ -29,14 +29,23 @@ import (
 
 var (
 	contractMethodsColumns = []string{
+		"id",
 		"interface_id",
 		"namespace",
 		"name",
+		"params",
+		"returns",
+	}
+	contractMethodsQueryColumns = []string{
+		"id",
+		"name",
+		"params",
+		"returns",
 	}
 	contractMethodsFilterFieldMap = map[string]string{}
 )
 
-func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contractID *fftypes.UUID, methodName string) (err error) {
+func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -45,8 +54,8 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
-			From("contract_methods").
-			Where(sq.And{sq.Eq{"interface_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": methodName}}),
+			From("contractmethods").
+			Where(sq.And{sq.Eq{"interface_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": method.Name}}),
 	)
 	if err != nil {
 		return err
@@ -56,10 +65,12 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 
 	if existing {
 		if err = s.updateTx(ctx, tx,
-			sq.Update("contract_methods").
+			sq.Update("contractmethods").
 				Set("interface_id", contractID).
 				Set("namespace", ns).
-				Set("name", methodName),
+				Set("name", method.Name).
+				Set("params", method.Params).
+				Set("returns", method.Returns),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractInterfaces, fftypes.ChangeEventTypeUpdated, ns, contractID)
 			},
@@ -68,12 +79,15 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 		}
 	} else {
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contract_methods").
+			sq.Insert("contractmethods").
 				Columns(contractMethodsColumns...).
 				Values(
+					method.ID,
 					contractID,
 					ns,
-					methodName,
+					method.Name,
+					method.Params,
+					method.Returns,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractInterfaces, fftypes.ChangeEventTypeCreated, ns, contractID)
@@ -87,22 +101,23 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 }
 
 func (s *SQLCommon) contractMethodResult(ctx context.Context, row *sql.Rows) (*fftypes.FFIMethod, error) {
-	ffi := fftypes.FFIMethod{}
+	method := fftypes.FFIMethod{}
 	err := row.Scan(
-		nil,
-		nil,
-		&ffi.Name,
+		&method.ID,
+		&method.Name,
+		&method.Params,
+		&method.Returns,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contract_methods")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractmethods")
 	}
-	return &ffi, nil
+	return &method, nil
 }
 
 func (s *SQLCommon) getContractMethodPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFIMethod, error) {
 	rows, _, err := s.query(ctx,
-		sq.Select(contractMethodsColumns...).
-			From("contract_methods").
+		sq.Select(contractMethodsQueryColumns...).
+			From("contractmethods").
 			Where(pred),
 	)
 	if err != nil {
@@ -124,7 +139,7 @@ func (s *SQLCommon) getContractMethodPred(ctx context.Context, desc string, pred
 }
 
 func (s *SQLCommon) GetContractMethods(ctx context.Context, ns string, filter database.Filter) (methods []*fftypes.FFIMethod, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractMethodsColumns...).From("contract_methods").Where(sq.Eq{"namespace": ns}), filter, contractMethodsFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractMethodsQueryColumns...).From("contractmethods").Where(sq.Eq{"namespace": ns}), filter, contractMethodsFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

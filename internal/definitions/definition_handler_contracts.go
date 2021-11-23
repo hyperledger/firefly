@@ -25,25 +25,17 @@ import (
 
 func (dh *definitionHandlers) persistContractInterface(ctx context.Context, contractInterface *fftypes.FFI) (valid bool, err error) {
 	err = dh.database.InsertContractInterface(ctx, contractInterface)
-
-	for _, method := range contractInterface.Methods {
-		// insert method
-
-		for i, param := range method.Params {
-			if err := dh.database.InsertContractParam(ctx, contractInterface.Namespace, contractInterface.ID, method.Name, "param", i, param); err != nil {
-				return false, err
-			}
-		}
-		for i, param := range method.Returns {
-			if err := dh.database.InsertContractParam(ctx, contractInterface.Namespace, contractInterface.ID, method.Name, "return", i, param); err != nil {
-				return false, err
-			}
-		}
-	}
-
 	if err != nil {
 		return false, err
 	}
+
+	for _, method := range contractInterface.Methods {
+		err := dh.database.InsertContractMethod(ctx, contractInterface.Namespace, contractInterface.ID, method)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	return true, nil
 }
 

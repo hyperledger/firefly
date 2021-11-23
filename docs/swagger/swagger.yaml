@@ -362,11 +362,14 @@ paths:
                   events:
                     items:
                       properties:
+                        id: {}
                         name:
                           type: string
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -380,9 +383,12 @@ paths:
                   methods:
                     items:
                       properties:
+                        id: {}
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -392,6 +398,8 @@ paths:
                         returns:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -447,8 +455,12 @@ paths:
                     version:
                       type: string
                   type: object
-                ledger: {}
-                location: {}
+                ledger:
+                  format: byte
+                  type: string
+                location:
+                  format: byte
+                  type: string
                 name:
                   type: string
               type: object
@@ -467,13 +479,108 @@ paths:
                         type: string
                     type: object
                   id: {}
-                  ledger: {}
-                  location: {}
+                  ledger:
+                    format: byte
+                    type: string
+                  location:
+                    format: byte
+                    type: string
                   message: {}
                   name:
                     type: string
                   namespace:
                     type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{apiName}/invoke/{methodName}:
+    post:
+      description: 'TODO: Description'
+      operationId: postInvokeContractAPI
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: apiName
+        required: true
+        schema:
+          example: apiName
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: methodName
+        required: true
+        schema:
+          example: methodName
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contractId: {}
+                ledger:
+                  format: byte
+                  type: string
+                location:
+                  format: byte
+                  type: string
+                method:
+                  properties:
+                    id: {}
+                    params:
+                      items:
+                        properties:
+                          internalType:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    returns:
+                      items:
+                        properties:
+                          internalType:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                params:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties: {}
                 type: object
           description: Success
         default:
@@ -1123,11 +1230,14 @@ paths:
                   events:
                     items:
                       properties:
+                        id: {}
                         name:
                           type: string
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1141,9 +1251,12 @@ paths:
                   methods:
                     items:
                       properties:
+                        id: {}
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1153,6 +1266,8 @@ paths:
                         returns:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1203,11 +1318,14 @@ paths:
                 events:
                   items:
                     properties:
+                      id: {}
                       name:
                         type: string
                       params:
                         items:
                           properties:
+                            internalType:
+                              type: string
                             name:
                               type: string
                             type:
@@ -1219,9 +1337,12 @@ paths:
                 methods:
                   items:
                     properties:
+                      id: {}
                       params:
                         items:
                           properties:
+                            internalType:
+                              type: string
                             name:
                               type: string
                             type:
@@ -1231,6 +1352,8 @@ paths:
                       returns:
                         items:
                           properties:
+                            internalType:
+                              type: string
                             name:
                               type: string
                             type:
@@ -1253,11 +1376,14 @@ paths:
                   events:
                     items:
                       properties:
+                        id: {}
                         name:
                           type: string
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1271,9 +1397,12 @@ paths:
                   methods:
                     items:
                       properties:
+                        id: {}
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1283,6 +1412,8 @@ paths:
                         returns:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1336,11 +1467,14 @@ paths:
                   events:
                     items:
                       properties:
+                        id: {}
                         name:
                           type: string
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1354,9 +1488,12 @@ paths:
                   methods:
                     items:
                       properties:
+                        id: {}
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1366,6 +1503,8 @@ paths:
                         returns:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1426,11 +1565,14 @@ paths:
                   events:
                     items:
                       properties:
+                        id: {}
                         name:
                           type: string
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1444,9 +1586,12 @@ paths:
                   methods:
                     items:
                       properties:
+                        id: {}
                         params:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1456,6 +1601,8 @@ paths:
                         returns:
                           items:
                             properties:
+                              internalType:
+                                type: string
                               name:
                                 type: string
                               type:
@@ -1505,13 +1652,20 @@ paths:
             schema:
               properties:
                 contractId: {}
-                ledger: {}
-                location: {}
+                ledger:
+                  format: byte
+                  type: string
+                location:
+                  format: byte
+                  type: string
                 method:
                   properties:
+                    id: {}
                     params:
                       items:
                         properties:
+                          internalType:
+                            type: string
                           name:
                             type: string
                           type:
@@ -1521,6 +1675,8 @@ paths:
                     returns:
                       items:
                         properties:
+                          internalType:
+                            type: string
                           name:
                             type: string
                           type:

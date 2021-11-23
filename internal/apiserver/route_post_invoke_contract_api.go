@@ -27,7 +27,7 @@ import (
 )
 
 var postInvokeContractAPI = &oapispec.Route{
-	Name:   "postNewContractAPI",
+	Name:   "postInvokeContractAPI",
 	Path:   "namespaces/{ns}/apis/{apiName}/invoke/{methodName}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
