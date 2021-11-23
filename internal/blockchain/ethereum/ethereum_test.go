@@ -173,7 +173,6 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "!!!://")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utEthconnectConf.Set(EthconnectConfigSkipEventstreamInit, true)
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)
