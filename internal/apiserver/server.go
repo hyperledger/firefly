@@ -112,7 +112,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	}
 
 	if as.metricsEnabled {
-		metricsHTTPServer, err := newHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(ctx), metricsErrChan, metricsConfigPrefix)
+		metricsHTTPServer, err := newHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfigPrefix)
 		if err != nil {
 			return err
 		}
@@ -494,7 +494,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	return r
 }
 
-func (as *apiServer) createMetricsMuxRouter(_ context.Context) *mux.Router {
+func (as *apiServer) createMetricsMuxRouter() *mux.Router {
 	r := mux.NewRouter()
 
 	r.Path(config.GetString(config.MetricsPath)).Handler(promhttp.InstrumentMetricHandler(metrics.Registry(),
