@@ -108,6 +108,9 @@ type Orchestrator interface {
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
 
+	// Metrics
+	GetMetrics(ctx context.Context, ns string, startTime string, endTime string, periods string, tableName string) ([]*fftypes.Metric, error)
+
 	// Config Management
 	GetConfig(ctx context.Context) fftypes.JSONObject
 	GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error)

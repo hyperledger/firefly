@@ -404,6 +404,11 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
+type iMetricCollection interface {
+	// GetMetrics - Get metrics for specified time interval
+	GetMetrics(ctx context.Context, interval *fftypes.MetricInterval, tableName string) (count string, err error)
+}
+
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
@@ -460,6 +465,7 @@ type PeristenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
+	iMetricCollection
 }
 
 // CollectionName represents all collections

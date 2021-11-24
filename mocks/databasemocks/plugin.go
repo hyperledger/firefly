@@ -706,6 +706,27 @@ func (_m *Plugin) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, 
 	return r0, r1, r2
 }
 
+// GetMetrics provides a mock function with given fields: ctx, interval, tableName
+func (_m *Plugin) GetMetrics(ctx context.Context, interval *fftypes.MetricInterval, tableName string) (string, error) {
+	ret := _m.Called(ctx, interval, tableName)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.MetricInterval, string) string); ok {
+		r0 = rf(ctx, interval, tableName)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.MetricInterval, string) error); ok {
+		r1 = rf(ctx, interval, tableName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetNamespace provides a mock function with given fields: ctx, name
 func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*fftypes.Namespace, error) {
 	ret := _m.Called(ctx, name)
