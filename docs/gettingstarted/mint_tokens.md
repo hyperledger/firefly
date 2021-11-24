@@ -27,6 +27,25 @@ nav_order: 9
 - FireFly tracks a history of all token operations along with all current token balances
 - The blockchain backing each token connector may be the same _or_ different from the one backing FireFly message pinning
 
+## What is a pool?
+
+Token pools are a FireFly construct for describing a set of tokens. The exact definition of a token pool
+is dependent on the token connector implementation. Some examples of how pools might map to various well-defined
+Ethereum standards:
+
+- **[ERC-1155](https://eips.ethereum.org/EIPS/eip-1155):** a single contract instance can efficiently allocate
+  many isolated pools of fungible or non-fungible tokens
+  (see [reference implementation](https://github.com/hyperledger/firefly-tokens-erc1155))
+- **[ERC-20](https://eips.ethereum.org/EIPS/eip-20) / [ERC-777](https://eips.ethereum.org/EIPS/eip-777):**
+  each contract instance represents a single fungible pool of value, e.g. "a coin"
+- **[ERC-721](https://eips.ethereum.org/EIPS/eip-721):** each contract instance represents a single pool of NFTs,
+  each with unique identities within the pool
+- **[ERC-1400](https://github.com/ethereum/eips/issues/1411) / [ERC-1410](https://github.com/ethereum/eips/issues/1410):**
+  partially supported in the same manner as ERC-20/ERC-777, but would require new features for working with partitions
+
+These are provided as examples only - a custom token connector could be backed by any token technology (Ethereum or otherwise)
+as long as it can support the basic operations described here (create pool, mint, burn, transfer).
+
 ## Create a pool
 
 Every application will need to create at least one token pool. At a minimum, you must always
