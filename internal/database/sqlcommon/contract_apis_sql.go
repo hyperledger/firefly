@@ -58,7 +58,7 @@ func (s *SQLCommon) InsertContractAPI(ctx context.Context, cd *fftypes.ContractA
 	rows.Close()
 
 	if existing {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("contractapis").
 				Set("id", cd.ID).
 				Set("interface_id", cd.Contract.ID).

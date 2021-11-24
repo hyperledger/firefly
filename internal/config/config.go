@@ -40,7 +40,7 @@ import (
 )
 
 // The following keys can be access from the root configuration.
-// Plugins are resonsible for defining their own keys using the Config interface
+// Plugins are responsible for defining their own keys using the Config interface
 var (
 	// APIDefaultFilterLimit is the default limit that will be applied to filtered queries on the API
 	APIDefaultFilterLimit = rootKey("api.defaultFilterLimit")
@@ -148,7 +148,7 @@ var (
 	GroupCacheSize = rootKey("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses
 	GroupCacheTTL = rootKey("group.cache.ttl")
-	// AdminHTTPEnabled determines whether the admin interface will be enabled or not
+	// AdminEnabled determines whether the admin interface will be enabled or not
 	AdminEnabled = rootKey("admin.enabled")
 	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
 	AdminPreinit = rootKey("admin.preinit")
@@ -180,6 +180,10 @@ var (
 	LogMaxAge = rootKey("log.maxAge")
 	// LogCompress sets whether to compress backups
 	LogCompress = rootKey("log.compress")
+	// MetricsEnabled determines whether metrics will be instrumented and if the metrics server will be enabled or not
+	MetricsEnabled = rootKey("metrics.enabled")
+	// MetricsPath determines what path to serve the Prometheus metrics from
+	MetricsPath = rootKey("metrics.path")
 	// NamespacesDefault is the default namespace - must be in the predefines list
 	NamespacesDefault = rootKey("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network

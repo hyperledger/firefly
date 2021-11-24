@@ -31,6 +31,7 @@ var (
 	tokenBalanceColumns = []string{
 		"pool_id",
 		"token_index",
+		"uri",
 		"connector",
 		"namespace",
 		"key",
@@ -62,8 +63,9 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 	}
 
 	if account != nil {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("tokenbalance").
+				Set("uri", transfer.URI).
 				Set("balance", balance).
 				Set("updated", fftypes.Now()).
 				Where(sq.And{
@@ -82,6 +84,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 				Values(
 					transfer.Pool,
 					transfer.TokenIndex,
+					transfer.URI,
 					transfer.Connector,
 					transfer.Namespace,
 					key,
@@ -123,6 +126,7 @@ func (s *SQLCommon) tokenBalanceResult(ctx context.Context, row *sql.Rows) (*fft
 	err := row.Scan(
 		&account.Pool,
 		&account.TokenIndex,
+		&account.URI,
 		&account.Connector,
 		&account.Namespace,
 		&account.Key,
@@ -199,6 +203,7 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 	if err != nil {
 		return nil, nil, err
 	}
+	fi.CountExpr = "DISTINCT key"
 
 	rows, tx, err := s.query(ctx, query)
 	if err != nil {
@@ -220,11 +225,13 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 
 func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select("pool_id").Distinct().From("tokenbalance").Where(sq.Eq{"key": key}),
-		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
+		sq.Select("pool_id").Distinct().From("tokenbalance"),
+		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"},
+		sq.Eq{"key": key})
 	if err != nil {
 		return nil, nil, err
 	}
+	fi.CountExpr = "DISTINCT pool_id"
 
 	rows, tx, err := s.query(ctx, query)
 	if err != nil {

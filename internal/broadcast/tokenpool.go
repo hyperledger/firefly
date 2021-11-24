@@ -23,16 +23,16 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error) {
-	if err := pool.Validate(ctx, false); err != nil {
+	if err := pool.Pool.Validate(ctx); err != nil {
 		return nil, err
 	}
-	if err := bm.data.VerifyNamespaceExists(ctx, pool.Namespace); err != nil {
+	if err := bm.data.VerifyNamespaceExists(ctx, pool.Pool.Namespace); err != nil {
 		return nil, err
 	}
 
 	msg, err = bm.BroadcastDefinitionAsNode(ctx, ns, pool, fftypes.SystemTagDefinePool, waitConfirm)
 	if msg != nil {
-		pool.Message = msg.Header.ID
+		pool.Pool.Message = msg.Header.ID
 	}
 	return msg, err
 }

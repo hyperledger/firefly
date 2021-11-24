@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -177,7 +178,7 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, false, false); err != nil {
+	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
 

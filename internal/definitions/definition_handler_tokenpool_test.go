@@ -30,431 +30,177 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestHandleDefinitionBroadcastTokenPoolSelfOk(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
+func newPoolAnnouncement() *fftypes.TokenPoolAnnouncement {
+	pool := &fftypes.TokenPool{
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns1",
+		Name:       "name1",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
+		Symbol:     "COIN",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
 		},
-		ProtocolTxID: "tx123",
 	}
+	return &fftypes.TokenPoolAnnouncement{
+		Pool: pool,
+		TX:   &fftypes.Transaction{},
+	}
+}
+
+func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftypes.Message, []*fftypes.Data, error) {
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:  fftypes.NewUUID(),
 			Tag: string(fftypes.SystemTagDefinePool),
 		},
 	}
-	b, err := json.Marshal(&pool)
-	assert.NoError(t, err)
+	b, err := json.Marshal(announce)
+	if err != nil {
+		return nil, nil, err
+	}
 	data := []*fftypes.Data{{
 		Value: fftypes.Byteable(b),
 	}}
+	return msg, data, nil
+}
+
+func TestHandleSystemBroadcastTokenPoolActivateOK(t *testing.T) {
+	sh := newTestDefinitionHandlers(t)
+
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
+	assert.NoError(t, err)
 	opID := fftypes.NewUUID()
 	operations := []*fftypes.Operation{{ID: opID}}
-	tx := &fftypes.Transaction{ProtocolID: "tx123"}
 
 	mdi := sh.database.(*databasemocks.Plugin)
+	mam := sh.assets.(*assetmocks.Manager)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
 	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
-	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(tx, nil)
-	mdi.On("UpsertTransaction", context.Background(), tx, false).Return(nil)
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolConfirmed
+	mam.On("ActivateTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+		return true
+	}), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return true
 	})).Return(nil)
 
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.True(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionWait, action)
 	assert.NoError(t, err)
-	assert.Equal(t, fftypes.OpStatusSucceeded, tx.Status)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolSelfUpdateOpFail(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolUpdateOpFail(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
 	opID := fftypes.NewUUID()
 	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
 	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolSelfGetTXFail(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
-	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, fmt.Errorf("pop"))
 
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolSelfTXMismatch(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolExisting(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
-	tx := &fftypes.Transaction{ProtocolID: "bad"}
-
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
-	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(tx, nil)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolRejected
-	})).Return(nil)
-
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
-	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestHandleDefinitionBroadcastTokenPoolSelfUpdateTXFail(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
-	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
-	tx := &fftypes.Transaction{ProtocolID: "tx123"}
-
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
-	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(tx, nil)
-	mdi.On("UpsertTransaction", context.Background(), tx, false).Return(fmt.Errorf("pop"))
-
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-}
-
-func TestHandleDefinitionBroadcastTokenPoolOk(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
-	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
 	operations := []*fftypes.Operation{}
 
 	mdi := sh.database.(*databasemocks.Plugin)
+	mam := sh.assets.(*assetmocks.Manager)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(nil, nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(t *fftypes.Transaction) bool {
-		return t.Subject.Type == fftypes.TransactionTypeTokenPool && *t.Subject.Reference == *pool.ID
-	}), false).Return(nil)
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(&fftypes.TokenPool{}, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolConfirmed
+	mam.On("ActivateTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+		return true
+	}), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return true
 	})).Return(nil)
 
-	mam := sh.assets.(*assetmocks.Manager)
-	mam.On("ValidateTokenPoolTx", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
-		return *p.ID == *pool.ID
-	}), "tx123").Return(nil)
-
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.True(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionWait, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolValidateTxFail(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
-	operations := []*fftypes.Operation{}
+	existing := &fftypes.TokenPool{
+		State: fftypes.TokenPoolStateConfirmed,
+	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(existing, nil)
 
-	mam := sh.assets.(*assetmocks.Manager)
-	mam.On("ValidateTokenPoolTx", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
-		return *p.ID == *pool.ID
-	}), "tx123").Return(fmt.Errorf("pop"))
-
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
-}
-
-func TestHandleDefinitionBroadcastTokenPoolBadTX(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   nil,
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
-	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
-	operations := []*fftypes.Operation{}
-
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolRejected
-	})).Return(nil)
-
-	mam := sh.assets.(*assetmocks.Manager)
-	mam.On("ValidateTokenPoolTx", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
-		return *p.ID == *pool.ID
-	}), "tx123").Return(nil)
-
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
-	operations := []*fftypes.Operation{}
+	opID := fftypes.NewUUID()
+	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(nil, nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(t *fftypes.Transaction) bool {
-		return t.Subject.Type == fftypes.TransactionTypeTokenPool && *t.Subject.Reference == *pool.ID
-	}), false).Return(nil)
+	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(database.IDMismatch)
@@ -462,140 +208,121 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolRejected
 	})).Return(nil)
 
-	mam := sh.assets.(*assetmocks.Manager)
-	mam.On("ValidateTokenPoolTx", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
-		return *p.ID == *pool.ID
-	}), "tx123").Return(nil)
-
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
-	operations := []*fftypes.Operation{}
+	opID := fftypes.NewUUID()
+	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("GetTransactionByID", context.Background(), pool.TX.ID).Return(nil, nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(t *fftypes.Transaction) bool {
-		return t.Subject.Type == fftypes.TransactionTypeTokenPool && *t.Subject.Reference == *pool.ID
-	}), false).Return(nil)
+	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(fmt.Errorf("pop"))
 
-	mam := sh.assets.(*assetmocks.Manager)
-	mam.On("ValidateTokenPoolTx", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
-		return *p.ID == *pool.ID
-	}), "tx123").Return(nil)
-
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
-	mam.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolOpsFail(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolOpsFail(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool: fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "name1",
-			Type:       fftypes.TokenTypeFungible,
-			ProtocolID: "12345",
-			Symbol:     "COIN",
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeTokenPool,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
+func TestHandleSystemBroadcastTokenPoolActivateFail(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		TokenPool:    fftypes.TokenPool{},
-		ProtocolTxID: "tx123",
-	}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
-		},
-	}
-	b, err := json.Marshal(&pool)
+	announce := newPoolAnnouncement()
+	pool := announce.Pool
+	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
-	}}
+	opID := fftypes.NewUUID()
+	operations := []*fftypes.Operation{{ID: opID}}
+
+	mdi := sh.database.(*databasemocks.Plugin)
+	mam := sh.assets.(*assetmocks.Manager)
+	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
+	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
+	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+		return *p.ID == *pool.ID && p.Message == msg.Header.ID
+	})).Return(nil)
+	mam.On("ActivateTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+		return true
+	}), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return true
+	})).Return(fmt.Errorf("pop"))
+
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionRetry, action)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestHandleSystemBroadcastTokenPoolValidateFail(t *testing.T) {
+	sh := newTestDefinitionHandlers(t)
+
+	announce := &fftypes.TokenPoolAnnouncement{
+		Pool: &fftypes.TokenPool{},
+		TX:   &fftypes.Transaction{},
+	}
+	msg, data, err := buildPoolDefinitionMessage(announce)
+	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
 		return event.Type == fftypes.EventTypePoolRejected
 	})).Return(nil)
 
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
-	assert.False(t, valid)
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestHandleSystemBroadcastTokenPoolBadMessage(t *testing.T) {
+	sh := newTestDefinitionHandlers(t)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:  fftypes.NewUUID(),
+			Tag: string(fftypes.SystemTagDefinePool),
+		},
+	}
+
+	action, err := sh.HandleSystemBroadcast(context.Background(), msg, nil)
+	assert.Equal(t, ActionReject, action)
+	assert.NoError(t, err)
 }

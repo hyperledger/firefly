@@ -35,9 +35,18 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
+	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
+
+type SystemBroadcastAction int
+
+const (
+	ActionReject SystemBroadcastAction = iota
+	ActionConfirm
+	ActionRetry
+	ActionWait
+)
 
 type definitionHandlers struct {
 	database  database.Plugin
@@ -77,18 +86,20 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
+	var valid bool
+	var err error
 	switch fftypes.SystemTag(msg.Header.Tag) {
 	case fftypes.SystemTagDefineDatatype:
-		return dh.handleDatatypeBroadcast(ctx, msg, data)
+		valid, err = dh.handleDatatypeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNamespace:
-		return dh.handleNamespaceBroadcast(ctx, msg, data)
+		valid, err = dh.handleNamespaceBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineOrganization:
-		return dh.handleOrganizationBroadcast(ctx, msg, data)
+		valid, err = dh.handleOrganizationBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNode:
-		return dh.handleNodeBroadcast(ctx, msg, data)
+		valid, err = dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineContractInterface:
@@ -96,9 +107,17 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 	case fftypes.SystemTagDefineContractAPI:
 		return dh.handleContractAPIBroadcast(ctx, msg, data)
 	default:
-		l.Debugf("Unknown topic '%s' for system broadcast or definition ID '%s'", msg.Header.Tag, msg.Header.ID)
+		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
+		return ActionReject, nil
 	}
-	return false, nil
+	switch {
+	case err != nil:
+		return ActionRetry, err
+	case !valid:
+		return ActionReject, nil
+	default:
+		return ActionConfirm, nil
+	}
 }
 
 func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {

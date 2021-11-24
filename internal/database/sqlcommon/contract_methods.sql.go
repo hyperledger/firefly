@@ -64,7 +64,7 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 	rows.Close()
 
 	if existing {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("contractmethods").
 				Set("interface_id", contractID).
 				Set("namespace", ns).

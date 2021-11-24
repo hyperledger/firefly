@@ -47,19 +47,19 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	return true, nil
 }
 
-func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
-	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
+	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
-		if err = broadcast.Validate(ctx, true); err != nil {
+		if err := broadcast.Validate(ctx, true); err != nil {
 			l.Warnf("Unable to process contract definition broadcast %s - validate failed: %s", msg.Header.ID, err)
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistContractInterface(ctx, &broadcast)
 			if err != nil {
-				return valid, err
+				return ActionReject, err
 			}
 		}
 	}
@@ -72,23 +72,23 @@ func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Conte
 		l.Warnf("Contract definition rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
 	}
-	err = dh.database.InsertEvent(ctx, event)
-	return valid, err
+	err := dh.database.InsertEvent(ctx, event)
+	return ActionConfirm, err
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.ContractAPI
-	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
+	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
-		if err = broadcast.Validate(ctx, true); err != nil {
+		if err := broadcast.Validate(ctx, true); err != nil {
 			l.Warnf("Unable to process contract API broadcast %s - validate failed: %s", msg.Header.ID, err)
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistContractAPI(ctx, &broadcast)
 			if err != nil {
-				return valid, err
+				return ActionReject, err
 			}
 		}
 	}
@@ -101,6 +101,6 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, ms
 		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
 	}
-	err = dh.database.InsertEvent(ctx, event)
-	return valid, err
+	err := dh.database.InsertEvent(ctx, event)
+	return ActionConfirm, err
 }

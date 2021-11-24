@@ -62,7 +62,7 @@ func (s *SQLCommon) UpsertConfigRecord(ctx context.Context, configRecord *fftype
 
 	if existing {
 		// Update the config record
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("config").
 				Set("config_value", configRecord.Value).
 				Where(sq.Eq{"config_key": configRecord.Key}),

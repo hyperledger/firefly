@@ -67,27 +67,21 @@ func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, 
 	return em.txhelper.PersistTransaction(ctx, transaction)
 }
 
-func (em *eventManager) getMessageForTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) (*fftypes.Message, error) {
-	var messages []*fftypes.Message
-	fb := database.MessageQueryFactory.NewFilter(ctx)
-	filter := fb.And(
-		fb.Eq("confirmed", nil),
-		fb.Eq("hash", transfer.MessageHash),
-	)
-	messages, _, err := em.database.GetMessages(ctx, filter)
-	if err != nil || len(messages) == 0 {
-		return nil, err
-	}
-	return messages[0], nil
-}
-
-func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	var batchID *fftypes.UUID
 
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			// Check that transfer has not already been recorded
+			if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
+				return err
+			} else if existing != nil {
+				log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
+				return nil
+			}
+
 			// Check that this is from a known pool
-			pool, err := em.database.GetTokenPoolByProtocolID(ctx, poolProtocolID)
+			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.Connector, poolProtocolID)
 			if err != nil {
 				return err
 			}
@@ -105,6 +99,14 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID strin
 				if valid, err := em.persistTokenTransaction(ctx, pool.Namespace, transfer, protocolTxID, additionalInfo); err != nil || !valid {
 					return err
 				}
+
+				// Some operations result in multiple transfer events - if the protocol ID was unique but the
+				// local ID is not unique, generate a unique local ID now.
+				if existing, err := em.database.GetTokenTransfer(ctx, transfer.LocalID); err != nil {
+					return err
+				} else if existing != nil {
+					transfer.LocalID = fftypes.NewUUID()
+				}
 			} else {
 				transfer.LocalID = fftypes.NewUUID()
 			}
@@ -119,16 +121,14 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID strin
 			}
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 
-			if transfer.MessageHash != nil {
-				msg, err := em.getMessageForTransfer(ctx, transfer)
-				if err != nil {
+			if transfer.Message != nil {
+				if msg, err := em.database.GetMessageByID(ctx, transfer.Message); err != nil {
 					return err
-				}
-				if msg != nil {
+				} else if msg != nil {
 					if msg.State == fftypes.MessageStateStaged {
 						// Message can now be sent
 						msg.State = fftypes.MessageStateReady
-						if err := em.database.UpsertMessage(ctx, msg, true, false); err != nil {
+						if err := em.database.UpsertMessage(ctx, msg, database.UpsertOptimizationExisting); err != nil {
 							return err
 						}
 					} else {
@@ -144,12 +144,10 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID strin
 		return err != nil, err // retry indefinitely (until context closes)
 	})
 
-	if err == nil {
-		// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
-		if batchID != nil {
-			log.L(em.ctx).Infof("Batch '%s' contains reference to received transfer. Transfer='%s' Message='%s'", batchID, transfer.ProtocolID, transfer.MessageHash)
-			em.aggregator.offchainBatches <- batchID
-		}
+	// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
+	if err == nil && batchID != nil {
+		log.L(em.ctx).Infof("Batch '%s' contains reference to received transfer. Transfer='%s' Message='%s'", batchID, transfer.ProtocolID, transfer.Message)
+		em.aggregator.offchainBatches <- batchID
 	}
 
 	return err

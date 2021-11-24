@@ -156,6 +156,7 @@ type orchestrator struct {
 	bc             boundCallbacks
 	preInitMode    bool
 	contracts      *contracts.ContractManager
+	node           *fftypes.UUID
 }
 
 func NewOrchestrator() Orchestrator {
@@ -188,7 +189,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
-	or.bc.am = or.assets
 	return err
 }
 
@@ -398,7 +398,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or.database, or.data)
+		or.batch, err = batch.NewBatchManager(ctx, or, or.database, or.data)
 		if err != nil {
 			return err
 		}
@@ -429,7 +429,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging)
+		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets)
 		if err != nil {
 			return err
 		}

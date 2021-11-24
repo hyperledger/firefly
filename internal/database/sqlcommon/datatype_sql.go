@@ -70,7 +70,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 	if existing {
 
 		// Update the datatype
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("datatypes").
 				Set("message_id", datatype.Message).
 				Set("validator", string(datatype.Validator)).
@@ -205,7 +205,7 @@ func (s *SQLCommon) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

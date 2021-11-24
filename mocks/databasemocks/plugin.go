@@ -1637,13 +1637,13 @@ func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*ffty
 	return r0, r1
 }
 
-// GetTokenPoolByProtocolID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error) {
-	ret := _m.Called(ctx, id)
+// GetTokenPoolByProtocolID provides a mock function with given fields: ctx, connector, protocolID
+func (_m *Plugin) GetTokenPoolByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, connector, protocolID)
 
 	var r0 *fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.TokenPool); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, connector, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenPool)
@@ -1651,8 +1651,8 @@ func (_m *Plugin) GetTokenPoolByProtocolID(ctx context.Context, id string) (*fft
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, connector, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1708,6 +1708,29 @@ func (_m *Plugin) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, localID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, connector, protocolID
+func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, connector, protocolID)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, connector, protocolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, connector, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2185,13 +2208,13 @@ func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRe
 	return r0
 }
 
-// UpsertData provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
-func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowExisting bool, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
+// UpsertData provides a mock function with given fields: ctx, data, optimization
+func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data, bool, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2227,13 +2250,13 @@ func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExi
 	return r0
 }
 
-// UpsertMessage provides a mock function with given fields: ctx, message, allowExisting, allowHashUpdate
-func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting bool, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, message, allowExisting, allowHashUpdate)
+// UpsertMessage provides a mock function with given fields: ctx, message, optimization
+func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, message, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, bool, bool) error); ok {
-		r0 = rf(ctx, message, allowExisting, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, message, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

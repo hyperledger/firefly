@@ -231,13 +231,27 @@ func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: tk, poolProtocolID, transfer, protocolTxID, additionalInfo
-func (_m *EventManager) TokensTransferred(tk tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, poolProtocolID, transfer, protocolTxID, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: ti, pool, protocolTxID, additionalInfo
+func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(ti, pool, protocolTxID, additionalInfo)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ti, pool, protocolTxID, additionalInfo)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TokensTransferred provides a mock function with given fields: ti, poolProtocolID, transfer, protocolTxID, additionalInfo
+func (_m *EventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(ti, poolProtocolID, transfer, protocolTxID, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, poolProtocolID, transfer, protocolTxID, additionalInfo)
+		r0 = rf(ti, poolProtocolID, transfer, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -55,7 +55,7 @@ func newTestFabric() (*Fabric, func()) {
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
 		ctx:            ctx,
-		client:         resty.New().SetHostURL("http://localhost:12345"),
+		client:         resty.New().SetBaseURL("http://localhost:12345"),
 		defaultChannel: "firefly",
 		chaincode:      "firefly",
 		topic:          "topic1",
@@ -179,7 +179,6 @@ func TestWSInitFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
-	utFabconnectConf.Set(FabconnectConfigSkipEventstreamInit, true)
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)

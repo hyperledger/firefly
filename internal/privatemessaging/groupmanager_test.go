@@ -66,7 +66,7 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", mock.Anything, mock.Anything, true).Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	group := &fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{

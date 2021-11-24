@@ -34,11 +34,11 @@ import (
 // sequence, and also persist all the data.
 func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 
-	log.L(em.ctx).Infof("-> BatchPinComplete txn=%s signingIdentity=%s", protocolTxID, signingIdentity)
+	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, protocolTxID, signingIdentity)
 	defer func() {
-		log.L(em.ctx).Infof("<- BatchPinComplete txn=%s signingIdentity=%s", protocolTxID, signingIdentity)
+		log.L(em.ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, protocolTxID, signingIdentity)
 	}()
-	log.L(em.ctx).Tracef("BatchPinComplete info: %+v", additionalInfo)
+	log.L(em.ctx).Tracef("BatchPinComplete batch=%s info: %+v", batchPin.BatchID, additionalInfo)
 
 	if batchPin.BatchPayloadRef != "" {
 		return em.handleBroadcastPinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)

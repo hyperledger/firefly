@@ -41,8 +41,6 @@ const (
 	EthconnectConfigBatchSize = "batchSize"
 	// EthconnectConfigBatchTimeout is the batch timeout to configure on event streams, when auto-defining them
 	EthconnectConfigBatchTimeout = "batchTimeout"
-	// EthconnectConfigSkipEventstreamInit disables auto-configuration of event streams
-	EthconnectConfigSkipEventstreamInit = "skipEventstreamInit"
 	// EthconnectPrefixShort is used in the query string in requests to ethconnect
 	EthconnectPrefixShort = "prefixShort"
 	// EthconnectPrefixLong is used in HTTP headers in requests to ethconnect
@@ -54,7 +52,6 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	wsconfig.InitPrefix(ethconnectConf)
 	ethconnectConf.AddKnownKey(EthconnectConfigInstancePath)
 	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
-	ethconnectConf.AddKnownKey(EthconnectConfigSkipEventstreamInit)
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)

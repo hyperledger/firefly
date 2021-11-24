@@ -45,8 +45,6 @@ const (
 	FabconnectConfigBatchSize = "batchSize"
 	// FabconnectConfigBatchTimeout is the batch timeout to configure on event streams, when auto-defining them
 	FabconnectConfigBatchTimeout = "batchTimeout"
-	// FabconnectConfigSkipEventstreamInit disables auto-configuration of event streams
-	FabconnectConfigSkipEventstreamInit = "skipEventstreamInit"
 	// FabconnectPrefixShort is used in the query string in requests to ethconnect
 	FabconnectPrefixShort = "prefixShort"
 	// FabconnectPrefixLong is used in HTTP headers in requests to ethconnect
@@ -60,7 +58,6 @@ func (f *Fabric) InitPrefix(prefix config.Prefix) {
 	fabconnectConf.AddKnownKey(FabconnectConfigChaincode)
 	fabconnectConf.AddKnownKey(FabconnectConfigSigner)
 	fabconnectConf.AddKnownKey(FabconnectConfigTopic)
-	fabconnectConf.AddKnownKey(FabconnectConfigSkipEventstreamInit)
 	fabconnectConf.AddKnownKey(FabconnectConfigBatchSize, defaultBatchSize)
 	fabconnectConf.AddKnownKey(FabconnectConfigBatchTimeout, defaultBatchTimeout)
 	fabconnectConf.AddKnownKey(FabconnectPrefixShort, defaultPrefixShort)

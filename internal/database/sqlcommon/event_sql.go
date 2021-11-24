@@ -156,7 +156,7 @@ func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update da
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events on filter based update */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events on filter based update */)
 	if err != nil {
 		return err
 	}

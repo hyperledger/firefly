@@ -60,29 +60,8 @@ type Fabric struct {
 	closed  chan struct{}
 }
 
-type eventStream struct {
-	ID             string               `json:"id"`
-	Name           string               `json:"name"`
-	ErrorHandling  string               `json:"errorHandling"`
-	BatchSize      uint                 `json:"batchSize"`
-	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
-	Type           string               `json:"type"`
-	WebSocket      eventStreamWebsocket `json:"websocket"`
-}
-
 type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
-}
-
-type subscription struct {
-	ID          string      `json:"id"`
-	Description string      `json:"description"`
-	Name        string      `json:"name"`
-	Channel     string      `json:"channel"`
-	Signer      string      `json:"signer"`
-	Stream      string      `json:"stream"`
-	FromBlock   string      `json:"fromBlock"`
-	Filter      eventFilter `json:"filter"`
 }
 
 type eventFilter struct {
@@ -168,8 +147,8 @@ type Location struct {
 	Chaincode string `json:"chaincode"`
 }
 
-var requiredSubscriptions = map[string]string{
-	"BatchPin": "Batch pin",
+var requiredSubscriptions = []string{
+	"BatchPin",
 }
 
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
@@ -221,10 +200,21 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		return err
 	}
 
-	if !fabconnectConf.GetBool(FabconnectConfigSkipEventstreamInit) {
-		if err = f.ensureEventStreams(fabconnectConf); err != nil {
-			return err
-		}
+	streams := streamManager{
+		ctx:            f.ctx,
+		client:         f.client,
+		defaultChannel: f.defaultChannel,
+		chaincode:      f.chaincode,
+		signer:         f.signer,
+	}
+	batchSize := fabconnectConf.GetUint(FabconnectConfigBatchSize)
+	batchTimeout := uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
+	if f.initInfo.stream, err = streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
+		return err
+	}
+	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
+	if f.initInfo.subs, err = streams.ensureSubscriptions(f.initInfo.stream.ID, requiredSubscriptions); err != nil {
+		return err
 	}
 
 	f.closed = make(chan struct{})
@@ -240,42 +230,6 @@ func (f *Fabric) Start() error {
 func (f *Fabric) Capabilities() *blockchain.Capabilities {
 	return f.capabilities
 }
-
-func (f *Fabric) ensureEventStreams(fabconnectConf config.Prefix) error {
-
-	var existingStreams []*eventStream
-	res, err := f.client.R().SetContext(f.ctx).SetResult(&existingStreams).Get("/eventstreams")
-	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(f.ctx, res, err, i18n.MsgFabconnectRESTErr)
-	}
-
-	for _, stream := range existingStreams {
-		if stream.WebSocket.Topic == f.topic {
-			f.initInfo.stream = stream
-		}
-	}
-
-	if f.initInfo.stream == nil {
-		newStream := eventStream{
-			Name:           f.topic,
-			ErrorHandling:  "block",
-			BatchSize:      fabconnectConf.GetUint(FabconnectConfigBatchSize),
-			BatchTimeoutMS: uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds()),
-			Type:           "websocket",
-		}
-		newStream.WebSocket.Topic = f.topic
-		res, err = f.client.R().SetBody(&newStream).SetResult(&newStream).Post("/eventstreams")
-		if err != nil || !res.IsSuccess() {
-			return restclient.WrapRestErr(f.ctx, res, err, i18n.MsgFabconnectRESTErr)
-		}
-		f.initInfo.stream = &newStream
-	}
-
-	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
-
-	return f.ensureSusbscriptions(f.initInfo.stream.ID)
-}
-
 func (f *Fabric) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 	// Send a subscribe to our topic after each connect/reconnect
 	b, _ := json.Marshal(&fabWSCommandPayload{
@@ -290,51 +244,6 @@ func (f *Fabric) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 		err = w.Send(ctx, b)
 	}
 	return err
-}
-
-func (f *Fabric) ensureSusbscriptions(streamID string) error {
-	for eventType, subDesc := range requiredSubscriptions {
-
-		var existingSubs []*subscription
-		res, err := f.client.R().SetResult(&existingSubs).Get("/subscriptions")
-		if err != nil || !res.IsSuccess() {
-			return restclient.WrapRestErr(f.ctx, res, err, i18n.MsgFabconnectRESTErr)
-		}
-
-		var sub *subscription
-		for _, s := range existingSubs {
-			if s.Name == eventType {
-				sub = s
-			}
-		}
-
-		if sub == nil {
-			newSub := subscription{
-				Name:        eventType,
-				Description: subDesc,
-				Channel:     f.defaultChannel,
-				Signer:      f.signer,
-				Stream:      streamID,
-			}
-			newSub.Filter.ChaincodeID = f.chaincode
-			newSub.Filter.EventFilter = "BatchPin"
-
-			res, err = f.client.R().
-				SetContext(f.ctx).
-				SetBody(&newSub).
-				SetResult(&newSub).
-				Post("/subscriptions")
-			if err != nil || !res.IsSuccess() {
-				return restclient.WrapRestErr(f.ctx, res, err, i18n.MsgFabconnectRESTErr)
-			}
-			sub = &newSub
-		}
-
-		log.L(f.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		f.initInfo.subs = append(f.initInfo.subs, sub)
-
-	}
-	return nil
 }
 
 func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {

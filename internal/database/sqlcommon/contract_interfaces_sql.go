@@ -56,7 +56,7 @@ func (s *SQLCommon) InsertContractInterface(ctx context.Context, cd *fftypes.FFI
 	rows.Close()
 
 	if existing {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("contractinterfaces").
 				Set("namespace", cd.Namespace).
 				Set("name", cd.Name).

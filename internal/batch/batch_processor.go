@@ -26,6 +26,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -53,6 +54,7 @@ type batchProcessorConf struct {
 
 type batchProcessor struct {
 	ctx         context.Context
+	ni          sysmessaging.LocalNodeInfo
 	database    database.Plugin
 	name        string
 	cancelCtx   func()
@@ -65,12 +67,13 @@ type batchProcessor struct {
 	conf        *batchProcessorConf
 }
 
-func newBatchProcessor(ctx context.Context, di database.Plugin, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
+func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
 	pCtx := log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key))
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
 		ctx:         pCtx,
 		cancelCtx:   cancelCtx,
+		ni:          ni,
 		database:    di,
 		name:        fmt.Sprintf("%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key),
 		newWork:     make(chan *batchWork),
@@ -161,6 +164,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 			Group:     bp.conf.group,
 			Payload:   fftypes.BatchPayload{},
 			Created:   fftypes.Now(),
+			Node:      bp.ni.GetNodeUUID(bp.ctx),
 		}
 	}
 	for _, w := range newWork {

@@ -290,14 +290,14 @@ func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.
 
 			// Persist the data
 			for i, d := range data {
-				if ok, err := em.persistReceivedData(ctx, i, d, "message", message.Header.ID); err != nil || !ok {
+				if ok, err := em.persistReceivedData(ctx, i, d, "message", message.Header.ID, database.UpsertOptimizationSkip); err != nil || !ok {
 					return err
 				}
 			}
 
 			// Persist the message - immediately considered confirmed as this is an unpinned receive
 			message.Confirmed = fftypes.Now()
-			if ok, err := em.persistReceivedMessage(ctx, 0, message, "message", message.Header.ID); err != nil || !ok {
+			if ok, err := em.persistReceivedMessage(ctx, 0, message, "message", message.Header.ID, database.UpsertOptimizationSkip); err != nil || !ok {
 				return err
 			}
 

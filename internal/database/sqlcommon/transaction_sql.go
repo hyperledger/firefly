@@ -79,7 +79,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 	if existing {
 
 		// Update the transaction
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("transactions").
 				Set("ttype", string(transaction.Subject.Type)).
 				Set("namespace", transaction.Subject.Namespace).
@@ -210,7 +210,7 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, upd
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change evnents for filter based updates */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change evnents for filter based updates */)
 	if err != nil {
 		return err
 	}

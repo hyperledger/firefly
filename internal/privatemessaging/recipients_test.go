@@ -23,6 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -56,7 +57,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return(orgDIDLocal, nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: signingKeyLocal}, nil)
-	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, true, false).Return(nil)
+	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
 		data := a[1].(*fftypes.Data)
 		assert.Equal(t, fftypes.ValidatorTypeSystemDefinition, data.Validator)
@@ -82,7 +83,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 
 		dataID = data.ID
 	}
-	um := mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
+	um := mdi.On("UpsertMessage", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil).Once()
 	um.RunFn = func(a mock.Arguments) {
 		msg := a[1].(*fftypes.Message)
 		assert.Equal(t, fftypes.MessageTypeGroupInit, msg.Header.Type)

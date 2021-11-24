@@ -18,9 +18,36 @@ package txcommon
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
+
+func AddTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
+	op.Input = fftypes.JSONObject{
+		"id":        pool.ID.String(),
+		"namespace": pool.Namespace,
+		"name":      pool.Name,
+		"symbol":    pool.Symbol,
+		"config":    pool.Config,
+	}
+}
+
+func RetrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
+	input := &op.Input
+	pool.ID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
+	if err != nil {
+		return err
+	}
+	pool.Namespace = input.GetString("namespace")
+	pool.Name = input.GetString("name")
+	if pool.Namespace == "" || pool.Name == "" {
+		return fmt.Errorf("namespace or name missing from inputs")
+	}
+	pool.Symbol = input.GetString("symbol")
+	pool.Config = input.GetObject("config")
+	return nil
+}
 
 func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
 	op.Input = fftypes.JSONObject{
