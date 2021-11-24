@@ -144,10 +144,8 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 
-	if !ethconnectConf.GetBool(EthconnectConfigSkipEventstreamInit) {
-		if err = e.ensureEventStreams(ethconnectConf); err != nil {
-			return err
-		}
+	if err = e.ensureEventStreams(ethconnectConf); err != nil {
+		return err
 	}
 
 	e.closed = make(chan struct{})

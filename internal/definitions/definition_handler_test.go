@@ -41,32 +41,32 @@ func newTestDefinitionHandlers(t *testing.T) *definitionHandlers {
 	return NewDefinitionHandlers(mdi, mdx, mdm, mbm, mpm, mam).(*definitionHandlers)
 }
 
-func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-	valid, err := sh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+func TestHandleSystemBroadcastUnknown(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: "uknown",
+			Tag: "unknown",
 		},
 	}, []*fftypes.Data{})
-	assert.False(t, valid)
+	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
+	dh := newTestDefinitionHandlers(t)
+	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: "uknown",
+			Tag: "unknown",
 		},
 	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
 }
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
+	dh := newTestDefinitionHandlers(t)
+	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: "uknown",
+			Tag: "unknown",
 		},
 	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
@@ -75,17 +75,17 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 func TestPrivateMessagingPassthroughs(t *testing.T) {
 	ctx := context.Background()
 
-	sh := newTestDefinitionHandlers(t)
-	mpm := sh.messaging.(*privatemessagingmocks.Manager)
+	dh := newTestDefinitionHandlers(t)
+	mpm := dh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("GetGroupByID", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil, nil)
 	mpm.On("ResolveInitGroup", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("EnsureLocalGroup", ctx, mock.Anything).Return(false, nil)
 
-	_, _ = sh.GetGroupByID(ctx, fftypes.NewUUID().String())
-	_, _, _ = sh.GetGroups(ctx, nil)
-	_, _ = sh.ResolveInitGroup(ctx, nil)
-	_, _ = sh.EnsureLocalGroup(ctx, nil)
+	_, _ = dh.GetGroupByID(ctx, fftypes.NewUUID().String())
+	_, _, _ = dh.GetGroups(ctx, nil)
+	_, _ = dh.ResolveInitGroup(ctx, nil)
+	_, _ = dh.EnsureLocalGroup(ctx, nil)
 
 	mpm.AssertExpectations(t)
 

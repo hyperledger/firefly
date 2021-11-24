@@ -33,6 +33,14 @@ var (
 	DeleteRecordNotFound = i18n.NewError(context.Background(), i18n.Msg404NotFound)
 )
 
+type UpsertOptimization int
+
+const (
+	UpsertOptimizationSkip UpsertOptimization = iota
+	UpsertOptimizationNew
+	UpsertOptimizationExisting
+)
+
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
 	PeristenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
@@ -65,8 +73,9 @@ type iNamespaceCollection interface {
 
 type iMessageCollection interface {
 	// UpsertMessage - Upsert a message, with all the embedded data references.
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
+	//                 The database layer must ensure that if a record already exists, the hash of that existing record
+	//                 must match the hash of the record that is being inserted.
+	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -88,9 +97,10 @@ type iMessageCollection interface {
 }
 
 type iDataCollection interface {
-	// UpsertData - Upsert a data record
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
+	// UpsertData - Upsert a data record. A hint can be supplied to whether the data already exists.
+	//              The database layer must ensure that if a record already exists, the hash of that existing record
+	//              must match the hash of the record that is being inserted.
+	UpsertData(ctx context.Context, data *fftypes.Data, optimization UpsertOptimization) (err error)
 
 	// UpdateData - Update data
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -357,7 +367,7 @@ type iTokenPoolCollection interface {
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by protocol ID
-	GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error)
+	GetTokenPoolByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenPool, error)
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
@@ -386,6 +396,9 @@ type iTokenTransferCollection interface {
 
 	// GetTokenTransfer - Get a token transfer by ID
 	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
+
+	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
+	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
@@ -538,6 +551,7 @@ const (
 // providing a building block for a cluster of FireFly servers to directly propgate events to each other.
 //
 type Callbacks interface {
+	// OrderedUUIDCollectionNSEvent emits the sequence on insert, but it will be -1 on update
 	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID, sequence int64)
 	OrderedCollectionEvent(resType OrderedCollection, eventType fftypes.ChangeEventType, sequence int64)
 	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID)
@@ -596,6 +610,7 @@ var BatchQueryFactory = &queryFields{
 	"confirmed":  &TimeField{},
 	"tx.type":    &StringField{},
 	"tx.id":      &UUIDField{},
+	"node":       &UUIDField{},
 }
 
 // TransactionQueryFactory filter fields for transactions
@@ -768,6 +783,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"key":        &StringField{},
 	"symbol":     &StringField{},
 	"message":    &UUIDField{},
+	"state":      &StringField{},
 	"created":    &TimeField{},
 	"connector":  &StringField{},
 }
@@ -795,6 +811,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"to":          &StringField{},
 	"amount":      &Int64Field{},
 	"protocolid":  &StringField{},
+	"message":     &UUIDField{},
 	"messagehash": &Bytes32Field{},
 	"created":     &TimeField{},
 }

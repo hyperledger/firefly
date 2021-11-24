@@ -29,13 +29,13 @@ import (
 )
 
 func TestSendReplyBroadcastFail(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
+	dh := newTestDefinitionHandlers(t)
 	mms := &sysmessagingmocks.MessageSender{}
-	mbm := sh.broadcast.(*broadcastmocks.Manager)
+	mbm := dh.broadcast.(*broadcastmocks.Manager)
 	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
-	sh.SendReply(context.Background(), &fftypes.Event{
+	dh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{})
@@ -45,13 +45,13 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 }
 
 func TestSendReplyPrivateFail(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
+	dh := newTestDefinitionHandlers(t)
 	mms := &sysmessagingmocks.MessageSender{}
-	mpm := sh.messaging.(*privatemessagingmocks.Manager)
+	mpm := dh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
-	sh.SendReply(context.Background(), &fftypes.Event{
+	dh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{
@@ -67,7 +67,7 @@ func TestSendReplyPrivateFail(t *testing.T) {
 }
 
 func TestSendReplyPrivateOk(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
+	dh := newTestDefinitionHandlers(t)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -76,11 +76,11 @@ func TestSendReplyPrivateOk(t *testing.T) {
 	}
 
 	mms := &sysmessagingmocks.MessageSender{}
-	mpm := sh.messaging.(*privatemessagingmocks.Manager)
+	mpm := dh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	sh.SendReply(context.Background(), &fftypes.Event{
+	dh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{

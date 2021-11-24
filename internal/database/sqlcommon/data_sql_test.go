@@ -57,7 +57,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", dataID, mock.Anything).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeUpdated, "ns1", dataID, mock.Anything).Return()
 
-	err := s.UpsertData(ctx, data, true, false)
+	err := s.UpsertData(ctx, data, database.UpsertOptimizationSkip)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - we should not to return the value first
@@ -99,11 +99,14 @@ func TestDataE2EWithDB(t *testing.T) {
 		},
 	}
 
-	// Check disallows hash update
-	err = s.UpsertData(context.Background(), dataUpdated, true, false)
+	// Check disallows hash update, regardless of optimization
+	err = s.UpsertData(context.Background(), dataUpdated, database.UpsertOptimizationNew)
+	assert.Equal(t, database.HashMismatch, err)
+	err = s.UpsertData(context.Background(), dataUpdated, database.UpsertOptimizationExisting)
 	assert.Equal(t, database.HashMismatch, err)
 
-	err = s.UpsertData(context.Background(), dataUpdated, true, true)
+	dataUpdated.Hash = data.Hash
+	err = s.UpsertData(context.Background(), dataUpdated, database.UpsertOptimizationSkip)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
@@ -162,7 +165,7 @@ func TestDataE2EWithDB(t *testing.T) {
 func TestUpsertDataFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertData(context.Background(), &fftypes.Data{}, true, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -173,7 +176,7 @@ func TestUpsertDataFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataID := fftypes.NewUUID()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -185,7 +188,7 @@ func TestUpsertDataFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataID := fftypes.NewUUID()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -193,11 +196,12 @@ func TestUpsertDataFailInsert(t *testing.T) {
 func TestUpsertDataFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataID.String()))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow(dataHash.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID, Hash: dataHash}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -209,7 +213,7 @@ func TestUpsertDataFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

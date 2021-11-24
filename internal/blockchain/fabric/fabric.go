@@ -199,10 +199,8 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		return err
 	}
 
-	if !fabconnectConf.GetBool(FabconnectConfigSkipEventstreamInit) {
-		if err = f.ensureEventStreams(fabconnectConf); err != nil {
-			return err
-		}
+	if err = f.ensureEventStreams(fabconnectConf); err != nil {
+		return err
 	}
 
 	f.closed = make(chan struct{})

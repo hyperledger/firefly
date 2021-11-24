@@ -53,7 +53,7 @@ func newTestEthereum() (*Ethereum, func()) {
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
 		ctx:          ctx,
-		client:       resty.New().SetHostURL("http://localhost:12345"),
+		client:       resty.New().SetBaseURL("http://localhost:12345"),
 		instancePath: "/instances/0x12345",
 		topic:        "topic1",
 		prefixShort:  defaultPrefixShort,
@@ -173,7 +173,6 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "!!!://")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utEthconnectConf.Set(EthconnectConfigSkipEventstreamInit, true)
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)

@@ -5,6 +5,7 @@ package definitionsmocks
 import (
 	context "context"
 
+	definitions "github.com/hyperledger/firefly/internal/definitions"
 	database "github.com/hyperledger/firefly/pkg/database"
 
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
@@ -93,15 +94,15 @@ func (_m *DefinitionHandlers) GetGroups(ctx context.Context, filter database.And
 	return r0, r1, r2
 }
 
-// HandleDefinitionBroadcast provides a mock function with given fields: ctx, msg, data
-func (_m *DefinitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (bool, error) {
+// HandleSystemBroadcast provides a mock function with given fields: ctx, msg, data
+func (_m *DefinitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (definitions.SystemBroadcastAction, error) {
 	ret := _m.Called(ctx, msg, data)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, []*fftypes.Data) bool); ok {
+	var r0 definitions.SystemBroadcastAction
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, []*fftypes.Data) definitions.SystemBroadcastAction); ok {
 		r0 = rf(ctx, msg, data)
 	} else {
-		r0 = ret.Get(0).(bool)
+		r0 = ret.Get(0).(definitions.SystemBroadcastAction)
 	}
 
 	var r1 error

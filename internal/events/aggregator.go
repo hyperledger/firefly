@@ -416,11 +416,14 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	if msg.Header.Type == fftypes.MessageTypeTransferBroadcast || msg.Header.Type == fftypes.MessageTypeTransferPrivate {
 		fb := database.TokenTransferQueryFactory.NewFilter(ctx)
 		filter := fb.And(
-			fb.Eq("messagehash", msg.Hash),
+			fb.Eq("message", msg.Header.ID),
 		)
 		if transfers, _, err := ag.database.GetTokenTransfers(ctx, filter); err != nil || len(transfers) == 0 {
-			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Hash)
+			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
 			return false, err
+		} else if !msg.Hash.Equals(transfers[0].MessageHash) {
+			log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
+			return false, nil
 		}
 	}
 
@@ -431,20 +434,23 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the system events they depend on.
-		if valid, err = ag.definitions.HandleDefinitionBroadcast(ctx, msg, data); err != nil {
-			// Should only return errors that are retryable
+		var action definitions.SystemBroadcastAction
+		action, err = ag.definitions.HandleSystemBroadcast(ctx, msg, data)
+		if action == definitions.ActionRetry || action == definitions.ActionWait {
 			return false, err
 		}
+		valid = action == definitions.ActionConfirm
+
 	case msg.Header.Type == fftypes.MessageTypeGroupInit:
-		// Already handled as part of resolving the context.
-		valid = true
-		eventType = fftypes.EventTypeGroupConfirmed
+		// Already handled as part of resolving the context - do nothing.
+
 	case len(msg.Data) > 0:
 		valid, err = ag.data.ValidateAll(ctx, data)
 		if err != nil {
 			return false, err
 		}
 	}
+
 	// This message is now confirmed
 	state := fftypes.MessageStateConfirmed
 	if !valid {

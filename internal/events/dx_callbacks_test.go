@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -681,7 +682,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
 		Identity: "0x12345",
 	}, nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
 
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -731,7 +732,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
 		Identity: "0x12345",
 	}, nil)
-	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
 
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -781,8 +782,8 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
 		Identity: "0x12345",
 	}, nil)
-	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err = em.MessageReceived(mdx, "peer1", b)

@@ -62,7 +62,7 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 	}
 
 	if account != nil {
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("tokenbalance").
 				Set("balance", balance).
 				Set("updated", fftypes.Now()).
@@ -199,6 +199,7 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 	if err != nil {
 		return nil, nil, err
 	}
+	fi.CountExpr = "DISTINCT key"
 
 	rows, tx, err := s.query(ctx, query)
 	if err != nil {
@@ -220,11 +221,13 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 
 func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select("pool_id").Distinct().From("tokenbalance").Where(sq.Eq{"key": key}),
-		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
+		sq.Select("pool_id").Distinct().From("tokenbalance"),
+		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"},
+		sq.Eq{"key": key})
 	if err != nil {
 		return nil, nil, err
 	}
+	fi.CountExpr = "DISTINCT pool_id"
 
 	rows, tx, err := s.query(ctx, query)
 	if err != nil {

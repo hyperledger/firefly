@@ -45,6 +45,6 @@ type Provider interface {
 	// PlaceholderFormat gets the Squirrel placeholder format
 	PlaceholderFormat() sq.PlaceholderFormat
 
-	// UpdateInsertForReturn updates the insert query for returning the Sequenc, and returns whether it needs to be run as a query to return the Sequence field
+	// UpdateInsertForSequenceReturn updates the INSERT query for returning the Sequence, and returns whether it needs to be run as a query to return the Sequence field
 	UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (updatedInsert sq.InsertBuilder, runAsQuery bool)
 }

@@ -47,6 +47,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Connector:  "erc1155",
 		Symbol:     "COIN",
 		Message:    fftypes.NewUUID(),
+		State:      fftypes.TokenPoolStateConfirmed,
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
@@ -80,7 +81,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
 	// Query back the token pool (by protocol ID)
-	poolRead, err = s.GetTokenPoolByProtocolID(ctx, pool.ProtocolID)
+	poolRead, err = s.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID)
 	assert.NoError(t, err)
 	assert.NotNil(t, poolRead)
 	poolReadJson, _ = json.Marshal(&poolRead)

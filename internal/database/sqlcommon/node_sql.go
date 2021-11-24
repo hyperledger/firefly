@@ -85,7 +85,7 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 
 	if existing {
 		// Update the node
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("nodes").
 				// Note we do not update ID
 				Set("message_id", node.Message).
@@ -218,7 +218,7 @@ func (s *SQLCommon) UpdateNode(ctx context.Context, id *fftypes.UUID, update dat
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

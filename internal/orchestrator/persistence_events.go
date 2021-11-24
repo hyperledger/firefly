@@ -39,12 +39,17 @@ func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUI
 	case eventType == fftypes.ChangeEventTypeCreated && resType == database.CollectionEvents:
 		or.events.NewEvents() <- sequence
 	}
+	var ces *int64
+	if eventType == fftypes.ChangeEventTypeCreated {
+		// Sequence is only provided on create events
+		ces = &sequence
+	}
 	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,
 		ID:         id,
-		Sequence:   &sequence,
+		Sequence:   ces,
 	})
 }
 

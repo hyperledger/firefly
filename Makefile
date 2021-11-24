@@ -24,6 +24,7 @@ ${MOCKERY}:
 ${LINT}:
 		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
+
 define makemock
 mocks: mocks-$(strip $(1))-$(strip $(2))
 mocks-$(strip $(1))-$(strip $(2)): ${MOCKERY}
@@ -50,6 +51,7 @@ $(eval $(call makemock, internal/identity,         Manager,            identitym
 $(eval $(call makemock, internal/batchpin,         Submitter,          batchpinmocks))
 $(eval $(call makemock, internal/sysmessaging,     SystemEvents,       sysmessagingmocks))
 $(eval $(call makemock, internal/sysmessaging,     MessageSender,      sysmessagingmocks))
+$(eval $(call makemock, internal/sysmessaging,     LocalNodeInfo,      sysmessagingmocks))
 $(eval $(call makemock, internal/syncasync,        Bridge,             syncasyncmocks))
 $(eval $(call makemock, internal/data,             Manager,            datamocks))
 $(eval $(call makemock, internal/batch,            Manager,            batchmocks))

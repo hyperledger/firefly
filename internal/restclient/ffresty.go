@@ -75,7 +75,7 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 
 	url := strings.TrimSuffix(staticConfig.GetString(HTTPConfigURL), "/")
 	if url != "" {
-		client.SetHostURL(url)
+		client.SetBaseURL(url)
 		log.L(ctx).Debugf("Created REST client to %s", url)
 	}
 

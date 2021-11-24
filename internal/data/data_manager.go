@@ -260,7 +260,7 @@ func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validato
 	}
 	err = data.Seal(ctx)
 	if err == nil {
-		err = dm.database.UpsertData(ctx, data, false, false)
+		err = dm.database.UpsertData(ctx, data, database.UpsertOptimizationNew)
 	}
 	if err != nil {
 		return nil, nil, err

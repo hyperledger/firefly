@@ -79,7 +79,7 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 
 	if existing {
 		// Update the organization
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("orgs").
 				// Note we do not update ID
 				Set("message_id", organization.Message).
@@ -215,7 +215,7 @@ func (s *SQLCommon) UpdateOrganization(ctx context.Context, id *fftypes.UUID, up
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}
