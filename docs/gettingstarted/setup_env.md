@@ -58,7 +58,7 @@ within your stack. By default, it will include the following:
   - A [SQLite](https://www.sqlite.org) relational database is the default option
 - Token connector: one per member
   - The token service for your node
-  - A instance of [firefly-tokens-erc1155](https://github.com/kaleido-io/firefly-tokens-erc1155) is the default option
+  - A instance of [firefly-tokens-erc1155](https://github.com/hyperledger/firefly-tokens-erc1155) is the default option
 
 ## Check your `ff` CLI is healthy
 
