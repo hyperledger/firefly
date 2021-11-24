@@ -66,7 +66,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 	if existing {
 
 		// Update the group
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("groups").
 				Set("message_id", group.Message).
 				Set("namespace", group.Namespace).
@@ -303,7 +303,7 @@ func (s *SQLCommon) UpdateGroups(ctx context.Context, filter database.Filter, up
 		return err
 	}
 
-	err = s.updateTx(ctx, tx, query, nil /* no change event for filter based update */)
+	_, err = s.updateTx(ctx, tx, query, nil /* no change event for filter based update */)
 	if err != nil {
 		return err
 	}

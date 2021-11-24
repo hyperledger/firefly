@@ -17,7 +17,6 @@
 package orchestrator
 
 import (
-	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -29,7 +28,6 @@ type boundCallbacks struct {
 	bi blockchain.Plugin
 	dx dataexchange.Plugin
 	ei events.EventManager
-	am assets.Manager
 }
 
 func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error {
@@ -56,8 +54,8 @@ func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) error {
 	return bc.ei.MessageReceived(bc.dx, peerID, data)
 }
 
-func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.am.TokenPoolCreated(plugin, pool, protocolTxID, additionalInfo)
+func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.TokenPoolCreated(plugin, pool, protocolTxID, additionalInfo)
 }
 
 func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {

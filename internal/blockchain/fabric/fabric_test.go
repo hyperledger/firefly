@@ -55,7 +55,7 @@ func newTestFabric() (*Fabric, func()) {
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
 		ctx:            ctx,
-		client:         resty.New().SetHostURL("http://localhost:12345"),
+		client:         resty.New().SetBaseURL("http://localhost:12345"),
 		defaultChannel: "firefly",
 		chaincode:      "firefly",
 		topic:          "topic1",

@@ -78,7 +78,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 
 	if existing {
 		// Update the namespace
-		if err = s.updateTx(ctx, tx,
+		if _, err = s.updateTx(ctx, tx,
 			sq.Update("namespaces").
 				// Note we do not update ID
 				Set("message_id", namespace.Message).

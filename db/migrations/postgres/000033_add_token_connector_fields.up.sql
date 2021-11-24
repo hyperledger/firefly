@@ -14,4 +14,7 @@ UPDATE tokentransfer SET connector = pool.connector
 ALTER TABLE tokenaccount ALTER COLUMN connector SET NOT NULL;
 ALTER TABLE tokentransfer ALTER COLUMN connector SET NOT NULL;
 
+DROP INDEX tokentransfer_protocolid;
+CREATE UNIQUE INDEX tokentransfer_protocolid ON tokentransfer(connector,protocol_id);
+
 COMMIT;

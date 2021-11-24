@@ -115,19 +115,19 @@ func TestCreateTokenPool(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/pool", httpURL),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			body := make(fftypes.JSONObject)
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId":  opID.String(),
-				"trackingId": pool.TX.ID.String(),
-				"operator":   "0x123",
-				"type":       "fungible",
+				"requestId": opID.String(),
+				"operator":  "0x123",
+				"type":      "fungible",
 				"config": map[string]interface{}{
 					"foo": "bar",
 				},
+				"data": `{"tx":"` + pool.TX.ID.String() + `"}`,
 			}, body)
 
 			res := &http.Response{
@@ -156,10 +156,70 @@ func TestCreateTokenPoolError(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/pool", httpURL),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
 	err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
+	assert.Regexp(t, "FF10274", err)
+}
+
+func TestActivateTokenPool(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	opID := fftypes.NewUUID()
+	pool := &fftypes.TokenPool{
+		ProtocolID: "N1",
+	}
+	txInfo := map[string]interface{}{
+		"foo": "bar",
+	}
+	tx := &fftypes.Transaction{
+		Info: txInfo,
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"requestId":   opID.String(),
+				"poolId":      "N1",
+				"transaction": txInfo,
+			}, body)
+
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 202,
+			}
+			return res, nil
+		})
+
+	err := h.ActivateTokenPool(context.Background(), opID, pool, tx)
+	assert.NoError(t, err)
+}
+
+func TestActivateTokenPoolError(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
+	tx := &fftypes.Transaction{}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+
+	err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, tx)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -185,12 +245,12 @@ func TestMintTokens(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"poolId":     "123",
-				"to":         "user1",
-				"amount":     "10",
-				"operator":   "0x123",
-				"requestId":  opID.String(),
-				"trackingId": mint.TX.ID.String(),
+				"poolId":    "123",
+				"to":        "user1",
+				"amount":    "10",
+				"operator":  "0x123",
+				"requestId": opID.String(),
+				"data":      `{"tx":"` + mint.TX.ID.String() + `"}`,
 			}, body)
 
 			res := &http.Response{
@@ -249,7 +309,7 @@ func TestBurnTokens(t *testing.T) {
 				"amount":     "10",
 				"operator":   "0x123",
 				"requestId":  opID.String(),
-				"trackingId": burn.TX.ID.String(),
+				"data":       `{"tx":"` + burn.TX.ID.String() + `"}`,
 			}, body)
 
 			res := &http.Response{
@@ -310,7 +370,7 @@ func TestTransferTokens(t *testing.T) {
 				"amount":     "10",
 				"operator":   "0x123",
 				"requestId":  opID.String(),
-				"trackingId": transfer.TX.ID.String(),
+				"data":       `{"tx":"` + transfer.TX.ID.String() + `"}`,
 			}, body)
 
 			res := &http.Response{
@@ -357,87 +417,241 @@ func TestEvents(t *testing.T) {
 	opID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
 
-	fromServer <- `{"id":"2","event":"receipt","data":{}}`
-	fromServer <- `{"id":"3","event":"receipt","data":{"id":"abc"}}`
+	fromServer <- fftypes.JSONObject{
+		"id":    "2",
+		"event": "receipt",
+		"data":  fftypes.JSONObject{},
+	}.String()
+
+	fromServer <- fftypes.JSONObject{
+		"id":    "3",
+		"event": "receipt",
+		"data":  fftypes.JSONObject{"id": "abc"},
+	}.String()
 
 	// receipt: success
 	mcb.On("TokenOpUpdate", h, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
-	fromServer <- `{"id":"4","event":"receipt","data":{"id":"` + opID.String() + `","success":true}}`
+	fromServer <- fftypes.JSONObject{
+		"id":    "4",
+		"event": "receipt",
+		"data": fftypes.JSONObject{
+			"id":      opID.String(),
+			"success": true,
+		},
+	}.String()
 
 	// receipt: failure
 	mcb.On("TokenOpUpdate", h, opID, fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
-	fromServer <- `{"id":"5","event":"receipt","data":{"id":"` + opID.String() + `","success":false}}`
+	fromServer <- fftypes.JSONObject{
+		"id":    "5",
+		"event": "receipt",
+		"data": fftypes.JSONObject{
+			"id":      opID.String(),
+			"success": false,
+		},
+	}.String()
 
 	// token-pool: missing data
-	fromServer <- `{"id":"6","event":"token-pool"}`
+	fromServer <- fftypes.JSONObject{
+		"id":    "6",
+		"event": "token-pool",
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
 
-	// token-pool: invalid uuid
-	fromServer <- `{"id":"7","event":"token-pool","data":{"trackingId":"bad","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	// token-pool: invalid uuid (success)
+	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && p.TransactionID == nil
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "7",
+		"event": "token-pool",
+		"data": fftypes.JSONObject{
+			"type":     "fungible",
+			"poolId":   "F1",
+			"operator": "0x0",
+			"data":     fftypes.JSONObject{"tx": "bad"}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
 
 	// token-pool: success
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *fftypes.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && *p.TX.ID == *txID
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"8","event":"token-pool","data":{"trackingId":"` + txID.String() + `","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && txID.Equals(p.TransactionID)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "8",
+		"event": "token-pool",
+		"data": fftypes.JSONObject{
+			"type":     "fungible",
+			"poolId":   "F1",
+			"operator": "0x0",
+			"data":     fftypes.JSONObject{"tx": txID.String()}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
 	// token-mint: missing data
-	fromServer <- `{"id":"9","event":"token-mint"}`
+	fromServer <- fftypes.JSONObject{
+		"id":    "9",
+		"event": "token-mint",
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
 
 	// token-mint: invalid amount
-	fromServer <- `{"id":"10","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"bad","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- fftypes.JSONObject{
+		"id":    "10",
+		"event": "token-mint",
+		"data": fftypes.JSONObject{
+			"poolId":     "F1",
+			"tokenIndex": "0",
+			"operator":   "0x0",
+			"to":         "0x0",
+			"amount":     "bad",
+			"data":       fftypes.JSONObject{"tx": txID.String()}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"10"},"event":"ack"}`, string(msg))
 
 	// token-mint: success
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 2 && t.To == "0x0" && t.TokenIndex == "" && *t.TX.ID == *txID
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"11","event":"token-mint","data":{"poolId":"F1","operator":"0x0","to":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "11",
+		"event": "token-mint",
+		"data": fftypes.JSONObject{
+			"poolId":   "F1",
+			"operator": "0x0",
+			"to":       "0x0",
+			"amount":   "2",
+			"data":     fftypes.JSONObject{"tx": txID.String()}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"11"},"event":"ack"}`, string(msg))
 
 	// token-mint: invalid uuid (success)
 	mcb.On("TokensTransferred", h, "N1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 1 && t.To == "0x0" && t.TokenIndex == "1"
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"12","event":"token-mint","data":{"poolId":"N1","tokenIndex":"1","operator":"0x0","to":"0x0","amount":"1","trackingId":"bad","transaction":{"transactionHash":"abc"}}}`
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "12",
+		"event": "token-mint",
+		"data": fftypes.JSONObject{
+			"poolId":     "N1",
+			"tokenIndex": "1",
+			"operator":   "0x0",
+			"to":         "0x0",
+			"amount":     "1",
+			"data":       fftypes.JSONObject{"tx": "bad"}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"12"},"event":"ack"}`, string(msg))
 
 	// token-transfer: missing from
-	fromServer <- `{"id":"13","event":"token-transfer","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- fftypes.JSONObject{
+		"id":    "13",
+		"event": "token-transfer",
+		"data": fftypes.JSONObject{
+			"poolId":     "F1",
+			"tokenIndex": "0",
+			"operator":   "0x0",
+			"to":         "0x0",
+			"amount":     "2",
+			"data":       fftypes.JSONObject{"tx": txID.String()}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"13"},"event":"ack"}`, string(msg))
 
 	// token-transfer: bad message hash (success)
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == ""
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"14","event":"token-transfer","data":{"poolId":"F1","operator":"0x0","from":"0x0","to":"0x1","amount":"2","trackingId":"` + txID.String() + `","data":"bad","transaction":{"transactionHash":"abc"}}}`
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "14",
+		"event": "token-transfer",
+		"data": fftypes.JSONObject{
+			"poolId":   "F1",
+			"operator": "0x0",
+			"from":     "0x0",
+			"to":       "0x1",
+			"amount":   "2",
+			"data":     fftypes.JSONObject{"tx": txID.String(), "messageHash": "bad"}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"14"},"event":"ack"}`, string(msg))
 
 	// token-transfer: success
+	messageID := fftypes.NewUUID()
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == ""
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"15","event":"token-transfer","data":{"poolId":"F1","operator":"0x0","from":"0x0","to":"0x1","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && messageID.Equals(t.Message)
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "15",
+		"event": "token-transfer",
+		"data": fftypes.JSONObject{
+			"poolId":   "F1",
+			"operator": "0x0",
+			"from":     "0x0",
+			"to":       "0x1",
+			"amount":   "2",
+			"data":     fftypes.JSONObject{"tx": txID.String(), "message": messageID.String()}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"15"},"event":"ack"}`, string(msg))
 
 	// token-burn: success
 	mcb.On("TokensTransferred", h, "F1", mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.TokenIndex == "0"
-	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"16","event":"token-burn","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","from":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "16",
+		"event": "token-burn",
+		"data": fftypes.JSONObject{
+			"poolId":     "F1",
+			"tokenIndex": "0",
+			"operator":   "0x0",
+			"from":       "0x0",
+			"amount":     "2",
+			"data":       fftypes.JSONObject{"tx": txID.String()}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "abc",
+			},
+		},
+	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"16"},"event":"ack"}`, string(msg))
 

@@ -221,7 +221,8 @@ func (s *transferSender) resolve(ctx context.Context) error {
 		if err = sender.Prepare(ctx); err != nil {
 			return err
 		}
-		s.transfer.MessageHash = s.transfer.Message.Hash
+		s.transfer.TokenTransfer.Message = s.transfer.Message.Header.ID
+		s.transfer.TokenTransfer.MessageHash = s.transfer.Message.Hash
 	}
 	return nil
 }
@@ -270,9 +271,12 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err = s.mgr.GetTokenPool(ctx, s.namespace, s.transfer.Connector, s.transfer.Pool)
+		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
 			return err
+		}
+		if pool.State != fftypes.TokenPoolStateConfirmed {
+			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
 		}
 
 		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
@@ -284,7 +288,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		}
 		if s.transfer.Message != nil {
 			s.transfer.Message.State = fftypes.MessageStateStaged
-			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, false, false)
+			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, database.UpsertOptimizationNew)
 		}
 		return err
 	})

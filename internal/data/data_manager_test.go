@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -405,7 +406,7 @@ func TestResolveInlineDataValueNoValidatorOK(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 
-	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(nil)
+	mdi.On("UpsertData", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{Value: fftypes.Byteable(`{"some":"json"}`)},
@@ -421,7 +422,7 @@ func TestResolveInlineDataValueNoValidatorStoreFail(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 
-	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	_, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{Value: fftypes.Byteable(`{"some":"json"}`)},
@@ -434,7 +435,7 @@ func TestResolveInlineDataValueWithValidation(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 
-	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(nil)
+	mdi.On("UpsertData", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("GetDatatypeByName", ctx, "ns1", "customer", "0.0.1").Return(&fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,

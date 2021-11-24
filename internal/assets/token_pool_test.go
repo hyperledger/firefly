@@ -425,6 +425,42 @@ func TestCreateTokenPoolByTypeConfirm(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestActivateTokenPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Namespace: "ns1",
+		Connector: "magic-tokens",
+	}
+	tx := &fftypes.Transaction{}
+
+	mdm := am.data.(*datamocks.Manager)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, tx).Return(nil)
+
+	err := am.ActivateTokenPool(context.Background(), pool, tx)
+	assert.NoError(t, err)
+}
+
+func TestActivateTokenPoolBadConnector(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Namespace: "ns1",
+		Connector: "bad",
+	}
+	tx := &fftypes.Transaction{}
+
+	mdm := am.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+
+	err := am.ActivateTokenPool(context.Background(), pool, tx)
+	assert.Regexp(t, "FF10272", err)
+}
+
 func TestGetTokenPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -581,12 +617,4 @@ func TestGetTokenPoolsByTypeBadNamespace(t *testing.T) {
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := am.GetTokenPoolsByType(context.Background(), "", "magic-tokens", f)
 	assert.Regexp(t, "FF10131", err)
-}
-
-func TestValidateTokenPoolTx(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	err := am.ValidateTokenPoolTx(context.Background(), nil, "")
-	assert.NoError(t, err)
 }

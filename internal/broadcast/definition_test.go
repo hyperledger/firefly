@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,7 +37,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
@@ -53,7 +54,7 @@ func TestBroadcastDefinitionAsNodeUpsertFail(t *testing.T) {
 	defer cancel()
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
@@ -81,7 +82,7 @@ func TestBroadcastRootOrgDefinitionPassedThroughAnyIdentity(t *testing.T) {
 	mim.On("OrgDID", mock.Anything, mock.Anything).Return("did:firefly:org/12345", nil)
 	// Should call through to upsert data, stop test there
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastRootOrgDefinition(bm.ctx, &fftypes.Organization{
 		ID: fftypes.NewUUID(),

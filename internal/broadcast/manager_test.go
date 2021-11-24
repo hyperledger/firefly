@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -81,7 +82,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 	defer cancel()
 
 	msg := &fftypes.MessageInOut{}
-	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, &msg.Message, false, false).Return(nil)
+	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, &msg.Message, database.UpsertOptimizationNew).Return(nil)
 
 	broadcast := broadcastSender{
 		mgr: bm,

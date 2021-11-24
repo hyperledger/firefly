@@ -161,8 +161,8 @@ func beforeE2ETest(t *testing.T) *testState {
 		httpProtocolClient2 = "https"
 		websocketProtocolClient2 = "wss"
 	}
-	ts.client1.SetHostURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort))
-	ts.client2.SetHostURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort))
+	ts.client1.SetBaseURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort))
+	ts.client2.SetBaseURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort))
 
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")
@@ -231,6 +231,17 @@ func beforeE2ETest(t *testing.T) *testState {
 		t.Log("WebSockets closed")
 	}
 	return ts
+}
+
+func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgType fftypes.MessageType) *fftypes.EventDelivery {
+	for {
+		ed := <-c
+		if ed.Type == fftypes.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
+			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
+			return ed
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
 }
 
 func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {

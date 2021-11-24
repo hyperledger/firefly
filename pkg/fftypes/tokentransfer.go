@@ -29,6 +29,7 @@ type TokenTransfer struct {
 	LocalID     *UUID             `json:"localId,omitempty"`
 	Pool        *UUID             `json:"pool,omitempty"`
 	TokenIndex  string            `json:"tokenIndex,omitempty"`
+	URI         string            `json:"uri,omitempty"`
 	Connector   string            `json:"connector,omitempty"`
 	Namespace   string            `json:"namespace,omitempty"`
 	Key         string            `json:"key,omitempty"`
@@ -36,6 +37,7 @@ type TokenTransfer struct {
 	To          string            `json:"to,omitempty"`
 	Amount      BigInt            `json:"amount"`
 	ProtocolID  string            `json:"protocolId,omitempty"`
+	Message     *UUID             `json:"message,omitempty"`
 	MessageHash *Bytes32          `json:"messageHash,omitempty"`
 	Created     *FFTime           `json:"created,omitempty"`
 	TX          TransactionRef    `json:"tx,omitempty"`
