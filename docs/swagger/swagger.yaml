@@ -66,6 +66,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -73,6 +80,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -174,6 +187,10 @@ paths:
                     name:
                       type: string
                     type:
+                      enum:
+                      - local
+                      - broadcast
+                      - system
                       type: string
                   type: object
                 type: array
@@ -221,6 +238,10 @@ paths:
                   name:
                     type: string
                   type:
+                    enum:
+                    - local
+                    - broadcast
+                    - system
                     type: string
                 type: object
           description: Success
@@ -237,6 +258,10 @@ paths:
                   name:
                     type: string
                   type:
+                    enum:
+                    - local
+                    - broadcast
+                    - system
                     type: string
                 type: object
           description: Success
@@ -275,6 +300,10 @@ paths:
                   name:
                     type: string
                   type:
+                    enum:
+                    - local
+                    - broadcast
+                    - system
                     type: string
                 type: object
           description: Success
@@ -484,6 +513,13 @@ paths:
                                   txtype:
                                     type: string
                                   type:
+                                    enum:
+                                    - definition
+                                    - broadcast
+                                    - private
+                                    - groupinit
+                                    - transfer_broadcast
+                                    - transfer_private
                                     type: string
                                 type: object
                               pins:
@@ -491,6 +527,12 @@ paths:
                                   type: string
                                 type: array
                               state:
+                                enum:
+                                - staged
+                                - ready
+                                - pending
+                                - confirmed
+                                - rejected
                                 type: string
                             type: object
                           type: array
@@ -620,6 +662,13 @@ paths:
                                 txtype:
                                   type: string
                                 type:
+                                  enum:
+                                  - definition
+                                  - broadcast
+                                  - private
+                                  - groupinit
+                                  - transfer_broadcast
+                                  - transfer_private
                                   type: string
                               type: object
                             pins:
@@ -627,6 +676,12 @@ paths:
                                 type: string
                               type: array
                             state:
+                              enum:
+                              - staged
+                              - ready
+                              - pending
+                              - confirmed
+                              - rejected
                               type: string
                           type: object
                         type: array
@@ -722,6 +777,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -729,6 +791,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -838,6 +906,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -845,6 +920,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -1476,6 +1557,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -1483,6 +1571,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -1592,6 +1686,10 @@ paths:
                     namespace:
                       type: string
                     validator:
+                      enum:
+                      - json
+                      - none
+                      - definition
                       type: string
                     value:
                       format: byte
@@ -1661,6 +1759,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -1683,6 +1785,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -1734,6 +1840,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -1790,6 +1900,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -1904,6 +2018,16 @@ paths:
                       format: int64
                       type: integer
                     type:
+                      enum:
+                      - message_confirmed
+                      - message_rejected
+                      - namespace_confirmed
+                      - datatype_confirmed
+                      - group_confirmed
+                      - token_pool_confirmed
+                      - token_pool_rejected
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
                       type: string
                   type: object
                 type: array
@@ -1950,6 +2074,16 @@ paths:
                     format: int64
                     type: integer
                   type:
+                    enum:
+                    - message_confirmed
+                    - message_rejected
+                    - namespace_confirmed
+                    - datatype_confirmed
+                    - group_confirmed
+                    - token_pool_confirmed
+                    - token_pool_rejected
+                    - token_transfer_confirmed
+                    - token_transfer_op_failed
                     type: string
                 type: object
           description: Success
@@ -2137,6 +2271,13 @@ paths:
                         txtype:
                           type: string
                         type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
                           type: string
                       type: object
                     pins:
@@ -2144,6 +2285,12 @@ paths:
                         type: string
                       type: array
                     state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
                       type: string
                   type: object
                 type: array
@@ -2239,6 +2386,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -2246,6 +2400,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -2421,6 +2581,16 @@ paths:
                       format: int64
                       type: integer
                     type:
+                      enum:
+                      - message_confirmed
+                      - message_rejected
+                      - namespace_confirmed
+                      - datatype_confirmed
+                      - group_confirmed
+                      - token_pool_confirmed
+                      - token_pool_rejected
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
                       type: string
                   type: object
                 type: array
@@ -2479,6 +2649,14 @@ paths:
                       type: string
                     tx: {}
                     type:
+                      enum:
+                      - blockchain_batch_pin
+                      - publicstorage_batch_broadcast
+                      - dataexchange_batch_send
+                      - dataexchange_blob_send
+                      - token_create_pool
+                      - token_announce_pool
+                      - token_transfer
                       type: string
                     updated: {}
                   type: object
@@ -2535,6 +2713,11 @@ paths:
                       signer:
                         type: string
                       type:
+                        enum:
+                        - none
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
                         type: string
                     type: object
                 type: object
@@ -2649,6 +2832,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -2656,6 +2846,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -2696,6 +2892,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -2703,6 +2906,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -2830,6 +3039,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -2837,6 +3053,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -2877,6 +3099,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -2884,6 +3113,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3021,6 +3256,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3028,6 +3270,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3173,6 +3421,14 @@ paths:
                       type: string
                     tx: {}
                     type:
+                      enum:
+                      - blockchain_batch_pin
+                      - publicstorage_batch_broadcast
+                      - dataexchange_batch_send
+                      - dataexchange_blob_send
+                      - token_create_pool
+                      - token_announce_pool
+                      - token_transfer
                       type: string
                     updated: {}
                   type: object
@@ -3231,6 +3487,14 @@ paths:
                     type: string
                   tx: {}
                   type:
+                    enum:
+                    - blockchain_batch_pin
+                    - publicstorage_batch_broadcast
+                    - dataexchange_batch_send
+                    - dataexchange_blob_send
+                    - token_create_pool
+                    - token_announce_pool
+                    - token_transfer
                     type: string
                   updated: {}
                 type: object
@@ -3370,6 +3634,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3377,6 +3648,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3500,6 +3777,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3507,6 +3791,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -4279,6 +4569,10 @@ paths:
                     standard:
                       type: string
                     state:
+                      enum:
+                      - unknown
+                      - pending
+                      - confirmed
                       type: string
                     symbol:
                       type: string
@@ -4289,6 +4583,9 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - fungible
+                      - nonfungible
                       type: string
                   type: object
                 type: array
@@ -4370,6 +4667,10 @@ paths:
                   standard:
                     type: string
                   state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
                     type: string
                   symbol:
                     type: string
@@ -4380,6 +4681,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -4407,6 +4711,10 @@ paths:
                   standard:
                     type: string
                   state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
                     type: string
                   symbol:
                     type: string
@@ -4417,6 +4725,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -4479,6 +4790,10 @@ paths:
                   standard:
                     type: string
                   state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
                     type: string
                   symbol:
                     type: string
@@ -4489,6 +4804,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -4797,6 +5115,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -4832,6 +5154,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -5016,6 +5342,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -5051,6 +5381,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -5221,6 +5555,10 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - mint
+                      - burn
+                      - transfer
                       type: string
                   type: object
                 type: array
@@ -5405,6 +5743,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -5440,6 +5782,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -5931,6 +6277,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -5966,6 +6316,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -6170,6 +6524,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -6205,6 +6563,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -6349,6 +6711,10 @@ paths:
                     standard:
                       type: string
                     state:
+                      enum:
+                      - unknown
+                      - pending
+                      - confirmed
                       type: string
                     symbol:
                       type: string
@@ -6359,6 +6725,9 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - fungible
+                      - nonfungible
                       type: string
                   type: object
                 type: array
@@ -6435,6 +6804,10 @@ paths:
                   standard:
                     type: string
                   state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
                     type: string
                   symbol:
                     type: string
@@ -6445,6 +6818,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -6472,6 +6848,10 @@ paths:
                   standard:
                     type: string
                   state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
                     type: string
                   symbol:
                     type: string
@@ -6482,6 +6862,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -6537,6 +6920,10 @@ paths:
                   standard:
                     type: string
                   state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
                     type: string
                   symbol:
                     type: string
@@ -6547,6 +6934,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -6709,6 +7099,10 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - mint
+                      - burn
+                      - transfer
                       type: string
                   type: object
                 type: array
@@ -6880,6 +7274,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -6915,6 +7313,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -6978,6 +7380,10 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
                     type: string
                 type: object
           description: Success
@@ -7111,6 +7517,11 @@ paths:
                         signer:
                           type: string
                         type:
+                          enum:
+                          - none
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
                           type: string
                       type: object
                   type: object
@@ -7251,6 +7662,11 @@ paths:
                       signer:
                         type: string
                       type:
+                        enum:
+                        - none
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
                         type: string
                     type: object
                 type: object
@@ -7307,6 +7723,11 @@ paths:
                         signer:
                           type: string
                         type:
+                          enum:
+                          - none
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
                           type: string
                       type: object
                   type: object
@@ -7900,6 +8321,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -7907,6 +8335,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -7968,6 +8402,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -7975,6 +8416,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -8048,6 +8495,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -8055,6 +8509,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
