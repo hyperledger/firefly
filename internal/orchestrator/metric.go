@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) getMetricIntervals(ctx context.Context, startTime string, endTime string, numPeriods int64) ([]*fftypes.MetricInterval, error) {
+func (or *orchestrator) getMetricIntervals(startTime string, endTime string, numPeriods int64) ([]*fftypes.MetricInterval, error) {
 	startInt, err := strconv.ParseInt(startTime, 10, 64)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (or *orchestrator) GetMetrics(ctx context.Context, ns string, startTime str
 	if numPeriods > 100 {
 		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, "100")
 	}
-	metricIntervals, err := or.getMetricIntervals(ctx, startTime, endTime, numPeriods)
+	metricIntervals, err := or.getMetricIntervals(startTime, endTime, numPeriods)
 	if err != nil {
 		return nil, err
 	}
