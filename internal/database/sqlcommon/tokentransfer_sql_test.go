@@ -40,6 +40,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		Type:        fftypes.TokenTransferTypeTransfer,
 		Pool:        fftypes.NewUUID(),
 		TokenIndex:  "1",
+		URI:         "firefly://token/1",
 		Connector:   "erc1155",
 		Namespace:   "ns1",
 		From:        "0x01",

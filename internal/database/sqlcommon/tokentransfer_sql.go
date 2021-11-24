@@ -33,6 +33,7 @@ var (
 		"local_id",
 		"pool_id",
 		"token_index",
+		"uri",
 		"connector",
 		"namespace",
 		"key",
@@ -85,6 +86,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("local_id", transfer.LocalID).
 				Set("pool_id", transfer.Pool).
 				Set("token_index", transfer.TokenIndex).
+				Set("uri", transfer.URI).
 				Set("connector", transfer.Connector).
 				Set("namespace", transfer.Namespace).
 				Set("key", transfer.Key).
@@ -112,6 +114,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.LocalID,
 					transfer.Pool,
 					transfer.TokenIndex,
+					transfer.URI,
 					transfer.Connector,
 					transfer.Namespace,
 					transfer.Key,
@@ -143,6 +146,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.LocalID,
 		&transfer.Pool,
 		&transfer.TokenIndex,
+		&transfer.URI,
 		&transfer.Connector,
 		&transfer.Namespace,
 		&transfer.Key,

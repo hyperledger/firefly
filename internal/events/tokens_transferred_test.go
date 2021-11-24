@@ -35,9 +35,11 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
+	uri := "firefly://token/1"
 	transfer := &fftypes.TokenTransfer{
 		Type:       fftypes.TokenTransferTypeTransfer,
 		TokenIndex: "0",
+		URI:        uri,
 		Connector:  "erc1155",
 		Key:        "0x12345",
 		From:       "0x1",
@@ -187,9 +189,11 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
+	uri := "firefly://token/1"
 	transfer := &fftypes.TokenTransfer{
 		Type:       fftypes.TokenTransferTypeTransfer,
 		TokenIndex: "0",
+		URI:        uri,
 		Connector:  "erc1155",
 		Key:        "0x12345",
 		From:       "0x1",
@@ -230,9 +234,11 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
+	uri := "firefly://token/1"
 	transfer := &fftypes.TokenTransfer{
 		Type:       fftypes.TokenTransferTypeTransfer,
 		TokenIndex: "0",
+		URI:        uri,
 		Connector:  "erc1155",
 		Key:        "0x12345",
 		From:       "0x1",
