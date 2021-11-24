@@ -103,7 +103,7 @@ func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *ff
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
 	default:
-		l.Warnf("Unknown topic '%s' for system broadcast ID '%s'", msg.Header.Tag, msg.Header.ID)
+		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 		return ActionReject, nil
 	}
 	switch {

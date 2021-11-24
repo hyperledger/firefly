@@ -432,8 +432,8 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	eventType := fftypes.EventTypeMessageConfirmed
 	switch {
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
-		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
-		// dispatched subsequent events before we have processed the system events they depend on.
+		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
+		// dispatched subsequent events before we have processed the definition events they depend on.
 		var action definitions.SystemBroadcastAction
 		action, err = ag.definitions.HandleSystemBroadcast(ctx, msg, data)
 		if action == definitions.ActionRetry || action == definitions.ActionWait {
