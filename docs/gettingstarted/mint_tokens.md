@@ -109,13 +109,14 @@ Other parameters:
 All transfers (as well as mint/burn operations) support an optional `message` parameter that contains a broadcast or private
 message to be sent along with the transfer. This message follows the same convention as other FireFly messages, and may be comprised
 of text or blob data, and can provide context, metadata, or other supporting information about the transfer. The message will be
-batched, hashed, and pinned to the primary blockchain as described in [key concepts](/keyconcepts/broadcast.html).
+batched, hashed, and pinned to the primary blockchain as described in [key concepts](../keyconcepts/broadcast.html).
 
-The message hash will also be sent to the token connector as part of the transfer operation, to be written to the token blockchain
+The message ID and hash will also be sent to the token connector as part of the transfer operation, to be written to the token blockchain
 when the transaction is submitted. All recipients of the message will then be able to correlate the message with the token transfer.
 
 `POST` `/api/v1/namespaces/default/tokens/transfers`
 
+Broadcast message:
 ```json
 {
   "amount": 1,
@@ -128,9 +129,29 @@ when the transaction is submitted. All recipients of the message will then be ab
 }
 ```
 
-By default, a broadcast message is used. In order to send a private message, specify `"type": "transfer_private"` in the message header,
-and include a `"group"` entry specifying the recipients. All parties in the network will be able to see the transfer (including the
-message hash), but only the recipients of the message will be able to view the actual message data.
+Private message:
+```json
+{
+  "amount": 1,
+  "to": "0x07eab7731db665caf02bc92c286f51dea81f923f",
+  "message": {
+    "header": {
+      "type": "transfer_private",
+    },
+    "group": {
+      "members": [{
+          "identity": "org_1"
+      }]
+    },
+    "data": [{
+      "value": "payment for goods"
+    }]
+  }
+}
+```
+
+Note that all parties in the network will be able to see the transfer (including the message ID and hash), but only
+the recipients of the message will be able to view the actual message data.
 
 ## Burn tokens
 
