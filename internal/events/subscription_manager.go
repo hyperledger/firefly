@@ -23,12 +23,12 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
-	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -58,7 +58,7 @@ type subscriptionManager struct {
 	database                  database.Plugin
 	data                      data.Manager
 	eventNotifier             *eventNotifier
-	syshandlers               syshandlers.SystemHandlers
+	definitions               definitions.DefinitionHandlers
 	transports                map[string]events.Plugin
 	connections               map[string]*connection
 	mux                       sync.Mutex
@@ -71,7 +71,7 @@ type subscriptionManager struct {
 	retry                     retry.Retry
 }
 
-func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Manager, en *eventNotifier, sh syshandlers.SystemHandlers) (*subscriptionManager, error) {
+func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Manager, en *eventNotifier, sh definitions.DefinitionHandlers) (*subscriptionManager, error) {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	sm := &subscriptionManager{
 		ctx:                       ctx,
@@ -85,7 +85,7 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 		maxSubs:                   uint64(config.GetUint(config.SubscriptionMax)),
 		cancelCtx:                 cancelCtx,
 		eventNotifier:             en,
-		syshandlers:               sh,
+		definitions:               sh,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.SubscriptionsRetryInitialDelay),
 			MaximumDelay: config.GetDuration(config.SubscriptionsRetryMaxDelay),
@@ -381,7 +381,7 @@ func (sm *subscriptionManager) matchSubToConnLocked(conn *connection, sub *subsc
 	}
 	if conn.transport == sub.definition.Transport && conn.matcher(sub.definition.SubscriptionRef) {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
-			dispatcher := newEventDispatcher(sm.ctx, conn.ei, sm.database, sm.data, sm.syshandlers, conn.id, sub, sm.eventNotifier, sm.cel)
+			dispatcher := newEventDispatcher(sm.ctx, conn.ei, sm.database, sm.data, sm.definitions, conn.id, sub, sm.eventNotifier, sm.cel)
 			conn.dispatchers[*sub.definition.ID] = dispatcher
 			dispatcher.start()
 		}
@@ -418,7 +418,7 @@ func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, n
 	}
 
 	// Create the dispatcher, and start immediately
-	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.syshandlers, connID, newSub, sm.eventNotifier, sm.cel)
+	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.definitions, connID, newSub, sm.eventNotifier, sm.cel)
 	dispatcher.start()
 
 	conn.dispatchers[*subID] = dispatcher

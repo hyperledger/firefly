@@ -23,7 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -599,7 +599,7 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
-	msh := em.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
@@ -636,7 +636,7 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
-	msh := em.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
@@ -673,7 +673,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
-	msh := em.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
@@ -723,7 +723,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
-	msh := em.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
@@ -773,7 +773,7 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
-	msh := em.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
@@ -825,7 +825,7 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
-	msh := em.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
 
 	err = em.MessageReceived(mdx, "peer1", b)
@@ -867,7 +867,7 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
-	msh := em.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, nil)
 
 	err = em.MessageReceived(mdx, "peer1", b)

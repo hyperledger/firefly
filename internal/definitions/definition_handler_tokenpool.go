@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -24,38 +24,38 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *systemHandlers) confirmPoolAnnounceOp(ctx context.Context, pool *fftypes.TokenPool) error {
+func (dh *definitionHandlers) confirmPoolAnnounceOp(ctx context.Context, pool *fftypes.TokenPool) error {
 	// Find a matching operation within this transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", pool.TX.ID),
 		fb.Eq("type", fftypes.OpTypeTokenAnnouncePool),
 	)
-	if operations, _, err := sh.database.GetOperations(ctx, filter); err != nil {
+	if operations, _, err := dh.database.GetOperations(ctx, filter); err != nil {
 		return err
 	} else if len(operations) > 0 {
 		op := operations[0]
 		update := database.OperationQueryFactory.NewUpdate(ctx).
 			Set("status", fftypes.OpStatusSucceeded).
 			Set("output", fftypes.JSONObject{"message": pool.Message})
-		if err := sh.database.UpdateOperation(ctx, op.ID, update); err != nil {
+		if err := dh.database.UpdateOperation(ctx, op.ID, update); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (sh *systemHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
+func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
 	pool := announce.Pool
 
 	// Mark announce operation (if any) completed
-	if err := sh.confirmPoolAnnounceOp(ctx, pool); err != nil {
+	if err := dh.confirmPoolAnnounceOp(ctx, pool); err != nil {
 		return false, err // retryable
 	}
 
 	// Create the pool in pending state
 	pool.State = fftypes.TokenPoolStatePending
-	err = sh.database.UpsertTokenPool(ctx, pool)
+	err = dh.database.UpsertTokenPool(ctx, pool)
 	if err != nil {
 		if err == database.IDMismatch {
 			log.L(ctx).Errorf("Invalid token pool '%s'. ID mismatch with existing record", pool.ID)
@@ -68,15 +68,15 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, announce *fftype
 	return true, nil
 }
 
-func (sh *systemHandlers) rejectPool(ctx context.Context, pool *fftypes.TokenPool) error {
+func (dh *definitionHandlers) rejectPool(ctx context.Context, pool *fftypes.TokenPool) error {
 	event := fftypes.NewEvent(fftypes.EventTypePoolRejected, pool.Namespace, pool.ID)
-	err := sh.database.InsertEvent(ctx, event)
+	err := dh.database.InsertEvent(ctx, event)
 	return err
 }
 
-func (sh *systemHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
+func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	var announce fftypes.TokenPoolAnnouncement
-	if valid := sh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
 		return ActionReject, nil
 	}
 
@@ -85,23 +85,23 @@ func (sh *systemHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fft
 
 	if err := pool.Validate(ctx); err != nil {
 		log.L(ctx).Warnf("Token pool '%s' rejected - validate failed: %s", pool.ID, err)
-		return ActionReject, sh.rejectPool(ctx, pool)
+		return ActionReject, dh.rejectPool(ctx, pool)
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
-	if existingPool, err := sh.database.GetTokenPoolByID(ctx, pool.ID); err != nil {
+	if existingPool, err := dh.database.GetTokenPoolByID(ctx, pool.ID); err != nil {
 		return ActionRetry, err
 	} else if existingPool != nil && existingPool.State == fftypes.TokenPoolStateConfirmed {
 		return ActionConfirm, nil
 	}
 
-	if valid, err := sh.persistTokenPool(ctx, &announce); err != nil {
+	if valid, err := dh.persistTokenPool(ctx, &announce); err != nil {
 		return ActionRetry, err
 	} else if !valid {
-		return ActionReject, sh.rejectPool(ctx, pool)
+		return ActionReject, dh.rejectPool(ctx, pool)
 	}
 
-	if err := sh.assets.ActivateTokenPool(ctx, pool, announce.TX); err != nil {
+	if err := dh.assets.ActivateTokenPool(ctx, pool, announce.TX); err != nil {
 		log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
 		return ActionRetry, err
 	}

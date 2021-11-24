@@ -63,7 +63,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node 
 		return nil, nil, err
 	}
 
-	msg, err = nm.broadcast.BroadcastDefinitionAsNode(ctx, node, fftypes.SystemTagDefineNode, waitConfirm)
+	msg, err = nm.broadcast.BroadcastDefinitionAsNode(ctx, fftypes.SystemNamespace, node, fftypes.SystemTagDefineNode, waitConfirm)
 	if msg != nil {
 		node.Message = msg.Header.ID
 	}

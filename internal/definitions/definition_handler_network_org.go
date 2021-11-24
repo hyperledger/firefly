@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleOrganizationBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var org fftypes.Organization
-	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &org)
+	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &org)
 	if !valid {
 		return false, nil
 	}
@@ -38,7 +38,7 @@ func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *
 	}
 
 	if org.Parent != "" {
-		parent, err := sh.database.GetOrganizationByIdentity(ctx, org.Parent)
+		parent, err := dh.database.GetOrganizationByIdentity(ctx, org.Parent)
 		if err != nil {
 			return false, err // We only return database errors
 		}
@@ -53,11 +53,11 @@ func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *
 		}
 	}
 
-	existing, err := sh.database.GetOrganizationByIdentity(ctx, org.Identity)
+	existing, err := dh.database.GetOrganizationByIdentity(ctx, org.Identity)
 	if err == nil && existing == nil {
-		existing, err = sh.database.GetOrganizationByName(ctx, org.Name)
+		existing, err = dh.database.GetOrganizationByName(ctx, org.Name)
 		if err == nil && existing == nil {
-			existing, err = sh.database.GetOrganizationByID(ctx, org.ID)
+			existing, err = dh.database.GetOrganizationByID(ctx, org.ID)
 		}
 	}
 	if err != nil {
@@ -71,7 +71,7 @@ func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *
 		org.ID = nil // we keep the existing ID
 	}
 
-	if err = sh.database.UpsertOrganization(ctx, &org, true); err != nil {
+	if err = dh.database.UpsertOrganization(ctx, &org, true); err != nil {
 		return false, err
 	}
 

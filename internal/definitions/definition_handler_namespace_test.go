@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -28,8 +28,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestHandleSystemBroadcastNSOk(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastNSOk(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -41,11 +41,11 @@ func TestHandleSystemBroadcastNSOk(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
+	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -56,8 +56,8 @@ func TestHandleSystemBroadcastNSOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNSEventFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastNSEventFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -69,11 +69,11 @@ func TestHandleSystemBroadcastNSEventFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
+	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -84,8 +84,8 @@ func TestHandleSystemBroadcastNSEventFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastNSUpsertFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -97,10 +97,10 @@ func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
+	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -111,10 +111,10 @@ func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastNSMissingData(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -123,8 +123,8 @@ func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHandleSystemBroadcastNSBadID(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastNSBadID(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{}
 	b, err := json.Marshal(&ns)
@@ -133,7 +133,7 @@ func TestHandleSystemBroadcastNSBadID(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -142,14 +142,14 @@ func TestHandleSystemBroadcastNSBadID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHandleSystemBroadcastNSBadData(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastNSBadData(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	data := &fftypes.Data{
 		Value: fftypes.Byteable(`!{json`),
 	}
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -158,8 +158,8 @@ func TestHandleSystemBroadcastNSBadData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHandleSystemBroadcastDuplicate(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDuplicate(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -171,9 +171,9 @@ func TestHandleSystemBroadcastDuplicate(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
+	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -184,8 +184,8 @@ func TestHandleSystemBroadcastDuplicate(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastDuplicateOverrideLocal(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDuplicateOverrideLocal(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -198,12 +198,12 @@ func TestHandleSystemBroadcastDuplicateOverrideLocal(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
+	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
 	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -214,8 +214,8 @@ func TestHandleSystemBroadcastDuplicateOverrideLocal(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastDuplicateOverrideLocalFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDuplicateOverrideLocalFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -228,10 +228,10 @@ func TestHandleSystemBroadcastDuplicateOverrideLocalFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
+	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
 	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
@@ -242,8 +242,8 @@ func TestHandleSystemBroadcastDuplicateOverrideLocalFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastDupCheckFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDupCheckFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -255,9 +255,9 @@ func TestHandleSystemBroadcastDupCheckFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := sh.database.(*databasemocks.Plugin)
+	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
