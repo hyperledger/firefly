@@ -36,7 +36,7 @@ spec:
         - name: dx
           securityContext:
             {{- toYaml .Values.dataexchange.securityContext | nindent 12 }}
-          image: "{{ .Values.dataexchange.image.repository }}:{{ .Values.dataexchange.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.dataexchange.image.repository }}:{{ .Values.dataexchange.image.tag }}"
           imagePullPolicy: {{ .Values.dataexchange.image.pullPolicy }}
           {{- if .Values.dataexchange.extraEnv }}
           env:

@@ -8,6 +8,8 @@ config:
 
   # Enables the metrics server / port for Prometheus scraping
   metricsEnabled: true
+
+  # Configures the path on which Prometheus metrics are served, useful if you need to change it to match existing Prometheus scrape configs
   metricsPath: /metrics
 
   # Puts a fresh FireFly node into the preinit state, allowing an operator to then setup smart contracts, apply database migrations, etc. before re-configuring the node to proceed.
@@ -137,7 +139,6 @@ core:
     serviceMonitor:
       enabled: false
       scrapeInterval: 10s
-
 
   # NOTE: The Ingress will only expose the HTTP API and never the Admin or Debug APIs
   ingress:
