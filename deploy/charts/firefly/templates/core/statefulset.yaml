@@ -56,6 +56,11 @@ spec:
               containerPort: {{ .Values.core.service.adminPort }}
               protocol: TCP
             {{- end }}
+            {{- if .Values.config.metricsEnabled }}
+            - name: metrics
+              containerPort: {{ .Values.core.service.metricsPort }}
+              protocol: TCP
+          {{- end }}
           livenessProbe:
             tcpSocket:
               port: {{ if and .Values.config.adminEnabled .Values.config.preInit }}admin{{ else }}http{{ end }}

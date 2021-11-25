@@ -23,5 +23,11 @@ spec:
       protocol: TCP
       name: admin
     {{- end }}
+    {{- if .Values.config.metricsEnabled }}
+    - port: {{ .Values.core.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- end }}
   selector:
     {{- include "firefly.coreSelectorLabels" . | nindent 4 }}

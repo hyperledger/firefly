@@ -6,6 +6,10 @@ config:
   # Enables the Admin API port for dynamic configuration
   adminEnabled: true
 
+  # Enables the metrics server / port for Prometheus scraping
+  metricsEnabled: true
+  metricsPath: /metrics
+
   # Puts a fresh FireFly node into the preinit state, allowing an operator to then setup smart contracts, apply database migrations, etc. before re-configuring the node to proceed.
   # It is _not_ recommended to configure FireFly nodes in a preinit state for non-development scenarios.
   preInit: false
@@ -127,6 +131,13 @@ core:
     httpPort: 5000
     adminPort: 5001
     debugPort: 6060
+    metricsPort: 5100
+
+  metrics:
+    serviceMonitor:
+      enabled: false
+      scrapeInterval: 10s
+
 
   # NOTE: The Ingress will only expose the HTTP API and never the Admin or Debug APIs
   ingress:
