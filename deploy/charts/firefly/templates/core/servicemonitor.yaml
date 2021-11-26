@@ -14,7 +14,7 @@ spec:
     - port: metrics
       path: {{ .Values.config.metricsPath }}
       interval: {{ .Values.core.metrics.serviceMonitor.scrapeInterval }}
-      {{- if .Values.controller.metrics.serviceMonitor.honorLabels }}
+      {{- if .Values.core.metrics.serviceMonitor.honorLabels }}
       honorLabels: true
       {{- end }}
       {{- if .Values.core.metrics.serviceMonitor.metricRelabelings }}
