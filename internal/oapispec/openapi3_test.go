@@ -30,6 +30,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type RecursiveType struct {
+	Field1     string           `json:"field1"`
+	Field2     string           `json:"field2"`
+	Field3     string           `json:"field3"`
+	Components []*RecursiveType `json:"children,omitempty"`
+}
+
 var testRoutes = []*Route{
 	{
 		Name:   "op1",
@@ -79,9 +86,8 @@ var testRoutes = []*Route{
 		},
 		FilterFactory:   nil,
 		Description:     i18n.MsgTBD,
-		JSONInputValue:  func() interface{} { return &fftypes.Data{} },
+		JSONInputValue:  func() interface{} { return &RecursiveType{} },
 		JSONOutputValue: func() interface{} { return nil },
-		JSONInputMask:   []string{"id"},
 		JSONOutputCodes: []int{http.StatusNoContent},
 		FormParams: []*FormParam{
 			{Name: "metadata", Description: i18n.MsgTBD},

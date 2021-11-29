@@ -1,4 +1,18 @@
-components: {}
+components:
+  schemas:
+    FFIParam:
+      properties:
+        components:
+          items:
+            $ref: '#/components/schemas/FFIParam'
+          type: array
+        internalType:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+      type: object
 info:
   description: Copyright © 2021 Kaleido, Inc.
   title: FireFly
@@ -66,6 +80,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -73,6 +94,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -174,6 +201,10 @@ paths:
                     name:
                       type: string
                     type:
+                      enum:
+                      - local
+                      - broadcast
+                      - system
                       type: string
                   type: object
                 type: array
@@ -221,6 +252,10 @@ paths:
                   name:
                     type: string
                   type:
+                    enum:
+                    - local
+                    - broadcast
+                    - system
                     type: string
                 type: object
           description: Success
@@ -237,6 +272,10 @@ paths:
                   name:
                     type: string
                   type:
+                    enum:
+                    - local
+                    - broadcast
+                    - system
                     type: string
                 type: object
           description: Success
@@ -275,6 +314,10 @@ paths:
                   name:
                     type: string
                   type:
+                    enum:
+                    - local
+                    - broadcast
+                    - system
                     type: string
                 type: object
           description: Success
@@ -368,6 +411,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -387,6 +434,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -398,6 +449,10 @@ paths:
                         returns:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -551,6 +606,10 @@ paths:
                     params:
                       items:
                         properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
                           internalType:
                             type: string
                           name:
@@ -562,6 +621,10 @@ paths:
                     returns:
                       items:
                         properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
                           internalType:
                             type: string
                           name:
@@ -646,6 +709,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: node
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: payloadref
         schema:
           type: string
@@ -718,6 +786,7 @@ paths:
                       type: string
                     namespace:
                       type: string
+                    node: {}
                     payload:
                       properties:
                         data:
@@ -783,6 +852,13 @@ paths:
                                   txtype:
                                     type: string
                                   type:
+                                    enum:
+                                    - definition
+                                    - broadcast
+                                    - private
+                                    - groupinit
+                                    - transfer_broadcast
+                                    - transfer_private
                                     type: string
                                 type: object
                               pins:
@@ -790,6 +866,12 @@ paths:
                                   type: string
                                 type: array
                               state:
+                                enum:
+                                - staged
+                                - ready
+                                - pending
+                                - confirmed
+                                - rejected
                                 type: string
                             type: object
                           type: array
@@ -853,6 +935,7 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  node: {}
                   payload:
                     properties:
                       data:
@@ -918,6 +1001,13 @@ paths:
                                 txtype:
                                   type: string
                                 type:
+                                  enum:
+                                  - definition
+                                  - broadcast
+                                  - private
+                                  - groupinit
+                                  - transfer_broadcast
+                                  - transfer_private
                                   type: string
                               type: object
                             pins:
@@ -925,6 +1015,12 @@ paths:
                                 type: string
                               type: array
                             state:
+                              enum:
+                              - staged
+                              - ready
+                              - pending
+                              - confirmed
+                              - rejected
                               type: string
                           type: object
                         type: array
@@ -1020,6 +1116,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -1027,6 +1130,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -1136,6 +1245,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -1143,6 +1259,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -1236,6 +1358,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1255,6 +1381,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1266,6 +1396,10 @@ paths:
                         returns:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1324,6 +1458,10 @@ paths:
                       params:
                         items:
                           properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
                             internalType:
                               type: string
                             name:
@@ -1341,6 +1479,10 @@ paths:
                       params:
                         items:
                           properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
                             internalType:
                               type: string
                             name:
@@ -1352,6 +1494,10 @@ paths:
                       returns:
                         items:
                           properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
                             internalType:
                               type: string
                             name:
@@ -1382,6 +1528,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1401,6 +1551,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1412,6 +1566,10 @@ paths:
                         returns:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1473,6 +1631,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1492,6 +1654,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1503,6 +1669,10 @@ paths:
                         returns:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1571,6 +1741,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1590,6 +1764,10 @@ paths:
                         params:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1601,6 +1779,10 @@ paths:
                         returns:
                           items:
                             properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
                               internalType:
                                 type: string
                               name:
@@ -1664,6 +1846,10 @@ paths:
                     params:
                       items:
                         properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
                           internalType:
                             type: string
                           name:
@@ -1675,6 +1861,10 @@ paths:
                     returns:
                       items:
                         properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
                           internalType:
                             type: string
                           name:
@@ -2324,6 +2514,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -2331,6 +2528,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -2440,6 +2643,10 @@ paths:
                     namespace:
                       type: string
                     validator:
+                      enum:
+                      - json
+                      - none
+                      - definition
                       type: string
                     value:
                       format: byte
@@ -2509,6 +2716,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -2531,6 +2742,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -2582,6 +2797,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -2638,6 +2857,10 @@ paths:
                   namespace:
                     type: string
                   validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
                     type: string
                   value:
                     format: byte
@@ -2752,6 +2975,16 @@ paths:
                       format: int64
                       type: integer
                     type:
+                      enum:
+                      - message_confirmed
+                      - message_rejected
+                      - namespace_confirmed
+                      - datatype_confirmed
+                      - group_confirmed
+                      - token_pool_confirmed
+                      - token_pool_rejected
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
                       type: string
                   type: object
                 type: array
@@ -2798,6 +3031,16 @@ paths:
                     format: int64
                     type: integer
                   type:
+                    enum:
+                    - message_confirmed
+                    - message_rejected
+                    - namespace_confirmed
+                    - datatype_confirmed
+                    - group_confirmed
+                    - token_pool_confirmed
+                    - token_pool_rejected
+                    - token_transfer_confirmed
+                    - token_transfer_op_failed
                     type: string
                 type: object
           description: Success
@@ -2985,6 +3228,13 @@ paths:
                         txtype:
                           type: string
                         type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
                           type: string
                       type: object
                     pins:
@@ -2992,6 +3242,12 @@ paths:
                         type: string
                       type: array
                     state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
                       type: string
                   type: object
                 type: array
@@ -3087,6 +3343,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3094,6 +3357,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3269,6 +3538,16 @@ paths:
                       format: int64
                       type: integer
                     type:
+                      enum:
+                      - message_confirmed
+                      - message_rejected
+                      - namespace_confirmed
+                      - datatype_confirmed
+                      - group_confirmed
+                      - token_pool_confirmed
+                      - token_pool_rejected
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
                       type: string
                   type: object
                 type: array
@@ -3327,6 +3606,14 @@ paths:
                       type: string
                     tx: {}
                     type:
+                      enum:
+                      - blockchain_batch_pin
+                      - publicstorage_batch_broadcast
+                      - dataexchange_batch_send
+                      - dataexchange_blob_send
+                      - token_create_pool
+                      - token_announce_pool
+                      - token_transfer
                       type: string
                     updated: {}
                   type: object
@@ -3383,6 +3670,11 @@ paths:
                       signer:
                         type: string
                       type:
+                        enum:
+                        - none
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
                         type: string
                     type: object
                 type: object
@@ -3497,6 +3789,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3504,6 +3803,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3544,6 +3849,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3551,6 +3863,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3678,6 +3996,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3685,6 +4010,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3725,6 +4056,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3732,6 +4070,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -3869,6 +4213,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -3876,6 +4227,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -4021,6 +4378,14 @@ paths:
                       type: string
                     tx: {}
                     type:
+                      enum:
+                      - blockchain_batch_pin
+                      - publicstorage_batch_broadcast
+                      - dataexchange_batch_send
+                      - dataexchange_blob_send
+                      - token_create_pool
+                      - token_announce_pool
+                      - token_transfer
                       type: string
                     updated: {}
                   type: object
@@ -4079,6 +4444,14 @@ paths:
                     type: string
                   tx: {}
                   type:
+                    enum:
+                    - blockchain_batch_pin
+                    - publicstorage_batch_broadcast
+                    - dataexchange_batch_send
+                    - dataexchange_blob_send
+                    - token_create_pool
+                    - token_announce_pool
+                    - token_transfer
                     type: string
                   updated: {}
                 type: object
@@ -4218,6 +4591,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -4225,6 +4605,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -4348,6 +4734,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -4355,6 +4748,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -5054,6 +5453,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: symbol
         schema:
           type: string
@@ -5121,6 +5525,12 @@ paths:
                       type: string
                     standard:
                       type: string
+                    state:
+                      enum:
+                      - unknown
+                      - pending
+                      - confirmed
+                      type: string
                     symbol:
                       type: string
                     tx:
@@ -5130,6 +5540,9 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - fungible
+                      - nonfungible
                       type: string
                   type: object
                 type: array
@@ -5210,6 +5623,12 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -5219,6 +5638,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -5245,6 +5667,12 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -5254,6 +5682,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -5315,6 +5746,12 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -5324,6 +5761,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -5396,6 +5836,11 @@ paths:
         name: updated
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -5448,6 +5893,8 @@ paths:
                     tokenIndex:
                       type: string
                     updated: {}
+                    uri:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -5504,82 +5951,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -5598,6 +5974,8 @@ paths:
                   - burn
                   - transfer
                   type: string
+                uri:
+                  type: string
               type: object
       responses:
         "200":
@@ -5614,6 +5992,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5631,6 +6010,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -5648,6 +6033,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5665,6 +6051,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -5721,82 +6113,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -5815,6 +6136,8 @@ paths:
                   - burn
                   - transfer
                   type: string
+                uri:
+                  type: string
               type: object
       responses:
         "200":
@@ -5831,6 +6154,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5848,6 +6172,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -5865,6 +6195,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -5882,6 +6213,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -5951,6 +6288,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: messagehash
         schema:
           type: string
@@ -5961,7 +6303,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: poolprotocolid
+        name: pool
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5977,6 +6319,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: tokenindex
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -6029,6 +6376,7 @@ paths:
                     key:
                       type: string
                     localId: {}
+                    message: {}
                     messageHash: {}
                     namespace:
                       type: string
@@ -6046,6 +6394,12 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - mint
+                      - burn
+                      - transfer
+                      type: string
+                    uri:
                       type: string
                   type: object
                 type: array
@@ -6102,82 +6456,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -6196,6 +6479,8 @@ paths:
                   - burn
                   - transfer
                   type: string
+                uri:
+                  type: string
               type: object
       responses:
         "200":
@@ -6212,6 +6497,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6229,6 +6515,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -6246,6 +6538,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6263,6 +6556,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -6320,6 +6619,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: updated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -6430,6 +6734,11 @@ paths:
         name: updated
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -6531,6 +6840,11 @@ paths:
         name: updated
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -6583,6 +6897,8 @@ paths:
                     tokenIndex:
                       type: string
                     updated: {}
+                    uri:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -6626,82 +6942,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -6720,6 +6965,8 @@ paths:
                   - burn
                   - transfer
                   type: string
+                uri:
+                  type: string
               type: object
       responses:
         "200":
@@ -6736,6 +6983,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6753,6 +7001,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -6770,6 +7024,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6787,6 +7042,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -6863,82 +7124,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -6957,6 +7147,8 @@ paths:
                   - burn
                   - transfer
                   type: string
+                uri:
+                  type: string
               type: object
       responses:
         "200":
@@ -6973,6 +7165,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -6990,6 +7183,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -7007,6 +7206,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -7024,6 +7224,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -7095,6 +7301,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: symbol
         schema:
           type: string
@@ -7162,6 +7373,12 @@ paths:
                       type: string
                     standard:
                       type: string
+                    state:
+                      enum:
+                      - unknown
+                      - pending
+                      - confirmed
+                      type: string
                     symbol:
                       type: string
                     tx:
@@ -7171,6 +7388,9 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - fungible
+                      - nonfungible
                       type: string
                   type: object
                 type: array
@@ -7246,6 +7466,12 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -7255,6 +7481,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -7281,6 +7510,12 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -7290,6 +7525,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -7344,6 +7582,12 @@ paths:
                     type: string
                   standard:
                     type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -7353,6 +7597,9 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - fungible
+                    - nonfungible
                     type: string
                 type: object
           description: Success
@@ -7414,6 +7661,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: messagehash
         schema:
           type: string
@@ -7424,7 +7676,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: poolprotocolid
+        name: pool
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7440,6 +7692,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: tokenindex
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -7492,6 +7749,7 @@ paths:
                     key:
                       type: string
                     localId: {}
+                    message: {}
                     messageHash: {}
                     namespace:
                       type: string
@@ -7509,6 +7767,12 @@ paths:
                           type: string
                       type: object
                     type:
+                      enum:
+                      - mint
+                      - burn
+                      - transfer
+                      type: string
+                    uri:
                       type: string
                   type: object
                 type: array
@@ -7552,82 +7816,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -7646,6 +7839,8 @@ paths:
                   - burn
                   - transfer
                   type: string
+                uri:
+                  type: string
               type: object
       responses:
         "200":
@@ -7662,6 +7857,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -7679,6 +7875,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -7696,6 +7898,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -7713,6 +7916,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -7758,6 +7967,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  message: {}
                   messageHash: {}
                   namespace:
                     type: string
@@ -7775,6 +7985,12 @@ paths:
                         type: string
                     type: object
                   type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -7908,6 +8124,11 @@ paths:
                         signer:
                           type: string
                         type:
+                          enum:
+                          - none
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
                           type: string
                       type: object
                   type: object
@@ -8048,6 +8269,11 @@ paths:
                       signer:
                         type: string
                       type:
+                        enum:
+                        - none
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
                         type: string
                     type: object
                 type: object
@@ -8104,6 +8330,11 @@ paths:
                         signer:
                           type: string
                         type:
+                          enum:
+                          - none
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
                           type: string
                       type: object
                   type: object
@@ -8697,6 +8928,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -8704,6 +8942,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -8765,6 +9009,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -8772,6 +9023,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success
@@ -8845,6 +9102,13 @@ paths:
                       txtype:
                         type: string
                       type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
                         type: string
                     type: object
                   pins:
@@ -8852,6 +9116,12 @@ paths:
                       type: string
                     type: array
                   state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
                     type: string
                 type: object
           description: Success

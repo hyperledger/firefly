@@ -31,7 +31,7 @@ import (
 )
 
 func newSubscriptionSchemaGenerator(ctx context.Context) string {
-	baseSchema, _, _ := openapi3gen.NewSchemaRefForValue(&fftypes.Subscription{})
+	baseSchema, _ := openapi3gen.NewSchemaRefForValue(&fftypes.Subscription{}, nil)
 	baseProps := baseSchema.Value.Properties
 	delete(baseProps, "id")
 	delete(baseProps, "namespace")
