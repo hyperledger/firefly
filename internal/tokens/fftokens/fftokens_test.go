@@ -512,6 +512,7 @@ func TestEvents(t *testing.T) {
 		"id":    "10",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
+			"id":         "1.0.0",
 			"poolId":     "F1",
 			"tokenIndex": "0",
 			"operator":   "0x0",
@@ -534,6 +535,7 @@ func TestEvents(t *testing.T) {
 		"id":    "11",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
+			"id":       "1.0.0",
 			"poolId":   "F1",
 			"operator": "0x0",
 			"to":       "0x0",
@@ -555,6 +557,7 @@ func TestEvents(t *testing.T) {
 		"id":    "12",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
+			"id":         "1.0.0",
 			"poolId":     "N1",
 			"tokenIndex": "1",
 			"operator":   "0x0",
@@ -574,6 +577,7 @@ func TestEvents(t *testing.T) {
 		"id":    "13",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
+			"id":         "1.0.0",
 			"poolId":     "F1",
 			"tokenIndex": "0",
 			"operator":   "0x0",
@@ -596,6 +600,7 @@ func TestEvents(t *testing.T) {
 		"id":    "14",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
+			"id":       "1.0.0",
 			"poolId":   "F1",
 			"operator": "0x0",
 			"from":     "0x0",
@@ -619,6 +624,7 @@ func TestEvents(t *testing.T) {
 		"id":    "15",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
+			"id":       "1.0.0",
 			"poolId":   "F1",
 			"operator": "0x0",
 			"from":     "0x0",
@@ -641,6 +647,7 @@ func TestEvents(t *testing.T) {
 		"id":    "16",
 		"event": "token-burn",
 		"data": fftypes.JSONObject{
+			"id":         "1.0.0",
 			"poolId":     "F1",
 			"tokenIndex": "0",
 			"operator":   "0x0",

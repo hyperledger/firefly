@@ -27,11 +27,11 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
-	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +48,7 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	mpi := &publicstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &syshandlersmocks.SystemHandlers{}
+	msh := &definitionsmocks.DefinitionHandlers{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
@@ -97,7 +97,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mim := &identitymanagermocks.Manager{}
 	mpi := &publicstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &syshandlersmocks.SystemHandlers{}
+	msh := &definitionsmocks.DefinitionHandlers{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}

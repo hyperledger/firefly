@@ -798,6 +798,7 @@ var TokenPoolQueryFactory = &queryFields{
 var TokenBalanceQueryFactory = &queryFields{
 	"pool":       &UUIDField{},
 	"tokenindex": &StringField{},
+	"uri":        &StringField{},
 	"connector":  &StringField{},
 	"namespace":  &StringField{},
 	"key":        &StringField{},
@@ -810,6 +811,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"localid":     &StringField{},
 	"pool":        &UUIDField{},
 	"tokenindex":  &StringField{},
+	"uri":         &StringField{},
 	"connector":   &StringField{},
 	"namespace":   &StringField{},
 	"key":         &StringField{},

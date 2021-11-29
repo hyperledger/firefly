@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -31,19 +31,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestSystemHandlers(t *testing.T) *systemHandlers {
+func newTestDefinitionHandlers(t *testing.T) *definitionHandlers {
 	mdi := &databasemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
-	return NewSystemHandlers(mdi, mdx, mdm, mbm, mpm, mam).(*systemHandlers)
+	return NewDefinitionHandlers(mdi, mdx, mdm, mbm, mpm, mam).(*definitionHandlers)
 }
 
 func TestHandleSystemBroadcastUnknown(t *testing.T) {
-	sh := newTestSystemHandlers(t)
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	dh := newTestDefinitionHandlers(t)
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
@@ -53,8 +53,8 @@ func TestHandleSystemBroadcastUnknown(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
-	sh := newTestSystemHandlers(t)
-	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
+	dh := newTestDefinitionHandlers(t)
+	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
@@ -63,8 +63,8 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
-	sh := newTestSystemHandlers(t)
-	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
+	dh := newTestDefinitionHandlers(t)
+	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
@@ -75,17 +75,17 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 func TestPrivateMessagingPassthroughs(t *testing.T) {
 	ctx := context.Background()
 
-	sh := newTestSystemHandlers(t)
-	mpm := sh.messaging.(*privatemessagingmocks.Manager)
+	dh := newTestDefinitionHandlers(t)
+	mpm := dh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("GetGroupByID", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil, nil)
 	mpm.On("ResolveInitGroup", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("EnsureLocalGroup", ctx, mock.Anything).Return(false, nil)
 
-	_, _ = sh.GetGroupByID(ctx, fftypes.NewUUID().String())
-	_, _, _ = sh.GetGroups(ctx, nil)
-	_, _ = sh.ResolveInitGroup(ctx, nil)
-	_, _ = sh.EnsureLocalGroup(ctx, nil)
+	_, _ = dh.GetGroupByID(ctx, fftypes.NewUUID().String())
+	_, _, _ = dh.GetGroups(ctx, nil)
+	_, _ = dh.ResolveInitGroup(ctx, nil)
+	_, _ = dh.EnsureLocalGroup(ctx, nil)
 
 	mpm.AssertExpectations(t)
 

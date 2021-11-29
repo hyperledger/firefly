@@ -39,13 +39,13 @@ func (_m *Manager) BroadcastDatatype(ctx context.Context, ns string, datatype *f
 	return r0, r1
 }
 
-// BroadcastDefinition provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
+// BroadcastDefinition provides a mock function with given fields: ctx, ns, def, signingIdentity, tag, waitConfirm
+func (_m *Manager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, def, signingIdentity, tag, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.Definition, *fftypes.Identity, fftypes.SystemTag, bool) *fftypes.Message); ok {
-		r0 = rf(ctx, def, signingIdentity, tag, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, *fftypes.Identity, fftypes.SystemTag, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -53,8 +53,8 @@ func (_m *Manager) BroadcastDefinition(ctx context.Context, def fftypes.Definiti
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.Definition, *fftypes.Identity, fftypes.SystemTag, bool) error); ok {
-		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, *fftypes.Identity, fftypes.SystemTag, bool) error); ok {
+		r1 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,13 +62,13 @@ func (_m *Manager) BroadcastDefinition(ctx context.Context, def fftypes.Definiti
 	return r0, r1
 }
 
-// BroadcastDefinitionAsNode provides a mock function with given fields: ctx, def, tag, waitConfirm
-func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, def, tag, waitConfirm)
+// BroadcastDefinitionAsNode provides a mock function with given fields: ctx, ns, def, tag, waitConfirm
+func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, def, tag, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.Definition, fftypes.SystemTag, bool) *fftypes.Message); ok {
-		r0 = rf(ctx, def, tag, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, fftypes.SystemTag, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, def, tag, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -76,8 +76,8 @@ func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, def fftypes.De
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.Definition, fftypes.SystemTag, bool) error); ok {
-		r1 = rf(ctx, def, tag, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, fftypes.SystemTag, bool) error); ok {
+		r1 = rf(ctx, ns, def, tag, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

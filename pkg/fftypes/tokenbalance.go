@@ -19,6 +19,7 @@ package fftypes
 type TokenBalance struct {
 	Pool       *UUID   `json:"pool,omitempty"`
 	TokenIndex string  `json:"tokenIndex,omitempty"`
+	URI        string  `json:"uri,omitempty"`
 	Connector  string  `json:"connector,omitempty"`
 	Namespace  string  `json:"namespace,omitempty"`
 	Key        string  `json:"key,omitempty"`

@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
@@ -38,7 +39,6 @@ import (
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/publicstorage/psfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -138,7 +138,7 @@ type orchestrator struct {
 	batch          batch.Manager
 	broadcast      broadcast.Manager
 	messaging      privatemessaging.Manager
-	syshandlers    syshandlers.SystemHandlers
+	definitions    definitions.DefinitionHandlers
 	data           data.Manager
 	syncasync      syncasync.Bridge
 	batchpin       batchpin.Submitter
@@ -416,10 +416,10 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
+	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.syshandlers, or.data, or.broadcast, or.messaging, or.assets)
+		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets)
 		if err != nil {
 			return err
 		}

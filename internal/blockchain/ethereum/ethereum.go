@@ -18,10 +18,8 @@ package ethereum
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -57,26 +55,8 @@ type Ethereum struct {
 	closed chan struct{}
 }
 
-type eventStream struct {
-	ID             string               `json:"id"`
-	Name           string               `json:"name"`
-	ErrorHandling  string               `json:"errorHandling"`
-	BatchSize      uint                 `json:"batchSize"`
-	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
-	Type           string               `json:"type"`
-	WebSocket      eventStreamWebsocket `json:"websocket"`
-}
-
 type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
-}
-
-type subscription struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	Stream      string `json:"stream"`
-	FromBlock   string `json:"fromBlock"`
 }
 
 type asyncTXSubmission struct {
@@ -96,8 +76,8 @@ type ethWSCommandPayload struct {
 	Topic string `json:"topic,omitempty"`
 }
 
-var requiredSubscriptions = map[string]string{
-	"BatchPin": "Batch pin",
+var requiredSubscriptions = []string{
+	"BatchPin",
 }
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
@@ -144,7 +124,18 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 
-	if err = e.ensureEventStreams(ethconnectConf); err != nil {
+	streams := streamManager{
+		ctx:          e.ctx,
+		client:       e.client,
+		instancePath: e.instancePath,
+	}
+	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
+	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
+	if e.initInfo.stream, err = streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
+		return err
+	}
+	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
+	if e.initInfo.subs, err = streams.ensureSubscriptions(e.initInfo.stream.ID, requiredSubscriptions); err != nil {
 		return err
 	}
 
@@ -162,41 +153,6 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) ensureEventStreams(ethconnectConf config.Prefix) error {
-
-	var existingStreams []*eventStream
-	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")
-	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
-	}
-
-	for _, stream := range existingStreams {
-		if stream.WebSocket.Topic == e.topic {
-			e.initInfo.stream = stream
-		}
-	}
-
-	if e.initInfo.stream == nil {
-		newStream := eventStream{
-			Name:           e.topic,
-			ErrorHandling:  "block",
-			BatchSize:      ethconnectConf.GetUint(EthconnectConfigBatchSize),
-			BatchTimeoutMS: uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()),
-			Type:           "websocket",
-		}
-		newStream.WebSocket.Topic = e.topic
-		res, err = e.client.R().SetBody(&newStream).SetResult(&newStream).Post("/eventstreams")
-		if err != nil || !res.IsSuccess() {
-			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
-		}
-		e.initInfo.stream = &newStream
-	}
-
-	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-
-	return e.ensureSubscriptions()
-}
-
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 	// Send a subscribe to our topic after each connect/reconnect
 	b, _ := json.Marshal(&ethWSCommandPayload{
@@ -211,57 +167,6 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 		err = w.Send(ctx, b)
 	}
 	return err
-}
-
-func (e *Ethereum) ensureSubscriptions() error {
-	// Include a hash of the instance path in the subscription, so if we ever point at a different
-	// contract configuration, we re-subscribe from block 0.
-	// We don't need full strength hashing, so just use the first 16 chars for readability.
-	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(e.instancePath)))[0:16]
-
-	for eventType, subDesc := range requiredSubscriptions {
-
-		var existingSubs []*subscription
-		res, err := e.client.R().SetResult(&existingSubs).Get("/subscriptions")
-		if err != nil || !res.IsSuccess() {
-			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
-		}
-
-		var sub *subscription
-		subName := fmt.Sprintf("%s_%s", eventType, instanceUniqueHash)
-		for _, s := range existingSubs {
-			if s.Name == subName ||
-				/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
-				   If one of these very early environments needed a new subscription, the existing one would need to
-					 be deleted manually. */
-				s.Name == eventType {
-				sub = s
-			}
-		}
-
-		if sub == nil {
-			newSub := subscription{
-				Name:        subName,
-				Description: subDesc,
-				Stream:      e.initInfo.stream.ID,
-				FromBlock:   "0",
-			}
-			res, err = e.client.R().
-				SetContext(e.ctx).
-				SetBody(&newSub).
-				SetResult(&newSub).
-				Post(fmt.Sprintf("%s/%s", e.instancePath, eventType))
-			if err != nil || !res.IsSuccess() {
-				return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
-			}
-			sub = &newSub
-		}
-
-		log.L(e.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		e.initInfo.subs = append(e.initInfo.subs, sub)
-
-	}
-	return nil
 }
 
 func ethHexFormatB32(b *fftypes.Bytes32) string {

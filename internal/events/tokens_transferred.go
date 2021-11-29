@@ -99,6 +99,14 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID strin
 				if valid, err := em.persistTokenTransaction(ctx, pool.Namespace, transfer, protocolTxID, additionalInfo); err != nil || !valid {
 					return err
 				}
+
+				// Some operations result in multiple transfer events - if the protocol ID was unique but the
+				// local ID is not unique, generate a unique local ID now.
+				if existing, err := em.database.GetTokenTransfer(ctx, transfer.LocalID); err != nil {
+					return err
+				} else if existing != nil {
+					transfer.LocalID = fftypes.NewUUID()
+				}
 			} else {
 				transfer.LocalID = fftypes.NewUUID()
 			}
@@ -114,11 +122,9 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID strin
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 
 			if transfer.Message != nil {
-				msg, err := em.database.GetMessageByID(ctx, transfer.Message)
-				if err != nil {
+				if msg, err := em.database.GetMessageByID(ctx, transfer.Message); err != nil {
 					return err
-				}
-				if msg != nil {
+				} else if msg != nil {
 					if msg.State == fftypes.MessageStateStaged {
 						// Message can now be sent
 						msg.State = fftypes.MessageStateReady

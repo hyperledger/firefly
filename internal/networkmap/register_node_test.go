@@ -53,7 +53,7 @@ func TestRegisterNodeOk(t *testing.T) {
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinitionAsNode", nm.ctx, mock.Anything, fftypes.SystemTagDefineNode, true).Return(mockMsg, nil)
+	mbm.On("BroadcastDefinitionAsNode", nm.ctx, fftypes.SystemNamespace, mock.Anything, fftypes.SystemTagDefineNode, true).Return(mockMsg, nil)
 
 	node, msg, err := nm.RegisterNode(nm.ctx, true)
 	assert.NoError(t, err)

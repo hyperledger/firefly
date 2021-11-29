@@ -208,7 +208,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
-	tokenIndex := data.GetString("tokenIndex")
+	protocolID := data.GetString("id")
 	poolProtocolID := data.GetString("poolId")
 	operatorAddress := data.GetString("operator")
 	fromAddress := data.GetString("from")
@@ -216,6 +216,8 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	value := data.GetString("amount")
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
+	tokenIndex := data.GetString("tokenIndex") // optional
+	uri := data.GetString("uri")               // optional
 
 	var eventName string
 	switch t {
@@ -227,7 +229,8 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		eventName = "Transfer"
 	}
 
-	if poolProtocolID == "" ||
+	if protocolID == "" ||
+		poolProtocolID == "" ||
 		operatorAddress == "" ||
 		value == "" ||
 		txHash == "" ||
@@ -249,10 +252,11 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	transfer := &fftypes.TokenTransfer{
 		Type:        t,
 		TokenIndex:  tokenIndex,
+		URI:         uri,
 		Connector:   ft.configuredName,
 		From:        fromAddress,
 		To:          toAddress,
-		ProtocolID:  txHash,
+		ProtocolID:  protocolID,
 		Key:         operatorAddress,
 		Message:     transferData.Message,
 		MessageHash: transferData.MessageHash,

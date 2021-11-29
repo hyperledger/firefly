@@ -24,9 +24,9 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
-	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -38,7 +38,7 @@ const (
 type aggregator struct {
 	ctx             context.Context
 	database        database.Plugin
-	syshandlers     syshandlers.SystemHandlers
+	definitions     definitions.DefinitionHandlers
 	data            data.Manager
 	eventPoller     *eventPoller
 	newPins         chan int64
@@ -47,12 +47,12 @@ type aggregator struct {
 	retry           *retry.Retry
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, sh syshandlers.SystemHandlers, dm data.Manager, en *eventNotifier) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, sh definitions.DefinitionHandlers, dm data.Manager, en *eventNotifier) *aggregator {
 	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:             log.WithLogField(ctx, "role", "aggregator"),
 		database:        di,
-		syshandlers:     sh,
+		definitions:     sh,
 		data:            dm,
 		newPins:         make(chan int64),
 		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
@@ -340,7 +340,7 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, msg *fftypes.Messa
 	l := log.L(ctx)
 
 	// It might be the system topic/context initializing the group
-	group, err := ag.syshandlers.ResolveInitGroup(ctx, msg)
+	group, err := ag.definitions.ResolveInitGroup(ctx, msg)
 	if err != nil || group == nil {
 		return nil, err
 	}
@@ -431,15 +431,15 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed
 	switch {
-	case msg.Header.Namespace == fftypes.SystemNamespace:
-		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
-		// dispatched subsequent events before we have processed the system events they depend on.
-		var action syshandlers.SystemBroadcastAction
-		action, err = ag.syshandlers.HandleSystemBroadcast(ctx, msg, data)
-		if action == syshandlers.ActionRetry || action == syshandlers.ActionWait {
+	case msg.Header.Type == fftypes.MessageTypeDefinition:
+		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
+		// dispatched subsequent events before we have processed the definition events they depend on.
+		var action definitions.SystemBroadcastAction
+		action, err = ag.definitions.HandleSystemBroadcast(ctx, msg, data)
+		if action == definitions.ActionRetry || action == definitions.ActionWait {
 			return false, err
 		}
-		valid = action == syshandlers.ActionConfirm
+		valid = action == definitions.ActionConfirm
 
 	case msg.Header.Type == fftypes.MessageTypeGroupInit:
 		// Already handled as part of resolving the context - do nothing.

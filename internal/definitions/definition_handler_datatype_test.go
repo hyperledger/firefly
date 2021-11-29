@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -29,8 +29,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -47,13 +47,13 @@ func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdm := sh.data.(*datamocks.Manager)
+	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mbi := sh.database.(*databasemocks.Plugin)
+	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
@@ -65,8 +65,8 @@ func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastDatatypeEventFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -83,13 +83,13 @@ func TestHandleSystemBroadcastDatatypeEventFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdm := sh.data.(*datamocks.Manager)
+	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mbi := sh.database.(*databasemocks.Plugin)
+	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
@@ -101,8 +101,8 @@ func TestHandleSystemBroadcastDatatypeEventFail(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastDatatypeMissingID(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		Validator: fftypes.ValidatorTypeJSON,
@@ -118,7 +118,7 @@ func TestHandleSystemBroadcastDatatypeMissingID(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
@@ -127,8 +127,8 @@ func TestHandleSystemBroadcastDatatypeMissingID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHandleSystemBroadcastBadSchema(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -145,9 +145,9 @@ func TestHandleSystemBroadcastBadSchema(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdm := sh.data.(*datamocks.Manager)
+	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
@@ -158,8 +158,8 @@ func TestHandleSystemBroadcastBadSchema(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastMissingData(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -171,7 +171,7 @@ func TestHandleSystemBroadcastMissingData(t *testing.T) {
 	}
 	dt.Hash = dt.Value.Hash()
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
@@ -180,8 +180,8 @@ func TestHandleSystemBroadcastMissingData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHandleSystemBroadcastDatatypeLookupFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -198,11 +198,11 @@ func TestHandleSystemBroadcastDatatypeLookupFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdm := sh.data.(*datamocks.Manager)
+	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mbi := sh.database.(*databasemocks.Plugin)
+	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineDatatype),
@@ -215,8 +215,8 @@ func TestHandleSystemBroadcastDatatypeLookupFail(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastUpsertFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -233,12 +233,12 @@ func TestHandleSystemBroadcastUpsertFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdm := sh.data.(*datamocks.Manager)
+	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mbi := sh.database.(*databasemocks.Plugin)
+	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
@@ -250,8 +250,8 @@ func TestHandleSystemBroadcastUpsertFail(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastDatatypeDuplicate(t *testing.T) {
-	sh := newTestSystemHandlers(t)
+func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -268,11 +268,11 @@ func TestHandleSystemBroadcastDatatypeDuplicate(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdm := sh.data.(*datamocks.Manager)
+	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mbi := sh.database.(*databasemocks.Plugin)
+	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
-	action, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},

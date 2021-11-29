@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *systemHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var ns fftypes.Namespace
-	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &ns)
+	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
 		return false, nil
 	}
@@ -36,7 +36,7 @@ func (sh *systemHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fft
 		return false, nil
 	}
 
-	existing, err := sh.database.GetNamespace(ctx, ns.Name)
+	existing, err := dh.database.GetNamespace(ctx, ns.Name)
 	if err != nil {
 		return false, err // We only return database errors
 	}
@@ -46,17 +46,17 @@ func (sh *systemHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fft
 			return false, nil
 		}
 		// Remove the local definition
-		if err = sh.database.DeleteNamespace(ctx, existing.ID); err != nil {
+		if err = dh.database.DeleteNamespace(ctx, existing.ID); err != nil {
 			return false, err
 		}
 	}
 
-	if err = sh.database.UpsertNamespace(ctx, &ns, false); err != nil {
+	if err = dh.database.UpsertNamespace(ctx, &ns, false); err != nil {
 		return false, err
 	}
 
 	event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID)
-	if err = sh.database.InsertEvent(ctx, event); err != nil {
+	if err = dh.database.InsertEvent(ctx, event); err != nil {
 		return false, err
 	}
 

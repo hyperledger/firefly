@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package syshandlers
+package definitions
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (sh *systemHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var node fftypes.Node
-	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &node)
+	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &node)
 	if !valid {
 		return false, nil
 	}
@@ -37,7 +37,7 @@ func (sh *systemHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.
 		return false, nil
 	}
 
-	owner, err := sh.database.GetOrganizationByIdentity(ctx, node.Owner)
+	owner, err := dh.database.GetOrganizationByIdentity(ctx, node.Owner)
 	if err != nil {
 		return false, err // We only return database errors
 	}
@@ -51,9 +51,9 @@ func (sh *systemHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.
 		return false, nil
 	}
 
-	existing, err := sh.database.GetNode(ctx, node.Owner, node.Name)
+	existing, err := dh.database.GetNode(ctx, node.Owner, node.Name)
 	if err == nil && existing == nil {
-		existing, err = sh.database.GetNodeByID(ctx, node.ID)
+		existing, err = dh.database.GetNodeByID(ctx, node.ID)
 	}
 	if err != nil {
 		return false, err // We only return database errors
@@ -66,12 +66,12 @@ func (sh *systemHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.
 		node.ID = nil // we keep the existing ID
 	}
 
-	if err = sh.database.UpsertNode(ctx, &node, true); err != nil {
+	if err = dh.database.UpsertNode(ctx, &node, true); err != nil {
 		return false, err
 	}
 
 	// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-	if err = sh.exchange.AddPeer(ctx, node.DX.Peer, node.DX.Endpoint); err != nil {
+	if err = dh.exchange.AddPeer(ctx, node.DX.Peer, node.DX.Endpoint); err != nil {
 		return false, err
 	}
 

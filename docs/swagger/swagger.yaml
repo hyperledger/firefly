@@ -4615,6 +4615,11 @@ paths:
         name: updated
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -4667,6 +4672,8 @@ paths:
                     tokenIndex:
                       type: string
                     updated: {}
+                    uri:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -4723,82 +4730,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -4816,6 +4752,8 @@ paths:
                   - mint
                   - burn
                   - transfer
+                  type: string
+                uri:
                   type: string
               type: object
       responses:
@@ -4852,6 +4790,8 @@ paths:
                     type: object
                   type:
                     type: string
+                  uri:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -4886,6 +4826,8 @@ paths:
                         type: string
                     type: object
                   type:
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -4942,82 +4884,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -5035,6 +4906,8 @@ paths:
                   - mint
                   - burn
                   - transfer
+                  type: string
+                uri:
                   type: string
               type: object
       responses:
@@ -5071,6 +4944,8 @@ paths:
                     type: object
                   type:
                     type: string
+                  uri:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -5105,6 +4980,8 @@ paths:
                         type: string
                     type: object
                   type:
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -5207,6 +5084,11 @@ paths:
         name: tokenindex
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -5276,6 +5158,8 @@ paths:
                       type: object
                     type:
                       type: string
+                    uri:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -5331,82 +5215,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -5424,6 +5237,8 @@ paths:
                   - mint
                   - burn
                   - transfer
+                  type: string
+                uri:
                   type: string
               type: object
       responses:
@@ -5460,6 +5275,8 @@ paths:
                     type: object
                   type:
                     type: string
+                  uri:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -5494,6 +5311,8 @@ paths:
                         type: string
                     type: object
                   type:
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -5551,6 +5370,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: updated
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -5661,6 +5485,11 @@ paths:
         name: updated
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -5762,6 +5591,11 @@ paths:
         name: updated
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -5814,6 +5648,8 @@ paths:
                     tokenIndex:
                       type: string
                     updated: {}
+                    uri:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -5857,82 +5693,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -5950,6 +5715,8 @@ paths:
                   - mint
                   - burn
                   - transfer
+                  type: string
+                uri:
                   type: string
               type: object
       responses:
@@ -5986,6 +5753,8 @@ paths:
                     type: object
                   type:
                     type: string
+                  uri:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -6020,6 +5789,8 @@ paths:
                         type: string
                     type: object
                   type:
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -6096,82 +5867,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -6189,6 +5889,8 @@ paths:
                   - mint
                   - burn
                   - transfer
+                  type: string
+                uri:
                   type: string
               type: object
       responses:
@@ -6225,6 +5927,8 @@ paths:
                     type: object
                   type:
                     type: string
+                  uri:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -6259,6 +5963,8 @@ paths:
                         type: string
                     type: object
                   type:
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -6695,6 +6401,11 @@ paths:
         name: tokenindex
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: uri
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -6764,6 +6475,8 @@ paths:
                       type: object
                     type:
                       type: string
+                    uri:
+                      type: string
                   type: object
                 type: array
           description: Success
@@ -6806,82 +6519,11 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    group:
-                      properties:
-                        ledger: {}
-                        members:
-                          items:
-                            properties:
-                              identity:
-                                type: string
-                              node:
-                                type: string
-                            type: object
-                          type: array
-                        name:
-                          type: string
-                      type: object
-                    hash: {}
-                    header:
-                      properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
-                      type: object
-                    pins:
-                      items:
-                        type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
-                  type: object
+                message: {}
                 messageHash: {}
                 namespace:
                   type: string
-                pool:
-                  type: string
+                pool: {}
                 protocolId:
                   type: string
                 to:
@@ -6899,6 +6541,8 @@ paths:
                   - mint
                   - burn
                   - transfer
+                  type: string
+                uri:
                   type: string
               type: object
       responses:
@@ -6935,6 +6579,8 @@ paths:
                     type: object
                   type:
                     type: string
+                  uri:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -6969,6 +6615,8 @@ paths:
                         type: string
                     type: object
                   type:
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
@@ -7032,6 +6680,8 @@ paths:
                         type: string
                     type: object
                   type:
+                    type: string
+                  uri:
                     type: string
                 type: object
           description: Success
