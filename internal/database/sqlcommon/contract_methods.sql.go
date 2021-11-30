@@ -102,6 +102,7 @@ func (s *SQLCommon) InsertContractMethod(ctx context.Context, ns string, contrac
 
 func (s *SQLCommon) contractMethodResult(ctx context.Context, row *sql.Rows) (*fftypes.FFIMethod, error) {
 	method := fftypes.FFIMethod{}
+	row.Next()
 	err := row.Scan(
 		&method.ID,
 		&method.Name,

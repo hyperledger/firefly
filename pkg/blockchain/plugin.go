@@ -47,9 +47,15 @@ type Plugin interface {
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
 
-	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error)
+	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error)
 
-	ValidateContractLocation(ctx context.Context, onChainLocation fftypes.Byteable) error
+	ValidateContractLocation(ctx context.Context, location fftypes.Byteable) error
+
+	ValidateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
+
+	ValidateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error
+
+	ValidateInvokeContractRequest(ctx context.Context, event *fftypes.InvokeContractRequest) error
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

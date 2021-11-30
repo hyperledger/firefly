@@ -29,6 +29,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
+/* TODO:
+* Create an interface for the ContractManager and make this the implementation
+* Remove useless pass through functions in the orchestrator
+ */
+
 type ContractManager struct {
 	database      database.Plugin
 	publicStorage publicstorage.Plugin
@@ -106,6 +111,9 @@ func (cm *ContractManager) InvokeContract(ctx context.Context, ns string, req *f
 	if err != nil {
 		return nil, err
 	}
+	if err := cm.ValidateInvokeContractRequest(ctx, req); err != nil {
+		return nil, err
+	}
 	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, method, req.Params)
 }
 
@@ -172,10 +180,50 @@ func (cm *ContractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 		Key:    cm.identity.GetOrgKey(ctx),
 	}
 
-	// TODO: Do we do anything with this message here?
-	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, api, identity, fftypes.SystemTagDefineContractAPI, waitConfirm)
+	msg, err := cm.broadcast.BroadcastDefinition(ctx, ns, api, identity, fftypes.SystemTagDefineContractAPI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
+	api.Message = msg.Header.ID
 	return api, nil
+}
+
+func (cm *ContractManager) ValidateFFI(ctx context.Context, ns string, ffi *fftypes.FFI) error {
+	for _, method := range ffi.Methods {
+		if err := cm.validateFFIMethod(ctx, method); err != nil {
+			return err
+		}
+	}
+	for _, method := range ffi.Events {
+		if err := cm.validateFFIEvent(ctx, method); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cm *ContractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+	return cm.blockchain.ValidateFFIMethod(ctx, method)
+}
+
+func (cm *ContractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error {
+	return cm.blockchain.ValidateFFIEvent(ctx, event)
+}
+
+func (cm *ContractManager) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
+	if err := cm.validateFFIMethod(ctx, req.Method); err != nil {
+		return err
+	}
+
+	for _, param := range req.Method.Params {
+		value, ok := req.Params[param.Name]
+		if !ok {
+			return i18n.NewError(ctx, i18n.MsgContractMissingInputArgument, param.Name)
+		}
+		if err := checkParam(ctx, value, param); err != nil {
+			return err
+		}
+	}
+
+	return cm.blockchain.ValidateInvokeContractRequest(ctx, req)
 }

@@ -54,4 +54,4 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
-replace github.com/getkin/kin-openapi => ../kin-openapi
+replace github.com/getkin/kin-openapi => github.com/kaleido-io/kin-openapi v0.74.1-0.20211124195155-f24e6dc2ad45
