@@ -96,10 +96,10 @@ config:
 # Configures the properties of the StatefulSet, Service, and optionally Ingress used to deploy and expose FireFly
 core:
   image:
-    repository: ghcr.io/hyperledger-labs/firefly
+    repository: ghcr.io/hyperledger/firefly
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: latest
+    # tag: latest
 
   extraEnv: []
     # - name: FIREFLY_LOG_LEVEL
@@ -187,10 +187,10 @@ dataexchange:
     #   value: DEBUG
 
   image:
-    repository: ghcr.io/hyperledger-labs/firefly-dataexchange-https
+    repository: ghcr.io/hyperledger/firefly-dataexchange-https
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: latest
+    tag: v0.9.1
 
   imagePullSecrets: []
   nameOverride: ""
