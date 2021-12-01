@@ -129,7 +129,7 @@ func (cm *ContractManager) GetMethod(ctx context.Context, ns, contractInstanceNa
 	if err != nil {
 		return nil, err
 	}
-	return cm.database.GetContractMethodByName(ctx, ns, contractID, methodName)
+	return cm.database.GetContractInterfaceMethod(ctx, ns, contractID, methodName)
 }
 
 func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
@@ -144,7 +144,7 @@ func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 			return nil, fmt.Errorf("error resolving contract method - method signature is required if contract ID is absent")
 		}
 
-		method, err = cm.database.GetContractMethodByName(ctx, ns, req.ContractID, method.Name)
+		method, err = cm.database.GetContractInterfaceMethod(ctx, ns, req.ContractID, method.Name)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving contract method")
 		}
