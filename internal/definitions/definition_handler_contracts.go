@@ -30,7 +30,7 @@ func (dh *definitionHandlers) persistContractInterface(ctx context.Context, cont
 	}
 
 	for _, method := range contractInterface.Methods {
-		err := dh.database.UpsertContractMethod(ctx, contractInterface.Namespace, contractInterface.ID, method)
+		err := dh.database.UpsertContractInterfaceMethod(ctx, contractInterface.Namespace, contractInterface.ID, method)
 		if err != nil {
 			return false, err
 		}

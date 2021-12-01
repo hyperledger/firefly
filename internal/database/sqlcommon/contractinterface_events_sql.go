@@ -42,7 +42,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertContractEvent(ctx context.Context, ns string, contractID *fftypes.UUID, event *fftypes.FFIEvent) (err error) {
+func (s *SQLCommon) UpsertContractInterfaceEvent(ctx context.Context, ns string, contractID *fftypes.UUID, event *fftypes.FFIEvent) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (s *SQLCommon) UpsertContractEvent(ctx context.Context, ns string, contract
 
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
-			From("contractevents").
+			From("contractinterface_events").
 			Where(sq.And{sq.Eq{"interface_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": event.Name}}),
 	)
 	if err != nil {
@@ -62,20 +62,18 @@ func (s *SQLCommon) UpsertContractEvent(ctx context.Context, ns string, contract
 
 	if existing {
 		if _, err = s.updateTx(ctx, tx,
-			sq.Update("contractevents").
-				Set("interface_id", contractID).
-				Set("namespace", ns).
-				Set("name", event.Name).
-				Set("params", event.Params),
+			sq.Update("contractinterface_events").
+				Set("params", event.Params).
+				Where(sq.And{sq.Eq{"interface_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": event.Name}}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractEvents, fftypes.ChangeEventTypeUpdated, ns, event.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractInterfaceEvents, fftypes.ChangeEventTypeUpdated, ns, event.ID)
 			},
 		); err != nil {
 			return err
 		}
 	} else {
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contractevents").
+			sq.Insert("contractinterface_events").
 				Columns(contractEventsColumns...).
 				Values(
 					event.ID,
@@ -85,7 +83,7 @@ func (s *SQLCommon) UpsertContractEvent(ctx context.Context, ns string, contract
 					event.Params,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractEvents, fftypes.ChangeEventTypeCreated, ns, event.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractInterfaceEvents, fftypes.ChangeEventTypeCreated, ns, event.ID)
 			},
 		); err != nil {
 			return err
@@ -103,15 +101,15 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 		&event.Params,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractevents")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractinterface_events")
 	}
 	return &event, nil
 }
 
-func (s *SQLCommon) getContractEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFIEvent, error) {
+func (s *SQLCommon) getContractInterfaceEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFIEvent, error) {
 	rows, _, err := s.query(ctx,
 		sq.Select(contractEventsQueryColumns...).
-			From("contractevents").
+			From("contractinterface_events").
 			Where(pred),
 	)
 	if err != nil {
@@ -132,8 +130,8 @@ func (s *SQLCommon) getContractEventPred(ctx context.Context, desc string, pred 
 	return ci, nil
 }
 
-func (s *SQLCommon) GetContractEvents(ctx context.Context, filter database.Filter) (events []*fftypes.FFIEvent, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractEventsQueryColumns...).From("contractevents"), filter, nil, []interface{}{"sequence"})
+func (s *SQLCommon) GetContractInterfaceEvents(ctx context.Context, filter database.Filter) (events []*fftypes.FFIEvent, res *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractEventsQueryColumns...).From("contractinterface_events"), filter, nil, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -152,10 +150,10 @@ func (s *SQLCommon) GetContractEvents(ctx context.Context, filter database.Filte
 		events = append(events, ci)
 	}
 
-	return events, s.queryRes(ctx, tx, "contractevents", fop, fi), err
+	return events, s.queryRes(ctx, tx, "contractinterface_events", fop, fi), err
 
 }
 
-func (s *SQLCommon) GetContractEventByName(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error) {
-	return s.getContractEventPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"name": name}})
+func (s *SQLCommon) GetContractInterfaceEvent(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error) {
+	return s.getContractInterfaceEventPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"name": name}})
 }

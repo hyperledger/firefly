@@ -390,61 +390,6 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	return r0, r1, r2
 }
 
-// GetContractEventByName provides a mock function with given fields: ctx, ns, contractID, name
-func (_m *Plugin) GetContractEventByName(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error) {
-	ret := _m.Called(ctx, ns, contractID, name)
-
-	var r0 *fftypes.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIEvent); ok {
-		r0 = rf(ctx, ns, contractID, name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFIEvent)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
-		r1 = rf(ctx, ns, contractID, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContractEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetContractEvents(ctx context.Context, filter database.Filter) ([]*fftypes.FFIEvent, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*fftypes.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIEvent); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.FFIEvent)
-		}
-	}
-
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
 // GetContractInterfaceByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, id)
@@ -491,6 +436,116 @@ func (_m *Plugin) GetContractInterfaceByNameAndVersion(ctx context.Context, ns s
 	return r0, r1
 }
 
+// GetContractInterfaceEvent provides a mock function with given fields: ctx, ns, contractID, name
+func (_m *Plugin) GetContractInterfaceEvent(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error) {
+	ret := _m.Called(ctx, ns, contractID, name)
+
+	var r0 *fftypes.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIEvent); ok {
+		r0 = rf(ctx, ns, contractID, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFIEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, ns, contractID, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractInterfaceEvents provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetContractInterfaceEvents(ctx context.Context, filter database.Filter) ([]*fftypes.FFIEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIEvent); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.FFIEvent)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetContractInterfaceMethod provides a mock function with given fields: ctx, ns, contractID, name
+func (_m *Plugin) GetContractInterfaceMethod(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error) {
+	ret := _m.Called(ctx, ns, contractID, name)
+
+	var r0 *fftypes.FFIMethod
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIMethod); ok {
+		r0 = rf(ctx, ns, contractID, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFIMethod)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, ns, contractID, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContractInterfaceMethods provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetContractInterfaceMethods(ctx context.Context, filter database.Filter) ([]*fftypes.FFIMethod, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.FFIMethod
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIMethod); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.FFIMethod)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetContractInterfaces provides a mock function with given fields: ctx, ns, filter
 func (_m *Plugin) GetContractInterfaces(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.FFI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
@@ -516,61 +571,6 @@ func (_m *Plugin) GetContractInterfaces(ctx context.Context, ns string, filter d
 	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
 		r2 = rf(ctx, ns, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// GetContractMethodByName provides a mock function with given fields: ctx, ns, contractID, name
-func (_m *Plugin) GetContractMethodByName(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error) {
-	ret := _m.Called(ctx, ns, contractID, name)
-
-	var r0 *fftypes.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIMethod); ok {
-		r0 = rf(ctx, ns, contractID, name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFIMethod)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
-		r1 = rf(ctx, ns, contractID, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContractMethods provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetContractMethods(ctx context.Context, filter database.Filter) ([]*fftypes.FFIMethod, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*fftypes.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIMethod); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.FFIMethod)
-		}
-	}
-
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -2281,8 +2281,8 @@ func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRe
 	return r0
 }
 
-// UpsertContractEvent provides a mock function with given fields: ctx, ns, contractID, method
-func (_m *Plugin) UpsertContractEvent(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIEvent) error {
+// UpsertContractInterfaceEvent provides a mock function with given fields: ctx, ns, contractID, method
+func (_m *Plugin) UpsertContractInterfaceEvent(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIEvent) error {
 	ret := _m.Called(ctx, ns, contractID, method)
 
 	var r0 error
@@ -2295,8 +2295,8 @@ func (_m *Plugin) UpsertContractEvent(ctx context.Context, ns string, contractID
 	return r0
 }
 
-// UpsertContractMethod provides a mock function with given fields: ctx, ns, contractID, method
-func (_m *Plugin) UpsertContractMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error {
+// UpsertContractInterfaceMethod provides a mock function with given fields: ctx, ns, contractID, method
+func (_m *Plugin) UpsertContractInterfaceMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error {
 	ret := _m.Called(ctx, ns, contractID, method)
 
 	var r0 error
