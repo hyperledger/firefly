@@ -418,6 +418,12 @@ type iContractMethodCollection interface {
 	GetContractMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
+type iContractEventCollection interface {
+	UpsertContractEvent(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIEvent) error
+	GetContractEventByName(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error)
+	GetContractEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
+}
+
 type iContractAPICollection interface {
 	InsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error
 	GetContractAPIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractAPI, *FilterResult, error)
@@ -483,6 +489,7 @@ type PeristenceInterface interface {
 	iTokenTransferCollection
 	iContractDefinitionCollection
 	iContractMethodCollection
+	iContractEventCollection
 	iContractAPICollection
 }
 
@@ -853,4 +860,11 @@ var ContractInterfaceQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"name":      &StringField{},
 	"version":   &StringField{},
+}
+
+// ContractEventQueryFactory filter fields for contract events
+var ContractEventQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
 }
