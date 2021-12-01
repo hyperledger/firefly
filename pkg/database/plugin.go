@@ -860,6 +860,13 @@ var ContractInterfaceQueryFactory = &queryFields{
 	"version":   &StringField{},
 }
 
+// ContractInterfaceMethodQueryFactory filter fields for contract methods
+var ContractInterfaceMethodQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+}
+
 // ContractInterfaceEventQueryFactory filter fields for contract events
 var ContractInterfaceEventQueryFactory = &queryFields{
 	"id":        &UUIDField{},
