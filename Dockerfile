@@ -3,7 +3,7 @@ RUN apk add make gcc build-base curl git
 WORKDIR /firefly
 ADD go.mod go.sum ./
 RUN go mod download
-ENV UI_RELEASE "https://github.com/hyperledger/firefly-ui/releases/download/v0.4.1/v0.4.1_f09c392.tgz"
+ENV UI_RELEASE "https://github.com/hyperledger/firefly-ui/releases/download/v0.4.2/v0.4.2_8351002.tgz"
 RUN mkdir /firefly/frontend \
  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 ADD . .
