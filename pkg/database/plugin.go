@@ -413,8 +413,9 @@ type iContractDefinitionCollection interface {
 }
 
 type iContractMethodCollection interface {
-	InsertContractMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error
-	GetContractMethodByName(ctx context.Context, ns, contractID, name string) (*fftypes.FFIMethod, error)
+	UpsertContractMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error
+	GetContractMethodByName(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error)
+	GetContractMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
 type iContractAPICollection interface {
