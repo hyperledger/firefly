@@ -732,13 +732,13 @@ func (_m *Orchestrator) GetMessagesWithData(ctx context.Context, ns string, filt
 	return r0, r1, r2
 }
 
-// GetMetrics provides a mock function with given fields: ctx, ns, startTime, endTime, periods, tableName
-func (_m *Orchestrator) GetMetrics(ctx context.Context, ns string, startTime string, endTime string, periods string, tableName string) ([]*fftypes.Metric, error) {
-	ret := _m.Called(ctx, ns, startTime, endTime, periods, tableName)
+// GetMetrics provides a mock function with given fields: ctx, ns, startTime, endTime, buckets, tableName
+func (_m *Orchestrator) GetMetrics(ctx context.Context, ns string, startTime string, endTime string, buckets string, tableName string) ([]*fftypes.Metric, error) {
+	ret := _m.Called(ctx, ns, startTime, endTime, buckets, tableName)
 
 	var r0 []*fftypes.Metric
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) []*fftypes.Metric); ok {
-		r0 = rf(ctx, ns, startTime, endTime, periods, tableName)
+		r0 = rf(ctx, ns, startTime, endTime, buckets, tableName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Metric)
@@ -747,7 +747,7 @@ func (_m *Orchestrator) GetMetrics(ctx context.Context, ns string, startTime str
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, ns, startTime, endTime, periods, tableName)
+		r1 = rf(ctx, ns, startTime, endTime, buckets, tableName)
 	} else {
 		r1 = ret.Error(1)
 	}

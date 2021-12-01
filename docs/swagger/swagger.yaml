@@ -3055,9 +3055,9 @@ paths:
         name: endTime
         schema:
           type: string
-      - description: Number of periods between start time and end time
+      - description: Number of buckets between start time and end time
         in: query
-        name: periods
+        name: buckets
         schema:
           type: string
       - description: Type of metrics to fetch

@@ -35,7 +35,7 @@ var getMetrics = &oapispec.Route{
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "startTime", Description: i18n.MsgMetricStartTimeParam, IsBool: false},
 		{Name: "endTime", Description: i18n.MsgMetricEndTimeParam, IsBool: false},
-		{Name: "periods", Description: i18n.MsgMetricPeriodsParam, IsBool: false},
+		{Name: "buckets", Description: i18n.MsgMetricBucketsParam, IsBool: false},
 		{Name: "type", Description: i18n.MsgMetricTypeParam, IsBool: false},
 	},
 	FilterFactory:   nil,
@@ -44,6 +44,6 @@ var getMetrics = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Metric{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.GetMetrics(r.Ctx, r.PP["ns"], r.QP["startTime"], r.QP["endTime"], r.QP["periods"], r.QP["type"])
+		return r.Or.GetMetrics(r.Ctx, r.PP["ns"], r.QP["startTime"], r.QP["endTime"], r.QP["buckets"], r.QP["type"])
 	},
 }

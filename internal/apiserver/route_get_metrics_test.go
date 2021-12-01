@@ -27,7 +27,7 @@ import (
 
 func TestGetMetrics(t *testing.T) {
 	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/metrics?type=testName&startTime=123&endTime=456&periods=30", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/metrics?type=testName&startTime=123&endTime=456&buckets=30", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

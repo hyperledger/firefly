@@ -213,7 +213,7 @@ var (
 	MsgTokenPoolNotConfirmed       = ffm("FF10293", "Token pool is not yet confirmed")
 	MsgMetricStartTimeParam        = ffm("FF10294", "Start time of the metrics to be fetched")
 	MsgMetricEndTimeParam          = ffm("FF10295", "End time of the metrics to be fetched")
-	MsgMetricPeriodsParam          = ffm("FF10296", "Number of periods between start time and end time")
+	MsgMetricBucketsParam          = ffm("FF10296", "Number of buckets between start time and end time")
 	MsgMetricTypeParam             = ffm("FF10297", "Type of metrics to fetch")
 	MsgInvalidNumberOfIntervals    = ffm("FF10298", "Number of time intervals must be less than")
 )

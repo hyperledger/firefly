@@ -19,6 +19,8 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -26,38 +28,75 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (s *SQLCommon) metricResult(ctx context.Context, row *sql.Rows) (*fftypes.MetricCount, error) {
-	var batch fftypes.MetricCount
-	err := row.Scan(
-		&batch.Count,
-	)
+func (s *SQLCommon) getCaseQueries(intervals []*fftypes.MetricInterval) (caseQueries []sq.CaseBuilder) {
+	for _, interval := range intervals {
+		caseQueries = append(caseQueries, sq.Case().
+			When(
+				sq.And{
+					sq.GtOrEq{"created": interval.StartTime},
+					sq.Lt{"created": interval.EndTime},
+				},
+				"1",
+			).
+			Else("0"))
+	}
+
+	return caseQueries
+}
+
+func (s *SQLCommon) metricResult(ctx context.Context, rows *sql.Rows, cols []interface{}) ([]interface{}, error) {
+	results := []interface{}{}
+
+	for i := range cols {
+		results = append(results, &cols[i])
+	}
+	err := rows.Scan(results...)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "metrics")
 	}
-	return &batch, nil
+	return cols, nil
 }
 
-func (s *SQLCommon) GetMetrics(ctx context.Context, interval *fftypes.MetricInterval, tableName string) (count string, err error) {
-	rows, _, err := s.query(ctx,
-		sq.Select("count(*)").
-			From(tableName).
-			Where(sq.GtOrEq{"created": interval.StartTime}).
-			Where(sq.Lt{"created": interval.EndTime}),
-	)
+func (s *SQLCommon) GetMetrics(ctx context.Context, intervals []*fftypes.MetricInterval, tableName string) ([]*fftypes.Metric, error) {
+	cols := []interface{}{}
+	qb := sq.Select()
+
+	caseQueries := s.getCaseQueries(intervals)
+	for i, caseQuery := range caseQueries {
+		query, args, err := caseQuery.ToSql()
+		if err != nil {
+			return nil, err
+		}
+		col := "case_" + strconv.Itoa(i)
+		cols = append(cols, "")
+
+		qb = qb.Column(sq.Alias(sq.Expr("sum("+query+")", args...), col))
+	}
+
+	rows, _, err := s.query(ctx, qb.From(tableName))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Error fetching count from '%s' table", tableName)
-		return "", nil
+		log.L(ctx).Debugf("Error fetching rows from '%s' table", tableName)
+		return nil, nil
 	}
 
-	metric, err := s.metricResult(ctx, rows)
+	res, err := s.metricResult(ctx, rows, cols)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return metric.Count, err
+	metrics := []*fftypes.Metric{}
+
+	for i, interval := range res {
+		metrics = append(metrics, &fftypes.Metric{
+			Count:     fmt.Sprintf("%v", interval),
+			Timestamp: intervals[i].StartTime,
+		})
+	}
+
+	return metrics, err
 }

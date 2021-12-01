@@ -24,57 +24,42 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) getMetricIntervals(startTime string, endTime string, numPeriods int64) ([]*fftypes.MetricInterval, error) {
-	startInt, err := strconv.ParseInt(startTime, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	endInt, err := strconv.ParseInt(endTime, 10, 64)
-	if err != nil {
-		return nil, err
-	}
+func (or *orchestrator) getMetricIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []*fftypes.MetricInterval) {
+	timeIntervalLength := (endTime - startTime) / numBuckets
 
-	intervals := []*fftypes.MetricInterval{}
-
-	timeIntervalLength := (endInt - startInt) / numPeriods
-
-	for i := startInt; i < endInt; i += timeIntervalLength {
+	for i := startTime; i < endTime; i += timeIntervalLength {
 		intervals = append(intervals, &fftypes.MetricInterval{
 			StartTime: fftypes.UnixTime(i),
 			EndTime:   fftypes.UnixTime(i + timeIntervalLength),
 		})
 	}
 
-	return intervals, nil
+	return intervals
 }
 
-func (or *orchestrator) GetMetrics(ctx context.Context, ns string, startTime string, endTime string, periods string, tableName string) ([]*fftypes.Metric, error) {
-	numPeriods, err := strconv.ParseInt(periods, 10, 64)
+func (or *orchestrator) GetMetrics(ctx context.Context, ns string, startTime string, endTime string, buckets string, tableName string) ([]*fftypes.Metric, error) {
+	startTimeInt, err := strconv.ParseInt(startTime, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	if numPeriods > 100 {
-		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, "100")
+	endTimeInt, err := strconv.ParseInt(endTime, 10, 64)
+	if err != nil {
+		return nil, err
 	}
-	metricIntervals, err := or.getMetricIntervals(startTime, endTime, numPeriods)
+	numBuckets, err := strconv.ParseInt(buckets, 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	metrics := []*fftypes.Metric{}
+	if numBuckets > fftypes.MetricMaxBuckets {
+		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, fftypes.MetricMaxBuckets)
+	}
 
-	for _, interval := range metricIntervals {
-		count, err := or.database.GetMetrics(ctx, interval, tableName)
-		if err != nil {
-			return nil, err
-		}
-		metrics = append(metrics, &fftypes.Metric{
-			Count:     count,
-			Timestamp: interval.StartTime,
-		})
-		if err != nil {
-			return nil, err
-		}
+	intervals := or.getMetricIntervals(startTimeInt, endTimeInt, numBuckets)
+
+	metrics, err := or.database.GetMetrics(ctx, intervals, tableName)
+	if err != nil {
+		return nil, err
 	}
 
 	return metrics, nil

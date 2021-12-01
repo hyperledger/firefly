@@ -16,6 +16,11 @@
 
 package fftypes
 
+const (
+	// MetricMaxBuckets max buckets that can be requested
+	MetricMaxBuckets = 100
+)
+
 // Metric is a timestamp and count
 type Metric struct {
 	// Timestamp of metric
@@ -30,10 +35,4 @@ type MetricInterval struct {
 	StartTime *FFTime `json:"startTime"`
 	// EndTime end time of metric interval
 	EndTime *FFTime `json:"endTime"`
-}
-
-// MetricCount count
-type MetricCount struct {
-	// Count count for given metric interval
-	Count string `json:"count"`
 }
