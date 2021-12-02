@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestContractInterfaceEventsE2EWithDB(t *testing.T) {
+func TestFFIEventsE2EWithDB(t *testing.T) {
 
 	s, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()

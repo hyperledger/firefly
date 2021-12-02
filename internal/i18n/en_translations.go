@@ -213,5 +213,4 @@ var (
 	MsgTokenPoolNotConfirmed       = ffm("FF10293", "Token pool is not yet confirmed")
 	MsgContractInterfaceExists     = ffm("FF10294", "A contract interface already exists in the namespace: '%s' with name: '%s' and version: '%s'")
 	MsgContractInterfaceNotFound   = ffm("FF10295", "Contract interface %s not found")
-	MsgContractInstanceExists      = ffm("FF10296", "A contract instance already exists in the namespace: '%s' with name: '%s'")
 )

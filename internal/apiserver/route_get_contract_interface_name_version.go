@@ -42,6 +42,6 @@ var getContractInterfaceNameVersion = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.Contracts().GetContractInterfaceByNameAndVersion(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+		return r.Or.Contracts().GetFFI(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
 	},
 }

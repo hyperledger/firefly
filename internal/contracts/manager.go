@@ -30,10 +30,11 @@ import (
 )
 
 type Manager interface {
-	BroadcastContractInterface(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
-	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
-	GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error)
-	GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
+	BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
+	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
+	GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error)
+	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
+
 	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error)
 	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
@@ -58,7 +59,7 @@ func NewContractManager(database database.Plugin, publicStorage publicstorage.Pl
 	}
 }
 
-func (cm *contractManager) BroadcastContractInterface(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {
+func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {
 	ffi.ID = fftypes.NewUUID()
 	ffi.Namespace = ns
 
@@ -93,15 +94,15 @@ func (cm *contractManager) scopeNS(ns string, filter database.AndFilter) databas
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (cm *contractManager) GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
+func (cm *contractManager) GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
 	return cm.database.GetFFI(ctx, ns, name, version)
 }
 
-func (cm *contractManager) GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error) {
+func (cm *contractManager) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error) {
 	return cm.database.GetFFIByID(ctx, id)
 }
 
-func (cm *contractManager) GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
+func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
 	filter = cm.scopeNS(ns, filter)
 	return cm.database.GetFFIs(ctx, ns, filter)
 }

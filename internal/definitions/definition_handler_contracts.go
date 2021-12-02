@@ -23,14 +23,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) persistContractInterface(ctx context.Context, contractInterface *fftypes.FFI) (valid bool, err error) {
-	err = dh.database.InsertFFI(ctx, contractInterface)
+func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) (valid bool, err error) {
+	err = dh.database.InsertFFI(ctx, ffi)
 	if err != nil {
 		return false, err
 	}
 
-	for _, method := range contractInterface.Methods {
-		err := dh.database.UpsertFFIMethod(ctx, contractInterface.Namespace, contractInterface.ID, method)
+	for _, method := range ffi.Methods {
+		err := dh.database.UpsertFFIMethod(ctx, ffi.Namespace, ffi.ID, method)
 		if err != nil {
 			return false, err
 		}
@@ -57,7 +57,7 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftyp
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID
-			valid, err = dh.persistContractInterface(ctx, &broadcast)
+			valid, err = dh.persistFFI(ctx, &broadcast)
 			if err != nil {
 				return ActionReject, err
 			}
