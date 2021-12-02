@@ -32,7 +32,7 @@ spec:
         - name: firefly
           securityContext:
             {{- toYaml .Values.core.securityContext | nindent 12 }}
-          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.core.image.pullPolicy }}
           env:
             - name: FIREFLY_NODE_NAME

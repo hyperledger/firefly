@@ -96,10 +96,10 @@ config:
 # Configures the properties of the StatefulSet, Service, and optionally Ingress used to deploy and expose FireFly
 core:
   image:
-    repository: ghcr.io/hyperledger-labs/firefly
+    repository: ghcr.io/hyperledger/firefly
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: latest
+    # tag: latest
 
   extraEnv: []
     # - name: FIREFLY_LOG_LEVEL
@@ -187,10 +187,10 @@ dataexchange:
     #   value: DEBUG
 
   image:
-    repository: ghcr.io/hyperledger-labs/firefly-dataexchange-https
+    repository: ghcr.io/hyperledger/firefly-dataexchange-https
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: latest
+    tag: v0.9.2
 
   imagePullSecrets: []
   nameOverride: ""
@@ -215,13 +215,14 @@ dataexchange:
     p2pPort: 5001
 
   # The Ingress templated will only expose the HTTPS DataExchange P2P endpoint, as its API will only need to be accessible to FireFly
-  # NOTE: tls is not templatable for the Ingress since it is provided as part of the mTLS certificate above.
+  # NOTE: TLS is not templatable for the Ingress since it is provided as part of the mTLS certificate above. TLS passthrough
+  #       must be enabled for the Ingress in order for mTLS to work, make sure to set the appropriate annotation for your
+  #       respective Ingress controller. See below for an example of the passthrough annotation for ingress-nginx.
   ingress:
     enabled: false
     className: ""
     annotations: {}
-      # kubernetes.io/ingress.class: nginx
-      # kubernetes.io/tls-acme: "true"
+      # nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     hosts:
       - host: chart-example.local
 
