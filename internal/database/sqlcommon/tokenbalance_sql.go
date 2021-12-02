@@ -211,7 +211,7 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 	}
 	defer rows.Close()
 
-	var accounts []*fftypes.TokenAccount
+	accounts := make([]*fftypes.TokenAccount, 0)
 	for rows.Next() {
 		var account fftypes.TokenAccount
 		if err := rows.Scan(&account.Key); err != nil {
@@ -239,7 +239,7 @@ func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter
 	}
 	defer rows.Close()
 
-	var pools []*fftypes.TokenAccountPool
+	pools := make([]*fftypes.TokenAccountPool, 0)
 	for rows.Next() {
 		var pool fftypes.TokenAccountPool
 		if err := rows.Scan(&pool.Pool); err != nil {
