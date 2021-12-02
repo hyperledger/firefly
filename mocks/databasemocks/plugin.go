@@ -706,13 +706,13 @@ func (_m *Plugin) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, 
 	return r0, r1, r2
 }
 
-// GetMetrics provides a mock function with given fields: ctx, intervals, tableName
-func (_m *Plugin) GetMetrics(ctx context.Context, intervals []*fftypes.MetricInterval, tableName string) ([]*fftypes.Metric, error) {
-	ret := _m.Called(ctx, intervals, tableName)
+// GetMetrics provides a mock function with given fields: ctx, intervals, collection
+func (_m *Plugin) GetMetrics(ctx context.Context, intervals []fftypes.MetricInterval, collection database.CollectionName) ([]*fftypes.Metric, error) {
+	ret := _m.Called(ctx, intervals, collection)
 
 	var r0 []*fftypes.Metric
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.MetricInterval, string) []*fftypes.Metric); ok {
-		r0 = rf(ctx, intervals, tableName)
+	if rf, ok := ret.Get(0).(func(context.Context, []fftypes.MetricInterval, database.CollectionName) []*fftypes.Metric); ok {
+		r0 = rf(ctx, intervals, collection)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Metric)
@@ -720,8 +720,8 @@ func (_m *Plugin) GetMetrics(ctx context.Context, intervals []*fftypes.MetricInt
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.MetricInterval, string) error); ok {
-		r1 = rf(ctx, intervals, tableName)
+	if rf, ok := ret.Get(1).(func(context.Context, []fftypes.MetricInterval, database.CollectionName) error); ok {
+		r1 = rf(ctx, intervals, collection)
 	} else {
 		r1 = ret.Error(1)
 	}

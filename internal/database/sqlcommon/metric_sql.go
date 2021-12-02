@@ -24,11 +24,11 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (s *SQLCommon) getCaseQueries(intervals []*fftypes.MetricInterval) (caseQueries []sq.CaseBuilder) {
+func (s *SQLCommon) getCaseQueries(intervals []fftypes.MetricInterval) (caseQueries []sq.CaseBuilder) {
 	for _, interval := range intervals {
 		caseQueries = append(caseQueries, sq.Case().
 			When(
@@ -44,6 +44,21 @@ func (s *SQLCommon) getCaseQueries(intervals []*fftypes.MetricInterval) (caseQue
 	return caseQueries
 }
 
+func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection database.CollectionName) (tableName string, err error) {
+	switch collection {
+	case database.CollectionName(database.CollectionMessages):
+		return "messages", nil
+	case database.CollectionName(database.CollectionTransactions):
+		return "transactions", nil
+	case database.CollectionName(database.CollectionOperations):
+		return "operations", nil
+	case database.CollectionName(database.CollectionEvents):
+		return "events", nil
+	default:
+		return "", i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, collection)
+	}
+}
+
 func (s *SQLCommon) metricResult(ctx context.Context, rows *sql.Rows, cols []interface{}) ([]interface{}, error) {
 	results := []interface{}{}
 
@@ -52,25 +67,26 @@ func (s *SQLCommon) metricResult(ctx context.Context, rows *sql.Rows, cols []int
 	}
 	err := rows.Scan(results...)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "metrics")
+		return nil, i18n.NewError(ctx, i18n.MsgDBReadErr, "metrics")
 	}
 	return cols, nil
 }
 
-func (s *SQLCommon) GetMetrics(ctx context.Context, intervals []*fftypes.MetricInterval, tableName string) ([]*fftypes.Metric, error) {
+func (s *SQLCommon) GetMetrics(ctx context.Context, intervals []fftypes.MetricInterval, collection database.CollectionName) (metrics []*fftypes.Metric, err error) {
+	tableName, err := s.getTableNameFromCollection(ctx, collection)
+	if err != nil {
+		return nil, err
+	}
+
 	cols := []interface{}{}
 	qb := sq.Select()
 
-	caseQueries := s.getCaseQueries(intervals)
-	for i, caseQuery := range caseQueries {
-		query, args, err := caseQuery.ToSql()
-		if err != nil {
-			return nil, err
-		}
+	for i, caseQuery := range s.getCaseQueries(intervals) {
+		query, args, _ := caseQuery.ToSql()
 		col := "case_" + strconv.Itoa(i)
 		cols = append(cols, "")
 
-		qb = qb.Column(sq.Alias(sq.Expr("sum("+query+")", args...), col))
+		qb = qb.Column(sq.Alias(sq.Expr("SUM("+query+")", args...), col))
 	}
 
 	rows, _, err := s.query(ctx, qb.From(tableName))
@@ -78,18 +94,14 @@ func (s *SQLCommon) GetMetrics(ctx context.Context, intervals []*fftypes.MetricI
 		return nil, err
 	}
 	defer rows.Close()
-
 	if !rows.Next() {
-		log.L(ctx).Debugf("Error fetching rows from '%s' table", tableName)
-		return nil, nil
+		return nil, i18n.NewError(ctx, i18n.MsgErrorFetchingRows)
 	}
 
 	res, err := s.metricResult(ctx, rows, cols)
 	if err != nil {
 		return nil, err
 	}
-
-	metrics := []*fftypes.Metric{}
 
 	for i, interval := range res {
 		metrics = append(metrics, &fftypes.Metric{
@@ -98,5 +110,5 @@ func (s *SQLCommon) GetMetrics(ctx context.Context, intervals []*fftypes.MetricI
 		})
 	}
 
-	return metrics, err
+	return metrics, nil
 }

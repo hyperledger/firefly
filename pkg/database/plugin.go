@@ -406,7 +406,7 @@ type iTokenTransferCollection interface {
 
 type iMetricCollection interface {
 	// GetMetrics - Get metrics for specified time interval
-	GetMetrics(ctx context.Context, intervals []*fftypes.MetricInterval, tableName string) ([]*fftypes.Metric, error)
+	GetMetrics(ctx context.Context, intervals []fftypes.MetricInterval, collection CollectionName) ([]*fftypes.Metric, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -478,7 +478,7 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages OrderedUUIDCollectionNS = "message"
+	CollectionMessages OrderedUUIDCollectionNS = "messages"
 	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 

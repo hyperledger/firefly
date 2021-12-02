@@ -19,6 +19,8 @@ package fftypes
 const (
 	// MetricMaxBuckets max buckets that can be requested
 	MetricMaxBuckets = 100
+	// MetricMinBuckets min buckets that can be requested
+	MetricMinBuckets = 1
 )
 
 // Metric is a timestamp and count

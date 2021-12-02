@@ -18,17 +18,17 @@ package orchestrator
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) getMetricIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []*fftypes.MetricInterval) {
+func (or *orchestrator) getMetricIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []fftypes.MetricInterval) {
 	timeIntervalLength := (endTime - startTime) / numBuckets
 
 	for i := startTime; i < endTime; i += timeIntervalLength {
-		intervals = append(intervals, &fftypes.MetricInterval{
+		intervals = append(intervals, fftypes.MetricInterval{
 			StartTime: fftypes.UnixTime(i),
 			EndTime:   fftypes.UnixTime(i + timeIntervalLength),
 		})
@@ -37,27 +37,14 @@ func (or *orchestrator) getMetricIntervals(startTime int64, endTime int64, numBu
 	return intervals
 }
 
-func (or *orchestrator) GetMetrics(ctx context.Context, ns string, startTime string, endTime string, buckets string, tableName string) ([]*fftypes.Metric, error) {
-	startTimeInt, err := strconv.ParseInt(startTime, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	endTimeInt, err := strconv.ParseInt(endTime, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	numBuckets, err := strconv.ParseInt(buckets, 10, 64)
-	if err != nil {
-		return nil, err
+func (or *orchestrator) GetMetrics(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*fftypes.Metric, error) {
+	if buckets > fftypes.MetricMaxBuckets || buckets < fftypes.MetricMinBuckets {
+		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, fftypes.MetricMinBuckets, fftypes.MetricMaxBuckets)
 	}
 
-	if numBuckets > fftypes.MetricMaxBuckets {
-		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, fftypes.MetricMaxBuckets)
-	}
+	intervals := or.getMetricIntervals(startTime, endTime, buckets)
 
-	intervals := or.getMetricIntervals(startTimeInt, endTimeInt, numBuckets)
-
-	metrics, err := or.database.GetMetrics(ctx, intervals, tableName)
+	metrics, err := or.database.GetMetrics(ctx, intervals, collection)
 	if err != nil {
 		return nil, err
 	}

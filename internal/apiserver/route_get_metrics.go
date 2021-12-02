@@ -18,10 +18,12 @@ package apiserver
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -36,7 +38,7 @@ var getMetrics = &oapispec.Route{
 		{Name: "startTime", Description: i18n.MsgMetricStartTimeParam, IsBool: false},
 		{Name: "endTime", Description: i18n.MsgMetricEndTimeParam, IsBool: false},
 		{Name: "buckets", Description: i18n.MsgMetricBucketsParam, IsBool: false},
-		{Name: "type", Description: i18n.MsgMetricTypeParam, IsBool: false},
+		{Name: "collection", Description: i18n.MsgMetricCollectionParam, IsBool: false},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
@@ -44,6 +46,18 @@ var getMetrics = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Metric{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.GetMetrics(r.Ctx, r.PP["ns"], r.QP["startTime"], r.QP["endTime"], r.QP["buckets"], r.QP["type"])
+		startTime, err := strconv.ParseInt(r.QP["startTime"], 10, 64)
+		if err != nil {
+			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidMetricParam, "startTime")
+		}
+		endTime, err := strconv.ParseInt(r.QP["endTime"], 10, 64)
+		if err != nil {
+			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidMetricParam, "endTime")
+		}
+		buckets, err := strconv.ParseInt(r.QP["buckets"], 10, 64)
+		if err != nil {
+			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidMetricParam, "buckets")
+		}
+		return r.Or.GetMetrics(r.Ctx, r.PP["ns"], startTime, endTime, buckets, database.CollectionName(r.QP["collection"]))
 	},
 }

@@ -3060,9 +3060,9 @@ paths:
         name: buckets
         schema:
           type: string
-      - description: Type of metrics to fetch
+      - description: Collection to fetch
         in: query
-        name: type
+        name: collection
         schema:
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
