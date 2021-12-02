@@ -1,7 +1,7 @@
 # FireFly
 
-A bare-bones Helm chart for installing a [FireFly](https://github.com/hyperledger-labs/firefly) node with robust templating of its configuration
-for development and production scenarios. Additionally, includes FireFly's [default DataExchange](https://github.com/hyperledger-labs/firefly-dataexchange-https) component
+A bare-bones Helm chart for installing a [FireFly](https://github.com/hyperledger/firefly) node with robust templating of its configuration
+for development and production scenarios. Additionally, includes FireFly's [default DataExchange](https://github.com/hyperledger/firefly-dataexchange-https) component
 for simple, private messaging using HTTPS backed with mTLS.
 
 ## Prerequisites
