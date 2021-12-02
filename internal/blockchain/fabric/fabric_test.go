@@ -148,7 +148,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.Equal(t, "fabric", e.Name())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 	assert.True(t, e.Capabilities().GlobalSequencer)
 
 	err = e.Start()
@@ -225,7 +225,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 
 	assert.NoError(t, err)
 
@@ -568,6 +568,9 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
 
 	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(nil)
 
@@ -609,6 +612,9 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
 		callbacks: em,
+	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
 	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(nil)
@@ -652,6 +658,9 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
 
 	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -677,6 +686,10 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
+
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
 	assert.NoError(t, err)
@@ -699,6 +712,10 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
+
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
 	assert.NoError(t, err)
@@ -710,6 +727,9 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
@@ -729,6 +749,9 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
@@ -748,6 +771,9 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
@@ -767,6 +793,9 @@ func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,

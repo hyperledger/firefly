@@ -51,7 +51,7 @@ type Ethereum struct {
 	client       *resty.Client
 	initInfo     struct {
 		stream *eventStream
-		subs   []*subscription
+		sub    *subscription
 	}
 	wsconn wsclient.WSClient
 	closed chan struct{}
@@ -87,10 +87,7 @@ type paramDetails struct {
 	Indexed bool
 }
 
-var requiredSubscriptions = []string{
-	"BatchPin",
-}
-
+var batchPinEvent = "BatchPin"
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
 func (e *Ethereum) Name() string {
@@ -146,7 +143,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-	if e.initInfo.subs, err = streams.ensureSubscriptions(e.initInfo.stream.ID, requiredSubscriptions); err != nil {
+	if e.initInfo.sub, err = streams.ensureSubscription(e.initInfo.stream.ID, batchPinEvent); err != nil {
 		return err
 	}
 
@@ -296,16 +293,19 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		l1 := l.WithField("ethmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
 		signature := msgJSON.GetString("signature")
+		sub := msgJSON.GetString("subId")
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		switch signature {
-		case broadcastBatchEventSignature:
-			if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
-				return err
+		if sub == e.initInfo.sub.ID {
+			switch signature {
+			case broadcastBatchEventSignature:
+				if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
+					return err
+				}
+			default:
+				l.Infof("Ignoring event with unknown signature: %s", signature)
 			}
-		default:
-			l.Infof("Ignoring event with unknown signature: %s", signature)
 		}
 	}
 

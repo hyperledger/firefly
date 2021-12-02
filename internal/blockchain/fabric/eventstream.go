@@ -130,29 +130,24 @@ func (s *streamManager) createSubscription(name, stream, event string) (*subscri
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscriptions(stream string, subscriptions []string) (subs []*subscription, err error) {
+func (s *streamManager) ensureSubscription(stream, eventType string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, eventType := range subscriptions {
-		var sub *subscription
-		for _, s := range existingSubs {
-			if s.Name == eventType {
-				sub = s
-			}
+	for _, s := range existingSubs {
+		if s.Name == eventType {
+			sub = s
 		}
-
-		if sub == nil {
-			if sub, err = s.createSubscription(eventType, stream, eventType); err != nil {
-				return nil, err
-			}
-		}
-
-		log.L(s.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		subs = append(subs, sub)
-
 	}
-	return subs, nil
+
+	if sub == nil {
+		if sub, err = s.createSubscription(eventType, stream, eventType); err != nil {
+			return nil, err
+		}
+	}
+
+	log.L(s.ctx).Infof("%s subscription: %s", eventType, sub.ID)
+	return sub, nil
 }

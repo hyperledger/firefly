@@ -53,7 +53,7 @@ type Fabric struct {
 	client         *resty.Client
 	initInfo       struct {
 		stream *eventStream
-		subs   []*subscription
+		sub    *subscription
 	}
 	idCache map[string]*fabIdentity
 	wsconn  wsclient.WSClient
@@ -147,10 +147,7 @@ type Location struct {
 	Chaincode string `json:"chaincode"`
 }
 
-var requiredSubscriptions = []string{
-	"BatchPin",
-}
-
+var batchPinEvent = "BatchPin"
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
 var cnPatteren = regexp.MustCompile("CN=([^,]+)")
 
@@ -213,7 +210,7 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		return err
 	}
 	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
-	if f.initInfo.subs, err = streams.ensureSubscriptions(f.initInfo.stream.ID, requiredSubscriptions); err != nil {
+	if f.initInfo.sub, err = streams.ensureSubscription(f.initInfo.stream.ID, batchPinEvent); err != nil {
 		return err
 	}
 
@@ -347,16 +344,19 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		l1 := l.WithField("fabmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
 		eventName := msgJSON.GetString("eventName")
+		sub := msgJSON.GetString("subId")
 		l1.Infof("Received '%s' message", eventName)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		switch eventName {
-		case broadcastBatchEventName:
-			if err := f.handleBatchPinEvent(ctx1, msgJSON); err != nil {
-				return err
+		if sub == f.initInfo.sub.ID {
+			switch eventName {
+			case broadcastBatchEventName:
+				if err := f.handleBatchPinEvent(ctx1, msgJSON); err != nil {
+					return err
+				}
+			default:
+				l.Infof("Ignoring event with unknown name: %s", eventName)
 			}
-		default:
-			l.Infof("Ignoring event with unknown name: %s", eventName)
 		}
 	}
 

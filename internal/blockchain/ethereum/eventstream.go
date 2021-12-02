@@ -123,7 +123,7 @@ func (s *streamManager) createSubscription(name, stream, event string) (*subscri
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscriptions(stream string, subscriptions []string) (subs []*subscription, err error) {
+func (s *streamManager) ensureSubscription(stream, event string) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -134,27 +134,23 @@ func (s *streamManager) ensureSubscriptions(stream string, subscriptions []strin
 		return nil, err
 	}
 
-	for _, eventType := range subscriptions {
-		var sub *subscription
-		subName := fmt.Sprintf("%s_%s", eventType, instanceUniqueHash)
-		for _, s := range existingSubs {
-			if s.Name == subName ||
-				/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
-				   If one of these very early environments needed a new subscription, the existing one would need to
-					 be deleted manually. */
-				s.Name == eventType {
-				sub = s
-			}
+	subName := fmt.Sprintf("%s_%s", event, instanceUniqueHash)
+	for _, s := range existingSubs {
+		if s.Name == subName ||
+			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
+			   If one of these very early environments needed a new subscription, the existing one would need to
+				 be deleted manually. */
+			s.Name == event {
+			sub = s
 		}
-
-		if sub == nil {
-			if sub, err = s.createSubscription(subName, stream, eventType); err != nil {
-				return nil, err
-			}
-		}
-
-		log.L(s.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		subs = append(subs, sub)
 	}
-	return subs, nil
+
+	if sub == nil {
+		if sub, err = s.createSubscription(subName, stream, event); err != nil {
+			return nil, err
+		}
+	}
+
+	log.L(s.ctx).Infof("%s subscription: %s", event, sub.ID)
+	return sub, nil
 }
