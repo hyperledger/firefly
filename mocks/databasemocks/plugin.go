@@ -390,6 +390,38 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	return r0, r1, r2
 }
 
+// GetContractSubscriptions provides a mock function with given fields: ctx, ns, filter
+func (_m *Plugin) GetContractSubscriptions(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.ContractSubscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractSubscription); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ContractSubscription)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetData provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftypes.Data, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -2274,6 +2306,20 @@ func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRe
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ConfigRecord, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertContractSubscription provides a mock function with given fields: ctx, sub
+func (_m *Plugin) UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) error {
+	ret := _m.Called(ctx, sub)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractSubscription) error); ok {
+		r0 = rf(ctx, sub)
 	} else {
 		r0 = ret.Error(0)
 	}

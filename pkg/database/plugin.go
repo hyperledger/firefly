@@ -43,7 +43,7 @@ const (
 
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
-	PeristenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
+	PersistenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
 
 	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitPrefix(prefix config.Prefix)
@@ -146,7 +146,7 @@ type iTransactionCollection interface {
 }
 
 type iDatatypeCollection interface {
-	// UpsertDatatype - Upsert a data definitino
+	// UpsertDatatype - Upsert a data definition
 	UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) (err error)
 
 	// UpdateDatatype - Update data definition
@@ -346,7 +346,7 @@ type iConfigRecordCollection interface {
 	// Throws IDMismatch error if updating and ids don't match
 	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
 
-	// GetConfigRecord - Get an config record by key
+	// GetConfigRecord - Get a config record by key
 	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
 
 	// GetConfigRecords - Get config records
@@ -430,6 +430,14 @@ type iContractAPICollection interface {
 	GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error)
 }
 
+type iContractSubscriptionCollection interface {
+	// UpsertContractSubscription - upsert a subscription to an external smart contract
+	UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) (err error)
+
+	// GetContractSubscriptions - get smart contract subscriptions
+	GetContractSubscriptions(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
+}
+
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
@@ -454,7 +462,7 @@ type iContractAPICollection interface {
 // For SQL databases the process of adding a new database is simplified via the common SQL layer.
 // For NoSQL databases, the code should be straight forward to map the collections, indexes, and operations.
 //
-type PeristenceInterface interface {
+type PersistenceInterface interface {
 	fftypes.Named
 
 	// RunAsGroup instructs the database plugin that all database operations performed within the context
@@ -490,6 +498,7 @@ type PeristenceInterface interface {
 	iFFIMethodCollection
 	iFFIEventCollection
 	iContractAPICollection
+	iContractSubscriptionCollection
 }
 
 // CollectionName represents all collections
@@ -872,4 +881,13 @@ var FFIEventQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},
+}
+
+// ContractSubscriptionQueryFactory filter fields for contract subscriptions
+var ContractSubscriptionQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"interfaceid": &UUIDField{},
+	"eventid":     &UUIDField{},
+	"namespace":   &StringField{},
+	"protocolid":  &StringField{},
 }
