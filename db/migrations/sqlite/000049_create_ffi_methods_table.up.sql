@@ -1,4 +1,4 @@
-CREATE TABLE contractinterface_methods (
+CREATE TABLE ffimethods (
   seq               INTEGER         PRIMARY KEY AUTOINCREMENT,
   id                UUID            NOT NULL,
   interface_id      UUID            NOT NULL,
@@ -8,4 +8,4 @@ CREATE TABLE contractinterface_methods (
   returns           BYTEA           NOT NULL
 );
 
-CREATE UNIQUE INDEX contractmethods_interface_id_name ON contractinterface_methods(interface_id,name);
+CREATE UNIQUE INDEX ffimethods_name ON ffimethods(interface_id,name);

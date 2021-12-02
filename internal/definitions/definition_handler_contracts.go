@@ -24,13 +24,13 @@ import (
 )
 
 func (dh *definitionHandlers) persistContractInterface(ctx context.Context, contractInterface *fftypes.FFI) (valid bool, err error) {
-	err = dh.database.InsertContractInterface(ctx, contractInterface)
+	err = dh.database.InsertFFI(ctx, contractInterface)
 	if err != nil {
 		return false, err
 	}
 
 	for _, method := range contractInterface.Methods {
-		err := dh.database.UpsertContractInterfaceMethod(ctx, contractInterface.Namespace, contractInterface.ID, method)
+		err := dh.database.UpsertFFIMethod(ctx, contractInterface.Namespace, contractInterface.ID, method)
 		if err != nil {
 			return false, err
 		}
@@ -47,7 +47,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	return true, nil
 }
 
-func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)

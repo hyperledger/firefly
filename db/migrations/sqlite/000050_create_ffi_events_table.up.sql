@@ -1,4 +1,4 @@
-CREATE TABLE contractinterface_events (
+CREATE TABLE ffievents (
   seq               INTEGER         PRIMARY KEY AUTOINCREMENT,
   id                UUID            NOT NULL,
   interface_id      UUID            NULL,
@@ -7,4 +7,4 @@ CREATE TABLE contractinterface_events (
   params            BYTEA           NOT NULL
 );
 
-CREATE UNIQUE INDEX contractevents_interface_id_name ON contractinterface_events(interface_id,name);
+CREATE UNIQUE INDEX ffievents_name ON ffievents(interface_id,name);

@@ -54,14 +54,14 @@ func TestContractInterfaceMethodsE2EWithDB(t *testing.T) {
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractInterfaceMethods, fftypes.ChangeEventTypeCreated, "ns", methodID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractInterfaceMethods, fftypes.ChangeEventTypeUpdated, "ns", methodID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIMethods, fftypes.ChangeEventTypeCreated, "ns", methodID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIMethods, fftypes.ChangeEventTypeUpdated, "ns", methodID).Return()
 
-	err := s.UpsertContractInterfaceMethod(ctx, "ns", contractID, method)
+	err := s.UpsertFFIMethod(ctx, "ns", contractID, method)
 	assert.NoError(t, err)
 
 	// Query back the method (by name)
-	methodRead, err := s.GetContractInterfaceMethod(ctx, "ns", contractID, "Set")
+	methodRead, err := s.GetFFIMethod(ctx, "ns", contractID, "Set")
 	assert.NoError(t, err)
 	assert.NotNil(t, methodRead)
 	methodJson, _ := json.Marshal(&method)
@@ -69,12 +69,12 @@ func TestContractInterfaceMethodsE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(methodJson), string(methodReadJson))
 
 	// Query back the method (by query filter)
-	fb := database.ContractInterfaceMethodQueryFactory.NewFilter(ctx)
+	fb := database.FFIMethodQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", methodRead.ID.String()),
 		fb.Eq("name", methodRead.Name),
 	)
-	methods, res, err := s.GetContractInterfaceMethods(ctx, filter.Count(true))
+	methods, res, err := s.GetFFIMethods(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(methods))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -83,11 +83,11 @@ func TestContractInterfaceMethodsE2EWithDB(t *testing.T) {
 
 	// Update method
 	method.Params = fftypes.FFIParams{}
-	err = s.UpsertContractInterfaceMethod(ctx, "ns", contractID, method)
+	err = s.UpsertFFIMethod(ctx, "ns", contractID, method)
 	assert.NoError(t, err)
 
 	// Query back the method (by name)
-	methodRead, err = s.GetContractInterfaceMethod(ctx, "ns", contractID, "Set")
+	methodRead, err = s.GetFFIMethod(ctx, "ns", contractID, "Set")
 	assert.NoError(t, err)
 	assert.NotNil(t, methodRead)
 	methodJson, _ = json.Marshal(&method)

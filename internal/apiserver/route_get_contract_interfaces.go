@@ -34,7 +34,7 @@ var getContractInterfaces = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.ContractInterfaceQueryFactory,
+	FilterFactory:   database.FFIQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONInputMask:   nil,

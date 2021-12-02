@@ -404,23 +404,23 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
-type iContractInterfaceCollection interface {
-	InsertContractInterface(ctx context.Context, cd *fftypes.FFI) error
-	GetContractInterfaces(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
-	GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error)
-	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
+type iFFICollection interface {
+	InsertFFI(ctx context.Context, cd *fftypes.FFI) error
+	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
+	GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error)
+	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 }
 
-type iContractInterfaceMethodCollection interface {
-	UpsertContractInterfaceMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error
-	GetContractInterfaceMethod(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error)
-	GetContractInterfaceMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
+type iFFIMethodCollection interface {
+	UpsertFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error
+	GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error)
+	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
-type iContractInterfaceEventCollection interface {
-	UpsertContractInterfaceEvent(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIEvent) error
-	GetContractInterfaceEvent(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error)
-	GetContractInterfaceEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
+type iFFIEventCollection interface {
+	UpsertFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIEvent) error
+	GetFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error)
+	GetFFIEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
 }
 
 type iContractAPICollection interface {
@@ -486,9 +486,9 @@ type PeristenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
-	iContractInterfaceCollection
-	iContractInterfaceMethodCollection
-	iContractInterfaceEventCollection
+	iFFICollection
+	iFFIMethodCollection
+	iFFIEventCollection
 	iContractAPICollection
 }
 
@@ -519,17 +519,17 @@ const (
 type UUIDCollectionNS CollectionName
 
 const (
-	CollectionBatches                  UUIDCollectionNS = "batches"
-	CollectionData                     UUIDCollectionNS = "data"
-	CollectionDataTypes                UUIDCollectionNS = "datatypes"
-	CollectionOperations               UUIDCollectionNS = "operations"
-	CollectionSubscriptions            UUIDCollectionNS = "subscriptions"
-	CollectionTransactions             UUIDCollectionNS = "transactions"
-	CollectionTokenPools               UUIDCollectionNS = "tokenpools"
-	CollectionContractInterfaces       UUIDCollectionNS = "contractinterfaces"
-	CollectionContractInterfaceMethods UUIDCollectionNS = "contractinterface_methods"
-	CollectionContractInterfaceEvents  UUIDCollectionNS = "contractinterface_events"
-	CollectionContractAPIs             UUIDCollectionNS = "contractapis"
+	CollectionBatches       UUIDCollectionNS = "batches"
+	CollectionData          UUIDCollectionNS = "data"
+	CollectionDataTypes     UUIDCollectionNS = "datatypes"
+	CollectionOperations    UUIDCollectionNS = "operations"
+	CollectionSubscriptions UUIDCollectionNS = "subscriptions"
+	CollectionTransactions  UUIDCollectionNS = "transactions"
+	CollectionTokenPools    UUIDCollectionNS = "tokenpools"
+	CollectionFFIs          UUIDCollectionNS = "ffi"
+	CollectionFFIMethods    UUIDCollectionNS = "ffimethods"
+	CollectionFFIEvents     UUIDCollectionNS = "ffievents"
+	CollectionContractAPIs  UUIDCollectionNS = "contractapis"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can
@@ -852,23 +852,23 @@ var TokenTransferQueryFactory = &queryFields{
 	"created":     &TimeField{},
 }
 
-// ContractInterfaceQueryFactory filter fields for contract definitions
-var ContractInterfaceQueryFactory = &queryFields{
+// FFIQueryFactory filter fields for contract definitions
+var FFIQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},
 	"version":   &StringField{},
 }
 
-// ContractInterfaceMethodQueryFactory filter fields for contract methods
-var ContractInterfaceMethodQueryFactory = &queryFields{
+// FFIMethodQueryFactory filter fields for contract methods
+var FFIMethodQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},
 }
 
-// ContractInterfaceEventQueryFactory filter fields for contract events
-var ContractInterfaceEventQueryFactory = &queryFields{
+// FFIEventQueryFactory filter fields for contract events
+var FFIEventQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},

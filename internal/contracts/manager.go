@@ -51,7 +51,7 @@ func (cm *ContractManager) BroadcastContractInterface(ctx context.Context, ns st
 	ffi.ID = fftypes.NewUUID()
 	ffi.Namespace = ns
 
-	existing, err := cm.database.GetContractInterfaceByNameAndVersion(ctx, ffi.Namespace, ffi.Name, ffi.Version)
+	existing, err := cm.database.GetFFI(ctx, ffi.Namespace, ffi.Name, ffi.Version)
 
 	if existing != nil && err == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
@@ -71,7 +71,7 @@ func (cm *ContractManager) BroadcastContractInterface(ctx context.Context, ns st
 	}
 
 	// TODO: Do we do anything with this message here?
-	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineContractInterface, waitConfirm)
+	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
@@ -83,16 +83,16 @@ func (cm *ContractManager) scopeNS(ns string, filter database.AndFilter) databas
 }
 
 func (cm *ContractManager) GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
-	return cm.database.GetContractInterfaceByNameAndVersion(ctx, ns, name, version)
+	return cm.database.GetFFI(ctx, ns, name, version)
 }
 
 func (cm *ContractManager) GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error) {
-	return cm.database.GetContractInterfaceByID(ctx, id)
+	return cm.database.GetFFIByID(ctx, id)
 }
 
 func (cm *ContractManager) GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
 	filter = cm.scopeNS(ns, filter)
-	return cm.database.GetContractInterfaces(ctx, ns, filter)
+	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
 func (cm *ContractManager) GetContractMethod(ctx context.Context, ns, contractID, methodName string) (*fftypes.FFIMethod, error) {
@@ -129,7 +129,7 @@ func (cm *ContractManager) GetMethod(ctx context.Context, ns, contractInstanceNa
 	if err != nil {
 		return nil, err
 	}
-	return cm.database.GetContractInterfaceMethod(ctx, ns, contractID, methodName)
+	return cm.database.GetFFIMethod(ctx, ns, contractID, methodName)
 }
 
 func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
@@ -144,7 +144,7 @@ func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 			return nil, fmt.Errorf("error resolving contract method - method signature is required if contract ID is absent")
 		}
 
-		method, err = cm.database.GetContractInterfaceMethod(ctx, ns, req.ContractID, method.Name)
+		method, err = cm.database.GetFFIMethod(ctx, ns, req.ContractID, method.Name)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving contract method")
 		}

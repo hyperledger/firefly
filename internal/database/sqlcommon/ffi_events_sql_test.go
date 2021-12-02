@@ -47,14 +47,14 @@ func TestContractInterfaceEventsE2EWithDB(t *testing.T) {
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractInterfaceEvents, fftypes.ChangeEventTypeCreated, "ns", eventID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractInterfaceEvents, fftypes.ChangeEventTypeUpdated, "ns", eventID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, fftypes.ChangeEventTypeCreated, "ns", eventID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, fftypes.ChangeEventTypeUpdated, "ns", eventID).Return()
 
-	err := s.UpsertContractInterfaceEvent(ctx, "ns", contractID, event)
+	err := s.UpsertFFIEvent(ctx, "ns", contractID, event)
 	assert.NoError(t, err)
 
 	// Query back the event (by name)
-	eventRead, err := s.GetContractInterfaceEvent(ctx, "ns", contractID, "Changed")
+	eventRead, err := s.GetFFIEvent(ctx, "ns", contractID, "Changed")
 	assert.NoError(t, err)
 	assert.NotNil(t, eventRead)
 	eventJson, _ := json.Marshal(&event)
@@ -62,12 +62,12 @@ func TestContractInterfaceEventsE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 
 	// Query back the event (by query filter)
-	fb := database.ContractInterfaceEventQueryFactory.NewFilter(ctx)
+	fb := database.FFIEventQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("name", eventRead.Name),
 	)
-	events, res, err := s.GetContractInterfaceEvents(ctx, filter.Count(true))
+	events, res, err := s.GetFFIEvents(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -76,11 +76,11 @@ func TestContractInterfaceEventsE2EWithDB(t *testing.T) {
 
 	// Update event
 	event.Params = fftypes.FFIParams{}
-	err = s.UpsertContractInterfaceEvent(ctx, "ns", contractID, event)
+	err = s.UpsertFFIEvent(ctx, "ns", contractID, event)
 	assert.NoError(t, err)
 
 	// Query back the event (by name)
-	eventRead, err = s.GetContractInterfaceEvent(ctx, "ns", contractID, "Changed")
+	eventRead, err = s.GetFFIEvent(ctx, "ns", contractID, "Changed")
 	assert.NoError(t, err)
 	assert.NotNil(t, eventRead)
 	eventJson, _ = json.Marshal(&event)
