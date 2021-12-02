@@ -1707,6 +1707,20 @@ func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) e
 	return r0
 }
 
+// InsertOperation provides a mock function with given fields: ctx, operation
+func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operation) error {
+	ret := _m.Called(ctx, operation)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
+		r0 = rf(ctx, operation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Name provides a mock function with given fields:
 func (_m *Plugin) Name() string {
 	ret := _m.Called()
@@ -2092,20 +2106,6 @@ func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset, allowE
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertOperation provides a mock function with given fields: ctx, operation, allowExisting
-func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) error {
-	ret := _m.Called(ctx, operation, allowExisting)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation, bool) error); ok {
-		r0 = rf(ctx, operation, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}

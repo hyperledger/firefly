@@ -154,7 +154,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 	mdi.On("UpdateBatch", mock.Anything, batch.ID, mock.Anything).Return(nil)
-	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
@@ -170,7 +170,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "wrong", Key: "wrong"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
@@ -198,7 +198,7 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
 	mbi.On("Name").Return("unittest")
 
@@ -226,7 +226,7 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

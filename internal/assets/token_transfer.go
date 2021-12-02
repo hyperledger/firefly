@@ -283,7 +283,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		if err != nil {
 			return err
 		}
-		if err = s.mgr.database.UpsertOperation(ctx, op, false); err != nil {
+		if err = s.mgr.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
 		if s.transfer.Message != nil {
