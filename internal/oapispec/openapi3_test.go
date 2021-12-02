@@ -50,7 +50,7 @@ var testRoutes = []*Route{
 		FilterFactory:   nil,
 		Description:     i18n.MsgTBD,
 		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-		JSONInputMask:   []string{"id"},
+		JSONInputMask:   nil,
 		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	},
@@ -107,6 +107,19 @@ var testRoutes = []*Route{
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusNoContent},
+	},
+	{
+		Name:            "op5",
+		Path:            "example2",
+		Method:          http.MethodPost,
+		PathParams:      nil,
+		QueryParams:     nil,
+		FilterFactory:   nil,
+		Description:     i18n.MsgTBD,
+		JSONInputValue:  func() interface{} { return &fftypes.Data{} },
+		JSONInputMask:   []string{"id"},
+		JSONOutputValue: func() interface{} { return &fftypes.Data{} },
+		JSONOutputCodes: []int{http.StatusOK},
 	},
 }
 
