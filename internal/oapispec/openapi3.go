@@ -101,7 +101,7 @@ func addInput(ctx context.Context, doc *openapi3.T, input interface{}, mask []st
 		}
 	}
 	if schemaRef == nil {
-		schemaRef, _ = openapi3gen.NewSchemaRefAndComponentsForValue(maskFields(input, mask), doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
+		schemaRef, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask), doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
 	}
 	op.RequestBody.Value.Content["application/json"] = &openapi3.MediaType{
 		Schema: schemaRef,
@@ -137,7 +137,7 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 }
 
 func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, op *openapi3.Operation) {
-	schemaRef, _ := openapi3gen.NewSchemaRefAndComponentsForValue(output, doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
+	schemaRef, _ := openapi3gen.NewSchemaRefForValue(output, doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
 	s := i18n.Expand(ctx, i18n.MsgSuccessResponse)
 	for _, code := range route.JSONOutputCodes {
 		op.Responses[strconv.FormatInt(int64(code), 10)] = &openapi3.ResponseRef{
