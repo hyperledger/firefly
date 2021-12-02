@@ -46,6 +46,9 @@ func SwaggerGen(ctx context.Context, routes []*Route, url string) *openapi3.T {
 			Version:     "1.0",
 			Description: "Copyright © 2021 Kaleido, Inc.",
 		},
+		Components: openapi3.Components{
+			Schemas: make(openapi3.Schemas),
+		},
 	}
 	opIds := make(map[string]bool)
 	for _, route := range routes {
@@ -89,7 +92,7 @@ func ffTagHandler(name string, t reflect.Type, tag reflect.StructTag, schema *op
 	return nil
 }
 
-func addInput(ctx context.Context, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
+func addInput(ctx context.Context, doc *openapi3.T, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
 	var schemaRef *openapi3.SchemaRef
 	if schemaDef != nil {
 		err := json.Unmarshal([]byte(schemaDef(ctx)), &schemaRef)
@@ -98,7 +101,7 @@ func addInput(ctx context.Context, input interface{}, mask []string, schemaDef f
 		}
 	}
 	if schemaRef == nil {
-		schemaRef, _, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask), openapi3gen.SchemaCustomizer(ffTagHandler))
+		schemaRef, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask), doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
 	}
 	op.RequestBody.Value.Content["application/json"] = &openapi3.MediaType{
 		Schema: schemaRef,
@@ -133,8 +136,8 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 	}
 }
 
-func addOutput(ctx context.Context, route *Route, output interface{}, op *openapi3.Operation) {
-	schemaRef, _, _ := openapi3gen.NewSchemaRefForValue(output)
+func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, op *openapi3.Operation) {
+	schemaRef, _ := openapi3gen.NewSchemaRefForValue(output, doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
 	s := i18n.Expand(ctx, i18n.MsgSuccessResponse)
 	for _, code := range route.JSONOutputCodes {
 		op.Responses[strconv.FormatInt(int64(code), 10)] = &openapi3.ResponseRef{
@@ -196,7 +199,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		}
 		initInput(op)
 		if input != nil {
-			addInput(ctx, input, route.JSONInputMask, route.JSONInputSchema, op)
+			addInput(ctx, doc, input, route.JSONInputMask, route.JSONInputSchema, op)
 		}
 		if route.FormUploadHandler != nil {
 			addFormInput(ctx, op, route.FormParams)
@@ -207,7 +210,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		output = route.JSONOutputValue()
 	}
 	if output != nil {
-		addOutput(ctx, route, output, op)
+		addOutput(ctx, doc, route, output, op)
 	}
 	for _, p := range route.PathParams {
 		example := p.Example
