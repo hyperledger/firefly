@@ -70,6 +70,7 @@ type Orchestrator interface {
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
 	Assets() assets.Manager
+	Contracts() contracts.Manager
 	IsPreInit() bool
 
 	// Status
@@ -119,17 +120,6 @@ type Orchestrator interface {
 
 	// Message Routing
 	RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
-
-	// Custom smart contracts
-	AddContractInterface(ctx context.Context, ns string, cd *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
-	GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
-	GetContractInterfaceByID(ctx context.Context, id string) (output *fftypes.FFI, err error)
-	GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.FFI, err error)
-	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
-
-	CreateContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (*fftypes.ContractAPI, error)
-	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
-	InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error)
 }
 
 type orchestrator struct {
@@ -155,7 +145,7 @@ type orchestrator struct {
 	tokens         map[string]tokens.Plugin
 	bc             boundCallbacks
 	preInitMode    bool
-	contracts      *contracts.ContractManager
+	contracts      contracts.Manager
 	node           *fftypes.UUID
 }
 
@@ -262,6 +252,10 @@ func (or *orchestrator) Data() data.Manager {
 
 func (or *orchestrator) Assets() assets.Manager {
 	return or.assets
+}
+
+func (or *orchestrator) Contracts() contracts.Manager {
+	return or.contracts
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
@@ -515,36 +509,4 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (or *orchestrator) AddContractInterface(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {
-	return or.contracts.BroadcastContractInterface(ctx, ns, ffi, waitConfirm)
-}
-
-func (or *orchestrator) GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.FFI, res *database.FilterResult, err error) {
-	return or.contracts.GetContractInterfaces(ctx, ns, filter)
-}
-
-func (or *orchestrator) GetContractInterfaceByID(ctx context.Context, id string) (output *fftypes.FFI, err error) {
-	return or.contracts.GetContractInterfaceByID(ctx, id)
-}
-
-func (or *orchestrator) GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (output *fftypes.FFI, err error) {
-	return or.contracts.GetContractInterfaceByNameAndVersion(ctx, ns, name, version)
-}
-
-func (or *orchestrator) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
-	return or.contracts.InvokeContract(ctx, ns, req)
-}
-
-func (or *orchestrator) InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
-	return or.contracts.InvokeContractAPI(ctx, ns, apiName, methodName, req)
-}
-
-func (or *orchestrator) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (output []*fftypes.ContractAPI, res *database.FilterResult, err error) {
-	return or.contracts.GetContractAPIs(ctx, ns, filter)
-}
-
-func (or *orchestrator) CreateContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
-	return or.contracts.BroadcastContractAPI(ctx, ns, api, waitConfirm)
 }
