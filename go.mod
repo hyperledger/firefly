@@ -32,7 +32,7 @@ require (
 	github.com/onsi/ginkgo v1.16.1 // indirect
 	github.com/onsi/gomega v1.11.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.8.0
+	github.com/prometheus/client_golang v1.11.0
 	github.com/qeesung/image2ascii v1.0.1
 	github.com/rs/cors v1.8.0
 	github.com/sirupsen/logrus v1.8.1
