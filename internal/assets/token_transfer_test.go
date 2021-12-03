@@ -454,6 +454,40 @@ func TestMintTokensFail(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("UpdateTransaction", context.Background(), mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestMintTokensFailAndDbFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mint := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			Amount: *fftypes.NewBigInt(5),
+		},
+		Pool: "pool1",
+	}
+	pool := &fftypes.TokenPool{
+		ProtocolID: "F1",
+		State:      fftypes.TokenPoolStateConfirmed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer && tx.Status != fftypes.OpStatusFailed
+	}), false).Return(nil)
+	mdi.On("UpdateTransaction", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("Update fail"))
+	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("Update fail"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")
