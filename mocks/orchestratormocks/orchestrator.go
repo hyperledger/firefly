@@ -221,6 +221,29 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	return r0, r1, r2
 }
 
+// GetChartHistogram provides a mock function with given fields: ctx, ns, startTime, endTime, buckets, tableName
+func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+	ret := _m.Called(ctx, ns, startTime, endTime, buckets, tableName)
+
+	var r0 []*fftypes.ChartHistogram
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, int64, database.CollectionName) []*fftypes.ChartHistogram); ok {
+		r0 = rf(ctx, ns, startTime, endTime, buckets, tableName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ChartHistogram)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int64, int64, int64, database.CollectionName) error); ok {
+		r1 = rf(ctx, ns, startTime, endTime, buckets, tableName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetConfig provides a mock function with given fields: ctx
 func (_m *Orchestrator) GetConfig(ctx context.Context) fftypes.JSONObject {
 	ret := _m.Called(ctx)
@@ -730,29 +753,6 @@ func (_m *Orchestrator) GetMessagesWithData(ctx context.Context, ns string, filt
 	}
 
 	return r0, r1, r2
-}
-
-// GetMetrics provides a mock function with given fields: ctx, ns, startTime, endTime, buckets, tableName
-func (_m *Orchestrator) GetMetrics(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.Metric, error) {
-	ret := _m.Called(ctx, ns, startTime, endTime, buckets, tableName)
-
-	var r0 []*fftypes.Metric
-	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, int64, database.CollectionName) []*fftypes.Metric); ok {
-		r0 = rf(ctx, ns, startTime, endTime, buckets, tableName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Metric)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, int64, int64, int64, database.CollectionName) error); ok {
-		r1 = rf(ctx, ns, startTime, endTime, buckets, tableName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetNamespace provides a mock function with given fields: ctx, ns

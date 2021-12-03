@@ -108,8 +108,8 @@ type Orchestrator interface {
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
 
-	// Metrics
-	GetMetrics(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.Metric, error)
+	// Charts
+	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogram, error)
 
 	// Config Management
 	GetConfig(ctx context.Context) fftypes.JSONObject

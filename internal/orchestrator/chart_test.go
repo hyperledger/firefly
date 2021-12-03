@@ -27,9 +27,9 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func makeTestIntervals(start int, numIntervals int) (intervals []fftypes.MetricInterval) {
+func makeTestIntervals(start int, numIntervals int) (intervals []fftypes.ChartHistogramInterval) {
 	for i := 0; i < numIntervals; i++ {
-		intervals = append(intervals, fftypes.MetricInterval{
+		intervals = append(intervals, fftypes.ChartHistogramInterval{
 			StartTime: fftypes.UnixTime(int64(start + i)),
 			EndTime:   fftypes.UnixTime(int64(start + i + 1)),
 		})
@@ -39,30 +39,30 @@ func makeTestIntervals(start int, numIntervals int) (intervals []fftypes.MetricI
 
 func TestGetMetricsBadIntervalMin(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetMetrics(context.Background(), "ns1", 1234567890, 9876543210, fftypes.MetricMinBuckets-1, database.CollectionName("test"))
+	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, fftypes.ChartHistogramMinBuckets-1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
 func TestGetMetricsBadIntervalMax(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetMetrics(context.Background(), "ns1", 1234567890, 9876543210, fftypes.MetricMaxBuckets+1, database.CollectionName("test"))
+	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, fftypes.ChartHistogramMaxBuckets+1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
 func TestGetMetricsFailDB(t *testing.T) {
 	or := newTestOrchestrator()
 	intervals := makeTestIntervals(1000000000, 10)
-	or.mdi.On("GetMetrics", mock.Anything, intervals, database.CollectionName("test")).Return(nil, fmt.Errorf("pop"))
-	_, err := or.GetMetrics(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
+	or.mdi.On("GetChartHistogram", mock.Anything, intervals, database.CollectionName("test")).Return(nil, fmt.Errorf("pop"))
+	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
 	assert.EqualError(t, err, "pop")
 }
 
 func TestGetMetricsSuccess(t *testing.T) {
 	or := newTestOrchestrator()
 	intervals := makeTestIntervals(1000000000, 10)
-	mockMetrics := []*fftypes.Metric{}
+	mockMetrics := []*fftypes.ChartHistogram{}
 
-	or.mdi.On("GetMetrics", mock.Anything, intervals, database.CollectionName("test")).Return(mockMetrics, nil)
-	_, err := or.GetMetrics(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
+	or.mdi.On("GetChartHistogram", mock.Anything, intervals, database.CollectionName("test")).Return(mockMetrics, nil)
+	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
 	assert.NoError(t, err)
 }

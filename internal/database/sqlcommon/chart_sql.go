@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (s *SQLCommon) getCaseQueries(intervals []fftypes.MetricInterval) (caseQueries []sq.CaseBuilder) {
+func (s *SQLCommon) getCaseQueries(intervals []fftypes.ChartHistogramInterval) (caseQueries []sq.CaseBuilder) {
 	for _, interval := range intervals {
 		caseQueries = append(caseQueries, sq.Case().
 			When(
@@ -72,7 +72,7 @@ func (s *SQLCommon) metricResult(ctx context.Context, rows *sql.Rows, cols []int
 	return cols, nil
 }
 
-func (s *SQLCommon) GetMetrics(ctx context.Context, intervals []fftypes.MetricInterval, collection database.CollectionName) (metrics []*fftypes.Metric, err error) {
+func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (metrics []*fftypes.ChartHistogram, err error) {
 	tableName, err := s.getTableNameFromCollection(ctx, collection)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (s *SQLCommon) GetMetrics(ctx context.Context, intervals []fftypes.MetricIn
 	}
 
 	for i, interval := range res {
-		metrics = append(metrics, &fftypes.Metric{
+		metrics = append(metrics, &fftypes.ChartHistogram{
 			Count:     fmt.Sprintf("%v", interval),
 			Timestamp: intervals[i].StartTime,
 		})

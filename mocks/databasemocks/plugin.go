@@ -257,6 +257,29 @@ func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*ffty
 	return r0, r1, r2
 }
 
+// GetChartHistogram provides a mock function with given fields: ctx, intervals, collection
+func (_m *Plugin) GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+	ret := _m.Called(ctx, intervals, collection)
+
+	var r0 []*fftypes.ChartHistogram
+	if rf, ok := ret.Get(0).(func(context.Context, []fftypes.ChartHistogramInterval, database.CollectionName) []*fftypes.ChartHistogram); ok {
+		r0 = rf(ctx, intervals, collection)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ChartHistogram)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []fftypes.ChartHistogramInterval, database.CollectionName) error); ok {
+		r1 = rf(ctx, intervals, collection)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetConfigRecord provides a mock function with given fields: ctx, key
 func (_m *Plugin) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {
 	ret := _m.Called(ctx, key)
@@ -704,29 +727,6 @@ func (_m *Plugin) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, 
 	}
 
 	return r0, r1, r2
-}
-
-// GetMetrics provides a mock function with given fields: ctx, intervals, collection
-func (_m *Plugin) GetMetrics(ctx context.Context, intervals []fftypes.MetricInterval, collection database.CollectionName) ([]*fftypes.Metric, error) {
-	ret := _m.Called(ctx, intervals, collection)
-
-	var r0 []*fftypes.Metric
-	if rf, ok := ret.Get(0).(func(context.Context, []fftypes.MetricInterval, database.CollectionName) []*fftypes.Metric); ok {
-		r0 = rf(ctx, intervals, collection)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Metric)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []fftypes.MetricInterval, database.CollectionName) error); ok {
-		r1 = rf(ctx, intervals, collection)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetNamespace provides a mock function with given fields: ctx, name

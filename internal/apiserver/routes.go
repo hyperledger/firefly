@@ -77,7 +77,7 @@ var routes = []*oapispec.Route{
 	getTxnOps,
 	getTxns,
 
-	getMetrics,
+	getChartHistogram,
 
 	postTokenPool,
 	postTokenPoolByType,

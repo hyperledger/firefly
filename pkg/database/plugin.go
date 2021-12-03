@@ -404,9 +404,9 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
-type iMetricCollection interface {
-	// GetMetrics - Get metrics for specified time interval
-	GetMetrics(ctx context.Context, intervals []fftypes.MetricInterval, collection CollectionName) ([]*fftypes.Metric, error)
+type iChartCollection interface {
+	// GetChartHistogram - Get charting data for a histogram
+	GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -465,7 +465,7 @@ type PeristenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
-	iMetricCollection
+	iChartCollection
 }
 
 // CollectionName represents all collections

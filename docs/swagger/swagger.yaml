@@ -931,6 +931,60 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/charts/histogram:
+    get:
+      description: 'TODO: Description'
+      operationId: getChartHistogram
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Start time of the metrics to be fetched
+        in: query
+        name: startTime
+        schema:
+          type: string
+      - description: End time of the metrics to be fetched
+        in: query
+        name: endTime
+        schema:
+          type: string
+      - description: Number of buckets between start time and end time
+        in: query
+        name: buckets
+        schema:
+          type: string
+      - description: Collection to fetch
+        in: query
+        name: collection
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    count:
+                      type: string
+                    timestamp: {}
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/data:
     get:
       description: 'TODO: Description'
@@ -3278,60 +3332,6 @@ paths:
                     - rejected
                     type: string
                 type: object
-          description: Success
-        default:
-          description: ""
-  /namespaces/{ns}/metrics:
-    get:
-      description: 'TODO: Description'
-      operationId: getMetrics
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: Start time of the metrics to be fetched
-        in: query
-        name: startTime
-        schema:
-          type: string
-      - description: End time of the metrics to be fetched
-        in: query
-        name: endTime
-        schema:
-          type: string
-      - description: Number of buckets between start time and end time
-        in: query
-        name: buckets
-        schema:
-          type: string
-      - description: Collection to fetch
-        in: query
-        name: collection
-        schema:
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  properties:
-                    count:
-                      type: string
-                    timestamp: {}
-                  type: object
-                type: array
           description: Success
         default:
           description: ""

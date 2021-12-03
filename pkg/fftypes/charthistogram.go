@@ -17,24 +17,24 @@
 package fftypes
 
 const (
-	// MetricMaxBuckets max buckets that can be requested
-	MetricMaxBuckets = 100
-	// MetricMinBuckets min buckets that can be requested
-	MetricMinBuckets = 1
+	// ChartHistogramMaxBuckets max buckets that can be requested
+	ChartHistogramMaxBuckets = 100
+	// ChartHistogramMinBuckets min buckets that can be requested
+	ChartHistogramMinBuckets = 1
 )
 
-// Metric is a timestamp and count
-type Metric struct {
-	// Timestamp of metric
+// ChartHistogram is a timestamp and count
+type ChartHistogram struct {
+	// Timestamp of bucket in histogram
 	Timestamp *FFTime `json:"timestamp"`
-	// Count for timestamp
+	// Count for timestamp in histogram
 	Count string `json:"count"`
 }
 
-// MetricInterval specifies lower and upper timestamps for metric
-type MetricInterval struct {
-	// StartTime start time of metric interval
+// ChartHistogramInterval specifies lower and upper timestamps for histogram bucket
+type ChartHistogramInterval struct {
+	// StartTime start time of histogram interval
 	StartTime *FFTime `json:"startTime"`
-	// EndTime end time of metric interval
+	// EndTime end time of histogram interval
 	EndTime *FFTime `json:"endTime"`
 }

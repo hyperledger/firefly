@@ -27,9 +27,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getMetrics = &oapispec.Route{
-	Name:   "getMetrics",
-	Path:   "namespaces/{ns}/metrics",
+var getChartHistogram = &oapispec.Route{
+	Name:   "getChartHistogram",
+	Path:   "namespaces/{ns}/charts/histogram",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -43,7 +43,7 @@ var getMetrics = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Metric{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.ChartHistogram{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		startTime, err := strconv.ParseInt(r.QP["startTime"], 10, 64)
@@ -58,6 +58,6 @@ var getMetrics = &oapispec.Route{
 		if err != nil {
 			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidMetricParam, "buckets")
 		}
-		return r.Or.GetMetrics(r.Ctx, r.PP["ns"], startTime, endTime, buckets, database.CollectionName(r.QP["collection"]))
+		return r.Or.GetChartHistogram(r.Ctx, r.PP["ns"], startTime, endTime, buckets, database.CollectionName(r.QP["collection"]))
 	},
 }

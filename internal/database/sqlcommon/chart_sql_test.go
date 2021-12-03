@@ -28,13 +28,13 @@ import (
 )
 
 var (
-	expectedMetricsResult = []*fftypes.Metric{
+	expectedMetricsResult = []*fftypes.ChartHistogram{
 		{
 			Count:     "123",
 			Timestamp: fftypes.UnixTime(1000000000),
 		},
 	}
-	mockMetricInterval = []fftypes.MetricInterval{
+	mockMetricInterval = []fftypes.ChartHistogramInterval{
 		{
 			StartTime: fftypes.UnixTime(1000000000),
 			EndTime:   fftypes.UnixTime(1000000001),
@@ -51,7 +51,7 @@ var (
 func TestGetMetricsInvalidCollectionName(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	_, err := s.GetMetrics(context.Background(), []fftypes.MetricInterval{}, database.CollectionName("abc"))
+	_, err := s.GetChartHistogram(context.Background(), []fftypes.ChartHistogramInterval{}, database.CollectionName("abc"))
 	assert.Regexp(t, "FF10122", err)
 }
 
@@ -60,7 +60,7 @@ func TestGetMetricsValidCollectionName(t *testing.T) {
 		s, mock := newMockProvider().init()
 		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("123"))
 
-		metrics, err := s.GetMetrics(context.Background(), mockMetricInterval, database.CollectionName(validCollections[i]))
+		metrics, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName(validCollections[i]))
 
 		assert.NoError(t, err)
 		assert.Equal(t, metrics, expectedMetricsResult)
@@ -72,7 +72,7 @@ func TestGetMetricsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT *").WillReturnError(fmt.Errorf("pop"))
 
-	_, err := s.GetMetrics(context.Background(), mockMetricInterval, database.CollectionName("messages"))
+	_, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -81,7 +81,7 @@ func TestGetMetricsFailNoRows(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}))
 
-	_, err := s.GetMetrics(context.Background(), mockMetricInterval, database.CollectionName("messages"))
+	_, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
 	assert.Regexp(t, "FF10300", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -90,7 +90,7 @@ func TestGetMetricsScanFailTooManyCols(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0", "unexpected_column"}).AddRow("one", "two"))
 
-	_, err := s.GetMetrics(context.Background(), mockMetricInterval, database.CollectionName("messages"))
+	_, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -99,7 +99,7 @@ func TestGetMetricsSuccess(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("123"))
 
-	metrics, err := s.GetMetrics(context.Background(), mockMetricInterval, database.CollectionName("messages"))
+	metrics, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, metrics, expectedMetricsResult)
