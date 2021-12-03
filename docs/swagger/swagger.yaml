@@ -943,12 +943,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Start time of the metrics to be fetched
+      - description: Start time of the data to be fetched
         in: query
         name: startTime
         schema:
           type: string
-      - description: End time of the metrics to be fetched
+      - description: End time of the data to be fetched
         in: query
         name: endTime
         schema:

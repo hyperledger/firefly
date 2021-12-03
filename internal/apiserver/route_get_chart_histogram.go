@@ -35,10 +35,10 @@ var getChartHistogram = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "startTime", Description: i18n.MsgMetricStartTimeParam, IsBool: false},
-		{Name: "endTime", Description: i18n.MsgMetricEndTimeParam, IsBool: false},
-		{Name: "buckets", Description: i18n.MsgMetricBucketsParam, IsBool: false},
-		{Name: "collection", Description: i18n.MsgMetricCollectionParam, IsBool: false},
+		{Name: "startTime", Description: i18n.MsgHistogramStartTimeParam, IsBool: false},
+		{Name: "endTime", Description: i18n.MsgHistogramEndTimeParam, IsBool: false},
+		{Name: "buckets", Description: i18n.MsgHistogramBucketsParam, IsBool: false},
+		{Name: "collection", Description: i18n.MsgHistogramCollectionParam, IsBool: false},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
@@ -46,18 +46,18 @@ var getChartHistogram = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.ChartHistogram{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		startTime, err := strconv.ParseInt(r.QP["startTime"], 10, 64)
+		startTime, err := fftypes.ParseString(r.QP["startTime"])
 		if err != nil {
-			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidMetricParam, "startTime")
+			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "startTime")
 		}
-		endTime, err := strconv.ParseInt(r.QP["endTime"], 10, 64)
+		endTime, err := fftypes.ParseString(r.QP["endTime"])
 		if err != nil {
-			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidMetricParam, "endTime")
+			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "endTime")
 		}
 		buckets, err := strconv.ParseInt(r.QP["buckets"], 10, 64)
 		if err != nil {
-			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidMetricParam, "buckets")
+			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "buckets")
 		}
-		return r.Or.GetChartHistogram(r.Ctx, r.PP["ns"], startTime, endTime, buckets, database.CollectionName(r.QP["collection"]))
+		return r.Or.GetChartHistogram(r.Ctx, r.PP["ns"], startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.QP["collection"]))
 	},
 }

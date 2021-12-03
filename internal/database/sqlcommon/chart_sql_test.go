@@ -28,13 +28,14 @@ import (
 )
 
 var (
-	expectedMetricsResult = []*fftypes.ChartHistogram{
+	emptyHistogramResult    = make([]*fftypes.ChartHistogram, 0)
+	expectedHistogramResult = []*fftypes.ChartHistogram{
 		{
 			Count:     "123",
 			Timestamp: fftypes.UnixTime(1000000000),
 		},
 	}
-	mockMetricInterval = []fftypes.ChartHistogramInterval{
+	mockHistogramInterval = []fftypes.ChartHistogramInterval{
 		{
 			StartTime: fftypes.UnixTime(1000000000),
 			EndTime:   fftypes.UnixTime(1000000001),
@@ -48,60 +49,61 @@ var (
 	}
 )
 
-func TestGetMetricsInvalidCollectionName(t *testing.T) {
+func TestGetChartHistogramInvalidCollectionName(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	_, err := s.GetChartHistogram(context.Background(), []fftypes.ChartHistogramInterval{}, database.CollectionName("abc"))
-	assert.Regexp(t, "FF10122", err)
+	assert.Regexp(t, "FF10301", err)
 }
 
-func TestGetMetricsValidCollectionName(t *testing.T) {
+func TestGetChartHistogramValidCollectionName(t *testing.T) {
 	for i := range validCollections {
 		s, mock := newMockProvider().init()
 		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("123"))
 
-		metrics, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName(validCollections[i]))
+		histogram, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName(validCollections[i]))
 
 		assert.NoError(t, err)
-		assert.Equal(t, metrics, expectedMetricsResult)
+		assert.Equal(t, histogram, expectedHistogramResult)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	}
 }
 
-func TestGetMetricsQueryFail(t *testing.T) {
+func TestGetChartHistogramsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT *").WillReturnError(fmt.Errorf("pop"))
 
-	_, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
+	_, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetMetricsFailNoRows(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}))
-
-	_, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
-	assert.Regexp(t, "FF10300", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetMetricsScanFailTooManyCols(t *testing.T) {
+func TestGetChartHistogramScanFailTooManyCols(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0", "unexpected_column"}).AddRow("one", "two"))
 
-	_, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
+	_, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetMetricsSuccess(t *testing.T) {
+func TestGetChartHistogramSuccessNoRows(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}))
+
+	histogram, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
+	assert.NoError(t, err)
+	assert.Equal(t, emptyHistogramResult, histogram)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetChartHistogramSuccess(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("123"))
 
-	metrics, err := s.GetChartHistogram(context.Background(), mockMetricInterval, database.CollectionName("messages"))
+	histogram, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
 
 	assert.NoError(t, err)
-	assert.Equal(t, metrics, expectedMetricsResult)
+	assert.Equal(t, expectedHistogramResult, histogram)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

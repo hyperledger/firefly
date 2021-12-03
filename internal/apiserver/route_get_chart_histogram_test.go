@@ -61,11 +61,14 @@ func TestGetChartHistogramBadBuckets(t *testing.T) {
 
 func TestGetChartHistogramSuccess(t *testing.T) {
 	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram?collection=test&startTime=123&endTime=456&buckets=30", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram?collection=test&startTime=1234567890&endTime=1234567891&buckets=30", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetChartHistogram", mock.Anything, "mynamespace", int64(123), int64(456), int64(30), database.CollectionName("test")).
+	startTime, _ := fftypes.ParseString("1234567890")
+	endtime, _ := fftypes.ParseString("1234567891")
+
+	o.On("GetChartHistogram", mock.Anything, "mynamespace", startTime.UnixNano(), endtime.UnixNano(), int64(30), database.CollectionName("test")).
 		Return([]*fftypes.ChartHistogram{}, nil)
 	r.ServeHTTP(res, req)
 

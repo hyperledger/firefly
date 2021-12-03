@@ -20,7 +20,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -55,11 +54,11 @@ func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection d
 	case database.CollectionName(database.CollectionEvents):
 		return "events", nil
 	default:
-		return "", i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, collection)
+		return "", i18n.NewError(ctx, i18n.MsgUnsupportedCollection, collection)
 	}
 }
 
-func (s *SQLCommon) metricResult(ctx context.Context, rows *sql.Rows, cols []interface{}) ([]interface{}, error) {
+func (s *SQLCommon) histogramResult(ctx context.Context, rows *sql.Rows, cols []interface{}) ([]interface{}, error) {
 	results := []interface{}{}
 
 	for i := range cols {
@@ -67,12 +66,12 @@ func (s *SQLCommon) metricResult(ctx context.Context, rows *sql.Rows, cols []int
 	}
 	err := rows.Scan(results...)
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgDBReadErr, "metrics")
+		return nil, i18n.NewError(ctx, i18n.MsgDBReadErr, "histogram")
 	}
 	return cols, nil
 }
 
-func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (metrics []*fftypes.ChartHistogram, err error) {
+func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogram []*fftypes.ChartHistogram, err error) {
 	tableName, err := s.getTableNameFromCollection(ctx, collection)
 	if err != nil {
 		return nil, err
@@ -83,7 +82,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.C
 
 	for i, caseQuery := range s.getCaseQueries(intervals) {
 		query, args, _ := caseQuery.ToSql()
-		col := "case_" + strconv.Itoa(i)
+		col := fmt.Sprintf("case_%d", i)
 		cols = append(cols, "")
 
 		qb = qb.Column(sq.Alias(sq.Expr("SUM("+query+")", args...), col))
@@ -95,20 +94,20 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.C
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return nil, i18n.NewError(ctx, i18n.MsgErrorFetchingRows)
+		return []*fftypes.ChartHistogram{}, nil
 	}
 
-	res, err := s.metricResult(ctx, rows, cols)
+	res, err := s.histogramResult(ctx, rows, cols)
 	if err != nil {
 		return nil, err
 	}
 
 	for i, interval := range res {
-		metrics = append(metrics, &fftypes.ChartHistogram{
+		histogram = append(histogram, &fftypes.ChartHistogram{
 			Count:     fmt.Sprintf("%v", interval),
 			Timestamp: intervals[i].StartTime,
 		})
 	}
 
-	return metrics, nil
+	return histogram, nil
 }

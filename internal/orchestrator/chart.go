@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) getMetricIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []fftypes.ChartHistogramInterval) {
+func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []fftypes.ChartHistogramInterval) {
 	timeIntervalLength := (endTime - startTime) / numBuckets
 
 	for i := startTime; i < endTime; i += timeIntervalLength {
@@ -41,13 +41,16 @@ func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startT
 	if buckets > fftypes.ChartHistogramMaxBuckets || buckets < fftypes.ChartHistogramMinBuckets {
 		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, fftypes.ChartHistogramMinBuckets, fftypes.ChartHistogramMaxBuckets)
 	}
+	if startTime > endTime {
+		return nil, i18n.NewError(ctx, i18n.MsgHistogramInvalidTimes)
+	}
 
-	intervals := or.getMetricIntervals(startTime, endTime, buckets)
+	intervals := or.getHistogramIntervals(startTime, endTime, buckets)
 
-	metrics, err := or.database.GetChartHistogram(ctx, intervals, collection)
+	histogram, err := or.database.GetChartHistogram(ctx, intervals, collection)
 	if err != nil {
 		return nil, err
 	}
 
-	return metrics, nil
+	return histogram, nil
 }

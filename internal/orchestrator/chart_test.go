@@ -37,19 +37,25 @@ func makeTestIntervals(start int, numIntervals int) (intervals []fftypes.ChartHi
 	return intervals
 }
 
-func TestGetMetricsBadIntervalMin(t *testing.T) {
+func TestGetHistogramBadIntervalMin(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, fftypes.ChartHistogramMinBuckets-1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
-func TestGetMetricsBadIntervalMax(t *testing.T) {
+func TestGetHistogramBadIntervalMax(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, fftypes.ChartHistogramMaxBuckets+1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
-func TestGetMetricsFailDB(t *testing.T) {
+func TestGetHistogramBadStartEndTimes(t *testing.T) {
+	or := newTestOrchestrator()
+	_, err := or.GetChartHistogram(context.Background(), "ns1", 9876543210, 1234567890, 10, database.CollectionName("test"))
+	assert.Regexp(t, "FF10300", err)
+}
+
+func TestGetHistogramFailDB(t *testing.T) {
 	or := newTestOrchestrator()
 	intervals := makeTestIntervals(1000000000, 10)
 	or.mdi.On("GetChartHistogram", mock.Anything, intervals, database.CollectionName("test")).Return(nil, fmt.Errorf("pop"))
@@ -57,12 +63,12 @@ func TestGetMetricsFailDB(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestGetMetricsSuccess(t *testing.T) {
+func TestGetHistogramSuccess(t *testing.T) {
 	or := newTestOrchestrator()
 	intervals := makeTestIntervals(1000000000, 10)
-	mockMetrics := []*fftypes.ChartHistogram{}
+	mockHistogram := []*fftypes.ChartHistogram{}
 
-	or.mdi.On("GetChartHistogram", mock.Anything, intervals, database.CollectionName("test")).Return(mockMetrics, nil)
+	or.mdi.On("GetChartHistogram", mock.Anything, intervals, database.CollectionName("test")).Return(mockHistogram, nil)
 	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
 	assert.NoError(t, err)
 }
