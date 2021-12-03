@@ -931,7 +931,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/charts/histogram:
+  /namespaces/{ns}/charts/histogram/{collection}:
     get:
       description: 'TODO: Description'
       operationId: getChartHistogram
@@ -942,6 +942,12 @@ paths:
         required: true
         schema:
           example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: collection
+        required: true
+        schema:
           type: string
       - description: Start time of the data to be fetched
         in: query
@@ -956,11 +962,6 @@ paths:
       - description: Number of buckets between start time and end time
         in: query
         name: buckets
-        schema:
-          type: string
-      - description: Collection to fetch
-        in: query
-        name: collection
         schema:
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix

@@ -28,7 +28,7 @@ import (
 
 func TestGetChartHistogramBadStartTime(t *testing.T) {
 	_, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram?collection=test&startTime=abc&endTime=456&buckets=30", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram/test?startTime=abc&endTime=456&buckets=30", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
@@ -39,7 +39,7 @@ func TestGetChartHistogramBadStartTime(t *testing.T) {
 
 func TestGetChartHistogramBadEndTime(t *testing.T) {
 	_, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram?collection=test&startTime=123&endTime=abc&buckets=30", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram/test?startTime=123&endTime=abc&buckets=30", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
@@ -50,7 +50,7 @@ func TestGetChartHistogramBadEndTime(t *testing.T) {
 
 func TestGetChartHistogramBadBuckets(t *testing.T) {
 	_, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram?collection=test&startTime=123&endTime=456&buckets=abc", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram/test?startTime=123&endTime=456&buckets=abc", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
@@ -61,7 +61,7 @@ func TestGetChartHistogramBadBuckets(t *testing.T) {
 
 func TestGetChartHistogramSuccess(t *testing.T) {
 	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram?collection=test&startTime=1234567890&endTime=1234567891&buckets=30", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/charts/histogram/test?startTime=1234567890&endTime=1234567891&buckets=30", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

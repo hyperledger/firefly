@@ -29,16 +29,16 @@ import (
 
 var getChartHistogram = &oapispec.Route{
 	Name:   "getChartHistogram",
-	Path:   "namespaces/{ns}/charts/histogram",
+	Path:   "namespaces/{ns}/charts/histogram/{collection}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "collection", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "startTime", Description: i18n.MsgHistogramStartTimeParam, IsBool: false},
 		{Name: "endTime", Description: i18n.MsgHistogramEndTimeParam, IsBool: false},
 		{Name: "buckets", Description: i18n.MsgHistogramBucketsParam, IsBool: false},
-		{Name: "collection", Description: i18n.MsgHistogramCollectionParam, IsBool: false},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
@@ -58,6 +58,6 @@ var getChartHistogram = &oapispec.Route{
 		if err != nil {
 			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "buckets")
 		}
-		return r.Or.GetChartHistogram(r.Ctx, r.PP["ns"], startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.QP["collection"]))
+		return r.Or.GetChartHistogram(r.Ctx, r.PP["ns"], startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
 	},
 }
