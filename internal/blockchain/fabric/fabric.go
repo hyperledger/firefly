@@ -51,6 +51,7 @@ type Fabric struct {
 	capabilities   *blockchain.Capabilities
 	callbacks      blockchain.Callbacks
 	client         *resty.Client
+	streams        *streamManager
 	initInfo       struct {
 		stream *eventStream
 		sub    *subscription
@@ -197,20 +198,22 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		return err
 	}
 
-	streams := streamManager{
-		ctx:            f.ctx,
-		client:         f.client,
-		defaultChannel: f.defaultChannel,
-		chaincode:      f.chaincode,
-		signer:         f.signer,
+	f.streams = &streamManager{
+		ctx:    f.ctx,
+		client: f.client,
+		signer: f.signer,
 	}
 	batchSize := fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
-	if f.initInfo.stream, err = streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
+	if f.initInfo.stream, err = f.streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
-	if f.initInfo.sub, err = streams.ensureSubscription(f.initInfo.stream.ID, batchPinEvent); err != nil {
+	location := &Location{
+		Channel:   f.defaultChannel,
+		Chaincode: f.chaincode,
+	}
+	if f.initInfo.sub, err = f.streams.ensureSubscription(location, f.initInfo.stream.ID, batchPinEvent, ""); err != nil {
 		return err
 	}
 
@@ -570,5 +573,18 @@ func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Loc
 
 func (f *Fabric) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
 	// TODO: Implement validation
+	return nil
+}
+
+func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+	location, err := parseContractLocation(ctx, subscription.Location)
+	if err != nil {
+		return err
+	}
+	result, err := f.streams.ensureSubscription(location, f.initInfo.stream.ID, subscription.Event.Name, subscription.Namespace)
+	if err != nil {
+		return err
+	}
+	subscription.ProtocolID = result.ID
 	return nil
 }

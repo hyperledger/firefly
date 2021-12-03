@@ -49,6 +49,7 @@ type Ethereum struct {
 	capabilities *blockchain.Capabilities
 	callbacks    blockchain.Callbacks
 	client       *resty.Client
+	streams      *streamManager
 	initInfo     struct {
 		stream *eventStream
 		sub    *subscription
@@ -132,18 +133,17 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 
-	streams := streamManager{
-		ctx:          e.ctx,
-		client:       e.client,
-		instancePath: e.instancePath,
+	e.streams = &streamManager{
+		ctx:    e.ctx,
+		client: e.client,
 	}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-	if e.initInfo.stream, err = streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
+	if e.initInfo.stream, err = e.streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-	if e.initInfo.sub, err = streams.ensureSubscription(e.initInfo.stream.ID, batchPinEvent); err != nil {
+	if e.initInfo.sub, err = e.streams.ensureSubscription(e.instancePath, e.initInfo.stream.ID, batchPinEvent, ""); err != nil {
 		return err
 	}
 
@@ -504,4 +504,17 @@ func (e *Ethereum) validateParamInternal(ctx context.Context, param *fftypes.FFI
 		}
 	}
 	return i18n.NewError(ctx, i18n.MsgContractInternalType, param.Name, param.Type, paramDetails.Type)
+}
+
+func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+	location, err := parseContractLocation(ctx, subscription.Location)
+	if err != nil {
+		return err
+	}
+	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subscription.Event)
+	if err != nil {
+		return err
+	}
+	subscription.ProtocolID = result.ID
+	return nil
 }

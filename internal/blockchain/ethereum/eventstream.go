@@ -26,12 +26,12 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type streamManager struct {
-	ctx          context.Context
-	client       *resty.Client
-	instancePath string
+	ctx    context.Context
+	client *resty.Client
 }
 
 type eventStream struct {
@@ -44,11 +44,25 @@ type eventStream struct {
 	WebSocket      eventStreamWebsocket `json:"websocket"`
 }
 
+type subscriptionEventArg struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Indexed bool   `json:"indexed"`
+}
+
+type subscriptionEvent struct {
+	Name   string                 `json:"name"`
+	Type   string                 `json:"type"`
+	Inputs []subscriptionEventArg `json:"inputs"`
+}
+
 type subscription struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Stream    string `json:"stream"`
-	FromBlock string `json:"fromBlock"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Stream    string            `json:"stream"`
+	FromBlock string            `json:"fromBlock"`
+	Address   string            `json:"address"`
+	Event     subscriptionEvent `json:"event"`
 }
 
 func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
@@ -106,7 +120,7 @@ func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(name, stream, event string) (*subscription, error) {
+func (s *streamManager) createInstanceSubscription(instancePath, name, stream, event string) (*subscription, error) {
 	sub := subscription{
 		Name:      name,
 		Stream:    stream,
@@ -116,18 +130,54 @@ func (s *streamManager) createSubscription(name, stream, event string) (*subscri
 		SetContext(s.ctx).
 		SetBody(&sub).
 		SetResult(&sub).
-		Post(fmt.Sprintf("%s/%s", s.instancePath, event))
+		Post(fmt.Sprintf("%s/%s", instancePath, event))
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscription(stream, event string) (sub *subscription, err error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream string, event fftypes.FFIEvent) (*subscription, error) {
+	inputs := make([]subscriptionEventArg, 0, len(event.Params))
+	for _, param := range event.Params {
+		paramDetails, err := parseParamDetails(ctx, param.Details)
+		if err != nil {
+			return nil, err
+		}
+		inputs = append(inputs, subscriptionEventArg{
+			Name:    param.Name,
+			Type:    paramDetails.Type,
+			Indexed: paramDetails.Indexed,
+		})
+	}
+
+	sub := subscription{
+		Name:      event.Name,
+		Stream:    stream,
+		FromBlock: "0",
+		Address:   location.Address,
+		Event: subscriptionEvent{
+			Type:   "event",
+			Name:   event.Name,
+			Inputs: inputs,
+		},
+	}
+	res, err := s.client.R().
+		SetContext(s.ctx).
+		SetBody(&sub).
+		SetResult(&sub).
+		Post("/subscriptions")
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return &sub, nil
+}
+
+func (s *streamManager) ensureSubscription(instancePath, stream, event, namespace string) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
-	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(s.instancePath)))[0:16]
+	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(instancePath)))[0:16]
 
 	existingSubs, err := s.getSubscriptions()
 	if err != nil {
@@ -135,6 +185,10 @@ func (s *streamManager) ensureSubscription(stream, event string) (sub *subscript
 	}
 
 	subName := fmt.Sprintf("%s_%s", event, instanceUniqueHash)
+	if namespace != "" {
+		subName = fmt.Sprintf("%s_%s", namespace, subName)
+	}
+
 	for _, s := range existingSubs {
 		if s.Name == subName ||
 			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
@@ -146,7 +200,7 @@ func (s *streamManager) ensureSubscription(stream, event string) (sub *subscript
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(subName, stream, event); err != nil {
+		if sub, err = s.createInstanceSubscription(instancePath, subName, stream, event); err != nil {
 			return nil, err
 		}
 	}

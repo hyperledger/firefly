@@ -22,6 +22,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -108,6 +109,34 @@ func (s *SQLCommon) contractSubscriptionResult(ctx context.Context, row *sql.Row
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractsubscriptions")
 	}
 	return &sub, nil
+}
+
+func (s *SQLCommon) getContractSubscriptionPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractSubscription, error) {
+	rows, _, err := s.query(ctx,
+		sq.Select(contractSubscriptionColumns...).
+			From("contractsubscriptions").
+			Where(pred),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		log.L(ctx).Debugf("Contract subscription '%s' not found", desc)
+		return nil, nil
+	}
+
+	sub, err := s.contractSubscriptionResult(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return sub, nil
+}
+
+func (s *SQLCommon) GetContractSubscriptionByProtocolID(ctx context.Context, id string) (offset *fftypes.ContractSubscription, err error) {
+	return s.getContractSubscriptionPred(ctx, id, sq.Eq{"protocol_id": id})
 }
 
 func (s *SQLCommon) GetContractSubscriptions(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {

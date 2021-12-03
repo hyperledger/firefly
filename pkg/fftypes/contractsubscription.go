@@ -24,3 +24,8 @@ type ContractSubscription struct {
 	ProtocolID string   `json:"protocolId,omitempty"`
 	Location   Byteable `json:"location,omitempty"`
 }
+
+type ContractSubscriptionInput struct {
+	ContractSubscription
+	Event FFIEvent `json:"event,omitempty"`
+}

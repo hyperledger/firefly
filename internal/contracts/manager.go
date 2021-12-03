@@ -42,6 +42,9 @@ type Manager interface {
 
 	ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error
 	ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error
+
+	AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error)
+	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
 }
 
 type contractManager struct {
@@ -200,8 +203,8 @@ func (cm *contractManager) ValidateFFI(ctx context.Context, ffi *fftypes.FFI) er
 			return err
 		}
 	}
-	for _, method := range ffi.Events {
-		if err := cm.validateFFIEvent(ctx, method); err != nil {
+	for _, event := range ffi.Events {
+		if err := cm.validateFFIEvent(ctx, event); err != nil {
 			return err
 		}
 	}
@@ -247,4 +250,29 @@ func (cm *contractManager) ValidateInvokeContractRequest(ctx context.Context, re
 	}
 
 	return nil
+}
+
+func (cm *contractManager) AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error) {
+	sub.ID = fftypes.NewUUID()
+	sub.Namespace = ns
+	sub.Event.ID = fftypes.NewUUID()
+	sub.ContractSubscription.Event = sub.Event.ID
+
+	if err := cm.validateFFIEvent(ctx, &sub.Event); err != nil {
+		return nil, err
+	}
+	if err = cm.blockchain.AddSubscription(ctx, sub); err != nil {
+		return nil, err
+	}
+	if err = cm.database.UpsertFFIEvent(ctx, ns, nil, &sub.Event); err != nil {
+		return nil, err
+	}
+	if err = cm.database.UpsertContractSubscription(ctx, &sub.ContractSubscription); err != nil {
+		return nil, err
+	}
+	return &sub.ContractSubscription, nil
+}
+
+func (cm *contractManager) GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
+	return cm.database.GetContractSubscriptions(ctx, ns, filter)
 }

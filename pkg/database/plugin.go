@@ -434,6 +434,9 @@ type iContractSubscriptionCollection interface {
 	// UpsertContractSubscription - upsert a subscription to an external smart contract
 	UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) (err error)
 
+	// GetContractSubscriptionByProtocolID - get smart contract subscription by protocol id
+	GetContractSubscriptionByProtocolID(ctx context.Context, id string) (offset *fftypes.ContractSubscription, err error)
+
 	// GetContractSubscriptions - get smart contract subscriptions
 	GetContractSubscriptions(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
 }
