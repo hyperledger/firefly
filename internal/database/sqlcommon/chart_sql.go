@@ -58,16 +58,17 @@ func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection d
 	}
 }
 
-func (s *SQLCommon) histogramResult(ctx context.Context, rows *sql.Rows, cols []interface{}) ([]interface{}, error) {
+func (s *SQLCommon) histogramResult(ctx context.Context, rows *sql.Rows, cols []*fftypes.ChartHistogram) ([]*fftypes.ChartHistogram, error) {
 	results := []interface{}{}
 
 	for i := range cols {
-		results = append(results, &cols[i])
+		results = append(results, &cols[i].Count)
 	}
 	err := rows.Scan(results...)
 	if err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgDBReadErr, "histogram")
 	}
+
 	return cols, nil
 }
 
@@ -77,15 +78,17 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.C
 		return nil, err
 	}
 
-	cols := []interface{}{}
 	qb := sq.Select()
 
 	for i, caseQuery := range s.getCaseQueries(intervals) {
 		query, args, _ := caseQuery.ToSql()
-		col := fmt.Sprintf("case_%d", i)
-		cols = append(cols, "")
 
-		qb = qb.Column(sq.Alias(sq.Expr("SUM("+query+")", args...), col))
+		histogram = append(histogram, &fftypes.ChartHistogram{
+			Count:     "",
+			Timestamp: intervals[i].StartTime,
+		})
+
+		qb = qb.Column(sq.Alias(sq.Expr("SUM("+query+")", args...), fmt.Sprintf("case_%d", i)))
 	}
 
 	rows, _, err := s.query(ctx, qb.From(tableName))
@@ -93,21 +96,10 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.C
 		return nil, err
 	}
 	defer rows.Close()
+
 	if !rows.Next() {
 		return []*fftypes.ChartHistogram{}, nil
 	}
 
-	res, err := s.histogramResult(ctx, rows, cols)
-	if err != nil {
-		return nil, err
-	}
-
-	for i, interval := range res {
-		histogram = append(histogram, &fftypes.ChartHistogram{
-			Count:     fmt.Sprintf("%v", interval),
-			Timestamp: intervals[i].StartTime,
-		})
-	}
-
-	return histogram, nil
+	return s.histogramResult(ctx, rows, histogram)
 }
