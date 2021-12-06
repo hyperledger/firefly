@@ -441,6 +441,14 @@ type iContractSubscriptionCollection interface {
 	GetContractSubscriptions(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
 }
 
+type iContractEventCollection interface {
+	// InsertContractEvent - insert an event from an external smart contract
+	InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) (err error)
+
+	// GetContractEvents - get smart contract events
+	GetContractEvents(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractEvent, *FilterResult, error)
+}
+
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
@@ -502,6 +510,7 @@ type PersistenceInterface interface {
 	iFFIEventCollection
 	iContractAPICollection
 	iContractSubscriptionCollection
+	iContractEventCollection
 }
 
 // CollectionName represents all collections
@@ -522,7 +531,8 @@ const (
 type OrderedCollection CollectionName
 
 const (
-	CollectionPins OrderedCollection = "pins"
+	CollectionPins           OrderedCollection = "pins"
+	CollectionContractEvents OrderedCollection = "contractevents"
 )
 
 // UUIDCollectionNS is the most common type of collection - each entry has a UUID that
@@ -893,4 +903,12 @@ var ContractSubscriptionQueryFactory = &queryFields{
 	"eventid":     &UUIDField{},
 	"namespace":   &StringField{},
 	"protocolid":  &StringField{},
+}
+
+// ContractEventQueryFactory filter fields for contract events
+var ContractEventQueryFactory = &queryFields{
+	"id":             &UUIDField{},
+	"namespace":      &StringField{},
+	"subscriptionid": &StringField{},
+	"name":           &StringField{},
 }

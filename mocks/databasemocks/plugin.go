@@ -390,6 +390,38 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	return r0, r1, r2
 }
 
+// GetContractEvents provides a mock function with given fields: ctx, ns, filter
+func (_m *Plugin) GetContractEvents(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.ContractEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractEvent); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ContractEvent)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetContractSubscriptionByProtocolID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetContractSubscriptionByProtocolID(ctx context.Context, id string) (*fftypes.ContractSubscription, error) {
 	ret := _m.Called(ctx, id)
@@ -2007,6 +2039,20 @@ func (_m *Plugin) InsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractAPI) error); ok {
 		r0 = rf(ctx, cd)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertContractEvent provides a mock function with given fields: ctx, event
+func (_m *Plugin) InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) error {
+	ret := _m.Called(ctx, event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractEvent) error); ok {
+		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Error(0)
 	}

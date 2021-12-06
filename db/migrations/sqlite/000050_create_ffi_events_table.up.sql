@@ -3,7 +3,7 @@ CREATE TABLE ffievents (
   id                UUID            NOT NULL,
   interface_id      UUID            NULL,
   namespace         VARCHAR(64)     NOT NULL,
-  name              VARCHAR(64)     NOT NULL,
+  name              VARCHAR(1024)   NOT NULL,
   params            BYTEA           NOT NULL
 );
 
