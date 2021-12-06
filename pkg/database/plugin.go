@@ -404,6 +404,11 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
+type iChartCollection interface {
+	// GetChartHistogram - Get charting data for a histogram
+	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
+}
+
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
@@ -460,6 +465,7 @@ type PeristenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
+	iChartCollection
 }
 
 // CollectionName represents all collections
@@ -472,7 +478,7 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages OrderedUUIDCollectionNS = "message"
+	CollectionMessages OrderedUUIDCollectionNS = "messages"
 	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 
