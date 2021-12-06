@@ -20,9 +20,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/hex"
+	"math"
+	"math/big"
 	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -35,8 +36,7 @@ import (
 
 var inputTypeMap = map[string]string{
 	"bool":    "boolean",
-	"int":     "number",
-	"float64": "number",
+	"float64": "integer",
 	"string":  "string",
 	"byte":    "byte",
 }
@@ -44,35 +44,15 @@ var inputTypeMap = map[string]string{
 var arrayRegex, _ = regexp.Compile(`(\[\])+$`)
 
 func checkParam(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
+	// do we expect this param to be an array
 	if arrayRegex.MatchString(param.Type) {
-		// input should be an array
-		arrayType := strings.TrimSuffix(param.Type, "[]")
-		if arrayType == "byte" && reflect.TypeOf(input).Name() == "string" {
-			inputString := input.(string)
-			// Is it hex (0x prefix) or base64 encoded?
-			if strings.HasPrefix(inputString, "0x") {
-				if _, err := hex.DecodeString(strings.TrimPrefix(inputString, "0x")); err != nil {
-					return i18n.WrapError(ctx, err, i18n.MsgContractByteDecode, param.Name)
-				}
-			} else {
-				if _, err := base64.StdEncoding.DecodeString(inputString); err != nil {
-					return i18n.WrapError(ctx, err, i18n.MsgContractByteDecode, param.Name)
-				}
-
-			}
-			return nil
+		// check to see if this a string that should be treated as a byte array
+		if strings.TrimSuffix(param.Type, "[]") == "byte" && reflect.TypeOf(input).Name() == "string" {
+			return checkByteArray(ctx, input, param)
+		} else {
+			// check the input as an array of any other type
+			return checkArrayType(ctx, input, param)
 		}
-		arrayParam := &fftypes.FFIParam{
-			Type:       arrayType,
-			Components: param.Components,
-		}
-		inputArray, ok := input.([]interface{})
-
-		if !ok {
-			return i18n.NewError(ctx, i18n.MsgContractWrongInputType, input, reflect.TypeOf(input), param.Type)
-		}
-		return checkArrayType(ctx, inputArray, arrayParam)
-
 	} else if len(param.Components) > 0 {
 		// input should be an object
 		inputMap, ok := input.(map[string]interface{})
@@ -96,21 +76,8 @@ func checkParam(ctx context.Context, input interface{}, param *fftypes.FFIParam)
 		mappedType, ok := inputTypeMap[rt.Name()]
 		if !ok {
 			return i18n.NewError(ctx, i18n.MsgContractMapInputType, rt, param.Type)
-		} else if mappedType == "string" && param.Type == "number" {
-			inputString := input.(string)
-			// check to see if it's a number represented as a string
-			_, err := strconv.ParseFloat(inputString, 64)
-			if err == nil {
-				return nil
-			}
-			if strings.HasPrefix(inputString, "0x") {
-				_, err = strconv.ParseUint(inputString, 16, 32)
-				if err != nil {
-					return nil
-				}
-			} else {
-				return i18n.NewError(ctx, i18n.MsgContractWrongInputType, input, mappedType, param.Type)
-			}
+		} else if param.Type == "integer" {
+			return checkInteger(ctx, input, param)
 		} else if mappedType != param.Type {
 			return i18n.NewError(ctx, i18n.MsgContractWrongInputType, input, mappedType, param.Type)
 		}
@@ -120,26 +87,74 @@ func checkParam(ctx context.Context, input interface{}, param *fftypes.FFIParam)
 
 // Recursively check the i-th dimension of an an n-dimensional array to make sure
 // that each dimension is an array or all leaf elements are of type t
-func checkArrayType(ctx context.Context, input []interface{}, param *fftypes.FFIParam) error {
-	for _, v := range input {
-		if arrayRegex.MatchString(param.Type) {
+func checkArrayType(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
+	elementType := strings.TrimSuffix(param.Type, "[]")
+	elementParam := &fftypes.FFIParam{
+		Name:         param.Name,
+		Type:         elementType,
+		InternalType: param.InternalType,
+		Components:   param.Components,
+	}
+	inputArray, ok := input.([]interface{})
+
+	if !ok {
+		return i18n.NewError(ctx, i18n.MsgContractWrongInputType, input, reflect.TypeOf(input), param.Type)
+	}
+
+	for _, v := range inputArray {
+		if arrayRegex.MatchString(elementType) {
 			// input should be an array
-			arrayType := strings.TrimSuffix(param.Type, "[]")
-			arrayParam := &fftypes.FFIParam{
-				Type:       arrayType,
-				Components: param.Components,
-			}
 			arr, ok := v.([]interface{})
 			rt := reflect.TypeOf(v)
 			if rt != reflect.TypeOf(arr) || !ok {
 				return i18n.NewError(ctx, i18n.MsgContractWrongInputType, v, rt, reflect.TypeOf(arr))
 			}
-			if err := checkArrayType(ctx, arr, arrayParam); err != nil {
+			if err := checkArrayType(ctx, arr, elementParam); err != nil {
 				return err
 			}
-		} else if err := checkParam(ctx, v, param); err != nil {
+		} else if err := checkParam(ctx, v, elementParam); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func checkByteArray(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
+	inputString := input.(string)
+	// if it is prefixed with "0X", treat it as hex, otherwise base64 encoded
+	if strings.HasPrefix(inputString, "0x") {
+		if _, err := hex.DecodeString(strings.TrimPrefix(inputString, "0x")); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgContractByteDecode, param.Name)
+		}
+	} else {
+		if _, err := base64.StdEncoding.DecodeString(inputString); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgContractByteDecode, param.Name)
+		}
+
+	}
+	return nil
+}
+
+func checkInteger(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
+	switch t := input.(type) {
+	case float64:
+		if t != math.Trunc(t) {
+			return i18n.NewError(ctx, i18n.MsgContractWrongInputType, input, reflect.TypeOf(t), param.Type)
+		}
+	case string:
+		i := new(big.Int)
+		var ok bool
+		if strings.HasPrefix(t, "0x") {
+			t = strings.TrimPrefix(t, "0x")
+			_, ok = i.SetString(t, 16)
+		} else {
+			_, ok = i.SetString(t, 10)
+		}
+		if !ok {
+			return i18n.NewError(ctx, i18n.MsgContractWrongInputType, t, reflect.TypeOf(t), param.Type)
+		}
+	default:
+		return i18n.NewError(ctx, i18n.MsgContractWrongInputType, t, reflect.TypeOf(t), param.Type)
 	}
 	return nil
 }

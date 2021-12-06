@@ -9,7 +9,7 @@ require (
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/getkin/kin-openapi v0.83.0
+	github.com/getkin/kin-openapi v0.85.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.7.0
@@ -53,5 +53,3 @@ require (
 	gopkg.in/ini.v1 v1.64.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
-
-replace github.com/getkin/kin-openapi => github.com/kaleido-io/kin-openapi v0.74.1-0.20211124195155-f24e6dc2ad45

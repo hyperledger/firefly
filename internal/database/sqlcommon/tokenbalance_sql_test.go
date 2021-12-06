@@ -43,7 +43,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 		Connector:  "erc1155",
 		Namespace:  "ns1",
 		To:         "0x0",
-		Amount:     *fftypes.NewBigInt(10),
+		Amount:     *fftypes.NewFFBigInt(10),
 	}
 	balance := &fftypes.TokenBalance{
 		Pool:       transfer.Pool,
@@ -52,7 +52,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 		Connector:  "erc1155",
 		Namespace:  "ns1",
 		Key:        "0x0",
-		Balance:    *fftypes.NewBigInt(10),
+		Balance:    *fftypes.NewFFBigInt(10),
 	}
 	balanceJson, _ := json.Marshal(&balance)
 
@@ -87,7 +87,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 	// Transfer half to a different address
 	transfer.From = "0x0"
 	transfer.To = "0x1"
-	transfer.Amount = *fftypes.NewBigInt(5)
+	transfer.Amount = *fftypes.NewFFBigInt(5)
 	err = s.UpdateTokenBalances(ctx, transfer)
 	assert.NoError(t, err)
 
@@ -98,7 +98,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 	assert.Greater(t, balanceRead.Updated.UnixNano(), int64(0))
 	balanceRead.Updated = nil
 	balanceReadJson, _ = json.Marshal(&balanceRead)
-	balance.Balance = *fftypes.NewBigInt(5)
+	balance.Balance = *fftypes.NewFFBigInt(5)
 	balanceJson, _ = json.Marshal(&balance)
 	assert.Equal(t, string(balanceJson), string(balanceReadJson))
 
@@ -110,7 +110,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 	balanceRead.Updated = nil
 	balanceReadJson, _ = json.Marshal(&balanceRead)
 	balance.Key = "0x1"
-	balance.Balance = *fftypes.NewBigInt(5)
+	balance.Balance = *fftypes.NewFFBigInt(5)
 	balanceJson, _ = json.Marshal(&balance)
 	assert.Equal(t, string(balanceJson), string(balanceReadJson))
 

@@ -27,7 +27,7 @@ import (
 
 func TestNestedArrayTypeCheck(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Type: "number[]",
+		Type: "integer[][]",
 	}
 	jsonInput := `[[1,2,3],[4,5,6]]`
 	var arr []interface{}
@@ -38,7 +38,7 @@ func TestNestedArrayTypeCheck(t *testing.T) {
 
 func TestBadNestedArrayTypeCheck(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Type: "number[]",
+		Type: "integer[][]",
 	}
 	jsonInput := `[[1,2,3],[4,"bad",6]]`
 	var arr []interface{}
@@ -50,7 +50,7 @@ func TestBadNestedArrayTypeCheck(t *testing.T) {
 
 func TestInvalidArrayTypeCheck(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Type: "number[]",
+		Type: "integer[][]",
 	}
 	jsonInput := `[[1,2,3],"bad"]`
 	var arr []interface{}
@@ -62,13 +62,13 @@ func TestInvalidArrayTypeCheck(t *testing.T) {
 
 func TestNotAnArrayTypeCheck(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Type: "number[]",
+		Type: "integer[]",
 	}
 	jsonInput := `{"isArray": "nope"}`
 	var arr interface{}
 	json.Unmarshal([]byte(jsonInput), &arr)
 	err := checkParam(context.Background(), arr, param)
-	assert.Regexp(t, "Input.*not expected.*number", err)
+	assert.Regexp(t, "Input.*not expected.*integer", err)
 }
 
 func TestCustomTypeSimple(t *testing.T) {
@@ -84,7 +84,7 @@ func TestCustomTypeSimple(t *testing.T) {
 			},
 			{
 				Name:         "count",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 		},
@@ -110,7 +110,7 @@ func TestCustomTypeWrongType(t *testing.T) {
 			},
 			{
 				Name:         "count",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 		},
@@ -136,7 +136,7 @@ func TestCustomTypeFieldMissing(t *testing.T) {
 			},
 			{
 				Name:         "count",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 		},
@@ -162,7 +162,7 @@ func TestCustomTypeInvalid(t *testing.T) {
 			},
 			{
 				Name:         "count",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 		},
@@ -188,7 +188,7 @@ func TestArrayOfCustomType(t *testing.T) {
 			},
 			{
 				Name:         "count",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 		},
@@ -235,7 +235,7 @@ func TestNullValue(t *testing.T) {
 func TestInvalidTypeMapping(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:         "foo",
-		Type:         "number",
+		Type:         "integer",
 		InternalType: "uint256",
 	}
 	var i float32 = 32
@@ -251,12 +251,12 @@ func TestComplexCustomType(t *testing.T) {
 		Components: []*fftypes.FFIParam{
 			{
 				Name:         "x",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 			{
 				Name:         "y",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 			{
@@ -292,12 +292,12 @@ func TestBadComplexCustomType(t *testing.T) {
 		Components: []*fftypes.FFIParam{
 			{
 				Name:         "x",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 			{
 				Name:         "y",
-				Type:         "number",
+				Type:         "integer",
 				InternalType: "uint256",
 			},
 			{
@@ -322,7 +322,7 @@ func TestBadComplexCustomType(t *testing.T) {
 	err := json.Unmarshal([]byte(jsonInput), &i)
 	assert.NoError(t, err)
 	err = checkParam(context.Background(), i, param)
-	assert.Regexp(t, "Input.*number.*not expected type", err)
+	assert.Regexp(t, "Input.*integer.*not expected type", err)
 }
 
 func TestBytesBase64(t *testing.T) {
@@ -357,26 +357,42 @@ func TestBadBytesHex(t *testing.T) {
 	assert.Regexp(t, "encoding/hex: invalid byte:", err)
 }
 
-func TestNumberAsString(t *testing.T) {
+func TestIntegerAsString(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Type: "number",
+		Type: "integer",
 	}
 	err := checkParam(context.Background(), "1", param)
 	assert.NoError(t, err)
 }
 
-func TestNumberAsHexString(t *testing.T) {
+func TestIntegerAsHexString(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Type: "number",
+		Type: "integer",
 	}
 	err := checkParam(context.Background(), "0xffffff", param)
 	assert.NoError(t, err)
 }
 
-func TestNumberAsHexStringBad(t *testing.T) {
+func TestStringAsInteger(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Type: "number",
+		Type: "integer",
+	}
+	err := checkParam(context.Background(), "123456789012345678901234567890", param)
+	assert.NoError(t, err)
+}
+
+func TestIntegerAsHexStringBad(t *testing.T) {
+	param := &fftypes.FFIParam{
+		Type: "integer",
 	}
 	err := checkParam(context.Background(), "ffffff", param)
 	assert.Regexp(t, "Input.*string.*not expected type", err)
+}
+
+func TestFloatInvalid(t *testing.T) {
+	param := &fftypes.FFIParam{
+		Type: "integer",
+	}
+	err := checkParam(context.Background(), 0.5, param)
+	assert.Regexp(t, "Input.*float64.*not expected type", err)
 }

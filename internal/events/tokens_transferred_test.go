@@ -45,7 +45,7 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 		From:       "0x1",
 		To:         "0x2",
 		ProtocolID: "123",
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 	}
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -86,7 +86,7 @@ func TestTokensTransferredIgnoreExisting(t *testing.T) {
 		From:       "0x1",
 		To:         "0x2",
 		ProtocolID: "123",
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(&fftypes.TokenTransfer{}, nil)
@@ -114,7 +114,7 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 		From:       "0x1",
 		To:         "0x2",
 		ProtocolID: "123",
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -168,7 +168,7 @@ func TestTokensTransferredWithTransactionLoadLocalID(t *testing.T) {
 		From:       "0x1",
 		To:         "0x2",
 		ProtocolID: "123",
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -224,7 +224,7 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 		From:       "0x1",
 		To:         "0x2",
 		ProtocolID: "123",
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -279,7 +279,7 @@ func TestTokensTransferredBadPool(t *testing.T) {
 		From:       "0x1",
 		To:         "0x2",
 		ProtocolID: "123",
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
@@ -311,7 +311,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 		To:         "0x2",
 		ProtocolID: "123",
 		Message:    fftypes.NewUUID(),
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 	}
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -356,7 +356,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		To:         "0x2",
 		ProtocolID: "123",
 		Message:    fftypes.NewUUID(),
-		Amount:     *fftypes.NewBigInt(1),
+		Amount:     *fftypes.NewFFBigInt(1),
 	}
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
