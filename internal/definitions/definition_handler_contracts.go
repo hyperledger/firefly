@@ -23,14 +23,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) persistContractInterface(ctx context.Context, contractInterface *fftypes.FFI) (valid bool, err error) {
-	err = dh.database.InsertContractInterface(ctx, contractInterface)
+func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) (valid bool, err error) {
+	err = dh.database.InsertFFI(ctx, ffi)
 	if err != nil {
 		return false, err
 	}
 
-	for _, method := range contractInterface.Methods {
-		err := dh.database.InsertContractMethod(ctx, contractInterface.Namespace, contractInterface.ID, method)
+	for _, method := range ffi.Methods {
+		err := dh.database.UpsertFFIMethod(ctx, ffi.Namespace, ffi.ID, method)
 		if err != nil {
 			return false, err
 		}
@@ -47,7 +47,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	return true, nil
 }
 
-func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -57,7 +57,7 @@ func (dh *definitionHandlers) handleContractInterfaceBroadcast(ctx context.Conte
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID
-			valid, err = dh.persistContractInterface(ctx, &broadcast)
+			valid, err = dh.persistFFI(ctx, &broadcast)
 			if err != nil {
 				return ActionReject, err
 			}

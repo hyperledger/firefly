@@ -46,26 +46,26 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 			Params: []*fftypes.FFIParam{
 				{
 					Name:         "x",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 				{
 					Name:         "y",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
 					Name:         "z",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 		},
 		Params: map[string]interface{}{
-			"x": 1,
-			"y": 2,
+			"x": float64(1),
+			"y": float64(2),
 		},
 	}
 	err := cm.ValidateInvokeContractRequest(context.Background(), req)
@@ -88,25 +88,25 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 			Params: []*fftypes.FFIParam{
 				{
 					Name:         "x",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 				{
 					Name:         "y",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
 					Name:         "z",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 		},
 		Params: map[string]interface{}{
-			"x": 1,
+			"x": float64(1),
 		},
 	}
 	err := cm.ValidateInvokeContractRequest(context.Background(), req)
@@ -129,30 +129,30 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 			Params: []*fftypes.FFIParam{
 				{
 					Name:         "x",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 				{
 					Name:         "y",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
 					Name:         "z",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 		},
 		Params: map[string]interface{}{
-			"x": 1,
+			"x": float64(1),
 			"y": "two",
 		},
 	}
 	err := cm.ValidateInvokeContractRequest(context.Background(), req)
-	assert.Regexp(t, "Input.*not expected.*number", err)
+	assert.Regexp(t, "Input.*not expected.*integer", err)
 }
 
 func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
@@ -170,26 +170,26 @@ func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
 			Params: []*fftypes.FFIParam{
 				{
 					Name:         "x",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 				{
 					Name:         "y",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
 					Name:         "z",
-					Type:         "number",
+					Type:         "integer",
 					InternalType: "uint256",
 				},
 			},
 		},
 		Params: map[string]interface{}{
-			"x": 1,
-			"y": 2,
+			"x": float64(1),
+			"y": float64(2),
 		},
 	}
 
@@ -216,19 +216,19 @@ func TestValidateFFI(t *testing.T) {
 				Params: []*fftypes.FFIParam{
 					{
 						Name:         "x",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 					{
 						Name:         "y",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
 						Name:         "z",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
@@ -240,7 +240,7 @@ func TestValidateFFI(t *testing.T) {
 				Params: []*fftypes.FFIParam{
 					{
 						Name:         "z",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
@@ -270,19 +270,19 @@ func TestValidateFFIBadMethod(t *testing.T) {
 				Params: []*fftypes.FFIParam{
 					{
 						Name:         "x",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 					{
 						Name:         "y",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
 						Name:         "z",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
@@ -294,7 +294,7 @@ func TestValidateFFIBadMethod(t *testing.T) {
 				Params: []*fftypes.FFIParam{
 					{
 						Name:         "z",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
@@ -325,19 +325,19 @@ func TestValidateFFIBadEvent(t *testing.T) {
 				Params: []*fftypes.FFIParam{
 					{
 						Name:         "x",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 					{
 						Name:         "y",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
 						Name:         "z",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},
@@ -349,7 +349,7 @@ func TestValidateFFIBadEvent(t *testing.T) {
 				Params: []*fftypes.FFIParam{
 					{
 						Name:         "z",
-						Type:         "number",
+						Type:         "integer",
 						InternalType: "uint256",
 					},
 				},

@@ -45,6 +45,6 @@ var postNewContractInterface = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.AddContractInterface(r.Ctx, r.PP["ns"], r.Input.(*fftypes.FFI), waitConfirm)
+		return r.Or.Contracts().BroadcastFFI(r.Ctx, r.PP["ns"], r.Input.(*fftypes.FFI), waitConfirm)
 	},
 }

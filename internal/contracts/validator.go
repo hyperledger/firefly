@@ -44,16 +44,14 @@ var inputTypeMap = map[string]string{
 var arrayRegex, _ = regexp.Compile(`(\[\])+$`)
 
 func checkParam(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
-	// do we expect this param to be an array
-	if arrayRegex.MatchString(param.Type) {
+	switch {
+	case arrayRegex.MatchString(param.Type):
 		// check to see if this a string that should be treated as a byte array
 		if strings.TrimSuffix(param.Type, "[]") == "byte" && reflect.TypeOf(input).Name() == "string" {
 			return checkByteArray(ctx, input, param)
-		} else {
-			// check the input as an array of any other type
-			return checkArrayType(ctx, input, param)
 		}
-	} else if len(param.Components) > 0 {
+		return checkArrayType(ctx, input, param)
+	case len(param.Components) > 0:
 		// input should be an object
 		inputMap, ok := input.(map[string]interface{})
 		if !ok {
@@ -68,17 +66,18 @@ func checkParam(ctx context.Context, input interface{}, param *fftypes.FFIParam)
 				return err
 			}
 		}
-	} else {
+	default:
 		rt := reflect.TypeOf(input)
 		if rt == nil {
 			return i18n.NewError(ctx, i18n.MsgContractMapInputType, rt, param.Type)
 		}
 		mappedType, ok := inputTypeMap[rt.Name()]
-		if !ok {
+		switch {
+		case !ok:
 			return i18n.NewError(ctx, i18n.MsgContractMapInputType, rt, param.Type)
-		} else if param.Type == "integer" {
+		case param.Type == "integer":
 			return checkInteger(ctx, input, param)
-		} else if mappedType != param.Type {
+		case mappedType != param.Type:
 			return i18n.NewError(ctx, i18n.MsgContractWrongInputType, input, mappedType, param.Type)
 		}
 	}

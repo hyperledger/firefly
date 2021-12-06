@@ -22,7 +22,6 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -34,13 +33,13 @@ var getContractAPIs = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.ContractInterfaceQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetContractAPIs(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(r.Or.Contracts().GetContractAPIs(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

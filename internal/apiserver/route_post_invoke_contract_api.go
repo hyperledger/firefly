@@ -47,6 +47,6 @@ var postInvokeContractAPI = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodName"], r.Input.(*fftypes.InvokeContractRequest))
+		return r.Or.Contracts().InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodName"], r.Input.(*fftypes.InvokeContractRequest))
 	},
 }

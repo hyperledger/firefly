@@ -1,4 +1,4 @@
-CREATE TABLE contractinterfaces (
+CREATE TABLE ffi (
   seq               INTEGER         PRIMARY KEY AUTOINCREMENT,
   id                UUID            NOT NULL,
   namespace         VARCHAR(64)     NOT NULL,
@@ -6,5 +6,5 @@ CREATE TABLE contractinterfaces (
   version           VARCHAR(64)     NOT NULL
 );
 
-CREATE UNIQUE INDEX contractinterfaces_id ON contractinterfaces(id);
-CREATE UNIQUE INDEX contractinterfaces_namespace_name_version ON contractinterfaces(namespace,name,version);
+CREATE UNIQUE INDEX ffi_id ON ffi(id);
+CREATE UNIQUE INDEX ffi_name ON ffi(namespace,name,version);

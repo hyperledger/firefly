@@ -34,13 +34,13 @@ var getContractInterfaces = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.ContractInterfaceQueryFactory,
+	FilterFactory:   database.FFIQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetContractInterfaces(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(r.Or.Contracts().GetFFIs(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

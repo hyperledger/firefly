@@ -102,8 +102,8 @@ func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *ff
 		valid, err = dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
-	case fftypes.SystemTagDefineContractInterface:
-		return dh.handleContractInterfaceBroadcast(ctx, msg, data)
+	case fftypes.SystemTagDefineFFI:
+		return dh.handleFFIBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineContractAPI:
 		return dh.handleContractAPIBroadcast(ctx, msg, data)
 	default:

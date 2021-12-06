@@ -29,12 +29,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
-/* TODO:
-* Create an interface for the ContractManager and make this the implementation
-* Remove useless pass through functions in the orchestrator
- */
+type Manager interface {
+	BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
+	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
+	GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error)
+	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 
-type ContractManager struct {
+	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
+	InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error)
+	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
+	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
+
+	ValidateFFI(ctx context.Context, ns string, ffi *fftypes.FFI) error
+	ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error
+}
+
+type contractManager struct {
 	database      database.Plugin
 	publicStorage publicstorage.Plugin
 	broadcast     broadcast.Manager
@@ -42,8 +52,8 @@ type ContractManager struct {
 	blockchain    blockchain.Plugin
 }
 
-func NewContractManager(database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) *ContractManager {
-	return &ContractManager{
+func NewContractManager(database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) Manager {
+	return &contractManager{
 		database,
 		publicStorage,
 		broadcast,
@@ -52,11 +62,11 @@ func NewContractManager(database database.Plugin, publicStorage publicstorage.Pl
 	}
 }
 
-func (cm *ContractManager) BroadcastContractInterface(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {
+func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {
 	ffi.ID = fftypes.NewUUID()
 	ffi.Namespace = ns
 
-	existing, err := cm.database.GetContractInterfaceByNameAndVersion(ctx, ffi.Namespace, ffi.Name, ffi.Version)
+	existing, err := cm.database.GetFFI(ctx, ffi.Namespace, ffi.Name, ffi.Version)
 
 	if existing != nil && err == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
@@ -76,35 +86,31 @@ func (cm *ContractManager) BroadcastContractInterface(ctx context.Context, ns st
 	}
 
 	// TODO: Do we do anything with this message here?
-	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineContractInterface, waitConfirm)
+	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
 	return ffi, nil
 }
 
-func (cm *ContractManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
+func (cm *contractManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (cm *ContractManager) GetContractInterfaceByNameAndVersion(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
-	return cm.database.GetContractInterfaceByNameAndVersion(ctx, ns, name, version)
+func (cm *contractManager) GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
+	return cm.database.GetFFI(ctx, ns, name, version)
 }
 
-func (cm *ContractManager) GetContractInterfaceByID(ctx context.Context, id string) (*fftypes.FFI, error) {
-	return cm.database.GetContractInterfaceByID(ctx, id)
+func (cm *contractManager) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error) {
+	return cm.database.GetFFIByID(ctx, id)
 }
 
-func (cm *ContractManager) GetContractInterfaces(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
+func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
 	filter = cm.scopeNS(ns, filter)
-	return cm.database.GetContractInterfaces(ctx, ns, filter)
+	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
-func (cm *ContractManager) GetContractMethod(ctx context.Context, ns, contractID, methodName string) (*fftypes.FFIMethod, error) {
-	return nil, nil
-}
-
-func (cm *ContractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
 	signingKey := cm.identity.GetOrgKey(ctx)
 	operationID := fftypes.NewUUID()
 	method, err := cm.resolveInvokeContractRequest(ctx, ns, req)
@@ -117,7 +123,7 @@ func (cm *ContractManager) InvokeContract(ctx context.Context, ns string, req *f
 	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, method, req.Params)
 }
 
-func (cm *ContractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
@@ -132,11 +138,7 @@ func (cm *ContractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	return cm.InvokeContract(ctx, ns, req)
 }
 
-func (cm *ContractManager) GetMethod(ctx context.Context, ns, contractInstanceNameOrID, methodName string) (*fftypes.FFIMethod, error) {
-	return cm.database.GetContractMethodByName(ctx, ns, contractInstanceNameOrID, methodName)
-}
-
-func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
+func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
 	if req.Method == nil {
 		// TODO: more helpful error message here
 		return nil, fmt.Errorf("method nil")
@@ -148,7 +150,7 @@ func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 			return nil, fmt.Errorf("error resolving contract method - method signature is required if contract ID is absent")
 		}
 
-		method, err = cm.database.GetContractMethodByName(ctx, ns, req.ContractID.String(), method.Name)
+		method, err = cm.database.GetFFIMethod(ctx, ns, req.ContractID, method.Name)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving contract method")
 		}
@@ -156,12 +158,12 @@ func (cm *ContractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 	return method, nil
 }
 
-func (cm *ContractManager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+func (cm *contractManager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
 	filter = cm.scopeNS(ns, filter)
 	return cm.database.GetContractAPIs(ctx, ns, filter)
 }
 
-func (cm *ContractManager) BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
+func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
 	api.ID = fftypes.NewUUID()
 	api.Namespace = ns
 
@@ -188,7 +190,7 @@ func (cm *ContractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 	return api, nil
 }
 
-func (cm *ContractManager) ValidateFFI(ctx context.Context, ns string, ffi *fftypes.FFI) error {
+func (cm *contractManager) ValidateFFI(ctx context.Context, ns string, ffi *fftypes.FFI) error {
 	for _, method := range ffi.Methods {
 		if err := cm.validateFFIMethod(ctx, method); err != nil {
 			return err
@@ -202,15 +204,15 @@ func (cm *ContractManager) ValidateFFI(ctx context.Context, ns string, ffi *ffty
 	return nil
 }
 
-func (cm *ContractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
 	return cm.blockchain.ValidateFFIMethod(ctx, method)
 }
 
-func (cm *ContractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error {
+func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error {
 	return cm.blockchain.ValidateFFIEvent(ctx, event)
 }
 
-func (cm *ContractManager) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
+func (cm *contractManager) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
 	if err := cm.validateFFIMethod(ctx, req.Method); err != nil {
 		return err
 	}
