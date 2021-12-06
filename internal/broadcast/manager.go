@@ -129,7 +129,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		fftypes.OpTypePublicStorageBatchBroadcast,
 		fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
 	)
-	err = bm.database.UpsertOperation(ctx, op, false)
+	err = bm.database.InsertOperation(ctx, op)
 	if err != nil {
 		return err
 	}

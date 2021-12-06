@@ -41,29 +41,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Namespace:   "ns1",
 		Type:        fftypes.OpTypeBlockchainBatchPin,
 		Transaction: fftypes.NewUUID(),
-		Status:      fftypes.OpStatusPending,
-		Created:     fftypes.Now(),
-	}
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeCreated, "ns1", operationID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeUpdated, "ns1", operationID).Return()
-	err := s.UpsertOperation(ctx, operation, true)
-	assert.NoError(t, err)
-
-	// Check we get the exact same operation back
-	operationRead, err := s.GetOperationByID(ctx, operationID)
-	assert.NoError(t, err)
-	assert.NotNil(t, operationRead)
-	operationJson, _ := json.Marshal(&operation)
-	operationReadJson, _ := json.Marshal(&operationRead)
-	assert.Equal(t, string(operationJson), string(operationReadJson))
-
-	// Update the operation (this is testing what's possible at the database layer,
-	// and does not account for the verification that happens at the higher level)
-	operationUpdated := &fftypes.Operation{
-		ID:          operationID,
-		Namespace:   "ns1",
-		Type:        fftypes.OpTypeBlockchainBatchPin,
-		Transaction: fftypes.NewUUID(),
 		Status:      fftypes.OpStatusFailed,
 		Plugin:      "ethereum",
 		BackendID:   fftypes.NewRandB32().String(),
@@ -73,40 +50,41 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Created:     fftypes.Now(),
 		Updated:     fftypes.Now(),
 	}
-	err = s.UpsertOperation(context.Background(), operationUpdated, true)
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeCreated, "ns1", operationID).Return()
+	err := s.InsertOperation(ctx, operation)
 	assert.NoError(t, err)
 
-	// Check we get the exact same message back - note the removal of one of the operation elements
-	operationRead, err = s.GetOperationByID(ctx, operationID)
+	// Query back the operation (by ID)
+	operationRead, err := s.GetOperationByID(ctx, operationID)
 	assert.NoError(t, err)
-	operationJson, _ = json.Marshal(&operationUpdated)
-	operationReadJson, _ = json.Marshal(&operationRead)
+	operationJson, _ := json.Marshal(operation)
+	operationReadJson, _ := json.Marshal(operationRead)
 	assert.Equal(t, string(operationJson), string(operationReadJson))
 
-	// Query back the operation
+	// Query back the operation (by query filter)
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("id", operationUpdated.ID.String()),
-		fb.Eq("tx", operationUpdated.Transaction),
-		fb.Eq("type", operationUpdated.Type),
-		fb.Eq("status", operationUpdated.Status),
-		fb.Eq("error", operationUpdated.Error),
-		fb.Eq("plugin", operationUpdated.Plugin),
-		fb.Eq("backendid", operationUpdated.BackendID),
+		fb.Eq("id", operation.ID.String()),
+		fb.Eq("tx", operation.Transaction),
+		fb.Eq("type", operation.Type),
+		fb.Eq("status", operation.Status),
+		fb.Eq("error", operation.Error),
+		fb.Eq("plugin", operation.Plugin),
+		fb.Eq("backendid", operation.BackendID),
 		fb.Gt("created", 0),
 		fb.Gt("updated", 0),
 	)
-
 	operations, res, err := s.GetOperations(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(operations))
 	assert.Equal(t, int64(1), *res.TotalCount)
+	operationJson, _ = json.Marshal(operation)
 	operationReadJson, _ = json.Marshal(operations[0])
 	assert.Equal(t, string(operationJson), string(operationReadJson))
 
 	// Negative test on filter
 	filter = fb.And(
-		fb.Eq("id", operationUpdated.ID.String()),
+		fb.Eq("id", operation.ID.String()),
 		fb.Eq("updated", "0"),
 	)
 	operations, _, err = s.GetOperations(ctx, filter)
@@ -119,12 +97,12 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Set("status", fftypes.OpStatusSucceeded).
 		Set("updated", updateTime).
 		Set("error", "")
-	err = s.UpdateOperation(ctx, operationUpdated.ID, up)
+	err = s.UpdateOperation(ctx, operation.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
-		fb.Eq("id", operationUpdated.ID.String()),
+		fb.Eq("id", operation.ID.String()),
 		fb.Eq("status", fftypes.OpStatusSucceeded),
 		fb.Eq("error", ""),
 	)
@@ -135,57 +113,32 @@ func TestOperationE2EWithDB(t *testing.T) {
 	s.callbacks.AssertExpectations(t)
 }
 
-func TestUpsertOperationFailBegin(t *testing.T) {
+func TestInsertOperationFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{}, true)
+	err := s.InsertOperation(context.Background(), &fftypes.Operation{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertOperationFailSelect(t *testing.T) {
+func TestInsertOperationFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	operationID := fftypes.NewUUID()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
-	assert.Regexp(t, "FF10115", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertOperationFailInsert(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	operationID := fftypes.NewUUID()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
+	err := s.InsertOperation(context.Background(), &fftypes.Operation{ID: operationID})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertOperationFailUpdate(t *testing.T) {
+func TestInsertOperationFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(operationID.String()))
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
-	assert.Regexp(t, "FF10117", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertOperationFailCommit(t *testing.T) {
-	s, mock := newMockProvider().init()
-	operationID := fftypes.NewUUID()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
+	err := s.InsertOperation(context.Background(), &fftypes.Operation{ID: operationID})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

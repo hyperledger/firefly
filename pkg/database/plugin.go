@@ -194,8 +194,8 @@ type iPinCollection interface {
 }
 
 type iOperationCollection interface {
-	// UpsertOperation - Upsert an operation
-	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
+	// InsertOperation - Insert an operation
+	InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
 
 	// UpdateOperation - Update operation by ID
 	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)

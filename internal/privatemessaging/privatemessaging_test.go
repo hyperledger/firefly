@@ -130,22 +130,22 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		PayloadRef: "/blob/1",
 	}, nil)
 	mdx.On("TransferBLOB", pm.ctx, "node1", "/blob/1").Return("tracking1", nil)
-	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.BackendID == "tracking1" && op.Type == fftypes.OpTypeDataExchangeBlobSend
-	}), false).Return(nil, nil)
+	})).Return(nil, nil)
 	mdx.On("TransferBLOB", pm.ctx, "node2", "/blob/1").Return("tracking2", nil)
-	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.BackendID == "tracking2" && op.Type == fftypes.OpTypeDataExchangeBlobSend
-	}), false).Return(nil, nil)
+	})).Return(nil, nil)
 
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking3", nil).Once()
-	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.BackendID == "tracking3" && op.Type == fftypes.OpTypeDataExchangeBatchSend
-	}), false).Return(nil, nil)
+	})).Return(nil, nil)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking4", nil).Once()
-	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.BackendID == "tracking4" && op.Type == fftypes.OpTypeDataExchangeBatchSend
-	}), false).Return(nil, nil)
+	})).Return(nil, nil)
 
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
 
@@ -270,7 +270,7 @@ func TestSendImmediateFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestSendSubmitUpsertOperationFail(t *testing.T) {
+func TestSendSubmitInsertOperationFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
@@ -281,7 +281,7 @@ func TestSendSubmitUpsertOperationFail(t *testing.T) {
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
@@ -339,7 +339,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
-	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
 
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -388,7 +388,7 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(&fftypes.Blob{PayloadRef: "blob/1"}, nil)
 	mdx.On("TransferBLOB", pm.ctx, "peer1", "blob/1").Return("tracking1", nil)
-	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
