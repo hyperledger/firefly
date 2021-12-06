@@ -52,7 +52,7 @@ var (
 func TestGetChartHistogramInvalidCollectionName(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	_, err := s.GetChartHistogram(context.Background(), []fftypes.ChartHistogramInterval{}, database.CollectionName("abc"))
+	_, err := s.GetChartHistogram(context.Background(), "ns1", []fftypes.ChartHistogramInterval{}, database.CollectionName("abc"))
 	assert.Regexp(t, "FF10301", err)
 }
 
@@ -61,7 +61,7 @@ func TestGetChartHistogramValidCollectionName(t *testing.T) {
 		s, mock := newMockProvider().init()
 		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("123"))
 
-		histogram, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName(validCollections[i]))
+		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollections[i]))
 
 		assert.NoError(t, err)
 		assert.Equal(t, histogram, expectedHistogramResult)
@@ -73,7 +73,7 @@ func TestGetChartHistogramsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT *").WillReturnError(fmt.Errorf("pop"))
 
-	_, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
+	_, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("messages"))
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -82,7 +82,7 @@ func TestGetChartHistogramScanFailTooManyCols(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0", "unexpected_column"}).AddRow("one", "two"))
 
-	_, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
+	_, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("messages"))
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -91,7 +91,7 @@ func TestGetChartHistogramSuccessNoRows(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}))
 
-	histogram, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
+	histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("messages"))
 	assert.NoError(t, err)
 	assert.Equal(t, emptyHistogramResult, histogram)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -101,7 +101,7 @@ func TestGetChartHistogramSuccess(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("123"))
 
-	histogram, err := s.GetChartHistogram(context.Background(), mockHistogramInterval, database.CollectionName("messages"))
+	histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("messages"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedHistogramResult, histogram)

@@ -257,13 +257,13 @@ func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*ffty
 	return r0, r1, r2
 }
 
-// GetChartHistogram provides a mock function with given fields: ctx, intervals, collection
-func (_m *Plugin) GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
-	ret := _m.Called(ctx, intervals, collection)
+// GetChartHistogram provides a mock function with given fields: ctx, ns, intervals, collection
+func (_m *Plugin) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+	ret := _m.Called(ctx, ns, intervals, collection)
 
 	var r0 []*fftypes.ChartHistogram
-	if rf, ok := ret.Get(0).(func(context.Context, []fftypes.ChartHistogramInterval, database.CollectionName) []*fftypes.ChartHistogram); ok {
-		r0 = rf(ctx, intervals, collection)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) []*fftypes.ChartHistogram); ok {
+		r0 = rf(ctx, ns, intervals, collection)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.ChartHistogram)
@@ -271,8 +271,8 @@ func (_m *Plugin) GetChartHistogram(ctx context.Context, intervals []fftypes.Cha
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []fftypes.ChartHistogramInterval, database.CollectionName) error); ok {
-		r1 = rf(ctx, intervals, collection)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) error); ok {
+		r1 = rf(ctx, ns, intervals, collection)
 	} else {
 		r1 = ret.Error(1)
 	}

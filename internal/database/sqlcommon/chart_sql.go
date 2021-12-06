@@ -27,13 +27,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (s *SQLCommon) getCaseQueries(intervals []fftypes.ChartHistogramInterval) (caseQueries []sq.CaseBuilder) {
+func (s *SQLCommon) getCaseQueries(ns string, intervals []fftypes.ChartHistogramInterval) (caseQueries []sq.CaseBuilder) {
 	for _, interval := range intervals {
 		caseQueries = append(caseQueries, sq.Case().
 			When(
 				sq.And{
 					sq.GtOrEq{"created": interval.StartTime},
 					sq.Lt{"created": interval.EndTime},
+					sq.Eq{"namespace": ns},
 				},
 				"1",
 			).
@@ -72,7 +73,7 @@ func (s *SQLCommon) histogramResult(ctx context.Context, rows *sql.Rows, cols []
 	return cols, nil
 }
 
-func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogram []*fftypes.ChartHistogram, err error) {
+func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogram []*fftypes.ChartHistogram, err error) {
 	tableName, err := s.getTableNameFromCollection(ctx, collection)
 	if err != nil {
 		return nil, err
@@ -80,7 +81,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, intervals []fftypes.C
 
 	qb := sq.Select()
 
-	for i, caseQuery := range s.getCaseQueries(intervals) {
+	for i, caseQuery := range s.getCaseQueries(ns, intervals) {
 		query, args, _ := caseQuery.ToSql()
 
 		histogram = append(histogram, &fftypes.ChartHistogram{

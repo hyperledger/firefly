@@ -406,7 +406,7 @@ type iTokenTransferCollection interface {
 
 type iChartCollection interface {
 	// GetChartHistogram - Get charting data for a histogram
-	GetChartHistogram(ctx context.Context, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
+	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
