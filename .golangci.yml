@@ -6,8 +6,6 @@ linters-settings:
     enabled-checks: []
     disabled-checks:
       - regexpMust
-    enabled-tags:
-      - performance
   goheader:
     template: |-
       Copyright © {{ YEAR }} Kaleido, Inc.
