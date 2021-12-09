@@ -254,6 +254,22 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash, msgJSON)
 }
 
+func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
+	sub := msgJSON.GetString("subId")
+	signature := msgJSON.GetString("signature")
+	dataJSON := msgJSON.GetObject("data")
+	name := strings.SplitN(signature, "(", 2)[0]
+	delete(msgJSON, "data")
+
+	event := &blockchain.ContractEvent{
+		Subscription: sub,
+		Name:         name,
+		Outputs:      dataJSON,
+		Info:         msgJSON,
+	}
+	return e.callbacks.ContractEvent(event)
+}
+
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
 	l := log.L(ctx)
 
@@ -306,6 +322,8 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 			default:
 				l.Infof("Ignoring event with unknown signature: %s", signature)
 			}
+		} else if err := e.handleContractEvent(msgJSON); err != nil {
+			return err
 		}
 	}
 

@@ -81,6 +81,20 @@ func (_m *EventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
 	return r0
 }
 
+// ContractEvent provides a mock function with given fields: event
+func (_m *EventManager) ContractEvent(event *blockchain.ContractEvent) error {
+	ret := _m.Called(event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*blockchain.ContractEvent) error); ok {
+		r0 = rf(event)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateUpdateDurableSubscription provides a mock function with given fields: ctx, subDef, mustNew
 func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) error {
 	ret := _m.Called(ctx, subDef, mustNew)

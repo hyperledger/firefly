@@ -3135,6 +3135,7 @@ paths:
                       - token_pool_rejected
                       - token_transfer_confirmed
                       - token_transfer_op_failed
+                      - contract_event
                       type: string
                   type: object
                 type: array
@@ -3191,6 +3192,7 @@ paths:
                     - token_pool_rejected
                     - token_transfer_confirmed
                     - token_transfer_op_failed
+                    - contract_event
                     type: string
                 type: object
           description: Success
@@ -3698,6 +3700,7 @@ paths:
                       - token_pool_rejected
                       - token_transfer_confirmed
                       - token_transfer_op_failed
+                      - contract_event
                       type: string
                   type: object
                 type: array
