@@ -960,3 +960,192 @@ func TestHandleReceiptBadRequestID(t *testing.T) {
 func TestFormatNil(t *testing.T) {
 	assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", ethHexFormatB32(nil))
 }
+
+func TestValidateFFIParamInteger(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "integer",
+		InternalType: "uint32",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "integer",
+		InternalType: "int16",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "integer",
+		InternalType: "uint256",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamIntegerInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "integer",
+		InternalType: "string",
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "integer",
+		InternalType: "uintfoo",
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "integer",
+		InternalType: "int7",
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamByteArray(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "byte[]",
+		InternalType: "byte[]",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Type:         "byte[]",
+		InternalType: "bytes",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "byte[]",
+		InternalType: "bytes32",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamByteArrayInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "byte[]",
+		InternalType: "bool",
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamArray(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "string[]",
+		InternalType: "string[]",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "integer[]",
+		InternalType: "uint256[]",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamArrayInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "string[][]",
+		InternalType: "string[]",
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "string[]",
+		InternalType: "uint32[]",
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamBoolean(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "boolean",
+		InternalType: "bool",
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamBooleanInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "TestParam",
+		Type:         "boolean",
+		InternalType: "boolean",
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamStruct(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "myWidget",
+		Type:         "Widget",
+		InternalType: "struct Widget",
+		Components: []*fftypes.FFIParam{
+			{
+				Name:         "Size",
+				Type:         "integer",
+				InternalType: "uint8",
+			},
+			{
+				Name:         "Teeth",
+				Type:         "integer",
+				InternalType: "uint16",
+			},
+			{
+				Name:         "Ddescription",
+				Type:         "string",
+				InternalType: "string",
+			},
+		},
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamStructInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:         "myWidget",
+		Type:         "Widget",
+		InternalType: "struct Widget",
+		Components: []*fftypes.FFIParam{
+			{
+				Name:         "Size",
+				Type:         "integer",
+				InternalType: "uint8",
+			},
+			{
+				Name:         "Teeth",
+				Type:         "integer",
+				InternalType: "string",
+			},
+			{
+				Name:         "Description",
+				Type:         "string",
+				InternalType: "string",
+			},
+		},
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}

@@ -568,22 +568,7 @@ func parseContractLocation(location fftypes.Byteable) (*Location, error) {
 	return fabricLocation, nil
 }
 
-func (f *Fabric) ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error {
-	// TODO: Implement validation
-	return nil
-}
-
-func (f *Fabric) ValidateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
-	// TODO: Implement validation
-	return nil
-}
-
-func (f *Fabric) ValidateFFIEvent(ctx context.Context, ffi *fftypes.FFIEvent) error {
-	// TODO: Implement validation
-	return nil
-}
-
-func (f *Fabric) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
+func (f *Fabric) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
 	// TODO: Implement validation
 	return nil
 }

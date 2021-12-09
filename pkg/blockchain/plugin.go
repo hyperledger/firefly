@@ -51,11 +51,7 @@ type Plugin interface {
 
 	ValidateContractLocation(ctx context.Context, location fftypes.Byteable) error
 
-	ValidateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
-
-	ValidateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error
-
-	ValidateInvokeContractRequest(ctx context.Context, event *fftypes.InvokeContractRequest) error
+	ValidateFFIParam(ctx context.Context, method *fftypes.FFIParam) error
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

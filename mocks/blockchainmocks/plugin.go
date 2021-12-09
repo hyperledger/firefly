@@ -153,41 +153,13 @@ func (_m *Plugin) ValidateContractLocation(ctx context.Context, location fftypes
 	return r0
 }
 
-// ValidateFFIEvent provides a mock function with given fields: ctx, event
-func (_m *Plugin) ValidateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error {
-	ret := _m.Called(ctx, event)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEvent) error); ok {
-		r0 = rf(ctx, event)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ValidateFFIMethod provides a mock function with given fields: ctx, method
-func (_m *Plugin) ValidateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+// ValidateFFIParam provides a mock function with given fields: ctx, method
+func (_m *Plugin) ValidateFFIParam(ctx context.Context, method *fftypes.FFIParam) error {
 	ret := _m.Called(ctx, method)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIParam) error); ok {
 		r0 = rf(ctx, method)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ValidateInvokeContractRequest provides a mock function with given fields: ctx, event
-func (_m *Plugin) ValidateInvokeContractRequest(ctx context.Context, event *fftypes.InvokeContractRequest) error {
-	ret := _m.Called(ctx, event)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.InvokeContractRequest) error); ok {
-		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Error(0)
 	}

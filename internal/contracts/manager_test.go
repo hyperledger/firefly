@@ -37,7 +37,7 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
 
-	mbi.On("ValidateFFIMethod", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
 
 	req := &fftypes.InvokeContractRequest{
@@ -79,7 +79,7 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
 
-	mbi.On("ValidateFFIMethod", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
 
 	req := &fftypes.InvokeContractRequest{
@@ -120,7 +120,7 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
 
-	mbi.On("ValidateFFIMethod", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
 
 	req := &fftypes.InvokeContractRequest{
@@ -155,14 +155,14 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 	assert.Regexp(t, "Input.*not expected.*integer", err)
 }
 
-func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
+func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
 	mps := &publicstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
 
-	mbi.On("ValidateFFIMethod", mock.Anything, mock.Anything).Return(errors.New("pop"))
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
 
 	req := &fftypes.InvokeContractRequest{
 		Method: &fftypes.FFIMethod{
@@ -197,6 +197,83 @@ func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
 	assert.Regexp(t, err, "pop")
 }
 
+func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
+	mdb := &databasemocks.Plugin{}
+	mps := &publicstoragemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	cm := &contractManager{
+		mdb,
+		mps,
+		mbm,
+		nil,
+		mbi,
+	}
+
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
+
+	method := &fftypes.FFIMethod{
+		Name: "sum",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:         "x",
+				Type:         "integer",
+				InternalType: "uint256",
+			},
+			{
+				Name:         "y",
+				Type:         "integer",
+				InternalType: "uint256",
+			},
+		},
+		Returns: []*fftypes.FFIParam{
+			{
+				Name:         "z",
+				Type:         "integer",
+				InternalType: "uint256",
+			},
+		},
+	}
+
+	err := cm.validateFFIMethod(context.Background(), method)
+	assert.Regexp(t, err, "pop")
+}
+
+func TestValidateInvokeContractRequestInvalidEvent(t *testing.T) {
+	mdb := &databasemocks.Plugin{}
+	mps := &publicstoragemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	cm := &contractManager{
+		mdb,
+		mps,
+		mbm,
+		nil,
+		mbi,
+	}
+
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
+
+	method := &fftypes.FFIEvent{
+		Name: "sum",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:         "x",
+				Type:         "integer",
+				InternalType: "uint256",
+			},
+			{
+				Name:         "y",
+				Type:         "integer",
+				InternalType: "uint256",
+			},
+		},
+	}
+
+	err := cm.validateFFIEvent(context.Background(), method)
+	assert.Regexp(t, err, "pop")
+}
+
 func TestValidateFFI(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
 	mps := &publicstoragemocks.Plugin{}
@@ -204,8 +281,7 @@ func TestValidateFFI(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
 
-	mbi.On("ValidateFFIMethod", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("ValidateFFIEvent", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 
 	ffi := &fftypes.FFI{
 		Name:      "math",
@@ -248,18 +324,18 @@ func TestValidateFFI(t *testing.T) {
 		},
 	}
 
-	err := cm.ValidateFFI(context.Background(), "default", ffi)
+	err := cm.ValidateFFI(context.Background(), ffi)
 	assert.NoError(t, err)
 }
 
-func TestValidateFFIBadMethod(t *testing.T) {
+func TestValidateFFIBadMethodParam(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
 	mps := &publicstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
 
-	mbi.On("ValidateFFIMethod", mock.Anything, mock.Anything).Return(errors.New("pop"))
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
 
 	ffi := &fftypes.FFI{
 		Name:      "math",
@@ -302,19 +378,19 @@ func TestValidateFFIBadMethod(t *testing.T) {
 		},
 	}
 
-	err := cm.ValidateFFI(context.Background(), "default", ffi)
+	err := cm.ValidateFFI(context.Background(), ffi)
 	assert.Regexp(t, err, "pop")
 }
 
-func TestValidateFFIBadEvent(t *testing.T) {
+func TestValidateFFIBadMethodReturnParam(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
 	mps := &publicstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
 
-	mbi.On("ValidateFFIMethod", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("ValidateFFIEvent", mock.Anything, mock.Anything).Return(errors.New("pop"))
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Twice().Return(nil)
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
 
 	ffi := &fftypes.FFI{
 		Name:      "math",
@@ -357,6 +433,61 @@ func TestValidateFFIBadEvent(t *testing.T) {
 		},
 	}
 
-	err := cm.ValidateFFI(context.Background(), "default", ffi)
+	err := cm.ValidateFFI(context.Background(), ffi)
+	assert.Regexp(t, err, "pop")
+}
+
+func TestValidateFFIBadEventParam(t *testing.T) {
+	mdb := &databasemocks.Plugin{}
+	mps := &publicstoragemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Times(3).Return(nil)
+	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
+
+	ffi := &fftypes.FFI{
+		Name:      "math",
+		Namespace: "default",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "sum",
+				Params: []*fftypes.FFIParam{
+					{
+						Name:         "x",
+						Type:         "integer",
+						InternalType: "uint256",
+					},
+					{
+						Name:         "y",
+						Type:         "integer",
+						InternalType: "uint256",
+					},
+				},
+				Returns: []*fftypes.FFIParam{
+					{
+						Name:         "z",
+						Type:         "integer",
+						InternalType: "uint256",
+					},
+				},
+			},
+		},
+		Events: []*fftypes.FFIEvent{
+			{
+				Name: "sum",
+				Params: []*fftypes.FFIParam{
+					{
+						Name:         "z",
+						Type:         "integer",
+						InternalType: "uint256",
+					},
+				},
+			},
+		},
+	}
+
+	err := cm.ValidateFFI(context.Background(), ffi)
 	assert.Regexp(t, err, "pop")
 }
