@@ -53,13 +53,13 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 
-// InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, onChainLocation, method, params
-func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, onChainLocation fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(ctx, operationID, signingKey, onChainLocation, method, params)
+// InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, location, method, params
+func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, operationID, signingKey, location, method, params)
 
 	var r0 interface{}
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, fftypes.Byteable, *fftypes.FFIMethod, map[string]interface{}) interface{}); ok {
-		r0 = rf(ctx, operationID, signingKey, onChainLocation, method, params)
+		r0 = rf(ctx, operationID, signingKey, location, method, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -68,7 +68,7 @@ func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID,
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, string, fftypes.Byteable, *fftypes.FFIMethod, map[string]interface{}) error); ok {
-		r1 = rf(ctx, operationID, signingKey, onChainLocation, method, params)
+		r1 = rf(ctx, operationID, signingKey, location, method, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -139,13 +139,55 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 	return r0
 }
 
-// ValidateContractLocation provides a mock function with given fields: ctx, onChainLocation
-func (_m *Plugin) ValidateContractLocation(ctx context.Context, onChainLocation fftypes.Byteable) error {
-	ret := _m.Called(ctx, onChainLocation)
+// ValidateContractLocation provides a mock function with given fields: ctx, location
+func (_m *Plugin) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) error {
+	ret := _m.Called(ctx, location)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, fftypes.Byteable) error); ok {
-		r0 = rf(ctx, onChainLocation)
+		r0 = rf(ctx, location)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ValidateFFIEvent provides a mock function with given fields: ctx, event
+func (_m *Plugin) ValidateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error {
+	ret := _m.Called(ctx, event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEvent) error); ok {
+		r0 = rf(ctx, event)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ValidateFFIMethod provides a mock function with given fields: ctx, method
+func (_m *Plugin) ValidateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+	ret := _m.Called(ctx, method)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod) error); ok {
+		r0 = rf(ctx, method)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ValidateInvokeContractRequest provides a mock function with given fields: ctx, event
+func (_m *Plugin) ValidateInvokeContractRequest(ctx context.Context, event *fftypes.InvokeContractRequest) error {
+	ret := _m.Called(ctx, event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.InvokeContractRequest) error); ok {
+		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Error(0)
 	}

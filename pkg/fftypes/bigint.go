@@ -25,12 +25,12 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 )
 
-const MaxBigIntHexLength = 65
+const MaxFFBigIntHexLength = 65
 
-// BigInt is a wrapper on a Go big.Int that standardizes JSON and DB serialization
-type BigInt big.Int
+// FFBigInt is a wrapper on a Go big.Int that standardizes JSON and DB serialization
+type FFBigInt big.Int
 
-func (i BigInt) MarshalText() ([]byte, error) {
+func (i FFBigInt) MarshalText() ([]byte, error) {
 	// Represent as base 10 string in Marshalled JSON
 	// This could become configurable to other options, such as:
 	// - Hex formatted string
@@ -38,7 +38,7 @@ func (i BigInt) MarshalText() ([]byte, error) {
 	return []byte((*big.Int)(&i).Text(10)), nil
 }
 
-func (i *BigInt) UnmarshalJSON(b []byte) error {
+func (i *FFBigInt) UnmarshalJSON(b []byte) error {
 	var val interface{}
 	if err := json.Unmarshal(b, &val); err != nil {
 		return i18n.WrapError(context.Background(), err, i18n.MsgBigIntParseFailed, b)
@@ -57,20 +57,20 @@ func (i *BigInt) UnmarshalJSON(b []byte) error {
 	}
 }
 
-func NewBigInt(x int64) *BigInt {
-	return (*BigInt)(big.NewInt(x))
+func NewFFBigInt(x int64) *FFBigInt {
+	return (*FFBigInt)(big.NewInt(x))
 }
 
-func (i BigInt) Value() (driver.Value, error) {
+func (i FFBigInt) Value() (driver.Value, error) {
 	// Represent as base 16 string in database, to allow a 64 character limit
 	res := (*big.Int)(&i).Text(16)
-	if len(res) > MaxBigIntHexLength {
-		return nil, i18n.NewError(context.Background(), i18n.MsgBigIntTooLarge, len(res), MaxBigIntHexLength)
+	if len(res) > MaxFFBigIntHexLength {
+		return nil, i18n.NewError(context.Background(), i18n.MsgBigIntTooLarge, len(res), MaxFFBigIntHexLength)
 	}
 	return res, nil
 }
 
-func (i *BigInt) Scan(src interface{}) error {
+func (i *FFBigInt) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case nil:
 		return nil
@@ -88,11 +88,11 @@ func (i *BigInt) Scan(src interface{}) error {
 	}
 }
 
-func (i *BigInt) Int() *big.Int {
+func (i *FFBigInt) Int() *big.Int {
 	return (*big.Int)(i)
 }
 
-func (i *BigInt) Equals(i2 *BigInt) bool {
+func (i *FFBigInt) Equals(i2 *FFBigInt) bool {
 	switch {
 	case i == nil && i2 == nil:
 		return true

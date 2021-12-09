@@ -231,7 +231,7 @@ func TestMintTokens(t *testing.T) {
 		LocalID: fftypes.NewUUID(),
 		To:      "user1",
 		Key:     "0x123",
-		Amount:  *fftypes.NewBigInt(10),
+		Amount:  *fftypes.NewFFBigInt(10),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -289,7 +289,7 @@ func TestBurnTokens(t *testing.T) {
 		TokenIndex: "1",
 		From:       "user1",
 		Key:        "0x123",
-		Amount:     *fftypes.NewBigInt(10),
+		Amount:     *fftypes.NewFFBigInt(10),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -349,7 +349,7 @@ func TestTransferTokens(t *testing.T) {
 		From:       "user1",
 		To:         "user2",
 		Key:        "0x123",
-		Amount:     *fftypes.NewBigInt(10),
+		Amount:     *fftypes.NewFFBigInt(10),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
