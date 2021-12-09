@@ -82,6 +82,8 @@ spec:
             - mountPath: /data/ca.pem
               name: tls
               subPath: ca.crt
+            - mountPath: /data/blobs
+              name: blobs
       {{- with .Values.dataexchange.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -101,6 +103,9 @@ spec:
         - name: tls
           secret:
             secretName: {{ if and .Values.dataexchange.certificate.enabled (not .Values.dataexchange.tlsSecret.enabled) }}"{{ include "firefly.fullname" . }}-dx-tls"{{ else }}{{ .Values.dataexchange.tlsSecret.name }}{{ end }}
+        - name: blobs
+          emptyDir:
+            sizeLimit: {{  .Values.dataexchange.blobStorageSize }}
   volumeClaimTemplates:
     - metadata:
         name: {{ include "firefly.fullname" . }}-dx-peer-certs
