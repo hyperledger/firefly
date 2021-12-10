@@ -73,19 +73,19 @@ func TestNotAnArrayTypeCheck(t *testing.T) {
 
 func TestCustomTypeSimple(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType",
-		InternalType: "struct",
+		Name:    "testParam",
+		Type:    "struct CustomType",
+		Details: []byte("{\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "foo",
-				Type:         "string",
-				InternalType: "string",
+				Name:    "foo",
+				Type:    "string",
+				Details: []byte("{\"type\":\"string\"}"),
 			},
 			{
-				Name:         "count",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "count",
+				Type:    "integer",
+				Details: []byte("{\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -99,19 +99,19 @@ func TestCustomTypeSimple(t *testing.T) {
 
 func TestCustomTypeWrongType(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType",
-		InternalType: "struct",
+		Name:    "testParam",
+		Type:    "struct CustomType",
+		Details: []byte("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "foo",
-				Type:         "string",
-				InternalType: "string",
+				Name:    "foo",
+				Type:    "string",
+				Details: []byte("\"type\":\"string\"}"),
 			},
 			{
-				Name:         "count",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "count",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -125,19 +125,19 @@ func TestCustomTypeWrongType(t *testing.T) {
 
 func TestCustomTypeFieldMissing(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType",
-		InternalType: "struct",
+		Name:    "testParam",
+		Type:    "struct CustomType",
+		Details: []byte("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "foo",
-				Type:         "string",
-				InternalType: "string",
+				Name:    "foo",
+				Type:    "string",
+				Details: []byte("\"type\":\"string\"}"),
 			},
 			{
-				Name:         "count",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "count",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -151,19 +151,19 @@ func TestCustomTypeFieldMissing(t *testing.T) {
 
 func TestCustomTypeInvalid(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType",
-		InternalType: "struct",
+		Name:    "testParam",
+		Type:    "struct CustomType",
+		Details: []byte("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "foo",
-				Type:         "string",
-				InternalType: "string",
+				Name:    "foo",
+				Type:    "string",
+				Details: []byte("\"type\":\"string\"}"),
 			},
 			{
-				Name:         "count",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "count",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -177,19 +177,19 @@ func TestCustomTypeInvalid(t *testing.T) {
 
 func TestArrayOfCustomType(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType[]",
-		InternalType: "struct[]",
+		Name:    "testParam",
+		Type:    "struct CustomType[]",
+		Details: []byte("\"type\":\"struct[]\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "foo",
-				Type:         "string",
-				InternalType: "string",
+				Name:    "foo",
+				Type:    "string",
+				Details: []byte("\"type\":\"string\"}"),
 			},
 			{
-				Name:         "count",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "count",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -213,14 +213,14 @@ func TestArrayOfCustomType(t *testing.T) {
 
 func TestNullValue(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType",
-		InternalType: "struct",
+		Name:    "testParam",
+		Type:    "struct CustomType",
+		Details: []byte("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "foo",
-				Type:         "string",
-				InternalType: "string",
+				Name:    "foo",
+				Type:    "string",
+				Details: []byte("\"type\":\"string\"}"),
 			},
 		},
 	}
@@ -234,9 +234,9 @@ func TestNullValue(t *testing.T) {
 
 func TestInvalidTypeMapping(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "foo",
-		Type:         "integer",
-		InternalType: "uint256",
+		Name:    "foo",
+		Type:    "integer",
+		Details: []byte("\"type\":\"uint256\"}"),
 	}
 	var i float32 = 32
 	err := checkParam(context.Background(), i, param)
@@ -245,29 +245,29 @@ func TestInvalidTypeMapping(t *testing.T) {
 
 func TestComplexCustomType(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType[][]",
-		InternalType: "struct",
+		Name:    "testParam",
+		Type:    "struct CustomType[][]",
+		Details: []byte("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "x",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "x",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 			{
-				Name:         "y",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "y",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 			{
-				Name:         "foo",
-				Type:         "struct Foo",
-				InternalType: "struct",
+				Name:    "foo",
+				Type:    "struct Foo",
+				Details: []byte("\"type\":\"struct\"}"),
 				Components: []*fftypes.FFIParam{
 					{
-						Name:         "bar",
-						Type:         "string",
-						InternalType: "string",
+						Name:    "bar",
+						Type:    "string",
+						Details: []byte("\"type\":\"string\"}"),
 					},
 				},
 			},
@@ -286,29 +286,29 @@ func TestComplexCustomType(t *testing.T) {
 
 func TestBadComplexCustomType(t *testing.T) {
 	param := &fftypes.FFIParam{
-		Name:         "testParam",
-		Type:         "struct CustomType[][]",
-		InternalType: "struct",
+		Name:    "testParam",
+		Type:    "struct CustomType[][]",
+		Details: []byte("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
-				Name:         "x",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "x",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 			{
-				Name:         "y",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "y",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 			{
-				Name:         "foo",
-				Type:         "struct Foo",
-				InternalType: "struct",
+				Name:    "foo",
+				Type:    "struct Foo",
+				Details: []byte("\"type\":\"struct\"}"),
 				Components: []*fftypes.FFIParam{
 					{
-						Name:         "bar",
-						Type:         "string",
-						InternalType: "string",
+						Name:    "bar",
+						Type:    "string",
+						Details: []byte("\"type\":\"string\"}"),
 					},
 				},
 			},

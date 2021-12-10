@@ -40,16 +40,16 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 		Name: "Set",
 		Params: fftypes.FFIParams{
 			{
-				Name:         "value",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "value",
+				Type:    "integer",
+				Details: []byte("\"internal-type-info\""),
 			},
 		},
 		Returns: fftypes.FFIParams{
 			{
-				Name:         "value",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "value",
+				Type:    "integer",
+				Details: []byte("\"internal-type-info\""),
 			},
 		},
 	}

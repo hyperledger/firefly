@@ -82,6 +82,11 @@ type Location struct {
 	Address string `json:"address"`
 }
 
+type paramDetails struct {
+	Type    string
+	Indexed bool
+}
+
 var requiredSubscriptions = []string{
 	"BatchPin",
 }
@@ -431,13 +436,32 @@ func parseContractLocation(location fftypes.Byteable) (*Location, error) {
 	return ethLocation, nil
 }
 
+func parseParamDetails(details fftypes.Byteable) (*paramDetails, error) {
+	ethParam := &paramDetails{}
+	if err := json.Unmarshal(details, &ethParam); err != nil {
+		return nil, fmt.Errorf("failed to validate param")
+	}
+	if ethParam.Type == "" {
+		return nil, fmt.Errorf("failed to validate param: 'type' not set")
+	}
+	return ethParam, nil
+}
+
 var intRegex, _ = regexp.Compile("^u?int([0-9]{1,3})$")
 
 func (e *Ethereum) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
+	paramDetails, err := parseParamDetails(param.Details)
+	if err != nil {
+		return err
+	}
+	return e.validateParamInternal(ctx, param, paramDetails)
+}
+
+func (e *Ethereum) validateParamInternal(ctx context.Context, param *fftypes.FFIParam, paramDetails *paramDetails) error {
 	switch {
 	case len(param.Components) > 0:
 		// struct
-		if strings.HasPrefix(param.InternalType, "struct ") {
+		if strings.HasPrefix(paramDetails.Type, "struct ") {
 			for _, childParam := range param.Components {
 				if err := e.ValidateFFIParam(ctx, childParam); err != nil {
 					return err
@@ -447,25 +471,22 @@ func (e *Ethereum) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam
 		}
 	case strings.HasPrefix(param.Type, "byte"):
 		// byte (array)
-		if param.Type == param.InternalType {
+		if param.Type == paramDetails.Type {
 			return nil
 		}
-		if param.InternalType == "byte[]" || strings.HasPrefix(param.InternalType, "bytes") {
+		if paramDetails.Type == "byte[]" || strings.HasPrefix(paramDetails.Type, "bytes") {
 			return nil
 		}
 	case strings.HasSuffix(param.Type, "[]"):
 		// array
-		if strings.Count(param.Type, "[]") == strings.Count(param.InternalType, "[]") {
-			return e.ValidateFFIParam(ctx, &fftypes.FFIParam{
-				Name:         param.Name,
-				Components:   param.Components,
-				Type:         strings.TrimSuffix(param.Type, "[]"),
-				InternalType: strings.TrimSuffix(param.InternalType, "[]"),
-			})
+		if strings.Count(param.Type, "[]") == strings.Count(paramDetails.Type, "[]") {
+			param.Type = strings.TrimSuffix(param.Type, "[]")
+			paramDetails.Type = strings.TrimSuffix(paramDetails.Type, "[]")
+			return e.validateParamInternal(ctx, param, paramDetails)
 		}
 	case param.Type == "integer":
 		// integer
-		matches := intRegex.FindStringSubmatch(param.InternalType)
+		matches := intRegex.FindStringSubmatch(paramDetails.Type)
 		if len(matches) == 2 {
 			i, err := strconv.ParseInt(matches[1], 10, 0)
 			if err == nil && i >= 8 && i <= 256 && i%8 == 0 {
@@ -474,13 +495,13 @@ func (e *Ethereum) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam
 		}
 	case param.Type == "string":
 		// string
-		if param.InternalType == "string" || param.InternalType == "address" {
+		if paramDetails.Type == "string" || paramDetails.Type == "address" {
 			return nil
 		}
 	case param.Type == "boolean":
-		if param.InternalType == "bool" {
+		if paramDetails.Type == "bool" {
 			return nil
 		}
 	}
-	return i18n.NewError(ctx, i18n.MsgContractInternalType, param.Name, param.Type, param.InternalType)
+	return i18n.NewError(ctx, i18n.MsgContractInternalType, param.Name, param.Type, paramDetails.Type)
 }

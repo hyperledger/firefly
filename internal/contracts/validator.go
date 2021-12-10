@@ -89,10 +89,10 @@ func checkParam(ctx context.Context, input interface{}, param *fftypes.FFIParam)
 func checkArrayType(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
 	elementType := strings.TrimSuffix(param.Type, "[]")
 	elementParam := &fftypes.FFIParam{
-		Name:         param.Name,
-		Type:         elementType,
-		InternalType: param.InternalType,
-		Components:   param.Components,
+		Name:       param.Name,
+		Type:       elementType,
+		Details:    param.Details,
+		Components: param.Components,
 	}
 	inputArray, ok := input.([]interface{})
 

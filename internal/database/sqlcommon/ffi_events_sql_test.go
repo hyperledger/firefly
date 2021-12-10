@@ -40,9 +40,9 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 		Name: "Changed",
 		Params: fftypes.FFIParams{
 			{
-				Name:         "value",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "value",
+				Type:    "integer",
+				Details: []byte("\"internal-type-info\""),
 			},
 		},
 	}

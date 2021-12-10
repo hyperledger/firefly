@@ -45,21 +45,21 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:         "x",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "x",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 				{
-					Name:         "y",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "y",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:         "z",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "z",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 		},
@@ -87,21 +87,21 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:         "x",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "x",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 				{
-					Name:         "y",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "y",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:         "z",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "z",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 		},
@@ -128,21 +128,21 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:         "x",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "x",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 				{
-					Name:         "y",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "y",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:         "z",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "z",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 		},
@@ -169,21 +169,21 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:         "x",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "x",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 				{
-					Name:         "y",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "y",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:         "z",
-					Type:         "integer",
-					InternalType: "uint256",
+					Name:    "z",
+					Type:    "integer",
+					Details: []byte("\"type\":\"uint256\"}"),
 				},
 			},
 		},
@@ -216,21 +216,21 @@ func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
 		Name: "sum",
 		Params: []*fftypes.FFIParam{
 			{
-				Name:         "x",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "x",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 			{
-				Name:         "y",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "y",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 		},
 		Returns: []*fftypes.FFIParam{
 			{
-				Name:         "z",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "z",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -258,14 +258,14 @@ func TestValidateInvokeContractRequestInvalidEvent(t *testing.T) {
 		Name: "sum",
 		Params: []*fftypes.FFIParam{
 			{
-				Name:         "x",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "x",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 			{
-				Name:         "y",
-				Type:         "integer",
-				InternalType: "uint256",
+				Name:    "y",
+				Type:    "integer",
+				Details: []byte("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -291,21 +291,21 @@ func TestValidateFFI(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "x",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "x",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 					{
-						Name:         "y",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "y",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
@@ -315,9 +315,9 @@ func TestValidateFFI(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
@@ -345,21 +345,21 @@ func TestValidateFFIBadMethodParam(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "x",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "x",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 					{
-						Name:         "y",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "y",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
@@ -369,9 +369,9 @@ func TestValidateFFIBadMethodParam(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
@@ -400,21 +400,21 @@ func TestValidateFFIBadMethodReturnParam(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "x",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "x",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 					{
-						Name:         "y",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "y",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
@@ -424,9 +424,9 @@ func TestValidateFFIBadMethodReturnParam(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
@@ -455,21 +455,21 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "x",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "x",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 					{
-						Name:         "y",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "y",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
@@ -479,9 +479,9 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:         "z",
-						Type:         "integer",
-						InternalType: "uint256",
+						Name:    "z",
+						Type:    "integer",
+						Details: []byte("\"type\":\"uint256\"}"),
 					},
 				},
 			},
