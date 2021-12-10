@@ -52,7 +52,7 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	filter := fb.And(
 		fb.Eq("protocolid", sub.ProtocolID),
 	)
-	subs, res, err := s.GetContractSubscriptions(ctx, "ns", filter.Count(true))
+	subs, res, err := s.GetContractSubscriptions(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -69,7 +69,7 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	filter = fb.And(
 		fb.Eq("protocolid", sub.ProtocolID),
 	)
-	subs, res, err = s.GetContractSubscriptions(ctx, "ns", filter.Count(true))
+	subs, res, err = s.GetContractSubscriptions(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)

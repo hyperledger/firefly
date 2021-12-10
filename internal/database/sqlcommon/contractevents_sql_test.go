@@ -51,7 +51,7 @@ func TestContractEventsE2EWithDB(t *testing.T) {
 		fb.Eq("name", "Changed"),
 		fb.Eq("subscriptionid", event.Subscription),
 	)
-	events, res, err := s.GetContractEvents(ctx, "ns", filter.Count(true))
+	events, res, err := s.GetContractEvents(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, int64(1), *res.TotalCount)

@@ -438,7 +438,7 @@ type iContractSubscriptionCollection interface {
 	GetContractSubscriptionByProtocolID(ctx context.Context, id string) (offset *fftypes.ContractSubscription, err error)
 
 	// GetContractSubscriptions - get smart contract subscriptions
-	GetContractSubscriptions(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
+	GetContractSubscriptions(ctx context.Context, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
 }
 
 type iContractEventCollection interface {
@@ -446,7 +446,7 @@ type iContractEventCollection interface {
 	InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) (err error)
 
 	// GetContractEvents - get smart contract events
-	GetContractEvents(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractEvent, *FilterResult, error)
+	GetContractEvents(ctx context.Context, filter Filter) ([]*fftypes.ContractEvent, *FilterResult, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.

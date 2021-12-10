@@ -139,9 +139,9 @@ func (s *SQLCommon) GetContractSubscriptionByProtocolID(ctx context.Context, id 
 	return s.getContractSubscriptionPred(ctx, id, sq.Eq{"protocol_id": id})
 }
 
-func (s *SQLCommon) GetContractSubscriptions(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
+func (s *SQLCommon) GetContractSubscriptions(ctx context.Context, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(contractSubscriptionColumns...).From("contractsubscriptions").Where(sq.Eq{"namespace": ns}),
+		sq.Select(contractSubscriptionColumns...).From("contractsubscriptions"),
 		filter, contractSubscriptionFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err

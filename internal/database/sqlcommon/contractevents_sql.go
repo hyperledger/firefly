@@ -82,9 +82,9 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 	return &event, nil
 }
 
-func (s *SQLCommon) GetContractEvents(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
+func (s *SQLCommon) GetContractEvents(ctx context.Context, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(contractEventColumns...).From("contractevents").Where(sq.Eq{"namespace": ns}),
+		sq.Select(contractEventColumns...).From("contractevents"),
 		filter, contractEventFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err

@@ -45,6 +45,7 @@ type Manager interface {
 
 	AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error)
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
+	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
 }
 
 type contractManager struct {
@@ -274,5 +275,9 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 }
 
 func (cm *contractManager) GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
-	return cm.database.GetContractSubscriptions(ctx, ns, filter)
+	return cm.database.GetContractSubscriptions(ctx, cm.scopeNS(ns, filter))
+}
+
+func (cm *contractManager) GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
+	return cm.database.GetContractEvents(ctx, cm.scopeNS(ns, filter))
 }

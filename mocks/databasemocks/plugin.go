@@ -390,13 +390,13 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	return r0, r1, r2
 }
 
-// GetContractEvents provides a mock function with given fields: ctx, ns, filter
-func (_m *Plugin) GetContractEvents(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetContractEvents provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetContractEvents(ctx context.Context, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.ContractEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractEvent); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.ContractEvent); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.ContractEvent)
@@ -404,8 +404,8 @@ func (_m *Plugin) GetContractEvents(ctx context.Context, ns string, filter datab
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -413,8 +413,8 @@ func (_m *Plugin) GetContractEvents(ctx context.Context, ns string, filter datab
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -445,13 +445,13 @@ func (_m *Plugin) GetContractSubscriptionByProtocolID(ctx context.Context, id st
 	return r0, r1
 }
 
-// GetContractSubscriptions provides a mock function with given fields: ctx, ns, filter
-func (_m *Plugin) GetContractSubscriptions(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetContractSubscriptions provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetContractSubscriptions(ctx context.Context, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractSubscription); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.ContractSubscription); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.ContractSubscription)
@@ -459,8 +459,8 @@ func (_m *Plugin) GetContractSubscriptions(ctx context.Context, ns string, filte
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -468,8 +468,8 @@ func (_m *Plugin) GetContractSubscriptions(ctx context.Context, ns string, filte
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
