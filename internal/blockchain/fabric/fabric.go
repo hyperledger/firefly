@@ -520,7 +520,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		}
 	}
 
-	fabricOnChainLocation, err := parseContractLocation(location)
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse onChainLocation")
 	}
@@ -550,20 +550,20 @@ func jsonEncodeParams(params map[string]interface{}) (output map[string]string, 
 }
 
 func (f *Fabric) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {
-	_, err = parseContractLocation(location)
+	_, err = parseContractLocation(ctx, location)
 	return
 }
 
-func parseContractLocation(location fftypes.Byteable) (*Location, error) {
+func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Location, error) {
 	fabricLocation := &Location{}
 	if err := json.Unmarshal(location, &fabricLocation); err != nil {
-		return nil, fmt.Errorf("failed to validate on chain location")
+		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
 	}
 	if fabricLocation.Channel == "" {
-		return nil, fmt.Errorf("failed to validate on chain location: 'channel' not set")
+		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'channel' not set")
 	}
 	if fabricLocation.Chaincode == "" {
-		return nil, fmt.Errorf("failed to validate on chain location: 'chaincode' not set")
+		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'chaincode' not set")
 	}
 	return fabricLocation, nil
 }

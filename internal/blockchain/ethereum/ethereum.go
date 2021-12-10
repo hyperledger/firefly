@@ -403,7 +403,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
-	contractAddress, err := parseContractLocation(location)
+	contractAddress, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
@@ -421,28 +421,28 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 }
 
 func (e *Ethereum) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {
-	_, err = parseContractLocation(location)
+	_, err = parseContractLocation(ctx, location)
 	return
 }
 
-func parseContractLocation(location fftypes.Byteable) (*Location, error) {
+func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Location, error) {
 	ethLocation := &Location{}
 	if err := json.Unmarshal(location, &ethLocation); err != nil {
-		return nil, fmt.Errorf("failed to validate on chain location")
+		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
 	}
 	if ethLocation.Address == "" {
-		return nil, fmt.Errorf("failed to validate on chain location: 'channel' not set")
+		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'address' not set")
 	}
 	return ethLocation, nil
 }
 
-func parseParamDetails(details fftypes.Byteable) (*paramDetails, error) {
+func parseParamDetails(ctx context.Context, details fftypes.Byteable) (*paramDetails, error) {
 	ethParam := &paramDetails{}
 	if err := json.Unmarshal(details, &ethParam); err != nil {
-		return nil, fmt.Errorf("failed to validate param")
+		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, err)
 	}
 	if ethParam.Type == "" {
-		return nil, fmt.Errorf("failed to validate param: 'type' not set")
+		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, "'type' not set")
 	}
 	return ethParam, nil
 }
@@ -450,7 +450,7 @@ func parseParamDetails(details fftypes.Byteable) (*paramDetails, error) {
 var intRegex, _ = regexp.Compile("^u?int([0-9]{1,3})$")
 
 func (e *Ethereum) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
-	paramDetails, err := parseParamDetails(param.Details)
+	paramDetails, err := parseParamDetails(ctx, param.Details)
 	if err != nil {
 		return err
 	}
