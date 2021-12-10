@@ -67,8 +67,10 @@ spec:
             {{- toYaml .Values.dataexchange.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /data/peer-certs
-              name: {{ include "firefly.fullname" . }}-dx-peer-certs
+              subPath: peer-certs
+              name: {{ include "firefly.fullname" . }}-dx-peers
             - mountPath: /data/peers
+              subPath: peers
               name: {{ include "firefly.fullname" . }}-dx-peers
             - mountPath: /data/config.json
               name: config
@@ -83,7 +85,10 @@ spec:
               name: tls
               subPath: ca.crt
             - mountPath: /data/blobs
-              name: blobs
+              {{- if and .Values.dataexchange.persistentVolumes.blobs.enabled .Values.dataexchange.persistentVolumes.blobs.subPath }}
+              subPath: {{ .Values.dataexchange.persistentVolumes.blobs.subPath | quote }}
+              {{- end }}
+              name: {{ include "firefly.fullname" . }}-dx-blobs
       {{- with .Values.dataexchange.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -103,24 +108,49 @@ spec:
         - name: tls
           secret:
             secretName: {{ if and .Values.dataexchange.certificate.enabled (not .Values.dataexchange.tlsSecret.enabled) }}"{{ include "firefly.fullname" . }}-dx-tls"{{ else }}{{ .Values.dataexchange.tlsSecret.name }}{{ end }}
-        - name: blobs
-          emptyDir:
-            sizeLimit: {{  .Values.dataexchange.blobStorageSize }}
+        {{- if not .Values.dataexchange.persistentVolumes.blobs.enabled }}
+        - name: {{ include "firefly.fullname" . }}-dx-blobs
+          emptyDir: {}
+        {{- end }}
+        {{- if not .Values.dataexchange.persistentVolumes.peers.enabled }}
+        - name: {{ include "firefly.fullname" . }}-dx-peers
+          emptyDir: {}
+  {{- end }}
+  {{- if or .Values.dataexchange.persistentVolumes.blobs.enabled .Values.dataexchange.persistentVolumes.peers.enabled }}
   volumeClaimTemplates:
+    {{- if .Values.dataexchange.persistentVolumes.blobs.enabled }}
     - metadata:
-        name: {{ include "firefly.fullname" . }}-dx-peer-certs
+      {{- with .Values.dataexchange.persistentVolumes.blobs }}
+        name: {{ include "firefly.fullname" . }}-dx-blobs
+        {{ with .annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       spec:
         accessModes:
-          - ReadWriteOnce
+          {{- toYaml .accessModes | nindent 10 }}
+        storageClassName: {{ .storageClass }}
         resources:
           requests:
-            storage: 1Gi
-    - metadata:
+            storage: {{ .size }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.dataexchange.persistentVolumes.peers.enabled }}
+      - metadata:
+        {{- with .Values.dataexchange.persistentVolumes.peers }}
         name: {{ include "firefly.fullname" . }}-dx-peers
+        {{ with .annotations }}
+        annotations:
+        {{- toYaml . | nindent 10 }}
+      {{- end }}
       spec:
         accessModes:
-          - ReadWriteOnce
+        {{- toYaml .accessModes | nindent 10 }}
+        storageClassName: {{ .storageClass }}
         resources:
           requests:
-            storage: 1Gi
+            storage: {{ .size }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
 {{- end }}

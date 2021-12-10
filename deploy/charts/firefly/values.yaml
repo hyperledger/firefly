@@ -244,4 +244,20 @@ dataexchange:
 
   affinity: {}
 
-  blobStorageSize: 1Gi
+  persistentVolumes:
+    # split into two mounts: /data/peers and /data/peer-certs
+    peers:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      annotations: {}
+      size: 1Gi
+      storageClass: ""
+    blobs:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      annotations: {}
+      subPath: ""
+      size: 2Gi
+      storageClass: ""
