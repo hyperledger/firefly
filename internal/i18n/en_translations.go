@@ -218,4 +218,5 @@ var (
 	MsgContractMissingInputField    = ffm("FF10298", "Expected object of type '%v' to contain field named '%v' but it was missing", 400)
 	MsgContractMapInputType         = ffm("FF10299", "Unable to map input type '%v' to known FireFly type - was expecting '%v'", 400)
 	MsgContractByteDecode           = ffm("FF10300", "Unable to decode field '%v' as bytes", 400)
+	MsgContractInternalType         = ffm("FF10301", "Input '%v' of type '%v' is not compatible blockchain internalType of '%v'", 400)
 )

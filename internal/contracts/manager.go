@@ -40,7 +40,7 @@ type Manager interface {
 	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 
-	ValidateFFI(ctx context.Context, ns string, ffi *fftypes.FFI) error
+	ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error
 	ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error
 }
 
@@ -76,6 +76,10 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 		method.ID = fftypes.NewUUID()
 	}
 
+	if err := cm.ValidateFFI(ctx, ffi); err != nil {
+		return nil, err
+	}
+
 	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)
 	if err != nil {
 		return nil, err
@@ -85,11 +89,11 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 		Key:    cm.identity.GetOrgKey(ctx),
 	}
 
-	// TODO: Do we do anything with this message here?
-	_, err = cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineFFI, waitConfirm)
+	msg, err := cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
+	output.Message = msg.Header.ID
 	return ffi, nil
 }
 
@@ -190,7 +194,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 	return api, nil
 }
 
-func (cm *contractManager) ValidateFFI(ctx context.Context, ns string, ffi *fftypes.FFI) error {
+func (cm *contractManager) ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error {
 	for _, method := range ffi.Methods {
 		if err := cm.validateFFIMethod(ctx, method); err != nil {
 			return err
@@ -205,11 +209,26 @@ func (cm *contractManager) ValidateFFI(ctx context.Context, ns string, ffi *ffty
 }
 
 func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
-	return cm.blockchain.ValidateFFIMethod(ctx, method)
+	for _, param := range method.Params {
+		if err := cm.blockchain.ValidateFFIParam(ctx, param); err != nil {
+			return err
+		}
+	}
+	for _, param := range method.Returns {
+		if err := cm.blockchain.ValidateFFIParam(ctx, param); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error {
-	return cm.blockchain.ValidateFFIEvent(ctx, event)
+	for _, param := range event.Params {
+		if err := cm.blockchain.ValidateFFIParam(ctx, param); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (cm *contractManager) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
@@ -227,5 +246,5 @@ func (cm *contractManager) ValidateInvokeContractRequest(ctx context.Context, re
 		}
 	}
 
-	return cm.blockchain.ValidateInvokeContractRequest(ctx, req)
+	return nil
 }

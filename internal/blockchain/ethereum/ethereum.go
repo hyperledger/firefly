@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -430,22 +431,56 @@ func parseContractLocation(location fftypes.Byteable) (*Location, error) {
 	return ethLocation, nil
 }
 
-func (e *Ethereum) ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error {
-	// TODO: Implement validation
-	return nil
-}
+var intRegex, _ = regexp.Compile("^u?int([0-9]{1,3})$")
 
-func (e *Ethereum) ValidateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
-	// TODO: Implement validation
-	return nil
-}
-
-func (e *Ethereum) ValidateFFIEvent(ctx context.Context, ffi *fftypes.FFIEvent) error {
-	// TODO: Implement validation
-	return nil
-}
-
-func (e *Ethereum) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
-	// TODO: Implement validation
-	return nil
+func (e *Ethereum) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
+	switch {
+	case len(param.Components) > 0:
+		// struct
+		if strings.HasPrefix(param.InternalType, "struct ") {
+			for _, childParam := range param.Components {
+				if err := e.ValidateFFIParam(ctx, childParam); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	case strings.HasPrefix(param.Type, "byte"):
+		// byte (array)
+		if param.Type == param.InternalType {
+			return nil
+		}
+		if param.InternalType == "byte[]" || strings.HasPrefix(param.InternalType, "bytes") {
+			return nil
+		}
+	case strings.HasSuffix(param.Type, "[]"):
+		// array
+		if strings.Count(param.Type, "[]") == strings.Count(param.InternalType, "[]") {
+			return e.ValidateFFIParam(ctx, &fftypes.FFIParam{
+				Name:         param.Name,
+				Components:   param.Components,
+				Type:         strings.TrimSuffix(param.Type, "[]"),
+				InternalType: strings.TrimSuffix(param.InternalType, "[]"),
+			})
+		}
+	case param.Type == "integer":
+		// integer
+		matches := intRegex.FindStringSubmatch(param.InternalType)
+		if len(matches) == 2 {
+			i, err := strconv.ParseInt(matches[1], 10, 0)
+			if err == nil && i >= 8 && i <= 256 && i%8 == 0 {
+				return nil
+			}
+		}
+	case param.Type == "string":
+		// string
+		if param.InternalType == "string" || param.InternalType == "address" {
+			return nil
+		}
+	case param.Type == "boolean":
+		if param.InternalType == "bool" {
+			return nil
+		}
+	}
+	return i18n.NewError(ctx, i18n.MsgContractInternalType, param.Name, param.Type, param.InternalType)
 }
