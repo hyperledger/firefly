@@ -115,14 +115,14 @@ spec:
         {{- if not .Values.dataexchange.persistentVolumes.peers.enabled }}
         - name: {{ include "firefly.fullname" . }}-dx-peers
           emptyDir: {}
-  {{- end }}
+        {{- end }}
   {{- if or .Values.dataexchange.persistentVolumes.blobs.enabled .Values.dataexchange.persistentVolumes.peers.enabled }}
   volumeClaimTemplates:
     {{- if .Values.dataexchange.persistentVolumes.blobs.enabled }}
     - metadata:
-      {{- with .Values.dataexchange.persistentVolumes.blobs }}
         name: {{ include "firefly.fullname" . }}-dx-blobs
-        {{ with .annotations }}
+      {{- with .Values.dataexchange.persistentVolumes.blobs }}
+        {{- with .annotations }}
         annotations:
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -136,13 +136,13 @@ spec:
       {{- end }}
     {{- end }}
     {{- if .Values.dataexchange.persistentVolumes.peers.enabled }}
-      - metadata:
-        {{- with .Values.dataexchange.persistentVolumes.peers }}
+    - metadata:
         name: {{ include "firefly.fullname" . }}-dx-peers
-        {{ with .annotations }}
+      {{- with .Values.dataexchange.persistentVolumes.peers }}
+        {{- with .annotations }}
         annotations:
-        {{- toYaml . | nindent 10 }}
-      {{- end }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
       spec:
         accessModes:
         {{- toYaml .accessModes | nindent 10 }}
