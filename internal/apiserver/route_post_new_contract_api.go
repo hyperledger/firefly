@@ -41,7 +41,7 @@ var postNewContractAPI = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.ContractAPI{} },
 	JSONInputMask:   []string{"ID", "Message", "Namespace"},
 	JSONOutputValue: func() interface{} { return &fftypes.ContractAPI{} },
-	JSONOutputCodes: []int{http.StatusOK},
+	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)

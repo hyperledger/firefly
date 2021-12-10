@@ -61,6 +61,7 @@ $(eval $(call makemock, internal/definitions,      DefinitionHandlers, definitio
 $(eval $(call makemock, internal/events,           EventManager,       eventmocks))
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,            assetmocks))
+$(eval $(call makemock, internal/contracts,        Manager,            contractmocks))
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
 $(eval $(call makemock, internal/apiserver,        IServer,            apiservermocks))
