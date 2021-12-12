@@ -1,6 +1,13 @@
 name: Helm
 
 on:
+  release:
+    types: [released, prereleased]
+  push:
+    branches:
+      - main
+    paths:
+      - "deploy/charts/**/*"
   pull_request:
     branches:
       - main
@@ -8,6 +15,7 @@ on:
       - "deploy/charts/**/*"
 jobs:
   helm:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,13 +23,13 @@ jobs:
       - name: setup helm
         uses: azure/setup-helm@v1
         with:
-          version: 3.6.0
+          version: 3.7.2
 
       - name: setup chart-testing tool
         uses: helm/chart-testing-action@v2.0.1
 
       - name: lint chart
-        run: ct lint --charts deploy/charts/firefly
+        run: ct lint --charts deploy/charts/firefly-helm
 
       - name: setup kind
         uses: engineerd/setup-kind@v0.5.0
@@ -47,9 +55,28 @@ jobs:
           helm install --set postgresqlPassword=firef1y --set extraEnv[0].name=POSTGRES_DATABASE --set extraEnv[0].value=firefly postgresql bitnami/postgresql
 
       - name: run chart integration test
-        run: ct install --charts deploy/charts/firefly
+        run: ct install --charts deploy/charts/firefly-helm
 
       - name: debug k8s
         if: ${{ failure() }}
         run: |
           kubectl get pod -A
+  release:
+    needs: helm
+    if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags/helm-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: setup helm
+        uses: azure/setup-helm@v1
+        with:
+          version: 3.7.2
+
+      - name: helm push
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u $GITHUB_ACTOR --password-stdin
+          helm chart save deploy/charts/firefly-helm ghcr.io/hfuss/firefly-helm:${TAG}
+          helm chart push ghcr.io/hfuss/firefly-helm:${TAG}
+        env:
+          HELM_EXPERIMENTAL_OCI: "1"
