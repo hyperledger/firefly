@@ -131,6 +131,23 @@ blockchain:
       {{- if .Values.config.ethconnectPrefixLong }}
       prefixLong: {{ .Values.config.ethconnectPrefixLong }}
       {{- end }}
+{{- else if .Values.config.fabconnectUrl }}
+blockchain:
+  type: fabric
+  fabric:
+    fabconnect:
+      url: {{ tpl .Values.config.fabconnectUrl . }}
+      {{- if and .Values.config.fabconnectUsername .Values.config.fabconnectPassword }}
+      auth:
+        username: {{ .Values.config.fabconnectUsername | quote }}
+        password: {{ .Values.config.fabconnectPassword | quote }}
+      {{- end }}
+      retry:
+        enable: {{ .Values.config.fabconnectRetry }}
+      channel: {{ .Values.config.fabconnectChannel | quote }}
+      chaincode: {{ .Values.config.fireflyChaincode | quote }}
+      topic: "1"  # TODO
+      signer: {{ .Values.config.fabconnectSigner | quote }}
 {{- end }}
 {{- if .Values.config.databaseOverride }}
 database:

@@ -25,6 +25,9 @@ config:
   # The Ethereum address of the pre-deployed FireFly smart contract
   fireflyContractAddress: "/instances/contractAddress"
 
+  # The name of the Fabric chaincode deployment for the FireFly chaincode
+  fireflyChaincode: firefly-go
+
   # The Postgres URL (including credentials and DB) for FireFly to for the database plugin
   postgresUrl: ""
 
@@ -72,6 +75,14 @@ config:
 
   # The long prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. FireFly or Kaleido
   ethconnectPrefixLong: ""
+
+  fabconnectChannel: default-channel
+
+  fabconnectSigner: ""
+  fabconnectRetry: true
+
+  fabconnectUsername: ""
+  fabconnectPassword: ""
 
   # Whether to use a Job to perform auto-registration of the FireFly runtime.
   # Note registration will not be successful until the new node has caught up with the head of the chain.
