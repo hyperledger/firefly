@@ -19,7 +19,7 @@ config:
   # The name of the organization the FireFly node belongs to
   organizationName: ""
 
-  # The blockchain signing key of the organization e.g. the Ethereum account address
+  # The blockchain signing key of the organization e.g. the Ethereum account address or the Fabric membership
   organizationKey: ""
 
   # The Ethereum address of the pre-deployed FireFly smart contract
@@ -76,12 +76,16 @@ config:
   # The long prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. FireFly or Kaleido
   ethconnectPrefixLong: ""
 
+  # The Fabric channel to use when communicating with peers and running chaincodes
   fabconnectChannel: default-channel
 
-  fabconnectSigner: ""
+  # Enables retries when communicating with Fabconnect
   fabconnectRetry: true
 
+  # The basic auth username to use for authenticating to Fabconnect
   fabconnectUsername: ""
+
+  # The basic auth password to use for authenticating to Fabconnect
   fabconnectPassword: ""
 
   # Whether to use a Job to perform auto-registration of the FireFly runtime.

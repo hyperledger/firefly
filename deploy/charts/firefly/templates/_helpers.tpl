@@ -147,7 +147,7 @@ blockchain:
       channel: {{ .Values.config.fabconnectChannel | quote }}
       chaincode: {{ .Values.config.fireflyChaincode | quote }}
       topic: "1"  # TODO
-      signer: {{ .Values.config.fabconnectSigner | quote }}
+      signer: {{ .Values.config.organizationKey | quote }}
 {{- end }}
 {{- if .Values.config.databaseOverride }}
 database:
