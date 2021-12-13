@@ -304,3 +304,6 @@ dataexchange:
       subPath: ""
       size: 2Gi
       storageClass: ""
+
+erc1155:
+  # TODO ...

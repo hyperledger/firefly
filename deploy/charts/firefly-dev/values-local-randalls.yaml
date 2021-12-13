@@ -1,0 +1,41 @@
+
+firefly:
+  config:
+    debugEnabled: true
+    preInit: false
+    adminEnabled: true
+    organizationName: randalls
+    organizationIdentity: 0x59fa082cd543ebfa7869423219e32d92cbcd2658
+    fireflyContractAddress: /instances/0xb149aad91748aef8b3c2e4a69f5fcb6428827c8c
+    # paymentAddress: 0x4b7139c54b9e2d9eb3d52774e5b2cda75500a8f0
+
+    ethconnectUrl: https://u0w5t5bum3-u0xfyqqhwx-connect.us0-aws.kaleido.io/
+    ethconnectUsername: u0nh7s3rnf
+    ethconnectPassword: z6gA8C9WHjP6h3PxgVm8mN8tjt-mxNtxZC2A_0oMaEQ
+    ethconnectPrefixLong: kaleido
+    ethconnectPrefixShort: kld
+
+    ipfsApiUrl: https://u0w5t5bum3-u0k14wzj4e-ipfs.us0-aws.kaleido.io
+    ipfsApiUsername: u0nh7s3rnf
+    ipfsApiPassword: z6gA8C9WHjP6h3PxgVm8mN8tjt-mxNtxZC2A_0oMaEQ
+
+    ipfsGatewayUrl: https://u0w5t5bum3-u0k14wzj4e-ipfs.us0-aws.kaleido.io
+    ipfsGatewayUsername: u0nh7s3rnf
+    ipfsGatewayPassword: z6gA8C9WHjP6h3PxgVm8mN8tjt-mxNtxZC2A_0oMaEQ
+
+  dataexchange:
+    apiKey: a-secret
+    certificate:
+      enabled: true
+      issuerRef:
+        name: selfsigned-ca
+        kind: ClusterIssuer
+
+    tlsSecret:
+      enabled: false
+
+ipfs:
+  enabled: false
+
+ethconnect:
+  enabled: false
