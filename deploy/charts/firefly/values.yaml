@@ -247,7 +247,6 @@ dataexchange:
   persistentVolumes:
     # split into two mounts: /data/peers and /data/peer-certs
     peers:
-      enabled: true
       accessModes:
         - ReadWriteOnce
       annotations: {}

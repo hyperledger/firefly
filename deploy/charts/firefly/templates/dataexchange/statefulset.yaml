@@ -112,13 +112,8 @@ spec:
         - name: {{ include "firefly.fullname" . }}-dx-blobs
           emptyDir: {}
         {{- end }}
-        {{- if not .Values.dataexchange.persistentVolumes.peers.enabled }}
-        - name: {{ include "firefly.fullname" . }}-dx-peers
-          emptyDir: {}
-        {{- end }}
   {{- if or .Values.dataexchange.persistentVolumes.blobs.enabled .Values.dataexchange.persistentVolumes.peers.enabled }}
   volumeClaimTemplates:
-    {{- if .Values.dataexchange.persistentVolumes.blobs.enabled }}
     - metadata:
         name: {{ include "firefly.fullname" . }}-dx-blobs
       {{- with .Values.dataexchange.persistentVolumes.blobs }}
@@ -135,7 +130,6 @@ spec:
             storage: {{ .size }}
       {{- end }}
     {{- end }}
-    {{- if .Values.dataexchange.persistentVolumes.peers.enabled }}
     - metadata:
         name: {{ include "firefly.fullname" . }}-dx-peers
       {{- with .Values.dataexchange.persistentVolumes.peers }}
@@ -150,7 +144,5 @@ spec:
         resources:
           requests:
             storage: {{ .size }}
-    {{- end }}
-  {{- end }}
-  {{- end }}
+      {{- end }}
 {{- end }}
