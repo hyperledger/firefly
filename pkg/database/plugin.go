@@ -434,11 +434,17 @@ type iContractSubscriptionCollection interface {
 	// UpsertContractSubscription - upsert a subscription to an external smart contract
 	UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) (err error)
 
-	// GetContractSubscriptionByProtocolID - get smart contract subscription by protocol id
+	// GetContractSubscriptionByID - get smart contract subscription by ID
+	GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.ContractSubscription, err error)
+
+	// GetContractSubscriptionByProtocolID - get smart contract subscription by protocol ID
 	GetContractSubscriptionByProtocolID(ctx context.Context, id string) (offset *fftypes.ContractSubscription, err error)
 
 	// GetContractSubscriptions - get smart contract subscriptions
 	GetContractSubscriptions(ctx context.Context, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
+
+	// DeleteContractSubscription - delete a subscription to an external smart contract
+	DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
 }
 
 type iContractEventCollection interface {
@@ -906,6 +912,7 @@ var ContractSubscriptionQueryFactory = &queryFields{
 	"eventid":     &UUIDField{},
 	"namespace":   &StringField{},
 	"protocolid":  &StringField{},
+	"created":     &TimeField{},
 }
 
 // ContractEventQueryFactory filter fields for contract events
@@ -914,4 +921,5 @@ var ContractEventQueryFactory = &queryFields{
 	"namespace":      &StringField{},
 	"subscriptionid": &StringField{},
 	"name":           &StringField{},
+	"created":        &TimeField{},
 }

@@ -63,6 +63,20 @@ func (_m *Plugin) DeleteConfigRecord(ctx context.Context, key string) error {
 	return r0
 }
 
+// DeleteContractSubscriptionByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteNamespace provides a mock function with given fields: ctx, id
 func (_m *Plugin) DeleteNamespace(ctx context.Context, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, id)
@@ -443,6 +457,29 @@ func (_m *Plugin) GetContractEvents(ctx context.Context, filter database.Filter)
 	}
 
 	return r0, r1, r2
+}
+
+// GetContractSubscriptionByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.ContractSubscription
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractSubscription); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetContractSubscriptionByProtocolID provides a mock function with given fields: ctx, id

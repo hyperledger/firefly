@@ -35,6 +35,7 @@ var (
 		"namespace",
 		"protocol_id",
 		"location",
+		"created",
 	}
 	contractSubscriptionFilterFieldMap = map[string]string{
 		"interfaceid": "interface_id",
@@ -75,6 +76,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 			return err
 		}
 	} else {
+		sub.Created = fftypes.Now()
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("contractsubscriptions").
 				Columns(contractSubscriptionColumns...).
@@ -85,6 +87,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 					sub.Namespace,
 					sub.ProtocolID,
 					sub.Location,
+					sub.Created,
 				),
 			nil, // no change event
 		); err != nil {
@@ -104,6 +107,7 @@ func (s *SQLCommon) contractSubscriptionResult(ctx context.Context, row *sql.Row
 		&sub.Namespace,
 		&sub.ProtocolID,
 		&sub.Location,
+		&sub.Created,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractsubscriptions")
@@ -135,6 +139,10 @@ func (s *SQLCommon) getContractSubscriptionPred(ctx context.Context, desc string
 	return sub, nil
 }
 
+func (s *SQLCommon) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.ContractSubscription, err error) {
+	return s.getContractSubscriptionPred(ctx, id.String(), sq.Eq{"id": id})
+}
+
 func (s *SQLCommon) GetContractSubscriptionByProtocolID(ctx context.Context, id string) (offset *fftypes.ContractSubscription, err error) {
 	return s.getContractSubscriptionPred(ctx, id, sq.Eq{"protocol_id": id})
 }
@@ -163,4 +171,24 @@ func (s *SQLCommon) GetContractSubscriptions(ctx context.Context, filter databas
 	}
 
 	return subs, s.queryRes(ctx, tx, "contractsubscriptions", fop, fi), err
+}
+
+func (s *SQLCommon) DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error) {
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	subscription, err := s.GetContractSubscriptionByID(ctx, id)
+	if err == nil && subscription != nil {
+		err = s.deleteTx(ctx, tx, sq.Delete("contractsubscriptions").Where(sq.Eq{"id": id}),
+			nil, // no change event
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
 }

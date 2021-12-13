@@ -35,6 +35,7 @@ var (
 		"name",
 		"outputs",
 		"info",
+		"created",
 	}
 	contractEventFilterFieldMap = map[string]string{
 		"subscriptionid": "subscription_id",
@@ -47,6 +48,7 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
+	event.Created = fftypes.Now()
 
 	if _, err = s.insertTx(ctx, tx,
 		sq.Insert("contractevents").
@@ -58,6 +60,7 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 				event.Name,
 				event.Outputs,
 				event.Info,
+				event.Created,
 			),
 		nil, // no change event
 	); err != nil {
@@ -76,6 +79,7 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 		&event.Name,
 		&event.Outputs,
 		&event.Info,
+		&event.Created,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractevents")

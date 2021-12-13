@@ -23,6 +23,7 @@ type ContractSubscription struct {
 	Namespace  string   `json:"namespace,omitempty"`
 	ProtocolID string   `json:"protocolId,omitempty"`
 	Location   Byteable `json:"location,omitempty"`
+	Created    *FFTime  `json:"created,omitempty"`
 }
 
 type ContractSubscriptionInput struct {

@@ -40,10 +40,11 @@ func TestContractEventsE2EWithDB(t *testing.T) {
 		Outputs:      fftypes.JSONObject{"value": 1},
 		Info:         fftypes.JSONObject{"blockNumber": 1},
 	}
-	eventJson, _ := json.Marshal(&event)
 
 	err := s.InsertContractEvent(ctx, event)
+	assert.NotNil(t, event.Created)
 	assert.NoError(t, err)
+	eventJson, _ := json.Marshal(&event)
 
 	// Query back the event (by query filter)
 	fb := database.ContractEventQueryFactory.NewFilter(ctx)
@@ -56,5 +57,11 @@ func TestContractEventsE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	eventReadJson, _ := json.Marshal(events[0])
+	assert.Equal(t, string(eventJson), string(eventReadJson))
+
+	// Query back the event (by ID)
+	eventRead, err := s.GetContractEventByID(ctx, event.ID)
+	assert.NoError(t, err)
+	eventReadJson, _ = json.Marshal(eventRead)
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 }

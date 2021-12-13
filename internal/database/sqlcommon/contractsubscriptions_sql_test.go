@@ -42,10 +42,11 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 		ProtocolID: "sb-123",
 		Location:   locationJson,
 	}
-	subJson, _ := json.Marshal(&sub)
 
 	err := s.UpsertContractSubscription(ctx, sub)
+	assert.NotNil(t, sub.Created)
 	assert.NoError(t, err)
+	subJson, _ := json.Marshal(&sub)
 
 	// Query back the subscription (by query filter)
 	fb := database.ContractSubscriptionQueryFactory.NewFilter(ctx)
@@ -57,6 +58,18 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	subReadJson, _ := json.Marshal(subs[0])
+	assert.Equal(t, string(subJson), string(subReadJson))
+
+	// Query back the event (by ID)
+	subRead, err := s.GetContractSubscriptionByID(ctx, sub.ID)
+	assert.NoError(t, err)
+	subReadJson, _ = json.Marshal(subRead)
+	assert.Equal(t, string(subJson), string(subReadJson))
+
+	// Query back the event (by protocol ID)
+	subRead, err = s.GetContractSubscriptionByProtocolID(ctx, sub.ProtocolID)
+	assert.NoError(t, err)
+	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Update the subscription
@@ -75,4 +88,11 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	assert.Equal(t, int64(1), *res.TotalCount)
 	subReadJson, _ = json.Marshal(subs[0])
 	assert.Equal(t, string(subJson), string(subReadJson))
+
+	// Test delete, and refind no return
+	err = s.DeleteContractSubscriptionByID(ctx, sub.ID)
+	assert.NoError(t, err)
+	subs, _, err = s.GetContractSubscriptions(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(subs))
 }

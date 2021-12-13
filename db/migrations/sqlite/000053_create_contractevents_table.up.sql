@@ -5,5 +5,6 @@ CREATE TABLE contractevents (
   name             VARCHAR(1024)   NOT NULL,
   subscription_id  UUID            NOT NULL,
   outputs          BYTEA,
-  info             BYTEA
+  info             BYTEA,
+  created          BIGINT          NOT NULL
 );

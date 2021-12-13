@@ -1270,6 +1270,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -1329,6 +1334,7 @@ paths:
               schema:
                 items:
                   properties:
+                    created: {}
                     id: {}
                     info:
                       additionalProperties: {}
@@ -1377,6 +1383,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  created: {}
                   id: {}
                   info:
                     additionalProperties: {}
@@ -2049,6 +2056,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: eventid
         schema:
           type: string
@@ -2113,6 +2125,7 @@ paths:
               schema:
                 items:
                   properties:
+                    created: {}
                     event: {}
                     id: {}
                     interface: {}
@@ -2151,6 +2164,7 @@ paths:
           application/json:
             schema:
               properties:
+                created: {}
                 event: {}
                 id: {}
                 interface: {}
@@ -2168,6 +2182,80 @@ paths:
             application/json:
               schema:
                 properties:
+                  created: {}
+                  event: {}
+                  id: {}
+                  interface: {}
+                  location:
+                    format: byte
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/subscriptions/{subid}:
+    delete:
+      description: 'TODO: Description'
+      operationId: deleteContractSubscription
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: subid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        default:
+          description: ""
+    get:
+      description: 'TODO: Description'
+      operationId: getContractSubscriptionByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: subid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
                   event: {}
                   id: {}
                   interface: {}

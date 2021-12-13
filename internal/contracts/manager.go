@@ -44,7 +44,9 @@ type Manager interface {
 	ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error
 
 	AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error)
+	GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error)
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
+	DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) error
 	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
 }
@@ -275,8 +277,16 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 	return &sub.ContractSubscription, nil
 }
 
+func (cm *contractManager) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error) {
+	return cm.database.GetContractSubscriptionByID(ctx, id)
+}
+
 func (cm *contractManager) GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
 	return cm.database.GetContractSubscriptions(ctx, cm.scopeNS(ns, filter))
+}
+
+func (cm *contractManager) DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
+	return cm.database.DeleteContractSubscriptionByID(ctx, id)
 }
 
 func (cm *contractManager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
