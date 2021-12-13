@@ -22,6 +22,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -80,6 +81,34 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractevents")
 	}
 	return &event, nil
+}
+
+func (s *SQLCommon) getContractEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractEvent, error) {
+	rows, _, err := s.query(ctx,
+		sq.Select(contractEventColumns...).
+			From("contractevents").
+			Where(pred),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		log.L(ctx).Debugf("Contract event '%s' not found", desc)
+		return nil, nil
+	}
+
+	event, err := s.contractEventResult(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
+}
+
+func (s *SQLCommon) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
+	return s.getContractEventPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
 func (s *SQLCommon) GetContractEvents(ctx context.Context, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {

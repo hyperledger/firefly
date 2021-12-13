@@ -390,6 +390,29 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	return r0, r1, r2
 }
 
+// GetContractEventByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.ContractEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractEvent); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetContractEvents provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetContractEvents(ctx context.Context, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

@@ -445,6 +445,9 @@ type iContractEventCollection interface {
 	// InsertContractEvent - insert an event from an external smart contract
 	InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) (err error)
 
+	// GetContractEventByID - get smart contract event by ID
+	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
+
 	// GetContractEvents - get smart contract events
 	GetContractEvents(ctx context.Context, filter Filter) ([]*fftypes.ContractEvent, *FilterResult, error)
 }

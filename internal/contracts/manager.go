@@ -45,6 +45,7 @@ type Manager interface {
 
 	AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error)
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
+	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
 }
 
@@ -276,6 +277,10 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 
 func (cm *contractManager) GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
 	return cm.database.GetContractSubscriptions(ctx, cm.scopeNS(ns, filter))
+}
+
+func (cm *contractManager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
+	return cm.database.GetContractEventByID(ctx, id)
 }
 
 func (cm *contractManager) GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {

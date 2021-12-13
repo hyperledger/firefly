@@ -1346,6 +1346,53 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/contracts/events/{id}:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractEventByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  outputs:
+                    additionalProperties: {}
+                    type: object
+                  subscription: {}
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/contracts/interfaces:
     get:
       description: 'TODO: Description'
