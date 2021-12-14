@@ -18,7 +18,6 @@ package contracts
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -89,6 +88,7 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 		Key:    cm.identity.GetOrgKey(ctx),
 	}
 
+	output = ffi
 	msg, err := cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
@@ -144,19 +144,18 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 
 func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
 	if req.Method == nil {
-		// TODO: more helpful error message here
-		return nil, fmt.Errorf("method nil")
+		return nil, i18n.NewError(ctx, i18n.MsgContractMethodNotSet)
 	}
 	method = req.Method
 	// We have a method name but no method signature - look up the method in the DB
 	if method.Name != "" && (method.Params == nil || method.Returns == nil) {
 		if req.ContractID.String() == "" {
-			return nil, fmt.Errorf("error resolving contract method - method signature is required if contract ID is absent")
+			return nil, i18n.NewError(ctx, i18n.MsgContractNoMethodSignature)
 		}
 
 		method, err = cm.database.GetFFIMethod(ctx, ns, req.ContractID, method.Name)
-		if err != nil {
-			return nil, fmt.Errorf("error resolving contract method")
+		if err != nil || method == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgContractResolveError)
 		}
 	}
 	return method, nil
@@ -171,10 +170,10 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 	api.ID = fftypes.NewUUID()
 	api.Namespace = ns
 
-	existing, err := cm.database.GetContractAPIByID(ctx, api.ID.String())
+	existing, err := cm.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 
 	if existing != nil && err == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgContractInterfaceExists, api.Namespace, api.Contract.Name, api.Contract.Version)
+		return nil, i18n.NewError(ctx, i18n.MsgContractAPIExists, api.Namespace, api.Name)
 	}
 
 	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)

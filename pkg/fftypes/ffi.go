@@ -91,9 +91,6 @@ func (m *FFIParams) Scan(src interface{}) error {
 }
 
 func (m FFIParams) Value() (driver.Value, error) {
-	bytes, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
+	bytes, _ := json.Marshal(m)
 	return bytes, nil
 }

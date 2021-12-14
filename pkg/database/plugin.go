@@ -424,9 +424,9 @@ type iFFIEventCollection interface {
 }
 
 type iContractAPICollection interface {
-	InsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error
-	GetContractAPIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.ContractAPI, *FilterResult, error)
-	GetContractAPIByID(ctx context.Context, id string) (*fftypes.ContractAPI, error)
+	UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI, optimization UpsertOptimization) error
+	GetContractAPIs(ctx context.Context, ns string, filter AndFilter) ([]*fftypes.ContractAPI, *FilterResult, error)
+	GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractAPI, error)
 	GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error)
 }
 
@@ -872,4 +872,11 @@ var FFIEventQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},
+}
+
+// ContractAPIQueryFactory filter fields for Contract APIs
+var ContractAPIQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"name":      &StringField{},
+	"namespace": &StringField{},
 }

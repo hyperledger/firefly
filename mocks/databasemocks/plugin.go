@@ -313,11 +313,11 @@ func (_m *Plugin) GetConfigRecords(ctx context.Context, filter database.Filter) 
 }
 
 // GetContractAPIByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractAPIByID(ctx context.Context, id string) (*fftypes.ContractAPI, error) {
+func (_m *Plugin) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractAPI, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractAPI); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractAPI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
@@ -326,7 +326,7 @@ func (_m *Plugin) GetContractAPIByID(ctx context.Context, id string) (*fftypes.C
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
@@ -359,11 +359,11 @@ func (_m *Plugin) GetContractAPIByName(ctx context.Context, ns string, name stri
 }
 
 // GetContractAPIs provides a mock function with given fields: ctx, ns, filter
-func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.ContractAPI); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractAPI); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -372,7 +372,7 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(1) != nil {
@@ -381,7 +381,7 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
 		r2 = rf(ctx, ns, filter)
 	} else {
 		r2 = ret.Error(2)
@@ -1945,20 +1945,6 @@ func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
 	return r0
 }
 
-// InsertContractAPI provides a mock function with given fields: ctx, cd
-func (_m *Plugin) InsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error {
-	ret := _m.Called(ctx, cd)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractAPI) error); ok {
-		r0 = rf(ctx, cd)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // InsertEvent provides a mock function with given fields: ctx, data
 func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	ret := _m.Called(ctx, data)
@@ -2274,6 +2260,20 @@ func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRe
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ConfigRecord, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertContractAPI provides a mock function with given fields: ctx, cd, optimization
+func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, cd, optimization)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractAPI, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, cd, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}
