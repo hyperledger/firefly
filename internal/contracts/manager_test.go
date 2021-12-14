@@ -30,12 +30,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestValidateInvokeContractRequest(t *testing.T) {
+func newTestContractManager(t *testing.T) *contractManager {
 	mdb := &databasemocks.Plugin{}
 	mps := &publicstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	return NewContractManager(mdb, mps, mbm, nil, mbi).(*contractManager)
+}
+
+func TestValidateInvokeContractRequest(t *testing.T) {
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
@@ -73,11 +78,8 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 }
 
 func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
@@ -114,11 +116,8 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 }
 
 func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
@@ -156,11 +155,8 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 }
 
 func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
 
@@ -198,17 +194,8 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 }
 
 func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := &contractManager{
-		mdb,
-		mps,
-		mbm,
-		nil,
-		mbi,
-	}
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
 
@@ -240,17 +227,8 @@ func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
 }
 
 func TestValidateInvokeContractRequestInvalidEvent(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := &contractManager{
-		mdb,
-		mps,
-		mbm,
-		nil,
-		mbi,
-	}
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
 
@@ -275,11 +253,8 @@ func TestValidateInvokeContractRequestInvalidEvent(t *testing.T) {
 }
 
 func TestValidateFFI(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 
@@ -329,11 +304,8 @@ func TestValidateFFI(t *testing.T) {
 }
 
 func TestValidateFFIBadMethodParam(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
 
@@ -383,11 +355,8 @@ func TestValidateFFIBadMethodParam(t *testing.T) {
 }
 
 func TestValidateFFIBadMethodReturnParam(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Twice().Return(nil)
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
@@ -438,11 +407,8 @@ func TestValidateFFIBadMethodReturnParam(t *testing.T) {
 }
 
 func TestValidateFFIBadEventParam(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
-	cm := NewContractManager(mdb, mps, mbm, nil, mbi)
+	cm := newTestContractManager(t)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Times(3).Return(nil)
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
