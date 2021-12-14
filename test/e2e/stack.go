@@ -22,15 +22,17 @@ import (
 )
 
 type Stack struct {
+	Name    string    `json:"name,omitempty"`
 	Members []*Member `json:"members,omitempty"`
 }
 
 type Member struct {
-	ExposedFireflyPort int    `json:"exposedFireflyPort,omitempty"`
-	FireflyHostname    string `json:"fireflyHostname,omitempty"`
-	Username           string `json:"username,omitempty"`
-	Password           string `json:"password,omitempty"`
-	UseHTTPS           bool   `json:"useHttps,omitempty"`
+	ExposedFireflyPort   int    `json:"exposedFireflyPort,omitempty"`
+	FireflyHostname      string `json:"fireflyHostname,omitempty"`
+	Username             string `json:"username,omitempty"`
+	Password             string `json:"password,omitempty"`
+	UseHTTPS             bool   `json:"useHttps,omitempty"`
+	ExposedConnectorPort int    `json:"exposedConnectorPort,omitempty"`
 }
 
 func GetMemberPort(filename string, n int) (int, error) {

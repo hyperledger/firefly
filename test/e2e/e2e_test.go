@@ -130,14 +130,18 @@ func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes
 	}
 }
 
-func beforeE2ETest(t *testing.T) *testState {
+func readStackFile(t *testing.T) *Stack {
 	stackFile := os.Getenv("STACK_FILE")
 	if stackFile == "" {
 		t.Fatal("STACK_FILE must be set")
 	}
-
 	stack, err := ReadStack(stackFile)
 	assert.NoError(t, err)
+	return stack
+}
+
+func beforeE2ETest(t *testing.T) *testState {
+	stack := readStackFile(t)
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
@@ -197,7 +201,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		time.Sleep(3 * time.Second)
 	}
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|contract_event"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
 
 	wsUrl1 := url.URL{
@@ -216,6 +220,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Websocket 1: " + wsUrl1.String())
 	t.Logf("Websocket 2: " + wsUrl2.String())
 
+	var err error
 	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
 	if err != nil {
 		t.Logf(err.Error())
