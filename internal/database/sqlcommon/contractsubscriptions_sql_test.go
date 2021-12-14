@@ -19,8 +19,10 @@ package sqlcommon
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -102,4 +104,122 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	subs, _, err = s.GetContractSubscriptions(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(subs))
+}
+
+func TestUpsertContractSubscriptionFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertContractSubscriptionFailSelect(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertContractSubscriptionFailInsert(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertContractSubscriptionFailUpdate(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("1"))
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	assert.Regexp(t, "FF10117", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertContractSubscriptionFailCommit(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
+	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
+	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	assert.Regexp(t, "FF10119", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractSubscriptionByIDSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractSubscriptionByIDNotFound(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
+	msg, err := s.GetContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	assert.NoError(t, err)
+	assert.Nil(t, msg)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractSubscriptionByIDScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
+	_, err := s.GetContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractSubscriptionsQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	_, _, err := s.GetContractSubscriptions(context.Background(), f)
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractSubscriptionsBuildQueryFail(t *testing.T) {
+	s, _ := newMockProvider().init()
+	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
+	_, _, err := s.GetContractSubscriptions(context.Background(), f)
+	assert.Regexp(t, "FF10149.*id", err)
+}
+
+func TestGetContractSubscriptionsScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
+	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	_, _, err := s.GetContractSubscriptions(context.Background(), f)
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestContractSubscriptionDeleteBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10114", err)
+}
+
+func TestContractSubscriptionDeleteFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractSubscriptionColumns).AddRow(
+		fftypes.NewUUID(), nil, fftypes.NewUUID(), "ns1", "sub1", "123", "{}", fftypes.Now()),
+	)
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10118", err)
 }

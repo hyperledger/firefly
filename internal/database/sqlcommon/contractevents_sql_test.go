@@ -19,8 +19,10 @@ package sqlcommon
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -64,4 +66,82 @@ func TestContractEventsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	eventReadJson, _ = json.Marshal(eventRead)
 	assert.Equal(t, string(eventJson), string(eventReadJson))
+}
+
+func TestInsertContractEventFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertContractEvent(context.Background(), &fftypes.ContractEvent{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertContractEventFailInsert(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.InsertContractEvent(context.Background(), &fftypes.ContractEvent{})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertContractEventFailCommit(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertContractEvent(context.Background(), &fftypes.ContractEvent{})
+	assert.Regexp(t, "FF10119", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractEventByIDSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetContractEventByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractEventByIDNotFound(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	msg, err := s.GetContractEventByID(context.Background(), fftypes.NewUUID())
+	assert.NoError(t, err)
+	assert.Nil(t, msg)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractEventByIDScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	_, err := s.GetContractEventByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractEventsQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.ContractEventQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, _, err := s.GetContractEvents(context.Background(), f)
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetContractEventsBuildQueryFail(t *testing.T) {
+	s, _ := newMockProvider().init()
+	f := database.ContractEventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, _, err := s.GetContractEvents(context.Background(), f)
+	assert.Regexp(t, "FF10149.*id", err)
+}
+
+func TestGetContractEventsScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	f := database.ContractEventQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, _, err := s.GetContractEvents(context.Background(), f)
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
