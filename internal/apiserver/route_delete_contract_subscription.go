@@ -22,16 +22,15 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var deleteContractSubscription = &oapispec.Route{
 	Name:   "deleteContractSubscription",
-	Path:   "namespaces/{ns}/contracts/subscriptions/{subid}",
+	Path:   "namespaces/{ns}/contracts/subscriptions/{nameOrID}",
 	Method: http.MethodDelete,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "subid", Description: i18n.MsgTBD},
+		{Name: "nameOrID", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -41,11 +40,7 @@ var deleteContractSubscription = &oapispec.Route{
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		subid, err := fftypes.ParseUUID(r.Ctx, r.PP["subid"])
-		if err != nil {
-			return nil, err
-		}
-		err = r.Or.Contracts().DeleteContractSubscriptionByID(r.Ctx, subid)
+		err = r.Or.Contracts().DeleteContractSubscriptionByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrID"])
 		return nil, err
 	},
 }

@@ -35,20 +35,9 @@ func TestDeleteContractSubscriptionByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("DeleteContractSubscriptionByID", mock.Anything, id).
+	mcm.On("DeleteContractSubscriptionByNameOrID", mock.Anything, "mynamespace", id.String()).
 		Return(nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 204, res.Result().StatusCode)
-}
-
-func TestDeleteContractSubscriptionBadID(t *testing.T) {
-	_, r := newTestAPIServer()
-	req := httptest.NewRequest("DELETE", "/api/v1/namespaces/mynamespace/contracts/subscriptions/bad", nil)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 400, res.Result().StatusCode)
 }

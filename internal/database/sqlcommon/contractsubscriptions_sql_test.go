@@ -39,6 +39,7 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 		Interface:  fftypes.NewUUID(),
 		Event:      fftypes.NewUUID(),
 		Namespace:  "ns",
+		Name:       "sub1",
 		ProtocolID: "sb-123",
 		Location:   locationJson,
 	}
@@ -60,13 +61,19 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	subReadJson, _ := json.Marshal(subs[0])
 	assert.Equal(t, string(subJson), string(subReadJson))
 
-	// Query back the event (by ID)
-	subRead, err := s.GetContractSubscriptionByID(ctx, sub.ID)
+	// Query back the subscription (by name)
+	subRead, err := s.GetContractSubscription(ctx, "ns", "sub1")
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
-	// Query back the event (by protocol ID)
+	// Query back the subscription (by ID)
+	subRead, err = s.GetContractSubscriptionByID(ctx, sub.ID)
+	assert.NoError(t, err)
+	subReadJson, _ = json.Marshal(subRead)
+	assert.Equal(t, string(subJson), string(subReadJson))
+
+	// Query back the subscription (by protocol ID)
 	subRead, err = s.GetContractSubscriptionByProtocolID(ctx, sub.ProtocolID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)

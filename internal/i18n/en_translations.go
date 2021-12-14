@@ -221,4 +221,5 @@ var (
 	MsgContractInternalType         = ffm("FF10301", "Input '%v' of type '%v' is not compatible blockchain internalType of '%v'", 400)
 	MsgContractLocationInvalid      = ffm("FF10302", "Failed to validate contract location: %v", 400)
 	MsgContractParamInvalid         = ffm("FF10303", "Failed to validate contract param: %v", 400)
+	MsgContractSubscriptionExists   = ffm("FF10304", "A contract subscription already exists in the namespace: '%s' with name: '%s'", 409)
 )

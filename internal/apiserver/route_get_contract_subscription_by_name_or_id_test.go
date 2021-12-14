@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetContractSubscriptionByID(t *testing.T) {
+func TestGetContractSubscriptionByNameOrID(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
@@ -35,20 +35,9 @@ func TestGetContractSubscriptionByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractSubscriptionByID", mock.Anything, id).
+	mcm.On("GetContractSubscriptionByNameOrID", mock.Anything, "mynamespace", id.String()).
 		Return(&fftypes.ContractSubscription{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
-}
-
-func TestGetContractSubscriptionBadID(t *testing.T) {
-	_, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/contracts/subscriptions/bad", nil)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 400, res.Result().StatusCode)
 }

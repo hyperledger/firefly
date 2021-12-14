@@ -459,6 +459,29 @@ func (_m *Plugin) GetContractEvents(ctx context.Context, filter database.Filter)
 	return r0, r1, r2
 }
 
+// GetContractSubscription provides a mock function with given fields: ctx, ns, name
+func (_m *Plugin) GetContractSubscription(ctx context.Context, ns string, name string) (*fftypes.ContractSubscription, error) {
+	ret := _m.Called(ctx, ns, name)
+
+	var r0 *fftypes.ContractSubscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractSubscription); ok {
+		r0 = rf(ctx, ns, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetContractSubscriptionByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error) {
 	ret := _m.Called(ctx, id)

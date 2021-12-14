@@ -25,13 +25,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractSubscriptionByID = &oapispec.Route{
-	Name:   "getContractSubscriptionByID",
-	Path:   "namespaces/{ns}/contracts/subscriptions/{subid}",
+var getContractSubscriptionByNameOrID = &oapispec.Route{
+	Name:   "getContractSubscriptionByNameOrID",
+	Path:   "namespaces/{ns}/contracts/subscriptions/{nameOrID}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "subid", Description: i18n.MsgTBD},
+		{Name: "nameOrID", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -41,10 +41,6 @@ var getContractSubscriptionByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		subid, err := fftypes.ParseUUID(r.Ctx, r.PP["subid"])
-		if err != nil {
-			return nil, err
-		}
-		return r.Or.Contracts().GetContractSubscriptionByID(r.Ctx, subid)
+		return r.Or.Contracts().GetContractSubscriptionByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrID"])
 	},
 }

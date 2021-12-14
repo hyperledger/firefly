@@ -21,6 +21,7 @@ type ContractSubscription struct {
 	Interface  *UUID    `json:"interface,omitempty"`
 	Event      *UUID    `json:"event,omitempty"`
 	Namespace  string   `json:"namespace,omitempty"`
+	Name       string   `json:"name,omitempty"`
 	ProtocolID string   `json:"protocolId,omitempty"`
 	Location   Byteable `json:"location,omitempty"`
 	Created    *FFTime  `json:"created,omitempty"`

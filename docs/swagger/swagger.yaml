@@ -2132,6 +2132,8 @@ paths:
                     location:
                       format: byte
                       type: string
+                    name:
+                      type: string
                     namespace:
                       type: string
                     protocolId:
@@ -2165,11 +2167,34 @@ paths:
             schema:
               properties:
                 created: {}
-                event: {}
+                event:
+                  properties:
+                    id: {}
+                    name:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
                 id: {}
                 interface: {}
                 location:
                   format: byte
+                  type: string
+                name:
                   type: string
                 namespace:
                   type: string
@@ -2189,6 +2214,8 @@ paths:
                   location:
                     format: byte
                     type: string
+                  name:
+                    type: string
                   namespace:
                     type: string
                   protocolId:
@@ -2197,7 +2224,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/subscriptions/{subid}:
+  /namespaces/{ns}/contracts/subscriptions/{nameOrID}:
     delete:
       description: 'TODO: Description'
       operationId: deleteContractSubscription
@@ -2211,7 +2238,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: subid
+        name: nameOrID
         required: true
         schema:
           type: string
@@ -2227,7 +2254,7 @@ paths:
           description: ""
     get:
       description: 'TODO: Description'
-      operationId: getContractSubscriptionByID
+      operationId: getContractSubscriptionByNameOrID
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2238,7 +2265,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: subid
+        name: nameOrID
         required: true
         schema:
           type: string
@@ -2261,6 +2288,8 @@ paths:
                   interface: {}
                   location:
                     format: byte
+                    type: string
+                  name:
                     type: string
                   namespace:
                     type: string

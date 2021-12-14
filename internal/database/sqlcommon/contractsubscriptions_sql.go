@@ -19,6 +19,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -33,6 +34,7 @@ var (
 		"interface_id",
 		"event_id",
 		"namespace",
+		"name",
 		"protocol_id",
 		"location",
 		"created",
@@ -69,6 +71,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 				Set("interface_id", sub.Interface).
 				Set("event_id", sub.Event).
 				Set("namespace", sub.Namespace).
+				Set("name", sub.Name).
 				Set("location", sub.Location).
 				Where(sq.Eq{"protocol_id": sub.ProtocolID}),
 			nil, // no change event
@@ -85,6 +88,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 					sub.Interface,
 					sub.Event,
 					sub.Namespace,
+					sub.Name,
 					sub.ProtocolID,
 					sub.Location,
 					sub.Created,
@@ -105,6 +109,7 @@ func (s *SQLCommon) contractSubscriptionResult(ctx context.Context, row *sql.Row
 		&sub.Interface,
 		&sub.Event,
 		&sub.Namespace,
+		&sub.Name,
 		&sub.ProtocolID,
 		&sub.Location,
 		&sub.Created,
@@ -139,11 +144,15 @@ func (s *SQLCommon) getContractSubscriptionPred(ctx context.Context, desc string
 	return sub, nil
 }
 
-func (s *SQLCommon) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.ContractSubscription, err error) {
+func (s *SQLCommon) GetContractSubscription(ctx context.Context, ns, name string) (sub *fftypes.ContractSubscription, err error) {
+	return s.getContractSubscriptionPred(ctx, fmt.Sprintf("%s:%s", ns, name), sq.Eq{"namespace": ns, "name": name})
+}
+
+func (s *SQLCommon) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractSubscription, err error) {
 	return s.getContractSubscriptionPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetContractSubscriptionByProtocolID(ctx context.Context, id string) (offset *fftypes.ContractSubscription, err error) {
+func (s *SQLCommon) GetContractSubscriptionByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractSubscription, err error) {
 	return s.getContractSubscriptionPred(ctx, id, sq.Eq{"protocol_id": id})
 }
 

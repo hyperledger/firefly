@@ -86,13 +86,13 @@ func (_m *Manager) BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI
 	return r0, r1
 }
 
-// DeleteContractSubscriptionByID provides a mock function with given fields: ctx, id
-func (_m *Manager) DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
-	ret := _m.Called(ctx, id)
+// DeleteContractSubscriptionByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
+func (_m *Manager) DeleteContractSubscriptionByNameOrID(ctx context.Context, ns string, nameOrID string) error {
+	ret := _m.Called(ctx, ns, nameOrID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, ns, nameOrID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -187,13 +187,13 @@ func (_m *Manager) GetContractEvents(ctx context.Context, ns string, filter data
 	return r0, r1, r2
 }
 
-// GetContractSubscriptionByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error) {
-	ret := _m.Called(ctx, id)
+// GetContractSubscriptionByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
+func (_m *Manager) GetContractSubscriptionByNameOrID(ctx context.Context, ns string, nameOrID string) (*fftypes.ContractSubscription, error) {
+	ret := _m.Called(ctx, ns, nameOrID)
 
 	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractSubscription); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractSubscription); ok {
+		r0 = rf(ctx, ns, nameOrID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.ContractSubscription)
@@ -201,8 +201,8 @@ func (_m *Manager) GetContractSubscriptionByID(ctx context.Context, id *fftypes.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, nameOrID)
 	} else {
 		r1 = ret.Error(1)
 	}

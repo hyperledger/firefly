@@ -44,9 +44,9 @@ type Manager interface {
 	ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error
 
 	AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error)
-	GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error)
+	GetContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractSubscription, error)
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
-	DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) error
+	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
 }
@@ -262,31 +262,68 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 	sub.Event.ID = fftypes.NewUUID()
 	sub.ContractSubscription.Event = sub.Event.ID
 
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return nil, err
+	}
+
+	if sub.Name != "" {
+		if err := fftypes.ValidateFFNameField(ctx, sub.Name, "name"); err != nil {
+			return nil, err
+		}
+		if existing, err := cm.database.GetContractSubscription(ctx, ns, sub.Name); err != nil {
+			return nil, err
+		} else if existing != nil {
+			return nil, i18n.NewError(ctx, i18n.MsgContractSubscriptionExists, ns, sub.Name)
+		}
+	}
+
 	if err := cm.validateFFIEvent(ctx, &sub.Event); err != nil {
 		return nil, err
 	}
 	if err = cm.blockchain.AddSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
-	if err = cm.database.UpsertFFIEvent(ctx, ns, nil, &sub.Event); err != nil {
-		return nil, err
-	}
-	if err = cm.database.UpsertContractSubscription(ctx, &sub.ContractSubscription); err != nil {
-		return nil, err
-	}
-	return &sub.ContractSubscription, nil
+
+	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		if err = cm.database.UpsertFFIEvent(ctx, ns, nil, &sub.Event); err != nil {
+			return err
+		}
+		if err = cm.database.UpsertContractSubscription(ctx, &sub.ContractSubscription); err != nil {
+			return err
+		}
+		return nil
+	})
+	return &sub.ContractSubscription, err
 }
 
-func (cm *contractManager) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error) {
-	return cm.database.GetContractSubscriptionByID(ctx, id)
+func (cm *contractManager) GetContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) (sub *fftypes.ContractSubscription, err error) {
+	id, err := fftypes.ParseUUID(ctx, nameOrID)
+	if err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
+			return nil, err
+		}
+		if sub, err = cm.database.GetContractSubscription(ctx, ns, nameOrID); err != nil {
+			return nil, err
+		}
+	} else if sub, err = cm.database.GetContractSubscriptionByID(ctx, id); err != nil {
+		return nil, err
+	}
+	if sub == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	return sub, nil
 }
 
 func (cm *contractManager) GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
 	return cm.database.GetContractSubscriptions(ctx, cm.scopeNS(ns, filter))
 }
 
-func (cm *contractManager) DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
-	return cm.database.DeleteContractSubscriptionByID(ctx, id)
+func (cm *contractManager) DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error {
+	sub, err := cm.GetContractSubscriptionByNameOrID(ctx, ns, nameOrID)
+	if err != nil {
+		return err
+	}
+	return cm.database.DeleteContractSubscriptionByID(ctx, sub.ID)
 }
 
 func (cm *contractManager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
