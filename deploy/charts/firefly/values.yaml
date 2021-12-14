@@ -189,8 +189,7 @@ dataexchange:
   image:
     repository: ghcr.io/hyperledger/firefly-dataexchange-https
     pullPolicy: Always
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: v0.9.2
+    tag: v0.9.3
 
   imagePullSecrets: []
   nameOverride: ""
