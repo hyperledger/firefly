@@ -322,6 +322,9 @@ func (cm *contractManager) DeleteContractSubscriptionByNameOrID(ctx context.Cont
 	if err != nil {
 		return err
 	}
+	if err = cm.blockchain.DeleteSubscription(ctx, sub); err != nil {
+		return err
+	}
 	return cm.database.DeleteContractSubscriptionByID(ctx, sub.ID)
 }
 

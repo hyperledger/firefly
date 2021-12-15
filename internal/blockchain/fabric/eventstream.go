@@ -127,6 +127,16 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 	return &sub, nil
 }
 
+func (s *streamManager) deleteSubscription(ctx context.Context, subID string) error {
+	res, err := s.client.R().
+		SetContext(ctx).
+		Post("/subscriptions/" + subID)
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
+	}
+	return nil
+}
+
 func (s *streamManager) ensureSubscription(ctx context.Context, location *Location, stream, event string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {

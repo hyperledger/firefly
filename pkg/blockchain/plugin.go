@@ -55,6 +55,9 @@ type Plugin interface {
 
 	// AddSubscription adds a new subscription to a user-specified contract and event
 	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
+
+	// DeleteSubscription deletes a previously-created subscription
+	DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

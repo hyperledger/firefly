@@ -535,3 +535,7 @@ func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.Co
 	subscription.ProtocolID = result.ID
 	return nil
 }
+
+func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+	return e.streams.deleteSubscription(ctx, subscription.ProtocolID)
+}

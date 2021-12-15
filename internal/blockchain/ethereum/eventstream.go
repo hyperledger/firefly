@@ -171,6 +171,16 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 	return &sub, nil
 }
 
+func (s *streamManager) deleteSubscription(ctx context.Context, subID string) error {
+	res, err := s.client.R().
+		SetContext(ctx).
+		Delete("/subscriptions/" + subID)
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return nil
+}
+
 func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, stream, event string) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.

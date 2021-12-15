@@ -587,3 +587,7 @@ func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.Cont
 	subscription.ProtocolID = result.ID
 	return nil
 }
+
+func (f *Fabric) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+	return f.streams.deleteSubscription(ctx, subscription.ProtocolID)
+}

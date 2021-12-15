@@ -48,6 +48,20 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	return r0
 }
 
+// DeleteSubscription provides a mock function with given fields: ctx, subscription
+func (_m *Plugin) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+	ret := _m.Called(ctx, subscription)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractSubscription) error); ok {
+		r0 = rf(ctx, subscription)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Init provides a mock function with given fields: ctx, prefix, callbacks
 func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) error {
 	ret := _m.Called(ctx, prefix, callbacks)

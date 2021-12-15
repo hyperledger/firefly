@@ -1081,6 +1081,7 @@ func TestGetContractSubscriptions(t *testing.T) {
 
 func TestDeleteContractSubscription(t *testing.T) {
 	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdi := cm.database.(*databasemocks.Plugin)
 
 	sub := &fftypes.ContractSubscription{
@@ -1088,10 +1089,28 @@ func TestDeleteContractSubscription(t *testing.T) {
 	}
 
 	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(sub, nil)
+	mbi.On("DeleteSubscription", context.Background(), sub).Return(nil)
 	mdi.On("DeleteContractSubscriptionByID", context.Background(), sub.ID).Return(nil)
 
 	err := cm.DeleteContractSubscriptionByNameOrID(context.Background(), "ns", "sub1")
 	assert.NoError(t, err)
+}
+
+func TestDeleteContractSubscriptionBlockchainFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscription{
+		ID: fftypes.NewUUID(),
+	}
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(sub, nil)
+	mbi.On("DeleteSubscription", context.Background(), sub).Return(fmt.Errorf("pop"))
+	mdi.On("DeleteContractSubscriptionByID", context.Background(), sub.ID).Return(nil)
+
+	err := cm.DeleteContractSubscriptionByNameOrID(context.Background(), "ns", "sub1")
+	assert.EqualError(t, err, "pop")
 }
 
 func TestDeleteContractSubscriptionNotFound(t *testing.T) {
