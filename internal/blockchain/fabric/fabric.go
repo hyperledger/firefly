@@ -199,13 +199,12 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 	}
 
 	f.streams = &streamManager{
-		ctx:    f.ctx,
 		client: f.client,
 		signer: f.signer,
 	}
 	batchSize := fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
-	if f.initInfo.stream, err = f.streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
+	if f.initInfo.stream, err = f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
@@ -213,7 +212,7 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		Channel:   f.defaultChannel,
 		Chaincode: f.chaincode,
 	}
-	if f.initInfo.sub, err = f.streams.ensureSubscription(location, f.initInfo.stream.ID, batchPinEvent, ""); err != nil {
+	if f.initInfo.sub, err = f.streams.ensureSubscription(f.ctx, location, f.initInfo.stream.ID, batchPinEvent); err != nil {
 		return err
 	}
 
@@ -581,7 +580,7 @@ func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.Cont
 	if err != nil {
 		return err
 	}
-	result, err := f.streams.ensureSubscription(location, f.initInfo.stream.ID, subscription.Event.Name, subscription.Namespace)
+	result, err := f.streams.createSubscription(ctx, location, f.initInfo.stream.ID, "", subscription.Event.Name)
 	if err != nil {
 		return err
 	}

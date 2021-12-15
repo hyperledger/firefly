@@ -134,16 +134,15 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	}
 
 	e.streams = &streamManager{
-		ctx:    e.ctx,
 		client: e.client,
 	}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-	if e.initInfo.stream, err = e.streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
+	if e.initInfo.stream, err = e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-	if e.initInfo.sub, err = e.streams.ensureSubscription(e.instancePath, e.initInfo.stream.ID, batchPinEvent, ""); err != nil {
+	if e.initInfo.sub, err = e.streams.ensureSubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEvent); err != nil {
 		return err
 	}
 

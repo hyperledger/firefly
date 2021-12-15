@@ -18,7 +18,6 @@ package fabric
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -27,7 +26,6 @@ import (
 )
 
 type streamManager struct {
-	ctx    context.Context
 	client *resty.Client
 	signer string
 }
@@ -44,7 +42,7 @@ type eventStream struct {
 
 type subscription struct {
 	ID        string      `json:"id"`
-	Name      string      `json:"name"`
+	Name      string      `json:"name,omitempty"`
 	Channel   string      `json:"channel"`
 	Signer    string      `json:"signer"`
 	Stream    string      `json:"stream"`
@@ -52,18 +50,18 @@ type subscription struct {
 	Filter    eventFilter `json:"filter"`
 }
 
-func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
+func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return streams, nil
 }
 
-func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
 	stream := eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",
@@ -73,18 +71,18 @@ func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout 
 		WebSocket:      eventStreamWebsocket{Topic: topic},
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&stream).
 		SetResult(&stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return &stream, nil
 }
 
-func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
-	existingStreams, err := s.getEventStreams()
+func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+	existingStreams, err := s.getEventStreams(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -93,21 +91,21 @@ func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout 
 			return stream, nil
 		}
 	}
-	return s.createEventStream(topic, batchSize, batchTimeout)
+	return s.createEventStream(ctx, topic, batchSize, batchTimeout)
 }
 
-func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
+func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscription, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(location *Location, name, stream, event string) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event string) (*subscription, error) {
 	sub := subscription{
 		Name:    name,
 		Channel: location.Channel,
@@ -119,27 +117,23 @@ func (s *streamManager) createSubscription(location *Location, name, stream, eve
 		},
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&sub).
 		SetResult(&sub).
 		Post("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscription(location *Location, stream, event, namespace string) (sub *subscription, err error) {
-	existingSubs, err := s.getSubscriptions()
+func (s *streamManager) ensureSubscription(ctx context.Context, location *Location, stream, event string) (sub *subscription, err error) {
+	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	subName := event
-	if namespace != "" {
-		subName = fmt.Sprintf("%s_%s", namespace, subName)
-	}
-
 	for _, s := range existingSubs {
 		if s.Name == subName {
 			sub = s
@@ -147,11 +141,11 @@ func (s *streamManager) ensureSubscription(location *Location, stream, event, na
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(location, subName, stream, event); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, event); err != nil {
 			return nil, err
 		}
 	}
 
-	log.L(s.ctx).Infof("%s subscription: %s", event, sub.ID)
+	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
 	return sub, nil
 }

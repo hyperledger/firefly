@@ -30,7 +30,6 @@ import (
 )
 
 type streamManager struct {
-	ctx    context.Context
 	client *resty.Client
 }
 
@@ -58,25 +57,25 @@ type subscriptionEvent struct {
 
 type subscription struct {
 	ID        string            `json:"id"`
-	Name      string            `json:"name"`
+	Name      string            `json:"name,omitempty"`
 	Stream    string            `json:"stream"`
 	FromBlock string            `json:"fromBlock"`
 	Address   string            `json:"address"`
 	Event     subscriptionEvent `json:"event"`
 }
 
-func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
+func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return streams, nil
 }
 
-func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
 	stream := eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",
@@ -86,18 +85,18 @@ func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout 
 		WebSocket:      eventStreamWebsocket{Topic: topic},
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&stream).
 		SetResult(&stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &stream, nil
 }
 
-func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
-	existingStreams, err := s.getEventStreams()
+func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+	existingStreams, err := s.getEventStreams(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -106,33 +105,33 @@ func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout 
 			return stream, nil
 		}
 	}
-	return s.createEventStream(topic, batchSize, batchTimeout)
+	return s.createEventStream(ctx, topic, batchSize, batchTimeout)
 }
 
-func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
+func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscription, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return subs, nil
 }
 
-func (s *streamManager) createInstanceSubscription(instancePath, name, stream, event string) (*subscription, error) {
+func (s *streamManager) createInstanceSubscription(ctx context.Context, instancePath, name, stream, event string) (*subscription, error) {
 	sub := subscription{
 		Name:      name,
 		Stream:    stream,
 		FromBlock: "0",
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&sub).
 		SetResult(&sub).
 		Post(fmt.Sprintf("%s/%s", instancePath, event))
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &sub, nil
 }
@@ -152,7 +151,6 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 	}
 
 	sub := subscription{
-		Name:      event.Name,
 		Stream:    stream,
 		FromBlock: "0",
 		Address:   location.Address,
@@ -163,31 +161,28 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		},
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&sub).
 		SetResult(&sub).
 		Post("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscription(instancePath, stream, event, namespace string) (sub *subscription, err error) {
+func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, stream, event string) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
 	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(instancePath)))[0:16]
 
-	existingSubs, err := s.getSubscriptions()
+	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	subName := fmt.Sprintf("%s_%s", event, instanceUniqueHash)
-	if namespace != "" {
-		subName = fmt.Sprintf("%s_%s", namespace, subName)
-	}
 
 	for _, s := range existingSubs {
 		if s.Name == subName ||
@@ -200,11 +195,11 @@ func (s *streamManager) ensureSubscription(instancePath, stream, event, namespac
 	}
 
 	if sub == nil {
-		if sub, err = s.createInstanceSubscription(instancePath, subName, stream, event); err != nil {
+		if sub, err = s.createInstanceSubscription(ctx, instancePath, subName, stream, event); err != nil {
 			return nil, err
 		}
 	}
 
-	log.L(s.ctx).Infof("%s subscription: %s", event, sub.ID)
+	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
 	return sub, nil
 }
