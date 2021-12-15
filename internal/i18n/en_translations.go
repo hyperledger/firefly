@@ -222,4 +222,8 @@ var (
 	MsgContractLocationInvalid      = ffm("FF10302", "Failed to validate contract location: %v", 400)
 	MsgContractParamInvalid         = ffm("FF10303", "Failed to validate contract param: %v", 400)
 	MsgContractSubscriptionExists   = ffm("FF10304", "A contract subscription already exists in the namespace: '%s' with name: '%s'", 409)
+	MsgContractMethodNotSet         = ffm("FF10305", "Method not specified on invoke contract request", 400)
+	MsgContractNoMethodSignature    = ffm("FF10306", "Method signature is required if contractId is absent", 400)
+	MsgContractResolveError         = ffm("FF10307", "Unable to resolve contract method", 400)
+	MsgContractAPIExists            = ffm("FF10308", "A contract API already exists in the namespace: '%s' with name: '%s'", 409)
 )

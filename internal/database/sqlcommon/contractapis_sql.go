@@ -39,7 +39,7 @@ var (
 	contractAPIsFilterFieldMap = map[string]string{}
 )
 
-func (s *SQLCommon) InsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) (err error) {
+func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -137,7 +137,7 @@ func (s *SQLCommon) getContractAPIPred(ctx context.Context, desc string, pred in
 	return api, nil
 }
 
-func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter database.Filter) (contractAPIs []*fftypes.ContractAPI, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (contractAPIs []*fftypes.ContractAPI, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractAPIsColumns...).From("contractapis").Where(sq.Eq{"namespace": ns}), filter, contractAPIsFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -163,8 +163,8 @@ func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter datab
 
 }
 
-func (s *SQLCommon) GetContractAPIByID(ctx context.Context, id string) (*fftypes.ContractAPI, error) {
-	return s.getContractAPIPred(ctx, id, sq.Eq{"id": id})
+func (s *SQLCommon) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractAPI, error) {
+	return s.getContractAPIPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
 func (s *SQLCommon) GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error) {

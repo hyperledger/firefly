@@ -41,6 +41,7 @@ var getContractInterface = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+
 		return r.Or.Contracts().GetFFIByID(r.Ctx, r.PP["interfaceId"])
 	},
 }
