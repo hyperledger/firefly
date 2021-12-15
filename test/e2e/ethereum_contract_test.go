@@ -172,4 +172,6 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 	DeleteContractSubscription(suite.T(), suite.testState.client1, subs[0].ID)
 	subs = GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 0, len(subs))
+
+	<-changes1 // only expect database change events
 }

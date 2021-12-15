@@ -535,16 +535,16 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages OrderedUUIDCollectionNS = "message"
-	CollectionEvents   OrderedUUIDCollectionNS = "events"
+	CollectionMessages       OrderedUUIDCollectionNS = "message"
+	CollectionEvents         OrderedUUIDCollectionNS = "events"
+	CollectionContractEvents OrderedUUIDCollectionNS = "contractevents"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
 type OrderedCollection CollectionName
 
 const (
-	CollectionPins           OrderedCollection = "pins"
-	CollectionContractEvents OrderedCollection = "contractevents"
+	CollectionPins OrderedCollection = "pins"
 )
 
 // UUIDCollectionNS is the most common type of collection - each entry has a UUID that
@@ -553,17 +553,18 @@ const (
 type UUIDCollectionNS CollectionName
 
 const (
-	CollectionBatches       UUIDCollectionNS = "batches"
-	CollectionData          UUIDCollectionNS = "data"
-	CollectionDataTypes     UUIDCollectionNS = "datatypes"
-	CollectionOperations    UUIDCollectionNS = "operations"
-	CollectionSubscriptions UUIDCollectionNS = "subscriptions"
-	CollectionTransactions  UUIDCollectionNS = "transactions"
-	CollectionTokenPools    UUIDCollectionNS = "tokenpools"
-	CollectionFFIs          UUIDCollectionNS = "ffi"
-	CollectionFFIMethods    UUIDCollectionNS = "ffimethods"
-	CollectionFFIEvents     UUIDCollectionNS = "ffievents"
-	CollectionContractAPIs  UUIDCollectionNS = "contractapis"
+	CollectionBatches               UUIDCollectionNS = "batches"
+	CollectionData                  UUIDCollectionNS = "data"
+	CollectionDataTypes             UUIDCollectionNS = "datatypes"
+	CollectionOperations            UUIDCollectionNS = "operations"
+	CollectionSubscriptions         UUIDCollectionNS = "subscriptions"
+	CollectionTransactions          UUIDCollectionNS = "transactions"
+	CollectionTokenPools            UUIDCollectionNS = "tokenpools"
+	CollectionFFIs                  UUIDCollectionNS = "ffi"
+	CollectionFFIMethods            UUIDCollectionNS = "ffimethods"
+	CollectionFFIEvents             UUIDCollectionNS = "ffievents"
+	CollectionContractAPIs          UUIDCollectionNS = "contractapis"
+	CollectionContractSubscriptions UUIDCollectionNS = "contractsubscriptions"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can

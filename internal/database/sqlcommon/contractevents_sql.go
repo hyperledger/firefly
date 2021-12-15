@@ -50,7 +50,7 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 	defer s.rollbackTx(ctx, tx, autoCommit)
 	event.Created = fftypes.Now()
 
-	if _, err = s.insertTx(ctx, tx,
+	if event.Sequence, err = s.insertTx(ctx, tx,
 		sq.Insert("contractevents").
 			Columns(contractEventColumns...).
 			Values(
@@ -62,7 +62,9 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 				event.Info,
 				event.Created,
 			),
-		nil, // no change event
+		func() {
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionContractEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
+		},
 	); err != nil {
 		return err
 	}
@@ -80,6 +82,8 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 		&event.Outputs,
 		&event.Info,
 		&event.Created,
+		// Must be added to the list of columns in all selects
+		&event.Sequence,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractevents")
@@ -88,8 +92,11 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 }
 
 func (s *SQLCommon) getContractEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractEvent, error) {
+	cols := append([]string{}, contractEventColumns...)
+	cols = append(cols, sequenceColumn)
+
 	rows, _, err := s.query(ctx,
-		sq.Select(contractEventColumns...).
+		sq.Select(cols...).
 			From("contractevents").
 			Where(pred),
 	)
@@ -116,8 +123,11 @@ func (s *SQLCommon) GetContractEventByID(ctx context.Context, id *fftypes.UUID) 
 }
 
 func (s *SQLCommon) GetContractEvents(ctx context.Context, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
+	cols := append([]string{}, contractEventColumns...)
+	cols = append(cols, sequenceColumn)
+
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(contractEventColumns...).From("contractevents"),
+		sq.Select(cols...).From("contractevents"),
 		filter, contractEventFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err

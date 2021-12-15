@@ -18,6 +18,7 @@ package fftypes
 
 type ContractEvent struct {
 	ID           *UUID      `json:"id,omitempty"`
+	Sequence     int64      `json:"sequence"`
 	Namespace    string     `json:"namespace,omitempty"`
 	Name         string     `json:"name,omitempty"`
 	Subscription *UUID      `json:"subscription,omitempty"`

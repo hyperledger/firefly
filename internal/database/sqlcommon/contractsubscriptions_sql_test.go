@@ -46,6 +46,10 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 		Location:   locationJson,
 	}
 
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractSubscriptions, fftypes.ChangeEventTypeCreated, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractSubscriptions, fftypes.ChangeEventTypeUpdated, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractSubscriptions, fftypes.ChangeEventTypeDeleted, "ns", sub.ID).Return()
+
 	err := s.UpsertContractSubscription(ctx, sub)
 	assert.NotNil(t, sub.Created)
 	assert.NoError(t, err)

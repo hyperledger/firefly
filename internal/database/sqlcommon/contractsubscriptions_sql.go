@@ -74,7 +74,9 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 				Set("name", sub.Name).
 				Set("location", sub.Location).
 				Where(sq.Eq{"protocol_id": sub.ProtocolID}),
-			nil, // no change event
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractSubscriptions, fftypes.ChangeEventTypeUpdated, sub.Namespace, sub.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -93,7 +95,9 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 					sub.Location,
 					sub.Created,
 				),
-			nil, // no change event
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractSubscriptions, fftypes.ChangeEventTypeCreated, sub.Namespace, sub.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -189,10 +193,12 @@ func (s *SQLCommon) DeleteContractSubscriptionByID(ctx context.Context, id *ffty
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	subscription, err := s.GetContractSubscriptionByID(ctx, id)
-	if err == nil && subscription != nil {
+	sub, err := s.GetContractSubscriptionByID(ctx, id)
+	if err == nil && sub != nil {
 		err = s.deleteTx(ctx, tx, sq.Delete("contractsubscriptions").Where(sq.Eq{"id": id}),
-			nil, // no change event
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractSubscriptions, fftypes.ChangeEventTypeDeleted, sub.Namespace, sub.ID)
+			},
 		)
 		if err != nil {
 			return err

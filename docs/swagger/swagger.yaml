@@ -1346,6 +1346,9 @@ paths:
                     outputs:
                       additionalProperties: {}
                       type: object
+                    sequence:
+                      format: int64
+                      type: integer
                     subscription: {}
                   type: object
                 type: array
@@ -1395,6 +1398,9 @@ paths:
                   outputs:
                     additionalProperties: {}
                     type: object
+                  sequence:
+                    format: int64
+                    type: integer
                   subscription: {}
                 type: object
           description: Success
