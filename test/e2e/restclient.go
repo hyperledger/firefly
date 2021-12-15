@@ -34,22 +34,24 @@ import (
 )
 
 var (
-	urlGetNamespaces    = "/namespaces"
-	urlUploadData       = "/namespaces/default/data"
-	urlGetMessages      = "/namespaces/default/messages"
-	urlBroadcastMessage = "/namespaces/default/messages/broadcast"
-	urlPrivateMessage   = "/namespaces/default/messages/private"
-	urlRequestMessage   = "/namespaces/default/messages/requestreply"
-	urlGetData          = "/namespaces/default/data"
-	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
-	urlSubscriptions    = "/namespaces/default/subscriptions"
-	urlDatatypes        = "/namespaces/default/datatypes"
-	urlTokenPools       = "/namespaces/default/tokens/pools"
-	urlTokenMint        = "/namespaces/default/tokens/mint"
-	urlTokenBurn        = "/namespaces/default/tokens/burn"
-	urlTokenTransfers   = "/namespaces/default/tokens/transfers"
-	urlTokenBalances    = "/namespaces/default/tokens/balances"
-	urlGetOrganizations = "/network/organizations"
+	urlGetNamespaces         = "/namespaces"
+	urlUploadData            = "/namespaces/default/data"
+	urlGetMessages           = "/namespaces/default/messages"
+	urlBroadcastMessage      = "/namespaces/default/messages/broadcast"
+	urlPrivateMessage        = "/namespaces/default/messages/private"
+	urlRequestMessage        = "/namespaces/default/messages/requestreply"
+	urlGetData               = "/namespaces/default/data"
+	urlGetDataBlob           = "/namespaces/default/data/%s/blob"
+	urlSubscriptions         = "/namespaces/default/subscriptions"
+	urlDatatypes             = "/namespaces/default/datatypes"
+	urlTokenPools            = "/namespaces/default/tokens/pools"
+	urlTokenMint             = "/namespaces/default/tokens/mint"
+	urlTokenBurn             = "/namespaces/default/tokens/burn"
+	urlTokenTransfers        = "/namespaces/default/tokens/transfers"
+	urlTokenBalances         = "/namespaces/default/tokens/balances"
+	urlContractSubscriptions = "/namespaces/default/contracts/subscriptions"
+	urlContractEvents        = "/namespaces/default/contracts/events"
+	urlGetOrganizations      = "/network/organizations"
 )
 
 func NewResty(t *testing.T) *resty.Client {
@@ -443,4 +445,51 @@ func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, t
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	require.Equal(t, len(accounts), 1)
 	return accounts[0]
+}
+
+func CreateContractSubscription(t *testing.T, client *resty.Client, event *fftypes.FFIEvent, location *fftypes.JSONObject) *fftypes.ContractSubscription {
+	body := fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(location.String()),
+		},
+		Event: *event,
+	}
+	var sub fftypes.ContractSubscription
+	path := urlContractSubscriptions
+	resp, err := client.R().
+		SetBody(&body).
+		SetResult(&sub).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &sub
+}
+
+func GetContractSubscriptions(t *testing.T, client *resty.Client, startTime time.Time) (subs []*fftypes.ContractSubscription) {
+	path := urlContractSubscriptions
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&subs).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return subs
+}
+
+func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time) (events []*fftypes.ContractEvent) {
+	path := urlContractEvents
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&events).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return events
+}
+
+func DeleteContractSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
+	path := urlContractSubscriptions + "/" + id.String()
+	resp, err := client.R().Delete(path)
+	require.NoError(t, err)
+	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }

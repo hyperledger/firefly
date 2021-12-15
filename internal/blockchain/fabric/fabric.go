@@ -51,9 +51,10 @@ type Fabric struct {
 	capabilities   *blockchain.Capabilities
 	callbacks      blockchain.Callbacks
 	client         *resty.Client
+	streams        *streamManager
 	initInfo       struct {
 		stream *eventStream
-		subs   []*subscription
+		sub    *subscription
 	}
 	idCache map[string]*fabIdentity
 	wsconn  wsclient.WSClient
@@ -147,10 +148,7 @@ type Location struct {
 	Chaincode string `json:"chaincode"`
 }
 
-var requiredSubscriptions = []string{
-	"BatchPin",
-}
-
+var batchPinEvent = "BatchPin"
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
 var cnPatteren = regexp.MustCompile("CN=([^,]+)")
 
@@ -200,20 +198,22 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		return err
 	}
 
-	streams := streamManager{
-		ctx:            f.ctx,
-		client:         f.client,
-		defaultChannel: f.defaultChannel,
-		chaincode:      f.chaincode,
-		signer:         f.signer,
+	f.streams = &streamManager{
+		ctx:    f.ctx,
+		client: f.client,
+		signer: f.signer,
 	}
 	batchSize := fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
-	if f.initInfo.stream, err = streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
+	if f.initInfo.stream, err = f.streams.ensureEventStream(f.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
-	if f.initInfo.subs, err = streams.ensureSubscriptions(f.initInfo.stream.ID, requiredSubscriptions); err != nil {
+	location := &Location{
+		Channel:   f.defaultChannel,
+		Chaincode: f.chaincode,
+	}
+	if f.initInfo.sub, err = f.streams.ensureSubscription(location, f.initInfo.stream.ID, batchPinEvent, ""); err != nil {
 		return err
 	}
 
@@ -347,16 +347,19 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		l1 := l.WithField("fabmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
 		eventName := msgJSON.GetString("eventName")
+		sub := msgJSON.GetString("subId")
 		l1.Infof("Received '%s' message", eventName)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		switch eventName {
-		case broadcastBatchEventName:
-			if err := f.handleBatchPinEvent(ctx1, msgJSON); err != nil {
-				return err
+		if sub == f.initInfo.sub.ID {
+			switch eventName {
+			case broadcastBatchEventName:
+				if err := f.handleBatchPinEvent(ctx1, msgJSON); err != nil {
+					return err
+				}
+			default:
+				l.Infof("Ignoring event with unknown name: %s", eventName)
 			}
-		default:
-			l.Infof("Ignoring event with unknown name: %s", eventName)
 		}
 	}
 
@@ -570,5 +573,18 @@ func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Loc
 
 func (f *Fabric) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
 	// TODO: Implement validation
+	return nil
+}
+
+func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+	location, err := parseContractLocation(ctx, subscription.Location)
+	if err != nil {
+		return err
+	}
+	result, err := f.streams.ensureSubscription(location, f.initInfo.stream.ID, subscription.Event.Name, subscription.Namespace)
+	if err != nil {
+		return err
+	}
+	subscription.ProtocolID = result.ID
 	return nil
 }

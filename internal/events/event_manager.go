@@ -69,6 +69,9 @@ type EventManager interface {
 	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
 	TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
+	// Bound contract callbacks
+	ContractEvent(event *blockchain.ContractEvent) error
+
 	// Internal events
 	sysmessaging.SystemEvents
 }

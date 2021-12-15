@@ -43,7 +43,7 @@ const (
 
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
-	PeristenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
+	PersistenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
 
 	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitPrefix(prefix config.Prefix)
@@ -146,7 +146,7 @@ type iTransactionCollection interface {
 }
 
 type iDatatypeCollection interface {
-	// UpsertDatatype - Upsert a data definitino
+	// UpsertDatatype - Upsert a data definition
 	UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) (err error)
 
 	// UpdateDatatype - Update data definition
@@ -346,7 +346,7 @@ type iConfigRecordCollection interface {
 	// Throws IDMismatch error if updating and ids don't match
 	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
 
-	// GetConfigRecord - Get an config record by key
+	// GetConfigRecord - Get a config record by key
 	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
 
 	// GetConfigRecords - Get config records
@@ -430,6 +430,37 @@ type iContractAPICollection interface {
 	GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error)
 }
 
+type iContractSubscriptionCollection interface {
+	// UpsertContractSubscription - upsert a subscription to an external smart contract
+	UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) (err error)
+
+	// GetContractSubscription - get smart contract subscription by name
+	GetContractSubscription(ctx context.Context, ns, name string) (sub *fftypes.ContractSubscription, err error)
+
+	// GetContractSubscriptionByID - get smart contract subscription by ID
+	GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractSubscription, err error)
+
+	// GetContractSubscriptionByProtocolID - get smart contract subscription by protocol ID
+	GetContractSubscriptionByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractSubscription, err error)
+
+	// GetContractSubscriptions - get smart contract subscriptions
+	GetContractSubscriptions(ctx context.Context, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
+
+	// DeleteContractSubscription - delete a subscription to an external smart contract
+	DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
+}
+
+type iContractEventCollection interface {
+	// InsertContractEvent - insert an event from an external smart contract
+	InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) (err error)
+
+	// GetContractEventByID - get smart contract event by ID
+	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
+
+	// GetContractEvents - get smart contract events
+	GetContractEvents(ctx context.Context, filter Filter) ([]*fftypes.ContractEvent, *FilterResult, error)
+}
+
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
@@ -454,7 +485,7 @@ type iContractAPICollection interface {
 // For SQL databases the process of adding a new database is simplified via the common SQL layer.
 // For NoSQL databases, the code should be straight forward to map the collections, indexes, and operations.
 //
-type PeristenceInterface interface {
+type PersistenceInterface interface {
 	fftypes.Named
 
 	// RunAsGroup instructs the database plugin that all database operations performed within the context
@@ -490,6 +521,8 @@ type PeristenceInterface interface {
 	iFFIMethodCollection
 	iFFIEventCollection
 	iContractAPICollection
+	iContractSubscriptionCollection
+	iContractEventCollection
 }
 
 // CollectionName represents all collections
@@ -510,7 +543,8 @@ const (
 type OrderedCollection CollectionName
 
 const (
-	CollectionPins OrderedCollection = "pins"
+	CollectionPins           OrderedCollection = "pins"
+	CollectionContractEvents OrderedCollection = "contractevents"
 )
 
 // UUIDCollectionNS is the most common type of collection - each entry has a UUID that
@@ -872,6 +906,25 @@ var FFIEventQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"name":      &StringField{},
+}
+
+// ContractSubscriptionQueryFactory filter fields for contract subscriptions
+var ContractSubscriptionQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"interfaceid": &UUIDField{},
+	"eventid":     &UUIDField{},
+	"namespace":   &StringField{},
+	"protocolid":  &StringField{},
+	"created":     &TimeField{},
+}
+
+// ContractEventQueryFactory filter fields for contract events
+var ContractEventQueryFactory = &queryFields{
+	"id":             &UUIDField{},
+	"namespace":      &StringField{},
+	"subscriptionid": &StringField{},
+	"name":           &StringField{},
+	"created":        &TimeField{},
 }
 
 // ContractAPIQueryFactory filter fields for Contract APIs

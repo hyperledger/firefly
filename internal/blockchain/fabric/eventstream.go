@@ -18,6 +18,7 @@ package fabric
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -26,11 +27,9 @@ import (
 )
 
 type streamManager struct {
-	ctx            context.Context
-	client         *resty.Client
-	defaultChannel string
-	chaincode      string
-	signer         string
+	ctx    context.Context
+	client *resty.Client
+	signer string
 }
 
 type eventStream struct {
@@ -108,14 +107,14 @@ func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(name, stream, event string) (*subscription, error) {
+func (s *streamManager) createSubscription(location *Location, name, stream, event string) (*subscription, error) {
 	sub := subscription{
 		Name:    name,
-		Channel: s.defaultChannel,
+		Channel: location.Channel,
 		Signer:  s.signer,
 		Stream:  stream,
 		Filter: eventFilter{
-			ChaincodeID: s.chaincode,
+			ChaincodeID: location.Chaincode,
 			EventFilter: event,
 		},
 	}
@@ -130,29 +129,29 @@ func (s *streamManager) createSubscription(name, stream, event string) (*subscri
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscriptions(stream string, subscriptions []string) (subs []*subscription, err error) {
+func (s *streamManager) ensureSubscription(location *Location, stream, event, namespace string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, eventType := range subscriptions {
-		var sub *subscription
-		for _, s := range existingSubs {
-			if s.Name == eventType {
-				sub = s
-			}
-		}
-
-		if sub == nil {
-			if sub, err = s.createSubscription(eventType, stream, eventType); err != nil {
-				return nil, err
-			}
-		}
-
-		log.L(s.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		subs = append(subs, sub)
-
+	subName := event
+	if namespace != "" {
+		subName = fmt.Sprintf("%s_%s", namespace, subName)
 	}
-	return subs, nil
+
+	for _, s := range existingSubs {
+		if s.Name == subName {
+			sub = s
+		}
+	}
+
+	if sub == nil {
+		if sub, err = s.createSubscription(location, subName, stream, event); err != nil {
+			return nil, err
+		}
+	}
+
+	log.L(s.ctx).Infof("%s subscription: %s", event, sub.ID)
+	return sub, nil
 }

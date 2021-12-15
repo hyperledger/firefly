@@ -39,6 +39,8 @@ var (
 	EventTypeTransferConfirmed EventType = ffEnum("eventtype", "token_transfer_confirmed")
 	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)
 	EventTypeTransferOpFailed EventType = ffEnum("eventtype", "token_transfer_op_failed")
+	// EventTypeContractEvent occurs when a new event has been emitted from a subscribed smart contract
+	EventTypeContractEvent EventType = ffEnum("eventtype", "contract_event")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

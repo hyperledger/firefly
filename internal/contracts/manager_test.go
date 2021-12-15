@@ -39,6 +39,14 @@ func newTestContractManager() *contractManager {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+
+	rag := mdb.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
+
 	return NewContractManager(mdb, mps, mbm, mim, mbi).(*contractManager)
 }
 
@@ -589,6 +597,268 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 	assert.Regexp(t, err, "pop")
 }
 
+func TestAddContractSubscription(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "integer",
+				},
+			},
+		},
+	}
+
+	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
+	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mdi.On("UpsertFFIEvent", context.Background(), "ns", (*fftypes.UUID)(nil), &sub.Event).Return(nil)
+	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(nil)
+
+	result, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.NoError(t, err)
+	assert.NotNil(t, result.ID)
+	assert.NotNil(t, result.Event)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionBadNamespace(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{}
+
+	_, err := cm.AddContractSubscription(context.Background(), "!bad", sub)
+	assert.Regexp(t, "FF10131.*'namespace'", err)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionBadName(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Name: "!bad",
+		},
+	}
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.Regexp(t, "FF10131.*'name'", err)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionNameConflict(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Name: "sub1",
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "integer",
+				},
+			},
+		},
+	}
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(&fftypes.ContractSubscription{}, nil)
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.Regexp(t, "FF10304", err)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionNameError(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Name: "sub1",
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "integer",
+				},
+			},
+		},
+	}
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.EqualError(t, err, "pop")
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionValidateFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "integer",
+				},
+			},
+		},
+	}
+
+	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(fmt.Errorf("pop"))
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.EqualError(t, err, "pop")
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionBlockchainFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "integer",
+				},
+			},
+		},
+	}
+
+	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
+	mbi.On("AddSubscription", context.Background(), sub).Return(fmt.Errorf("pop"))
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.EqualError(t, err, "pop")
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionUpsertEventFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "integer",
+				},
+			},
+		},
+	}
+
+	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
+	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mdi.On("UpsertFFIEvent", context.Background(), "ns", (*fftypes.UUID)(nil), &sub.Event).Return(fmt.Errorf("pop"))
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.EqualError(t, err, "pop")
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionUpsertSubFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "integer",
+				},
+			},
+		},
+	}
+
+	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
+	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mdi.On("UpsertFFIEvent", context.Background(), "ns", (*fftypes.UUID)(nil), &sub.Event).Return(nil)
+	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(fmt.Errorf("pop"))
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.EqualError(t, err, "pop")
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestGetFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
@@ -653,7 +923,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
-	assert.Regexp(t, "FF10304", err)
+	assert.Regexp(t, "FF10305", err)
 }
 
 func TestInvokeContractNoMethodSignature(t *testing.T) {
@@ -674,7 +944,7 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
-	assert.Regexp(t, "FF10305", err)
+	assert.Regexp(t, "FF10306", err)
 }
 
 func TestInvokeContractMethodNotFound(t *testing.T) {
@@ -696,7 +966,7 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
-	assert.Regexp(t, "FF10306", err)
+	assert.Regexp(t, "FF10307", err)
 }
 
 func TestInvokeContractMethodBadInput(t *testing.T) {
@@ -732,13 +1002,128 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 			},
 		},
 	}
-
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 	mbi.On("ValidateFFIParam", mock.Anything, mock.AnythingOfType("*fftypes.FFIParam")).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
-
 	assert.Regexp(t, "FF10296", err)
+}
+
+func TestGetContractSubscriptionByID(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	id := fftypes.NewUUID()
+	mdi.On("GetContractSubscriptionByID", context.Background(), id).Return(&fftypes.ContractSubscription{}, nil)
+
+	_, err := cm.GetContractSubscriptionByNameOrID(context.Background(), "ns", id.String())
+	assert.NoError(t, err)
+}
+
+func TestGetContractSubscriptionByIDFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	id := fftypes.NewUUID()
+	mdi.On("GetContractSubscriptionByID", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractSubscriptionByNameOrID(context.Background(), "ns", id.String())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetContractSubscriptionByName(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(&fftypes.ContractSubscription{}, nil)
+
+	_, err := cm.GetContractSubscriptionByNameOrID(context.Background(), "ns", "sub1")
+	assert.NoError(t, err)
+}
+
+func TestGetContractSubscriptionBadName(t *testing.T) {
+	cm := newTestContractManager()
+
+	_, err := cm.GetContractSubscriptionByNameOrID(context.Background(), "ns", "!bad")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetContractSubscriptionByNameFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractSubscriptionByNameOrID(context.Background(), "ns", "sub1")
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetContractSubscriptionNotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(nil, nil)
+
+	_, err := cm.GetContractSubscriptionByNameOrID(context.Background(), "ns", "sub1")
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetContractSubscriptions(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetContractSubscriptions", context.Background(), mock.Anything).Return(nil, nil, nil)
+
+	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background())
+	_, _, err := cm.GetContractSubscriptions(context.Background(), "ns", f.And())
+	assert.NoError(t, err)
+}
+
+func TestDeleteContractSubscription(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscription{
+		ID: fftypes.NewUUID(),
+	}
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(sub, nil)
+	mdi.On("DeleteContractSubscriptionByID", context.Background(), sub.ID).Return(nil)
+
+	err := cm.DeleteContractSubscriptionByNameOrID(context.Background(), "ns", "sub1")
+	assert.NoError(t, err)
+}
+
+func TestDeleteContractSubscriptionNotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(nil, nil)
+
+	err := cm.DeleteContractSubscriptionByNameOrID(context.Background(), "ns", "sub1")
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetContractEventByID(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	id := fftypes.NewUUID()
+	mdi.On("GetContractEventByID", context.Background(), id).Return(&fftypes.ContractEvent{}, nil)
+
+	_, err := cm.GetContractEventByID(context.Background(), id)
+	assert.NoError(t, err)
+}
+
+func TestGetContractEvents(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetContractEvents", context.Background(), mock.Anything).Return(nil, nil, nil)
+
+	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background())
+	_, _, err := cm.GetContractEvents(context.Background(), "ns", f.And())
+	assert.NoError(t, err)
 }
 
 func TestInvokeContractAPI(t *testing.T) {
@@ -845,7 +1230,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(&fftypes.ContractAPI{}, nil)
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
-	assert.Regexp(t, "FF10307", err)
+	assert.Regexp(t, "FF10308", err)
 }
 
 func TestBroadcastContractAPIResolveLocalOrgFail(t *testing.T) {

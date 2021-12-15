@@ -52,6 +52,9 @@ type Plugin interface {
 	ValidateContractLocation(ctx context.Context, location fftypes.Byteable) error
 
 	ValidateFFIParam(ctx context.Context, method *fftypes.FFIParam) error
+
+	// AddSubscription adds a new subscription to a user-specified contract and event
+	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -77,6 +80,9 @@ type Callbacks interface {
 	//
 	// Error should will only be returned in shutdown scenarios
 	BatchPinComplete(batch *BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+
+	// ContractEvent notifies on the arrival of any event from a user-created subscription
+	ContractEvent(event *ContractEvent) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -127,4 +133,11 @@ type BatchPin struct {
 	//   - The hashes contain a sender specific nonce that is a monotomically increasing number
 	//     for batches sent by that sender, within the context (maintined by the sender FireFly node)
 	Contexts []*fftypes.Bytes32
+}
+
+type ContractEvent struct {
+	Subscription string
+	Name         string
+	Outputs      fftypes.JSONObject
+	Info         fftypes.JSONObject
 }

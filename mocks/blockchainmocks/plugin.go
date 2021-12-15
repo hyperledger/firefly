@@ -18,6 +18,20 @@ type Plugin struct {
 	mock.Mock
 }
 
+// AddSubscription provides a mock function with given fields: ctx, subscription
+func (_m *Plugin) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+	ret := _m.Called(ctx, subscription)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractSubscriptionInput) error); ok {
+		r0 = rf(ctx, subscription)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Capabilities provides a mock function with given fields:
 func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	ret := _m.Called()

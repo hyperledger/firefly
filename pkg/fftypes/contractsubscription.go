@@ -14,16 +14,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package fftypes
 
-import (
-	"testing"
+type ContractSubscription struct {
+	ID         *UUID    `json:"id,omitempty"`
+	Interface  *UUID    `json:"interface,omitempty"`
+	Event      *UUID    `json:"event,omitempty"`
+	Namespace  string   `json:"namespace,omitempty"`
+	Name       string   `json:"name,omitempty"`
+	ProtocolID string   `json:"protocolId,omitempty"`
+	Location   Byteable `json:"location,omitempty"`
+	Created    *FFTime  `json:"created,omitempty"`
+}
 
-	"github.com/stretchr/testify/suite"
-)
-
-func TestEthereumE2ESuite(t *testing.T) {
-	suite.Run(t, new(OnChainOffChainTestSuite))
-	suite.Run(t, new(TokensTestSuite))
-	suite.Run(t, new(EthereumContractTestSuite))
+type ContractSubscriptionInput struct {
+	ContractSubscription
+	Event FFIEvent `json:"event,omitempty"`
 }
