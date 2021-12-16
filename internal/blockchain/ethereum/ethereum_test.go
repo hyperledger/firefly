@@ -41,6 +41,31 @@ import (
 var utConfPrefix = config.NewPluginConfig("eth_unit_tests")
 var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
 
+func testFFIMethod() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name: "sum",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:    "x",
+				Type:    "integer",
+				Details: []byte(`{"type": "uint256"}`),
+			},
+			{
+				Name:    "y",
+				Type:    "integer",
+				Details: []byte(`{"type": "uint256"}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{
+			{
+				Name:    "z",
+				Type:    "integer",
+				Details: []byte(`{"type": "uint256"}`),
+			},
+		},
+	}
+}
+
 func resetConf() {
 	config.Reset()
 	e := &Ethereum{}
@@ -1426,44 +1451,17 @@ func TestInvokeContractOK(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-
 	signingKey := ethHexFormatB32(fftypes.NewRandB32())
-
 	location := &Location{
 		Address: "0x12345",
 	}
-
-	method := &fftypes.FFIMethod{
-		Name: "sum",
-		Params: []*fftypes.FFIParam{
-			{
-				Name:    "x",
-				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
-			},
-			{
-				Name:    "y",
-				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
-			},
-		},
-		Returns: []*fftypes.FFIParam{
-			{
-				Name:    "z",
-				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
-			},
-		},
-	}
-
+	method := testFFIMethod()
 	params := map[string]interface{}{
 		"x": float64(1),
 		"y": float64(2),
 	}
-
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-
 	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
@@ -1474,7 +1472,107 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, float64(2), body["y"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
-
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
 	assert.NoError(t, err)
+}
+
+func TestInvokeContractAddressNotSet(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
 	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.Regexp(t, "'address' not set", err)
+}
+
+func TestInvokeContractEthconnectError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestInvokeContractUnmarshalResponseError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
+			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.Regexp(t, "invalid character", err)
+}
+
+func TestValidateContractLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{
+		Address: "0x12345",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	err = e.ValidateContractLocation(context.Background(), locationBytes)
+	assert.NoError(t, err)
+}
+
+func TestParseParamErr(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	param := &fftypes.FFIParam{
+		Name: "x",
+		Type: "integer",
+	}
+	err := e.ValidateFFIParam(context.Background(), param)
+	assert.Regexp(t, "FF10303", err)
+
+	param = &fftypes.FFIParam{
+		Name:    "x",
+		Type:    "integer",
+		Details: []byte(`{"type":""}`),
+	}
+	err = e.ValidateFFIParam(context.Background(), param)
+	assert.Regexp(t, "FF10303", err)
+}
