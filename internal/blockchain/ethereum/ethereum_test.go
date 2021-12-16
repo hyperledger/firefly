@@ -1233,7 +1233,18 @@ func TestAddSubscription(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 		},
-		Event: fftypes.FFIEvent{},
+		Event: fftypes.FFIEvent{
+			Name: "Changed",
+			Params: fftypes.FFIParams{
+				{
+					Name: "value",
+					Type: "string",
+					Details: fftypes.Byteable(fftypes.JSONObject{
+						"type": "string",
+					}.String()),
+				},
+			},
+		},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
@@ -1242,6 +1253,44 @@ func TestAddSubscription(t *testing.T) {
 	err := e.AddSubscription(context.Background(), sub)
 
 	assert.NoError(t, err)
+}
+
+func TestAddSubscriptionBaddParamDetails(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		Event: fftypes.FFIEvent{
+			Name: "Changed",
+			Params: fftypes.FFIParams{
+				{
+					Name:    "value",
+					Type:    "string",
+					Details: fftypes.Byteable{},
+				},
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10303", err)
 }
 
 func TestAddSubscriptionBadLocation(t *testing.T) {

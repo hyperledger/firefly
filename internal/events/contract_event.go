@@ -19,7 +19,7 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -33,7 +33,8 @@ func (em *eventManager) ContractEvent(blockchainEvent *blockchain.ContractEvent)
 				return err
 			}
 			if sub == nil {
-				return i18n.NewError(ctx, i18n.Msg404NotFound)
+				log.L(ctx).Warnf("Event received from unknown subscription %s", blockchainEvent.Subscription)
+				return nil // no retry
 			}
 			contractEvent := &fftypes.ContractEvent{
 				ID:           fftypes.NewUUID(),
