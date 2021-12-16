@@ -58,14 +58,17 @@ type contractManager struct {
 	blockchain    blockchain.Plugin
 }
 
-func NewContractManager(database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) Manager {
+func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
+	if database == nil || publicStorage == nil || broadcast == nil || identity == nil || blockchain == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
 	return &contractManager{
 		database,
 		publicStorage,
 		broadcast,
 		identity,
 		blockchain,
-	}
+	}, nil
 }
 
 func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {

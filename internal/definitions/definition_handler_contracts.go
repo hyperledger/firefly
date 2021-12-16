@@ -25,7 +25,7 @@ import (
 )
 
 func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) (valid bool, err error) {
-	err = dh.database.InsertFFI(ctx, ffi)
+	err = dh.database.UpsertFFI(ctx, ffi)
 	if err != nil {
 		return false, err
 	}
@@ -49,6 +49,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 }
 
 func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
+	var actionResult SystemBroadcastAction
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -69,15 +70,18 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftyp
 	if valid {
 		l.Infof("Contract definition created id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
+		actionResult = ActionConfirm
 	} else {
 		l.Warnf("Contract definition rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
+		actionResult = ActionReject
 	}
 	err := dh.database.InsertEvent(ctx, event)
-	return ActionConfirm, err
+	return actionResult, err
 }
 
 func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
+	var actionResult SystemBroadcastAction
 	l := log.L(ctx)
 	var broadcast fftypes.ContractAPI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -98,10 +102,12 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, ms
 	if valid {
 		l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
+		actionResult = ActionConfirm
 	} else {
 		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
+		actionResult = ActionReject
 	}
 	err := dh.database.InsertEvent(ctx, event)
-	return ActionConfirm, err
+	return actionResult, err
 }

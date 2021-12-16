@@ -420,8 +420,6 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
-
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets)
 		if err != nil {
@@ -438,7 +436,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	or.syncasync.Init(or.events)
 
-	or.contracts = contracts.NewContractManager(or.database, or.publicstorage, or.broadcast, or.identity, or.blockchain)
+	if or.contracts == nil {
+		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.publicstorage, or.broadcast, or.identity, or.blockchain)
+		if err != nil {
+			return err
+		}
+	}
+
+	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets, or.contracts)
 
 	return nil
 }

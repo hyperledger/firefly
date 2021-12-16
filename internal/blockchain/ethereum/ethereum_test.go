@@ -1195,7 +1195,6 @@ func TestAddSubscription(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-
 	e.initInfo.stream = &eventStream{
 		ID: "es-1",
 	}
@@ -1395,3 +1394,61 @@ func TestHandleMessageContractEventError(t *testing.T) {
 
 	em.AssertExpectations(t)
 }
+
+func TestInvokeContractOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+
+	location := &Location{
+		Address: "0x12345",
+	}
+
+	method := &fftypes.FFIMethod{
+		Name: "sum",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:    "x",
+				Type:    "integer",
+				Details: []byte(`{"type": "uint256"}`),
+			},
+			{
+				Name:    "y",
+				Type:    "integer",
+				Details: []byte(`{"type": "uint256"}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{
+			{
+				Name:    "z",
+				Type:    "integer",
+				Details: []byte(`{"type": "uint256"}`),
+			},
+		},
+	}
+
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
+			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
+		})
+
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.NoError(t, err)
+	}

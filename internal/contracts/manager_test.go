@@ -46,8 +46,13 @@ func newTestContractManager() *contractManager {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
+	cm, _ := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
+	return cm.(*contractManager)
+}
 
-	return NewContractManager(mdb, mps, mbm, mim, mbi).(*contractManager)
+func TestNewContractManagerFail(t *testing.T) {
+	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil)
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestBroadcastFFI(t *testing.T) {

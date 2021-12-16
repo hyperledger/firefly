@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
@@ -55,10 +56,11 @@ type definitionHandlers struct {
 	broadcast broadcast.Manager
 	messaging privatemessaging.Manager
 	assets    assets.Manager
+	contracts contracts.Manager
 	txhelper  txcommon.Helper
 }
 
-func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) DefinitionHandlers {
+func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
 	return &definitionHandlers{
 		database:  di,
 		exchange:  dx,
@@ -66,6 +68,7 @@ func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.M
 		broadcast: bm,
 		messaging: pm,
 		assets:    am,
+		contracts: cm,
 		txhelper:  txcommon.NewTransactionHelper(di),
 	}
 }

@@ -2143,20 +2143,6 @@ func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	return r0
 }
 
-// InsertFFI provides a mock function with given fields: ctx, cd
-func (_m *Plugin) InsertFFI(ctx context.Context, cd *fftypes.FFI) error {
-	ret := _m.Called(ctx, cd)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
-		r0 = rf(ctx, cd)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // InsertNextPin provides a mock function with given fields: ctx, nextpin
 func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) error {
 	ret := _m.Called(ctx, nextpin)
@@ -2500,6 +2486,20 @@ func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype,
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Datatype, bool) error); ok {
 		r0 = rf(ctx, datadef, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertFFI provides a mock function with given fields: ctx, cd
+func (_m *Plugin) UpsertFFI(ctx context.Context, cd *fftypes.FFI) error {
+	ret := _m.Called(ctx, cd)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
+		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)
 	}

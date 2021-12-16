@@ -36,7 +36,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) InsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) {
+func (s *SQLCommon) UpsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (s *SQLCommon) InsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) 
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("ffi").
-			Where(sq.And{sq.Eq{"namespace": cd.Namespace}, sq.Eq{"name": cd.Name}, sq.Eq{"version": cd.Version}}),
+			Where(sq.And{sq.Eq{"id": cd.ID}}),
 	)
 	if err != nil {
 		return err

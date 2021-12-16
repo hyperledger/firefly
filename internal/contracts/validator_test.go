@@ -396,3 +396,11 @@ func TestFloatInvalid(t *testing.T) {
 	err := checkParam(context.Background(), 0.5, param)
 	assert.Regexp(t, "Input.*float64.*not expected type", err)
 }
+
+func TestIntegerInvalid(t *testing.T) {
+	param := &fftypes.FFIParam{
+		Type: "integer",
+	}
+	err := checkParam(context.Background(), false, param)
+	assert.Regexp(t, "FF10297", err)
+}
