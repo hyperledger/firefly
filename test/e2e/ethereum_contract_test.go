@@ -144,7 +144,7 @@ func queryContract(t *testing.T, client *resty.Client, contractAddress, method s
 	return result.Output
 }
 
-func invokeContract(t *testing.T, client *resty.Client, identity, contractAddress, method string, body interface{}) {
+func invokeEthContract(t *testing.T, client *resty.Client, identity, contractAddress, method string, body interface{}) {
 	path := "/contracts/" + contractAddress + "/" + method
 	resp, err := client.R().
 		SetHeader("x-firefly-from", identity).
@@ -206,7 +206,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 	assert.Equal(suite.T(), 1, len(subs))
 	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
 
-	invokeContract(suite.T(), suite.ethClient, suite.ethIdentity, suite.contractAddress, "set", &simpleStorageBody{
+	invokeEthContract(suite.T(), suite.ethClient, suite.ethIdentity, suite.contractAddress, "set", &simpleStorageBody{
 		NewValue: "1",
 	})
 
