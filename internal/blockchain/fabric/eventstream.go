@@ -50,6 +50,11 @@ type subscription struct {
 	Filter    eventFilter `json:"filter"`
 }
 
+type eventFilter struct {
+	ChaincodeID string `json:"chaincodeId"`
+	EventFilter string `json:"eventFilter"`
+}
+
 func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
 	res, err := s.client.R().
 		SetContext(ctx).
@@ -130,7 +135,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 func (s *streamManager) deleteSubscription(ctx context.Context, subID string) error {
 	res, err := s.client.R().
 		SetContext(ctx).
-		Post("/subscriptions/" + subID)
+		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}

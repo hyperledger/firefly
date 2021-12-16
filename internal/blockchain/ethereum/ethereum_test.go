@@ -1300,6 +1300,32 @@ func TestDeleteSubscription(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestDeleteSubscriptionFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscription{
+		ProtocolID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(500, "pop"))
+
+	err := e.DeleteSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
+}
+
 func TestHandleMessageContractEvent(t *testing.T) {
 	data := []byte(`
 [

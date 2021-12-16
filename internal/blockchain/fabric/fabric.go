@@ -65,11 +65,6 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
-type eventFilter struct {
-	ChaincodeID string `json:"chaincodeId"`
-	EventFilter string `json:"eventFilter"`
-}
-
 type asyncTXSubmission struct {
 	ID string `json:"id"`
 }
@@ -229,6 +224,7 @@ func (f *Fabric) Start() error {
 func (f *Fabric) Capabilities() *blockchain.Capabilities {
 	return f.capabilities
 }
+
 func (f *Fabric) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 	// Send a subscribe to our topic after each connect/reconnect
 	b, _ := json.Marshal(&fabWSCommandPayload{
@@ -245,20 +241,29 @@ func (f *Fabric) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 	return err
 }
 
-func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
-	sTransactionHash := msgJSON.GetString("transactionId")
-	payloadString := msgJSON.GetString("payload")
+func (f *Fabric) decodeJSONPayload(ctx context.Context, payloadString string) *fftypes.JSONObject {
 	bytes, err := base64.StdEncoding.DecodeString(payloadString)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad payload content: %s", payloadString)
-		return nil // move on
+		return nil
 	}
 	dataBytes := fftypes.Byteable(bytes)
 	payload, ok := dataBytes.JSONObjectOk()
 	if !ok {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad JSON payload: %s", bytes)
+		return nil
+	}
+	return &payload
+}
+
+func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	payloadString := msgJSON.GetString("payload")
+	payload := f.decodeJSONPayload(ctx, payloadString)
+	if payload == nil {
 		return nil // move on
 	}
+
+	sTransactionHash := msgJSON.GetString("transactionId")
 	signer := payload.GetString("signer")
 	ns := payload.GetString("namespace")
 	sUUIDs := payload.GetString("uuids")
@@ -305,6 +310,26 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 
 	// If there's an error dispatching the event, we must return the error and shutdown
 	return f.callbacks.BatchPinComplete(batch, signer, sTransactionHash, msgJSON)
+}
+
+func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	payloadString := msgJSON.GetString("payload")
+	payload := f.decodeJSONPayload(ctx, payloadString)
+	if payload == nil {
+		return nil // move on
+	}
+	delete(msgJSON, "payload")
+
+	sub := msgJSON.GetString("subId")
+	name := msgJSON.GetString("eventName")
+
+	event := &blockchain.ContractEvent{
+		Subscription: sub,
+		Name:         name,
+		Outputs:      *payload,
+		Info:         msgJSON,
+	}
+	return f.callbacks.ContractEvent(event)
 }
 
 func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -359,6 +384,8 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 			default:
 				l.Infof("Ignoring event with unknown name: %s", eventName)
 			}
+		} else if err := f.handleContractEvent(ctx, msgJSON); err != nil {
+			return err
 		}
 	}
 
