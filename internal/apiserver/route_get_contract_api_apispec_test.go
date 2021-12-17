@@ -36,7 +36,7 @@ func TestGetContractAPISwagger(t *testing.T) {
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/apis/magic/api", &buf)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/apis/magic/apispec", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

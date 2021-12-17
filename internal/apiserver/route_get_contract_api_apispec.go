@@ -28,7 +28,7 @@ import (
 
 var getContractAPISwagger = &oapispec.Route{
 	Name:   "getContractAPISwagger",
-	Path:   "namespaces/{ns}/apis/{apiName}/api",
+	Path:   "namespaces/{ns}/apis/{apiName}/apispec",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
