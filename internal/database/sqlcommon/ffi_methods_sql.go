@@ -41,6 +41,7 @@ var (
 		"name",
 		"params",
 		"returns",
+		"interfaceid",
 	}
 )
 

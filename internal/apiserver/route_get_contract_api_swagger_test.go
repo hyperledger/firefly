@@ -22,43 +22,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetContractInterface(t *testing.T) {
+func TestGetContractAPISwagger(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/62757af9-b539-4b77-adfa-c0e7beebbfd3", &buf)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/apis/magic/api", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetFFIByID", mock.Anything, "62757af9-b539-4b77-adfa-c0e7beebbfd3").
-		Return(&fftypes.FFI{}, nil)
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 200, res.Result().StatusCode)
-}
-
-func TestGetContractInterfaceWithChildren(t *testing.T) {
-	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/62757af9-b539-4b77-adfa-c0e7beebbfd3?fetchchildren", &buf)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	mcm.On("GetFFIByIDWithChildren", mock.Anything, "62757af9-b539-4b77-adfa-c0e7beebbfd3").
-		Return(&fftypes.FFI{}, nil)
+	mcm.On("GetContractAPISwagger", mock.Anything, "ns1", "magic").
+		Return(&openapi3.T{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

@@ -19,6 +19,7 @@ package contracts
 import (
 	"context"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
@@ -32,6 +33,7 @@ type Manager interface {
 	BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
 	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error)
+	GetFFIByIDWithChildren(ctx context.Context, id string) (*fftypes.FFI, error)
 	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 
 	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
@@ -48,6 +50,7 @@ type Manager interface {
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
+	GetContractAPISwagger(ctx context.Context, ns, apiName string) (*openapi3.T, error)
 }
 
 type contractManager struct {
@@ -56,6 +59,7 @@ type contractManager struct {
 	broadcast     broadcast.Manager
 	identity      identity.Manager
 	blockchain    blockchain.Plugin
+	swaggerGen    ContractAPISwaggerGen
 }
 
 func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
@@ -63,11 +67,12 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	return &contractManager{
-		database,
-		publicStorage,
-		broadcast,
-		identity,
-		blockchain,
+		database:      database,
+		publicStorage: publicStorage,
+		broadcast:     broadcast,
+		identity:      identity,
+		blockchain:    blockchain,
+		swaggerGen:    newContractAPISwaggerGen(),
 	}, nil
 }
 
@@ -117,6 +122,27 @@ func (cm *contractManager) GetFFI(ctx context.Context, ns, name, version string)
 
 func (cm *contractManager) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error) {
 	return cm.database.GetFFIByID(ctx, id)
+}
+
+func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id string) (*fftypes.FFI, error) {
+	ffi, err := cm.database.GetFFIByID(ctx, id)
+	if err != nil || ffi == nil {
+		return nil, err
+	}
+
+	mfb := database.FFIMethodQueryFactory.NewFilter(ctx)
+	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, mfb.Eq("interfaceid", id))
+	if err != nil {
+		return nil, err
+	}
+
+	efb := database.FFIEventQueryFactory.NewFilter(ctx)
+	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, efb.Eq("interfaceid", id))
+	if err != nil {
+		return nil, err
+	}
+
+	return ffi, nil
 }
 
 func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
@@ -174,6 +200,25 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 func (cm *contractManager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
 	filter = cm.scopeNS(ns, filter)
 	return cm.database.GetContractAPIs(ctx, ns, filter)
+}
+
+func (cm *contractManager) GetContractAPISwagger(ctx context.Context, ns, apiName string) (*openapi3.T, error) {
+
+	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
+	if err != nil {
+		return nil, err
+	}
+	if api == nil || api.Contract == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
+	}
+
+	ffi, err := cm.GetFFIByIDWithChildren(ctx, api.Contract.ID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	return cm.swaggerGen.Generate(ctx, ffi)
+
 }
 
 func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {

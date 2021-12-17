@@ -39,6 +39,7 @@ var (
 		"id",
 		"name",
 		"params",
+		"interfaceid",
 	}
 )
 

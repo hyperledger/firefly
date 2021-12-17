@@ -897,16 +897,18 @@ var FFIQueryFactory = &queryFields{
 
 // FFIMethodQueryFactory filter fields for contract methods
 var FFIMethodQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"name":      &StringField{},
+	"id":          &UUIDField{},
+	"namespace":   &StringField{},
+	"name":        &StringField{},
+	"interfaceid": &UUIDField{},
 }
 
 // FFIEventQueryFactory filter fields for contract events
 var FFIEventQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"name":      &StringField{},
+	"id":          &UUIDField{},
+	"namespace":   &StringField{},
+	"name":        &StringField{},
+	"interfaceid": &UUIDField{},
 }
 
 // ContractSubscriptionQueryFactory filter fields for contract subscriptions

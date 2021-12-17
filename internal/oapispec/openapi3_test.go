@@ -71,7 +71,14 @@ var testRoutes = []*Route{
 			}
 		}`
 		},
-		JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
+		JSONOutputSchema: func(ctx context.Context) string {
+			return `{
+			"type": "object",
+			"properties": {
+				"id": "string"
+			}
+		}`
+		},
 		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
