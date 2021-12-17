@@ -15,7 +15,6 @@ components:
           type: string
       type: object
 info:
-  description: Copyright © 2021 Kaleido, Inc.
   title: FireFly
   version: "1.0"
 openapi: 3.0.2
@@ -9643,4 +9642,4 @@ paths:
         default:
           description: ""
 servers:
-- url: http://localhost:12345/api/v1
+- url: http://localhost:12345

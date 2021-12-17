@@ -36,7 +36,7 @@ var getStatus = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.NodeStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetStatus(r.Ctx)
+		output, err = getOr(r.Ctx).GetStatus(r.Ctx)
 		return output, err
 	},
 }

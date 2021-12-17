@@ -40,6 +40,6 @@ var getTxns = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetTransactions(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetTransactions(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

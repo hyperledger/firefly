@@ -39,6 +39,6 @@ var getTokenConnectors = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenConnector{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.Assets().GetTokenConnectors(r.Ctx, r.PP["ns"])
+		return getOr(r.Ctx).Assets().GetTokenConnectors(r.Ctx, r.PP["ns"])
 	},
 }

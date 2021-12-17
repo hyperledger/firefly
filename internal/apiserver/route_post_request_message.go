@@ -41,7 +41,7 @@ var postRequestMessage = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.RequestReply(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
+		output, err = getOr(r.Ctx).RequestReply(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
 		return output, err
 	},
 	Deprecated: true, // moving to more intutitive route/return structure

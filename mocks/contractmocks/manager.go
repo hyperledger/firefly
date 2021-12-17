@@ -102,13 +102,13 @@ func (_m *Manager) DeleteContractSubscriptionByNameOrID(ctx context.Context, ns 
 	return r0
 }
 
-// GetContractAPISwagger provides a mock function with given fields: ctx, ns, apiName
-func (_m *Manager) GetContractAPISwagger(ctx context.Context, ns string, apiName string) (*openapi3.T, error) {
-	ret := _m.Called(ctx, ns, apiName)
+// GetContractAPISwagger provides a mock function with given fields: ctx, httpServerURL, ns, apiName
+func (_m *Manager) GetContractAPISwagger(ctx context.Context, httpServerURL string, ns string, apiName string) (*openapi3.T, error) {
+	ret := _m.Called(ctx, httpServerURL, ns, apiName)
 
 	var r0 *openapi3.T
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *openapi3.T); ok {
-		r0 = rf(ctx, ns, apiName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *openapi3.T); ok {
+		r0 = rf(ctx, httpServerURL, ns, apiName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*openapi3.T)
@@ -116,8 +116,8 @@ func (_m *Manager) GetContractAPISwagger(ctx context.Context, ns string, apiName
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, apiName)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, httpServerURL, ns, apiName)
 	} else {
 		r1 = ret.Error(1)
 	}

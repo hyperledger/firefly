@@ -41,6 +41,6 @@ var getContractEvents = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.ContractEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Contracts().GetContractEvents(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).Contracts().GetContractEvents(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

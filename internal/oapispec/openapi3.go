@@ -34,17 +34,24 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func SwaggerGen(ctx context.Context, routes []*Route, url string) *openapi3.T {
+type SwaggerGenConfig struct {
+	BaseURL     string
+	Title       string
+	Version     string
+	Description string
+}
+
+func SwaggerGen(ctx context.Context, routes []*Route, conf *SwaggerGenConfig) *openapi3.T {
 
 	doc := &openapi3.T{
 		OpenAPI: "3.0.2",
 		Servers: openapi3.Servers{
-			{URL: url + "/api/v1"},
+			{URL: conf.BaseURL},
 		},
 		Info: &openapi3.Info{
-			Title:       "FireFly",
-			Version:     "1.0",
-			Description: "Copyright © 2021 Kaleido, Inc.",
+			Title:       conf.Title,
+			Version:     conf.Version,
+			Description: conf.Description,
 		},
 		Components: openapi3.Components{
 			Schemas: make(openapi3.Schemas),

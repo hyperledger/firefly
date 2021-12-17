@@ -30,13 +30,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type RecursiveType struct {
-	Field1     string           `json:"field1"`
-	Field2     string           `json:"field2"`
-	Field3     string           `json:"field3"`
-	Components []*RecursiveType `json:"children,omitempty"`
-}
-
 var testRoutes = []*Route{
 	{
 		Name:   "op1",
@@ -93,7 +86,7 @@ var testRoutes = []*Route{
 		},
 		FilterFactory:   nil,
 		Description:     i18n.MsgTBD,
-		JSONInputValue:  func() interface{} { return &RecursiveType{} },
+		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusNoContent},
 		FormParams: []*FormParam{
@@ -133,7 +126,11 @@ var testRoutes = []*Route{
 func TestOpenAPI3SwaggerGen(t *testing.T) {
 	config.Reset()
 
-	doc := SwaggerGen(context.Background(), testRoutes, "http://localhost:12345/api/v1")
+	doc := SwaggerGen(context.Background(), testRoutes, &SwaggerGenConfig{
+		Title:   "UnitTest",
+		Version: "1.0",
+		BaseURL: "http://localhost:12345/api/v1",
+	})
 	err := doc.Validate(context.Background())
 	assert.NoError(t, err)
 
@@ -147,7 +144,11 @@ func TestDuplicateOperationIDCheck(t *testing.T) {
 		{Name: "op1"}, {Name: "op1"},
 	}
 	assert.PanicsWithValue(t, "Duplicate/invalid name (used as operation ID in swagger): op1", func() {
-		_ = SwaggerGen(context.Background(), routes, "http://localhost:12345/api/v1")
+		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+			Title:   "UnitTest",
+			Version: "1.0",
+			BaseURL: "http://localhost:12345/api/v1",
+		})
 	})
 }
 
@@ -166,6 +167,10 @@ func TestBadCustomSchema(t *testing.T) {
 		},
 	}
 	assert.PanicsWithValue(t, "invalid schema for *fftypes.Message: invalid character '!' looking for beginning of value", func() {
-		_ = SwaggerGen(context.Background(), routes, "http://localhost:12345/api/v1")
+		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+			Title:   "UnitTest",
+			Version: "1.0",
+			BaseURL: "http://localhost:12345/api/v1",
+		})
 	})
 }

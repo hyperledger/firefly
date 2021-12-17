@@ -67,6 +67,6 @@ var getContractAPISwagger = &oapispec.Route{
 	},
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.Contracts().GetContractAPISwagger(r.Ctx, r.PP["ns"], r.PP["apiName"])
+		return getOr(r.Ctx).Contracts().GetContractAPISwagger(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"])
 	},
 }

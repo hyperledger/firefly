@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contracts
+package oapispec
 
 import (
 	"context"
@@ -23,18 +23,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-type ContractAPISwaggerGen interface {
-	Generate(ctx context.Context, ffi *fftypes.FFI) (*openapi3.T, error)
+type FFISwaggerGen interface {
+	Generate(ctx context.Context, baseURL string, ffi *fftypes.FFI) (*openapi3.T, error)
 }
 
-// contractAPISwaggerGen generates OpenAPI3 (Swagger) definitions for FFIs
-type contractAPISwaggerGen struct {
+// ffiSwaggerGen generates OpenAPI3 (Swagger) definitions for FFIs
+type ffiSwaggerGen struct {
 }
 
-func newContractAPISwaggerGen() ContractAPISwaggerGen {
-	return &contractAPISwaggerGen{}
+func NewFFISwaggerGen() FFISwaggerGen {
+	return &ffiSwaggerGen{}
 }
 
-func (og *contractAPISwaggerGen) Generate(ctx context.Context, ffi *fftypes.FFI) (*openapi3.T, error) {
+func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, ffi *fftypes.FFI) (*openapi3.T, error) {
+
+	// routes := []*Route{}
+
 	return nil, nil
 }

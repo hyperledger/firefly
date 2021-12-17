@@ -40,7 +40,7 @@ func TestGetContractAPISwagger(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractAPISwagger", mock.Anything, "ns1", "magic").
+	mcm.On("GetContractAPISwagger", mock.Anything, "http://127.0.0.1:5000/api/v1", "ns1", "magic").
 		Return(&openapi3.T{}, nil)
 	r.ServeHTTP(res, req)
 

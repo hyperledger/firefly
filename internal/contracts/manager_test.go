@@ -25,9 +25,9 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/oapispecmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -41,7 +41,7 @@ func newTestContractManager() *contractManager {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
-	msg := &contractmocks.ContractAPISwaggerGen{}
+	mfg := &oapispecmocks.FFISwaggerGen{}
 
 	rag := mdb.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -50,7 +50,7 @@ func newTestContractManager() *contractManager {
 		}
 	}
 	cm, _ := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
-	cm.(*contractManager).swaggerGen = msg
+	cm.(*contractManager).swaggerGen = mfg
 	return cm.(*contractManager)
 }
 
@@ -1307,7 +1307,7 @@ func TestGetContractAPIs(t *testing.T) {
 
 func TestGetContractAPISwagger(t *testing.T) {
 	cm := newTestContractManager()
-	msg := cm.swaggerGen.(*contractmocks.ContractAPISwaggerGen)
+	msg := cm.swaggerGen.(*oapispecmocks.FFISwaggerGen)
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
@@ -1326,13 +1326,13 @@ func TestGetContractAPISwagger(t *testing.T) {
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
 		{ID: fftypes.NewUUID(), Name: "event1"},
 	}, nil, nil)
-	msg.On("Generate", mock.Anything, mock.Anything).Return(&openapi3.T{
+	msg.On("Generate", mock.Anything, "http://localhost:5000/api/v1/namespaces/ns1/apis/banana", mock.Anything).Return(&openapi3.T{
 		Info: &openapi3.Info{
 			Title: "utapi",
 		},
 	}, nil)
 
-	swagger, err := cm.GetContractAPISwagger(context.Background(), "ns1", "banana")
+	swagger, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
 
 	assert.NoError(t, err)
 	assert.Equal(t, "utapi", swagger.Info.Title)
@@ -1341,7 +1341,7 @@ func TestGetContractAPISwagger(t *testing.T) {
 
 func TestGetContractAPISwaggerGenFail(t *testing.T) {
 	cm := newTestContractManager()
-	msg := cm.swaggerGen.(*contractmocks.ContractAPISwaggerGen)
+	msg := cm.swaggerGen.(*oapispecmocks.FFISwaggerGen)
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
@@ -1354,9 +1354,9 @@ func TestGetContractAPISwaggerGenFail(t *testing.T) {
 	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{ID: cid}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{}, nil, nil)
-	msg.On("Generate", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msg.On("Generate", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetContractAPISwagger(context.Background(), "ns1", "banana")
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
 
 	assert.EqualError(t, err, "pop")
 	mdb.AssertExpectations(t)
@@ -1368,7 +1368,7 @@ func TestGetContractAPISwaggerNotFound(t *testing.T) {
 
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
 
-	_, err := cm.GetContractAPISwagger(context.Background(), "ns1", "banana")
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
 
 	assert.Regexp(t, "FF10143", err)
 	mdb.AssertExpectations(t)
@@ -1380,7 +1380,7 @@ func TestGetContractAPISwaggerAPIFail(t *testing.T) {
 
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetContractAPISwagger(context.Background(), "ns1", "banana")
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
 
 	assert.EqualError(t, err, "pop")
 	mdb.AssertExpectations(t)
@@ -1399,7 +1399,7 @@ func TestGetContractAPISwaggerFFIFail(t *testing.T) {
 	}, nil)
 	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetContractAPISwagger(context.Background(), "ns1", "banana")
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
 
 	assert.EqualError(t, err, "pop")
 	mdb.AssertExpectations(t)

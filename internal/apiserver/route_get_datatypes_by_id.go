@@ -40,7 +40,7 @@ var getDatatypeByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtid"])
+		output, err = getOr(r.Ctx).GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtid"])
 		return output, err
 	},
 	Deprecated: true, // replaced with getDatatypeByName

@@ -41,6 +41,6 @@ var getContractSubscriptions = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Contracts().GetContractSubscriptions(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).Contracts().GetContractSubscriptions(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

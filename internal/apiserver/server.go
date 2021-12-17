@@ -48,6 +48,8 @@ import (
 	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
 
+type orchestratorContextKey struct{}
+
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 var (
@@ -87,6 +89,10 @@ func NewAPIServer() Server {
 		apiMaxTimeout:      config.GetDuration(config.APIRequestMaxTimeout),
 		metricsEnabled:     config.GetBool(config.MetricsEnabled),
 	}
+}
+
+func getOr(ctx context.Context) orchestrator.Orchestrator {
+	return ctx.Value(orchestratorContextKey{}).(orchestrator.Orchestrator)
 }
 
 // Serve is the main entry point for the API Server
@@ -199,7 +205,7 @@ func (as *apiServer) getParams(req *http.Request, route *oapispec.Route) (queryP
 	return queryParams, pathParams
 }
 
-func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
+func (as *apiServer) routeHandler(o orchestrator.Orchestrator, apiBaseURL string, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	return as.apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
 
@@ -239,15 +245,16 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 		}
 
 		if err == nil {
+			rCtx := context.WithValue(req.Context(), orchestratorContextKey{}, o)
 			r := &oapispec.APIRequest{
-				Ctx:           req.Context(),
-				Or:            o,
+				Ctx:           rCtx,
 				Req:           req,
 				PP:            pathParams,
 				QP:            queryParams,
 				Filter:        filter,
 				Input:         jsonInput,
 				SuccessStatus: http.StatusOK,
+				APIBaseURL:    apiBaseURL,
 			}
 			if len(route.JSONOutputCodes) > 0 {
 				r.SuccessStatus = route.JSONOutputCodes[0]
@@ -417,17 +424,25 @@ func (as *apiServer) getPublicURL(conf config.Prefix, pathPrefix string) string 
 	return publicURL
 }
 
-func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) swaggerGenConf(apiBaseURL string) *oapispec.SwaggerGenConfig {
+	return &oapispec.SwaggerGenConfig{
+		BaseURL: apiBaseURL,
+		Title:   "FireFly",
+		Version: "1.0",
+	}
+}
+
+func (as *apiServer) swaggerHandler(routes []*oapispec.Route, apiBaseURL string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		vars := mux.Vars(req)
 		if vars["ext"] == ".json" {
 			res.Header().Add("Content-Type", "application/json")
-			doc := oapispec.SwaggerGen(req.Context(), routes, url)
+			doc := oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf(apiBaseURL))
 			b, _ := json.Marshal(&doc)
 			_, _ = res.Write(b)
 		} else {
 			res.Header().Add("Content-Type", "application/x-yaml")
-			doc := oapispec.SwaggerGen(req.Context(), routes, url)
+			doc := oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf(apiBaseURL))
 			b, _ := yaml.Marshal(&doc)
 			_, _ = res.Write(b)
 		}
@@ -453,15 +468,16 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 	r := mux.NewRouter()
 	as.configurePrometheusInstrumentation("apiserver", "rest", r)
 
+	publicURL := as.getPublicURL(apiConfigPrefix, "")
+	apiBaseURL := fmt.Sprintf("%s/api/v1", publicURL)
 	for _, route := range routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(o, route)).
+			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
 				Methods(route.Method)
 		}
 	}
 	ws, _ := eifactory.GetPlugin(ctx, "websockets")
-	publicURL := as.getPublicURL(apiConfigPrefix, "")
-	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, publicURL)))
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, apiBaseURL)))
 	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
@@ -480,14 +496,15 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	r := mux.NewRouter()
 	as.configurePrometheusInstrumentation("apiserver", "admin", r)
 
+	publicURL := as.getPublicURL(adminConfigPrefix, "admin")
+	apiBaseURL := fmt.Sprintf("%s/admin/api/v1", publicURL)
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, route)).
+			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
 				Methods(route.Method)
 		}
 	}
-	publicURL := as.getPublicURL(adminConfigPrefix, "admin")
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, publicURL)))
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, apiBaseURL)))
 	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 

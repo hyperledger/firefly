@@ -18,11 +18,13 @@ package contracts
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -50,7 +52,7 @@ type Manager interface {
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
-	GetContractAPISwagger(ctx context.Context, ns, apiName string) (*openapi3.T, error)
+	GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error)
 }
 
 type contractManager struct {
@@ -59,7 +61,7 @@ type contractManager struct {
 	broadcast     broadcast.Manager
 	identity      identity.Manager
 	blockchain    blockchain.Plugin
-	swaggerGen    ContractAPISwaggerGen
+	swaggerGen    oapispec.FFISwaggerGen
 }
 
 func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
@@ -72,7 +74,7 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 		broadcast:     broadcast,
 		identity:      identity,
 		blockchain:    blockchain,
-		swaggerGen:    newContractAPISwaggerGen(),
+		swaggerGen:    oapispec.NewFFISwaggerGen(),
 	}, nil
 }
 
@@ -202,7 +204,7 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, ns string, filte
 	return cm.database.GetContractAPIs(ctx, ns, filter)
 }
 
-func (cm *contractManager) GetContractAPISwagger(ctx context.Context, ns, apiName string) (*openapi3.T, error) {
+func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error) {
 
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
@@ -217,7 +219,8 @@ func (cm *contractManager) GetContractAPISwagger(ctx context.Context, ns, apiNam
 		return nil, err
 	}
 
-	return cm.swaggerGen.Generate(ctx, ffi)
+	baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, ns, apiName)
+	return cm.swaggerGen.Generate(ctx, baseURL, ffi)
 
 }
 

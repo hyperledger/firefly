@@ -40,7 +40,7 @@ var getTokenPoolByNameOrID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Assets().GetTokenPoolByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrID"])
+		output, err = getOr(r.Ctx).Assets().GetTokenPoolByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrID"])
 		return output, err
 	},
 }
