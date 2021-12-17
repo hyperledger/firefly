@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -33,7 +34,9 @@ var getContractInterface = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "interfaceId", Example: "interfaceId", Description: i18n.MsgTBD},
 	},
-	QueryParams:     nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchchildren", Example: "true", Description: i18n.MsgTBD, IsBool: true},
+	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
@@ -41,7 +44,9 @@ var getContractInterface = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-
-		return r.Or.Contracts().GetFFIByID(r.Ctx, r.PP["interfaceId"])
+		if strings.EqualFold(r.QP["fetchchildren"], "true") {
+			return getOr(r.Ctx).Contracts().GetFFIByIDWithChildren(r.Ctx, r.PP["interfaceId"])
+		}
+		return getOr(r.Ctx).Contracts().GetFFIByID(r.Ctx, r.PP["interfaceId"])
 	},
 }

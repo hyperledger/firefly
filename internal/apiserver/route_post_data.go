@@ -50,7 +50,7 @@ var postData = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 	JSONOutputCodes: []int{http.StatusCreated},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Data().UploadJSON(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataRefOrValue))
+		output, err = getOr(r.Ctx).Data().UploadJSON(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataRefOrValue))
 		return output, err
 	},
 	FormUploadHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
@@ -74,7 +74,7 @@ var postData = &oapispec.Route{
 			}
 			data.Value = fftypes.Byteable(metadata)
 		}
-		output, err = r.Or.Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
+		output, err = getOr(r.Ctx).Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err
 	},
 }

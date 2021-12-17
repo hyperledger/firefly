@@ -40,7 +40,7 @@ var putSubscription = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONInputSchema: newSubscriptionSchemaGenerator,
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.CreateUpdateSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Subscription))
+		output, err = getOr(r.Ctx).CreateUpdateSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Subscription))
 		return output, err
 	},
 }

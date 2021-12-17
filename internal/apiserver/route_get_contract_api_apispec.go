@@ -17,29 +17,56 @@
 package apiserver
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getTokenAccounts = &oapispec.Route{
-	Name:   "getTokenAccounts",
-	Path:   "namespaces/{ns}/tokens/accounts",
+var getContractAPISwagger = &oapispec.Route{
+	Name:   "getContractAPISwagger",
+	Path:   "namespaces/{ns}/apis/{apiName}/apispec",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "apiName", Example: "apiName", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.TokenBalanceQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccount{} },
+	JSONInputMask:   nil,
+	JSONOutputValue: func() interface{} { return &openapi3.T{} },
+	JSONOutputSchema: func(ctx context.Context) string {
+		return `{
+			"type": "object",
+			"properties": {
+				"openapi": {
+					"type": "string",
+					"example": "3.0.2"
+				},
+				"info": {
+					"type": "object",
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"version": {
+							"type": "string"
+						}
+					}
+				}
+			}
+		}`
+	},
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Assets().GetTokenAccounts(r.Ctx, r.PP["ns"], r.Filter))
+		return getOr(r.Ctx).Contracts().GetContractAPISwagger(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"])
 	},
 }

@@ -14,29 +14,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package oapispec
 
 import (
-	"net/http"
+	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getConfig = &oapispec.Route{
-	Name:            "getConfig",
-	Path:            "config",
-	Method:          http.MethodGet,
-	PathParams:      nil,
-	QueryParams:     nil,
-	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.JSONObject{} },
-	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output = getOr(r.Ctx).GetConfig(r.Ctx)
-		return output, nil
-	},
+type FFISwaggerGen interface {
+	Generate(ctx context.Context, baseURL string, ffi *fftypes.FFI) (*openapi3.T, error)
+}
+
+// ffiSwaggerGen generates OpenAPI3 (Swagger) definitions for FFIs
+type ffiSwaggerGen struct {
+}
+
+func NewFFISwaggerGen() FFISwaggerGen {
+	return &ffiSwaggerGen{}
+}
+
+func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, ffi *fftypes.FFI) (*openapi3.T, error) {
+
+	// routes := []*Route{}
+
+	return nil, nil
 }

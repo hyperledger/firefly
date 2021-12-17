@@ -123,7 +123,7 @@ func TestStartMetricsFail(t *testing.T) {
 
 func TestJSONHTTPServePOST201(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -149,7 +149,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -174,7 +174,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -199,7 +199,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 
 func TestJSONHTTPDefault500Error(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -224,7 +224,7 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 
 func TestStatusCodeHintMapping(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -249,7 +249,7 @@ func TestStatusCodeHintMapping(t *testing.T) {
 
 func TestStatusInvalidContentType(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -287,7 +287,7 @@ func TestNotFound(t *testing.T) {
 
 func TestTimeout(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -314,7 +314,7 @@ func TestTimeout(t *testing.T) {
 
 func TestBadTimeout(t *testing.T) {
 	mo, as := newTestServer()
-	handler := as.routeHandler(mo, &oapispec.Route{
+	handler := as.routeHandler(mo, "http://localhost:5000/api/v1", &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",

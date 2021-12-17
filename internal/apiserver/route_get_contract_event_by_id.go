@@ -45,6 +45,6 @@ var getContractEventByID = &oapispec.Route{
 		if err != nil {
 			return nil, err
 		}
-		return r.Or.Contracts().GetContractEventByID(r.Ctx, u)
+		return getOr(r.Ctx).Contracts().GetContractEventByID(r.Ctx, u)
 	},
 }

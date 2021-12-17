@@ -22,10 +22,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/oapispecmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -39,6 +41,7 @@ func newTestContractManager() *contractManager {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+	mfg := &oapispecmocks.FFISwaggerGen{}
 
 	rag := mdb.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -47,6 +50,7 @@ func newTestContractManager() *contractManager {
 		}
 	}
 	cm, _ := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
+	cm.(*contractManager).swaggerGen = mfg
 	return cm.(*contractManager)
 }
 
@@ -881,6 +885,92 @@ func TestGetFFIByID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetFFIByIDWithChildren(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+		ID: cid,
+	}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
+		{ID: fftypes.NewUUID(), Name: "method1"},
+	}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), Name: "event1"},
+	}, nil, nil)
+
+	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+
+	assert.NoError(t, err)
+	mdb.AssertExpectations(t)
+
+	assert.Equal(t, "method1", ffi.Methods[0].Name)
+	assert.Equal(t, "event1", ffi.Events[0].Name)
+}
+
+func TestGetFFIByIDWithChildrenEventsFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+		ID: cid,
+	}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
+		{ID: fftypes.NewUUID(), Name: "method1"},
+	}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
+}
+
+func TestGetFFIByIDWithChildrenMethodsFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+		ID: cid,
+	}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
+}
+
+func TestGetFFIByIDWithChildrenFFILookupFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
+}
+
+func TestGetFFIByIDWithChildrenFFINotFoundl(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(nil, nil)
+
+	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+
+	assert.NoError(t, err)
+	assert.Nil(t, ffi)
+	mdb.AssertExpectations(t)
+}
+
 func TestGetFFIs(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
@@ -1213,6 +1303,106 @@ func TestGetContractAPIs(t *testing.T) {
 	_, _, err := cm.GetContractAPIs(context.Background(), "ns1", filter)
 
 	assert.NoError(t, err)
+}
+
+func TestGetContractAPISwagger(t *testing.T) {
+	cm := newTestContractManager()
+	msg := cm.swaggerGen.(*oapispecmocks.FFISwaggerGen)
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
+		ID: fftypes.NewUUID(),
+		Contract: &fftypes.ContractIdentifier{
+			ID: cid,
+		},
+	}, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+		ID: cid,
+	}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
+		{ID: fftypes.NewUUID(), Name: "method1"},
+	}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), Name: "event1"},
+	}, nil, nil)
+	msg.On("Generate", mock.Anything, "http://localhost:5000/api/v1/namespaces/ns1/apis/banana", mock.Anything).Return(&openapi3.T{
+		Info: &openapi3.Info{
+			Title: "utapi",
+		},
+	}, nil)
+
+	swagger, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "utapi", swagger.Info.Title)
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPISwaggerGenFail(t *testing.T) {
+	cm := newTestContractManager()
+	msg := cm.swaggerGen.(*oapispecmocks.FFISwaggerGen)
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
+		ID: fftypes.NewUUID(),
+		Contract: &fftypes.ContractIdentifier{
+			ID: cid,
+		},
+	}, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{ID: cid}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{}, nil, nil)
+	msg.On("Generate", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPISwaggerNotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
+
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
+
+	assert.Regexp(t, "FF10143", err)
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPISwaggerAPIFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPISwaggerFFIFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
+		ID: fftypes.NewUUID(),
+		Contract: &fftypes.ContractIdentifier{
+			ID: cid,
+		},
+	}, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
+
+	assert.EqualError(t, err, "pop")
+	mdb.AssertExpectations(t)
 }
 
 func TestBroadcastContractAPI(t *testing.T) {

@@ -40,6 +40,6 @@ var getDataBlob = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []byte{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.Data().DownloadBLOB(r.Ctx, r.PP["ns"], r.PP["dataid"])
+		return getOr(r.Ctx).Data().DownloadBLOB(r.Ctx, r.PP["ns"], r.PP["dataid"])
 	},
 }

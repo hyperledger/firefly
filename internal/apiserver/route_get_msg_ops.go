@@ -40,6 +40,6 @@ var getMsgOps = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetMessageOperations(r.Ctx, r.PP["ns"], r.PP["msgid"]))
+		return filterResult(getOr(r.Ctx).GetMessageOperations(r.Ctx, r.PP["ns"], r.PP["msgid"]))
 	},
 }

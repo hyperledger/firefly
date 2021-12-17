@@ -50,6 +50,6 @@ var getTokenTransfers = &oapispec.Route{
 					Condition(fb.Eq("from", fromOrTo)).
 					Condition(fb.Eq("to", fromOrTo)))
 		}
-		return filterResult(r.Or.Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], filter))
+		return filterResult(getOr(r.Ctx).Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], filter))
 	},
 }

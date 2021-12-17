@@ -45,6 +45,6 @@ var postTokenBurn = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().BurnTokens(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
+		return getOr(r.Ctx).Assets().BurnTokens(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
 	},
 }

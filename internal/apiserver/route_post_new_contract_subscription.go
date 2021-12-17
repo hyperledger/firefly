@@ -40,6 +40,6 @@ var postNewContractSubscription = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.Contracts().AddContractSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.ContractSubscriptionInput))
+		return getOr(r.Ctx).Contracts().AddContractSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.ContractSubscriptionInput))
 	},
 }

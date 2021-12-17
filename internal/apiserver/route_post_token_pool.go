@@ -45,6 +45,6 @@ var postTokenPool = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().CreateTokenPool(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenPool), waitConfirm)
+		return getOr(r.Ctx).Assets().CreateTokenPool(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenPool), waitConfirm)
 	},
 }

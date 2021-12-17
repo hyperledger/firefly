@@ -37,6 +37,6 @@ var getConfigRecords = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.ConfigRecord{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetConfigRecords(r.Ctx, r.Filter))
+		return filterResult(getOr(r.Ctx).GetConfigRecords(r.Ctx, r.Filter))
 	},
 }

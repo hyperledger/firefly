@@ -20,14 +20,12 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type APIRequest struct {
 	Ctx           context.Context
-	Or            orchestrator.Orchestrator
 	Req           *http.Request
 	QP            map[string]string
 	PP            map[string]string
@@ -36,4 +34,5 @@ type APIRequest struct {
 	Input         interface{}
 	Part          *fftypes.Multipart
 	SuccessStatus int
+	APIBaseURL    string
 }

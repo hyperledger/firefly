@@ -41,6 +41,6 @@ var getTokenAccountPools = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccountPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenAccountPools(r.Ctx, r.PP["ns"], r.PP["key"], r.Filter))
+		return filterResult(getOr(r.Ctx).Assets().GetTokenAccountPools(r.Ctx, r.PP["ns"], r.PP["key"], r.Filter))
 	},
 }

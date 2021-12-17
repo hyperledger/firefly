@@ -40,7 +40,7 @@ var postRegisterNode = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		// This (old) route is always async, and returns the message
-		_, output, err = r.Or.NetworkMap().RegisterNode(r.Ctx, false)
+		_, output, err = getOr(r.Ctx).NetworkMap().RegisterNode(r.Ctx, false)
 		return output, err
 	},
 	Deprecated: true, // moving to more intutitive route/return structure
