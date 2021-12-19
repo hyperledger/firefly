@@ -35,9 +35,35 @@ func NewFFISwaggerGen() FFISwaggerGen {
 	return &ffiSwaggerGen{}
 }
 
-func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, ffi *fftypes.FFI) (*openapi3.T, error) {
+func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, ffi *fftypes.FFI) (swagger *openapi3.T, err error) {
 
 	// routes := []*Route{}
 
+	// for _, method := range ffi.Methods {
+	// 	if routes, err = og.addMethod(ctx, routes, method); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+
+	// for _, event := range ffi.Events {
+	// 	if routes, err = og.addEvent(ctx, routes, event); err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+
 	return nil, nil
 }
+
+// func (og *ffiSwaggerGen) addMethod(ctx context.Context, routes []*Route, method *fftypes.FFIMethod) ([]*Route, error) {
+
+// 	routes = append(routes, &Route{
+// 		Name: fmt.Sprintf("method_%s_invoke", method.Name),
+// 	})
+
+// 	return routes, nil
+// }
+
+// func (og *ffiSwaggerGen) addEvent(ctx context.Context, routes []*Route, event *fftypes.FFIEvent) ([]*Route, error) {
+
+// 	return routes, nil
+// }

@@ -1039,8 +1039,8 @@ func TestAddSubscription(t *testing.T) {
 				"channel":   "firefly",
 				"chaincode": "mycode",
 			}.String()),
+			Event: &fftypes.FFISerializedEvent{},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
@@ -1067,8 +1067,8 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
 			Location: fftypes.Byteable{},
+			Event:    &fftypes.FFISerializedEvent{},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	err := e.AddSubscription(context.Background(), sub)
@@ -1095,8 +1095,8 @@ func TestAddSubscriptionFail(t *testing.T) {
 				"channel":   "firefly",
 				"chaincode": "mycode",
 			}.String()),
+			Event: &fftypes.FFISerializedEvent{},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,

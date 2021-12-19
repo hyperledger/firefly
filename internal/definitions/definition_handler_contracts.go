@@ -25,13 +25,25 @@ import (
 )
 
 func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) (valid bool, err error) {
+	if err := dh.contracts.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
+		log.L(ctx).Warnf("Unable to process FFI %s - validate failed: %s", ffi.ID, err)
+		return false, nil
+	}
+
 	err = dh.database.UpsertFFI(ctx, ffi)
 	if err != nil {
 		return false, err
 	}
 
 	for _, method := range ffi.Methods {
-		err := dh.database.UpsertFFIMethod(ctx, ffi.Namespace, ffi.ID, method)
+		err := dh.database.UpsertFFIMethod(ctx, method)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	for _, event := range ffi.Events {
+		err := dh.database.UpsertFFIEvent(ctx, event)
 		if err != nil {
 			return false, err
 		}

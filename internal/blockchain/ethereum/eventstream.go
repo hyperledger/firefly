@@ -136,7 +136,7 @@ func (s *streamManager) createInstanceSubscription(ctx context.Context, instance
 	return &sub, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream string, event fftypes.FFIEvent) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream string, event fftypes.FFIEventDefinition) (*subscription, error) {
 	inputs := make([]subscriptionEventArg, 0, len(event.Params))
 	for _, param := range event.Params {
 		paramDetails, err := parseParamDetails(ctx, param.Details)

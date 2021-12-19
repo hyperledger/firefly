@@ -16,18 +16,48 @@
 
 package fftypes
 
+import (
+	"context"
+	"database/sql/driver"
+	"encoding/json"
+
+	"github.com/hyperledger/firefly/internal/i18n"
+)
+
 type ContractSubscription struct {
-	ID         *UUID    `json:"id,omitempty"`
-	Interface  *UUID    `json:"interface,omitempty"`
-	Event      *UUID    `json:"event,omitempty"`
-	Namespace  string   `json:"namespace,omitempty"`
-	Name       string   `json:"name,omitempty"`
-	ProtocolID string   `json:"protocolId,omitempty"`
-	Location   Byteable `json:"location,omitempty"`
-	Created    *FFTime  `json:"created,omitempty"`
+	ID         *UUID               `json:"id,omitempty"`
+	Interface  *UUID               `json:"interface,omitempty"`
+	Namespace  string              `json:"namespace,omitempty"`
+	Name       string              `json:"name,omitempty"`
+	ProtocolID string              `json:"protocolId,omitempty"`
+	Location   Byteable            `json:"location,omitempty"`
+	Created    *FFTime             `json:"created,omitempty"`
+	Event      *FFISerializedEvent `json:"event,omitempty"`
 }
 
 type ContractSubscriptionInput struct {
 	ContractSubscription
-	Event FFIEvent `json:"event,omitempty"`
+	EventID *UUID `json:"eventId,omitempty"`
+}
+
+type FFISerializedEvent struct {
+	FFIEventDefinition
+}
+
+// Scan implements sql.Scanner
+func (fse *FFISerializedEvent) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case nil:
+		fse = nil
+		return nil
+	case []byte:
+		return json.Unmarshal(src, &fse)
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, fse)
+	}
+}
+
+func (fse FFISerializedEvent) Value() (driver.Value, error) {
+	bytes, _ := json.Marshal(fse)
+	return bytes, nil
 }

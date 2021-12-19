@@ -54,12 +54,14 @@ func TestValidateFFI(t *testing.T) {
 		},
 		Events: []*FFIEvent{
 			{
-				Name: "sum",
-				Params: []*FFIParam{
-					{
-						Name:    "z",
-						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+				FFIEventDefinition: FFIEventDefinition{
+					Name: "sum",
+					Params: []*FFIParam{
+						{
+							Name:    "z",
+							Type:    "integer",
+							Details: []byte(`{"type": "uint256"}`),
+						},
 					},
 				},
 			},

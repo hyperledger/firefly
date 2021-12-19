@@ -395,11 +395,18 @@ paths:
             application/json:
               schema:
                 properties:
+                  description:
+                    type: string
                   events:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
                         name:
+                          type: string
+                        namespace:
                           type: string
                         params:
                           items:
@@ -417,6 +424,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                       type: object
                     type: array
                   id: {}
@@ -424,7 +433,14 @@ paths:
                   methods:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
                         params:
                           items:
                             properties:
@@ -441,6 +457,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                         returns:
                           items:
                             properties:
@@ -673,7 +691,14 @@ paths:
                   type: string
                 method:
                   properties:
+                    contract: {}
+                    description:
+                      type: string
                     id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
                     params:
                       items:
                         properties:
@@ -690,6 +715,8 @@ paths:
                             type: string
                         type: object
                       type: array
+                    pathname:
+                      type: string
                     returns:
                       items:
                         properties:
@@ -1573,11 +1600,18 @@ paths:
             application/json:
               schema:
                 properties:
+                  description:
+                    type: string
                   events:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
                         name:
+                          type: string
+                        namespace:
                           type: string
                         params:
                           items:
@@ -1595,6 +1629,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                       type: object
                     type: array
                   id: {}
@@ -1602,7 +1638,14 @@ paths:
                   methods:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
                         params:
                           items:
                             properties:
@@ -1619,6 +1662,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                         returns:
                           items:
                             properties:
@@ -1676,11 +1721,18 @@ paths:
           application/json:
             schema:
               properties:
+                description:
+                  type: string
                 events:
                   items:
                     properties:
+                      contract: {}
+                      description:
+                        type: string
                       id: {}
                       name:
+                        type: string
+                      namespace:
                         type: string
                       params:
                         items:
@@ -1698,12 +1750,21 @@ paths:
                               type: string
                           type: object
                         type: array
+                      pathname:
+                        type: string
                     type: object
                   type: array
                 methods:
                   items:
                     properties:
+                      contract: {}
+                      description:
+                        type: string
                       id: {}
+                      name:
+                        type: string
+                      namespace:
+                        type: string
                       params:
                         items:
                           properties:
@@ -1720,6 +1781,8 @@ paths:
                               type: string
                           type: object
                         type: array
+                      pathname:
+                        type: string
                       returns:
                         items:
                           properties:
@@ -1749,11 +1812,18 @@ paths:
             application/json:
               schema:
                 properties:
+                  description:
+                    type: string
                   events:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
                         name:
+                          type: string
+                        namespace:
                           type: string
                         params:
                           items:
@@ -1771,6 +1841,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                       type: object
                     type: array
                   id: {}
@@ -1778,7 +1850,14 @@ paths:
                   methods:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
                         params:
                           items:
                             properties:
@@ -1795,6 +1874,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                         returns:
                           items:
                             properties:
@@ -1861,11 +1942,18 @@ paths:
             application/json:
               schema:
                 properties:
+                  description:
+                    type: string
                   events:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
                         name:
+                          type: string
+                        namespace:
                           type: string
                         params:
                           items:
@@ -1883,6 +1971,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                       type: object
                     type: array
                   id: {}
@@ -1890,7 +1980,14 @@ paths:
                   methods:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
                         params:
                           items:
                             properties:
@@ -1907,6 +2004,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                         returns:
                           items:
                             properties:
@@ -1974,11 +2073,18 @@ paths:
             application/json:
               schema:
                 properties:
+                  description:
+                    type: string
                   events:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
                         name:
+                          type: string
+                        namespace:
                           type: string
                         params:
                           items:
@@ -1996,6 +2102,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                       type: object
                     type: array
                   id: {}
@@ -2003,7 +2111,14 @@ paths:
                   methods:
                     items:
                       properties:
+                        contract: {}
+                        description:
+                          type: string
                         id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
                         params:
                           items:
                             properties:
@@ -2020,6 +2135,8 @@ paths:
                                 type: string
                             type: object
                           type: array
+                        pathname:
+                          type: string
                         returns:
                           items:
                             properties:
@@ -2087,7 +2204,14 @@ paths:
                   type: string
                 method:
                   properties:
+                    contract: {}
+                    description:
+                      type: string
                     id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
                     params:
                       items:
                         properties:
@@ -2104,6 +2228,8 @@ paths:
                             type: string
                         type: object
                       type: array
+                    pathname:
+                      type: string
                     returns:
                       items:
                         properties:
@@ -2223,7 +2349,29 @@ paths:
               schema:
                 properties:
                   created: {}
-                  event: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
                   id: {}
                   interface: {}
                   location:
@@ -2265,7 +2413,8 @@ paths:
                 created: {}
                 event:
                   properties:
-                    id: {}
+                    description:
+                      type: string
                     name:
                       type: string
                     params:
@@ -2285,6 +2434,7 @@ paths:
                         type: object
                       type: array
                   type: object
+                eventId: {}
                 id: {}
                 interface: {}
                 location:
@@ -2304,7 +2454,29 @@ paths:
               schema:
                 properties:
                   created: {}
-                  event: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
                   id: {}
                   interface: {}
                   location:
@@ -2379,7 +2551,29 @@ paths:
               schema:
                 properties:
                   created: {}
-                  event: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
                   id: {}
                   interface: {}
                   location:

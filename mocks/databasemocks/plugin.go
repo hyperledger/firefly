@@ -826,13 +826,13 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, erro
 	return r0, r1
 }
 
-// GetFFIEvent provides a mock function with given fields: ctx, ns, contractID, name
-func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error) {
-	ret := _m.Called(ctx, ns, contractID, name)
+// GetFFIEvent provides a mock function with given fields: ctx, ns, contractID, pathName
+func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error) {
+	ret := _m.Called(ctx, ns, contractID, pathName)
 
 	var r0 *fftypes.FFIEvent
 	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIEvent); ok {
-		r0 = rf(ctx, ns, contractID, name)
+		r0 = rf(ctx, ns, contractID, pathName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.FFIEvent)
@@ -841,7 +841,30 @@ func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, contractID *fftype
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
-		r1 = rf(ctx, ns, contractID, name)
+		r1 = rf(ctx, ns, contractID, pathName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetFFIEventByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFIEvent); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFIEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2507,13 +2530,13 @@ func (_m *Plugin) UpsertFFI(ctx context.Context, cd *fftypes.FFI) error {
 	return r0
 }
 
-// UpsertFFIEvent provides a mock function with given fields: ctx, ns, contractID, method
-func (_m *Plugin) UpsertFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIEvent) error {
-	ret := _m.Called(ctx, ns, contractID, method)
+// UpsertFFIEvent provides a mock function with given fields: ctx, method
+func (_m *Plugin) UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error {
+	ret := _m.Called(ctx, method)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *fftypes.FFIEvent) error); ok {
-		r0 = rf(ctx, ns, contractID, method)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEvent) error); ok {
+		r0 = rf(ctx, method)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2521,13 +2544,13 @@ func (_m *Plugin) UpsertFFIEvent(ctx context.Context, ns string, contractID *fft
 	return r0
 }
 
-// UpsertFFIMethod provides a mock function with given fields: ctx, ns, contractID, method
-func (_m *Plugin) UpsertFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error {
-	ret := _m.Called(ctx, ns, contractID, method)
+// UpsertFFIMethod provides a mock function with given fields: ctx, method
+func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+	ret := _m.Called(ctx, method)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *fftypes.FFIMethod) error); ok {
-		r0 = rf(ctx, ns, contractID, method)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod) error); ok {
+		r0 = rf(ctx, method)
 	} else {
 		r0 = ret.Error(0)
 	}

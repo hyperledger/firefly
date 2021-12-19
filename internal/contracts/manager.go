@@ -43,7 +43,7 @@ type Manager interface {
 	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 
-	ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error
+	ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error
 	ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error
 
 	AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error)
@@ -92,7 +92,7 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 		method.ID = fftypes.NewUUID()
 	}
 
-	if err := cm.ValidateFFI(ctx, ffi); err != nil {
+	if err := cm.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
 		return nil, err
 	}
 
@@ -251,14 +251,36 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 	return api, nil
 }
 
-func (cm *contractManager) ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error {
+func (cm *contractManager) uniquePathName(name string, usedNames map[string]bool) string {
+	pathName := name
+	for counter := 1; ; counter++ {
+		if _, existing := usedNames[pathName]; existing {
+			pathName = fmt.Sprintf("%s_%d", name, counter)
+		} else {
+			usedNames[pathName] = true
+			return pathName
+		}
+	}
+}
+
+func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error {
+
+	methodPathNames := map[string]bool{}
 	for _, method := range ffi.Methods {
+		method.Contract = ffi.ID
+		method.Namespace = ffi.Namespace
+		method.Pathname = cm.uniquePathName(method.Name, methodPathNames)
 		if err := cm.validateFFIMethod(ctx, method); err != nil {
 			return err
 		}
 	}
+
+	eventPathNames := map[string]bool{}
 	for _, event := range ffi.Events {
-		if err := cm.validateFFIEvent(ctx, event); err != nil {
+		event.Contract = ffi.ID
+		event.Namespace = ffi.Namespace
+		event.Pathname = cm.uniquePathName(event.Name, eventPathNames)
+		if err := cm.validateFFIEvent(ctx, &event.FFIEventDefinition); err != nil {
 			return err
 		}
 	}
@@ -266,6 +288,9 @@ func (cm *contractManager) ValidateFFI(ctx context.Context, ffi *fftypes.FFI) er
 }
 
 func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+	if method.Name == "" {
+		return i18n.NewError(ctx, i18n.MsgMethodNameMustBeSet)
+	}
 	for _, param := range method.Params {
 		if err := cm.blockchain.ValidateFFIParam(ctx, param); err != nil {
 			return err
@@ -279,7 +304,10 @@ func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftype
 	return nil
 }
 
-func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEvent) error {
+func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEventDefinition) error {
+	if event.Name == "" {
+		return i18n.NewError(ctx, i18n.MsgEventNameMustBeSet)
+	}
 	for _, param := range event.Params {
 		if err := cm.blockchain.ValidateFFIParam(ctx, param); err != nil {
 			return err
@@ -309,8 +337,6 @@ func (cm *contractManager) ValidateInvokeContractRequest(ctx context.Context, re
 func (cm *contractManager) AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error) {
 	sub.ID = fftypes.NewUUID()
 	sub.Namespace = ns
-	sub.Event.ID = fftypes.NewUUID()
-	sub.ContractSubscription.Event = sub.Event.ID
 
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
@@ -327,22 +353,35 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 		}
 	}
 
-	if err := cm.validateFFIEvent(ctx, &sub.Event); err != nil {
+	if sub.Event == nil {
+		if sub.EventID == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgSubscriptionNoEvent)
+		}
+
+		event, err := cm.database.GetFFIEventByID(ctx, sub.EventID)
+		if err != nil {
+			return nil, err
+		}
+		if event == nil || event.Namespace != sub.Namespace {
+			return nil, i18n.NewError(ctx, i18n.MsgSubscriptionEventNotFound, sub.Namespace, sub.EventID)
+		}
+		// Copy the event definition into the subscription
+		sub.Event = &fftypes.FFISerializedEvent{
+			FFIEventDefinition: event.FFIEventDefinition,
+		}
+	}
+
+	if err := cm.validateFFIEvent(ctx, &sub.Event.FFIEventDefinition); err != nil {
 		return nil, err
 	}
 	if err = cm.blockchain.AddSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
 
-	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		if err = cm.database.UpsertFFIEvent(ctx, ns, nil, &sub.Event); err != nil {
-			return err
-		}
-		if err = cm.database.UpsertContractSubscription(ctx, &sub.ContractSubscription); err != nil {
-			return err
-		}
-		return nil
-	})
+	if err = cm.database.UpsertContractSubscription(ctx, &sub.ContractSubscription); err != nil {
+		return nil, err
+	}
+
 	return &sub.ContractSubscription, err
 }
 

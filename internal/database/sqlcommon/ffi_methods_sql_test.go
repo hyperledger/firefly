@@ -38,8 +38,12 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	contractID := fftypes.NewUUID()
 	methodID := fftypes.NewUUID()
 	method := &fftypes.FFIMethod{
-		ID:   methodID,
-		Name: "Set",
+		ID:          methodID,
+		Contract:    contractID,
+		Name:        "Set",
+		Namespace:   "ns",
+		Pathname:    "Set_1",
+		Description: "Sets things",
 		Params: fftypes.FFIParams{
 			{
 				Name:    "value",
@@ -59,11 +63,11 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIMethods, fftypes.ChangeEventTypeCreated, "ns", methodID).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIMethods, fftypes.ChangeEventTypeUpdated, "ns", methodID).Return()
 
-	err := s.UpsertFFIMethod(ctx, "ns", contractID, method)
+	err := s.UpsertFFIMethod(ctx, method)
 	assert.NoError(t, err)
 
 	// Query back the method (by name)
-	methodRead, err := s.GetFFIMethod(ctx, "ns", contractID, "Set")
+	methodRead, err := s.GetFFIMethod(ctx, "ns", contractID, "Set_1")
 	assert.NoError(t, err)
 	assert.NotNil(t, methodRead)
 	methodJson, _ := json.Marshal(&method)
@@ -85,11 +89,11 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 
 	// Update method
 	method.Params = fftypes.FFIParams{}
-	err = s.UpsertFFIMethod(ctx, "ns", contractID, method)
+	err = s.UpsertFFIMethod(ctx, method)
 	assert.NoError(t, err)
 
 	// Query back the method (by name)
-	methodRead, err = s.GetFFIMethod(ctx, "ns", contractID, "Set")
+	methodRead, err = s.GetFFIMethod(ctx, "ns", contractID, "Set_1")
 	assert.NoError(t, err)
 	assert.NotNil(t, methodRead)
 	methodJson, _ = json.Marshal(&method)
@@ -102,7 +106,7 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 func TestFFIMethodDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIMethod(context.Background(), "ns1", fftypes.NewUUID(), &fftypes.FFIMethod{})
+	err := s.UpsertFFIMethod(context.Background(), &fftypes.FFIMethod{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -111,7 +115,7 @@ func TestFFIMethodDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIMethod(context.Background(), "ns1", fftypes.NewUUID(), &fftypes.FFIMethod{})
+	err := s.UpsertFFIMethod(context.Background(), &fftypes.FFIMethod{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -124,7 +128,7 @@ func TestFFIMethodDBFailInsert(t *testing.T) {
 	event := &fftypes.FFIMethod{
 		ID: fftypes.NewUUID(),
 	}
-	err := s.UpsertFFIMethod(context.Background(), "ns1", fftypes.NewUUID(), event)
+	err := s.UpsertFFIMethod(context.Background(), event)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -139,7 +143,7 @@ func TestFFIMethodDBFailUpdate(t *testing.T) {
 	event := &fftypes.FFIMethod{
 		ID: fftypes.NewUUID(),
 	}
-	err := s.UpsertFFIMethod(context.Background(), "ns1", fftypes.NewUUID(), event)
+	err := s.UpsertFFIMethod(context.Background(), event)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -178,8 +182,8 @@ func TestGetFFIMethods(t *testing.T) {
 		fb.Eq("name", "sum"),
 	)
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "name", "params", "returns"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "sum", []byte(`[]`), []byte(`[]`))
+	rows := sqlmock.NewRows(ffiMethodsColumns).
+		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`), []byte(`[]`))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetFFIMethods(context.Background(), filter)
 	assert.NoError(t, err)
@@ -222,8 +226,8 @@ func TestGetFFIMethodsQueryResultFail(t *testing.T) {
 
 func TestGetFFIMethod(t *testing.T) {
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "name", "params", "returns"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "sum", []byte(`[]`), []byte(`[]`))
+	rows := sqlmock.NewRows(ffiMethodsColumns).
+		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`), []byte(`[]`))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	FFIMethod, err := s.GetFFIMethod(context.Background(), "ns1", fftypes.NewUUID(), "math")
 	assert.NoError(t, err)

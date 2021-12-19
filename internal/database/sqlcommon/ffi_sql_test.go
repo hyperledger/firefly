@@ -39,10 +39,11 @@ func TestFFIE2EWithDB(t *testing.T) {
 	id := fftypes.NewUUID()
 
 	ffi := &fftypes.FFI{
-		ID:        id,
-		Namespace: "ns1",
-		Name:      "math",
-		Version:   "v1.0.0",
+		ID:          id,
+		Namespace:   "ns1",
+		Name:        "math",
+		Version:     "v1.0.0",
+		Description: "Does things and stuff",
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
@@ -175,8 +176,8 @@ func TestFFIDBNoRows(t *testing.T) {
 func TestGetFFIs(t *testing.T) {
 	fb := database.FFIQueryFactory.NewFilter(context.Background())
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "namespace", "name", "version"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0")
+	rows := sqlmock.NewRows(ffiColumns).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetFFIs(context.Background(), "ns1", fb.And())
 	assert.NoError(t, err)
@@ -213,8 +214,8 @@ func TestGetFFIsQueryResultFail(t *testing.T) {
 
 func TestGetFFI(t *testing.T) {
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "namespace", "name", "version"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0")
+	rows := sqlmock.NewRows(ffiColumns).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	ffi, err := s.GetFFI(context.Background(), "ns1", "math", "v1.0.0")
 	assert.NoError(t, err)

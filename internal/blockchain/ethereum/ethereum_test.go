@@ -1232,16 +1232,18 @@ func TestAddSubscription(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-		},
-		Event: fftypes.FFIEvent{
-			Name: "Changed",
-			Params: fftypes.FFIParams{
-				{
-					Name: "value",
-					Type: "string",
-					Details: fftypes.Byteable(fftypes.JSONObject{
-						"type": "string",
-					}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Changed",
+					Params: fftypes.FFIParams{
+						{
+							Name: "value",
+							Type: "string",
+							Details: fftypes.Byteable(fftypes.JSONObject{
+								"type": "string",
+							}.String()),
+						},
+					},
 				},
 			},
 		},
@@ -1272,14 +1274,16 @@ func TestAddSubscriptionBaddParamDetails(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-		},
-		Event: fftypes.FFIEvent{
-			Name: "Changed",
-			Params: fftypes.FFIParams{
-				{
-					Name:    "value",
-					Type:    "string",
-					Details: fftypes.Byteable{},
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:    "value",
+							Type:    "string",
+							Details: fftypes.Byteable{},
+						},
+					},
 				},
 			},
 		},
@@ -1309,8 +1313,8 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
 			Location: fftypes.Byteable{},
+			Event:    &fftypes.FFISerializedEvent{},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	err := e.AddSubscription(context.Background(), sub)
@@ -1336,8 +1340,8 @@ func TestAddSubscriptionFail(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Event: &fftypes.FFISerializedEvent{},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,

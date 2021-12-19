@@ -32,7 +32,7 @@ var (
 	contractSubscriptionColumns = []string{
 		"id",
 		"interface_id",
-		"event_id",
+		"event",
 		"namespace",
 		"name",
 		"protocol_id",
@@ -41,7 +41,6 @@ var (
 	}
 	contractSubscriptionFilterFieldMap = map[string]string{
 		"interfaceid": "interface_id",
-		"eventid":     "event_id",
 		"protocolid":  "protocol_id",
 	}
 )
@@ -69,7 +68,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 			sq.Update("contractsubscriptions").
 				Set("id", sub.ID).
 				Set("interface_id", sub.Interface).
-				Set("event_id", sub.Event).
+				Set("event", sub.Event).
 				Set("namespace", sub.Namespace).
 				Set("name", sub.Name).
 				Set("location", sub.Location).

@@ -46,22 +46,24 @@ type simpleStorageBody struct {
 }
 
 var changedEvent = &fftypes.FFIEvent{
-	Name: "Changed",
-	Params: fftypes.FFIParams{
-		{
-			Name: "_from",
-			Type: "string",
-			Details: fftypes.Byteable(fftypes.JSONObject{
-				"type":    "address",
-				"indexed": true,
-			}.String()),
-		},
-		{
-			Name: "_value",
-			Type: "integer",
-			Details: fftypes.Byteable(fftypes.JSONObject{
-				"type": "uint256",
-			}.String()),
+	FFIEventDefinition: fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: fftypes.FFIParams{
+			{
+				Name: "_from",
+				Type: "string",
+				Details: fftypes.Byteable(fftypes.JSONObject{
+					"type":    "address",
+					"indexed": true,
+				}.String()),
+			},
+			{
+				Name: "_value",
+				Type: "integer",
+				Details: fftypes.Byteable(fftypes.JSONObject{
+					"type": "uint256",
+				}.String()),
+			},
 		},
 	},
 }

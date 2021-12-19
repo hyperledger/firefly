@@ -38,13 +38,19 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	contractID := fftypes.NewUUID()
 	eventID := fftypes.NewUUID()
 	event := &fftypes.FFIEvent{
-		ID:   eventID,
-		Name: "Changed",
-		Params: fftypes.FFIParams{
-			{
-				Name:    "value",
-				Type:    "integer",
-				Details: []byte("\"internal-type-info\""),
+		ID:        eventID,
+		Contract:  contractID,
+		Namespace: "ns",
+		Pathname:  "Changed_1",
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name:        "Changed",
+			Description: "Things changed",
+			Params: fftypes.FFIParams{
+				{
+					Name:    "value",
+					Type:    "integer",
+					Details: []byte("\"internal-type-info\""),
+				},
 			},
 		},
 	}
@@ -52,11 +58,11 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, fftypes.ChangeEventTypeCreated, "ns", eventID).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, fftypes.ChangeEventTypeUpdated, "ns", eventID).Return()
 
-	err := s.UpsertFFIEvent(ctx, "ns", contractID, event)
+	err := s.UpsertFFIEvent(ctx, event)
 	assert.NoError(t, err)
 
 	// Query back the event (by name)
-	eventRead, err := s.GetFFIEvent(ctx, "ns", contractID, "Changed")
+	eventRead, err := s.GetFFIEvent(ctx, "ns", contractID, "Changed_1")
 	assert.NoError(t, err)
 	assert.NotNil(t, eventRead)
 	eventJson, _ := json.Marshal(&event)
@@ -78,11 +84,11 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 
 	// Update event
 	event.Params = fftypes.FFIParams{}
-	err = s.UpsertFFIEvent(ctx, "ns", contractID, event)
+	err = s.UpsertFFIEvent(ctx, event)
 	assert.NoError(t, err)
 
 	// Query back the event (by name)
-	eventRead, err = s.GetFFIEvent(ctx, "ns", contractID, "Changed")
+	eventRead, err = s.GetFFIEventByID(ctx, event.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, eventRead)
 	eventJson, _ = json.Marshal(&event)
@@ -95,7 +101,7 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 func TestFFIEventDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIEvent(context.Background(), "ns1", fftypes.NewUUID(), &fftypes.FFIEvent{})
+	err := s.UpsertFFIEvent(context.Background(), &fftypes.FFIEvent{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -104,7 +110,7 @@ func TestFFIEventDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIEvent(context.Background(), "ns1", fftypes.NewUUID(), &fftypes.FFIEvent{})
+	err := s.UpsertFFIEvent(context.Background(), &fftypes.FFIEvent{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -117,7 +123,7 @@ func TestFFIEventDBFailInsert(t *testing.T) {
 	event := &fftypes.FFIEvent{
 		ID: fftypes.NewUUID(),
 	}
-	err := s.UpsertFFIEvent(context.Background(), "ns1", fftypes.NewUUID(), event)
+	err := s.UpsertFFIEvent(context.Background(), event)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -132,7 +138,7 @@ func TestFFIEventDBFailUpdate(t *testing.T) {
 	event := &fftypes.FFIEvent{
 		ID: fftypes.NewUUID(),
 	}
-	err := s.UpsertFFIEvent(context.Background(), "ns1", fftypes.NewUUID(), event)
+	err := s.UpsertFFIEvent(context.Background(), event)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -157,7 +163,7 @@ func TestFFIEventDBSelectFail(t *testing.T) {
 func TestFFIEventDBNoRows(t *testing.T) {
 	s, mock := newMockProvider().init()
 	id := fftypes.NewUUID()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "name", "params"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(ffiEventsColumns))
 	_, err := s.GetFFIEvent(context.Background(), id.String(), fftypes.NewUUID(), "sum")
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -171,8 +177,8 @@ func TestGetFFIEvents(t *testing.T) {
 		fb.Eq("name", "sum"),
 	)
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "name", "params"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "sum", []byte(`[]`))
+	rows := sqlmock.NewRows(ffiEventsColumns).
+		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetFFIEvents(context.Background(), filter)
 	assert.NoError(t, err)
@@ -215,8 +221,8 @@ func TestGetFFIEventsQueryResultFail(t *testing.T) {
 
 func TestGetFFIEvent(t *testing.T) {
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "name", "params"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "sum", []byte(`[]`))
+	rows := sqlmock.NewRows(ffiEventsColumns).
+		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	FFIEvent, err := s.GetFFIEvent(context.Background(), "ns1", fftypes.NewUUID(), "math")
 	assert.NoError(t, err)
