@@ -384,14 +384,27 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 		if err := json.Unmarshal(c.Value, &val); err != nil {
 			return err
 		}
-		switch val.(type) {
+		switch v := val.(type) {
 		case map[string]interface{}:
 			_ = s.ReadConfig(bytes.NewBuffer(c.Value))
 			for _, k := range s.AllKeys() {
-				viper.Set(fmt.Sprintf("%s.%s", c.Key, k), s.Get(k))
+				value := s.Get(k)
+				if reflect.TypeOf(value).Kind() == reflect.Slice {
+					configSlice := value.([]interface{})
+					for i := range configSlice {
+						viper.Set(fmt.Sprintf("%s.%s.%d", c.Key, k, i), configSlice[i])
+					}
+				} else {
+					viper.Set(fmt.Sprintf("%s.%s", c.Key, k), value)
+				}
+			}
+		case []interface{}:
+			_ = s.ReadConfig(bytes.NewBuffer(c.Value))
+			for i := range v {
+				viper.Set(fmt.Sprintf("%s.%d", c.Key, i), v[i])
 			}
 		default:
-			viper.Set(c.Key, val)
+			viper.Set(c.Key, v)
 		}
 	}
 	return nil
