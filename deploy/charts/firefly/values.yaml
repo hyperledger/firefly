@@ -26,7 +26,7 @@ config:
   fireflyContractAddress: "/instances/contractAddress"
 
   # The name of the Fabric chaincode deployment for the FireFly chaincode
-  fireflyChaincode: firefly-go
+  fireflyChaincode: firefly_go
 
   # The Postgres URL (including credentials and DB) for FireFly to for the database plugin
   postgresUrl: ""
@@ -70,11 +70,17 @@ config:
   # The basic auth password to use for authenticating to Ethconnect
   ethconnectPassword: ""
 
+  # The Ethconnect topic to use for blockchain event subscriptions
+  ethconnectTopic: 0
+
   # The short prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. ff or kld
   ethconnectPrefixShort: ""
 
   # The long prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. FireFly or Kaleido
   ethconnectPrefixLong: ""
+
+  # The URL of the Fabconnect API and WS server to use for the blockchain plugin of type `fabric`
+  fabconnectUrl: ""
 
   # The Fabric channel to use when communicating with peers and running chaincodes
   fabconnectChannel: default-channel
@@ -87,6 +93,12 @@ config:
 
   # The basic auth password to use for authenticating to Fabconnect
   fabconnectPassword: ""
+
+  # The Fabconnect topic to use for blockchain event subscriptions
+  fabconnectTopic: 0
+
+  # The Fabric to use for signing transactions, must be pre-registered and enrolled
+  fabconnectSigner: ""
 
   # Whether to use a Job to perform auto-registration of the FireFly runtime.
   # Note registration will not be successful until the new node has caught up with the head of the chain.

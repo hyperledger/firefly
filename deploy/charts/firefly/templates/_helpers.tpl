@@ -119,7 +119,7 @@ blockchain:
     ethconnect:
       url: {{ tpl .Values.config.ethconnectUrl . }}
       instance: {{ .Values.config.fireflyContractAddress }}
-      topic: "0" # TODO should likely be configurable
+      topic: {{ .Values.config.ethconnectTopic | quote }}
       {{- if and .Values.config.ethconnectUsername .Values.config.ethconnectPassword }}
       auth:
         username: {{ .Values.config.ethconnectUsername | quote }}
@@ -146,8 +146,8 @@ blockchain:
         enable: {{ .Values.config.fabconnectRetry }}
       channel: {{ .Values.config.fabconnectChannel | quote }}
       chaincode: {{ .Values.config.fireflyChaincode | quote }}
-      topic: "1"  # TODO
-      signer: {{ .Values.config.organizationKey | quote }}
+      topic: {{ .Values.config.fabconnectTopic | quote }}
+      signer: {{ .Values.config.fabconnectSigner | quote }}
 {{- end }}
 {{- if .Values.config.databaseOverride }}
 database:
