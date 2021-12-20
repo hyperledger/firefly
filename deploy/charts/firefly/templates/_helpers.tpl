@@ -120,6 +120,8 @@ blockchain:
       url: {{ tpl .Values.config.ethconnectUrl . }}
       instance: {{ .Values.config.fireflyContractAddress }}
       topic: {{ .Values.config.ethconnectTopic | quote }}
+      retry:
+        enable: {{ .Values.config.ethconnectRetry }}
       {{- if and .Values.config.ethconnectUsername .Values.config.ethconnectPassword }}
       auth:
         username: {{ .Values.config.ethconnectUsername | quote }}

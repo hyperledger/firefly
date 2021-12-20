@@ -70,6 +70,9 @@ config:
   # The basic auth password to use for authenticating to Ethconnect
   ethconnectPassword: ""
 
+  # Enables retries when communicating with Ethconnect
+  ethconnectRetry: true
+
   # The Ethconnect topic to use for blockchain event subscriptions
   ethconnectTopic: 0
 
@@ -228,7 +231,7 @@ dataexchange:
   image:
     repository: ghcr.io/hyperledger/firefly-dataexchange-https
     pullPolicy: Always
-    tag: v0.9.2
+    tag: v0.9.3
 
   imagePullSecrets: []
   nameOverride: ""
