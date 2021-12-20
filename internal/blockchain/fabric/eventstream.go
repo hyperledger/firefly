@@ -120,6 +120,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 			ChaincodeID: location.Chaincode,
 			EventFilter: event,
 		},
+		FromBlock: "0",
 	}
 	res, err := s.client.R().
 		SetContext(ctx).

@@ -63,12 +63,12 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	contexts := []*fftypes.Bytes32{}
 
 	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
-	mdi.On("UpsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 		return true
-	}), false).Return(nil)
+	})).Return(nil)
 	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), "0x12345", mock.Anything).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
@@ -99,12 +99,12 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	contexts := []*fftypes.Bytes32{}
 
 	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
-	mdi.On("UpsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 		return true
-	}), false).Return(nil)
+	})).Return(nil)
 	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), "0x12345", mock.Anything).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
@@ -133,7 +133,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	contexts := []*fftypes.Bytes32{}
 
 	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
-	mdi.On("UpsertOperation", ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.Regexp(t, "pop", err)

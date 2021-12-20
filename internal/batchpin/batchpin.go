@@ -73,7 +73,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 		"",
 		fftypes.OpTypeBlockchainBatchPin,
 		fftypes.OpStatusPending)
-	err = bp.database.UpsertOperation(ctx, op, false)
+	err = bp.database.InsertOperation(ctx, op)
 	if err != nil {
 		return err
 	}

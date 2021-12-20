@@ -138,7 +138,7 @@ func TestBroadcastFFIExists(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
-	assert.Regexp(t, "FF10294", err)
+	assert.Regexp(t, "FF10302", err)
 }
 
 func TestBroadcastFFIResolveOrgFail(t *testing.T) {
@@ -700,7 +700,7 @@ func TestAddContractSubscriptionNameConflict(t *testing.T) {
 	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(&fftypes.ContractSubscription{}, nil)
 
 	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
-	assert.Regexp(t, "FF10304", err)
+	assert.Regexp(t, "FF10312", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -1018,7 +1018,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
-	assert.Regexp(t, "FF10305", err)
+	assert.Regexp(t, "FF10313", err)
 }
 
 func TestInvokeContractNoMethodSignature(t *testing.T) {
@@ -1039,7 +1039,7 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
-	assert.Regexp(t, "FF10306", err)
+	assert.Regexp(t, "FF10314", err)
 }
 
 func TestInvokeContractMethodNotFound(t *testing.T) {
@@ -1061,7 +1061,7 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
-	assert.Regexp(t, "FF10307", err)
+	assert.Regexp(t, "FF10315", err)
 }
 
 func TestInvokeContractMethodBadInput(t *testing.T) {
@@ -1101,7 +1101,7 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 	mbi.On("ValidateFFIParam", mock.Anything, mock.AnythingOfType("*fftypes.FFIParam")).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
-	assert.Regexp(t, "FF10296", err)
+	assert.Regexp(t, "FF10304", err)
 }
 
 func TestGetContractSubscriptionByID(t *testing.T) {
@@ -1444,7 +1444,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(&fftypes.ContractAPI{}, nil)
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
-	assert.Regexp(t, "FF10308", err)
+	assert.Regexp(t, "FF10316", err)
 }
 
 func TestBroadcastContractAPIResolveLocalOrgFail(t *testing.T) {

@@ -50,76 +50,35 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error) {
-
+func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	existing := false
-	if allowExisting {
-		// Do a select within the transaction to detemine if the UUID already exists
-		opRows, _, err := s.queryTx(ctx, tx,
-			sq.Select("id").
-				From("operations").
-				Where(sq.Eq{"id": operation.ID}),
-		)
-		if err != nil {
-			return err
-		}
-
-		existing = opRows.Next()
-		opRows.Close()
-	}
-
-	if existing {
-		// Update the operation
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("operations").
-				Set("namespace", operation.Namespace).
-				Set("tx_id", operation.Transaction).
-				Set("optype", operation.Type).
-				Set("opstatus", operation.Status).
-				Set("plugin", operation.Plugin).
-				Set("backend_id", operation.BackendID).
-				Set("created", operation.Created).
-				Set("updated", operation.Updated).
-				Set("error", operation.Error).
-				Set("input", operation.Input).
-				Set("output", operation.Output).
-				Where(sq.Eq{"id": operation.ID}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeUpdated, operation.Namespace, operation.ID)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("operations").
-				Columns(opColumns...).
-				Values(
-					operation.ID,
-					operation.Namespace,
-					operation.Transaction,
-					string(operation.Type),
-					string(operation.Status),
-					operation.Plugin,
-					operation.BackendID,
-					operation.Created,
-					operation.Updated,
-					operation.Error,
-					operation.Input,
-					operation.Output,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeCreated, operation.Namespace, operation.ID)
-			},
-		); err != nil {
-			return err
-		}
+	if _, err = s.insertTx(ctx, tx,
+		sq.Insert("operations").
+			Columns(opColumns...).
+			Values(
+				operation.ID,
+				operation.Namespace,
+				operation.Transaction,
+				string(operation.Type),
+				string(operation.Status),
+				operation.Plugin,
+				operation.BackendID,
+				operation.Created,
+				operation.Updated,
+				operation.Error,
+				operation.Input,
+				operation.Output,
+			),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeCreated, operation.Namespace, operation.ID)
+		},
+	); err != nil {
+		return err
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)

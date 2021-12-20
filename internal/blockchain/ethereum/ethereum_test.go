@@ -1266,7 +1266,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 
 	err := e.AddSubscription(context.Background(), sub)
 
-	assert.Regexp(t, "FF10302", err)
+	assert.Regexp(t, "FF10310", err)
 }
 
 func TestAddSubscriptionFail(t *testing.T) {
@@ -1540,7 +1540,7 @@ func TestParseParamErr(t *testing.T) {
 		Type: "integer",
 	}
 	err := e.ValidateFFIParam(context.Background(), param)
-	assert.Regexp(t, "FF10303", err)
+	assert.Regexp(t, "FF10311", err)
 
 	param = &fftypes.FFIParam{
 		Name:    "x",
@@ -1548,5 +1548,5 @@ func TestParseParamErr(t *testing.T) {
 		Details: []byte(`{"type":""}`),
 	}
 	err = e.ValidateFFIParam(context.Background(), param)
-	assert.Regexp(t, "FF10303", err)
+	assert.Regexp(t, "FF10311", err)
 }

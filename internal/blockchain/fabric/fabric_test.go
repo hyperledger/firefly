@@ -132,6 +132,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, "es12345", body["stream"])
+			assert.Equal(t, "0", body["fromBlock"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 
@@ -1073,7 +1074,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 
 	err := e.AddSubscription(context.Background(), sub)
 
-	assert.Regexp(t, "FF10302", err)
+	assert.Regexp(t, "FF10310", err)
 }
 
 func TestAddSubscriptionFail(t *testing.T) {
