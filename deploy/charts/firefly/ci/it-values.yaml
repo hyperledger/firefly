@@ -1,6 +1,7 @@
 config:
   debugEnabled: true
   adminEnabled: true
+  metricsEnabled: true
   preInit: true
 
   organizationName: "firefly-os"
@@ -14,6 +15,11 @@ config:
 
   ipfsApiUrl: "http://ipfs.firefly-os:5001"
   ipfsGatewayUrl: "http://ipfs.firefly-os:8080"
+
+core:
+  metrics:
+    serviceMonitor:
+      enabled: true
 
 dataexchange:
   certificate:

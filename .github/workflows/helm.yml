@@ -36,6 +36,11 @@ jobs:
           helm install --skip-crds -n cert-manager cert-manager jetstack/cert-manager --wait
           kubectl apply -n cert-manager -f deploy/manifests/tls-issuers.yaml
 
+      - name: install prom-operator
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+          helm install --set kubeStateMetrics.enabled=false --set nodeExporter.enabled=false --set grafana.enabled=false kube-prometheus prometheus-community/kube-prometheus-stack
+
       - name: install postgres
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami || true

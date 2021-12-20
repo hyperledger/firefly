@@ -97,6 +97,13 @@ admin:
   address: 0.0.0.0
   enabled: {{ .Values.config.adminEnabled }}
   preinit: {{ and .Values.config.adminEnabled .Values.config.preInit }}
+metrics:
+  enabled: {{ .Values.config.metricsEnabled }}
+{{- if .Values.config.metricsEnabled }}
+  path: {{ .Values.config.metricsPath }}
+  address: 0.0.0.0
+  port: {{  .Values.core.service.metricsPort }}
+{{- end }}
 ui:
   path: ./frontend
 org:
