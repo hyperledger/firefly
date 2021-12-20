@@ -333,6 +333,9 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 	if err = cm.blockchain.AddSubscription(ctx, sub); err != nil {
 		return nil, err
 	}
+	if sub.Name == "" {
+		sub.Name = sub.ProtocolID
+	}
 
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		if err = cm.database.UpsertFFIEvent(ctx, ns, nil, &sub.Event); err != nil {

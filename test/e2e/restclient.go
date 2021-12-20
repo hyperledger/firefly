@@ -49,6 +49,8 @@ var (
 	urlTokenBurn             = "/namespaces/default/tokens/burn"
 	urlTokenTransfers        = "/namespaces/default/tokens/transfers"
 	urlTokenBalances         = "/namespaces/default/tokens/balances"
+	urlContractInvoke        = "/namespaces/default/contracts/invoke"
+	urlContractInterface     = "/namespaces/default/contracts/interfaces"
 	urlContractSubscriptions = "/namespaces/default/contracts/subscriptions"
 	urlContractEvents        = "/namespaces/default/contracts/events"
 	urlGetOrganizations      = "/network/organizations"
@@ -492,4 +494,40 @@ func DeleteContractSubscription(t *testing.T, client *resty.Client, id *fftypes.
 	resp, err := client.R().Delete(path)
 	require.NoError(t, err)
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func InvokeContractMethod(t *testing.T, client *resty.Client, invokeContractRequest *fftypes.InvokeContractRequest) (interface{}, error) {
+	var res interface{}
+	path := urlContractInvoke
+	resp, err := client.R().
+		SetBody(invokeContractRequest).
+		SetResult(&res).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{}, error) {
+	var res interface{}
+	path := urlContractInterface
+	resp, err := client.R().
+		SetBody(ffi).
+		SetResult(&res).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func InvokeFFIMethod(t *testing.T, client *resty.Client, contractID, methodName string, invokeContractRequest *fftypes.InvokeContractRequest) (interface{}, error) {
+	var res interface{}
+	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, contractID, methodName)
+	resp, err := client.R().
+		SetBody(invokeContractRequest).
+		SetResult(&res).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
 }
