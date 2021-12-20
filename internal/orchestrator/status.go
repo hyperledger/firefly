@@ -43,7 +43,7 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 
 func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStatus, err error) {
 
-	orgKey := or.identity.GetOrgKey(ctx)
+	orgKey, _ := or.identity.GetLocalOrgKey(ctx)
 	status = &fftypes.NodeStatus{
 		Node: fftypes.NodeStatusNode{
 			Name: config.GetString(config.NodeName),
