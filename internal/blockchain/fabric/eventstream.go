@@ -118,6 +118,7 @@ func (s *streamManager) createSubscription(name, stream, event string) (*subscri
 			ChaincodeID: s.chaincode,
 			EventFilter: event,
 		},
+		FromBlock: "0",
 	}
 	res, err := s.client.R().
 		SetContext(s.ctx).
