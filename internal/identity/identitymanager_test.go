@@ -366,6 +366,40 @@ func TestResolveSigningKeyIdentityOrgLookupUnresolved(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
+func TestGetLocalOrgKey(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil).Once()
+
+	config.Set(config.OrgIdentityDeprecated, "key1")
+
+	localOrgKey, err := im.GetLocalOrgKey(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, "key1resolved", localOrgKey)
+
+	// Check cache
+	localOrgKey, err = im.GetLocalOrgKey(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, "key1resolved", localOrgKey)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestGetLocalOrgKeyFail(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("", fmt.Errorf("pop")).Once()
+
+	config.Set(config.OrgIdentityDeprecated, "key1")
+
+	_, err := im.GetLocalOrgKey(ctx)
+	assert.EqualError(t, err, "pop")
+
+	mbi.AssertExpectations(t)
+}
+
 func TestResolveLocalOrgDIDSuccess(t *testing.T) {
 
 	org := &fftypes.Organization{

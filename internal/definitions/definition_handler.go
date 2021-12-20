@@ -74,8 +74,8 @@ func (dh *definitionHandlers) GetGroupByID(ctx context.Context, id string) (*fft
 	return dh.messaging.GetGroupByID(ctx, id)
 }
 
-func (dh *definitionHandlers) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
-	return dh.messaging.GetGroups(ctx, filter)
+func (dh *definitionHandlers) GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
+	return dh.messaging.GetGroupsNS(ctx, ns, filter)
 }
 
 func (dh *definitionHandlers) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {

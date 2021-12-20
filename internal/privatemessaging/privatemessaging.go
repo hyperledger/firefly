@@ -177,7 +177,8 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload fftypes.Byteable, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
 	l := log.L(ctx)
 
-	localOrgDID, err := pm.identity.ResolveLocalOrgDID(ctx)
+	// TODO: move to using DIDs consistently as the way to reference the node/organization (i.e. node.Owner becomes a DID)
+	localOrgSigingKey, err := pm.identity.GetLocalOrgKey(ctx)
 	if err != nil {
 		return err
 	}
@@ -185,7 +186,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 
-		if node.Owner == localOrgDID {
+		if node.Owner == localOrgSigingKey {
 			l.Debugf("Skipping send of %s for local node %s:%s for group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
 			continue
 		}

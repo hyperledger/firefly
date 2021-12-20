@@ -62,13 +62,13 @@ func (_m *DefinitionHandlers) GetGroupByID(ctx context.Context, id string) (*fft
 	return r0, r1
 }
 
-// GetGroups provides a mock function with given fields: ctx, filter
-func (_m *DefinitionHandlers) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetGroupsNS provides a mock function with given fields: ctx, ns, filter
+func (_m *DefinitionHandlers) GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Group
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.Group); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Group); ok {
+		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Group)
@@ -76,8 +76,8 @@ func (_m *DefinitionHandlers) GetGroups(ctx context.Context, filter database.And
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -85,8 +85,8 @@ func (_m *DefinitionHandlers) GetGroups(ctx context.Context, filter database.And
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

@@ -51,7 +51,7 @@ func TestGetStatusRegistered(t *testing.T) {
 		Owner: "0x1111111",
 	}, nil)
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -83,7 +83,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	mdi := or.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(nil, nil)
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -118,7 +118,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	}, nil)
 	mdi.On("GetNode", or.ctx, "0x1111111", "node1").Return(nil, nil)
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -147,7 +147,7 @@ func TestGetStatuOrgError(t *testing.T) {
 	mdi := or.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(nil, fmt.Errorf("pop"))
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
 
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
@@ -171,7 +171,7 @@ func TestGetStatusNodeError(t *testing.T) {
 	}, nil)
 	mdi.On("GetNode", or.ctx, "0x1111111", "node1").Return(nil, fmt.Errorf("pop"))
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
 
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
