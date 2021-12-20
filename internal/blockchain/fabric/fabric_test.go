@@ -132,6 +132,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, "es12345", body["stream"])
+			assert.Equal(t, "0", body["fromBlock"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 
