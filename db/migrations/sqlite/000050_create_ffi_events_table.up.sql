@@ -5,7 +5,7 @@ CREATE TABLE ffievents (
   namespace         VARCHAR(64)     NOT NULL,
   name              VARCHAR(1024)   NOT NULL,
   pathname          VARCHAR(1024)   NOT NULL,
-  description       VARCHAR(65536)  NOT NULL,
+  description       TEXT            NOT NULL,
   params            BYTEA           NOT NULL
 );
 

@@ -4,7 +4,7 @@ CREATE TABLE ffi (
   namespace         VARCHAR(64)     NOT NULL,
   name              VARCHAR(1024)   NOT NULL,
   version           VARCHAR(64)     NOT NULL,
-  description       VARCHAR(65536)  NOT NULL
+  description       TEXT            NOT NULL
 );
 
 CREATE UNIQUE INDEX ffi_id ON ffi(id);

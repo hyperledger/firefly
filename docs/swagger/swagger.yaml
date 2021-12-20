@@ -1904,6 +1904,114 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodName}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInvokeInterface
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: contractID
+        required: true
+        schema:
+          example: contractID
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: methodName
+        required: true
+        schema:
+          example: methodName
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contractId: {}
+                ledger:
+                  format: byte
+                  type: string
+                location:
+                  format: byte
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                params:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/contracts/interfaces/{interfaceId}:
     get:
       description: 'TODO: Description'

@@ -1396,12 +1396,11 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	}
 
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
-		httpmock.NewStringResponder(500, "pop"))
+		httpmock.NewStringResponder(500, ""))
 
 	err := e.DeleteSubscription(context.Background(), sub)
 
 	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
 }
 
 func TestHandleMessageContractEvent(t *testing.T) {
