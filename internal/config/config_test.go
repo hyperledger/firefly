@@ -146,6 +146,31 @@ tokens:
 	assert.Equal(t, []string{"arr1", "arr2"}, sally.GetStringSlice("key2"))
 }
 
+func TestMapOfAdminOverridePlugins(t *testing.T) {
+	defer Reset()
+
+	tokPlugins := NewPluginConfig("tokens").Array()
+	tokPlugins.AddKnownKey("firstkey")
+	tokPlugins.AddKnownKey("secondkey")
+	viper.SetConfigType("json")
+	err := viper.ReadConfig(strings.NewReader(`{
+		"tokens": {
+			"0": {
+				"firstkey": "firstitemfirstkeyvalue",
+				"secondkey": "firstitemsecondkeyvalue"
+			},
+			"1": {
+				"firstkey": "seconditemfirstkeyvalue",
+				"secondkey": "seconditemsecondkeyvalue"
+			}
+		}
+	}`))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, tokPlugins.ArraySize())
+	assert.Equal(t, "firstitemfirstkeyvalue", tokPlugins.ArrayEntry(0).Get("firstkey"))
+	assert.Equal(t, "seconditemsecondkeyvalue", tokPlugins.ArrayEntry(1).Get("secondkey"))
+}
+
 func TestGetKnownKeys(t *testing.T) {
 	knownKeys := GetKnownKeys()
 	assert.NotEmpty(t, knownKeys)
