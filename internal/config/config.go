@@ -479,7 +479,7 @@ func (c *configPrefix) Array() PrefixArray {
 func (c *configPrefixArray) ArraySize() int {
 	val := viper.Get(c.base)
 	vt := reflect.TypeOf(val)
-	if vt != nil && vt.Kind() == reflect.Slice {
+	if vt != nil && (vt.Kind() == reflect.Slice || vt.Kind() == reflect.Map) {
 		return reflect.ValueOf(val).Len()
 	}
 	return 0
