@@ -34,6 +34,26 @@ func TestSealBareMessage(t *testing.T) {
 	assert.NotNil(t, msg.Hash)
 }
 
+func TestSealEmptyTopicString(t *testing.T) {
+	msg := Message{
+		Header: MessageHeader{
+			Topics: []string{""},
+		},
+	}
+	err := msg.Seal(context.Background())
+	assert.Regexp(t, `FF10131.*header.topics\[0\]`, err)
+}
+
+func TestSealBadTagString(t *testing.T) {
+	msg := Message{
+		Header: MessageHeader{
+			Tag: "!wrong",
+		},
+	}
+	err := msg.Seal(context.Background())
+	assert.Regexp(t, `FF10131.*header.tag`, err)
+}
+
 func TestVerifyEmptyTopicString(t *testing.T) {
 	msg := Message{
 		Header: MessageHeader{
