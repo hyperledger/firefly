@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - helm-oci-chart-publishing
     paths:
       - "deploy/charts/**/*"
   pull_request:
@@ -15,7 +16,6 @@ on:
       - "deploy/charts/**/*"
 jobs:
   helm:
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
