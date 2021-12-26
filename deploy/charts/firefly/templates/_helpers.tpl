@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "firefly.name" -}}
-{{- default "firefly" .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -14,7 +14,7 @@ If release name contains chart name it will be used as a full name.
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- $name := default "firefly" .Values.nameOverride }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -40,7 +40,7 @@ helm.sh/chart: {{ include "firefly.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kuberentes.io/part-of: "firefly"
+app.kuberentes.io/part-of: .Chart.Name
 {{- end }}
 
 {{/*
@@ -53,7 +53,7 @@ helm.sh/chart: {{ include "firefly.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kuberentes.io/part-of: "firefly"
+app.kuberentes.io/part-of: .Chart.Name
 {{- end }}
 
 {{/*
