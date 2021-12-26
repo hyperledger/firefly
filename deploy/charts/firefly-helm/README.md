@@ -6,8 +6,8 @@ for simple, private messaging using HTTPS backed with mTLS.
 
 ## Prerequisites
 
-* Kubernetes 1.14+
-* Helm 3.6.0
+* Kubernetes 1.18+
+* Helm 3.7+
 * PV provisioner support in the underlying infrastructure
 * _Recommended:_ cert-manager 1.4+
 
@@ -15,7 +15,7 @@ for simple, private messaging using HTTPS backed with mTLS.
 
 ```shell
 # Deploy a FireFly node w/ some dummy values
-$ helm install acme-firefly ./deploy/charts/firefly \
+$ helm install acme-firefly ./deploy/charts/firefly-helm \
   --set dataexchange.tlsSecret.name=acme-dx-tls \
   --set config.organizationName=acme \
   --set config.organizationKey="0xeb7284ce905e0665b7d42cabe31c76c45da1d331" \

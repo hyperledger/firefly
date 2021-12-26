@@ -13,5 +13,5 @@ coverage.txt
 .DS_Store
 frontend
 __debug*
-!deploy/charts/firefly
+!deploy/charts/firefly-helm
 containerlogs
