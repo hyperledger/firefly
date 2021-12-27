@@ -63,7 +63,7 @@ jobs:
         run: |
           kubectl get pod -A
   release:
-    needs: helm
+    needs: test
     if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/helm-v') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/helm-oci-chart-publishing')
     runs-on: ubuntu-latest
     steps:
