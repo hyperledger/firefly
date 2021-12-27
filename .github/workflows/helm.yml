@@ -84,7 +84,7 @@ jobs:
       - name: release-version
         if: startsWith(github.ref, 'refs/tags/helm-v')
         run: |
-          TAG_VERSION=(echo -n "${GITHUB_REF##*/}" | sed 's/helm-v//g')
+          TAG_VERSION=$(echo -n "${GITHUB_REF##*/}" | sed 's/helm-v//g')
           if [[ "$TAG_VERSION" == "${{ env.CHART_VERSION }}" ]]; then
             echo "Release tag version [$TAG_VERSION] does not match the chart's version [${{ env.CHART_VERSION }}]"
             exit 1
