@@ -72,7 +72,7 @@ jobs:
 
       - name: chart-version
         run: |
-          CHART_VERSION=$(helm show chart ./firefly | grep '^version:' | awk '{ printf("%s", $2) }')
+          CHART_VERSION=$(helm show chart deploy/charts/firefly | grep '^version:' | awk '{ printf("%s", $2) }')
           echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
 
       - name: head-version
