@@ -453,8 +453,10 @@ func CreateContractSubscription(t *testing.T, client *resty.Client, event *fftyp
 	body := fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
 			Location: fftypes.Byteable(location.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: event.FFIEventDefinition,
+			},
 		},
-		Event: *event,
 	}
 	var sub fftypes.ContractSubscription
 	path := urlContractSubscriptions

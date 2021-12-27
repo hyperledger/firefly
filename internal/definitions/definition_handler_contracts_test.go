@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -58,6 +59,21 @@ func testFFI() *fftypes.FFI {
 				},
 			},
 		},
+		Events: []*fftypes.FFIEvent{
+			{
+				ID: fftypes.NewUUID(),
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "event1",
+					Params: fftypes.FFIParams{
+						{
+							Name:    "result",
+							Type:    "integer",
+							Details: []byte(`{}`),
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -85,8 +101,12 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("UpsertFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
+
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineFFI),
@@ -97,23 +117,53 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
+func TestPersistFFIValidateFFIFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	valid, err := dh.persistFFI(context.Background(), testFFI())
+	assert.NoError(t, err)
+	assert.False(t, valid)
+	mcm.AssertExpectations(t)
+}
+
 func TestPersistFFIUpsertFFIFail(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 	_, err := dh.persistFFI(context.Background(), testFFI())
 	assert.Regexp(t, "pop", err)
 	mbi.AssertExpectations(t)
+	mcm.AssertExpectations(t)
 }
 
 func TestPersistFFIUpsertFFIMethodFail(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("UpsertFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 	_, err := dh.persistFFI(context.Background(), testFFI())
 	assert.Regexp(t, "pop", err)
 	mbi.AssertExpectations(t)
+	mcm.AssertExpectations(t)
+}
+
+func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
+	mbi := dh.database.(*databasemocks.Plugin)
+	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
+	mbi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
+	_, err := dh.persistFFI(context.Background(), testFFI())
+	assert.Regexp(t, "pop", err)
+	mbi.AssertExpectations(t)
+	mcm.AssertExpectations(t)
 }
 
 func TestHandleFFIBroadcastValidateFail(t *testing.T) {
@@ -147,6 +197,8 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineFFI),

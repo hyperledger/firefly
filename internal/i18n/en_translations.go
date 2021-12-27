@@ -234,4 +234,8 @@ var (
 	MsgContractNoMethodSignature    = ffm("FF10314", "Method signature is required if contractId is absent", 400)
 	MsgContractResolveError         = ffm("FF10315", "Unable to resolve contract method", 400)
 	MsgContractAPIExists            = ffm("FF10316", "A contract API already exists in the namespace: '%s' with name: '%s'", 409)
+	MsgSubscriptionNoEvent          = ffm("FF10317", "An eventId or in-line event definition must be supplied when subscribing", 400)
+	MsgSubscriptionEventNotFound    = ffm("FF10318", "No event was found in namespace '%s' with id '%s'", 400)
+	MsgEventNameMustBeSet           = ffm("FF10319", "Event name must be set", 400)
+	MsgMethodNameMustBeSet          = ffm("FF10320", "Method name must be set", 400)
 )

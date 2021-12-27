@@ -33,6 +33,7 @@ var (
 		"namespace",
 		"name",
 		"version",
+		"description",
 	}
 )
 
@@ -59,7 +60,8 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) 
 			sq.Update("ffi").
 				Set("namespace", cd.Namespace).
 				Set("name", cd.Name).
-				Set("version", cd.Version),
+				Set("version", cd.Version).
+				Set("description", cd.Description),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeUpdated, cd.Namespace, cd.ID)
 			},
@@ -75,6 +77,7 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) 
 					cd.Namespace,
 					cd.Name,
 					cd.Version,
+					cd.Description,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeCreated, cd.Namespace, cd.ID)
@@ -94,6 +97,7 @@ func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI,
 		&ffi.Namespace,
 		&ffi.Name,
 		&ffi.Version,
+		&ffi.Description,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "ffi")

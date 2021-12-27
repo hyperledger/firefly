@@ -1232,8 +1232,21 @@ func TestAddSubscription(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Changed",
+					Params: fftypes.FFIParams{
+						{
+							Name: "value",
+							Type: "string",
+							Details: fftypes.Byteable(fftypes.JSONObject{
+								"type": "string",
+							}.String()),
+						},
+					},
+				},
+			},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
@@ -1242,6 +1255,46 @@ func TestAddSubscription(t *testing.T) {
 	err := e.AddSubscription(context.Background(), sub)
 
 	assert.NoError(t, err)
+}
+
+func TestAddSubscriptionBaddParamDetails(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:    "value",
+							Type:    "string",
+							Details: fftypes.Byteable{},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10311", err)
 }
 
 func TestAddSubscriptionBadLocation(t *testing.T) {
@@ -1260,8 +1313,8 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
 			Location: fftypes.Byteable{},
+			Event:    &fftypes.FFISerializedEvent{},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	err := e.AddSubscription(context.Background(), sub)
@@ -1287,8 +1340,8 @@ func TestAddSubscriptionFail(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Event: &fftypes.FFISerializedEvent{},
 		},
-		Event: fftypes.FFIEvent{},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
@@ -1323,6 +1376,31 @@ func TestDeleteSubscription(t *testing.T) {
 	err := e.DeleteSubscription(context.Background(), sub)
 
 	assert.NoError(t, err)
+}
+
+func TestDeleteSubscriptionFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscription{
+		ProtocolID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(500, ""))
+
+	err := e.DeleteSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10111", err)
 }
 
 func TestHandleMessageContractEvent(t *testing.T) {

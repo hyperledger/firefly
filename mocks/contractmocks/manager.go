@@ -414,8 +414,8 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 	return r0, r1
 }
 
-// ValidateFFI provides a mock function with given fields: ctx, ffi
-func (_m *Manager) ValidateFFI(ctx context.Context, ffi *fftypes.FFI) error {
+// ValidateFFIAndSetPathnames provides a mock function with given fields: ctx, ffi
+func (_m *Manager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error {
 	ret := _m.Called(ctx, ffi)
 
 	var r0 error

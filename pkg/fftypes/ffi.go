@@ -25,26 +25,39 @@ import (
 )
 
 type FFI struct {
-	ID        *UUID        `json:"id,omitempty"`
-	Message   *UUID        `json:"message,omitempty"`
-	Namespace string       `json:"namespace,omitempty"`
-	Name      string       `json:"name,omitempty"`
-	Version   string       `json:"version,omitempty"`
-	Methods   []*FFIMethod `json:"methods,omitempty"`
-	Events    []*FFIEvent  `json:"events,omitempty"`
+	ID          *UUID        `json:"id,omitempty"`
+	Message     *UUID        `json:"message,omitempty"`
+	Namespace   string       `json:"namespace,omitempty"`
+	Name        string       `json:"name,omitempty"`
+	Description string       `json:"description"`
+	Version     string       `json:"version,omitempty"`
+	Methods     []*FFIMethod `json:"methods,omitempty"`
+	Events      []*FFIEvent  `json:"events,omitempty"`
 }
 
 type FFIMethod struct {
-	ID      *UUID `json:"id,omitempty"`
-	Name    string
-	Params  FFIParams `json:"params"`
-	Returns FFIParams `json:"returns"`
+	ID          *UUID     `json:"id,omitempty"`
+	Contract    *UUID     `json:"contract,omitempty"`
+	Name        string    `json:"name"`
+	Namespace   string    `json:"namespace,omitempty"`
+	Pathname    string    `json:"pathname"`
+	Description string    `json:"description"`
+	Params      FFIParams `json:"params"`
+	Returns     FFIParams `json:"returns"`
+}
+
+type FFIEventDefinition struct {
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Params      FFIParams `json:"params"`
 }
 
 type FFIEvent struct {
-	ID     *UUID     `json:"id,omitempty"`
-	Name   string    `json:"name"`
-	Params FFIParams `json:"params"`
+	ID        *UUID  `json:"id,omitempty"`
+	Contract  *UUID  `json:"contract,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	Pathname  string `json:"pathname,omitempty"`
+	FFIEventDefinition
 }
 
 type FFIParam struct {

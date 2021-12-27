@@ -374,13 +374,27 @@ func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
 	assert.Regexp(t, err, "pop")
 }
 
-func TestValidateInvokeContractRequestInvalidEvent(t *testing.T) {
+func TestValidateInvokeContractRequestInvalidEventName(t *testing.T) {
+	cm := newTestContractManager()
+	event := &fftypes.FFIEventDefinition{}
+	err := cm.validateFFIEvent(context.Background(), event)
+	assert.Regexp(t, "FF10319", err)
+}
+
+func TestValidateInvokeContractRequestInvalidMethodName(t *testing.T) {
+	cm := newTestContractManager()
+	method := &fftypes.FFIMethod{}
+	err := cm.validateFFIMethod(context.Background(), method)
+	assert.Regexp(t, "FF10320", err)
+}
+
+func TestValidateInvokeContractRequestInvalidEventParams(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
 
-	method := &fftypes.FFIEvent{
+	method := &fftypes.FFIEventDefinition{
 		Name: "sum",
 		Params: []*fftypes.FFIParam{
 			{
@@ -432,23 +446,43 @@ func TestValidateFFI(t *testing.T) {
 					},
 				},
 			},
+			{
+				Name:        "sum",
+				Description: "Override of sum method with different args",
+				Params:      []*fftypes.FFIParam{},
+				Returns:     []*fftypes.FFIParam{},
+			},
 		},
 		Events: []*fftypes.FFIEvent{
 			{
-				Name: "sum",
-				Params: []*fftypes.FFIParam{
-					{
-						Name:    "z",
-						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "sum",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:    "z",
+							Type:    "integer",
+							Details: []byte(`{"type": "uint256"}`),
+						},
 					},
+				},
+			},
+			{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name:        "sum",
+					Description: "Override of event with different params",
+					Params:      []*fftypes.FFIParam{},
 				},
 			},
 		},
 	}
 
-	err := cm.ValidateFFI(context.Background(), ffi)
+	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
 	assert.NoError(t, err)
+
+	assert.Equal(t, "sum", ffi.Methods[0].Pathname)
+	assert.Equal(t, "sum_1", ffi.Methods[1].Pathname)
+	assert.Equal(t, "sum", ffi.Events[0].Pathname)
+	assert.Equal(t, "sum_1", ffi.Events[1].Pathname)
 }
 
 func TestValidateFFIBadMethodParam(t *testing.T) {
@@ -486,19 +520,21 @@ func TestValidateFFIBadMethodParam(t *testing.T) {
 		},
 		Events: []*fftypes.FFIEvent{
 			{
-				Name: "sum",
-				Params: []*fftypes.FFIParam{
-					{
-						Name:    "z",
-						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "sum",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:    "z",
+							Type:    "integer",
+							Details: []byte(`{"type": "uint256"}`),
+						},
 					},
 				},
 			},
 		},
 	}
 
-	err := cm.ValidateFFI(context.Background(), ffi)
+	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
 	assert.Regexp(t, err, "pop")
 }
 
@@ -538,19 +574,21 @@ func TestValidateFFIBadMethodReturnParam(t *testing.T) {
 		},
 		Events: []*fftypes.FFIEvent{
 			{
-				Name: "sum",
-				Params: []*fftypes.FFIParam{
-					{
-						Name:    "z",
-						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "sum",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:    "z",
+							Type:    "integer",
+							Details: []byte(`{"type": "uint256"}`),
+						},
 					},
 				},
 			},
 		},
 	}
 
-	err := cm.ValidateFFI(context.Background(), ffi)
+	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
 	assert.Regexp(t, err, "pop")
 }
 
@@ -590,23 +628,25 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 		},
 		Events: []*fftypes.FFIEvent{
 			{
-				Name: "sum",
-				Params: []*fftypes.FFIParam{
-					{
-						Name:    "z",
-						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "sum",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:    "z",
+							Type:    "integer",
+							Details: []byte(`{"type": "uint256"}`),
+						},
 					},
 				},
 			},
 		},
 	}
 
-	err := cm.ValidateFFI(context.Background(), ffi)
+	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
 	assert.Regexp(t, err, "pop")
 }
 
-func TestAddContractSubscription(t *testing.T) {
+func TestAddContractSubscriptionInline(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdi := cm.database.(*databasemocks.Plugin)
@@ -616,8 +656,42 @@ func TestAddContractSubscription(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name: "value",
+							Type: "integer",
+						},
+					},
+				},
+			},
 		},
-		Event: fftypes.FFIEvent{
+	}
+
+	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
+	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(nil)
+
+	result, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	assert.NoError(t, err)
+	assert.NotNil(t, result.ID)
+	assert.NotNil(t, result.Event)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionByRef(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	event := &fftypes.FFIEvent{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name: "changed",
 			Params: fftypes.FFIParams{
 				{
@@ -628,17 +702,90 @@ func TestAddContractSubscription(t *testing.T) {
 		},
 	}
 
-	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		EventID: event.ID,
+	}
+
+	mbi.On("ValidateFFIParam", context.Background(), mock.Anything).Return(nil)
 	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
-	mdi.On("UpsertFFIEvent", context.Background(), "ns", (*fftypes.UUID)(nil), &sub.Event).Return(nil)
+	mdi.On("GetFFIEventByID", context.Background(), event.ID).Return(event, nil)
 	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(nil)
 
-	result, err := cm.AddContractSubscription(context.Background(), "ns", sub)
+	result, err := cm.AddContractSubscription(context.Background(), "ns1", sub)
 	assert.NoError(t, err)
 	assert.NotNil(t, result.ID)
 	assert.NotNil(t, result.Event)
 
 	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionByRefLookupFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		EventID: fftypes.NewUUID(),
+	}
+
+	mdi.On("GetFFIEventByID", context.Background(), mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns1", sub)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionMissingEventOrID(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+	}
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns2", sub)
+	assert.Regexp(t, "FF10317", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractSubscriptionByRefLookupWrongNS(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	eventID := fftypes.NewUUID()
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.Byteable(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		EventID: eventID,
+	}
+
+	mdi.On("GetFFIEventByID", context.Background(), mock.Anything).Return(&fftypes.FFIEvent{
+		ID:        eventID,
+		Namespace: "ns1",
+	}, nil)
+
+	_, err := cm.AddContractSubscription(context.Background(), "ns2", sub)
+	assert.Regexp(t, "FF10318", err)
+
 	mdi.AssertExpectations(t)
 }
 
@@ -686,15 +833,7 @@ func TestAddContractSubscriptionNameConflict(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 		},
-		Event: fftypes.FFIEvent{
-			Name: "changed",
-			Params: fftypes.FFIParams{
-				{
-					Name: "value",
-					Type: "integer",
-				},
-			},
-		},
+		EventID: fftypes.NewUUID(),
 	}
 
 	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(&fftypes.ContractSubscription{}, nil)
@@ -718,15 +857,7 @@ func TestAddContractSubscriptionNameError(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 		},
-		Event: fftypes.FFIEvent{
-			Name: "changed",
-			Params: fftypes.FFIParams{
-				{
-					Name: "value",
-					Type: "integer",
-				},
-			},
-		},
+		EventID: fftypes.NewUUID(),
 	}
 
 	mdi.On("GetContractSubscription", context.Background(), "ns", "sub1").Return(nil, fmt.Errorf("pop"))
@@ -748,13 +879,15 @@ func TestAddContractSubscriptionValidateFail(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-		},
-		Event: fftypes.FFIEvent{
-			Name: "changed",
-			Params: fftypes.FFIParams{
-				{
-					Name: "value",
-					Type: "integer",
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name: "value",
+							Type: "integer",
+						},
+					},
 				},
 			},
 		},
@@ -779,13 +912,15 @@ func TestAddContractSubscriptionBlockchainFail(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-		},
-		Event: fftypes.FFIEvent{
-			Name: "changed",
-			Params: fftypes.FFIParams{
-				{
-					Name: "value",
-					Type: "integer",
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name: "value",
+							Type: "integer",
+						},
+					},
 				},
 			},
 		},
@@ -793,39 +928,6 @@ func TestAddContractSubscriptionBlockchainFail(t *testing.T) {
 
 	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
 	mbi.On("AddSubscription", context.Background(), sub).Return(fmt.Errorf("pop"))
-
-	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
-	assert.EqualError(t, err, "pop")
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestAddContractSubscriptionUpsertEventFail(t *testing.T) {
-	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable(fftypes.JSONObject{
-				"address": "0x123",
-			}.String()),
-		},
-		Event: fftypes.FFIEvent{
-			Name: "changed",
-			Params: fftypes.FFIParams{
-				{
-					Name: "value",
-					Type: "integer",
-				},
-			},
-		},
-	}
-
-	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
-	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
-	mdi.On("UpsertFFIEvent", context.Background(), "ns", (*fftypes.UUID)(nil), &sub.Event).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
 	assert.EqualError(t, err, "pop")
@@ -844,13 +946,15 @@ func TestAddContractSubscriptionUpsertSubFail(t *testing.T) {
 			Location: fftypes.Byteable(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-		},
-		Event: fftypes.FFIEvent{
-			Name: "changed",
-			Params: fftypes.FFIParams{
-				{
-					Name: "value",
-					Type: "integer",
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name: "value",
+							Type: "integer",
+						},
+					},
 				},
 			},
 		},
@@ -858,7 +962,6 @@ func TestAddContractSubscriptionUpsertSubFail(t *testing.T) {
 
 	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
 	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
-	mdi.On("UpsertFFIEvent", context.Background(), "ns", (*fftypes.UUID)(nil), &sub.Event).Return(nil)
 	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
@@ -897,7 +1000,7 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
-		{ID: fftypes.NewUUID(), Name: "event1"},
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
 
 	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
@@ -990,7 +1093,10 @@ func TestInvokeContract(t *testing.T) {
 		Ledger:     []byte{},
 		Location:   []byte{},
 		Method: &fftypes.FFIMethod{
-			ID: fftypes.NewUUID(),
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
 		},
 	}
 
@@ -1324,7 +1430,7 @@ func TestGetContractAPISwagger(t *testing.T) {
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
-		{ID: fftypes.NewUUID(), Name: "event1"},
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
 	msg.On("Generate", mock.Anything, "http://localhost:5000/api/v1/namespaces/ns1/apis/banana", mock.Anything).Return(&openapi3.T{
 		Info: &openapi3.Info{

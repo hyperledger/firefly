@@ -33,18 +33,17 @@ var (
 		"interface_id",
 		"namespace",
 		"name",
+		"pathname",
+		"description",
 		"params",
 		"returns",
 	}
-	ffiMethodsQueryColumns = []string{
-		"id",
-		"name",
-		"params",
-		"returns",
+	ffiMethodFilterFieldMap = map[string]string{
+		"interfaceid": "interface_id",
 	}
 )
 
-func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) (err error) {
+func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -54,7 +53,7 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, ns string, contractID *
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("ffimethods").
-			Where(sq.And{sq.Eq{"interface_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": method.Name}}),
+			Where(sq.And{sq.Eq{"interface_id": method.Contract}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
 	)
 	if err != nil {
 		return err
@@ -67,9 +66,9 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, ns string, contractID *
 			sq.Update("ffimethods").
 				Set("params", method.Params).
 				Set("returns", method.Returns).
-				Where(sq.And{sq.Eq{"interface_id": contractID}, sq.Eq{"namespace": ns}, sq.Eq{"name": method.Name}}),
+				Where(sq.And{sq.Eq{"interface_id": method.Contract}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIMethods, fftypes.ChangeEventTypeUpdated, ns, method.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIMethods, fftypes.ChangeEventTypeUpdated, method.Namespace, method.ID)
 			},
 		); err != nil {
 			return err
@@ -80,14 +79,16 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, ns string, contractID *
 				Columns(ffiMethodsColumns...).
 				Values(
 					method.ID,
-					contractID,
-					ns,
+					method.Contract,
+					method.Namespace,
 					method.Name,
+					method.Pathname,
+					method.Description,
 					method.Params,
 					method.Returns,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIMethods, fftypes.ChangeEventTypeCreated, ns, method.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIMethods, fftypes.ChangeEventTypeCreated, method.Namespace, method.ID)
 			},
 		); err != nil {
 			return err
@@ -101,7 +102,11 @@ func (s *SQLCommon) ffiMethodResult(ctx context.Context, row *sql.Rows) (*fftype
 	method := fftypes.FFIMethod{}
 	err := row.Scan(
 		&method.ID,
+		&method.Contract,
+		&method.Namespace,
 		&method.Name,
+		&method.Pathname,
+		&method.Description,
 		&method.Params,
 		&method.Returns,
 	)
@@ -113,7 +118,7 @@ func (s *SQLCommon) ffiMethodResult(ctx context.Context, row *sql.Rows) (*fftype
 
 func (s *SQLCommon) getFFIMethodPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFIMethod, error) {
 	rows, _, err := s.query(ctx,
-		sq.Select(ffiMethodsQueryColumns...).
+		sq.Select(ffiMethodsColumns...).
 			From("ffimethods").
 			Where(pred),
 	)
@@ -136,7 +141,7 @@ func (s *SQLCommon) getFFIMethodPred(ctx context.Context, desc string, pred inte
 }
 
 func (s *SQLCommon) GetFFIMethods(ctx context.Context, filter database.Filter) (methods []*fftypes.FFIMethod, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiMethodsQueryColumns...).From("ffimethods"), filter, nil, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiMethodsColumns...).From("ffimethods"), filter, ffiMethodFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -159,6 +164,6 @@ func (s *SQLCommon) GetFFIMethods(ctx context.Context, filter database.Filter) (
 
 }
 
-func (s *SQLCommon) GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error) {
-	return s.getFFIMethodPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"name": name}})
+func (s *SQLCommon) GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error) {
+	return s.getFFIMethodPred(ctx, ns+":"+pathName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"pathname": pathName}})
 }

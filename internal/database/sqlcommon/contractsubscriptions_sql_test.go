@@ -37,9 +37,13 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	location := fftypes.JSONObject{"path": "my-api"}
 	locationJson, _ := json.Marshal(location)
 	sub := &fftypes.ContractSubscription{
-		ID:         fftypes.NewUUID(),
-		Interface:  fftypes.NewUUID(),
-		Event:      fftypes.NewUUID(),
+		ID:        fftypes.NewUUID(),
+		Interface: fftypes.NewUUID(),
+		Event: &fftypes.FFISerializedEvent{
+			FFIEventDefinition: fftypes.FFIEventDefinition{
+				Name: "event1",
+			},
+		},
 		Namespace:  "ns",
 		Name:       "sub1",
 		ProtocolID: "sb-123",
@@ -221,7 +225,7 @@ func TestContractSubscriptionDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractSubscriptionColumns).AddRow(
-		fftypes.NewUUID(), nil, fftypes.NewUUID(), "ns1", "sub1", "123", "{}", fftypes.Now()),
+		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractSubscriptionByID(context.Background(), fftypes.NewUUID())

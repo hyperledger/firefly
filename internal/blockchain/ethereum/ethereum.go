@@ -528,7 +528,7 @@ func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.Co
 	if err != nil {
 		return err
 	}
-	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subscription.Event)
+	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subscription.Event.FFIEventDefinition)
 	if err != nil {
 		return err
 	}

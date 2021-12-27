@@ -412,14 +412,15 @@ type iFFICollection interface {
 }
 
 type iFFIMethodCollection interface {
-	UpsertFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIMethod) error
+	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
 	GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error)
 	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
-	UpsertFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, method *fftypes.FFIEvent) error
-	GetFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIEvent, error)
+	UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error
+	GetFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
+	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error)
 	GetFFIEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
 }
 
@@ -907,7 +908,9 @@ var FFIMethodQueryFactory = &queryFields{
 	"id":          &UUIDField{},
 	"namespace":   &StringField{},
 	"name":        &StringField{},
+	"pathname":    &StringField{},
 	"interfaceid": &UUIDField{},
+	"description": &StringField{},
 }
 
 // FFIEventQueryFactory filter fields for contract events
@@ -915,7 +918,9 @@ var FFIEventQueryFactory = &queryFields{
 	"id":          &UUIDField{},
 	"namespace":   &StringField{},
 	"name":        &StringField{},
+	"pathname":    &StringField{},
 	"interfaceid": &UUIDField{},
+	"description": &StringField{},
 }
 
 // ContractSubscriptionQueryFactory filter fields for contract subscriptions

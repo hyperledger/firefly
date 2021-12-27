@@ -44,7 +44,9 @@ type createAssetBody struct {
 }
 
 var assetCreatedEvent = &fftypes.FFIEvent{
-	Name: "AssetCreated",
+	FFIEventDefinition: fftypes.FFIEventDefinition{
+		Name: "AssetCreated",
+	},
 }
 
 func deployChaincode(t *testing.T, stackName string) string {
