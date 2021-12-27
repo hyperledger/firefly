@@ -528,7 +528,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 	// All arguments must be JSON serialized
 	args, err := jsonEncodeParams(params)
 	if err != nil {
-		return nil, err
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
 	}
 	input := &fabTxNamedInput{
 		Func:    method.Name,
@@ -551,12 +551,12 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
-		return nil, fmt.Errorf("cannot parse onChainLocation")
+		return nil, err
 	}
 
 	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, signingKey, operationID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	var result interface{}
 	err = json.Unmarshal(res.Body(), &result)

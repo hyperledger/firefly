@@ -73,6 +73,31 @@ func newTestFabric() (*Fabric, func()) {
 	}
 }
 
+func testFFIMethod() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name: "sum",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:    "x",
+				Type:    "integer",
+				Details: []byte(`{"type": "int"}`),
+			},
+			{
+				Name:    "y",
+				Type:    "integer",
+				Details: []byte(`{"type": "int"}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{
+			{
+				Name:    "z",
+				Type:    "integer",
+				Details: []byte(`{"type": "int"}`),
+			},
+		},
+	}
+}
+
 func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -1274,4 +1299,173 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	em.AssertExpectations(t)
+}
+
+func TestInvokeContractOK(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signingKey, req.URL.Query().Get(defaultPrefixShort+"-signer"))
+			assert.Equal(t, "firefly", req.URL.Query().Get(defaultPrefixShort+"-channel"))
+			assert.Equal(t, "simplestorage", req.URL.Query().Get(defaultPrefixShort+"-chaincode"))
+			assert.Equal(t, "false", req.URL.Query().Get(defaultPrefixShort+"-sync"))
+			assert.Equal(t, "1", body["args"].(map[string]interface{})["x"])
+			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
+			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.NoError(t, err)
+}
+
+func TestInvokeContractChaincodeNotSet(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestInvokeContractFabconnectError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{
+		Channel:   "fabric",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.Regexp(t, "FF10284", err)
+}
+
+func TestInvokeContractUnmarshalResponseError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+
+			assert.Equal(t, signingKey, req.URL.Query().Get(defaultPrefixShort+"-signer"))
+			assert.Equal(t, "firefly", req.URL.Query().Get(defaultPrefixShort+"-channel"))
+			assert.Equal(t, "simplestorage", req.URL.Query().Get(defaultPrefixShort+"-chaincode"))
+			assert.Equal(t, "false", req.URL.Query().Get(defaultPrefixShort+"-sync"))
+			assert.Equal(t, "1", body["args"].(map[string]interface{})["x"])
+			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
+			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.Regexp(t, "invalid character", err)
+}
+
+func TestValidateContractLocation(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	err = e.ValidateContractLocation(context.Background(), locationBytes)
+	assert.NoError(t, err)
+}
+
+func TestValidateNoContractLocationChaincode(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel: "firefly",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	err = e.ValidateContractLocation(context.Background(), locationBytes)
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestParseParam(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	param := &fftypes.FFIParam{
+		Name: "x",
+		Type: "integer",
+	}
+	err := e.ValidateFFIParam(context.Background(), param)
+	assert.NoError(t, err)
+}
+
+func TestInvokeJSONEncodeParamsError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{
+		Channel:   "fabric",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": map[bool]interface{}{true: false},
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	assert.Regexp(t, "FF10151", err)
 }
