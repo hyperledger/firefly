@@ -40,7 +40,7 @@ helm.sh/chart: {{ include "firefly.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kuberentes.io/part-of: .Chart.Name
+app.kuberentes.io/part-of: {{ .Chart.Name }}
 {{- end }}
 
 {{/*
@@ -53,7 +53,7 @@ helm.sh/chart: {{ include "firefly.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kuberentes.io/part-of: .Chart.Name
+app.kuberentes.io/part-of: {{ .Chart.Name }}
 {{- end }}
 
 {{/*
