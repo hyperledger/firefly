@@ -1,9 +1,9 @@
 name: Helm
 
 on:
-  release:
-    types: [released, prereleased]
   push:
+    tags:
+      - "helm-v*"
     branches:
       - main
       - helm-oci-chart-publishing
@@ -14,8 +14,9 @@ on:
       - main
     paths:
       - "deploy/charts/**/*"
+
 jobs:
-  helm:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -63,20 +64,42 @@ jobs:
           kubectl get pod -A
   release:
     needs: helm
-    if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags/helm-v')
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/helm-v') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/helm-oci-chart-publishing')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: chart-version
+        run: |
+          CHART_VERSION=$(helm show chart ./firefly | grep '^version:' | awk '{ printf("%s", $2) }')
+          echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
+
+      - name: head-version
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/helm-oci-chart-publishing'
+        run: |
+          BUILD_TAG=${{ env.CHART_VERSION }}-$(date +"%Y%m%d")-$GITHUB_RUN_NUMBER
+          echo "PUBLISH_VERSION=${BUILD_TAG}" >> $GITHUB_ENV
+
+      - name: release-version
+        if: startsWith(github.ref, 'refs/tags/helm-v')
+        run: |
+          TAG_VERSION=(echo -n "${GITHUB_REF##*/}" | sed 's/helm-v//g')
+          if [[ "$TAG_VERSION" == "${{ env.CHART_VERSION }}" ]]; then
+            echo "Release tag version [$TAG_VERSION] does not match the chart's version [${{ env.CHART_VERSION }}]"
+            exit 1
+          fi
+          echo "PUBLISH_VERSION=${{ env.CHART_VERSION }}" >> $GITHUB_ENV
 
       - name: setup helm
         uses: azure/setup-helm@v1
         with:
           version: 3.7.2
 
-      - name: helm push
+      - name: helm publish
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u $GITHUB_ACTOR --password-stdin
-          helm chart save deploy/charts/firefly-helm ghcr.io/hfuss/firefly-helm:${TAG}
-          helm chart push ghcr.io/hfuss/firefly-helm:${TAG}
+
+          helm package --version ${{ env.PUBLISH_VERSION }} ./deploy/charts/firefly
+          helm push firefly-${{ env.PUBLISH_VERSION }}.tgz ghcr.io/hfuss/helm
         env:
           HELM_EXPERIMENTAL_OCI: "1"
