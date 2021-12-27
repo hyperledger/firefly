@@ -19,14 +19,13 @@ package fftypes
 import (
 	"context"
 	"fmt"
-	"strings"
-	"unicode"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 const (
 	FireflyOrgDIDPrefix = "did:firefly:org/"
+	OrgTopic            = "ff_organizations"
 )
 
 // Organization is a top-level identity in the network
@@ -56,23 +55,8 @@ func (org *Organization) Validate(ctx context.Context, existing bool) (err error
 	return nil
 }
 
-func orgTopic(orgIdentity string) string {
-	buf := strings.Builder{}
-	for _, r := range orgIdentity {
-		if buf.Len() > 64 {
-			break
-		}
-		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			buf.WriteRune(r)
-		} else {
-			buf.WriteRune('_')
-		}
-	}
-	return fmt.Sprintf("ff_org_%s", buf.String())
-}
-
 func (org *Organization) Topic() string {
-	return orgTopic(org.Identity)
+	return OrgTopic
 }
 
 func (org *Organization) SetBroadcastMessage(msgID *UUID) {

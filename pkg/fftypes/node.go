@@ -58,7 +58,7 @@ func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (n *Node) Topic() string {
-	return orgTopic(n.Owner)
+	return OrgTopic
 }
 
 func (n *Node) SetBroadcastMessage(msgID *UUID) {

@@ -47,8 +47,7 @@ func TestOrganizationValidation(t *testing.T) {
 	assert.Regexp(t, "FF10203", org.Validate(context.Background(), true))
 
 	var def Definition = org
-	org.Identity = `A B C D E F G H I J K L M N O P Q R S T U V W X Y Z $ ( ) + ! 0 1 2 3 4 5 6 7 8 9`
-	assert.Equal(t, "ff_org_A_B_C_D_E_F_G_H_I_J_K_L_M_N_O_P_Q_R_S_T_U_V_W_X_Y_Z___________0_1", def.Topic())
+	assert.Equal(t, "ff_organizations", def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, org.Message)
 }
