@@ -94,7 +94,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -136,7 +136,7 @@ func TestCreateTokenPoolOperationFail(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -160,7 +160,7 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -184,7 +184,7 @@ func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -244,7 +244,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil).Times(1)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil).Times(1)
 	msa.On("WaitForTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
@@ -322,7 +322,7 @@ func TestCreateTokenPoolByTypeFail(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", pool, false)
@@ -364,7 +364,7 @@ func TestCreateTokenPoolByTypeOperationFail(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -388,7 +388,7 @@ func TestCreateTokenPoolByTypeSuccess(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 
 	_, err := am.CreateTokenPoolByType(context.Background(), "ns1", "magic-tokens", pool, false)
 	assert.NoError(t, err)
@@ -413,7 +413,7 @@ func TestCreateTokenPoolByTypeConfirm(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
-	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil).Times(1)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil).Times(1)
 	msa.On("WaitForTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)

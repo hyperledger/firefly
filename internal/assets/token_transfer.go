@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -283,7 +284,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		if err != nil {
 			return err
 		}
-		if err = s.mgr.database.UpsertOperation(ctx, op, false); err != nil {
+		if err = s.mgr.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
 		if s.transfer.Message != nil {
@@ -298,14 +299,35 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	switch s.transfer.Type {
 	case fftypes.TokenTransferTypeMint:
-		return plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeTransfer:
-		return plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeBurn:
-		return plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	default:
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}
+
+	// if transaction fails,  mark tx and op as failed in DB
+	if err != nil {
+		_ = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+			l := log.L(ctx)
+			tx.Status = fftypes.OpStatusFailed
+
+			update := database.OperationQueryFactory.NewUpdate(ctx).
+				Set("status", fftypes.OpStatusFailed)
+			if err = s.mgr.database.UpdateTransaction(ctx, tx.ID, update); err != nil {
+				l.Errorf("TX update failed: %s update=[ %s ]", err, update)
+			}
+			if err = s.mgr.database.UpdateOperation(ctx, op.ID, update); err != nil {
+				l.Errorf("Operation update failed: %s update=[ %s ]", err, update)
+			}
+
+			return nil
+		})
+	}
+
+	return err
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {

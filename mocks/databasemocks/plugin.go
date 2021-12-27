@@ -271,6 +271,29 @@ func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*ffty
 	return r0, r1, r2
 }
 
+// GetChartHistogram provides a mock function with given fields: ctx, ns, intervals, collection
+func (_m *Plugin) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+	ret := _m.Called(ctx, ns, intervals, collection)
+
+	var r0 []*fftypes.ChartHistogram
+	if rf, ok := ret.Get(0).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) []*fftypes.ChartHistogram); ok {
+		r0 = rf(ctx, ns, intervals, collection)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ChartHistogram)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) error); ok {
+		r1 = rf(ctx, ns, intervals, collection)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetConfigRecord provides a mock function with given fields: ctx, key
 func (_m *Plugin) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {
 	ret := _m.Called(ctx, key)
@@ -2180,6 +2203,20 @@ func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) e
 	return r0
 }
 
+// InsertOperation provides a mock function with given fields: ctx, operation
+func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operation) error {
+	ret := _m.Called(ctx, operation)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
+		r0 = rf(ctx, operation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Name provides a mock function with given fields:
 func (_m *Plugin) Name() string {
 	ret := _m.Called()
@@ -2635,20 +2672,6 @@ func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset, allowE
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertOperation provides a mock function with given fields: ctx, operation, allowExisting
-func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) error {
-	ret := _m.Called(ctx, operation, allowExisting)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation, bool) error); ok {
-		r0 = rf(ctx, operation, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -187,28 +187,56 @@ func TestMergeConfigOk(t *testing.T) {
 			}
 		}
 	}`)
-	conf2 := fftypes.Byteable(`{
+	confNumber := fftypes.Byteable(`{
 		"some":  {
 			"more": {
-				"stuff": "value2"
+				"stuff": 15
 			}
 		}
 	}`)
 	conf3 := fftypes.Byteable(`"value3"`)
+	confNestedSlice := fftypes.Byteable(`{
+		"nestedslice": [
+			{
+				"firstitemfirstkey": "firstitemfirstkeyvalue",
+				"firstitemsecondkey": "firstitemsecondkeyvalue"
+			},
+			{
+				"seconditemfirstkey": "seconditemfirstkeyvalue",
+				"seconditemsecondkey": "seconditemsecondkeyvalue"
+			}
+		]
+	}`)
+	confBaseSlice := fftypes.Byteable(`[
+		{
+			"firstitemfirstkey": "firstitemfirstkeyvalue",
+			"firstitemsecondkey": "firstitemsecondkeyvalue"
+		},
+		{
+			"seconditemfirstkey": "seconditemfirstkeyvalue",
+			"seconditemsecondkey": "seconditemsecondkeyvalue"
+		}
+	]`)
 
 	viper.Reset()
 	viper.Set("base.something", "value4")
 	err := MergeConfig([]*fftypes.ConfigRecord{
 		{Key: "base", Value: conf1},
-		{Key: "base", Value: conf2},
+		{Key: "base", Value: confNumber},
 		{Key: "base.some.plain", Value: conf3},
+		{Key: "base", Value: confNestedSlice},
+		{Key: "base.slice", Value: confBaseSlice},
 	})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "value1", viper.Get("base.some.nested.stuff"))
-	assert.Equal(t, "value2", viper.Get("base.some.more.stuff"))
+	assert.Equal(t, 15, viper.GetInt("base.some.more.stuff"))
 	assert.Equal(t, "value3", viper.Get("base.some.plain"))
 	assert.Equal(t, "value4", viper.Get("base.something"))
+	assert.Equal(t, "firstitemfirstkeyvalue", viper.Get("base.nestedslice.0.firstitemfirstkey"))
+	assert.Equal(t, "seconditemsecondkeyvalue", viper.Get("base.nestedslice.1.seconditemsecondkey"))
+	assert.Equal(t, "firstitemfirstkeyvalue", viper.Get("base.slice.0.firstitemfirstkey"))
+	assert.Equal(t, "seconditemsecondkeyvalue", viper.Get("base.slice.1.seconditemsecondkey"))
 
 }
 

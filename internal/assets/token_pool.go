@@ -111,7 +111,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		err = am.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 		if err == nil {
-			err = am.database.UpsertOperation(ctx, op, false)
+			err = am.database.InsertOperation(ctx, op)
 		}
 		return err
 	})

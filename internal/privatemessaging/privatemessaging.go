@@ -165,7 +165,7 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 					trackingID,
 					fftypes.OpTypeDataExchangeBlobSend,
 					fftypes.OpStatusPending)
-				if err = pm.database.UpsertOperation(ctx, op, false); err != nil {
+				if err = pm.database.InsertOperation(ctx, op); err != nil {
 					return err
 				}
 			}
@@ -211,7 +211,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 				trackingID,
 				fftypes.OpTypeDataExchangeBatchSend,
 				fftypes.OpStatusPending)
-			if err = pm.database.UpsertOperation(ctx, op, false); err != nil {
+			if err = pm.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
 		}

@@ -321,9 +321,9 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
-	mdi.On("UpsertOperation", em.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mdi.On("InsertOperation", em.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenAnnouncePool
-	}), false).Return(nil)
+	})).Return(nil)
 	mbm.On("BroadcastTokenPool", em.ctx, "test-ns", mock.MatchedBy(func(pool *fftypes.TokenPoolAnnouncement) bool {
 		return pool.Pool.Namespace == "test-ns" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)

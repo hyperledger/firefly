@@ -194,8 +194,8 @@ type iPinCollection interface {
 }
 
 type iOperationCollection interface {
-	// UpsertOperation - Upsert an operation
-	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
+	// InsertOperation - Insert an operation
+	InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
 
 	// UpdateOperation - Update operation by ID
 	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -463,6 +463,12 @@ type iContractEventCollection interface {
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
+type iChartCollection interface {
+	// GetChartHistogram - Get charting data for a histogram
+	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
+}
+
+// PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
 // while not trying to become the core database of the application (where full deeply nested
@@ -524,6 +530,7 @@ type PersistenceInterface interface {
 	iContractAPICollection
 	iContractSubscriptionCollection
 	iContractEventCollection
+	iChartCollection
 }
 
 // CollectionName represents all collections
@@ -536,7 +543,7 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages       OrderedUUIDCollectionNS = "message"
+	CollectionMessages       OrderedUUIDCollectionNS = "messages"
 	CollectionEvents         OrderedUUIDCollectionNS = "events"
 	CollectionContractEvents OrderedUUIDCollectionNS = "contractevents"
 )

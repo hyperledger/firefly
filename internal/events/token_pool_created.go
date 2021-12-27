@@ -132,7 +132,7 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, po
 		"",
 		fftypes.OpTypeTokenAnnouncePool,
 		fftypes.OpStatusPending)
-	return announcePool, em.database.UpsertOperation(ctx, nextOp, false)
+	return announcePool, em.database.InsertOperation(ctx, nextOp)
 }
 
 // It is expected that this method might be invoked twice for each pool, depending on the behavior of the connector.

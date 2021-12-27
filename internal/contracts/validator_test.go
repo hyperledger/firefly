@@ -402,5 +402,5 @@ func TestIntegerInvalid(t *testing.T) {
 		Type: "integer",
 	}
 	err := checkParam(context.Background(), false, param)
-	assert.Regexp(t, "FF10297", err)
+	assert.Regexp(t, "FF10305", err)
 }
