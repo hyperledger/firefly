@@ -9,12 +9,13 @@ on:
       - helm-oci-chart-publishing
     paths:
       - "deploy/charts/**/*"
+      - ".github/workflows/helm.yml"
   pull_request:
     branches:
       - main
     paths:
       - "deploy/charts/**/*"
-
+      - ".github/workflows/helm.yml"
 jobs:
   test:
     runs-on: ubuntu-latest
