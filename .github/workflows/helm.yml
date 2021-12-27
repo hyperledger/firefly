@@ -31,7 +31,7 @@ jobs:
         uses: helm/chart-testing-action@v2.0.1
 
       - name: lint chart
-        run: ct lint --charts deploy/charts/firefly-helm
+        run: ct lint --charts deploy/charts/firefly
 
       - name: setup kind
         uses: engineerd/setup-kind@v0.5.0
@@ -57,7 +57,7 @@ jobs:
           helm install --set postgresqlPassword=firef1y --set extraEnv[0].name=POSTGRES_DATABASE --set extraEnv[0].value=firefly postgresql bitnami/postgresql
 
       - name: run chart integration test
-        run: ct install --charts deploy/charts/firefly-helm
+        run: ct install --charts deploy/charts/firefly
 
       - name: debug k8s
         if: ${{ failure() }}
