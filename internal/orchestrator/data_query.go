@@ -128,7 +128,7 @@ func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
 		return nil, err
 	}
 	return or.database.GetDatatypeByName(ctx, ns, name, version)

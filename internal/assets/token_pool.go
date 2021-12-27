@@ -29,7 +29,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameField(ctx, pool.Name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
 	pool.ID = fftypes.NewUUID()
@@ -154,7 +154,7 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolNam
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameField(ctx, poolName, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
 		return nil, err
 	}
 	pool, err := am.database.GetTokenPool(ctx, ns, poolName)

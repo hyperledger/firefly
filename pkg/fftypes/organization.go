@@ -42,7 +42,7 @@ type Organization struct {
 }
 
 func (org *Organization) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameField(ctx, org.Name, "name"); err != nil {
+	if err = ValidateFFNameFieldNoUUID(ctx, org.Name, "name"); err != nil {
 		return err
 	}
 	if err = ValidateLength(ctx, org.Description, "description", 4096); err != nil {

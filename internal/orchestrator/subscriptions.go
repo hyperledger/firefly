@@ -41,7 +41,7 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, ns string,
 	if err := or.data.VerifyNamespaceExists(ctx, subDef.Namespace); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameField(ctx, subDef.Name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, subDef.Name, "name"); err != nil {
 		return nil, err
 	}
 	if subDef.Transport == system.SystemEventsTransport {
