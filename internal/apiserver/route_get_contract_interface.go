@@ -44,9 +44,13 @@ var getContractInterface = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		if strings.EqualFold(r.QP["fetchchildren"], "true") {
-			return getOr(r.Ctx).Contracts().GetFFIByIDWithChildren(r.Ctx, r.PP["interfaceId"])
+		interfaceID, err := fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"])
+		if err != nil {
+			return nil, err
 		}
-		return getOr(r.Ctx).Contracts().GetFFIByID(r.Ctx, r.PP["interfaceId"])
+		if strings.EqualFold(r.QP["fetchchildren"], "true") {
+			return getOr(r.Ctx).Contracts().GetFFIByIDWithChildren(r.Ctx, interfaceID)
+		}
+		return getOr(r.Ctx).Contracts().GetFFIByID(r.Ctx, interfaceID)
 	},
 }

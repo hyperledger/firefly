@@ -827,11 +827,11 @@ func (_m *Plugin) GetFFI(ctx context.Context, ns string, name string, version st
 }
 
 // GetFFIByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error) {
+func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.FFI); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
@@ -840,7 +840,7 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, erro
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)

@@ -291,11 +291,11 @@ func (_m *Manager) GetFFI(ctx context.Context, ns string, name string, version s
 }
 
 // GetFFIByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error) {
+func (_m *Manager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.FFI); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
@@ -304,7 +304,7 @@ func (_m *Manager) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, err
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
@@ -314,11 +314,11 @@ func (_m *Manager) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, err
 }
 
 // GetFFIByIDWithChildren provides a mock function with given fields: ctx, id
-func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id string) (*fftypes.FFI, error) {
+func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.FFI); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
@@ -327,7 +327,7 @@ func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id string) (*ffty
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)

@@ -155,8 +155,8 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filt
 
 }
 
-func (s *SQLCommon) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error) {
-	return s.getFFIPred(ctx, id, sq.Eq{"id": id})
+func (s *SQLCommon) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
+	return s.getFFIPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
 func (s *SQLCommon) GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {

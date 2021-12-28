@@ -407,7 +407,7 @@ type iTokenTransferCollection interface {
 type iFFICollection interface {
 	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
 	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
-	GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error)
+	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 }
 

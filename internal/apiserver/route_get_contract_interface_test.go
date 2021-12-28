@@ -28,6 +28,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func TestGetContractInterfaceBadID(t *testing.T) {
+	_, r := newTestAPIServer()
+	input := fftypes.Datatype{}
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(&input)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/bad", &buf)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
+}
+
 func TestGetContractInterface(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
@@ -35,11 +49,12 @@ func TestGetContractInterface(t *testing.T) {
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/62757af9-b539-4b77-adfa-c0e7beebbfd3", &buf)
+	id := fftypes.NewUUID()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/"+id.String(), &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetFFIByID", mock.Anything, "62757af9-b539-4b77-adfa-c0e7beebbfd3").
+	mcm.On("GetFFIByID", mock.Anything, id).
 		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -53,11 +68,12 @@ func TestGetContractInterfaceWithChildren(t *testing.T) {
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/62757af9-b539-4b77-adfa-c0e7beebbfd3?fetchchildren", &buf)
+	id := fftypes.NewUUID()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/"+id.String()+"?fetchchildren", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetFFIByIDWithChildren", mock.Anything, "62757af9-b539-4b77-adfa-c0e7beebbfd3").
+	mcm.On("GetFFIByIDWithChildren", mock.Anything, id).
 		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 

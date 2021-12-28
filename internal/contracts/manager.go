@@ -34,8 +34,8 @@ import (
 type Manager interface {
 	BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
 	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
-	GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error)
-	GetFFIByIDWithChildren(ctx context.Context, id string) (*fftypes.FFI, error)
+	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
+	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 
 	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
@@ -122,11 +122,11 @@ func (cm *contractManager) GetFFI(ctx context.Context, ns, name, version string)
 	return cm.database.GetFFI(ctx, ns, name, version)
 }
 
-func (cm *contractManager) GetFFIByID(ctx context.Context, id string) (*fftypes.FFI, error) {
+func (cm *contractManager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
 	return cm.database.GetFFIByID(ctx, id)
 }
 
-func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id string) (*fftypes.FFI, error) {
+func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
 	ffi, err := cm.database.GetFFIByID(ctx, id)
 	if err != nil || ffi == nil {
 		return nil, err
@@ -214,7 +214,7 @@ func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServer
 		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
 	}
 
-	ffi, err := cm.GetFFIByIDWithChildren(ctx, api.Contract.ID.String())
+	ffi, err := cm.GetFFIByIDWithChildren(ctx, api.Contract.ID)
 	if err != nil {
 		return nil, err
 	}

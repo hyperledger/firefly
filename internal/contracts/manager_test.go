@@ -982,9 +982,9 @@ func TestGetFFI(t *testing.T) {
 func TestGetFFIByID(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
-	id := fftypes.NewUUID().String()
-	mdb.On("GetFFIByID", mock.Anything, id).Return(&fftypes.FFI{}, nil)
-	_, err := cm.GetFFIByID(context.Background(), id)
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{}, nil)
+	_, err := cm.GetFFIByID(context.Background(), cid)
 	assert.NoError(t, err)
 }
 
@@ -993,7 +993,7 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
 		ID: cid,
 	}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
@@ -1003,7 +1003,7 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
 
-	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
 	assert.NoError(t, err)
 	mdb.AssertExpectations(t)
@@ -1017,7 +1017,7 @@ func TestGetFFIByIDWithChildrenEventsFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
 		ID: cid,
 	}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
@@ -1025,7 +1025,7 @@ func TestGetFFIByIDWithChildrenEventsFail(t *testing.T) {
 	}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
 	assert.EqualError(t, err, "pop")
 	mdb.AssertExpectations(t)
@@ -1036,12 +1036,12 @@ func TestGetFFIByIDWithChildrenMethodsFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
 		ID: cid,
 	}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
 	assert.EqualError(t, err, "pop")
 	mdb.AssertExpectations(t)
@@ -1052,9 +1052,9 @@ func TestGetFFIByIDWithChildrenFFILookupFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
 	assert.EqualError(t, err, "pop")
 	mdb.AssertExpectations(t)
@@ -1065,9 +1065,9 @@ func TestGetFFIByIDWithChildrenFFINotFoundl(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(nil, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(nil, nil)
 
-	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid.String())
+	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
 	assert.NoError(t, err)
 	assert.Nil(t, ffi)
@@ -1423,7 +1423,7 @@ func TestGetContractAPISwagger(t *testing.T) {
 			ID: cid,
 		},
 	}, nil)
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
 		ID: cid,
 	}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
@@ -1457,7 +1457,7 @@ func TestGetContractAPISwaggerGenFail(t *testing.T) {
 			ID: cid,
 		},
 	}, nil)
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(&fftypes.FFI{ID: cid}, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{ID: cid}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{}, nil, nil)
 	msg.On("Generate", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -1503,7 +1503,7 @@ func TestGetContractAPISwaggerFFIFail(t *testing.T) {
 			ID: cid,
 		},
 	}, nil)
-	mdb.On("GetFFIByID", mock.Anything, cid.String()).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
 
