@@ -24,6 +24,12 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 )
 
+type FFIReference struct {
+	ID      *UUID  `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+
 type FFI struct {
 	ID          *UUID        `json:"id,omitempty"`
 	Message     *UUID        `json:"message,omitempty"`

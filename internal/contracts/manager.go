@@ -170,7 +170,7 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	if err != nil {
 		return nil, err
 	}
-	req.ContractID = api.Contract.ID
+	req.ContractID = api.Interface.ID
 	req.Method = &fftypes.FFIMethod{
 		Name: methodName,
 	}
@@ -210,11 +210,11 @@ func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServer
 	if err != nil {
 		return nil, err
 	}
-	if api == nil || api.Contract == nil {
+	if api == nil || api.Interface == nil {
 		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
 	}
 
-	ffi, err := cm.GetFFIByIDWithChildren(ctx, api.Contract.ID)
+	ffi, err := cm.GetFFIByIDWithChildren(ctx, api.Interface.ID)
 	if err != nil {
 		return nil, err
 	}

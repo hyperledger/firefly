@@ -44,7 +44,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 		ID:        apiID,
 		Namespace: "ns1",
 		Name:      "banana",
-		Contract: &fftypes.ContractIdentifier{
+		Interface: &fftypes.FFIReference{
 			ID:      contractID,
 			Name:    "banana",
 			Version: "v1.0.0",
@@ -63,7 +63,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	assert.NotNil(t, dataRead)
 	assert.Equal(t, *apiID, *dataRead.ID)
 
-	contractAPI.Contract.Version = "v1.1.0"
+	contractAPI.Interface.Version = "v1.1.0"
 
 	err = s.UpsertContractAPI(ctx, contractAPI, database.UpsertOptimizationSkip)
 	assert.NoError(t, err)
@@ -99,7 +99,7 @@ func TestContractAPIDBFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	// mock.ExpectQuery("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	api := &fftypes.ContractAPI{
-		Contract: &fftypes.ContractIdentifier{},
+		Interface: &fftypes.FFIReference{},
 	}
 	err := s.UpsertContractAPI(context.Background(), api, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
@@ -114,7 +114,7 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	api := &fftypes.ContractAPI{
-		Contract: &fftypes.ContractIdentifier{},
+		Interface: &fftypes.FFIReference{},
 	}
 	err := s.UpsertContractAPI(context.Background(), api, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "pop", err)

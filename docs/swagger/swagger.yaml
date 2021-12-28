@@ -516,7 +516,7 @@ paths:
           application/json:
             schema:
               properties:
-                contract:
+                interface:
                   properties:
                     id: {}
                     name:
@@ -539,7 +539,8 @@ paths:
             application/json:
               schema:
                 properties:
-                  contract:
+                  id: {}
+                  interface:
                     properties:
                       id: {}
                       name:
@@ -547,7 +548,6 @@ paths:
                       version:
                         type: string
                     type: object
-                  id: {}
                   ledger:
                     format: byte
                     type: string
@@ -566,7 +566,8 @@ paths:
             application/json:
               schema:
                 properties:
-                  contract:
+                  id: {}
+                  interface:
                     properties:
                       id: {}
                       name:
@@ -574,7 +575,6 @@ paths:
                       version:
                         type: string
                     type: object
-                  id: {}
                   ledger:
                     format: byte
                     type: string

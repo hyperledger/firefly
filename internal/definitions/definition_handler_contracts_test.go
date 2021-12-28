@@ -82,7 +82,7 @@ func testContractAPI() *fftypes.ContractAPI {
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "math",
-		Contract: &fftypes.ContractIdentifier{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 		Ledger:   []byte{},

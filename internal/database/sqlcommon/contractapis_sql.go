@@ -61,7 +61,7 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractA
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("contractapis").
 				Set("id", cd.ID).
-				Set("interface_id", cd.Contract.ID).
+				Set("interface_id", cd.Interface.ID).
 				Set("ledger", cd.Ledger).
 				Set("location", cd.Location).
 				Set("name", cd.Name).
@@ -78,7 +78,7 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractA
 				Columns(contractAPIsColumns...).
 				Values(
 					cd.ID,
-					cd.Contract.ID,
+					cd.Interface.ID,
 					cd.Ledger,
 					cd.Location,
 					cd.Name,
@@ -97,11 +97,11 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractA
 
 func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractAPI, error) {
 	api := fftypes.ContractAPI{
-		Contract: &fftypes.ContractIdentifier{},
+		Interface: &fftypes.FFIReference{},
 	}
 	err := row.Scan(
 		&api.ID,
-		&api.Contract.ID,
+		&api.Interface.ID,
 		&api.Ledger,
 		&api.Location,
 		&api.Name,

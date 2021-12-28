@@ -27,19 +27,13 @@ type InvokeContractRequest struct {
 }
 
 type ContractAPI struct {
-	ID        *UUID               `json:"id,omitempty"`
-	Namespace string              `json:"namespace,omitempty"`
-	Contract  *ContractIdentifier `json:"contract"`
-	Ledger    Byteable            `json:"ledger,omitempty"`
-	Location  Byteable            `json:"location,omitempty"`
-	Name      string              `json:"name"`
-	Message   *UUID               `json:"message,omitempty"`
-}
-
-type ContractIdentifier struct {
-	ID      *UUID  `json:"id,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Version string `json:"version,omitempty"`
+	ID        *UUID         `json:"id,omitempty"`
+	Namespace string        `json:"namespace,omitempty"`
+	Interface *FFIReference `json:"interface"`
+	Ledger    Byteable      `json:"ledger,omitempty"`
+	Location  Byteable      `json:"location,omitempty"`
+	Name      string        `json:"name"`
+	Message   *UUID         `json:"message,omitempty"`
 }
 
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {

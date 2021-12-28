@@ -1362,7 +1362,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	}
 
 	api := &fftypes.ContractAPI{
-		Contract: &fftypes.ContractIdentifier{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 		Location: []byte{},
@@ -1419,7 +1419,7 @@ func TestGetContractAPISwagger(t *testing.T) {
 	cid := fftypes.NewUUID()
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
 		ID: fftypes.NewUUID(),
-		Contract: &fftypes.ContractIdentifier{
+		Interface: &fftypes.FFIReference{
 			ID: cid,
 		},
 	}, nil)
@@ -1453,7 +1453,7 @@ func TestGetContractAPISwaggerGenFail(t *testing.T) {
 	cid := fftypes.NewUUID()
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
 		ID: fftypes.NewUUID(),
-		Contract: &fftypes.ContractIdentifier{
+		Interface: &fftypes.FFIReference{
 			ID: cid,
 		},
 	}, nil)
@@ -1499,7 +1499,7 @@ func TestGetContractAPISwaggerFFIFail(t *testing.T) {
 	cid := fftypes.NewUUID()
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
 		ID: fftypes.NewUUID(),
-		Contract: &fftypes.ContractIdentifier{
+		Interface: &fftypes.FFIReference{
 			ID: cid,
 		},
 	}, nil)
