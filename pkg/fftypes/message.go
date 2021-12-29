@@ -154,6 +154,14 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	if len(m.Header.Topics) == 0 {
 		m.Header.Topics = []string{DefaultTopic}
 	}
+	if err := m.Header.Topics.Validate(ctx, "header.topics"); err != nil {
+		return err
+	}
+	if m.Header.Tag != "" {
+		if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
+			return err
+		}
+	}
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}

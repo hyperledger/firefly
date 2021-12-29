@@ -66,7 +66,7 @@ func (t *TokenPool) Validate(ctx context.Context) (err error) {
 	if err = ValidateFFNameField(ctx, t.Namespace, "namespace"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameField(ctx, t.Name, "name"); err != nil {
+	if err = ValidateFFNameFieldNoUUID(ctx, t.Name, "name"); err != nil {
 		return err
 	}
 	return nil

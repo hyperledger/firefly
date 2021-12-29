@@ -40,7 +40,7 @@ type DXInfo struct {
 }
 
 func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameField(ctx, n.Name, "name"); err != nil {
+	if err = ValidateFFNameFieldNoUUID(ctx, n.Name, "name"); err != nil {
 		return err
 	}
 	if err = ValidateLength(ctx, n.Description, "description", 4096); err != nil {
@@ -58,7 +58,7 @@ func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (n *Node) Topic() string {
-	return orgTopic(n.Owner)
+	return OrgTopic
 }
 
 func (n *Node) SetBroadcastMessage(msgID *UUID) {

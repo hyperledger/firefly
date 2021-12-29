@@ -68,7 +68,7 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 	}
 	// We allow a blank name for a group (for auto creation)
 	if group.Name != "" {
-		if err = ValidateFFNameField(ctx, group.Name, "name"); err != nil {
+		if err = ValidateFFNameFieldNoUUID(ctx, group.Name, "name"); err != nil {
 			return err
 		}
 	}
