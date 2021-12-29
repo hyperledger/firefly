@@ -1377,7 +1377,7 @@ func TestInvokeContractAPI(t *testing.T) {
 
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
-	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(&fftypes.FFIMethod{}, nil)
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(&fftypes.FFIMethod{Name: "peel"}, nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", mock.Anything, mock.AnythingOfType("*fftypes.FFIMethod"), mock.Anything).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)

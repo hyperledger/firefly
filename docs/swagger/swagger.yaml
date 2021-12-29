@@ -638,7 +638,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/apis/{apiName}/invoke/{methodName}:
+  /namespaces/{ns}/apis/{apiName}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'
       operationId: postInvokeContractAPI
@@ -659,10 +659,10 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: methodName
+        name: methodPath
         required: true
         schema:
-          example: methodName
+          example: methodPath
           type: string
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
@@ -689,51 +689,6 @@ paths:
                 location:
                   format: byte
                   type: string
-                method:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            format: byte
-                            type: string
-                          name:
-                            type: string
-                          type:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                    returns:
-                      items:
-                        properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            format: byte
-                            type: string
-                          name:
-                            type: string
-                          type:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
                 params:
                   additionalProperties: {}
                   type: object

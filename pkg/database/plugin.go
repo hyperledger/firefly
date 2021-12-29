@@ -413,7 +413,7 @@ type iFFICollection interface {
 
 type iFFIMethodCollection interface {
 	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
-	GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error)
+	GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
 	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 

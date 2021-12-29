@@ -27,12 +27,12 @@ import (
 
 var postInvokeContractAPI = &oapispec.Route{
 	Name:   "postInvokeContractAPI",
-	Path:   "namespaces/{ns}/apis/{apiName}/invoke/{methodName}",
+	Path:   "namespaces/{ns}/apis/{apiName}/invoke/{methodPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "apiName", Example: "apiName", Description: i18n.MsgTBD},
-		{Name: "methodName", Example: "methodName", Description: i18n.MsgTBD},
+		{Name: "methodPath", Example: "methodPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
@@ -40,10 +40,10 @@ var postInvokeContractAPI = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
-	JSONInputMask:   nil,
+	JSONInputMask:   []string{"Method"},
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodName"], r.Input.(*fftypes.InvokeContractRequest))
+		return getOr(r.Ctx).Contracts().InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodPath"], r.Input.(*fftypes.InvokeContractRequest))
 	},
 }

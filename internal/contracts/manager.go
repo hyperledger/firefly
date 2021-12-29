@@ -39,7 +39,7 @@ type Manager interface {
 	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 
 	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
-	InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error)
+	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error)
 	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 
@@ -153,27 +153,26 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
-func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (res interface{}, err error) {
 	signingKey := cm.identity.GetOrgKey(ctx)
 	operationID := fftypes.NewUUID()
-	method, err := cm.resolveInvokeContractRequest(ctx, ns, req)
-	if err != nil {
+	if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
 		return nil, err
 	}
 	if err := cm.ValidateInvokeContractRequest(ctx, req); err != nil {
 		return nil, err
 	}
-	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, method, req.Params)
+	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, req.Method, req.Params)
 }
 
-func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error) {
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
 	}
 	req.ContractID = api.Interface.ID
 	req.Method = &fftypes.FFIMethod{
-		Name: methodName,
+		Pathname: methodPath,
 	}
 	if api.Location != nil {
 		req.Location = api.Location
@@ -186,13 +185,17 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 		return nil, i18n.NewError(ctx, i18n.MsgContractMethodNotSet)
 	}
 	method = req.Method
+
 	// We have a method name but no method signature - look up the method in the DB
-	if method.Name != "" && (method.Params == nil || method.Returns == nil) {
+	if method.Pathname == "" {
+		method.Pathname = method.Name
+	}
+	if method.Pathname != "" && (method.Params == nil || method.Returns == nil) {
 		if req.ContractID.String() == "" {
 			return nil, i18n.NewError(ctx, i18n.MsgContractNoMethodSignature)
 		}
 
-		method, err = cm.database.GetFFIMethod(ctx, ns, req.ContractID, method.Name)
+		method, err = cm.database.GetFFIMethod(ctx, ns, req.ContractID, method.Pathname)
 		if err != nil || method == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgContractResolveError)
 		}
