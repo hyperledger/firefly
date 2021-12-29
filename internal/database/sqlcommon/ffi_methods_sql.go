@@ -39,7 +39,7 @@ var (
 		"returns",
 	}
 	ffiMethodFilterFieldMap = map[string]string{
-		"interfaceid": "interface_id",
+		"interface": "interface_id",
 	}
 )
 

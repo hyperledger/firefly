@@ -38,7 +38,7 @@ var (
 		"params",
 	}
 	ffiEventFilterFieldMap = map[string]string{
-		"interfaceid": "interface_id",
+		"interface": "interface_id",
 	}
 )
 

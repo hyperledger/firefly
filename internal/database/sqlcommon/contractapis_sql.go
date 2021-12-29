@@ -36,7 +36,9 @@ var (
 		"name",
 		"namespace",
 	}
-	contractAPIsFilterFieldMap = map[string]string{}
+	contractAPIsFilterFieldMap = map[string]string{
+		"interface": "interface_id",
+	}
 )
 
 func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI, optimization database.UpsertOptimization) (err error) {

@@ -40,8 +40,8 @@ var (
 		"created",
 	}
 	contractSubscriptionFilterFieldMap = map[string]string{
-		"interfaceid": "interface_id",
-		"protocolid":  "protocol_id",
+		"interface":  "interface_id",
+		"protocolid": "protocol_id",
 	}
 )
 
