@@ -34,10 +34,14 @@ var (
 		"name",
 		"version",
 		"description",
+		"message_id",
+	}
+	ffiFilterFieldMap = map[string]string{
+		"message": "message_id",
 	}
 )
 
-func (s *SQLCommon) UpsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) {
+func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -47,7 +51,7 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) 
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("ffi").
-			Where(sq.And{sq.Eq{"id": cd.ID}}),
+			Where(sq.And{sq.Eq{"id": ffi.ID}}),
 	)
 	if err != nil {
 		return err
@@ -58,12 +62,13 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) 
 	if existing {
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("ffi").
-				Set("namespace", cd.Namespace).
-				Set("name", cd.Name).
-				Set("version", cd.Version).
-				Set("description", cd.Description),
+				Set("namespace", ffi.Namespace).
+				Set("name", ffi.Name).
+				Set("version", ffi.Version).
+				Set("description", ffi.Description).
+				Set("message_id", ffi.Message),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeUpdated, cd.Namespace, cd.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeUpdated, ffi.Namespace, ffi.ID)
 			},
 		); err != nil {
 			return err
@@ -73,14 +78,15 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, cd *fftypes.FFI) (err error) 
 			sq.Insert("ffi").
 				Columns(ffiColumns...).
 				Values(
-					cd.ID,
-					cd.Namespace,
-					cd.Name,
-					cd.Version,
-					cd.Description,
+					ffi.ID,
+					ffi.Namespace,
+					ffi.Name,
+					ffi.Version,
+					ffi.Description,
+					ffi.Message,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeCreated, cd.Namespace, cd.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeCreated, ffi.Namespace, ffi.ID)
 			},
 		); err != nil {
 			return err
@@ -98,6 +104,7 @@ func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI,
 		&ffi.Name,
 		&ffi.Version,
 		&ffi.Description,
+		&ffi.Message,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "ffi")
@@ -131,7 +138,7 @@ func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{
 
 func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filter) (ffis []*fftypes.FFI, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiColumns...).From("ffi").Where(sq.Eq{"namespace": ns}), filter, nil, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiColumns...).From("ffi").Where(sq.Eq{"namespace": ns}), filter, ffiFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}

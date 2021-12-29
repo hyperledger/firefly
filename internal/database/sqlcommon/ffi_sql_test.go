@@ -44,6 +44,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 		Name:        "math",
 		Version:     "v1.0.0",
 		Description: "Does things and stuff",
+		Message:     fftypes.NewUUID(),
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
@@ -177,7 +178,7 @@ func TestGetFFIs(t *testing.T) {
 	fb := database.FFIQueryFactory.NewFilter(context.Background())
 	s, mock := newMockProvider().init()
 	rows := sqlmock.NewRows(ffiColumns).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things")
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetFFIs(context.Background(), "ns1", fb.And())
 	assert.NoError(t, err)
@@ -215,7 +216,7 @@ func TestGetFFIsQueryResultFail(t *testing.T) {
 func TestGetFFI(t *testing.T) {
 	s, mock := newMockProvider().init()
 	rows := sqlmock.NewRows(ffiColumns).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things")
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "ns1", "math", "v1.0.0", "super mathy things", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	ffi, err := s.GetFFI(context.Background(), "ns1", "math", "v1.0.0")
 	assert.NoError(t, err)

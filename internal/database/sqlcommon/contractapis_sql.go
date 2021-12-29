@@ -35,11 +35,14 @@ var (
 		"location",
 		"name",
 		"namespace",
+		"message_id",
 	}
-	contractAPIsFilterFieldMap = map[string]string{}
+	contractAPIsFilterFieldMap = map[string]string{
+		"message": "message_id",
+	}
 )
 
-func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI, optimization database.UpsertOptimization) (err error) {
+func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.ContractAPI, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -49,7 +52,7 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractA
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("contractapis").
-			Where(sq.And{sq.Eq{"id": cd.ID}}),
+			Where(sq.And{sq.Eq{"id": api.ID}}),
 	)
 	if err != nil {
 		return err
@@ -60,14 +63,15 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractA
 	if existing {
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("contractapis").
-				Set("id", cd.ID).
-				Set("interface_id", cd.Interface.ID).
-				Set("ledger", cd.Ledger).
-				Set("location", cd.Location).
-				Set("name", cd.Name).
-				Set("namespace", cd.Namespace),
+				Set("id", api.ID).
+				Set("interface_id", api.Interface.ID).
+				Set("ledger", api.Ledger).
+				Set("location", api.Location).
+				Set("name", api.Name).
+				Set("namespace", api.Namespace).
+				Set("message_id", api.Message),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, fftypes.ChangeEventTypeUpdated, cd.Namespace, cd.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, fftypes.ChangeEventTypeUpdated, api.Namespace, api.ID)
 			},
 		); err != nil {
 			return err
@@ -77,15 +81,16 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractA
 			sq.Insert("contractapis").
 				Columns(contractAPIsColumns...).
 				Values(
-					cd.ID,
-					cd.Interface.ID,
-					cd.Ledger,
-					cd.Location,
-					cd.Name,
-					cd.Namespace,
+					api.ID,
+					api.Interface.ID,
+					api.Ledger,
+					api.Location,
+					api.Name,
+					api.Namespace,
+					api.Message,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, fftypes.ChangeEventTypeCreated, cd.Namespace, cd.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, fftypes.ChangeEventTypeCreated, api.Namespace, api.ID)
 			},
 		); err != nil {
 			return err
@@ -106,6 +111,7 @@ func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*ffty
 		&api.Location,
 		&api.Name,
 		&api.Namespace,
+		&api.Message,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contract")
