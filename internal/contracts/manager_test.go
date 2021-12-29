@@ -1805,11 +1805,12 @@ func TestSubscribeContractAPI(t *testing.T) {
 
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 	mdb.On("GetFFIEvent", mock.Anything, "ns1", api.Interface.ID, "peeled").Return(event, nil)
+	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbi.On("AddSubscription", mock.Anything, mock.MatchedBy(func(sub *fftypes.ContractSubscriptionInput) bool {
-		return sub.Event.Name == "peeled" && *sub.Interface == *api.Interface.ID && sub.Location.String() == api.Location.String()
+		return sub.Event.Name == "peeled" && *sub.Interface.ID == *api.Interface.ID && sub.Location.String() == api.Location.String()
 	})).Return(nil)
 	mdb.On("UpsertContractSubscription", mock.Anything, mock.MatchedBy(func(sub *fftypes.ContractSubscription) bool {
-		return sub.Event.Name == "peeled" && *sub.Interface == *api.Interface.ID && sub.Location.String() == api.Location.String()
+		return sub.Event.Name == "peeled" && *sub.Interface.ID == *api.Interface.ID && sub.Location.String() == api.Location.String()
 	})).Return(nil)
 
 	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
@@ -1841,6 +1842,32 @@ func TestSubscribeContractAPIContractNotFound(t *testing.T) {
 	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
 
 	assert.Regexp(t, "FF10109", err)
+}
+
+func TestSubscribeContractAPIInterfaceNotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	req := &fftypes.ContractSubscribeRequest{}
+	event := &fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "peeled",
+		},
+	}
+	api := &fftypes.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+		Location: []byte{'a', 'b', 'c'},
+	}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIEvent", mock.Anything, "ns1", api.Interface.ID, "peeled").Return(event, nil)
+	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(nil, nil)
+
+	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
+
+	assert.Regexp(t, "FF10303.*"+api.Interface.ID.String(), err)
 }
 
 func TestSubscribeContractAPIEventLookupFail(t *testing.T) {

@@ -390,6 +390,12 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 		}
 	}
 
+	if sub.Interface != nil {
+		if err := cm.resolveFFIReference(ctx, ns, sub.Interface); err != nil {
+			return nil, err
+		}
+	}
+
 	if sub.Event == nil {
 		if sub.EventID == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgSubscriptionNoEvent)
@@ -470,8 +476,10 @@ func (cm *contractManager) SubscribeContract(ctx context.Context, ns, eventPath 
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Interface: req.ContractID,
-			Location:  req.Location,
+			Interface: &fftypes.FFIReference{
+				ID: req.ContractID,
+			},
+			Location: req.Location,
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},

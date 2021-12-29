@@ -782,7 +782,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string
@@ -2225,7 +2232,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string
@@ -2708,7 +2722,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string
@@ -2771,7 +2792,14 @@ paths:
                   type: object
                 eventId: {}
                 id: {}
-                interface: {}
+                interface:
+                  properties:
+                    id: {}
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  type: object
                 location:
                   format: byte
                   type: string
@@ -2813,7 +2841,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string
@@ -2910,7 +2945,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string
