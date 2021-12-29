@@ -15,22 +15,26 @@ package manager. It can be used to deploy a FireFly node for an organization wit
 * [Upgrading Chart](#upgrading-chart)
 * [Using as a Dependency](#using-as-a-dependency)
 * [Deployment Architecture](#deployment-architecture)
-    * [Infrastructural Dependecies](#infrastructural-dependecies)
 * [Configuration](#configuration)
-    * [Configuration File Templating](#configuration-file-templating)
-        * [Ethereum](#ethereum)
-        * [Fabric](#fabric)
-    * [Ingress Examples](#ingress-examples)
-    * [SQL Database Migrations](#sql-database-migrations)
-    * [Auto-Registration](#auto-registration)
-    * [DataExchange HTTPS and cert-manager](#dataexchange-https-and-cert-manager)
-    * [Tokens via ERC1155 Connector](#tokens-via-erc1155-connector)
-    * [Prometheus Support](#prometheus-support)
+  * [Configuration File Templating](#configuration-file-templating)
+  * [Additional Environment Variables](#additional-environment-variables)
+  * [Ethereum](#ethereum)
+    * [Smart Contract Deployment](#smart-contract-deployment)
+  * [Fabric](#fabric)
+    * [Chaincode](#chaincode)
+    * [Identity Management](#identity-management)
+  * [Ingress Examples](#ingress-examples)
+  * [Database Migrations](#database-migrations)
+  * [Auto-Registration](#auto-registration)
+  * [DataExchange HTTPS and cert-manager](#dataexchange-https-and-cert-manager)
+  * [Tokens via ERC1155 Connector](#tokens-via-erc1155-connector)
+  * [Prometheus Support](#prometheus-support)
 * [Automated Deployments](#automated-deployments)
-    * [GitOps](#gitops)
-        * [Flux V2](#flux-v2)
-        * [ArgoCD](#argocd)
-    * [Terraform](#terraform)
+  * [GitOps](#gitops)
+    * [Flux V2](#flux-v2)
+    * [ArgoCD](#argocd)
+  * [Terraform](#terraform)
+
 
 
 ## Prerequisites
@@ -105,23 +109,26 @@ _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command d
 ## Deployment Architecture
 
 FireFly provides a REST API with an event-driven paradigm that makes building multi-party interactions via
-decentralized applications simpler. In order to do so, FireFly leverages extensible connector plugins that enable
+decentralized applications simpler. In order to do so, FireFly leverages extensible [connector plugins](https://hyperledger.github.io/firefly/architecture/plugin_architecture.html) that enable
 swapping out the underlying blockchain and off-chain infrastructure easily.
 
-As a result, FireFly has several infrastructural dependencies:
+As a result, a [FireFly node](https://hyperledger.github.io/firefly/architecture/node_component_architecture.html)
+has several infrastructural dependencies:
 
-* Blockchain connector (either Fabconnect -> Fabric, or Ethconnect -> Ethereum) for a _private_ blockchain
+* Blockchain connector (either Fabconnect -> Fabric, or Ethconnect -> Ethereum) for a [_private_ blockchain](https://hyperledger.github.io/firefly/keyconcepts/blockchain_protocols.html)
 * A Fabric chaincode or Ethereum smart contract deployed to the underlying blockchain
-* Private data exchange (HTTPS + mTLS)
+* [Private data exchange](https://hyperledger.github.io/firefly/keyconcepts/data_exchange.html) (HTTPS + mTLS)
 * Database (PostgreSQL)
-* Shared storage (IPFS)
+* [Shared storage](https://hyperledger.github.io/firefly/keyconcepts/broadcast.html#shared-data) (IPFS)
 * Optional tokens connector (ERC1155)
 
-<img src="./../../../images/helm_chart_deployment_architecture.jpg" width="60%" />
+<p align="center">
+  <img src="./../../../images/helm_chart_deployment_architecture.jpg" width="75%" />
+</p>
 
 As depicted above, the chart only aims to provide a means for deploying FireFly core, and optionally both the
-FireFly DataExchange HTTPS and FireFly Tokens ERC1155 microservices. All other infrastructural dependencies must be
-pre-provisioned in order for FireFly to be fully functioning.
+[FireFly DataExchange HTTPS](https://github.com/hyperledger/firefly-dataexchange-https) and [FireFly Tokens ERC1155](https://github.com/hyperledger/firefly-tokens-erc1155) microservices.
+All other infrastructural dependencies must be pre-provisioned in order for FireFly to be fully functioning.
 
 Below are some recommendations for provisioning the various pieces of infrastructural dependencies:
 
@@ -277,6 +284,9 @@ core:
 
 ### Database Migrations
 
+The database schema FireFly uses for its state must be configured via [migrations](https://www.prisma.io/dataguide/types/relational/what-are-database-migrations).
+The chart offers the ability to automatically apply the migrations matching the version of FireFly in use via a `Job`:
+
 ```yaml
 core:
   jobs:
@@ -284,10 +294,18 @@ core:
       enabled: true
 ```
 
+The `Job` will be named with the FireFly version in use, and will be automatically replace and re-run whenever the
+version is updated indicating the expected schema could have potentially changed. 
+
+Additionally, FireFly itself can apply its own schema migrations. However, this is not recommended for production use
+where an organization could have multiple FireFly nodes sharing the same database:
+
 ```yaml
 config:
   postgresAutomigrate: true
 ```
+
+It is recommended to use the migrations `Job` from above in favor of the automatic migrations.
 
 ### Auto-Registration
 
