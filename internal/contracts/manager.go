@@ -205,7 +205,6 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, ns string, filte
 }
 
 func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error) {
-
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
@@ -221,7 +220,35 @@ func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServer
 
 	baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, ns, apiName)
 	return cm.swaggerGen.Generate(ctx, baseURL, ffi)
+}
 
+func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, ref *fftypes.FFIReference) error {
+	switch {
+	case ref == nil:
+		return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, "")
+
+	case ref.ID != nil:
+		ffi, err := cm.database.GetFFIByID(ctx, ref.ID)
+		if err != nil {
+			return err
+		} else if ffi == nil {
+			return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, ref.ID)
+		}
+		return nil
+
+	case ref.Name != "" && ref.Version != "":
+		ffi, err := cm.database.GetFFI(ctx, ns, ref.Name, ref.Version)
+		if err != nil {
+			return err
+		} else if ffi == nil {
+			return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, ref.Name)
+		}
+		ref.ID = ffi.ID
+		return nil
+
+	default:
+		return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, ref.Name)
+	}
 }
 
 func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
@@ -229,9 +256,12 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 	api.Namespace = ns
 
 	existing, err := cm.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
-
 	if existing != nil && err == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractAPIExists, api.Namespace, api.Name)
+	}
+
+	if err := cm.resolveFFIReference(ctx, ns, api.Interface); err != nil {
+		return nil, err
 	}
 
 	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)
