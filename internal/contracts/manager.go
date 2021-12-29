@@ -83,7 +83,6 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 	ffi.Namespace = ns
 
 	existing, err := cm.database.GetFFI(ctx, ffi.Namespace, ffi.Name, ffi.Version)
-
 	if existing != nil && err == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
 	}
@@ -91,7 +90,9 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 	for _, method := range ffi.Methods {
 		method.ID = fftypes.NewUUID()
 	}
-
+	for _, event := range ffi.Events {
+		event.ID = fftypes.NewUUID()
+	}
 	if err := cm.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
 		return nil, err
 	}

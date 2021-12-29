@@ -82,6 +82,13 @@ func TestBroadcastFFI(t *testing.T) {
 				Name: "sum",
 			},
 		},
+		Events: []*fftypes.FFIEvent{
+			{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+				},
+			},
+		},
 	}
 	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
 	assert.NoError(t, err)
