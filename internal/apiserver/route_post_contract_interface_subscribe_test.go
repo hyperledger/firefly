@@ -29,31 +29,31 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostContractInterfaceInvoke(t *testing.T) {
+func TestPostContractInterfaceSubscribe(t *testing.T) {
 	interfaceID := fftypes.NewUUID()
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.InvokeContractRequest{}
+	input := fftypes.ContractSubscribeRequest{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/%s/invoke/test", interfaceID), &buf)
+	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/%s/subscribe/test", interfaceID), &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("InvokeContract", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.InvokeContractRequest")).
-		Return("banana", nil)
+	mcm.On("SubscribeContract", mock.Anything, "ns1", "test", mock.AnythingOfType("*fftypes.ContractSubscribeRequest")).
+		Return(&fftypes.ContractSubscription{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
 
-func TestPostContractInterfaceInvokeBadID(t *testing.T) {
+func TestPostContractInterfaceSubscribeBadID(t *testing.T) {
 	_, r := newTestAPIServer()
-	input := fftypes.InvokeContractRequest{}
+	input := fftypes.ContractSubscribeRequest{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/bad/invoke/test"), &buf)
+	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/bad/subscribe/test"), &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

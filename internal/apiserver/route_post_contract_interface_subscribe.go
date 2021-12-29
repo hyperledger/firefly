@@ -45,7 +45,9 @@ var postContractInterfaceSubscribe = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		contractSubscribeRequest := r.Input.(*fftypes.ContractSubscribeRequest)
-		contractSubscribeRequest.ContractID = fftypes.MustParseUUID(r.PP["contractID"])
+		if contractSubscribeRequest.ContractID, err = fftypes.ParseUUID(r.Ctx, r.PP["contractID"]); err != nil {
+			return nil, err
+		}
 		return getOr(r.Ctx).Contracts().SubscribeContract(r.Ctx, r.PP["ns"], r.PP["eventPath"], contractSubscribeRequest)
 	},
 }

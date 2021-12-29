@@ -45,10 +45,10 @@ var postContractInterfaceInvoke = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		invokeContractRequest := r.Input.(*fftypes.InvokeContractRequest)
-		invokeContractRequest.ContractID = fftypes.MustParseUUID(r.PP["contractID"])
-		invokeContractRequest.Method = &fftypes.FFIMethod{
-			Pathname: r.PP["methodPath"],
+		if invokeContractRequest.ContractID, err = fftypes.ParseUUID(r.Ctx, r.PP["contractID"]); err != nil {
+			return nil, err
 		}
+		invokeContractRequest.Method = &fftypes.FFIMethod{Pathname: r.PP["methodPath"]}
 		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], invokeContractRequest)
 	},
 }

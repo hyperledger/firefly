@@ -1406,6 +1406,27 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
+func TestInvokeContractAPIContractNotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	req := &fftypes.InvokeContractRequest{
+		ContractID: fftypes.NewUUID(),
+		Ledger:     []byte{},
+		Location:   []byte{},
+		Method: &fftypes.FFIMethod{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
+
+	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
+
+	assert.Regexp(t, "FF10109", err)
+}
+
 func TestGetContractAPIs(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
@@ -1762,4 +1783,82 @@ func TestBroadcastContractAPIInterfaceNoVersion(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
 	assert.Regexp(t, "FF10303.*my-ffi", err)
+}
+
+func TestSubscribeContractAPI(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	req := &fftypes.ContractSubscribeRequest{}
+	event := &fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "peeled",
+		},
+	}
+	api := &fftypes.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+		Location: []byte{'a', 'b', 'c'},
+	}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIEvent", mock.Anything, "ns1", api.Interface.ID, "peeled").Return(event, nil)
+	mbi.On("AddSubscription", mock.Anything, mock.MatchedBy(func(sub *fftypes.ContractSubscriptionInput) bool {
+		return sub.Event.Name == "peeled" && *sub.Interface == *api.Interface.ID && sub.Location.String() == api.Location.String()
+	})).Return(nil)
+	mdb.On("UpsertContractSubscription", mock.Anything, mock.MatchedBy(func(sub *fftypes.ContractSubscription) bool {
+		return sub.Event.Name == "peeled" && *sub.Interface == *api.Interface.ID && sub.Location.String() == api.Location.String()
+	})).Return(nil)
+
+	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
+
+	assert.NoError(t, err)
+}
+
+func TestSubscribeContractAPIContractLookupFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	req := &fftypes.ContractSubscribeRequest{}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
+
+	assert.EqualError(t, err, "pop")
+}
+
+func TestSubscribeContractAPIContractNotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	req := &fftypes.ContractSubscribeRequest{}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
+
+	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
+
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestSubscribeContractAPIEventLookupFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	req := &fftypes.ContractSubscribeRequest{}
+	api := &fftypes.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+		Location: []byte{'a', 'b', 'c'},
+	}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIEvent", mock.Anything, "ns1", api.Interface.ID, "peeled").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
+
+	assert.Regexp(t, "FF10321", err)
 }

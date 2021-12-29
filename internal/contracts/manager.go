@@ -171,6 +171,8 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
+	} else if api == nil || api.Interface == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
 	req.ContractID = api.Interface.ID
 	req.Method = &fftypes.FFIMethod{
@@ -193,7 +195,7 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 		method.Pathname = method.Name
 	}
 	if method.Pathname != "" && (method.Params == nil || method.Returns == nil) {
-		if req.ContractID.String() == "" {
+		if req.ContractID == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgContractNoMethodSignature)
 		}
 
@@ -214,8 +216,7 @@ func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServer
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
-	}
-	if api == nil || api.Interface == nil {
+	} else if api == nil || api.Interface == nil {
 		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
 	}
 
@@ -469,7 +470,8 @@ func (cm *contractManager) SubscribeContract(ctx context.Context, ns, eventPath 
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: req.Location,
+			Interface: req.ContractID,
+			Location:  req.Location,
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},
@@ -482,11 +484,15 @@ func (cm *contractManager) SubscribeContractAPI(ctx context.Context, ns, apiName
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
+	} else if api == nil || api.Interface == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
+
 	req.ContractID = api.Interface.ID
 	if api.Location != nil {
 		req.Location = api.Location
 	}
+
 	return cm.SubscribeContract(ctx, ns, eventPath, req)
 }
 
