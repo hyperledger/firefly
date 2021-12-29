@@ -342,6 +342,7 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 }
 
 func (f *Fabric) eventLoop() {
+	defer f.wsconn.Close()
 	defer close(f.closed)
 	l := log.L(f.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(f.ctx, l)
