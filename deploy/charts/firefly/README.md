@@ -3,7 +3,8 @@
 [Hyperledger FireFly](https://hyperledger.github.io/firefly/) is an implementation of a [multi-party system](https://github.com/hyperledger/firefly#multi-party-systems) that
 simplifies data orchestration on top of blockchain and other peer-to-peer technologies.
 
-This chart bootstraps a FireFly deployment on a [Kubernetes](https://kubernetes.io/) cluster using the [Helm](https://helm.sh/) package manager.
+This chart bootstraps a FireFly deployment on a [Kubernetes](https://kubernetes.io/) cluster using the [Helm](https://helm.sh/)
+package manager. It can be used to deploy a FireFly node for an organization within a multi-party system.
 
 ### Table of Contents
 
@@ -42,7 +43,7 @@ This chart bootstraps a FireFly deployment on a [Kubernetes](https://kubernetes.
 ## Get Repo Info
 
 Helm's [experimental OCI registry support](https://helm.sh/docs/topics/registries/) is used for publishing and retrieving
-the FireFly chart, as a result one must login to the [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+the FireFly chart, as a result one must log into [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
 to download the chart:
 
 ```shell
@@ -57,7 +58,7 @@ helm registry login ghcr.io
 ## Install Chart
 
 ```shell
-helm install firefly --version 0.1.0 oci://ghcr.io/hyperledger/helm/firefly
+helm install [RELEASE_NAME] --version 0.1.0 oci://ghcr.io/hyperledger/helm/firefly
 ```
 
 _See [configuration](#Configuration) below._
@@ -67,7 +68,7 @@ _See [helm install](https://helm.sh/docs/helm/helm_install/) for command documen
 ## Uninstall Chart
 
 ```shell
-helm uninstall firefly
+helm uninstall [RELEASE_NAME]
 ```
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
@@ -75,7 +76,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 ## Upgrading Chart
 
 ```shell
-helm upgrade firefly --version 0.1.1 oci://ghcr.io/hyperledger/helm/firefly
+helm upgrade [RELEASE_NAME] --install --version 0.1.1 oci://ghcr.io/hyperledger/helm/firefly
 ```
 
 _See [helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) for command documentation._
@@ -103,37 +104,154 @@ _See [helm dependency](https://helm.sh/docs/helm/helm_dependency/) for command d
 
 ## Deployment Architecture
 
-However, using blockchain directly can be challenging, and in multi-party systems there is typically
-off-chain data orchestration (i.e. private and blob  data exchange) that is required as well.
-FireFly provides a REST API with an event-driven paradigm that makes building such multi-party interactions via
-decentralized application much simpler, while providing extensible connector plugins that enable swapping out the
-underlying blockchain and off-chain infrastructure easily.
+FireFly provides a REST API with an event-driven paradigm that makes building multi-party interactions via
+decentralized applications simpler. In order to do so, FireFly leverages extensible connector plugins that enable
+swapping out the underlying blockchain and off-chain infrastructure easily.
 
-<img src="./../../../images/helm_chart_deployment_architecture.jpg" />
+As a result, FireFly has several infrastructural dependencies:
 
-### Infrastructural Dependecies
-
-Based on the above, FireFly has several infrastructural dependencies:
-
-* Blockchain connector (Fabconnect -> Fabric, Ethconnect -> Ethereum)
-* An Ethereum smart contract or Fabric chaincode deployed to the underlying blockchain
-* Private data exchange (HTTPS + mTLS, Kafka + mTLS, etc.)
-* Database (PostgreSQL, etc.)
+* Blockchain connector (either Fabconnect -> Fabric, or Ethconnect -> Ethereum) for a _private_ blockchain
+* A Fabric chaincode or Ethereum smart contract deployed to the underlying blockchain
+* Private data exchange (HTTPS + mTLS)
+* Database (PostgreSQL)
 * Shared storage (IPFS)
+* Optional tokens connector (ERC1155)
+
+<img src="./../../../images/helm_chart_deployment_architecture.jpg" width="60%" />
+
+As depicted above, the chart only aims to provide a means for deploying FireFly core, and optionally both the
+FireFly DataExchange HTTPS and FireFly Tokens ERC1155 microservices. All other infrastructural dependencies must be
+pre-provisioned in order for FireFly to be fully functioning.
+
+Below are some recommendations for provisioning the various pieces of infrastructural dependencies:
+
+* **PostgreSQL**: for self-hosting consider the [`postgresql-ha` Chart](https://github.com/bitnami/charts/tree/master/bitnami/postgresql-ha)
+  or a [Postgres operator](https://github.com/zalando/postgres-operator). Otherwise, consider cloud providers such as [AWS RDS](https://aws.amazon.com/rds/postgresql/).
+* **Blockchain**: for self-hosting consider [Hyperledger Bevel](https://github.com/hyperledger/bevel). Otherwise, consider
+  cloud providers such as [AWS Managed Blockchain](https://aws.amazon.com/managed-blockchain/) or [Kaleido](https://kaleido.io). _Please note, of these options only Kaleido
+  provides the necessary blockchain connectors (Fabconnect or Ethconnect) out-of-the-box. For Bevel and AWS, you will have to deploy the connectors yourself._
+* **IPFS**: for self-hosting options are limited, there is a [deprecated `stable/ipfs` chart](https://github.com/helm/charts/tree/master/stable/ipfs) which could be used to create private IPFS network. Otherwise
+  consider cloud providers such as [Kaledio](https://docs.kaleido.io/kaleido-services/ipfs/).
 
 ## Configuration
 
+The following describes how to use the chart's values to configure various aspects of the FireFly deployment.
+
 ### Configuration File Templating
 
+FireFly itself has a robust YAML configuration file (usually named `firefly.core`) powered by [Viper](https://github.com/spf13/viper)
+that allows one to define all  the necessary configuration for the FireFly server, and more importantly the underlying
+connectors it will use.
 
+The chart provides a top-level `config` value which then contains sub-values such as `postgresUrl`, `ethconnectUrl`,
+`organizationName`, `adminEnabled`, etc. These sub-values are meant to provide an opinionated, safe way of templating
+the `firefly.core` file. Based on which values are set, it will correctly configure the various connector plugins as well
+as determine if additional ports will be exposed such as the admin, debug, and metrics ports.
 
-#### Ethereum
+The following values are required in order for FireFly to startup correctly:
+* `config.organizationName`
+* `config.organizationKey`
+* `config.postgresUrl`
+* `config.ipfsUrl`
+* either:
+    * `config.ethconnectUrl` and `config.fireflyContractAddress`
+    * or, `config.fabconnectUrl` and `config.fabconnectSigner`
 
-see eth-values.yaml for an example
+You can find documentation regarding each of these values, as well as all the other `config` values,
+in the comments of the default [`values.yaml`](values.yaml). You can see how the values are used for
+templating the `firefly.core` file by looking at the `firefly.coreConfig` helper function in [`_helpers.tpl`](templates/_helpers.tpl).
 
-#### Fabric
+> **NOTE**: although `config.dataexchangeUrl` is available, by default `dataexchange.enabled` is `true` which will
+> deploy a DataExchange HTTPS and automatically configure FireFly to use it.
 
-see fab-values.yaml for an example
+If you would rather customize the templating of the `firefly.core` with your own values, you can use `config.templateOverride`:
+
+```yaml
+config:
+  templateOverride: |
+    org:
+      name: {{ .Values.global.myOrgNameValue }}
+    # etc. ...
+```
+
+See [`config.go`](../../../internal/config/config.go) for all available FireFly configuration options.
+
+### Additional Environment Variables
+
+If there are configurations you want to set via your own `ConfigMaps` or `Secrets`, it is recommended to do so
+via environment variables which can be provided with the `core.extraEnv` list value. FireFly will automatically override
+its config via environment variables prefixed with `FIREFLY_`. For example, if you want to set to the config value
+`log.level` you would set the env var `FIREFLY_LOG_LEVEL`.
+
+For a more detailed example using `core.extraEnv`, one could provide basic auth credentials for IPFS from a `Secret`
+like so:
+
+```yaml
+core:
+  extraEnv:
+    - name: FIREFLY_PUBLICSTORAGE_IPFS_API_AUTH_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: my-ipfs-basic-auth
+          key: username
+    - name: FIREFLY_PUBLICSTORAGE_IPFS_API_AUTH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: my-ipfs-basic-auth
+          key: password
+```
+
+### Ethereum
+
+Configuring FireFly to use an [Ethereum](https://ethereum.org/en/) blockchain such as [Geth](https://geth.ethereum.org/),
+[Quorum](https://github.com/ConsenSys/quorum), or [Hyperledger Besu](https://www.hyperledger.org/use/besu) requires first
+having an instance of [FireFly Ethconnect](https://github.com/hyperledger/firefly-ethconnect) deployed and connected to
+an Ethereum node in the underlying network.
+
+Once you have an Ethconnect instance ready, FireFly then needs three pieces of configuration:
+
+* `config.organizationKey`: the Ethereum address of the organization's wallet / key which will be used for signing transactions
+* `config.ethconnectUrl`: the HTTP/S URL of the Ethconnect instance FireFly will use
+* `config.fireflyContractAddress`: the Ethconnect URI representing the deployed FireFly smart contract i.e.
+  `/instances/0x965b92929108df1c77c156ba73d00ca851dcd2e1`. See [Smart Contract Deployment](#smart-contract-deployment)
+  for how to you can deploy the contract yourself.
+
+These will enable the FireFly deployment to connect to the Ethereum blockchain and submit batch pin transactions via
+its smart contract on behalf of the organization it's representing.
+
+#### Smart Contract Deployment
+
+Currently, the chart offers no way for one to manage the [FireFly smart contract](../../../smart_contracts/ethereum/solidity_firefly/contracts/Firefly.sol).
+Instead, the chart assumes it is already pre-provisioned via Ethconnect by one of the organizations.
+
+If you have the contract available as gateway contract on Ethconnect, you can then deploy it via the API:
+
+```shell
+curl -v \
+ -X POST \
+ -H 'Content-Type: application/json' \
+ -d '{}' \
+ "${ETHCONNECT_URL/gateways/${FF_CONTRACT_GATEWWAY}?ff-from=${ORG_WALLET_ADDRESS}&ff-sync=true"
+```
+
+The JSON returned by the API will have the Ethereum address of the smart contract in the `address` field.
+
+> **NOTE**: the FireFly smart contract only needs to be deployed by one organization within the blockchain
+> network. All organizations within a FireFly network must use the same smart contract instance in order for
+> transactions to work properly.
+
+If the contract is not available as a gateway contract on your Ethconnect instance, see the
+Ethconnect docs for [deploying a contract](https://github.com/hyperledger/firefly-ethconnect#yaml-to-deploy-a-contract).
+
+### Fabric
+
+Configuring FireFly to use a [Hyperledger Fabric](https://www.hyperledger.org/use/fabric) blockchain requires first
+having an instance of [FireFly Fabconnect](https://github.com/hyperledger/firefly-fabconnect) deployed and connected to
+a Fabric peer in the underlying network.
+
+#### Chaincode
+
+#### Identity Management
 
 ### Ingress Examples
 
@@ -155,21 +273,29 @@ core:
       - secretName: firefly-tls
         hosts:
           - firefly.acme.org
-
 ```
 
-### SQL Database Migrations
+### Database Migrations
+
+```yaml
+core:
+  jobs:
+    postgresMigrations:
+      enabled: true
+```
 
 ```yaml
 config:
-  postgresMigrationJob: true
+  postgresAutomigrate: true
 ```
 
 ### Auto-Registration
 
 ```yaml
-config:
-  registrationJob: true
+core:
+  jobs:
+    registration:
+      enabled: true
 ```
 
 ### DataExchange HTTPS and cert-manager
@@ -232,7 +358,8 @@ core:
 ```
 
 Additionally, if you are managing Prometheus via the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator),
-you can enable a [`ServiceMonitor`]() for FireFly with:
+you can enable a [`ServiceMonitor`](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md#related-resources)
+for FireFly with:
 
 ```yaml
 core:
@@ -245,7 +372,6 @@ core:
 
 Due to Helm's OCI registry support being experimental, below describes how to configure
 common deployment automation tooling for consuming the FireFly chart.
-
 
 ### GitOps
 
