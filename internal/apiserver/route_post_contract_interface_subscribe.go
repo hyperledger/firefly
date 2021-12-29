@@ -40,7 +40,7 @@ var postContractInterfaceSubscribe = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
-	JSONInputMask:   nil,
+	JSONInputMask:   []string{"ContractID"},
 	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

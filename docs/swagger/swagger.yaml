@@ -682,7 +682,6 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
                 ledger:
                   format: byte
                   type: string
@@ -745,7 +744,6 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
                 location:
                   format: byte
                   type: string
@@ -2053,7 +2051,6 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
                 ledger:
                   format: byte
                   type: string
@@ -2161,7 +2158,6 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
                 event:
                   properties:
                     contract: {}
