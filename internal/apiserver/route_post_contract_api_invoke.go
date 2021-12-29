@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postInvokeContractAPI = &oapispec.Route{
-	Name:   "postInvokeContractAPI",
+var postContractAPIInvoke = &oapispec.Route{
+	Name:   "postContractAPIInvoke",
 	Path:   "namespaces/{ns}/apis/{apiName}/invoke/{methodPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{

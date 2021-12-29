@@ -42,9 +42,10 @@ type Manager interface {
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error)
 	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
+	SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
+	SubscribeContractAPI(ctx context.Context, ns, apiName, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
 
 	ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error
-	ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error
 
 	AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (output *fftypes.ContractSubscription, err error)
 	GetContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractSubscription, error)
@@ -52,6 +53,7 @@ type Manager interface {
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
+
 	GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error)
 }
 
@@ -159,7 +161,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 	if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
 		return nil, err
 	}
-	if err := cm.ValidateInvokeContractRequest(ctx, req); err != nil {
+	if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
 		return nil, err
 	}
 	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, req.Method, req.Params)
@@ -197,7 +199,7 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 
 		method, err = cm.database.GetFFIMethod(ctx, ns, req.ContractID, method.Pathname)
 		if err != nil || method == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgContractResolveError)
+			return nil, i18n.NewError(ctx, i18n.MsgContractMethodResolveError)
 		}
 	}
 	return method, nil
@@ -350,7 +352,7 @@ func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.
 	return nil
 }
 
-func (cm *contractManager) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
+func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
 	if err := cm.validateFFIMethod(ctx, req.Method); err != nil {
 		return err
 	}
@@ -457,6 +459,35 @@ func (cm *contractManager) DeleteContractSubscriptionByNameOrID(ctx context.Cont
 		return err
 	}
 	return cm.database.DeleteContractSubscriptionByID(ctx, sub.ID)
+}
+
+func (cm *contractManager) SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
+	event, err := cm.database.GetFFIEvent(ctx, ns, req.ContractID, eventPath)
+	if err != nil || event == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgContractEventResolveError)
+	}
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: req.Location,
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: event.FFIEventDefinition,
+			},
+		},
+	}
+	return cm.AddContractSubscription(ctx, ns, sub)
+}
+
+func (cm *contractManager) SubscribeContractAPI(ctx context.Context, ns, apiName, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
+	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
+	if err != nil {
+		return nil, err
+	}
+	req.ContractID = api.Interface.ID
+	if api.Location != nil {
+		req.Location = api.Location
+	}
+	return cm.SubscribeContract(ctx, ns, eventPath, req)
 }
 
 func (cm *contractManager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {

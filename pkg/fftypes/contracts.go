@@ -26,6 +26,13 @@ type InvokeContractRequest struct {
 	Params     map[string]interface{} `json:"params"`
 }
 
+type ContractSubscribeRequest struct {
+	ContractID *UUID                  `json:"contractId,omitempty"`
+	Location   Byteable               `json:"location,omitempty"`
+	Event      *FFIEvent              `json:"event,omitempty"`
+	Params     map[string]interface{} `json:"params"`
+}
+
 type ContractAPI struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Namespace string        `json:"namespace,omitempty"`

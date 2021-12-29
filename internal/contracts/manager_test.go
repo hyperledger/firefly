@@ -228,7 +228,7 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 			"y": float64(2),
 		},
 	}
-	err := cm.ValidateInvokeContractRequest(context.Background(), req)
+	err := cm.validateInvokeContractRequest(context.Background(), req)
 	assert.NoError(t, err)
 }
 
@@ -266,7 +266,7 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 			"x": float64(1),
 		},
 	}
-	err := cm.ValidateInvokeContractRequest(context.Background(), req)
+	err := cm.validateInvokeContractRequest(context.Background(), req)
 	assert.Regexp(t, "Missing required input argument 'y'", err)
 }
 
@@ -305,7 +305,7 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 			"y": "two",
 		},
 	}
-	err := cm.ValidateInvokeContractRequest(context.Background(), req)
+	err := cm.validateInvokeContractRequest(context.Background(), req)
 	assert.Regexp(t, "Input.*not expected.*integer", err)
 }
 
@@ -344,7 +344,7 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 		},
 	}
 
-	err := cm.ValidateInvokeContractRequest(context.Background(), req)
+	err := cm.validateInvokeContractRequest(context.Background(), req)
 	assert.Regexp(t, err, "pop")
 }
 

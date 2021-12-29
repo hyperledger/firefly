@@ -25,30 +25,25 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContractInterfaceInvoke = &oapispec.Route{
-	Name:   "postContractInterfaceInvoke",
-	Path:   "namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodPath}",
+var postContractAPISubscribe = &oapispec.Route{
+	Name:   "postContractAPISubscribe",
+	Path:   "namespaces/{ns}/apis/{apiName}/subscribe/{eventPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "contractID", Example: "contractID", Description: i18n.MsgTBD},
-		{Name: "methodPath", Example: "methodPath", Description: i18n.MsgTBD},
+		{Name: "apiName", Example: "apiName", Description: i18n.MsgTBD},
+		{Name: "eventPath", Example: "eventPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
-	JSONInputMask:   nil,
-	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+	JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
+	JSONInputMask:   []string{"Event"},
+	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		invokeContractRequest := r.Input.(*fftypes.InvokeContractRequest)
-		invokeContractRequest.ContractID = fftypes.MustParseUUID(r.PP["contractID"])
-		invokeContractRequest.Method = &fftypes.FFIMethod{
-			Pathname: r.PP["methodPath"],
-		}
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], invokeContractRequest)
+		return getOr(r.Ctx).Contracts().SubscribeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"], r.Input.(*fftypes.ContractSubscribeRequest))
 	},
 }

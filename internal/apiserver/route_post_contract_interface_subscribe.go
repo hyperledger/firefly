@@ -25,30 +25,27 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContractInterfaceInvoke = &oapispec.Route{
-	Name:   "postContractInterfaceInvoke",
-	Path:   "namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodPath}",
+var postContractInterfaceSubscribe = &oapispec.Route{
+	Name:   "postContractInterfaceSubscribe",
+	Path:   "namespaces/{ns}/contracts/interfaces/{contractID}/subscribe/{eventPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "contractID", Example: "contractID", Description: i18n.MsgTBD},
-		{Name: "methodPath", Example: "methodPath", Description: i18n.MsgTBD},
+		{Name: "eventPath", Example: "eventPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
+	JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
 	JSONInputMask:   nil,
-	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		invokeContractRequest := r.Input.(*fftypes.InvokeContractRequest)
-		invokeContractRequest.ContractID = fftypes.MustParseUUID(r.PP["contractID"])
-		invokeContractRequest.Method = &fftypes.FFIMethod{
-			Pathname: r.PP["methodPath"],
-		}
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], invokeContractRequest)
+		contractSubscribeRequest := r.Input.(*fftypes.ContractSubscribeRequest)
+		contractSubscribeRequest.ContractID = fftypes.MustParseUUID(r.PP["contractID"])
+		return getOr(r.Ctx).Contracts().SubscribeContract(r.Ctx, r.PP["ns"], r.PP["eventPath"], contractSubscribeRequest)
 	},
 }

@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostInvokeContractAPI(t *testing.T) {
+func TestPostContractAPIInvoke(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)

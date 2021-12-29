@@ -641,7 +641,7 @@ paths:
   /namespaces/{ns}/apis/{apiName}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'
-      operationId: postInvokeContractAPI
+      operationId: postContractAPIInvoke
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -698,6 +698,103 @@ paths:
           content:
             application/json:
               schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{apiName}/subscribe/{eventPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractAPISubscribe
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: apiName
+        required: true
+        schema:
+          example: apiName
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: eventPath
+        required: true
+        schema:
+          example: eventPath
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contractId: {}
+                location:
+                  format: byte
+                  type: string
+                params:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface: {}
+                  location:
+                    format: byte
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -1912,10 +2009,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodName}:
+  /namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'
-      operationId: postContractInvokeInterface
+      operationId: postContractInterfaceInvoke
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -1933,10 +2030,10 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: methodName
+        name: methodPath
         required: true
         schema:
-          example: methodName
+          example: methodPath
           type: string
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
@@ -2017,6 +2114,132 @@ paths:
           content:
             application/json:
               schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{contractID}/subscribe/{eventPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInterfaceSubscribe
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: contractID
+        required: true
+        schema:
+          example: contractID
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: eventPath
+        required: true
+        schema:
+          example: eventPath
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contractId: {}
+                event:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                  type: object
+                location:
+                  format: byte
+                  type: string
+                params:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface: {}
+                  location:
+                    format: byte
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""

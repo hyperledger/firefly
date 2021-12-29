@@ -391,13 +391,13 @@ func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.I
 	return r0, r1
 }
 
-// InvokeContractAPI provides a mock function with given fields: ctx, ns, apiName, methodName, req
-func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName string, methodName string, req *fftypes.InvokeContractRequest) (interface{}, error) {
-	ret := _m.Called(ctx, ns, apiName, methodName, req)
+// InvokeContractAPI provides a mock function with given fields: ctx, ns, apiName, methodPath, req
+func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName string, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+	ret := _m.Called(ctx, ns, apiName, methodPath, req)
 
 	var r0 interface{}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.InvokeContractRequest) interface{}); ok {
-		r0 = rf(ctx, ns, apiName, methodName, req)
+		r0 = rf(ctx, ns, apiName, methodPath, req)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -406,7 +406,53 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.InvokeContractRequest) error); ok {
-		r1 = rf(ctx, ns, apiName, methodName, req)
+		r1 = rf(ctx, ns, apiName, methodPath, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SubscribeContract provides a mock function with given fields: ctx, ns, eventPath, req
+func (_m *Manager) SubscribeContract(ctx context.Context, ns string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
+	ret := _m.Called(ctx, ns, eventPath, req)
+
+	var r0 *fftypes.ContractSubscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractSubscription); ok {
+		r0 = rf(ctx, ns, eventPath, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.ContractSubscribeRequest) error); ok {
+		r1 = rf(ctx, ns, eventPath, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SubscribeContractAPI provides a mock function with given fields: ctx, ns, apiName, eventPath, req
+func (_m *Manager) SubscribeContractAPI(ctx context.Context, ns string, apiName string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
+	ret := _m.Called(ctx, ns, apiName, eventPath, req)
+
+	var r0 *fftypes.ContractSubscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractSubscription); ok {
+		r0 = rf(ctx, ns, apiName, eventPath, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractSubscribeRequest) error); ok {
+		r1 = rf(ctx, ns, apiName, eventPath, req)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -421,20 +467,6 @@ func (_m *Manager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
 		r0 = rf(ctx, ffi)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ValidateInvokeContractRequest provides a mock function with given fields: ctx, req
-func (_m *Manager) ValidateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
-	ret := _m.Called(ctx, req)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.InvokeContractRequest) error); ok {
-		r0 = rf(ctx, req)
 	} else {
 		r0 = ret.Error(0)
 	}

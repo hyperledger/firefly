@@ -927,13 +927,13 @@ func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*
 	return r0, r1, r2
 }
 
-// GetFFIMethod provides a mock function with given fields: ctx, ns, contractID, name
-func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, name string) (*fftypes.FFIMethod, error) {
-	ret := _m.Called(ctx, ns, contractID, name)
+// GetFFIMethod provides a mock function with given fields: ctx, ns, contractID, pathName
+func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error) {
+	ret := _m.Called(ctx, ns, contractID, pathName)
 
 	var r0 *fftypes.FFIMethod
 	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIMethod); ok {
-		r0 = rf(ctx, ns, contractID, name)
+		r0 = rf(ctx, ns, contractID, pathName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.FFIMethod)
@@ -942,7 +942,7 @@ func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, contractID *fftyp
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
-		r1 = rf(ctx, ns, contractID, name)
+		r1 = rf(ctx, ns, contractID, pathName)
 	} else {
 		r1 = ret.Error(1)
 	}
