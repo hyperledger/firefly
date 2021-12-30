@@ -419,3 +419,15 @@ func TestGetTimeoutMax(t *testing.T) {
 	timeout := as.getTimeout(req)
 	assert.Equal(t, 1*time.Second, timeout)
 }
+
+func TestContractAPISwaggerUI(t *testing.T) {
+	_, r := newTestAPIServer()
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/ui", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
+	assert.Regexp(t, "html", string(b))
+}

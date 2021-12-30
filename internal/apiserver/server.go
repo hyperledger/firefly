@@ -476,9 +476,15 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 				Methods(route.Method)
 		}
 	}
+	r.HandleFunc("/api/v1/namespaces/{ns}/apis/{apiName}/ui", func(rw http.ResponseWriter, req *http.Request) {
+		path := strings.TrimSuffix(req.URL.Path, "/ui") + "/apispec"
+		handler := as.apiWrapper(as.swaggerUIHandler(publicURL + path))
+		handler(rw, req)
+	})
+
 	ws, _ := eifactory.GetPlugin(ctx, "websockets")
 	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, apiBaseURL)))
-	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
+	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
@@ -505,7 +511,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 		}
 	}
 	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, apiBaseURL)))
-	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
+	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	return r
