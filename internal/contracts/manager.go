@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/internal/oapiffi"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -63,7 +63,7 @@ type contractManager struct {
 	broadcast     broadcast.Manager
 	identity      identity.Manager
 	blockchain    blockchain.Plugin
-	swaggerGen    oapispec.FFISwaggerGen
+	swaggerGen    oapiffi.FFISwaggerGen
 }
 
 func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
@@ -76,7 +76,7 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 		broadcast:     broadcast,
 		identity:      identity,
 		blockchain:    blockchain,
-		swaggerGen:    oapispec.NewFFISwaggerGen(),
+		swaggerGen:    oapiffi.NewFFISwaggerGen(),
 	}, nil
 }
 

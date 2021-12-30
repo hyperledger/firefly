@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapispec
+package oapiffi
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -41,7 +42,7 @@ func NewFFISwaggerGen() FFISwaggerGen {
 func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T, err error) {
 	hasLocation := !api.Location.IsNil()
 
-	routes := []*Route{}
+	routes := []*oapispec.Route{}
 	for _, method := range ffi.Methods {
 		routes = og.addMethod(routes, method, hasLocation)
 	}
@@ -49,7 +50,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 		routes = og.addEvent(routes, event, hasLocation)
 	}
 
-	return SwaggerGen(ctx, routes, &SwaggerGenConfig{
+	return oapispec.SwaggerGen(ctx, routes, &oapispec.SwaggerGenConfig{
 		Title:       ffi.Name,
 		Version:     ffi.Version,
 		Description: ffi.Description,
@@ -57,8 +58,8 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 	}), nil
 }
 
-func (og *ffiSwaggerGen) addMethod(routes []*Route, method *fftypes.FFIMethod, hasLocation bool) []*Route {
-	return append(routes, &Route{
+func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFIMethod, hasLocation bool) []*oapispec.Route {
+	return append(routes, &oapispec.Route{
 		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
 		Path:             fmt.Sprintf("invoke/%s", method.Pathname),
 		Method:           http.MethodPost,
@@ -70,14 +71,14 @@ func (og *ffiSwaggerGen) addMethod(routes []*Route, method *fftypes.FFIMethod, h
 	})
 }
 
-func (og *ffiSwaggerGen) addEvent(routes []*Route, event *fftypes.FFIEvent, hasLocation bool) []*Route {
+func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEvent, hasLocation bool) []*oapispec.Route {
 	// If the API has a location specified, there are no fields left to specify in the request body.
 	// Instead of masking them all (which causes Swagger UI some issues), explicitly set the schema to an empty object.
 	var schema func(ctx context.Context) string
 	if hasLocation {
 		schema = func(ctx context.Context) string { return `{"type": "object"}` }
 	}
-	return append(routes, &Route{
+	return append(routes, &oapispec.Route{
 		Name:            fmt.Sprintf("subscribe_%s", event.Pathname),
 		Path:            fmt.Sprintf("subscribe/%s", event.Pathname),
 		Method:          http.MethodPost,

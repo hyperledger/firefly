@@ -27,7 +27,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/oapispecmocks"
+	"github.com/hyperledger/firefly/mocks/oapiffimocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -41,7 +41,7 @@ func newTestContractManager() *contractManager {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
-	mfg := &oapispecmocks.FFISwaggerGen{}
+	mfg := &oapiffimocks.FFISwaggerGen{}
 
 	rag := mdb.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -1441,7 +1441,7 @@ func TestGetContractAPIs(t *testing.T) {
 
 func TestGetContractAPISwagger(t *testing.T) {
 	cm := newTestContractManager()
-	msg := cm.swaggerGen.(*oapispecmocks.FFISwaggerGen)
+	msg := cm.swaggerGen.(*oapiffimocks.FFISwaggerGen)
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
@@ -1477,7 +1477,7 @@ func TestGetContractAPISwagger(t *testing.T) {
 
 func TestGetContractAPISwaggerGenFail(t *testing.T) {
 	cm := newTestContractManager()
-	msg := cm.swaggerGen.(*oapispecmocks.FFISwaggerGen)
+	msg := cm.swaggerGen.(*oapiffimocks.FFISwaggerGen)
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
