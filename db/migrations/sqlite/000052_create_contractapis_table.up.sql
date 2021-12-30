@@ -5,7 +5,8 @@ CREATE TABLE contractapis (
   ledger            BYTEA,
   location          BYTEA,
   name              VARCHAR(64)     NOT NULL,
-  namespace         VARCHAR(64)     NOT NULL
+  namespace         VARCHAR(64)     NOT NULL,
+  message_id        UUID            NOT NULL
 );
 
 CREATE UNIQUE INDEX contractapis_namespace_name ON contractapis(namespace,name);
