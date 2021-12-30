@@ -226,7 +226,7 @@ func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServer
 	}
 
 	baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, ns, apiName)
-	return cm.swaggerGen.Generate(ctx, baseURL, ffi)
+	return cm.swaggerGen.Generate(ctx, baseURL, api, ffi)
 }
 
 func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, ref *fftypes.FFIReference) error {

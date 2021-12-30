@@ -18,8 +18,10 @@ package oapispec
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/ghodss/yaml"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,38 +34,50 @@ func testFFI() *fftypes.FFI {
 		Version:   "v1.0.0",
 		Methods: []*fftypes.FFIMethod{
 			{
-				Name: "sum",
+				Name:     "method1",
+				Pathname: "method1",
 				Params: fftypes.FFIParams{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: []byte(`{}`),
+						Name: "x",
+						Type: "integer",
 					},
 					{
-						Name:    "y",
-						Type:    "integer",
-						Details: []byte(`{}`),
+						Name: "y",
+						Type: "byte[]",
+					},
+					{
+						Name: "z",
+						Type: "widget[]",
+						Components: fftypes.FFIParams{
+							{
+								Name: "name",
+								Type: "string",
+							},
+							{
+								Name: "price",
+								Type: "integer",
+							},
+						},
 					},
 				},
 				Returns: fftypes.FFIParams{
 					{
-						Name:    "result",
-						Type:    "integer",
-						Details: []byte(`{}`),
+						Name: "success",
+						Type: "boolean",
 					},
 				},
 			},
 		},
 		Events: []*fftypes.FFIEvent{
 			{
-				ID: fftypes.NewUUID(),
+				ID:       fftypes.NewUUID(),
+				Pathname: "event1",
 				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "event1",
 					Params: fftypes.FFIParams{
 						{
-							Name:    "result",
-							Type:    "integer",
-							Details: []byte(`{}`),
+							Name: "result",
+							Type: "integer",
 						},
 					},
 				},
@@ -71,10 +85,25 @@ func testFFI() *fftypes.FFI {
 		},
 	}
 }
+
 func TestGenerate(t *testing.T) {
 	g := NewFFISwaggerGen()
-	swagger, err := g.Generate(context.Background(), "http://localhost:12345", testFFI())
+	api := &fftypes.ContractAPI{}
+	doc, err := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
 	assert.NoError(t, err)
-	// TODO: this needs to actually check the swagger once it's complete
-	assert.Nil(t, swagger)
+
+	b, err := yaml.Marshal(doc)
+	assert.NoError(t, err)
+	fmt.Print(string(b))
+}
+
+func TestGenerateWithLocation(t *testing.T) {
+	g := NewFFISwaggerGen()
+	api := &fftypes.ContractAPI{Location: []byte(`{}`)}
+	doc, err := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
+	assert.NoError(t, err)
+
+	b, err := yaml.Marshal(doc)
+	assert.NoError(t, err)
+	fmt.Print(string(b))
 }

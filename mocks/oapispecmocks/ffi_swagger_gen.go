@@ -16,13 +16,13 @@ type FFISwaggerGen struct {
 	mock.Mock
 }
 
-// Generate provides a mock function with given fields: ctx, baseURL, ffi
-func (_m *FFISwaggerGen) Generate(ctx context.Context, baseURL string, ffi *fftypes.FFI) (*openapi3.T, error) {
-	ret := _m.Called(ctx, baseURL, ffi)
+// Generate provides a mock function with given fields: ctx, baseURL, api, ffi
+func (_m *FFISwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (*openapi3.T, error) {
+	ret := _m.Called(ctx, baseURL, api, ffi)
 
 	var r0 *openapi3.T
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.FFI) *openapi3.T); ok {
-		r0 = rf(ctx, baseURL, ffi)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractAPI, *fftypes.FFI) *openapi3.T); ok {
+		r0 = rf(ctx, baseURL, api, ffi)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*openapi3.T)
@@ -30,8 +30,8 @@ func (_m *FFISwaggerGen) Generate(ctx context.Context, baseURL string, ffi *ffty
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.FFI) error); ok {
-		r1 = rf(ctx, baseURL, ffi)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractAPI, *fftypes.FFI) error); ok {
+		r1 = rf(ctx, baseURL, api, ffi)
 	} else {
 		r1 = ret.Error(1)
 	}

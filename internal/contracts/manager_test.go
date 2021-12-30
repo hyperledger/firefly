@@ -1445,22 +1445,24 @@ func TestGetContractAPISwagger(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
+	ffi := &fftypes.FFI{
+		ID: cid,
+	}
+	api := &fftypes.ContractAPI{
 		ID: fftypes.NewUUID(),
 		Interface: &fftypes.FFIReference{
 			ID: cid,
 		},
-	}, nil)
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
-		ID: cid,
-	}, nil)
+	}
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(ffi, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
 		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
-	msg.On("Generate", mock.Anything, "http://localhost:5000/api/v1/namespaces/ns1/apis/banana", mock.Anything).Return(&openapi3.T{
+	msg.On("Generate", mock.Anything, "http://localhost:5000/api/v1/namespaces/ns1/apis/banana", api, ffi).Return(&openapi3.T{
 		Info: &openapi3.Info{
 			Title: "utapi",
 		},
@@ -1479,16 +1481,20 @@ func TestGetContractAPISwaggerGenFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{
+	ffi := &fftypes.FFI{
+		ID: cid,
+	}
+	api := &fftypes.ContractAPI{
 		ID: fftypes.NewUUID(),
 		Interface: &fftypes.FFIReference{
 			ID: cid,
 		},
-	}, nil)
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{ID: cid}, nil)
+	}
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(ffi, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{}, nil, nil)
-	msg.On("Generate", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msg.On("Generate", mock.Anything, "http://localhost:5000/api/v1/namespaces/ns1/apis/banana", api, ffi).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.GetContractAPISwagger(context.Background(), "http://localhost:5000/api/v1", "ns1", "banana")
 
