@@ -33,8 +33,10 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const configDir = "../../test/data/config"
@@ -420,12 +422,29 @@ func TestGetTimeoutMax(t *testing.T) {
 	assert.Equal(t, 1*time.Second, timeout)
 }
 
+func TestContractAPISwaggerJSON(t *testing.T) {
+	o, r := newTestAPIServer()
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mcm.On("GetContractAPISwagger", mock.Anything, mock.Anything, "default", "my-api").Return(&openapi3.T{}, nil)
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
+	err = json.Unmarshal(b, &openapi3.T{})
+	assert.NoError(t, err)
+}
+
 func TestContractAPISwaggerUI(t *testing.T) {
 	_, r := newTestAPIServer()
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/ui", s.Listener.Addr()))
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
 	b, _ := ioutil.ReadAll(res.Body)

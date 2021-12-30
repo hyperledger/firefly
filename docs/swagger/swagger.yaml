@@ -671,54 +671,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/apis/{apiName}/apispec:
-    get:
-      description: 'TODO: Description'
-      operationId: getContractAPISwagger
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: apiName
-        required: true
-        schema:
-          example: apiName
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  info:
-                    properties:
-                      description:
-                        type: string
-                      title:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  openapi:
-                    example: 3.0.2
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
   /namespaces/{ns}/apis/{apiName}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'

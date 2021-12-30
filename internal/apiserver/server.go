@@ -476,8 +476,18 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 				Methods(route.Method)
 		}
 	}
-	r.HandleFunc("/api/v1/namespaces/{ns}/apis/{apiName}/ui", func(rw http.ResponseWriter, req *http.Request) {
-		path := strings.TrimSuffix(req.URL.Path, "/ui") + "/apispec"
+
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger.json`, as.routeHandler(o, apiBaseURL, &oapispec.Route{
+		PathParams: []*oapispec.PathParam{
+			{Name: "ns"},
+			{Name: "apiName"},
+		},
+		JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+			return o.Contracts().GetContractAPISwagger(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"])
+		},
+	}))
+	r.HandleFunc("/api/v1/namespaces/{ns}/apis/{apiName}/api", func(rw http.ResponseWriter, req *http.Request) {
+		path := req.URL.Path + "/swagger.json"
 		handler := as.apiWrapper(as.swaggerUIHandler(publicURL + path))
 		handler(rw, req)
 	})
