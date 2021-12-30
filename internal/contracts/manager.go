@@ -40,8 +40,8 @@ type Manager interface {
 
 	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error)
-	GetContractAPI(ctx context.Context, ns, apiName string) (*fftypes.ContractAPI, error)
-	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
+	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
+	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 	SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
 	SubscribeContractAPI(ctx context.Context, ns, apiName, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
@@ -208,13 +208,27 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 	return method, nil
 }
 
-func (cm *contractManager) GetContractAPI(ctx context.Context, ns, apiName string) (*fftypes.ContractAPI, error) {
-	return cm.database.GetContractAPIByName(ctx, ns, apiName)
+func (cm *contractManager) addContractURLs(httpServerURL string, api *fftypes.ContractAPI) {
+	if api != nil {
+		baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, api.Namespace, api.Name)
+		api.URLs.OpenAPI = baseURL + "/api/swagger.json"
+		api.URLs.UI = baseURL + "/api"
+	}
 }
 
-func (cm *contractManager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+func (cm *contractManager) GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error) {
+	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
+	cm.addContractURLs(httpServerURL, api)
+	return api, err
+}
+
+func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
 	filter = cm.scopeNS(ns, filter)
-	return cm.database.GetContractAPIs(ctx, ns, filter)
+	apis, fr, err := cm.database.GetContractAPIs(ctx, ns, filter)
+	for _, api := range apis {
+		cm.addContractURLs(httpServerURL, api)
+	}
+	return apis, fr, err
 }
 
 func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error) {

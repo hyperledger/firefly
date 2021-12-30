@@ -102,13 +102,13 @@ func (_m *Manager) DeleteContractSubscriptionByNameOrID(ctx context.Context, ns 
 	return r0
 }
 
-// GetContractAPI provides a mock function with given fields: ctx, ns, apiName
-func (_m *Manager) GetContractAPI(ctx context.Context, ns string, apiName string) (*fftypes.ContractAPI, error) {
-	ret := _m.Called(ctx, ns, apiName)
+// GetContractAPI provides a mock function with given fields: ctx, httpServerURL, ns, apiName
+func (_m *Manager) GetContractAPI(ctx context.Context, httpServerURL string, ns string, apiName string) (*fftypes.ContractAPI, error) {
+	ret := _m.Called(ctx, httpServerURL, ns, apiName)
 
 	var r0 *fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractAPI); ok {
-		r0 = rf(ctx, ns, apiName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.ContractAPI); ok {
+		r0 = rf(ctx, httpServerURL, ns, apiName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.ContractAPI)
@@ -116,8 +116,8 @@ func (_m *Manager) GetContractAPI(ctx context.Context, ns string, apiName string
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, apiName)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, httpServerURL, ns, apiName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -148,13 +148,13 @@ func (_m *Manager) GetContractAPISwagger(ctx context.Context, httpServerURL stri
 	return r0, r1
 }
 
-// GetContractAPIs provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetContractAPIs provides a mock function with given fields: ctx, httpServerURL, ns, filter
+func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+	ret := _m.Called(ctx, httpServerURL, ns, filter)
 
 	var r0 []*fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractAPI); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.ContractAPI); ok {
+		r0 = rf(ctx, httpServerURL, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.ContractAPI)
@@ -162,8 +162,8 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, ns string, filter databa
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, httpServerURL, ns, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -171,8 +171,8 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, ns string, filter databa
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, httpServerURL, ns, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

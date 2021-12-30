@@ -32,6 +32,11 @@ type ContractSubscribeRequest struct {
 	Event     *FFIEvent `json:"event,omitempty"`
 }
 
+type ContractURLs struct {
+	OpenAPI string `json:"openapi"`
+	UI      string `json:"ui"`
+}
+
 type ContractAPI struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Namespace string        `json:"namespace,omitempty"`
@@ -40,6 +45,7 @@ type ContractAPI struct {
 	Location  Byteable      `json:"location,omitempty"`
 	Name      string        `json:"name"`
 	Message   *UUID         `json:"message,omitempty"`
+	URLs      ContractURLs  `json:"urls"`
 }
 
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
