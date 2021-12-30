@@ -40,8 +40,8 @@ var (
 		"created",
 	}
 	contractSubscriptionFilterFieldMap = map[string]string{
-		"interfaceid": "interface_id",
-		"protocolid":  "protocol_id",
+		"interface":  "interface_id",
+		"protocolid": "protocol_id",
 	}
 )
 
@@ -63,11 +63,16 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 	existing := rows.Next()
 	rows.Close()
 
+	var interfaceID *fftypes.UUID
+	if sub.Interface != nil {
+		interfaceID = sub.Interface.ID
+	}
+
 	if existing {
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("contractsubscriptions").
 				Set("id", sub.ID).
-				Set("interface_id", sub.Interface).
+				Set("interface_id", interfaceID).
 				Set("event", sub.Event).
 				Set("namespace", sub.Namespace).
 				Set("name", sub.Name).
@@ -86,7 +91,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 				Columns(contractSubscriptionColumns...).
 				Values(
 					sub.ID,
-					sub.Interface,
+					interfaceID,
 					sub.Event,
 					sub.Namespace,
 					sub.Name,
@@ -106,10 +111,12 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 }
 
 func (s *SQLCommon) contractSubscriptionResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractSubscription, error) {
-	var sub fftypes.ContractSubscription
+	sub := fftypes.ContractSubscription{
+		Interface: &fftypes.FFIReference{},
+	}
 	err := row.Scan(
 		&sub.ID,
-		&sub.Interface,
+		&sub.Interface.ID,
 		&sub.Event,
 		&sub.Namespace,
 		&sub.Name,

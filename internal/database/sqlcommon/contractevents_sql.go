@@ -38,7 +38,7 @@ var (
 		"created",
 	}
 	contractEventFilterFieldMap = map[string]string{
-		"subscriptionid": "subscription_id",
+		"subscription": "subscription_id",
 	}
 )
 

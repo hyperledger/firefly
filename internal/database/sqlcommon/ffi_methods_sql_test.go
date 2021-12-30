@@ -35,11 +35,11 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new method entry
-	contractID := fftypes.NewUUID()
+	interfaceID := fftypes.NewUUID()
 	methodID := fftypes.NewUUID()
 	method := &fftypes.FFIMethod{
 		ID:          methodID,
-		Contract:    contractID,
+		Contract:    interfaceID,
 		Name:        "Set",
 		Namespace:   "ns",
 		Pathname:    "Set_1",
@@ -67,7 +67,7 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Query back the method (by name)
-	methodRead, err := s.GetFFIMethod(ctx, "ns", contractID, "Set_1")
+	methodRead, err := s.GetFFIMethod(ctx, "ns", interfaceID, "Set_1")
 	assert.NoError(t, err)
 	assert.NotNil(t, methodRead)
 	methodJson, _ := json.Marshal(&method)
@@ -93,7 +93,7 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Query back the method (by name)
-	methodRead, err = s.GetFFIMethod(ctx, "ns", contractID, "Set_1")
+	methodRead, err = s.GetFFIMethod(ctx, "ns", interfaceID, "Set_1")
 	assert.NoError(t, err)
 	assert.NotNil(t, methodRead)
 	methodJson, _ = json.Marshal(&method)

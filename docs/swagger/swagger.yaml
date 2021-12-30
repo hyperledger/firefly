@@ -347,6 +347,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: interface
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: name
         schema:
           type: string
@@ -641,7 +646,7 @@ paths:
   /namespaces/{ns}/apis/{apiName}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'
-      operationId: postInvokeContractAPI
+      operationId: postContractAPIInvoke
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -682,22 +687,118 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
                 ledger:
                   format: byte
                   type: string
                 location:
                   format: byte
                   type: string
-                params:
-                  additionalProperties: {}
-                  type: object
               type: object
       responses:
         "200":
           content:
             application/json:
               schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{apiName}/subscribe/{eventPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractAPISubscribe
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: apiName
+        required: true
+        schema:
+          example: apiName
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: eventPath
+        required: true
+        schema:
+          example: eventPath
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                location:
+                  format: byte
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    format: byte
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -1415,7 +1516,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: subscriptionid
+        name: subscription
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -1912,10 +2013,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodName}:
+  /namespaces/{ns}/contracts/interfaces/{interfaceID}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'
-      operationId: postContractInvokeInterface
+      operationId: postContractInterfaceInvoke
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -1926,17 +2027,17 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: contractID
+        name: interfaceID
         required: true
         schema:
-          example: contractID
+          example: interfaceID
           type: string
       - description: 'TODO: Description'
         in: path
-        name: methodName
+        name: methodPath
         required: true
         schema:
-          example: methodName
+          example: methodPath
           type: string
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
@@ -1956,7 +2057,6 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
                 ledger:
                   format: byte
                   type: string
@@ -2017,6 +2117,138 @@ paths:
           content:
             application/json:
               schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{interfaceID}/subscribe/{eventPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInterfaceSubscribe
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: interfaceID
+        required: true
+        schema:
+          example: interfaceID
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: eventPath
+        required: true
+        schema:
+          example: eventPath
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                event:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                  type: object
+                location:
+                  format: byte
+                  type: string
+                params:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    format: byte
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -2311,7 +2543,7 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
+                interface: {}
                 ledger:
                   format: byte
                   type: string
@@ -2401,17 +2633,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: eventid
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: id
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: interfaceid
+        name: interface
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -2489,7 +2716,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string
@@ -2552,7 +2786,14 @@ paths:
                   type: object
                 eventId: {}
                 id: {}
-                interface: {}
+                interface:
+                  properties:
+                    id: {}
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  type: object
                 location:
                   format: byte
                   type: string
@@ -2594,7 +2835,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string
@@ -2691,7 +2939,14 @@ paths:
                         type: array
                     type: object
                   id: {}
-                  interface: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
                   location:
                     format: byte
                     type: string

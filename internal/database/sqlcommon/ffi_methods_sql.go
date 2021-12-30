@@ -39,7 +39,7 @@ var (
 		"returns",
 	}
 	ffiMethodFilterFieldMap = map[string]string{
-		"interfaceid": "interface_id",
+		"interface": "interface_id",
 	}
 )
 
@@ -164,6 +164,6 @@ func (s *SQLCommon) GetFFIMethods(ctx context.Context, filter database.Filter) (
 
 }
 
-func (s *SQLCommon) GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error) {
-	return s.getFFIMethodPred(ctx, ns+":"+pathName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": contractID}, sq.Eq{"pathname": pathName}})
+func (s *SQLCommon) GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error) {
+	return s.getFFIMethodPred(ctx, ns+":"+pathName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": interfaceID}, sq.Eq{"pathname": pathName}})
 }

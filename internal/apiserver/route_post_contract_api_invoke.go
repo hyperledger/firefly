@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postInvokeContractAPI = &oapispec.Route{
-	Name:   "postInvokeContractAPI",
+var postContractAPIInvoke = &oapispec.Route{
+	Name:   "postContractAPIInvoke",
 	Path:   "namespaces/{ns}/apis/{apiName}/invoke/{methodPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
@@ -40,7 +40,7 @@ var postInvokeContractAPI = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
-	JSONInputMask:   []string{"Method"},
+	JSONInputMask:   []string{"Interface", "Method", "Params"},
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

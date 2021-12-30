@@ -19,11 +19,18 @@ package fftypes
 import "context"
 
 type InvokeContractRequest struct {
-	ContractID *UUID                  `json:"contractId,omitempty"`
-	Ledger     Byteable               `json:"ledger,omitempty"`
-	Location   Byteable               `json:"location,omitempty"`
-	Method     *FFIMethod             `json:"method,omitempty"`
-	Params     map[string]interface{} `json:"params"`
+	Interface *UUID                  `json:"interface,omitempty"`
+	Ledger    Byteable               `json:"ledger,omitempty"`
+	Location  Byteable               `json:"location,omitempty"`
+	Method    *FFIMethod             `json:"method,omitempty"`
+	Params    map[string]interface{} `json:"params"`
+}
+
+type ContractSubscribeRequest struct {
+	Interface *UUID                  `json:"interface,omitempty"`
+	Location  Byteable               `json:"location,omitempty"`
+	Event     *FFIEvent              `json:"event,omitempty"`
+	Params    map[string]interface{} `json:"params"`
 }
 
 type ContractAPI struct {

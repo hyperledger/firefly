@@ -413,13 +413,13 @@ type iFFICollection interface {
 
 type iFFIMethodCollection interface {
 	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
-	GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
+	GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
 	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
 	UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error
-	GetFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
+	GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
 	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error)
 	GetFFIEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
 }
@@ -909,7 +909,7 @@ var FFIMethodQueryFactory = &queryFields{
 	"namespace":   &StringField{},
 	"name":        &StringField{},
 	"pathname":    &StringField{},
-	"interfaceid": &UUIDField{},
+	"interface":   &UUIDField{},
 	"description": &StringField{},
 }
 
@@ -919,27 +919,26 @@ var FFIEventQueryFactory = &queryFields{
 	"namespace":   &StringField{},
 	"name":        &StringField{},
 	"pathname":    &StringField{},
-	"interfaceid": &UUIDField{},
+	"interface":   &UUIDField{},
 	"description": &StringField{},
 }
 
 // ContractSubscriptionQueryFactory filter fields for contract subscriptions
 var ContractSubscriptionQueryFactory = &queryFields{
-	"id":          &UUIDField{},
-	"interfaceid": &UUIDField{},
-	"eventid":     &UUIDField{},
-	"namespace":   &StringField{},
-	"protocolid":  &StringField{},
-	"created":     &TimeField{},
+	"id":         &UUIDField{},
+	"interface":  &UUIDField{},
+	"namespace":  &StringField{},
+	"protocolid": &StringField{},
+	"created":    &TimeField{},
 }
 
 // ContractEventQueryFactory filter fields for contract events
 var ContractEventQueryFactory = &queryFields{
-	"id":             &UUIDField{},
-	"namespace":      &StringField{},
-	"subscriptionid": &StringField{},
-	"name":           &StringField{},
-	"created":        &TimeField{},
+	"id":           &UUIDField{},
+	"namespace":    &StringField{},
+	"subscription": &StringField{},
+	"name":         &StringField{},
+	"created":      &TimeField{},
 }
 
 // ContractAPIQueryFactory filter fields for Contract APIs
@@ -947,4 +946,5 @@ var ContractAPIQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"name":      &StringField{},
 	"namespace": &StringField{},
+	"interface": &UUIDField{},
 }

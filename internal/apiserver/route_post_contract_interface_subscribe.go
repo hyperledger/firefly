@@ -25,30 +25,29 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContractInterfaceInvoke = &oapispec.Route{
-	Name:   "postContractInterfaceInvoke",
-	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceID}/invoke/{methodPath}",
+var postContractInterfaceSubscribe = &oapispec.Route{
+	Name:   "postContractInterfaceSubscribe",
+	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceID}/subscribe/{eventPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "interfaceID", Example: "interfaceID", Description: i18n.MsgTBD},
-		{Name: "methodPath", Example: "methodPath", Description: i18n.MsgTBD},
+		{Name: "eventPath", Example: "eventPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
+	JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
 	JSONInputMask:   []string{"Interface"},
-	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		invokeContractRequest := r.Input.(*fftypes.InvokeContractRequest)
-		if invokeContractRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceID"]); err != nil {
+		contractSubscribeRequest := r.Input.(*fftypes.ContractSubscribeRequest)
+		if contractSubscribeRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceID"]); err != nil {
 			return nil, err
 		}
-		invokeContractRequest.Method = &fftypes.FFIMethod{Pathname: r.PP["methodPath"]}
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], invokeContractRequest)
+		return getOr(r.Ctx).Contracts().SubscribeContract(r.Ctx, r.PP["ns"], r.PP["eventPath"], contractSubscribeRequest)
 	},
 }

@@ -26,7 +26,7 @@ import (
 
 type ContractSubscription struct {
 	ID         *UUID               `json:"id,omitempty"`
-	Interface  *UUID               `json:"interface,omitempty"`
+	Interface  *FFIReference       `json:"interface,omitempty"`
 	Namespace  string              `json:"namespace,omitempty"`
 	Name       string              `json:"name,omitempty"`
 	ProtocolID string              `json:"protocolId,omitempty"`

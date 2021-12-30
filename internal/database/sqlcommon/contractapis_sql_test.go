@@ -38,14 +38,14 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 
 	// Create a new contract API
 	apiID := fftypes.NewUUID()
-	contractID := fftypes.NewUUID()
+	interfaceID := fftypes.NewUUID()
 
 	contractAPI := &fftypes.ContractAPI{
 		ID:        apiID,
 		Namespace: "ns1",
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
-			ID:      contractID,
+			ID:      interfaceID,
 			Name:    "banana",
 			Version: "v1.0.0",
 		},

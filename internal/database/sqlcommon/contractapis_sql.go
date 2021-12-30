@@ -38,7 +38,8 @@ var (
 		"message_id",
 	}
 	contractAPIsFilterFieldMap = map[string]string{
-		"message": "message_id",
+		"interface": "interface_id",
+		"message":   "message_id",
 	}
 )
 

@@ -522,9 +522,9 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 	return res, err
 }
 
-func InvokeFFIMethod(t *testing.T, client *resty.Client, contractID, methodName string, invokeContractRequest *fftypes.InvokeContractRequest) (interface{}, error) {
+func InvokeFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, invokeContractRequest *fftypes.InvokeContractRequest) (interface{}, error) {
 	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, contractID, methodName)
+	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, interfaceID, methodName)
 	resp, err := client.R().
 		SetBody(invokeContractRequest).
 		SetResult(&res).

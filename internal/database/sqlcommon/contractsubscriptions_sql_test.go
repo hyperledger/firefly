@@ -37,8 +37,10 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	location := fftypes.JSONObject{"path": "my-api"}
 	locationJson, _ := json.Marshal(location)
 	sub := &fftypes.ContractSubscription{
-		ID:        fftypes.NewUUID(),
-		Interface: fftypes.NewUUID(),
+		ID: fftypes.NewUUID(),
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
 		Event: &fftypes.FFISerializedEvent{
 			FFIEventDefinition: fftypes.FFIEventDefinition{
 				Name: "event1",
