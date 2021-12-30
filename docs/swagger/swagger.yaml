@@ -693,9 +693,6 @@ paths:
                 location:
                   format: byte
                   type: string
-                params:
-                  additionalProperties: {}
-                  type: object
               type: object
       responses:
         "200":
@@ -752,9 +749,6 @@ paths:
                 location:
                   format: byte
                   type: string
-                params:
-                  additionalProperties: {}
-                  type: object
               type: object
       responses:
         "200":
@@ -2019,7 +2013,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodPath}:
+  /namespaces/{ns}/contracts/interfaces/{interfaceID}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'
       operationId: postContractInterfaceInvoke
@@ -2033,10 +2027,10 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: contractID
+        name: interfaceID
         required: true
         schema:
-          example: contractID
+          example: interfaceID
           type: string
       - description: 'TODO: Description'
         in: path
@@ -2126,7 +2120,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{contractID}/subscribe/{eventPath}:
+  /namespaces/{ns}/contracts/interfaces/{interfaceID}/subscribe/{eventPath}:
     post:
       description: 'TODO: Description'
       operationId: postContractInterfaceSubscribe
@@ -2140,10 +2134,10 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: contractID
+        name: interfaceID
         required: true
         schema:
-          example: contractID
+          example: interfaceID
           type: string
       - description: 'TODO: Description'
         in: path
@@ -2549,7 +2543,7 @@ paths:
           application/json:
             schema:
               properties:
-                contractId: {}
+                interface: {}
                 ledger:
                   format: byte
                   type: string

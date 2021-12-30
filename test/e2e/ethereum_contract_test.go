@@ -161,7 +161,7 @@ type EthereumContractTestSuite struct {
 	suite.Suite
 	testState       *testState
 	contractAddress string
-	contractID      string
+	interfaceID     string
 	ethClient       *resty.Client
 	ethIdentity     string
 }
@@ -184,8 +184,8 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
 
 	res, err := CreateFFI(suite.T(), suite.testState.client1, newTestFFI())
-	suite.contractID = res.(map[string]interface{})["id"].(string)
-	suite.T().Logf("contractID: %s", suite.contractID)
+	suite.interfaceID = res.(map[string]interface{})["id"].(string)
+	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
 }
 
@@ -295,7 +295,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	<-received1
 	<-changes1 // also expect database change events
 
-	res, err := InvokeFFIMethod(suite.testState.t, suite.testState.client1, suite.contractID, ffi.Methods[0].Name, invokeContractRequest)
+	res, err := InvokeFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, ffi.Methods[0].Name, invokeContractRequest)
 	assert.NoError(suite.testState.t, err)
 	assert.NotNil(suite.testState.t, res)
 

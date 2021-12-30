@@ -54,7 +54,7 @@ func TestContractEventsE2EWithDB(t *testing.T) {
 	fb := database.ContractEventQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("name", "Changed"),
-		fb.Eq("subscriptionid", event.Subscription),
+		fb.Eq("subscription", event.Subscription),
 	)
 	events, res, err := s.GetContractEvents(ctx, filter.Count(true))
 	assert.NoError(t, err)

@@ -27,11 +27,11 @@ import (
 
 var postContractInterfaceSubscribe = &oapispec.Route{
 	Name:   "postContractInterfaceSubscribe",
-	Path:   "namespaces/{ns}/contracts/interfaces/{contractID}/subscribe/{eventPath}",
+	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceID}/subscribe/{eventPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "contractID", Example: "contractID", Description: i18n.MsgTBD},
+		{Name: "interfaceID", Example: "interfaceID", Description: i18n.MsgTBD},
 		{Name: "eventPath", Example: "eventPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
@@ -40,12 +40,12 @@ var postContractInterfaceSubscribe = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
-	JSONInputMask:   []string{"ContractID"},
+	JSONInputMask:   []string{"Interface"},
 	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		contractSubscribeRequest := r.Input.(*fftypes.ContractSubscribeRequest)
-		if contractSubscribeRequest.ContractID, err = fftypes.ParseUUID(r.Ctx, r.PP["contractID"]); err != nil {
+		if contractSubscribeRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceID"]); err != nil {
 			return nil, err
 		}
 		return getOr(r.Ctx).Contracts().SubscribeContract(r.Ctx, r.PP["ns"], r.PP["eventPath"], contractSubscribeRequest)

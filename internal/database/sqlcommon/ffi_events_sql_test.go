@@ -35,11 +35,11 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new event entry
-	contractID := fftypes.NewUUID()
+	interfaceID := fftypes.NewUUID()
 	eventID := fftypes.NewUUID()
 	event := &fftypes.FFIEvent{
 		ID:        eventID,
-		Contract:  contractID,
+		Contract:  interfaceID,
 		Namespace: "ns",
 		Pathname:  "Changed_1",
 		FFIEventDefinition: fftypes.FFIEventDefinition{
@@ -62,7 +62,7 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Query back the event (by name)
-	eventRead, err := s.GetFFIEvent(ctx, "ns", contractID, "Changed_1")
+	eventRead, err := s.GetFFIEvent(ctx, "ns", interfaceID, "Changed_1")
 	assert.NoError(t, err)
 	assert.NotNil(t, eventRead)
 	eventJson, _ := json.Marshal(&event)

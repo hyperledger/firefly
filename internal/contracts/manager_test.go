@@ -1096,9 +1096,9 @@ func TestInvokeContract(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	req := &fftypes.InvokeContractRequest{
-		ContractID: fftypes.NewUUID(),
-		Ledger:     []byte{},
-		Location:   []byte{},
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
 		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
 			ID:      fftypes.NewUUID(),
@@ -1121,9 +1121,9 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	req := &fftypes.InvokeContractRequest{
-		ContractID: fftypes.NewUUID(),
-		Ledger:     []byte{},
-		Location:   []byte{},
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
 	}
 
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
@@ -1161,16 +1161,16 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	req := &fftypes.InvokeContractRequest{
-		ContractID: fftypes.NewUUID(),
-		Ledger:     []byte{},
-		Location:   []byte{},
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 		},
 	}
 
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
-	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.ContractID, req.Method.Name).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.Method.Name).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1183,9 +1183,9 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	req := &fftypes.InvokeContractRequest{
-		ContractID: fftypes.NewUUID(),
-		Ledger:     []byte{},
-		Location:   []byte{},
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: fftypes.FFIParams{
@@ -1360,9 +1360,9 @@ func TestInvokeContractAPI(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	req := &fftypes.InvokeContractRequest{
-		ContractID: fftypes.NewUUID(),
-		Ledger:     []byte{},
-		Location:   []byte{},
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
 		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
 		},
@@ -1390,9 +1390,9 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	req := &fftypes.InvokeContractRequest{
-		ContractID: fftypes.NewUUID(),
-		Ledger:     []byte{},
-		Location:   []byte{},
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
 		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
 		},
@@ -1411,9 +1411,9 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	req := &fftypes.InvokeContractRequest{
-		ContractID: fftypes.NewUUID(),
-		Ledger:     []byte{},
-		Location:   []byte{},
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
 		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
 		},

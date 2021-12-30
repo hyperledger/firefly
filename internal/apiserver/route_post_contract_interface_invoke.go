@@ -27,11 +27,11 @@ import (
 
 var postContractInterfaceInvoke = &oapispec.Route{
 	Name:   "postContractInterfaceInvoke",
-	Path:   "namespaces/{ns}/contracts/interfaces/{contractID}/invoke/{methodPath}",
+	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceID}/invoke/{methodPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "contractID", Example: "contractID", Description: i18n.MsgTBD},
+		{Name: "interfaceID", Example: "interfaceID", Description: i18n.MsgTBD},
 		{Name: "methodPath", Example: "methodPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
@@ -40,12 +40,12 @@ var postContractInterfaceInvoke = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
-	JSONInputMask:   []string{"ContractID"},
+	JSONInputMask:   []string{"Interface"},
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		invokeContractRequest := r.Input.(*fftypes.InvokeContractRequest)
-		if invokeContractRequest.ContractID, err = fftypes.ParseUUID(r.Ctx, r.PP["contractID"]); err != nil {
+		if invokeContractRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceID"]); err != nil {
 			return nil, err
 		}
 		invokeContractRequest.Method = &fftypes.FFIMethod{Pathname: r.PP["methodPath"]}

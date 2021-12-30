@@ -413,13 +413,13 @@ type iFFICollection interface {
 
 type iFFIMethodCollection interface {
 	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
-	GetFFIMethod(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
+	GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
 	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
 	UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error
-	GetFFIEvent(ctx context.Context, ns string, contractID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
+	GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
 	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error)
 	GetFFIEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
 }

@@ -174,7 +174,7 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	} else if api == nil || api.Interface == nil {
 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
-	req.ContractID = api.Interface.ID
+	req.Interface = api.Interface.ID
 	req.Method = &fftypes.FFIMethod{
 		Pathname: methodPath,
 	}
@@ -195,11 +195,11 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 		method.Pathname = method.Name
 	}
 	if method.Pathname != "" && (method.Params == nil || method.Returns == nil) {
-		if req.ContractID == nil {
+		if req.Interface == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgContractNoMethodSignature)
 		}
 
-		method, err = cm.database.GetFFIMethod(ctx, ns, req.ContractID, method.Pathname)
+		method, err = cm.database.GetFFIMethod(ctx, ns, req.Interface, method.Pathname)
 		if err != nil || method == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgContractMethodResolveError)
 		}
@@ -469,7 +469,7 @@ func (cm *contractManager) DeleteContractSubscriptionByNameOrID(ctx context.Cont
 }
 
 func (cm *contractManager) SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
-	event, err := cm.database.GetFFIEvent(ctx, ns, req.ContractID, eventPath)
+	event, err := cm.database.GetFFIEvent(ctx, ns, req.Interface, eventPath)
 	if err != nil || event == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractEventResolveError)
 	}
@@ -477,7 +477,7 @@ func (cm *contractManager) SubscribeContract(ctx context.Context, ns, eventPath 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
 			Interface: &fftypes.FFIReference{
-				ID: req.ContractID,
+				ID: req.Interface,
 			},
 			Location: req.Location,
 			Event: &fftypes.FFISerializedEvent{
@@ -496,7 +496,7 @@ func (cm *contractManager) SubscribeContractAPI(ctx context.Context, ns, apiName
 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
 
-	req.ContractID = api.Interface.ID
+	req.Interface = api.Interface.ID
 	if api.Location != nil {
 		req.Location = api.Location
 	}
