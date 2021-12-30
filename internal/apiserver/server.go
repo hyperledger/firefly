@@ -45,7 +45,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/prometheus/client_golang/prometheus"
-	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
@@ -437,7 +436,7 @@ func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(r
 
 func (as *apiServer) configurePrometheusInstrumentation(namespace, subsystem string, r *mux.Router) {
 	if as.metricsEnabled {
-		instrumentation := muxprom.NewCustomInstrumentation(
+		instrumentation := metrics.NewCustomInstrumentation(
 			true,
 			namespace,
 			subsystem,
