@@ -39,7 +39,7 @@ func NewFFISwaggerGen() FFISwaggerGen {
 }
 
 func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T, err error) {
-	hasLocation := api.Location.String() != "null"
+	hasLocation := !api.Location.IsNil()
 
 	routes := []*Route{}
 	for _, method := range ffi.Methods {
