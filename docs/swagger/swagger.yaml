@@ -693,6 +693,9 @@ paths:
                 location:
                   format: byte
                   type: string
+                params:
+                  additionalProperties: {}
+                  type: object
               type: object
       responses:
         "200":
@@ -2196,9 +2199,6 @@ paths:
                 location:
                   format: byte
                   type: string
-                params:
-                  additionalProperties: {}
-                  type: object
               type: object
       responses:
         "200":

@@ -136,13 +136,13 @@ func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftyp
 	}
 
 	mfb := database.FFIMethodQueryFactory.NewFilter(ctx)
-	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, mfb.Eq("interfaceid", id))
+	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, mfb.Eq("interface", id))
 	if err != nil {
 		return nil, err
 	}
 
 	efb := database.FFIEventQueryFactory.NewFilter(ctx)
-	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, efb.Eq("interfaceid", id))
+	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, efb.Eq("interface", id))
 	if err != nil {
 		return nil, err
 	}
