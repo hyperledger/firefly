@@ -31,8 +31,8 @@ var getContractInterfaceNameVersion = &oapispec.Route{
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "name", Example: "name", Description: i18n.MsgTBD},
-		{Name: "version", Example: "version", Description: i18n.MsgTBD},
+		{Name: "name", Description: i18n.MsgTBD},
+		{Name: "version", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,

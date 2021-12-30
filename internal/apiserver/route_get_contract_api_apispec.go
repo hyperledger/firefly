@@ -32,7 +32,7 @@ var getContractAPISwagger = &oapispec.Route{
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "apiName", Example: "apiName", Description: i18n.MsgTBD},
+		{Name: "apiName", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,

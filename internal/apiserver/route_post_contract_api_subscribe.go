@@ -31,8 +31,8 @@ var postContractAPISubscribe = &oapispec.Route{
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "apiName", Example: "apiName", Description: i18n.MsgTBD},
-		{Name: "eventPath", Example: "eventPath", Description: i18n.MsgTBD},
+		{Name: "apiName", Description: i18n.MsgTBD},
+		{Name: "eventPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},

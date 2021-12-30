@@ -32,7 +32,7 @@ var getContractInterface = &oapispec.Route{
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "interfaceId", Example: "interfaceId", Description: i18n.MsgTBD},
+		{Name: "interfaceId", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "fetchchildren", Example: "true", Description: i18n.MsgTBD, IsBool: true},
