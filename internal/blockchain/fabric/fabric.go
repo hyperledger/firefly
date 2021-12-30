@@ -584,7 +584,7 @@ func (f *Fabric) ValidateContractLocation(ctx context.Context, location fftypes.
 }
 
 func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Location, error) {
-	fabricLocation := &Location{}
+	fabricLocation := Location{}
 	if err := json.Unmarshal(location, &fabricLocation); err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
 	}
@@ -594,7 +594,7 @@ func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Loc
 	if fabricLocation.Chaincode == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'chaincode' not set")
 	}
-	return fabricLocation, nil
+	return &fabricLocation, nil
 }
 
 func (f *Fabric) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
