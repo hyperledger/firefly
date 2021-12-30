@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
@@ -161,7 +162,7 @@ type EthereumContractTestSuite struct {
 	suite.Suite
 	testState       *testState
 	contractAddress string
-	interfaceID     string
+	contractID      string
 	ethClient       *resty.Client
 	ethIdentity     string
 }
@@ -184,8 +185,8 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
 
 	res, err := CreateFFI(suite.T(), suite.testState.client1, newTestFFI())
-	suite.interfaceID = res.(map[string]interface{})["id"].(string)
-	suite.T().Logf("interfaceID: %s", suite.interfaceID)
+	suite.contractID = res.(map[string]interface{})["id"].(string)
+	suite.T().Logf("contractID: %s", suite.contractID)
 	assert.NoError(suite.T(), err)
 }
 
@@ -202,36 +203,39 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 		"address": suite.contractAddress,
 	})
 
+	<-received1
 	<-changes1 // only expect database change events
 
 	subs := GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(subs))
 	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
 
+	startTime := time.Now()
+	suite.T().Log(startTime.UTC().UnixNano())
+
 	invokeEthContract(suite.T(), suite.ethClient, suite.ethIdentity, suite.contractAddress, "set", &simpleStorageBody{
 		NewValue: "1",
 	})
 
-	<-received1
-	<-changes1 // also expect database change events
+	match := map[string]interface{}{
+		"info": map[string]interface{}{
+			"address": suite.contractAddress,
+		},
+		"outputs": map[string]interface{}{
+			"_value": "1",
+			"_from":  suite.testState.org1.Identity,
+		},
+		"subscription": sub.ID.String(),
+	}
 
-	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 1, len(events))
-	assert.Equal(suite.T(), "Changed", events[0].Name)
-	assert.Equal(suite.T(), "1", events[0].Outputs.GetString("_value"))
-	assert.Equal(suite.T(), suite.ethIdentity, events[0].Outputs.GetString("_from"))
-
-	DeleteContractSubscription(suite.T(), suite.testState.client1, subs[0].ID)
-	subs = GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 0, len(subs))
-
-	<-changes1 // only expect database change events
+	event := waitForChangeEvent(suite.T(), suite.testState.client1, changes1, match)
+	assert.NotNil(suite.T(), event)
 }
 
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
+	_, changes1 := wsReader(suite.T(), suite.testState.ws1)
 
 	sub := CreateContractSubscription(suite.T(), suite.testState.client1, newTestFFIEvent(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
@@ -250,19 +254,28 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	invokeContractRequest := &fftypes.InvokeContractRequest{
 		Location: locationBytes,
 		Method:   newTestFFIMethod(),
+		Params: map[string]interface{}{
+			"newValue": float64(2),
+		},
 	}
+
 	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
-	assert.NoError(suite.testState.t, err)
-	assert.NotNil(suite.testState.t, res)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), res)
 
-	<-received1
-	<-changes1 // also expect database change events
+	match := map[string]interface{}{
+		"info": map[string]interface{}{
+			"address": suite.contractAddress,
+		},
+		"outputs": map[string]interface{}{
+			"_value": "2",
+			"_from":  suite.testState.org1.Identity,
+		},
+		"subscription": sub.ID.String(),
+	}
 
-	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 1, len(events))
-	assert.Equal(suite.T(), "Changed", events[0].Name)
-	assert.Equal(suite.T(), "42", events[0].Outputs.GetString("_value"))
-	assert.Equal(suite.T(), suite.ethIdentity, events[0].Outputs.GetString("_from"))
+	event := waitForChangeEvent(suite.T(), suite.testState.client1, changes1, match)
+	assert.NotNil(suite.T(), event)
 }
 
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
@@ -288,23 +301,27 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	invokeContractRequest := &fftypes.InvokeContractRequest{
 		Location: locationBytes,
 		Params: map[string]interface{}{
-			"newValue": float64(42),
+			"newValue": float64(3),
 		},
 	}
 
 	<-received1
-	<-changes1 // also expect database change events
 
-	res, err := InvokeFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, ffi.Methods[0].Name, invokeContractRequest)
+	res, err := InvokeFFIMethod(suite.testState.t, suite.testState.client1, suite.contractID, ffi.Methods[0].Name, invokeContractRequest)
 	assert.NoError(suite.testState.t, err)
 	assert.NotNil(suite.testState.t, res)
 
-	<-received1
-	<-received1
+	match := map[string]interface{}{
+		"info": map[string]interface{}{
+			"address": suite.contractAddress,
+		},
+		"outputs": map[string]interface{}{
+			"_value": "3",
+			"_from":  suite.testState.org1.Identity,
+		},
+		"subscription": sub.ID.String(),
+	}
 
-	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 1, len(events))
-	assert.Equal(suite.T(), "Changed", events[0].Name)
-	assert.Equal(suite.T(), "42", events[0].Outputs.GetString("_value"))
-	assert.Equal(suite.T(), suite.ethIdentity, events[0].Outputs.GetString("_from"))
+	event := waitForChangeEvent(suite.T(), suite.testState.client1, changes1, match)
+	assert.NotNil(suite.T(), event)
 }

@@ -128,7 +128,7 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	<-received1
 	<-changes1 // also expect database change events
 
-	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime)
+	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime, sub.ID)
 	assert.Equal(suite.T(), 1, len(events))
 	assert.Equal(suite.T(), "AssetCreated", events[0].Name)
 	assert.Equal(suite.T(), asset, events[0].Outputs.GetString("name"))

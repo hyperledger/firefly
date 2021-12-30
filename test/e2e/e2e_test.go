@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -282,4 +283,64 @@ func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, 
 		}
 	}()
 	return events, changeEvents
+}
+
+func waitForChangeEvent(t *testing.T, client *resty.Client, c chan *fftypes.ChangeEvent, match map[string]interface{}) map[string]interface{} {
+	for {
+		changeEvent := <-c
+		if changeEvent.Collection == "events" || changeEvent.Collection == "contractevents" {
+			event, err := GetChangeEvent(t, client, changeEvent)
+			if err != nil {
+				t.Logf("WARN: unable to get changeEvent: %v", err.Error())
+				continue
+			}
+			eventJSON, ok := event.(map[string]interface{})
+			if !ok {
+				t.Logf("WARN: unable to parse changeEvent: %v", event)
+				continue
+			}
+			if checkObject(t, match, eventJSON) {
+				return eventJSON
+			}
+		}
+	}
+}
+
+func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
+	match := true
+
+	// check if this is a nested object
+	expectedObject, expectedIsObject := expected.(map[string]interface{})
+	actualObject, actualIsObject := actual.(map[string]interface{})
+
+	// check if this is an array
+	expectedArray, expectedIsArray := expected.([]interface{})
+	actualArray, actualIsArray := actual.([]interface{})
+	switch {
+	case expectedIsObject && actualIsObject:
+		for expectedKey, expectedValue := range expectedObject {
+			if !checkObject(t, expectedValue, actualObject[expectedKey]) {
+				return false
+			}
+		}
+	case expectedIsArray && actualIsArray:
+		for _, expectedItem := range expectedArray {
+			for j, actualItem := range actualArray {
+				if checkObject(t, expectedItem, actualItem) {
+					break
+				}
+				if j == len(actualArray)-1 {
+					return false
+				}
+			}
+		}
+	default:
+		expectedString, expectedIsString := expected.(string)
+		actualString, actualIsString := expected.(string)
+		if expectedIsString && actualIsString {
+			return strings.ToLower(expectedString) == strings.ToLower(actualString)
+		}
+		return expected == actual
+	}
+	return match
 }
