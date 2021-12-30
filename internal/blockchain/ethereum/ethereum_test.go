@@ -1417,7 +1417,8 @@ func TestHandleMessageContractEvent(t *testing.T) {
     },
     "subId": "sub2",
     "signature": "Changed(address,uint256)",
-    "logIndex": "50"
+    "logIndex": "50",
+	"timestamp": "1640811383"
   }
 ]`)
 
@@ -1455,10 +1456,46 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		"subId":            "sub2",
 		"transactionHash":  "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
 		"transactionIndex": "0x0",
+		"timestamp":        "1640811383",
 	}
 	assert.Equal(t, info, ev.Info)
 
 	em.AssertExpectations(t)
+}
+
+func TestHandleMessageContractEventNoTimestamp(t *testing.T) {
+	data := []byte(`
+[
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x0",
+    "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+    "data": {
+      "from": "0x91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"value": "1"
+    },
+    "subId": "sub2",
+    "signature": "Changed(address,uint256)",
+    "logIndex": "50"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: em,
+	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+
+	em.On("ContractEvent", mock.Anything).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.Regexp(t, "FF10165", err)
 }
 
 func TestHandleMessageContractEventError(t *testing.T) {
@@ -1475,7 +1512,8 @@ func TestHandleMessageContractEventError(t *testing.T) {
     },
     "subId": "sub2",
     "signature": "Changed(address,uint256)",
-    "logIndex": "50"
+    "logIndex": "50",
+	"timestamp": "1640811383"
   }
 ]`)
 

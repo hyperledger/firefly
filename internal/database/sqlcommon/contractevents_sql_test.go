@@ -41,12 +41,13 @@ func TestContractEventsE2EWithDB(t *testing.T) {
 		Name:         "Changed",
 		Outputs:      fftypes.JSONObject{"value": 1},
 		Info:         fftypes.JSONObject{"blockNumber": 1},
+		Timestamp:    fftypes.Now(),
 	}
 
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionContractEvents, fftypes.ChangeEventTypeCreated, "ns", event.ID, int64(1)).Return()
 
 	err := s.InsertContractEvent(ctx, event)
-	assert.NotNil(t, event.Created)
+	assert.NotNil(t, event.Timestamp)
 	assert.NoError(t, err)
 	eventJson, _ := json.Marshal(&event)
 

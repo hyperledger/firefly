@@ -41,6 +41,7 @@ type eventStream struct {
 	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
 	Type           string               `json:"type"`
 	WebSocket      eventStreamWebsocket `json:"websocket"`
+	Timestamps     bool                 `json:"timestamps"`
 }
 
 type subscriptionEventArg struct {
@@ -83,6 +84,7 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string, bat
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
 		WebSocket:      eventStreamWebsocket{Topic: topic},
+		Timestamps:     true,
 	}
 	res, err := s.client.R().
 		SetContext(ctx).

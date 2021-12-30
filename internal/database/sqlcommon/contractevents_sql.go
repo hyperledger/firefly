@@ -35,7 +35,7 @@ var (
 		"name",
 		"outputs",
 		"info",
-		"created",
+		"timestamp",
 	}
 	contractEventFilterFieldMap = map[string]string{
 		"subscription": "subscription_id",
@@ -48,7 +48,6 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
-	event.Created = fftypes.Now()
 
 	if event.Sequence, err = s.insertTx(ctx, tx,
 		sq.Insert("contractevents").
@@ -60,7 +59,7 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 				event.Name,
 				event.Outputs,
 				event.Info,
-				event.Created,
+				event.Timestamp,
 			),
 		func() {
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionContractEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
@@ -81,7 +80,7 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 		&event.Name,
 		&event.Outputs,
 		&event.Info,
-		&event.Created,
+		&event.Timestamp,
 		// Must be added to the list of columns in all selects
 		&event.Sequence,
 	)
