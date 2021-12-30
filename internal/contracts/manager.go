@@ -40,6 +40,7 @@ type Manager interface {
 
 	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error)
+	GetContractAPI(ctx context.Context, ns, apiName string) (*fftypes.ContractAPI, error)
 	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 	SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
@@ -205,6 +206,10 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 		}
 	}
 	return method, nil
+}
+
+func (cm *contractManager) GetContractAPI(ctx context.Context, ns, apiName string) (*fftypes.ContractAPI, error) {
+	return cm.database.GetContractAPIByName(ctx, ns, apiName)
 }
 
 func (cm *contractManager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {

@@ -1427,6 +1427,17 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10109", err)
 }
 
+func TestGetContractAPI(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(&fftypes.ContractAPI{}, nil)
+
+	_, err := cm.GetContractAPI(context.Background(), "http://localhost/api", "ns1", "banana")
+
+	assert.NoError(t, err)
+}
+
 func TestGetContractAPIs(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)

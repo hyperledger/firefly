@@ -102,6 +102,29 @@ func (_m *Manager) DeleteContractSubscriptionByNameOrID(ctx context.Context, ns 
 	return r0
 }
 
+// GetContractAPI provides a mock function with given fields: ctx, ns, apiName
+func (_m *Manager) GetContractAPI(ctx context.Context, ns string, apiName string) (*fftypes.ContractAPI, error) {
+	ret := _m.Called(ctx, ns, apiName)
+
+	var r0 *fftypes.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractAPI); ok {
+		r0 = rf(ctx, ns, apiName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractAPI)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, apiName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetContractAPISwagger provides a mock function with given fields: ctx, httpServerURL, ns, apiName
 func (_m *Manager) GetContractAPISwagger(ctx context.Context, httpServerURL string, ns string, apiName string) (*openapi3.T, error) {
 	ret := _m.Called(ctx, httpServerURL, ns, apiName)
