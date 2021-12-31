@@ -45,7 +45,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/prometheus/client_golang/prometheus"
-	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
+	muxprom "gitlab.com/hfuss/mux-prometheus/pkg/middleware"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
@@ -451,7 +451,7 @@ func (as *apiServer) configurePrometheusInstrumentation(namespace, subsystem str
 
 func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
-	as.configurePrometheusInstrumentation("apiserver", "rest", r)
+	as.configurePrometheusInstrumentation("ff_apiserver", "rest", r)
 
 	for _, route := range routes {
 		if route.JSONHandler != nil {
@@ -478,7 +478,7 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 
 func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
-	as.configurePrometheusInstrumentation("apiserver", "admin", r)
+	as.configurePrometheusInstrumentation("ff_apiserver", "admin", r)
 
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {
