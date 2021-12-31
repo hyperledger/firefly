@@ -23,7 +23,7 @@ package manager. It can be used to deploy a FireFly node for a single organizati
   * [Fabric](#fabric)
     * [Chaincode](#chaincode)
     * [Identity Management](#identity-management)
-  * [Ingress Examples](#ingress-examples)
+  * [Ingress Example](#ingress-example)
   * [Database Migrations](#database-migrations)
   * [Auto-Registration](#auto-registration)
   * [DataExchange HTTPS and cert-manager](#dataexchange-https-and-cert-manager)
@@ -506,20 +506,20 @@ To declaratively add the registry consult the [documentation](https://argo-cd.re
 
 ### Terraform
 
-[Terraform]() is a CLI tool that enables engineers to "plan" and "apply" infrastructure defined as code in the [HCL language]().
-Terraform offers a [Helm provider] for managing Helm releases and their values declaratively. Terraform [does not currently
-support OCI registries]().
+[Terraform](https://www.terraform.io/) is a CLI tool that enables engineers to "plan" and "apply" infrastructure defined
+as code in the [HCL language](https://github.com/hashicorp/hcl). Terraform offers a [Helm provider](https://registry.terraform.io/providers/hashicorp/helm/latest/docs)
+for managing Helm releases and their values declaratively. Terraform [does not currently support OCI registries](https://github.com/hashicorp/terraform-provider-helm/issues/633).
 
 As a result, you can configure Terraform to use the FireFly chart by either:
 
 1. Creating a wrapper parent chart with the FireFly chart dependency pre-downloaded and [vendored](https://medium.com/plain-and-simple/dependency-vendoring-dd765be75655).
    See [Using as a Dependency](#using-as-a-dependency) for more information.
 
-2. Pre-downloading the FireFly chart using:
+2. Pre-downloading the FireFly chart directly using:
     ```shell
     helm pull --version 0.0.1 oci://ghcr.io/hyperledger/helm/firefly
     ```
-   and then referring to via its filepath location:
+   then referring to via its filepath location:
     ```hcl
     resource "helm_release" "firefly" {
       name = "firefly"
