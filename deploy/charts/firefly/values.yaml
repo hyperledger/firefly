@@ -237,8 +237,6 @@ dataexchange:
     tag: v0.9.3
 
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
 
   podAnnotations: {}
 
@@ -306,4 +304,47 @@ dataexchange:
       storageClass: ""
 
 erc1155:
-  # TODO ...
+  enabled: false
+
+  image:
+    repository: ghcr.io/hyperledger/firefly-tokens-erc1155
+    pullPolicy: Always
+    tag: v0.10.2
+
+  imagePullSecrets: []
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+  # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+

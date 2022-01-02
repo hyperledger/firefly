@@ -43,12 +43,19 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kuberentes.io/part-of: {{ .Chart.Name }}
 {{- end }}
 
-{{/*
-Common labels
-*/}}
 {{- define "firefly.dataexchangeLabels" -}}
 helm.sh/chart: {{ include "firefly.chart" . }}
 {{ include "firefly.dataexchangeSelectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kuberentes.io/part-of: {{ .Chart.Name }}
+{{- end }}
+
+{{- define "firefly.erc1155Labels" -}}
+helm.sh/chart: {{ include "firefly.chart" . }}
+{{ include "firefly.erc1155SelectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -65,13 +72,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: core
 {{- end }}
 
-{{/*
-Selector labels
-*/}}
 {{- define "firefly.dataexchangeSelectorLabels" -}}
 app.kubernetes.io/name: {{ include "firefly.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: dx
+{{- end }}
+
+{{- define "firefly.erc1155SelectorLabels" -}}
+app.kubernetes.io/name: {{ include "firefly.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: erc1155
 {{- end }}
 
 {{- define "firefly.dataexchangeP2PHost" -}}

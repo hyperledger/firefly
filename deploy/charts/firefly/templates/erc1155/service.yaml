@@ -1,15 +1,17 @@
+{{- if .Values.erc1155.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "firefly-erc1155.fullname" . }}
+  name: {{ include "firefly.fullname" . }}-erc1155
   labels:
-    {{- include "firefly-erc1155.labels" . | nindent 4 }}
+    {{- include "firefly.erc1155Labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.erc1155.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - port: {{ .Values.erc1155.service.port }}
       targetPort: http
       protocol: TCP
       name: http
   selector:
-    {{- include "firefly-erc1155.selectorLabels" . | nindent 4 }}
+    {{- include "firefly.erc1155SelectorLabels" . | nindent 4 }}
+{{- end }}

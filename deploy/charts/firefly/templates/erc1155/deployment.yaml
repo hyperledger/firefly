@@ -1,42 +1,41 @@
+{{- if .Values.erc1155.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "firefly-erc1155.fullname" . }}
+  name: {{ include "firefly.fullname" . }}-erc1155
   labels:
-    {{- include "firefly-erc1155.labels" . | nindent 4 }}
+    {{- include "firefly.erc1155Labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: 1
   selector:
     matchLabels:
-      {{- include "firefly-erc1155.selectorLabels" . | nindent 6 }}
+      {{- include "firefly.erc1155SelectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with .Values.erc1155.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "firefly-erc1155.selectorLabels" . | nindent 8 }}
+        {{- include "firefly.erc1155SelectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with .Values.erc1155.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "firefly-erc1155.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.erc1155.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+            {{- toYaml .Values.erc1155.securityContext | nindent 12 }}
+          image: "{{ .Values.erc1155.image.repository }}:{{ .Values.erc1155.image.tag }}"
+          imagePullPolicy: {{ .Values.erc1155.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: {{ .Values.erc1155.service.port }}
               protocol: TCP
+          # TODO
           livenessProbe:
             httpGet:
               path: /
@@ -46,16 +45,17 @@ spec:
               path: /
               port: http
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+            {{- toYaml .Values.erc1155.resources | nindent 12 }}
+      {{- with .Values.erc1155.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.erc1155.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.erc1155.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}
