@@ -26,7 +26,7 @@ spec:
       securityContext:
         {{- toYaml .Values.erc1155.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ .Chart.Name }}-erc1155
           securityContext:
             {{- toYaml .Values.erc1155.securityContext | nindent 12 }}
           image: "{{ .Values.erc1155.image.repository }}:{{ .Values.erc1155.image.tag }}"
@@ -35,15 +35,34 @@ spec:
             - name: http
               containerPort: {{ .Values.erc1155.service.port }}
               protocol: TCP
-          # TODO
+          # blocked on 0.10.3+ release
           livenessProbe:
             httpGet:
-              path: /
+              path: /health/liveness
               port: http
           readinessProbe:
             httpGet:
-              path: /
+              path: /health/readiness
               port: http
+          env:
+            - name: PORT
+              value: {{ .Values.erc1155.service.port | quote }}
+            - name: ETHCONNECT_URL
+              value: {{ tpl .Values.config.ethconnectUrl . }}
+            - name: ETHCONNECT_INSTANCE
+              value: {{ .Values.config.erc1155ContractAddress }}
+            - name: ETHCONNECT_TOPIC
+              value: {{ .Values.config.erc1155EthconnectTopic | quote }}
+            - name: ETHCONNECT_PREFIX
+              value: {{ .Values.config.ethconnectPrefixShort | default "fly" }}
+            {{- if and .Values.config.ethconnectUsername .Values.config.ethconnectPassword }}
+            - name: ETHCONNECT_USERNAME
+              value: {{ .Values.config.ethconnectUsername | quote }}
+            - name: ETHCONNECT_PASSWORD
+              value: {{ .Values.config.ethconnectPassword | quote }}
+            {{- end }}
+            - name: AUTO_INIT
+              value: "true"
           resources:
             {{- toYaml .Values.erc1155.resources | nindent 12 }}
       {{- with .Values.erc1155.nodeSelector }}

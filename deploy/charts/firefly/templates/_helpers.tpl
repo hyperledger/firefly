@@ -215,4 +215,13 @@ dataexchange:
     {{- end }}
   {{- end }}
 {{- end }}
+{{- if and .Values.config.tokensOverride (not .Values.erc1155.enabled) }}
+tokens:
+    {{- toYaml (tpl .Values.config.tokensOverride .) | nindent 2 }}
+{{- else if and .Values.erc1155.enabled }}
+tokens:
+  - plugin: fftokens
+    name: erc1155
+    url: http://{{ include "firefly.fullname" . }}-erc1155.{{ .Release.Namespace }}.svc:{{ .Values.erc1155.service.port }}
+{{- end }}
 {{- end }}

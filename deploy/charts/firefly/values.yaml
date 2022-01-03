@@ -73,7 +73,7 @@ config:
   # The Ethconnect topic to use for blockchain event subscriptions
   ethconnectTopic: 0
 
-  # The short prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. ff or kld
+  # The short prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. fly or kld
   ethconnectPrefixShort: ""
 
   # The long prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. FireFly or Kaleido
@@ -100,6 +100,12 @@ config:
   # The Fabric to use for signing transactions, must be pre-registered and enrolled
   fabconnectSigner: ""
 
+  # The Ethconnet URI representing the ERC1155 tokens contract
+  erc1155ContractAddress: "/contracts/erc1155Addrress"
+
+  # The Ethconnet topic to use for tokens event subscriptions
+  erc1155EthconnectTopic: ""
+
   # The following values can be used to override the templating of specific plugin sections, in the case where
   # the user wants greater control to template the sections using global values, additional helpers, etc. OR if they
   # want to use other plugin types i.e. `fabric` which currently do not exist at the time of writing.
@@ -109,6 +115,8 @@ config:
   databaseOverride: {}
 
   publicstorageOverride: {}
+
+  tokensOverride: {}
 
   blockchainOverride: {}
    # type: ethereum
@@ -126,7 +134,7 @@ config:
 core:
   image:
     repository: ghcr.io/hyperledger/firefly
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     # tag: latest
 
@@ -135,8 +143,6 @@ core:
     #   value: debug
 
   imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
 
   podAnnotations: {}
 
@@ -233,7 +239,7 @@ dataexchange:
 
   image:
     repository: ghcr.io/hyperledger/firefly-dataexchange-https
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     tag: v0.9.3
 
   imagePullSecrets: []
@@ -304,11 +310,11 @@ dataexchange:
       storageClass: ""
 
 erc1155:
-  enabled: false
+  enabled: true
 
   image:
     repository: ghcr.io/hyperledger/firefly-tokens-erc1155
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     tag: v0.10.2
 
   imagePullSecrets: []
@@ -328,7 +334,7 @@ erc1155:
 
   service:
     type: ClusterIP
-    port: 8080
+    port: 3000
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -347,4 +353,3 @@ erc1155:
   tolerations: []
 
   affinity: {}
-
