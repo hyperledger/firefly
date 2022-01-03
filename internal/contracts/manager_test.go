@@ -219,7 +219,7 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 				},
 			},
 		},
-		Params: map[string]interface{}{
+		Input: map[string]interface{}{
 			"x": float64(1),
 			"y": float64(2),
 		},
@@ -258,7 +258,7 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 				},
 			},
 		},
-		Params: map[string]interface{}{
+		Input: map[string]interface{}{
 			"x": float64(1),
 		},
 	}
@@ -296,7 +296,7 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 				},
 			},
 		},
-		Params: map[string]interface{}{
+		Input: map[string]interface{}{
 			"x": float64(1),
 			"y": "two",
 		},
@@ -334,7 +334,7 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 				},
 			},
 		},
-		Params: map[string]interface{}{
+		Input: map[string]interface{}{
 			"x": float64(1),
 			"y": float64(2),
 		},

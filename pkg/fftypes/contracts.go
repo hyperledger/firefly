@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,7 +23,7 @@ type InvokeContractRequest struct {
 	Ledger    Byteable               `json:"ledger,omitempty"`
 	Location  Byteable               `json:"location,omitempty"`
 	Method    *FFIMethod             `json:"method,omitempty"`
-	Params    map[string]interface{} `json:"params"`
+	Input     map[string]interface{} `json:"input"`
 }
 
 type ContractSubscribeRequest struct {

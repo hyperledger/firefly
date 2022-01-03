@@ -287,7 +287,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	locationBytes, _ := json.Marshal(location)
 	invokeContractRequest := &fftypes.InvokeContractRequest{
 		Location: locationBytes,
-		Params: map[string]interface{}{
+		Input: map[string]interface{}{
 			"newValue": float64(42),
 		},
 	}

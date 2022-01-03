@@ -96,7 +96,7 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEv
  */
 func invokeRequestJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSONObject {
 	req := &fftypes.InvokeContractRequest{
-		Params: *ffiParamsJSONSchema(params),
+		Input: *ffiParamsJSONSchema(params),
 	}
 	if !hasLocation {
 		req.Location = []byte(`{}`)

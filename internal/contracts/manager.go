@@ -159,7 +159,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 	if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
 		return nil, err
 	}
-	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, req.Method, req.Params)
+	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, req.Method, req.Input)
 }
 
 func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error) {
@@ -356,7 +356,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 	}
 
 	for _, param := range req.Method.Params {
-		value, ok := req.Params[param.Name]
+		value, ok := req.Input[param.Name]
 		if !ok {
 			return i18n.NewError(ctx, i18n.MsgContractMissingInputArgument, param.Name)
 		}
