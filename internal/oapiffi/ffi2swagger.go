@@ -61,7 +61,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFIMethod, hasLocation bool) []*oapispec.Route {
 	return append(routes, &oapispec.Route{
 		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
-		Path:             fmt.Sprintf("invoke/%s", method.Pathname),
+		Path:             fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodPost,
 		JSONInputValue:   func() interface{} { return &fftypes.InvokeContractRequest{} },
 		JSONInputSchema:  func(ctx context.Context) string { return invokeRequestJSONSchema(&method.Params, hasLocation).String() },
@@ -80,7 +80,7 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEv
 	}
 	return append(routes, &oapispec.Route{
 		Name:            fmt.Sprintf("subscribe_%s", event.Pathname),
-		Path:            fmt.Sprintf("subscribe/%s", event.Pathname),
+		Path:            fmt.Sprintf("subscribe/%s", event.Pathname), // must match a route defined in apiserver routes!
 		Method:          http.MethodPost,
 		JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
 		JSONInputMask:   []string{"Interface", "Event"},

@@ -204,6 +204,7 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 
 func (cm *contractManager) addContractURLs(httpServerURL string, api *fftypes.ContractAPI) {
 	if api != nil {
+		// These URLs must match the actual routes in apiserver.createMuxRouter()!
 		baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, api.Namespace, api.Name)
 		api.URLs.OpenAPI = baseURL + "/api/swagger.json"
 		api.URLs.UI = baseURL + "/api"
