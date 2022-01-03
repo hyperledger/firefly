@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -64,9 +64,9 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFI
 		Path:             fmt.Sprintf("invoke/%s", method.Pathname),
 		Method:           http.MethodPost,
 		JSONInputValue:   func() interface{} { return &fftypes.InvokeContractRequest{} },
-		JSONInputSchema:  func(ctx context.Context) string { return invokeRequestJSON(&method.Params, hasLocation).String() },
+		JSONInputSchema:  func(ctx context.Context) string { return invokeRequestJSONSchema(&method.Params, hasLocation).String() },
 		JSONOutputValue:  func() interface{} { return &fftypes.JSONObject{} },
-		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSON(&method.Returns).String() },
+		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
 	})
 }
@@ -90,9 +90,13 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEv
 	})
 }
 
-func invokeRequestJSON(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSONObject {
+/**
+ * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke".
+ * Returns the JSON Schema as an `fftypes.JSONObject`.
+ */
+func invokeRequestJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSONObject {
 	req := &fftypes.InvokeContractRequest{
-		Params: *ffiParamsJSON(params),
+		Params: *ffiParamsJSONSchema(params),
 	}
 	if !hasLocation {
 		req.Location = []byte(`{}`)
@@ -103,10 +107,10 @@ func invokeRequestJSON(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSO
 	}
 }
 
-func ffiParamsJSON(params *fftypes.FFIParams) *fftypes.JSONObject {
+func ffiParamsJSONSchema(params *fftypes.FFIParams) *fftypes.JSONObject {
 	out := make(fftypes.JSONObject, len(*params))
 	for _, param := range *params {
-		out[param.Name] = ffiParamJSON(param)
+		out[param.Name] = ffiParamJSONSchema(param)
 	}
 	return &fftypes.JSONObject{
 		"type":       "object",
@@ -114,7 +118,7 @@ func ffiParamsJSON(params *fftypes.FFIParams) *fftypes.JSONObject {
 	}
 }
 
-func ffiParamJSON(param *fftypes.FFIParam) *fftypes.JSONObject {
+func ffiParamJSONSchema(param *fftypes.FFIParam) *fftypes.JSONObject {
 	out := fftypes.JSONObject{}
 	switch {
 	case strings.HasSuffix(param.Type, "[]"):
@@ -123,14 +127,14 @@ func ffiParamJSON(param *fftypes.FFIParam) *fftypes.JSONObject {
 			out["type"] = "string"
 		} else {
 			out["type"] = "array"
-			out["items"] = ffiParamJSON(&fftypes.FFIParam{
+			out["items"] = ffiParamJSONSchema(&fftypes.FFIParam{
 				Type:       baseType,
 				Components: param.Components,
 			})
 		}
 
 	case len(param.Components) > 0:
-		out = *ffiParamsJSON(&param.Components)
+		out = *ffiParamsJSONSchema(&param.Components)
 
 	case param.Type == "string", param.Type == "integer", param.Type == "boolean":
 		out["type"] = param.Type
