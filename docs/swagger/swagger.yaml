@@ -716,6 +716,8 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
+                key:
+                  type: string
                 ledger:
                   format: byte
                   type: string
@@ -2214,6 +2216,8 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
+                key:
+                  type: string
                 ledger:
                   format: byte
                   type: string
@@ -2564,6 +2568,8 @@ paths:
                   additionalProperties: {}
                   type: object
                 interface: {}
+                key:
+                  type: string
                 ledger:
                   format: byte
                   type: string

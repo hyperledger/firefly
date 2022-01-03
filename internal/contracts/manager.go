@@ -153,7 +153,9 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (res interface{}, err error) {
-	signingKey := cm.identity.GetOrgKey(ctx)
+	if req.Key == "" {
+		req.Key = cm.identity.GetOrgKey(ctx)
+	}
 	operationID := fftypes.NewUUID()
 	if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
 		return nil, err
@@ -161,7 +163,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 	if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
 		return nil, err
 	}
-	return cm.blockchain.InvokeContract(ctx, operationID, signingKey, req.Location, req.Method, req.Input)
+	return cm.blockchain.InvokeContract(ctx, operationID, req.Key, req.Location, req.Method, req.Input)
 }
 
 func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error) {

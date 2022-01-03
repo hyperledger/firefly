@@ -22,6 +22,7 @@ type InvokeContractRequest struct {
 	Interface *UUID                  `json:"interface,omitempty"`
 	Ledger    Byteable               `json:"ledger,omitempty"`
 	Location  Byteable               `json:"location,omitempty"`
+	Key       string                 `json:"key,omitempty"`
 	Method    *FFIMethod             `json:"method,omitempty"`
 	Input     map[string]interface{} `json:"input"`
 }
