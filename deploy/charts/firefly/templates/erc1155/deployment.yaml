@@ -35,15 +35,24 @@ spec:
             - name: http
               containerPort: {{ .Values.erc1155.service.port }}
               protocol: TCP
-          # blocked on 0.10.3+ release
           livenessProbe:
             httpGet:
-              path: /health/liveness
+              path: /api/v1/health/liveness
               port: http
+            successThreshold: 1
+            failureThreshold: 2
+            periodSeconds: 10
+            timeoutSeconds: 1
+            initialDelaySeconds: 5
           readinessProbe:
             httpGet:
-              path: /health/readiness
+              path: /api/v1/health/readiness
               port: http
+            successThreshold: 1
+            failureThreshold: 4
+            periodSeconds: 15
+            timeoutSeconds: 2
+            initialDelaySeconds: 15
           env:
             - name: PORT
               value: {{ .Values.erc1155.service.port | quote }}
