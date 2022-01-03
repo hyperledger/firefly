@@ -44,7 +44,8 @@ func TestGetContractInterfaceBadID(t *testing.T) {
 
 func TestGetContractInterface(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -62,7 +63,8 @@ func TestGetContractInterface(t *testing.T) {
 
 func TestGetContractInterfaceWithChildren(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

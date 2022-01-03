@@ -28,7 +28,8 @@ import (
 
 func TestGetContractSubscriptions(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/contracts/subscriptions", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

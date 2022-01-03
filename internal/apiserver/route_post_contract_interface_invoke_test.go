@@ -32,7 +32,8 @@ import (
 func TestPostContractInterfaceInvoke(t *testing.T) {
 	interfaceID := fftypes.NewUUID()
 	o, r := newTestAPIServer()
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	input := fftypes.InvokeContractRequest{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

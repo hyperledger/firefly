@@ -28,7 +28,8 @@ import (
 
 func TestGetContractEventByID(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	id := fftypes.NewUUID()
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/contracts/events/"+id.String(), nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")

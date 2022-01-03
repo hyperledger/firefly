@@ -30,7 +30,8 @@ import (
 
 func TestPostNewContractInterface(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -47,7 +48,8 @@ func TestPostNewContractInterface(t *testing.T) {
 
 func TestPostNewContractInterfaceSync(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

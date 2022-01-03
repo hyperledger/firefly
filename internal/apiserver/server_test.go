@@ -43,16 +43,9 @@ import (
 
 const configDir = "../../test/data/config"
 
-func newMockOrchestrator() *orchestratormocks.Orchestrator {
-	mor := &orchestratormocks.Orchestrator{}
-	mcm := &contractmocks.Manager{}
-	mor.On("Contracts").Return(mcm).Maybe()
-	return mor
-}
-
 func newTestServer() (*orchestratormocks.Orchestrator, *apiServer) {
 	InitConfig()
-	mor := newMockOrchestrator()
+	mor := &orchestratormocks.Orchestrator{}
 	as := &apiServer{
 		apiTimeout:    5 * time.Second,
 		ffiSwaggerGen: &oapiffimocks.FFISwaggerGen{},
@@ -83,7 +76,7 @@ func TestStartStopServer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := newMockOrchestrator()
+	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(false)
 	err := as.Serve(ctx, mor)
 	assert.NoError(t, err)
@@ -97,7 +90,7 @@ func TestStartAPIFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := newMockOrchestrator()
+	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(false)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
@@ -112,7 +105,7 @@ func TestStartAdminFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := newMockOrchestrator()
+	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(true)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
@@ -127,7 +120,7 @@ func TestStartMetricsFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := newMockOrchestrator()
+	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(true)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
@@ -435,7 +428,8 @@ func TestGetTimeoutMax(t *testing.T) {
 func TestContractAPISwaggerJSON(t *testing.T) {
 	o, as := newTestServer()
 	r := as.createMuxRouter(context.Background(), o)
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	mffi := as.ffiSwaggerGen.(*oapiffimocks.FFISwaggerGen)
 	s := httptest.NewServer(r)
 	defer s.Close()
@@ -459,7 +453,8 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
 	o, as := newTestServer()
 	r := as.createMuxRouter(context.Background(), o)
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
@@ -473,7 +468,8 @@ func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
 func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
 	o, as := newTestServer()
 	r := as.createMuxRouter(context.Background(), o)
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
@@ -487,7 +483,8 @@ func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
 func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
 	o, as := newTestServer()
 	r := as.createMuxRouter(context.Background(), o)
-	mcm := o.Contracts().(*contractmocks.Manager)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
 	s := httptest.NewServer(r)
 	defer s.Close()
 

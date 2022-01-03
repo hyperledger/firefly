@@ -30,7 +30,6 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/oapiffi"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -463,8 +462,9 @@ func (as *apiServer) swaggerGenerator(routes []*oapispec.Route, apiBaseURL strin
 	}
 }
 
-func (as *apiServer) contractSwaggerGenerator(cm contracts.Manager, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
+		cm := o.Contracts()
 		vars := mux.Vars(req)
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
 		if err != nil {
@@ -510,7 +510,7 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 		}
 	}
 
-	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.contractSwaggerGenerator(o.Contracts(), apiBaseURL))))
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.contractSwaggerGenerator(o, apiBaseURL))))
 	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api`, func(rw http.ResponseWriter, req *http.Request) {
 		url := req.URL.String() + "/swagger.yaml"
 		handler := as.apiWrapper(as.swaggerUIHandler(url))
