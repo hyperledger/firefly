@@ -443,25 +443,25 @@ func (e *Ethereum) ValidateContractLocation(ctx context.Context, location fftype
 }
 
 func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Location, error) {
-	ethLocation := &Location{}
+	ethLocation := Location{}
 	if err := json.Unmarshal(location, &ethLocation); err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
 	}
 	if ethLocation.Address == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'address' not set")
 	}
-	return ethLocation, nil
+	return &ethLocation, nil
 }
 
 func parseParamDetails(ctx context.Context, details fftypes.Byteable) (*paramDetails, error) {
-	ethParam := &paramDetails{}
+	ethParam := paramDetails{}
 	if err := json.Unmarshal(details, &ethParam); err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, err)
 	}
 	if ethParam.Type == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, "'type' not set")
 	}
-	return ethParam, nil
+	return &ethParam, nil
 }
 
 var intRegex, _ = regexp.Compile("^u?int([0-9]{1,3})$")

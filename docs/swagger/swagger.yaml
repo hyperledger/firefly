@@ -688,14 +688,12 @@ paths:
         name: apiName
         required: true
         schema:
-          example: apiName
           type: string
       - description: 'TODO: Description'
         in: path
         name: methodPath
         required: true
         schema:
-          example: methodPath
           type: string
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
@@ -750,14 +748,12 @@ paths:
         name: apiName
         required: true
         schema:
-          example: apiName
           type: string
       - description: 'TODO: Description'
         in: path
         name: eventPath
         required: true
         schema:
-          example: eventPath
           type: string
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
@@ -2422,14 +2418,12 @@ paths:
         name: name
         required: true
         schema:
-          example: name
           type: string
       - description: 'TODO: Description'
         in: path
         name: version
         required: true
         schema:
-          example: version
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
