@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -432,17 +433,19 @@ func (as *apiServer) swaggerGenConf(apiBaseURL string) *oapispec.SwaggerGenConfi
 	}
 }
 
-func (as *apiServer) swaggerHandler(routes []*oapispec.Route, apiBaseURL string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) swaggerHandler(generate func(req *http.Request) (*openapi3.T, error)) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		vars := mux.Vars(req)
+		doc, err := generate(req)
+		if err != nil {
+			return 500, err
+		}
 		if vars["ext"] == ".json" {
 			res.Header().Add("Content-Type", "application/json")
-			doc := oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf(apiBaseURL))
 			b, _ := json.Marshal(&doc)
 			_, _ = res.Write(b)
 		} else {
 			res.Header().Add("Content-Type", "application/x-yaml")
-			doc := oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf(apiBaseURL))
 			b, _ := yaml.Marshal(&doc)
 			_, _ = res.Write(b)
 		}
@@ -477,23 +480,20 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 		}
 	}
 
-	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger.json`, as.routeHandler(o, apiBaseURL, &oapispec.Route{
-		PathParams: []*oapispec.PathParam{
-			{Name: "ns"},
-			{Name: "apiName"},
-		},
-		JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-			return o.Contracts().GetContractAPISwagger(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"])
-		},
-	}))
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(func(req *http.Request) (*openapi3.T, error) {
+		vars := mux.Vars(req)
+		return o.Contracts().GetContractAPISwagger(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
+	})))
 	r.HandleFunc("/api/v1/namespaces/{ns}/apis/{apiName}/api", func(rw http.ResponseWriter, req *http.Request) {
-		path := req.URL.Path + "/swagger.json"
-		handler := as.apiWrapper(as.swaggerUIHandler(publicURL + path))
+		url := req.URL.String() + "/swagger.yaml"
+		handler := as.apiWrapper(as.swaggerUIHandler(url))
 		handler(rw, req)
 	})
 
 	ws, _ := eifactory.GetPlugin(ctx, "websockets")
-	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, apiBaseURL)))
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(func(req *http.Request) (*openapi3.T, error) {
+		return oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf(apiBaseURL)), nil
+	})))
 	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
@@ -520,7 +520,9 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 				Methods(route.Method)
 		}
 	}
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, apiBaseURL)))
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(func(req *http.Request) (*openapi3.T, error) {
+		return oapispec.SwaggerGen(req.Context(), adminRoutes, as.swaggerGenConf(apiBaseURL)), nil
+	})))
 	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 

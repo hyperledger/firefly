@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -29,12 +29,15 @@ import (
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDownloadSwaggerYAML(t *testing.T) {
 	as := &apiServer{}
-	handler := as.apiWrapper(as.swaggerHandler(routes, "http://localhost:12345"))
+	handler := as.apiWrapper(as.swaggerHandler(func(req *http.Request) (*openapi3.T, error) {
+		return oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf("http://localhost:12345")), nil
+	}))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 

@@ -352,7 +352,9 @@ func TestSwaggerUI(t *testing.T) {
 
 func TestSwaggerYAML(t *testing.T) {
 	_, as := newTestServer()
-	handler := as.apiWrapper(as.swaggerHandler(routes, "http://localhost:12345/api/v1"))
+	handler := as.apiWrapper(as.swaggerHandler(func(req *http.Request) (*openapi3.T, error) {
+		return oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf("http://localhost:12345/api/v1")), nil
+	}))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -437,6 +439,20 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 	b, _ := ioutil.ReadAll(res.Body)
 	err = json.Unmarshal(b, &openapi3.T{})
 	assert.NoError(t, err)
+}
+
+func TestContractAPISwaggerJSONFail(t *testing.T) {
+	o, r := newTestAPIServer()
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mcm.On("GetContractAPISwagger", mock.Anything, mock.Anything, "default", "my-api").Return(nil, fmt.Errorf("pop"))
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 500, res.StatusCode)
 }
 
 func TestContractAPISwaggerUI(t *testing.T) {
