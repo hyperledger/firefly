@@ -98,6 +98,13 @@ Then you update the indexed business objects in your own database, as a result o
 
 ![FireFly Event-driven Programming API Model](images/event_driven_programming_model.png)
 
+## FireFly Hardening & Performance Testing
+
+To be confident Firefly can perform under normal conditions for an extended period of time, [Firefly Performance CLI](https://github.com/hyperledger/firefly-perf-cli) is used and currently in development.
+
+### Performance Test Architecture
+<img width="1513" alt="perf-test-arch" src="https://user-images.githubusercontent.com/17093033/147951270-7aec6ff1-e37c-4f02-90f8-563a357d1551.png">
+
 ## Learn more about Hyperledger FireFly Architecture
 
 - [YouTube Channel](https://www.youtube.com/playlist?list=PL0MZ85B_96CFVEdBNsHRoX_f15AJacZJD)
