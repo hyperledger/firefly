@@ -28,7 +28,7 @@ import (
 )
 
 type FFISwaggerGen interface {
-	Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (*openapi3.T, error)
+	Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) *openapi3.T
 }
 
 // ffiSwaggerGen generates OpenAPI3 (Swagger) definitions for FFIs
@@ -39,7 +39,7 @@ func NewFFISwaggerGen() FFISwaggerGen {
 	return &ffiSwaggerGen{}
 }
 
-func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T, err error) {
+func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T) {
 	hasLocation := !api.Location.IsNil()
 
 	routes := []*oapispec.Route{}
@@ -55,7 +55,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 		Version:     ffi.Version,
 		Description: ffi.Description,
 		BaseURL:     baseURL,
-	}), nil
+	})
 }
 
 func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFIMethod, hasLocation bool) []*oapispec.Route {

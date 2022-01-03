@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,11 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/oapiffi"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -54,8 +52,6 @@ type Manager interface {
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
-
-	GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error)
 }
 
 type contractManager struct {
@@ -64,7 +60,6 @@ type contractManager struct {
 	broadcast     broadcast.Manager
 	identity      identity.Manager
 	blockchain    blockchain.Plugin
-	swaggerGen    oapiffi.FFISwaggerGen
 }
 
 func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
@@ -77,7 +72,6 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 		broadcast:     broadcast,
 		identity:      identity,
 		blockchain:    blockchain,
-		swaggerGen:    oapiffi.NewFFISwaggerGen(),
 	}, nil
 }
 
@@ -229,23 +223,6 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL, n
 		cm.addContractURLs(httpServerURL, api)
 	}
 	return apis, fr, err
-}
-
-func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error) {
-	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
-	if err != nil {
-		return nil, err
-	} else if api == nil || api.Interface == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
-	}
-
-	ffi, err := cm.GetFFIByIDWithChildren(ctx, api.Interface.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, ns, apiName)
-	return cm.swaggerGen.Generate(ctx, baseURL, api, ffi)
 }
 
 func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, ref *fftypes.FFIReference) error {

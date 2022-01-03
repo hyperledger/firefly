@@ -34,18 +34,28 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
+	"github.com/hyperledger/firefly/mocks/oapiffimocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 const configDir = "../../test/data/config"
 
+func newMockOrchestrator() *orchestratormocks.Orchestrator {
+	mor := &orchestratormocks.Orchestrator{}
+	mcm := &contractmocks.Manager{}
+	mor.On("Contracts").Return(mcm).Maybe()
+	return mor
+}
+
 func newTestServer() (*orchestratormocks.Orchestrator, *apiServer) {
 	InitConfig()
-	mor := &orchestratormocks.Orchestrator{}
+	mor := newMockOrchestrator()
 	as := &apiServer{
-		apiTimeout: 5 * time.Second,
+		apiTimeout:    5 * time.Second,
+		ffiSwaggerGen: &oapiffimocks.FFISwaggerGen{},
 	}
 	return mor, as
 }
@@ -73,7 +83,7 @@ func TestStartStopServer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
+	mor := newMockOrchestrator()
 	mor.On("IsPreInit").Return(false)
 	err := as.Serve(ctx, mor)
 	assert.NoError(t, err)
@@ -87,7 +97,7 @@ func TestStartAPIFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
+	mor := newMockOrchestrator()
 	mor.On("IsPreInit").Return(false)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
@@ -102,7 +112,7 @@ func TestStartAdminFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
+	mor := newMockOrchestrator()
 	mor.On("IsPreInit").Return(true)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
@@ -117,7 +127,7 @@ func TestStartMetricsFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
+	mor := newMockOrchestrator()
 	mor.On("IsPreInit").Return(true)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
@@ -352,9 +362,7 @@ func TestSwaggerUI(t *testing.T) {
 
 func TestSwaggerYAML(t *testing.T) {
 	_, as := newTestServer()
-	handler := as.apiWrapper(as.swaggerHandler(func(req *http.Request) (*openapi3.T, error) {
-		return oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf("http://localhost:12345/api/v1")), nil
-	}))
+	handler := as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:12345/api/v1")))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -425,30 +433,72 @@ func TestGetTimeoutMax(t *testing.T) {
 }
 
 func TestContractAPISwaggerJSON(t *testing.T) {
-	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
+	o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), o)
+	mcm := o.Contracts().(*contractmocks.Manager)
+	mffi := as.ffiSwaggerGen.(*oapiffimocks.FFISwaggerGen)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPISwagger", mock.Anything, mock.Anything, "default", "my-api").Return(&openapi3.T{}, nil)
+	ffi := &fftypes.FFI{}
+	api := &fftypes.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(api, nil)
+	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(ffi, nil)
+	mffi.On("Generate", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my-api", api, ffi).Return(&openapi3.T{})
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	b, _ := ioutil.ReadAll(res.Body)
-	err = json.Unmarshal(b, &openapi3.T{})
-	assert.NoError(t, err)
 }
 
-func TestContractAPISwaggerJSONFail(t *testing.T) {
-	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
+func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
+	o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), o)
+	mcm := o.Contracts().(*contractmocks.Manager)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPISwagger", mock.Anything, mock.Anything, "default", "my-api").Return(nil, fmt.Errorf("pop"))
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(nil, fmt.Errorf("pop"))
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 500, res.StatusCode)
+}
+
+func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
+	o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), o)
+	mcm := o.Contracts().(*contractmocks.Manager)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(nil, nil)
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 404, res.StatusCode)
+}
+
+func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
+	o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), o)
+	mcm := o.Contracts().(*contractmocks.Manager)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	api := &fftypes.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(api, nil)
+	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)

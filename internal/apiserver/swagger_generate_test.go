@@ -29,15 +29,12 @@ import (
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDownloadSwaggerYAML(t *testing.T) {
 	as := &apiServer{}
-	handler := as.apiWrapper(as.swaggerHandler(func(req *http.Request) (*openapi3.T, error) {
-		return oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf("http://localhost:12345")), nil
-	}))
+	handler := as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:12345")))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 

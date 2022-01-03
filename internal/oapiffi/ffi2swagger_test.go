@@ -89,8 +89,7 @@ func testFFI() *fftypes.FFI {
 func TestGenerate(t *testing.T) {
 	g := NewFFISwaggerGen()
 	api := &fftypes.ContractAPI{}
-	doc, err := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
-	assert.NoError(t, err)
+	doc := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
 
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
@@ -100,8 +99,7 @@ func TestGenerate(t *testing.T) {
 func TestGenerateWithLocation(t *testing.T) {
 	g := NewFFISwaggerGen()
 	api := &fftypes.ContractAPI{Location: []byte(`{}`)}
-	doc, err := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
-	assert.NoError(t, err)
+	doc := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
 
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
