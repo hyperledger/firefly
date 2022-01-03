@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,11 +28,11 @@ import (
 
 var getContractInterface = &oapispec.Route{
 	Name:   "getContractInterface",
-	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceID}",
+	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "interfaceID", Description: i18n.MsgTBD},
+		{Name: "interfaceId", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "fetchchildren", Example: "true", Description: i18n.MsgTBD, IsBool: true},
@@ -44,7 +44,7 @@ var getContractInterface = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		interfaceID, err := fftypes.ParseUUID(r.Ctx, r.PP["interfaceID"])
+		interfaceID, err := fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"])
 		if err != nil {
 			return nil, err
 		}

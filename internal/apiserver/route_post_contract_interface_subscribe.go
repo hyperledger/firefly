@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,12 +27,12 @@ import (
 
 var postContractInterfaceSubscribe = &oapispec.Route{
 	Name:   "postContractInterfaceSubscribe",
-	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceID}/subscribe/{eventPath}",
+	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}/subscribe/{eventPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "interfaceID", Example: "interfaceID", Description: i18n.MsgTBD},
-		{Name: "eventPath", Example: "eventPath", Description: i18n.MsgTBD},
+		{Name: "interfaceId", Description: i18n.MsgTBD},
+		{Name: "eventPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
@@ -45,7 +45,7 @@ var postContractInterfaceSubscribe = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		contractSubscribeRequest := r.Input.(*fftypes.ContractSubscribeRequest)
-		if contractSubscribeRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceID"]); err != nil {
+		if contractSubscribeRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"]); err != nil {
 			return nil, err
 		}
 		return getOr(r.Ctx).Contracts().SubscribeContract(r.Ctx, r.PP["ns"], r.PP["eventPath"], contractSubscribeRequest)

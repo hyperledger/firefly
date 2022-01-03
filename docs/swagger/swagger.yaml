@@ -2044,7 +2044,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{interfaceID}:
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}:
     get:
       description: 'TODO: Description'
       operationId: getContractInterface
@@ -2058,7 +2058,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: interfaceID
+        name: interfaceId
         required: true
         schema:
           type: string
@@ -2173,7 +2173,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{interfaceID}/invoke/{methodPath}:
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}/invoke/{methodPath}:
     post:
       description: 'TODO: Description'
       operationId: postContractInterfaceInvoke
@@ -2187,17 +2187,15 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: interfaceID
+        name: interfaceId
         required: true
         schema:
-          example: interfaceID
           type: string
       - description: 'TODO: Description'
         in: path
         name: methodPath
         required: true
         schema:
-          example: methodPath
           type: string
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
@@ -2280,7 +2278,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{interfaceID}/subscribe/{eventPath}:
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}/subscribe/{eventPath}:
     post:
       description: 'TODO: Description'
       operationId: postContractInterfaceSubscribe
@@ -2294,17 +2292,15 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: interfaceID
+        name: interfaceId
         required: true
         schema:
-          example: interfaceID
           type: string
       - description: 'TODO: Description'
         in: path
         name: eventPath
         required: true
         schema:
-          example: eventPath
           type: string
       - description: When true the HTTP request blocks until the message is confirmed
         in: query
@@ -2883,7 +2879,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/subscriptions/{nameOrID}:
+  /namespaces/{ns}/contracts/subscriptions/{nameOrId}:
     delete:
       description: 'TODO: Description'
       operationId: deleteContractSubscription
@@ -2897,7 +2893,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: nameOrID
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -2924,7 +2920,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: nameOrID
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -8602,7 +8598,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/pools/{nameOrID}:
+  /namespaces/{ns}/tokens/pools/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getTokenPoolByNameOrID
@@ -8616,7 +8612,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: nameOrID
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -8994,7 +8990,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/transfers/{transferID}:
+  /namespaces/{ns}/tokens/transfers/{transferId}:
     get:
       description: 'TODO: Description'
       operationId: getTokenTransferByID
@@ -9008,7 +9004,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: transferID
+        name: transferId
         required: true
         schema:
           type: string

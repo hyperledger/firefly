@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,11 +27,11 @@ import (
 
 var getTokenTransferByID = &oapispec.Route{
 	Name:   "getTokenTransferByID",
-	Path:   "namespaces/{ns}/tokens/transfers/{transferID}",
+	Path:   "namespaces/{ns}/tokens/transfers/{transferId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "transferID", Description: i18n.MsgTBD},
+		{Name: "transferId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -40,7 +40,7 @@ var getTokenTransferByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Assets().GetTokenTransferByID(r.Ctx, r.PP["ns"], r.PP["transferID"])
+		output, err = getOr(r.Ctx).Assets().GetTokenTransferByID(r.Ctx, r.PP["ns"], r.PP["transferId"])
 		return output, err
 	},
 }

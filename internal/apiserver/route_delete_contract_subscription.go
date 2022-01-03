@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,11 +26,11 @@ import (
 
 var deleteContractSubscription = &oapispec.Route{
 	Name:   "deleteContractSubscription",
-	Path:   "namespaces/{ns}/contracts/subscriptions/{nameOrID}",
+	Path:   "namespaces/{ns}/contracts/subscriptions/{nameOrId}",
 	Method: http.MethodDelete,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "nameOrID", Description: i18n.MsgTBD},
+		{Name: "nameOrId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -40,7 +40,7 @@ var deleteContractSubscription = &oapispec.Route{
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).Contracts().DeleteContractSubscriptionByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrID"])
+		err = getOr(r.Ctx).Contracts().DeleteContractSubscriptionByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrId"])
 		return nil, err
 	},
 }
