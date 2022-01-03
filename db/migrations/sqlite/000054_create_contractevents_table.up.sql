@@ -6,5 +6,5 @@ CREATE TABLE contractevents (
   subscription_id  UUID            NOT NULL,
   outputs          BYTEA,
   info             BYTEA,
-  created          BIGINT          NOT NULL
+  timestamp        BIGINT          NOT NULL
 );
