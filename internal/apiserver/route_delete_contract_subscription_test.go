@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,8 +28,7 @@ import (
 
 func TestDeleteContractSubscriptionByID(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
+	mcm := o.Contracts().(*contractmocks.Manager)
 	id := fftypes.NewUUID()
 	req := httptest.NewRequest("DELETE", "/api/v1/namespaces/mynamespace/contracts/subscriptions/"+id.String(), nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")

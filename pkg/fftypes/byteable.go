@@ -61,6 +61,10 @@ func (h Byteable) String() string {
 	return string(b)
 }
 
+func (h Byteable) IsNil() bool {
+	return h.String() == nullString
+}
+
 func (h Byteable) JSONObjectOk() (JSONObject, bool) {
 	var jo JSONObject
 	err := json.Unmarshal(h, &jo)

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,11 +27,11 @@ import (
 
 var postContractInterfaceInvoke = &oapispec.Route{
 	Name:   "postContractInterfaceInvoke",
-	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceID}/invoke/{methodPath}",
+	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}/invoke/{methodPath}",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "interfaceID", Description: i18n.MsgTBD},
+		{Name: "interfaceId", Description: i18n.MsgTBD},
 		{Name: "methodPath", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
@@ -45,7 +45,7 @@ var postContractInterfaceInvoke = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		invokeContractRequest := r.Input.(*fftypes.InvokeContractRequest)
-		if invokeContractRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceID"]); err != nil {
+		if invokeContractRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"]); err != nil {
 			return nil, err
 		}
 		invokeContractRequest.Method = &fftypes.FFIMethod{Pathname: r.PP["methodPath"]}

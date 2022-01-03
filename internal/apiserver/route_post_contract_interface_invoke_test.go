@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,8 +32,7 @@ import (
 func TestPostContractInterfaceInvoke(t *testing.T) {
 	interfaceID := fftypes.NewUUID()
 	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
+	mcm := o.Contracts().(*contractmocks.Manager)
 	input := fftypes.InvokeContractRequest{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
