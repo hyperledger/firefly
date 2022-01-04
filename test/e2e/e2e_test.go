@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -302,6 +302,32 @@ func waitForChangeEvent(t *testing.T, client *resty.Client, c chan *fftypes.Chan
 			if checkObject(t, match, eventJSON) {
 				return eventJSON
 			}
+		}
+	}
+}
+
+func waitForEventDelivery(t *testing.T, client *resty.Client, c chan *fftypes.EventDelivery, match map[string]interface{}) map[string]interface{} {
+	for {
+		eventDelivery := <-c
+		var event interface{}
+		var err error
+		switch eventDelivery.Type {
+		case fftypes.EventTypeContractEvent:
+			event, err = GetContractEvent(t, client, eventDelivery.Event.Reference.String())
+		default:
+			event, err = GetEvent(t, client, eventDelivery.Event.Reference.String())
+		}
+		if err != nil {
+			t.Logf("WARN: unable to get event: %v", err.Error())
+			continue
+		}
+		eventJSON, ok := event.(map[string]interface{})
+		if !ok {
+			t.Logf("WARN: unable to parse changeEvent: %v", event)
+			continue
+		}
+		if checkObject(t, match, eventJSON) {
+			return eventJSON
 		}
 	}
 }

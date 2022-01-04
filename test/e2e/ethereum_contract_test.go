@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -228,14 +228,14 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 		"subscription": sub.ID.String(),
 	}
 
-	event := waitForChangeEvent(suite.T(), suite.testState.client1, changes1, match)
+	event := waitForEventDelivery(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 }
 
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
-	_, changes1 := wsReader(suite.T(), suite.testState.ws1)
+	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
 
 	sub := CreateContractSubscription(suite.T(), suite.testState.client1, newTestFFIEvent(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
@@ -274,7 +274,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		"subscription": sub.ID.String(),
 	}
 
-	event := waitForChangeEvent(suite.T(), suite.testState.client1, changes1, match)
+	event := waitForEventDelivery(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 }
 
@@ -322,6 +322,6 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		"subscription": sub.ID.String(),
 	}
 
-	event := waitForChangeEvent(suite.T(), suite.testState.client1, changes1, match)
+	event := waitForEventDelivery(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 }

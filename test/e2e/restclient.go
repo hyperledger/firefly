@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -535,6 +535,7 @@ func InvokeFFIMethod(t *testing.T, client *resty.Client, contractID, methodName 
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
+
 func GetChangeEvent(t *testing.T, client *resty.Client, changeEvent *fftypes.ChangeEvent) (interface{}, error) {
 	var res interface{}
 	var url string
@@ -549,6 +550,28 @@ func GetChangeEvent(t *testing.T, client *resty.Client, changeEvent *fftypes.Cha
 		SetResult(&res).
 		Get(path)
 	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func GetEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
+	var res interface{}
+	path := fmt.Sprintf("%s/%s", urlGetEvents, eventID)
+	resp, err := client.R().
+		SetResult(&res).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func GetContractEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
+	var res interface{}
+	path := fmt.Sprintf("%s/%s", urlContractEvents, eventID)
+	resp, err := client.R().
+		SetResult(&res).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
