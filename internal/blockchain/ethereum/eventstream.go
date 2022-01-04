@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -97,6 +97,27 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string, bat
 	return &stream, nil
 }
 
+func (s *streamManager) updateEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint, eventStreamID string) (*eventStream, error) {
+	stream := eventStream{
+		Name:           topic,
+		ErrorHandling:  "block",
+		BatchSize:      batchSize,
+		BatchTimeoutMS: batchTimeout,
+		Type:           "websocket",
+		WebSocket:      eventStreamWebsocket{Topic: topic},
+		Timestamps:     true,
+	}
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetBody(&stream).
+		SetResult(&stream).
+		Patch("/eventstreams/" + eventStreamID)
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return &stream, nil
+}
+
 func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
 	existingStreams, err := s.getEventStreams(ctx)
 	if err != nil {
@@ -104,6 +125,10 @@ func (s *streamManager) ensureEventStream(ctx context.Context, topic string, bat
 	}
 	for _, stream := range existingStreams {
 		if stream.WebSocket.Topic == topic {
+			stream, err = s.updateEventStream(ctx, topic, batchSize, batchTimeout, stream.ID)
+			if err != nil {
+				return nil, err
+			}
 			return stream, nil
 		}
 	}

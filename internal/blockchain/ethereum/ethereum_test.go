@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -232,6 +232,8 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Name: "BatchPin_2f696e7374616e63" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
+	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
 
 	resetConf()
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
@@ -241,7 +243,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 
@@ -287,6 +289,34 @@ func TestStreamCreateError(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewStringResponder(500, `pop`))
+
+	resetConf()
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
+
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestStreamUpdateError(t *testing.T) {
+
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
