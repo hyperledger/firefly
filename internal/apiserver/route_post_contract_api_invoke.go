@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,11 +39,13 @@ var postContractAPIInvoke = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
-	JSONInputMask:   []string{"Interface", "Method"},
+	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
+	JSONInputMask:   []string{"Type", "Interface", "Method"},
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodPath"], r.Input.(*fftypes.InvokeContractRequest))
+		req := r.Input.(*fftypes.ContractCallRequest)
+		req.Type = fftypes.CallTypeInvoke
+		return getOr(r.Ctx).Contracts().InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodPath"], req)
 	},
 }

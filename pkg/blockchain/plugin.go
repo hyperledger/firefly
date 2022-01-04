@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,7 +47,11 @@ type Plugin interface {
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
 
-	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error)
+	// InvokeContract submits a new transaction to be executed by custom on-chain logic
+	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error)
+
+	// QueryContract executes a method via custom on-chain logic and returns the result
+	QueryContract(ctx context.Context, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error)
 
 	ValidateContractLocation(ctx context.Context, location fftypes.Byteable) error
 

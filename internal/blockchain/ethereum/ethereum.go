@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -64,6 +64,10 @@ type eventStreamWebsocket struct {
 
 type asyncTXSubmission struct {
 	ID string `json:"id"`
+}
+
+type queryOutput struct {
+	Output string `json:"output"`
 }
 
 type ethBatchPinInput struct {
@@ -391,19 +395,24 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, method, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, method, signingKey, requestID string, input interface{}) (*resty.Response, error) {
 	return e.client.R().
 		SetContext(ctx).
 		SetQueryParam(e.prefixShort+"-from", signingKey).
 		SetQueryParam(e.prefixShort+"-sync", "false").
 		SetQueryParam(e.prefixShort+"-id", requestID).
 		SetBody(input).
-		SetResult(output).
+		Post(contractPath + "/" + method)
+}
+
+func (e *Ethereum) queryContractMethod(ctx context.Context, contractPath, method string, input interface{}) (*resty.Response, error) {
+	return e.client.R().
+		SetContext(ctx).
+		SetBody(input).
 		Post(contractPath + "/" + method)
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
-	tx := &asyncTXSubmission{}
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -418,29 +427,43 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		PayloadRef: batch.BatchPayloadRef,
 		Contexts:   ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", signingKey, operationID.String(), input, tx)
+	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", signingKey, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	contractAddress, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	tx := &asyncTXSubmission{}
-	res, err := e.invokeContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, signingKey, operationID.String(), params, tx)
+	res, err := e.invokeContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, signingKey, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
-	var result interface{}
-	err = json.Unmarshal(res.Body(), &result)
+	tx := &asyncTXSubmission{}
+	if err = json.Unmarshal(res.Body(), tx); err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func (e *Ethereum) QueryContract(ctx context.Context, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+	contractAddress, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+	res, err := e.queryContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, input)
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	output := &queryOutput{}
+	if err = json.Unmarshal(res.Body(), output); err != nil {
+		return nil, err
+	}
+	return output, nil
 }
 
 func (e *Ethereum) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {

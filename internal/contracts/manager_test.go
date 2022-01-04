@@ -196,7 +196,8 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
@@ -235,7 +236,8 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
@@ -273,7 +275,8 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
@@ -311,7 +314,8 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 
 	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
@@ -1091,7 +1095,8 @@ func TestInvokeContract(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Ledger:    []byte{},
 		Location:  []byte{},
@@ -1116,7 +1121,8 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Ledger:    []byte{},
 		Location:  []byte{},
@@ -1135,7 +1141,8 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:     fftypes.CallTypeInvoke,
 		Ledger:   []byte{},
 		Location: []byte{},
 		Method: &fftypes.FFIMethod{
@@ -1156,7 +1163,8 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Ledger:    []byte{},
 		Location:  []byte{},
@@ -1178,7 +1186,8 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Ledger:    []byte{},
 		Location:  []byte{},
@@ -1355,7 +1364,8 @@ func TestInvokeContractAPI(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Ledger:    []byte{},
 		Location:  []byte{},
@@ -1385,7 +1395,8 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Ledger:    []byte{},
 		Location:  []byte{},
@@ -1406,7 +1417,8 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
-	req := &fftypes.InvokeContractRequest{
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Ledger:    []byte{},
 		Location:  []byte{},

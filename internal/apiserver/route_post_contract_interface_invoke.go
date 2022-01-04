@@ -39,16 +39,17 @@ var postContractInterfaceInvoke = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.InvokeContractRequest{} },
-	JSONInputMask:   []string{"Interface"},
+	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
+	JSONInputMask:   []string{"Type", "Interface"},
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		invokeContractRequest := r.Input.(*fftypes.InvokeContractRequest)
-		if invokeContractRequest.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"]); err != nil {
+		req := r.Input.(*fftypes.ContractCallRequest)
+		req.Type = fftypes.CallTypeInvoke
+		if req.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"]); err != nil {
 			return nil, err
 		}
-		invokeContractRequest.Method = &fftypes.FFIMethod{Pathname: r.PP["methodPath"]}
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], invokeContractRequest)
+		req.Method = &fftypes.FFIMethod{Pathname: r.PP["methodPath"]}
+		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req)
 	},
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -466,7 +466,7 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string) 
 	return signingKeyInput, nil
 }
 
-func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
+func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, signingKey string, requestID string, input interface{}) (*resty.Response, error) {
 	return f.client.R().
 		SetContext(ctx).
 		SetQueryParam(f.prefixShort+"-signer", getUserName(signingKey)).
@@ -475,7 +475,6 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, s
 		SetQueryParam(f.prefixShort+"-sync", "false").
 		SetQueryParam(f.prefixShort+"-id", requestID).
 		SetBody(input).
-		SetResult(output).
 		Post("/transactions")
 }
 
@@ -499,7 +498,6 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 }
 
 func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
-	tx := &asyncTXSubmission{}
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		hashes[i] = hexFormatB32(v)
@@ -515,35 +513,32 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 		Contexts:   hashes,
 	}
 	input := newTxInput(pinInput)
-	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, signingKey, operationID.String(), input, tx)
+	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, signingKey, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
-	tx := &asyncTXSubmission{}
-
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	// All arguments must be JSON serialized
-	args, err := jsonEncodeParams(params)
+	args, err := jsonEncodeInput(input)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
 	}
-	input := &fabTxNamedInput{
+	in := &fabTxNamedInput{
 		Func:    method.Name,
 		Headers: newTxInputHeaders(),
 		Args:    args,
 	}
-
-	input.Headers.PayloadSchema = &PayloadSchema{
+	in.Headers.PayloadSchema = &PayloadSchema{
 		Type:        "array",
 		PrefixItems: make([]*PrefixItem, len(method.Params)),
 	}
 
 	// Build the payload schema for the method parameters
 	for i, param := range method.Params {
-		input.Headers.PayloadSchema.PrefixItems[i] = &PrefixItem{
+		in.Headers.PayloadSchema.PrefixItems[i] = &PrefixItem{
 			Name: param.Name,
 			Type: "string",
 		}
@@ -554,19 +549,18 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		return nil, err
 	}
 
-	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, signingKey, operationID.String(), input, tx)
+	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, signingKey, operationID.String(), in)
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
-	var result interface{}
-	err = json.Unmarshal(res.Body(), &result)
-	if err != nil {
+	tx := &asyncTXSubmission{}
+	if err = json.Unmarshal(res.Body(), tx); err != nil {
 		return nil, err
 	}
-	return result, nil
+	return tx, nil
 }
 
-func jsonEncodeParams(params map[string]interface{}) (output map[string]string, err error) {
+func jsonEncodeInput(params map[string]interface{}) (output map[string]string, err error) {
 	output = make(map[string]string, len(params))
 	for field, value := range params {
 		encodedValue, err := json.Marshal(value)
@@ -576,6 +570,10 @@ func jsonEncodeParams(params map[string]interface{}) (output map[string]string, 
 		output[field] = string(encodedValue)
 	}
 	return
+}
+
+func (f *Fabric) QueryContract(ctx context.Context, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+	return nil, fmt.Errorf(("not yet supported"))
 }
 
 func (f *Fabric) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {
