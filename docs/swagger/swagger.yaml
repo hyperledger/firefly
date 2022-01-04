@@ -713,15 +713,17 @@ paths:
           application/json:
             schema:
               properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                key:
+                  type: string
                 ledger:
                   format: byte
                   type: string
                 location:
                   format: byte
                   type: string
-                params:
-                  additionalProperties: {}
-                  type: object
               type: object
       responses:
         "200":
@@ -2211,6 +2213,11 @@ paths:
           application/json:
             schema:
               properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                key:
+                  type: string
                 ledger:
                   format: byte
                   type: string
@@ -2261,9 +2268,6 @@ paths:
                             type: string
                         type: object
                       type: array
-                  type: object
-                params:
-                  additionalProperties: {}
                   type: object
               type: object
       responses:
@@ -2560,7 +2564,12 @@ paths:
           application/json:
             schema:
               properties:
+                input:
+                  additionalProperties: {}
+                  type: object
                 interface: {}
+                key:
+                  type: string
                 ledger:
                   format: byte
                   type: string
@@ -2611,9 +2620,6 @@ paths:
                             type: string
                         type: object
                       type: array
-                  type: object
-                params:
-                  additionalProperties: {}
                   type: object
               type: object
       responses:

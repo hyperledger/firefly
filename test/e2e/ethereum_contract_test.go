@@ -254,7 +254,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	invokeContractRequest := &fftypes.InvokeContractRequest{
 		Location: locationBytes,
 		Method:   newTestFFIMethod(),
-		Params: map[string]interface{}{
+		Input: map[string]interface{}{
 			"newValue": float64(2),
 		},
 	}
@@ -300,8 +300,8 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	locationBytes, _ := json.Marshal(location)
 	invokeContractRequest := &fftypes.InvokeContractRequest{
 		Location: locationBytes,
-		Params: map[string]interface{}{
-			"newValue": float64(3),
+		Input: map[string]interface{}{
+			"newValue": float64(42),
 		},
 	}
 
