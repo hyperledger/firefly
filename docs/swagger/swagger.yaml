@@ -564,6 +564,13 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
                 type: object
           description: Success
         "202":
@@ -591,14 +598,21 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/apis/{apiName}/apispec:
+  /namespaces/{ns}/apis/{apiName}:
     get:
       description: 'TODO: Description'
-      operationId: getContractAPISwagger
+      operationId: getContractAPIByName
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -626,18 +640,33 @@ paths:
             application/json:
               schema:
                 properties:
-                  info:
+                  id: {}
+                  interface:
                     properties:
-                      description:
-                        type: string
-                      title:
+                      id: {}
+                      name:
                         type: string
                       version:
                         type: string
                     type: object
-                  openapi:
-                    example: 3.0.2
+                  ledger:
+                    format: byte
                     type: string
+                  location:
+                    format: byte
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -2011,238 +2040,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{interfaceID}/invoke/{methodPath}:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractInterfaceInvoke
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: interfaceID
-        required: true
-        schema:
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: methodPath
-        required: true
-        schema:
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                ledger:
-                  format: byte
-                  type: string
-                location:
-                  format: byte
-                  type: string
-                method:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            format: byte
-                            type: string
-                          name:
-                            type: string
-                          type:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                    returns:
-                      items:
-                        properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            format: byte
-                            type: string
-                          name:
-                            type: string
-                          type:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
-                params:
-                  additionalProperties: {}
-                  type: object
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema: {}
-          description: Success
-        default:
-          description: ""
-  /namespaces/{ns}/contracts/interfaces/{interfaceID}/subscribe/{eventPath}:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractInterfaceSubscribe
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: interfaceID
-        required: true
-        schema:
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: eventPath
-        required: true
-        schema:
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                event:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            format: byte
-                            type: string
-                          name:
-                            type: string
-                          type:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                  type: object
-                location:
-                  format: byte
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created: {}
-                  event:
-                    properties:
-                      description:
-                        type: string
-                      name:
-                        type: string
-                      params:
-                        items:
-                          properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              format: byte
-                              type: string
-                            name:
-                              type: string
-                            type:
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  id: {}
-                  interface:
-                    properties:
-                      id: {}
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  location:
-                    format: byte
-                    type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  protocolId:
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
   /namespaces/{ns}/contracts/interfaces/{interfaceId}:
     get:
       description: 'TODO: Description'
@@ -2367,6 +2164,238 @@ paths:
                   namespace:
                     type: string
                   version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}/invoke/{methodPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInterfaceInvoke
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: methodPath
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                ledger:
+                  format: byte
+                  type: string
+                location:
+                  format: byte
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                params:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}/subscribe/{eventPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInterfaceSubscribe
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: eventPath
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                event:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            format: byte
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                  type: object
+                location:
+                  format: byte
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              format: byte
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    format: byte
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
                     type: string
                 type: object
           description: Success
@@ -2844,7 +2873,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/subscriptions/{nameOrID}:
+  /namespaces/{ns}/contracts/subscriptions/{nameOrId}:
     delete:
       description: 'TODO: Description'
       operationId: deleteContractSubscription
@@ -2858,7 +2887,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: nameOrID
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -2885,7 +2914,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: nameOrID
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -8563,7 +8592,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/pools/{nameOrID}:
+  /namespaces/{ns}/tokens/pools/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getTokenPoolByNameOrID
@@ -8577,7 +8606,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: nameOrID
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -8955,7 +8984,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/transfers/{transferID}:
+  /namespaces/{ns}/tokens/transfers/{transferId}:
     get:
       description: 'TODO: Description'
       operationId: getTokenTransferByID
@@ -8969,7 +8998,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: transferID
+        name: transferId
         required: true
         schema:
           type: string
