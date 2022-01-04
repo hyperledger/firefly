@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,7 +34,7 @@ import (
 
 func TestDownloadSwaggerYAML(t *testing.T) {
 	as := &apiServer{}
-	handler := as.apiWrapper(as.swaggerHandler(routes, "http://localhost:12345"))
+	handler := as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:12345")))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 

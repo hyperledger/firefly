@@ -39,7 +39,7 @@ var postNewContractAPI = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractAPI{} },
-	JSONInputMask:   []string{"ID", "Message", "Namespace"},
+	JSONInputMask:   []string{"ID", "Message", "Namespace", "URLs"},
 	JSONOutputValue: func() interface{} { return &fftypes.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,11 +27,11 @@ import (
 
 var getContractSubscriptionByNameOrID = &oapispec.Route{
 	Name:   "getContractSubscriptionByNameOrID",
-	Path:   "namespaces/{ns}/contracts/subscriptions/{nameOrID}",
+	Path:   "namespaces/{ns}/contracts/subscriptions/{nameOrId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "nameOrID", Description: i18n.MsgTBD},
+		{Name: "nameOrId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -41,6 +41,6 @@ var getContractSubscriptionByNameOrID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().GetContractSubscriptionByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrID"])
+		return getOr(r.Ctx).Contracts().GetContractSubscriptionByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrId"])
 	},
 }

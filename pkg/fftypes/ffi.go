@@ -67,10 +67,10 @@ type FFIEvent struct {
 }
 
 type FFIParam struct {
-	Name       string      `json:"name"`
-	Type       string      `json:"type"`
-	Details    Byteable    `json:"details"`
-	Components []*FFIParam `json:"components,omitempty"`
+	Name       string    `json:"name"`
+	Type       string    `json:"type"`
+	Details    Byteable  `json:"details"`
+	Components FFIParams `json:"components,omitempty"`
 }
 
 type FFIParams []*FFIParam

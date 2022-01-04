@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,11 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -40,7 +38,8 @@ type Manager interface {
 
 	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error)
-	GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
+	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
+	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 	SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
 	SubscribeContractAPI(ctx context.Context, ns, apiName, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
@@ -53,8 +52,6 @@ type Manager interface {
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
 	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
-
-	GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error)
 }
 
 type contractManager struct {
@@ -63,7 +60,6 @@ type contractManager struct {
 	broadcast     broadcast.Manager
 	identity      identity.Manager
 	blockchain    blockchain.Plugin
-	swaggerGen    oapispec.FFISwaggerGen
 }
 
 func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
@@ -76,7 +72,6 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 		broadcast:     broadcast,
 		identity:      identity,
 		blockchain:    blockchain,
-		swaggerGen:    oapispec.NewFFISwaggerGen(),
 	}, nil
 }
 
@@ -207,26 +202,28 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 	return method, nil
 }
 
-func (cm *contractManager) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
-	filter = cm.scopeNS(ns, filter)
-	return cm.database.GetContractAPIs(ctx, ns, filter)
+func (cm *contractManager) addContractURLs(httpServerURL string, api *fftypes.ContractAPI) {
+	if api != nil {
+		// These URLs must match the actual routes in apiserver.createMuxRouter()!
+		baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, api.Namespace, api.Name)
+		api.URLs.OpenAPI = baseURL + "/api/swagger.json"
+		api.URLs.UI = baseURL + "/api"
+	}
 }
 
-func (cm *contractManager) GetContractAPISwagger(ctx context.Context, httpServerURL, ns, apiName string) (*openapi3.T, error) {
+func (cm *contractManager) GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error) {
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
-	if err != nil {
-		return nil, err
-	} else if api == nil || api.Interface == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
-	}
+	cm.addContractURLs(httpServerURL, api)
+	return api, err
+}
 
-	ffi, err := cm.GetFFIByIDWithChildren(ctx, api.Interface.ID)
-	if err != nil {
-		return nil, err
+func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+	filter = cm.scopeNS(ns, filter)
+	apis, fr, err := cm.database.GetContractAPIs(ctx, ns, filter)
+	for _, api := range apis {
+		cm.addContractURLs(httpServerURL, api)
 	}
-
-	baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", httpServerURL, ns, apiName)
-	return cm.swaggerGen.Generate(ctx, baseURL, ffi)
+	return apis, fr, err
 }
 
 func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, ref *fftypes.FFIReference) error {

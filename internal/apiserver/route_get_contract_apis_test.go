@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,7 +39,7 @@ func TestGetContractAPIs(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractAPIs", mock.Anything, "ns1", mock.Anything).
+	mcm.On("GetContractAPIs", mock.Anything, "http://127.0.0.1:5000/api/v1", "ns1", mock.Anything).
 		Return([]*fftypes.ContractAPI{}, nil, nil)
 	r.ServeHTTP(res, req)
 

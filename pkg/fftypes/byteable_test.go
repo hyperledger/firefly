@@ -78,6 +78,8 @@ func TestByteableMarshalNull(t *testing.T) {
 	b, err := pb.MarshalJSON()
 	assert.NoError(t, err)
 	assert.Equal(t, nullString, string(b))
+	assert.True(t, pb.IsNil())
+
 }
 
 func TestByteableUnmarshalFail(t *testing.T) {
