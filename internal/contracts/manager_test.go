@@ -1109,7 +1109,7 @@ func TestInvokeContract(t *testing.T) {
 	}
 
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", mock.Anything, mock.AnythingOfType("*fftypes.FFIMethod"), mock.Anything).Return(struct{}{}, nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", req.Location, req.Method, req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1129,7 +1129,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	}
 
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", mock.Anything, mock.AnythingOfType("*fftypes.FFIMethod"), mock.Anything).Return(struct{}{}, nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", req.Location, req.Method, req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1220,6 +1220,55 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 	assert.Regexp(t, "FF10304", err)
+}
+
+func TestQueryContract(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mim := cm.identity.(*identitymanagermocks.Manager)
+
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeQuery,
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+	}
+
+	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input).Return(struct{}{}, nil)
+
+	_, err := cm.InvokeContract(context.Background(), "ns1", req)
+
+	assert.NoError(t, err)
+}
+
+func TestCallContractInvalidType(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+
+	req := &fftypes.ContractCallRequest{
+		Interface: fftypes.NewUUID(),
+		Ledger:    []byte{},
+		Location:  []byte{},
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+	}
+
+	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+
+	assert.PanicsWithValue(t, "unknown call type: ", func() {
+		cm.InvokeContract(context.Background(), "ns1", req)
+	})
 }
 
 func TestGetContractSubscriptionByID(t *testing.T) {
@@ -1384,7 +1433,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(&fftypes.FFIMethod{Name: "peel"}, nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", mock.Anything, mock.AnythingOfType("*fftypes.FFIMethod"), mock.Anything).Return(struct{}{}, nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", req.Location, mock.AnythingOfType("*fftypes.FFIMethod"), req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
 

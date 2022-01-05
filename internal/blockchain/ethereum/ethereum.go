@@ -408,6 +408,7 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, metho
 func (e *Ethereum) queryContractMethod(ctx context.Context, contractPath, method string, input interface{}) (*resty.Response, error) {
 	return e.client.R().
 		SetContext(ctx).
+		SetQueryParam(e.prefixShort+"-call", "true").
 		SetBody(input).
 		Post(contractPath + "/" + method)
 }
