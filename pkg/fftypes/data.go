@@ -136,6 +136,8 @@ func (d *Data) Seal(ctx context.Context, blob *Blob) (err error) {
 				}
 			}
 		}
+	} else if d.Blob != nil && d.Blob.Hash != nil {
+		return i18n.NewError(ctx, i18n.MsgBlobMismatchSealingData)
 	}
 	d.Hash, err = d.CalcHash(ctx)
 	if err == nil {

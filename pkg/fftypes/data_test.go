@@ -129,7 +129,7 @@ func TestSealBlobFileNamed(t *testing.T) {
 	assert.Equal(t, "file.ext", d.Blob.Name)
 }
 
-func TestSealBlobMismatch(t *testing.T) {
+func TestSealBlobMismatch1(t *testing.T) {
 	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
 	d := &Data{
 		Blob: &BlobRef{
@@ -139,6 +139,14 @@ func TestSealBlobMismatch(t *testing.T) {
 	err := d.Seal(context.Background(), &Blob{
 		Hash: NewRandB32(),
 	})
+	assert.Regexp(t, "FF10303", err)
+}
+
+func TestSealBlobMismatch2(t *testing.T) {
+	d := &Data{
+		Blob: &BlobRef{Hash: NewRandB32()},
+	}
+	err := d.Seal(context.Background(), nil)
 	assert.Regexp(t, "FF10303", err)
 }
 
