@@ -122,7 +122,19 @@ func (d *Data) Seal(ctx context.Context, blob *Blob) (err error) {
 		}
 		d.Blob.Size = blob.Size
 		if d.Value != nil {
-			d.Blob.Name = d.Value.JSONObjectNowarn().GetString("name")
+			valJSON := d.Value.JSONObjectNowarn()
+			jName := valJSON.GetString("name")
+			if jName != "" {
+				d.Blob.Name = jName
+			} else {
+				jPath := valJSON.GetString("path")
+				jFilename := valJSON.GetString("filename")
+				if jPath != "" && jFilename != "" {
+					d.Blob.Name = fmt.Sprintf("%s/%s", jPath, jFilename)
+				} else if jFilename != "" {
+					d.Blob.Name = jFilename
+				}
+			}
 		}
 	}
 	d.Hash, err = d.CalcHash(ctx)

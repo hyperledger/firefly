@@ -72,6 +72,63 @@ func TestSealBlobOnly(t *testing.T) {
 	assert.Equal(t, "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9", d.Hash.String())
 }
 
+func TestSealBlobExplictlyNamed(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "bec1b07d757894d5f8b0d6f09530ef89cb2168b3c00df12efbb6cf3d2937e7e1")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+		Value: Byteable(`{
+			"name": "use this",
+			"filename": "ignore this",
+			"path": "ignore this too"
+		}`),
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "5ed9e8c156d590c44c59dfa3455d556ab6a523c2e62cc5e699398ff7fcfd9313", d.Hash.String())
+	assert.Equal(t, "use this", d.Blob.Name)
+}
+
+func TestSealBlobPathNamed(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "bec1b07d757894d5f8b0d6f09530ef89cb2168b3c00df12efbb6cf3d2937e7e1")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+		Value: Byteable(`{
+			"filename": "file.ext",
+			"path": "/path/to"
+		}`),
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "be66bddaa0fc6e1da4d2989bb55560a36ac36c5b620d81ad1cc5f3ce5f7ee319", d.Hash.String())
+	assert.Equal(t, "/path/to/file.ext", d.Blob.Name)
+}
+
+func TestSealBlobFileNamed(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "bec1b07d757894d5f8b0d6f09530ef89cb2168b3c00df12efbb6cf3d2937e7e1")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+		Value: Byteable(`{
+			"filename": "file.ext"
+		}`),
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "8c58a0dc3b9d240e6e3066126e58f5853a18161733d2350f9e7488754e7160ec", d.Hash.String())
+	assert.Equal(t, "file.ext", d.Blob.Name)
+}
+
 func TestSealBlobMismatch(t *testing.T) {
 	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
 	d := &Data{
