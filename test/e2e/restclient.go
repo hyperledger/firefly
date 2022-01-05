@@ -51,6 +51,7 @@ var (
 	urlTokenTransfers        = "/namespaces/default/tokens/transfers"
 	urlTokenBalances         = "/namespaces/default/tokens/balances"
 	urlContractInvoke        = "/namespaces/default/contracts/invoke"
+	urlContractQuery         = "/namespaces/default/contracts/query"
 	urlContractInterface     = "/namespaces/default/contracts/interfaces"
 	urlContractSubscriptions = "/namespaces/default/contracts/subscriptions"
 	urlContractEvents        = "/namespaces/default/contracts/events"
@@ -512,6 +513,18 @@ func InvokeContractMethod(t *testing.T, client *resty.Client, req *fftypes.Contr
 	return res, err
 }
 
+func QueryContractMethod(t *testing.T, client *resty.Client, req *fftypes.ContractCallRequest) (interface{}, error) {
+	var res interface{}
+	path := urlContractQuery
+	resp, err := client.R().
+		SetBody(req).
+		SetResult(&res).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
 func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{}, error) {
 	var res interface{}
 	path := urlContractInterface
@@ -527,6 +540,18 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 func InvokeFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
 	var res interface{}
 	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, interfaceID, methodName)
+	resp, err := client.R().
+		SetBody(req).
+		SetResult(&res).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func QueryFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
+	var res interface{}
+	path := fmt.Sprintf("%s/%s/query/%s", urlContractInterface, interfaceID, methodName)
 	resp, err := client.R().
 		SetBody(req).
 		SetResult(&res).
