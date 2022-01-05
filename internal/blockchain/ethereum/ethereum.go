@@ -258,6 +258,11 @@ func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
 	signature := msgJSON.GetString("signature")
 	dataJSON := msgJSON.GetObject("data")
 	name := strings.SplitN(signature, "(", 2)[0]
+	timestampStr := msgJSON.GetString("timestamp")
+	timestamp, err := fftypes.ParseString(timestampStr)
+	if err != nil {
+		return err
+	}
 	delete(msgJSON, "data")
 
 	event := &blockchain.ContractEvent{
@@ -265,6 +270,7 @@ func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
 		Name:         name,
 		Outputs:      dataJSON,
 		Info:         msgJSON,
+		Timestamp:    timestamp,
 	}
 	return e.callbacks.ContractEvent(event)
 }

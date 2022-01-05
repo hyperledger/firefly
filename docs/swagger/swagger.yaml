@@ -1548,6 +1548,11 @@ paths:
         name: subscription
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: timestamp
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -1588,7 +1593,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  created: {}
                   id: {}
                   info:
                     additionalProperties: {}
@@ -1604,6 +1608,7 @@ paths:
                     format: int64
                     type: integer
                   subscription: {}
+                  timestamp: {}
                 type: object
           description: Success
         default:
@@ -1639,7 +1644,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  created: {}
                   id: {}
                   info:
                     additionalProperties: {}
@@ -1655,6 +1659,7 @@ paths:
                     format: int64
                     type: integer
                   subscription: {}
+                  timestamp: {}
                 type: object
           description: Success
         default:

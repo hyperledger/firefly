@@ -43,6 +43,7 @@ func (em *eventManager) ContractEvent(blockchainEvent *blockchain.ContractEvent)
 				Name:         blockchainEvent.Name,
 				Outputs:      blockchainEvent.Outputs,
 				Info:         blockchainEvent.Info,
+				Timestamp:    blockchainEvent.Timestamp,
 			}
 			if err = em.database.InsertContractEvent(ctx, contractEvent); err != nil {
 				return err

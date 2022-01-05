@@ -24,5 +24,5 @@ type ContractEvent struct {
 	Subscription *UUID      `json:"subscription,omitempty"`
 	Outputs      JSONObject `json:"outputs,omitempty"`
 	Info         JSONObject `json:"info,omitempty"`
-	Created      *FFTime    `json:"created,omitempty"`
+	Timestamp    *FFTime    `json:"timestamp,omitempty"`
 }

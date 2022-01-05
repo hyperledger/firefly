@@ -143,4 +143,5 @@ type ContractEvent struct {
 	Name         string
 	Outputs      fftypes.JSONObject
 	Info         fftypes.JSONObject
+	Timestamp    *fftypes.FFTime
 }

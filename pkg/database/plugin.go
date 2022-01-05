@@ -938,7 +938,7 @@ var ContractEventQueryFactory = &queryFields{
 	"namespace":    &StringField{},
 	"subscription": &StringField{},
 	"name":         &StringField{},
-	"created":      &TimeField{},
+	"timestamp":    &TimeField{},
 }
 
 // ContractAPIQueryFactory filter fields for Contract APIs
