@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,6 +42,7 @@ var (
 	urlRequestMessage        = "/namespaces/default/messages/requestreply"
 	urlGetData               = "/namespaces/default/data"
 	urlGetDataBlob           = "/namespaces/default/data/%s/blob"
+	urlGetEvents             = "/namespaces/default/events"
 	urlSubscriptions         = "/namespaces/default/subscriptions"
 	urlDatatypes             = "/namespaces/default/datatypes"
 	urlTokenPools            = "/namespaces/default/tokens/pools"
@@ -59,7 +60,7 @@ var (
 func NewResty(t *testing.T) *resty.Client {
 	client := resty.New()
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
-		t.Logf("==> %s %s", req.Method, req.URL)
+		t.Logf("==> %s %s %s", req.Method, req.URL, req.QueryParam)
 		return nil
 	})
 	client.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
@@ -480,10 +481,11 @@ func GetContractSubscriptions(t *testing.T, client *resty.Client, startTime time
 	return subs
 }
 
-func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time) (events []*fftypes.ContractEvent) {
+func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time, subscriptionID *fftypes.UUID) (events []*fftypes.ContractEvent) {
 	path := urlContractEvents
 	resp, err := client.R().
-		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetQueryParam("timestamp", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetQueryParam("subscriptionId", subscriptionID.String()).
 		SetResult(&events).
 		Get(path)
 	require.NoError(t, err)
@@ -522,14 +524,54 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 	return res, err
 }
 
-func InvokeFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, invokeContractRequest *fftypes.InvokeContractRequest) (interface{}, error) {
+func InvokeFFIMethod(t *testing.T, client *resty.Client, contractID, methodName string, invokeContractRequest *fftypes.InvokeContractRequest) (interface{}, error) {
 	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, interfaceID, methodName)
+	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, contractID, methodName)
 	resp, err := client.R().
 		SetBody(invokeContractRequest).
 		SetResult(&res).
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func GetChangeEvent(t *testing.T, client *resty.Client, changeEvent *fftypes.ChangeEvent) (interface{}, error) {
+	var res interface{}
+	var url string
+	switch changeEvent.Collection {
+	case "contractevents":
+		url = urlContractEvents
+	case "events":
+		url = urlGetEvents
+	}
+	path := fmt.Sprintf("%s/%s", url, changeEvent.ID)
+	resp, err := client.R().
+		SetResult(&res).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func GetEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
+	var res interface{}
+	path := fmt.Sprintf("%s/%s", urlGetEvents, eventID)
+	resp, err := client.R().
+		SetResult(&res).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func GetContractEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
+	var res interface{}
+	path := fmt.Sprintf("%s/%s", urlContractEvents, eventID)
+	resp, err := client.R().
+		SetResult(&res).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
