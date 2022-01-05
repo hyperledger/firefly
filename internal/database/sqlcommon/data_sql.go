@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -38,6 +38,8 @@ var (
 		"created",
 		"blob_hash",
 		"blob_public",
+		"blob_name",
+		"blob_size",
 	}
 	dataColumnsWithValue = append(append([]string{}, dataColumnsNoValue...), "value")
 	dataFilterFieldMap   = map[string]string{
@@ -46,6 +48,8 @@ var (
 		"datatype.version": "datatype_version",
 		"blob.hash":        "blob_hash",
 		"blob.public":      "blob_public",
+		"blob.name":        "blob_name",
+		"blob.size":        "blob_size",
 	}
 )
 
@@ -60,6 +64,8 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 			Set("created", data.Created).
 			Set("blob_hash", blob.Hash).
 			Set("blob_public", blob.Public).
+			Set("blob_name", blob.Name).
+			Set("blob_size", blob.Size).
 			Set("value", data.Value).
 			Where(sq.Eq{
 				"id":   data.ID,
@@ -84,6 +90,8 @@ func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *
 				data.Created,
 				blob.Hash,
 				blob.Public,
+				blob.Name,
+				blob.Size,
 				data.Value,
 			),
 		func() {
@@ -173,6 +181,8 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		&data.Created,
 		&data.Blob.Hash,
 		&data.Blob.Public,
+		&data.Blob.Name,
+		&data.Blob.Size,
 	}
 	if withValue {
 		results = append(results, &data.Value)

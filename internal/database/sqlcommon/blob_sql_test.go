@@ -39,6 +39,7 @@ func TestBlobsE2EWithDB(t *testing.T) {
 	// Create a new blob entry
 	blob := &fftypes.Blob{
 		Hash:       fftypes.NewRandB32(),
+		Size:       12345,
 		PayloadRef: fftypes.NewRandB32().String(),
 		Peer:       "peer1",
 		Created:    fftypes.Now(),

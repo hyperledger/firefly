@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -86,7 +86,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	if err == nil {
 		err = group.Validate(ctx, true)
 		if err == nil {
-			err = data.Seal(ctx)
+			err = data.Seal(ctx, nil)
 		}
 	}
 	if err != nil {

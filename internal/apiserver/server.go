@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -240,14 +240,15 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 
 		if err == nil {
 			r := &oapispec.APIRequest{
-				Ctx:           req.Context(),
-				Or:            o,
-				Req:           req,
-				PP:            pathParams,
-				QP:            queryParams,
-				Filter:        filter,
-				Input:         jsonInput,
-				SuccessStatus: http.StatusOK,
+				Ctx:             req.Context(),
+				Or:              o,
+				Req:             req,
+				PP:              pathParams,
+				QP:              queryParams,
+				Filter:          filter,
+				Input:           jsonInput,
+				SuccessStatus:   http.StatusOK,
+				ResponseHeaders: res.Header(),
 			}
 			if len(route.JSONOutputCodes) > 0 {
 				r.SuccessStatus = route.JSONOutputCodes[0]

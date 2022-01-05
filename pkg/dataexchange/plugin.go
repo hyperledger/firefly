@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -76,13 +76,13 @@ type Plugin interface {
 	AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) (err error)
 
 	// UploadBLOB streams a blob to storage, and returns the hash to confirm the hash calculated in Core matches the hash calculated in the plugin
-	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, err error)
+	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error)
 
 	// DownloadBLOB streams a received blob out of storage
 	DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error)
 
 	// CheckBLOBReceived confirms that a blob with the specified hash has been received from the specified peer
-	CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, err error)
+	CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error)
 
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelsim, then report completion asynchronously via the operation ID
@@ -99,7 +99,7 @@ type Callbacks interface {
 	MessageReceived(peerID string, data []byte) error
 
 	// BLOBReceived notifies of the ID of a BLOB that has been stored by DX after being received from another node in the network
-	BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error
+	BLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
 
 	// TransferResult notifies of a status update of a transfer
 	TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error

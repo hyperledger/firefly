@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
@@ -50,11 +51,13 @@ type wsEvent struct {
 	Path      string  `json:"path"`
 	Message   string  `json:"message"`
 	Hash      string  `json:"hash"`
+	Size      int64   `json:"size"`
 	Error     string  `json:"error"`
 }
 
 const (
 	dxHTTPHeaderHash = "dx-hash"
+	dxHTTPHeaderSize = "dx-size"
 )
 
 type msgType string
@@ -74,6 +77,7 @@ type responseWithRequestID struct {
 
 type uploadBlob struct {
 	Hash       string      `json:"hash"`
+	Size       int64       `json:"size"`
 	LastUpdate json.Number `json:"lastUpdate"`
 }
 
@@ -140,7 +144,7 @@ func (h *HTTPS) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSO
 	return nil
 }
 
-func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, err error) {
+func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
 	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
 	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
@@ -149,12 +153,12 @@ func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, cont
 		Put(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
 	if err != nil || !res.IsSuccess() {
 		err = restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
-		return "", nil, err
+		return "", nil, -1, err
 	}
 	if hash, err = fftypes.ParseBytes32(ctx, upload.Hash); err != nil {
-		return "", nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", upload.Hash)
+		return "", nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", upload.Hash)
 	}
-	return payloadRef, hash, nil
+	return payloadRef, hash, upload.Size, nil
 }
 
 func (h *HTTPS) DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
@@ -200,22 +204,28 @@ func (h *HTTPS) TransferBLOB(ctx context.Context, peerID, payloadRef string) (tr
 	return responseData.RequestID, nil
 }
 
-func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, err error) {
+func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetResult(&responseData).
 		Head(fmt.Sprintf("/api/v1/blobs/%s/%s/%s", peerID, ns, id.String()))
 	if err == nil && res.StatusCode() == http.StatusNotFound {
-		return nil, nil
+		return nil, -1, nil
 	}
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return nil, -1, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
 	hashString := res.Header().Get(dxHTTPHeaderHash)
 	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", hashString)
+		return nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", hashString)
 	}
-	return hash, nil
+	sizeString := res.Header().Get(dxHTTPHeaderSize)
+	if sizeString != "" {
+		if size, err = strconv.ParseInt(sizeString, 10, 64); err != nil {
+			return nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "size", sizeString)
+		}
+	}
+	return hash, size, nil
 }
 
 func (h *HTTPS) eventLoop() {
@@ -260,7 +270,7 @@ func (h *HTTPS) eventLoop() {
 					l.Errorf("Invalid hash received in DX event: '%s'", msg.Hash)
 					err = nil // still confirm the message
 				} else {
-					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Path)
+					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Size, msg.Path)
 				}
 			default:
 				l.Errorf("Message unexpected: %s", msg.Type)

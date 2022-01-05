@@ -44,7 +44,7 @@ func TestValidateBadValidator(t *testing.T) {
 
 func TestSealNoData(t *testing.T) {
 	d := &Data{}
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), nil)
 	assert.Regexp(t, "FF10199", err)
 }
 
@@ -53,7 +53,7 @@ func TestSealValueOnly(t *testing.T) {
 		Value: []byte("{}"),
 		Blob:  &BlobRef{},
 	}
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), nil)
 	assert.NoError(t, err)
 	assert.Equal(t, d.Hash.String(), "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a")
 }
@@ -65,9 +65,24 @@ func TestSealBlobOnly(t *testing.T) {
 			Hash: blobHash,
 		},
 	}
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9", d.Hash.String())
+}
+
+func TestSealBlobMismatch(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: NewRandB32(),
+	})
+	assert.Regexp(t, "FF10303", err)
 }
 
 func TestSealBlobAndHashOnly(t *testing.T) {
@@ -79,9 +94,13 @@ func TestSealBlobAndHashOnly(t *testing.T) {
 		Value: []byte("{}"),
 	}
 	h := sha256.Sum256([]byte(`44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9`))
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+		Size: 12345,
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, d.Hash[:], h[:])
+	assert.Equal(t, int64(12345), d.Blob.Size)
 }
 
 func TestHashDataNull(t *testing.T) {

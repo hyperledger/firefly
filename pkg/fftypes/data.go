@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,6 +32,8 @@ type DataRef struct {
 
 type BlobRef struct {
 	Hash   *Bytes32 `json:"hash"`
+	Size   int64    `json:"size"`
+	Name   string   `json:"name"`
 	Public string   `json:"public,omitempty"`
 }
 
@@ -104,7 +106,7 @@ func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	}
 }
 
-func (d *Data) Seal(ctx context.Context) (err error) {
+func (d *Data) Seal(ctx context.Context, blob *Blob) (err error) {
 	if d.Validator == "" {
 		d.Validator = ValidatorTypeJSON
 	}
@@ -113,6 +115,15 @@ func (d *Data) Seal(ctx context.Context) (err error) {
 	}
 	if d.Created == nil {
 		d.Created = Now()
+	}
+	if blob != nil {
+		if d.Blob == nil || !d.Blob.Hash.Equals(blob.Hash) {
+			return i18n.NewError(ctx, i18n.MsgBlobMismatchSealingData)
+		}
+		d.Blob.Size = blob.Size
+		if d.Value != nil {
+			d.Blob.Name = d.Value.JSONObjectNowarn().GetString("name")
+		}
 	}
 	d.Hash, err = d.CalcHash(ctx)
 	if err == nil {

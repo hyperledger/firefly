@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -61,20 +61,30 @@ func (h Byteable) String() string {
 	return string(b)
 }
 
-func (h Byteable) JSONObjectOk() (JSONObject, bool) {
+func (h Byteable) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {
 	var jo JSONObject
 	err := json.Unmarshal(h, &jo)
 	if err != nil {
-		log.L(context.Background()).Warnf("Unable to deserialize as JSON object: %s", string(h))
+		if len(noWarn) == 0 || !noWarn[0] {
+			log.L(context.Background()).Warnf("Unable to deserialize as JSON object: %s", string(h))
+		}
 		jo = JSONObject{}
 	}
 	return jo, err == nil
 }
 
 // JSONObject attempts to de-serailize the contained structure as a JSON Object (map)
-// Will fail if the type is array, string, bool, number etc.
+// Safe and will never return nil
+// Will return an empty object if the type is array, string, bool, number etc.
 func (h Byteable) JSONObject() JSONObject {
 	jo, _ := h.JSONObjectOk()
+	return jo
+}
+
+// JSONObjectNowarn acts the same as JSONObject, but does not warn if the value cannot
+// be parsed as an object
+func (h Byteable) JSONObjectNowarn() JSONObject {
+	jo, _ := h.JSONObjectOk(true)
 	return jo
 }
 
