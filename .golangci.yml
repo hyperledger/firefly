@@ -7,8 +7,11 @@ linters-settings:
     disabled-checks:
       - regexpMust
   goheader:
+    values:
+      regexp:
+        COMPANY: .*
     template: |-
-      Copyright © {{ YEAR }} Kaleido, Inc.
+      Copyright © {{ YEAR }} {{ COMPANY }}
       
       SPDX-License-Identifier: Apache-2.0
       
@@ -26,30 +29,30 @@ linters-settings:
 linters:
   disable-all: false
   enable:
-  - bodyclose
-  - deadcode
-  - depguard
-  - dogsled
-  - errcheck
-  - goconst
-  - gocritic
-  - gocyclo
-  - gofmt
-  - goheader
-  - goimports
-  - goprintffuncname
-  - gosec
-  - gosimple
-  - govet
-  - ineffassign
-  - misspell
-  - nakedret
-  - revive
-  - staticcheck
-  - structcheck
-  - stylecheck
-  - typecheck
-  - unconvert
-  - unparam
-  - unused
-  - varcheck
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goheader
+    - goimports
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - revive
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
