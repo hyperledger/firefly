@@ -34,9 +34,7 @@ var postContractInterfaceQuery = &oapispec.Route{
 		{Name: "interfaceId", Description: i18n.MsgTBD},
 		{Name: "methodPath", Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
-	},
+	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
