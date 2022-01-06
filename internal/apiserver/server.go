@@ -44,8 +44,6 @@ import (
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/prometheus/client_golang/prometheus"
-	muxprom "gitlab.com/hfuss/mux-prometheus/pkg/middleware"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
@@ -436,23 +434,12 @@ func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(r
 	}
 }
 
-func (as *apiServer) configurePrometheusInstrumentation(namespace, subsystem string, r *mux.Router) {
-	if as.metricsEnabled {
-		instrumentation := muxprom.NewCustomInstrumentation(
-			true,
-			namespace,
-			subsystem,
-			prometheus.DefBuckets,
-			map[string]string{},
-			metrics.Registry(),
-		)
-		r.Use(instrumentation.Middleware)
-	}
-}
-
 func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
-	as.configurePrometheusInstrumentation("ff_apiserver", "rest", r)
+
+	if as.metricsEnabled {
+		r.Use(metrics.GetRestServerInstrumentation().Middleware)
+	}
 
 	for _, route := range routes {
 		if route.JSONHandler != nil {
@@ -479,7 +466,9 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 
 func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
-	as.configurePrometheusInstrumentation("ff_apiserver", "admin", r)
+	if as.metricsEnabled {
+		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
+	}
 
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {
