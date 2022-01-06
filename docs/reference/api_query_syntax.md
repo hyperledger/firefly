@@ -71,9 +71,6 @@ behavior.
 | `!`      | Not - negates the match            |
 | `:`      | Case insensitive                   |
 
-> Characters `=`,`@`,`$`,`!` and `:` should technically be encoded
-> in URLs, but in practice should function fine without encoding.
-
 ## Detailed examples
 
 | Example      | Description                                |
