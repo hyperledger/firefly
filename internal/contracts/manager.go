@@ -266,7 +266,9 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		existing, err := cm.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 		if existing != nil && err == nil {
-			return i18n.NewError(ctx, i18n.MsgContractAPIExists, api.Namespace, api.Name)
+			if !existing.Location.Hash().Equals(api.Location.Hash()) || !existing.Ledger.Hash().Equals(api.Ledger.Hash()) {
+				return i18n.NewError(ctx, i18n.MsgContractLocationExists)
+			}
 		}
 
 		if err := cm.resolveFFIReference(ctx, ns, api.Interface); err != nil {

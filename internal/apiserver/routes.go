@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -111,6 +111,7 @@ var routes = []*oapispec.Route{
 	postNewContractAPI,
 	getContractAPIByName,
 	getContractAPIs,
+	putContractAPI,
 	postContractAPIInvoke,
 	postContractAPISubscribe,
 
