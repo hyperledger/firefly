@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -643,6 +643,8 @@ var DataQueryFactory = &queryFields{
 	"hash":             &Bytes32Field{},
 	"blob.hash":        &Bytes32Field{},
 	"blob.public":      &StringField{},
+	"blob.name":        &StringField{},
+	"blob.size":        &Int64Field{},
 	"created":          &TimeField{},
 }
 
@@ -774,6 +776,7 @@ var ConfigRecordQueryFactory = &queryFields{
 // BlobQueryFactory filter fields for config records
 var BlobQueryFactory = &queryFields{
 	"hash":       &Bytes32Field{},
+	"size":       &Int64Field{},
 	"payloadref": &StringField{},
 	"created":    &TimeField{},
 }

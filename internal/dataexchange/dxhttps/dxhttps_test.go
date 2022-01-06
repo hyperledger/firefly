@@ -155,7 +155,8 @@ func TestUploadBLOB(t *testing.T) {
 		func(r *http.Request) (*http.Response, error) {
 			res := &http.Response{
 				Body: ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(`{
-					"hash": "%s"
+					"hash": "%s",
+					"size": 12345
 				}`, hash)))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
@@ -166,10 +167,11 @@ func TestUploadBLOB(t *testing.T) {
 			return res, nil
 		})
 
-	payloadRef, hashReturned, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
+	payloadRef, hashReturned, sizeReturned, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("ns1/%s", u.String()), payloadRef)
 	assert.Equal(t, *hash, *hashReturned)
+	assert.Equal(t, int64(12345), sizeReturned)
 }
 
 func TestUploadBLOBBadHash(t *testing.T) {
@@ -190,7 +192,7 @@ func TestUploadBLOBBadHash(t *testing.T) {
 			return res, nil
 		})
 
-	_, _, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
+	_, _, _, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
 	assert.Regexp(t, "FF10237", err)
 }
 
@@ -202,7 +204,7 @@ func TestUploadBLOBError(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/blobs/ns1/%s", httpURL, u),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, _, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
+	_, _, _, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -218,15 +220,17 @@ func TestCheckBLOBReceivedOk(t *testing.T) {
 			res := &http.Response{
 				Header: http.Header{
 					"Dx-Hash": []string{hash.String()},
+					"Dx-Size": []string{"12345"},
 				},
 				StatusCode: 200,
 			}
 			return res, nil
 		})
 
-	hashReturned, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	hashReturned, size, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
 	assert.NoError(t, err)
 	assert.Equal(t, *hash, *hashReturned)
+	assert.Equal(t, int64(size), size)
 }
 
 func TestCheckBLOBReceivedBadHash(t *testing.T) {
@@ -246,7 +250,30 @@ func TestCheckBLOBReceivedBadHash(t *testing.T) {
 			return res, nil
 		})
 
-	_, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	_, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	assert.Regexp(t, "FF10237", err)
+}
+
+func TestCheckBLOBReceivedBadSize(t *testing.T) {
+
+	h, _, _, httpURL, done := newTestHTTPS(t)
+	defer done()
+
+	u := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
+		func(r *http.Request) (*http.Response, error) {
+			res := &http.Response{
+				Header: http.Header{
+					"Dx-Hash": []string{hash.String()},
+					"Dx-Size": []string{"bob"},
+				},
+				StatusCode: 200,
+			}
+			return res, nil
+		})
+
+	_, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
 	assert.Regexp(t, "FF10237", err)
 }
 
@@ -264,7 +291,7 @@ func TestCheckBLOBReceivedNotFound(t *testing.T) {
 			return res, nil
 		})
 
-	hashReturned, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	hashReturned, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
 	assert.NoError(t, err)
 	assert.Nil(t, hashReturned)
 }
@@ -283,7 +310,7 @@ func TestCheckBLOBReceivedError(t *testing.T) {
 			return res, nil
 		})
 
-	_, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	_, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -411,21 +438,21 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
 	u := fftypes.NewUUID()
-	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"!wrong"}`, u.String())
+	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"!wrong","size":-1}`, u.String())
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
 	hash := fftypes.NewRandB32()
 	mcb.On("BLOBReceived", mock.Anything, mock.MatchedBy(func(b32 fftypes.Bytes32) bool {
 		return b32 == *hash
-	}), fmt.Sprintf("ns1/%s", u.String())).Return(nil)
-	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"%s"}`, u.String(), hash.String())
+	}), int64(12345), fmt.Sprintf("ns1/%s", u.String())).Return(nil)
+	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"%s","size":12345}`, u.String(), hash.String())
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
 	mcb.AssertExpectations(t)
-
 }
+
 func TestEventLoopReceiveClosed(t *testing.T) {
 	dxc := &dataexchangemocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}

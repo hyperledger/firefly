@@ -37,13 +37,13 @@ func (_m *EventManager) AddSystemEventListener(ns string, el system.EventListene
 	return r0
 }
 
-// BLOBReceived provides a mock function with given fields: dx, peerID, hash, payloadRef
-func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error {
-	ret := _m.Called(dx, peerID, hash, payloadRef)
+// BLOBReceived provides a mock function with given fields: dx, peerID, hash, size, payloadRef
+func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
+	ret := _m.Called(dx, peerID, hash, size, payloadRef)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.Bytes32, string) error); ok {
-		r0 = rf(dx, peerID, hash, payloadRef)
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.Bytes32, int64, string) error); ok {
+		r0 = rf(dx, peerID, hash, size, payloadRef)
 	} else {
 		r0 = ret.Error(0)
 	}

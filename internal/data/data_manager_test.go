@@ -56,7 +56,7 @@ func TestValidateE2E(t *testing.T) {
 		},
 		Value: fftypes.Byteable(`{"some":"json"}`),
 	}
-	data.Seal(ctx)
+	data.Seal(ctx, nil)
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
@@ -82,7 +82,7 @@ func TestValidateE2E(t *testing.T) {
 	assert.Regexp(t, "FF10198", err)
 
 	data.Value = fftypes.Byteable(`{"field1":"value1"}`)
-	data.Seal(context.Background())
+	data.Seal(context.Background(), nil)
 	err = v.Validate(ctx, data)
 	assert.NoError(t, err)
 
@@ -605,7 +605,7 @@ func TestValidateAllLookupError(t *testing.T) {
 		},
 		Value: fftypes.Byteable(`anything`),
 	}
-	data.Seal(ctx)
+	data.Seal(ctx, nil)
 	_, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
 	assert.Regexp(t, "pop", err)
 

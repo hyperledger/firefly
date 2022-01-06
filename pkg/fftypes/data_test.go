@@ -44,7 +44,7 @@ func TestValidateBadValidator(t *testing.T) {
 
 func TestSealNoData(t *testing.T) {
 	d := &Data{}
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), nil)
 	assert.Regexp(t, "FF10199", err)
 }
 
@@ -53,7 +53,7 @@ func TestSealValueOnly(t *testing.T) {
 		Value: []byte("{}"),
 		Blob:  &BlobRef{},
 	}
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), nil)
 	assert.NoError(t, err)
 	assert.Equal(t, d.Hash.String(), "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a")
 }
@@ -65,9 +65,89 @@ func TestSealBlobOnly(t *testing.T) {
 			Hash: blobHash,
 		},
 	}
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9", d.Hash.String())
+}
+
+func TestSealBlobExplictlyNamed(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "bec1b07d757894d5f8b0d6f09530ef89cb2168b3c00df12efbb6cf3d2937e7e1")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+		Value: Byteable(`{
+			"name": "use this",
+			"filename": "ignore this",
+			"path": "ignore this too"
+		}`),
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "5ed9e8c156d590c44c59dfa3455d556ab6a523c2e62cc5e699398ff7fcfd9313", d.Hash.String())
+	assert.Equal(t, "use this", d.Blob.Name)
+}
+
+func TestSealBlobPathNamed(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "bec1b07d757894d5f8b0d6f09530ef89cb2168b3c00df12efbb6cf3d2937e7e1")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+		Value: Byteable(`{
+			"filename": "file.ext",
+			"path": "/path/to"
+		}`),
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "be66bddaa0fc6e1da4d2989bb55560a36ac36c5b620d81ad1cc5f3ce5f7ee319", d.Hash.String())
+	assert.Equal(t, "/path/to/file.ext", d.Blob.Name)
+}
+
+func TestSealBlobFileNamed(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "bec1b07d757894d5f8b0d6f09530ef89cb2168b3c00df12efbb6cf3d2937e7e1")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+		Value: Byteable(`{
+			"filename": "file.ext"
+		}`),
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "8c58a0dc3b9d240e6e3066126e58f5853a18161733d2350f9e7488754e7160ec", d.Hash.String())
+	assert.Equal(t, "file.ext", d.Blob.Name)
+}
+
+func TestSealBlobMismatch1(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
+	d := &Data{
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
+	}
+	err := d.Seal(context.Background(), &Blob{
+		Hash: NewRandB32(),
+	})
+	assert.Regexp(t, "FF10303", err)
+}
+
+func TestSealBlobMismatch2(t *testing.T) {
+	d := &Data{
+		Blob: &BlobRef{Hash: NewRandB32()},
+	}
+	err := d.Seal(context.Background(), nil)
+	assert.Regexp(t, "FF10303", err)
 }
 
 func TestSealBlobAndHashOnly(t *testing.T) {
@@ -79,9 +159,13 @@ func TestSealBlobAndHashOnly(t *testing.T) {
 		Value: []byte("{}"),
 	}
 	h := sha256.Sum256([]byte(`44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9`))
-	err := d.Seal(context.Background())
+	err := d.Seal(context.Background(), &Blob{
+		Hash: blobHash,
+		Size: 12345,
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, d.Hash[:], h[:])
+	assert.Equal(t, int64(12345), d.Blob.Size)
 }
 
 func TestHashDataNull(t *testing.T) {

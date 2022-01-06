@@ -55,26 +55,35 @@ func (_m *Manager) CopyBlobPStoDX(ctx context.Context, _a1 *fftypes.Data) (*ffty
 }
 
 // DownloadBLOB provides a mock function with given fields: ctx, ns, dataID
-func (_m *Manager) DownloadBLOB(ctx context.Context, ns string, dataID string) (io.ReadCloser, error) {
+func (_m *Manager) DownloadBLOB(ctx context.Context, ns string, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
 	ret := _m.Called(ctx, ns, dataID)
 
-	var r0 io.ReadCloser
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) io.ReadCloser); ok {
+	var r0 *fftypes.Blob
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Blob); ok {
 		r0 = rf(ctx, ns, dataID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(io.ReadCloser)
+			r0 = ret.Get(0).(*fftypes.Blob)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+	var r1 io.ReadCloser
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) io.ReadCloser); ok {
 		r1 = rf(ctx, ns, dataID)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(io.ReadCloser)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+		r2 = rf(ctx, ns, dataID)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetMessageData provides a mock function with given fields: ctx, msg, withValue
