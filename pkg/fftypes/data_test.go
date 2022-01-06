@@ -139,7 +139,7 @@ func TestSealBlobMismatch1(t *testing.T) {
 	err := d.Seal(context.Background(), &Blob{
 		Hash: NewRandB32(),
 	})
-	assert.Regexp(t, "FF10303", err)
+	assert.Regexp(t, "FF10304", err)
 }
 
 func TestSealBlobMismatch2(t *testing.T) {
@@ -147,7 +147,7 @@ func TestSealBlobMismatch2(t *testing.T) {
 		Blob: &BlobRef{Hash: NewRandB32()},
 	}
 	err := d.Seal(context.Background(), nil)
-	assert.Regexp(t, "FF10303", err)
+	assert.Regexp(t, "FF10304", err)
 }
 
 func TestSealBlobAndHashOnly(t *testing.T) {
