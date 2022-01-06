@@ -189,22 +189,21 @@ func TestWSConnectClosed(t *testing.T) {
 
 func TestWSReadLoopSendFailure(t *testing.T) {
 
-	toServer, _, url, done := NewTestWSServer(nil)
+	toServer, fromServer, url, done := NewTestWSServer(nil)
 	defer done()
 
 	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	wsconn.WriteJSON(map[string]string{"type": "listen", "topic": "topic1"})
 	assert.NoError(t, err)
 	<-toServer
-	wsconn.Close()
 	w := &wsClient{
 		ctx:      context.Background(),
-		closed:   true,
 		sendDone: make(chan []byte, 1),
 		wsconn:   wsconn,
 	}
 
-	// Close the sender channel
+	// Queue a message for the receiver, then immediately close the sender channel
+	fromServer <- `some data from server`
 	close(w.sendDone)
 
 	// Ensure the readLoop exits immediately
