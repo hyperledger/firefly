@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -204,17 +204,6 @@ func (w *wsClient) readLoop() {
 	l := log.L(w.ctx)
 	for {
 		mt, message, err := w.wsconn.ReadMessage()
-
-		// Check there's not a pending send message we need to return
-		// before returning any error (do not block)
-		select {
-		case <-w.sendDone:
-			l.Debugf("WS %s closing reader after send error", w.url)
-			return
-		default:
-		}
-
-		// return any error
 		if err != nil {
 			l.Errorf("WS %s closed: %s", w.url, err)
 			return
@@ -222,7 +211,12 @@ func (w *wsClient) readLoop() {
 
 		// Pass the message to the consumer
 		l.Tracef("WS %s read (mt=%d): %s", w.url, mt, message)
-		w.receive <- message
+		select {
+		case <-w.sendDone:
+			l.Debugf("WS %s closing reader after send error", w.url)
+			return
+		case w.receive <- message:
+		}
 	}
 }
 

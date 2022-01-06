@@ -12,7 +12,7 @@ metadata:
 spec:
   # NOTE: issuer should always be an internal / self-signed CA so that the subject is included
   #       LetsEncrypt will not work w/ DX currently bc those certs cannot have subject, etc. configured.
-  #       Nor will a self-signed cert due to https://github.com/jetstack/cert-manager/issues/3651 d
+  #       Nor will a self-signed cert due to https://github.com/jetstack/cert-manager/issues/3651
   issuerRef:
     {{- toYaml .Values.dataexchange.certificate.issuerRef | nindent 4 }}
   secretName: "{{ include "firefly.fullname" . }}-dx-tls"

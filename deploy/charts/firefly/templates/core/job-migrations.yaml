@@ -1,8 +1,8 @@
-{{- if .Values.config.postgresMigrationJob -}}
+{{- if .Values.core.jobs.postgresMigrations.enabled -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "firefly.fullname" . }}-{{ .Values.core.image.tag }}-migrations"
+  name: "{{ template "firefly.fullname" . }}-{{ .Values.core.image.tag | default (printf "v%s" .Chart.AppVersion) }}-migrations"
 spec:
   backoffLimit: 5
   activeDeadlineSeconds: 12000
@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
       - name: migration
-        image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default .Chart.AppVersion }}"
+        image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
         command:
         - sh
         - -ce

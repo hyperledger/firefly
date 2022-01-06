@@ -9,6 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Filter Helm Releases
+        run: |
+          echo "Detected that GitHub release is for the Helm chart... aborting this build as a result."
+          exit 1
+        if: startsWith(github.ref, 'refs/tags/helm-v')
 
       - name: Build
         run: |
@@ -17,16 +25,16 @@ jobs:
             --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --label tag=${GITHUB_REF##*/} \
             --tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} .
-      
+
       - name: Tag release
         if: github.event.action == 'released'
         run: docker tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} ghcr.io/hyperledger/firefly:latest
-      
+
       - name: Push docker image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
           docker push ghcr.io/hyperledger/firefly:${GITHUB_REF##*/}
-      
+
       - name: Push latest tag
         if: github.event.action == 'released'
         run: |

@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set build tag
         id: build_tag_generator
@@ -25,15 +27,15 @@ jobs:
             --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --label tag=${{ steps.build_tag_generator.outputs.BUILD_TAG }} \
             --tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }} .
-      
+
       - name: Tag release
         run: docker tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }} ghcr.io/hyperledger/firefly:head
-      
+
       - name: Push docker image
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
           docker push ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }}
-      
+
       - name: Push head tag
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
