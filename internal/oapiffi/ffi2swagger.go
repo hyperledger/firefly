@@ -59,16 +59,27 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 }
 
 func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFIMethod, hasLocation bool) []*oapispec.Route {
-	return append(routes, &oapispec.Route{
+	routes = append(routes, &oapispec.Route{
 		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
 		Path:             fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodPost,
-		JSONInputValue:   func() interface{} { return &fftypes.InvokeContractRequest{} },
-		JSONInputSchema:  func(ctx context.Context) string { return invokeRequestJSONSchema(&method.Params, hasLocation).String() },
+		JSONInputValue:   func() interface{} { return &fftypes.ContractCallRequest{} },
+		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
 		JSONOutputValue:  func() interface{} { return &fftypes.JSONObject{} },
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
 	})
+	routes = append(routes, &oapispec.Route{
+		Name:             fmt.Sprintf("query_%s", method.Pathname),
+		Path:             fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
+		Method:           http.MethodGet,
+		JSONInputValue:   func() interface{} { return &fftypes.ContractCallRequest{} },
+		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
+		JSONOutputValue:  func() interface{} { return &fftypes.JSONObject{} },
+		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
+		JSONOutputCodes:  []int{http.StatusOK},
+	})
+	return routes
 }
 
 func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEvent, hasLocation bool) []*oapispec.Route {
@@ -94,8 +105,8 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEv
  * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke".
  * Returns the JSON Schema as an `fftypes.JSONObject`.
  */
-func invokeRequestJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSONObject {
-	req := &fftypes.InvokeContractRequest{
+func contractCallJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSONObject {
+	req := &fftypes.ContractCallRequest{
 		Input: *ffiParamsJSONSchema(params),
 	}
 	if !hasLocation {

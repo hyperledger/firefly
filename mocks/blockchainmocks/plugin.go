@@ -81,13 +81,13 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 
-// InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, location, method, params
-func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, params map[string]interface{}) (interface{}, error) {
-	ret := _m.Called(ctx, operationID, signingKey, location, method, params)
+// InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, location, method, input
+func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, operationID, signingKey, location, method, input)
 
 	var r0 interface{}
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, fftypes.Byteable, *fftypes.FFIMethod, map[string]interface{}) interface{}); ok {
-		r0 = rf(ctx, operationID, signingKey, location, method, params)
+		r0 = rf(ctx, operationID, signingKey, location, method, input)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -96,7 +96,7 @@ func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID,
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, string, fftypes.Byteable, *fftypes.FFIMethod, map[string]interface{}) error); ok {
-		r1 = rf(ctx, operationID, signingKey, location, method, params)
+		r1 = rf(ctx, operationID, signingKey, location, method, input)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -116,6 +116,29 @@ func (_m *Plugin) Name() string {
 	}
 
 	return r0
+}
+
+// QueryContract provides a mock function with given fields: ctx, location, method, input
+func (_m *Plugin) QueryContract(ctx context.Context, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+	ret := _m.Called(ctx, location, method, input)
+
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.Byteable, *fftypes.FFIMethod, map[string]interface{}) interface{}); ok {
+		r0 = rf(ctx, location, method, input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.Byteable, *fftypes.FFIMethod, map[string]interface{}) error); ok {
+		r1 = rf(ctx, location, method, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ResolveSigningKey provides a mock function with given fields: ctx, signingKey

@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostInvokeContrac(t *testing.T) {
+func TestPostContractInvoke(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
@@ -39,8 +39,9 @@ func TestPostInvokeContrac(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("InvokeContract", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.InvokeContractRequest")).
-		Return("banana", nil)
+	mcm.On("InvokeContract", mock.Anything, "ns1", mock.MatchedBy(func(req *fftypes.ContractCallRequest) bool {
+		return req.Type == fftypes.CallTypeInvoke
+	})).Return("banana", nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

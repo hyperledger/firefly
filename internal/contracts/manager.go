@@ -36,8 +36,8 @@ type Manager interface {
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 
-	InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (interface{}, error)
-	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error)
+	InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (interface{}, error)
+	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
 	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
@@ -152,21 +152,29 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
-func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (res interface{}, err error) {
+func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {
 	if req.Key == "" {
 		req.Key = cm.identity.GetOrgKey(ctx)
 	}
-	operationID := fftypes.NewUUID()
 	if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
 		return nil, err
 	}
 	if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
 		return nil, err
 	}
-	return cm.blockchain.InvokeContract(ctx, operationID, req.Key, req.Location, req.Method, req.Input)
+
+	switch req.Type {
+	case fftypes.CallTypeInvoke:
+		operationID := fftypes.NewUUID()
+		return cm.blockchain.InvokeContract(ctx, operationID, req.Key, req.Location, req.Method, req.Input)
+	case fftypes.CallTypeQuery:
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
+	default:
+		panic(fmt.Sprintf("unknown call type: %s", req.Type))
+	}
 }
 
-func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.InvokeContractRequest) (interface{}, error) {
+func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error) {
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
@@ -183,7 +191,7 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	return cm.InvokeContract(ctx, ns, req)
 }
 
-func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.InvokeContractRequest) (method *fftypes.FFIMethod, err error) {
+func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (method *fftypes.FFIMethod, err error) {
 	if req.Method == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractMethodNotSet)
 	}
@@ -359,7 +367,7 @@ func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.
 	return nil
 }
 
-func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, req *fftypes.InvokeContractRequest) error {
+func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, req *fftypes.ContractCallRequest) error {
 	if err := cm.validateFFIMethod(ctx, req.Method); err != nil {
 		return err
 	}

@@ -25,16 +25,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContractInvoke = &oapispec.Route{
-	Name:   "postContractInvoke",
-	Path:   "namespaces/{ns}/contracts/invoke",
+var postContractQuery = &oapispec.Route{
+	Name:   "postContractQuery",
+	Path:   "namespaces/{ns}/contracts/query",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
-	},
+	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
@@ -43,7 +41,7 @@ var postContractInvoke = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		req := r.Input.(*fftypes.ContractCallRequest)
-		req.Type = fftypes.CallTypeInvoke
+		req.Type = fftypes.CallTypeQuery
 		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req)
 	},
 }

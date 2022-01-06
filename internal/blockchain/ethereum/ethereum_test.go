@@ -1666,6 +1666,103 @@ func TestInvokeContractUnmarshalResponseError(t *testing.T) {
 	assert.Regexp(t, "invalid character", err)
 }
 
+func TestQueryContractOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
+		})
+	result, err := e.QueryContract(context.Background(), locationBytes, method, params)
+	assert.NoError(t, err)
+	j, err := json.Marshal(result)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"output":"3"}`, string(j))
+}
+
+func TestQueryContractAddressNotSet(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), locationBytes, method, params)
+	assert.Regexp(t, "'address' not set", err)
+}
+
+func TestQueryContractEthconnectError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
+		})
+	_, err = e.QueryContract(context.Background(), locationBytes, method, params)
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestQueryContractUnmarshalResponseError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
+		})
+	_, err = e.QueryContract(context.Background(), locationBytes, method, params)
+	assert.Regexp(t, "invalid character", err)
+}
+
 func TestValidateContractLocation(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()

@@ -18,7 +18,17 @@ package fftypes
 
 import "context"
 
-type InvokeContractRequest struct {
+type ContractCallType = FFEnum
+
+var (
+	// CallTypeInvoke is an invocation that submits a transaction for inclusion in the chain
+	CallTypeInvoke ContractCallType = ffEnum("contractcalltype", "invoke")
+	// CallTypeQuery is a query that returns data from the chain
+	CallTypeQuery ContractCallType = ffEnum("contractcalltype", "query")
+)
+
+type ContractCallRequest struct {
+	Type      ContractCallType       `json:"type,omitempty" ffenum:"contractcalltype"`
 	Interface *UUID                  `json:"interface,omitempty"`
 	Ledger    Byteable               `json:"ledger,omitempty"`
 	Location  Byteable               `json:"location,omitempty"`

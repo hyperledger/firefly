@@ -50,7 +50,7 @@ type simpleStorageBody struct {
 	NewValue string `json:"newValue"`
 }
 
-func newTestFFIEvent() *fftypes.FFIEvent {
+func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	return &fftypes.FFIEvent{
 		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name: "Changed",
@@ -75,20 +75,21 @@ func newTestFFIEvent() *fftypes.FFIEvent {
 	}
 }
 
-func newTestFFI() *fftypes.FFI {
+func simpleStorageFFI() *fftypes.FFI {
 	return &fftypes.FFI{
 		Name:    "SimpleStorage",
 		Version: contractVersion,
 		Methods: []*fftypes.FFIMethod{
-			newTestFFIMethod(),
+			simpleStorageFFISet(),
+			simpleStorageFFIGet(),
 		},
 		Events: []*fftypes.FFIEvent{
-			newTestFFIEvent(),
+			simpleStorageFFIChanged(),
 		},
 	}
 }
 
-func newTestFFIMethod() *fftypes.FFIMethod {
+func simpleStorageFFISet() *fftypes.FFIMethod {
 	return &fftypes.FFIMethod{
 		Name: "set",
 		Params: fftypes.FFIParams{
@@ -99,6 +100,20 @@ func newTestFFIMethod() *fftypes.FFIMethod {
 			},
 		},
 		Returns: fftypes.FFIParams{},
+	}
+}
+
+func simpleStorageFFIGet() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name:   "get",
+		Params: fftypes.FFIParams{},
+		Returns: fftypes.FFIParams{
+			{
+				Name:    "output",
+				Type:    "integer",
+				Details: []byte(`{"type": "uint256"}`),
+			},
+		},
 	}
 }
 
@@ -134,17 +149,6 @@ func deployABI(t *testing.T, client *resty.Client, identity, abiID string) (resu
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return result
-}
-
-func queryContract(t *testing.T, client *resty.Client, contractAddress, method string) string {
-	path := "/contracts/" + contractAddress + "/" + method
-	var result ethconnectOutput
-	resp, err := client.R().
-		SetResult(&result).
-		Get(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return result.Output
 }
 
 func invokeEthContract(t *testing.T, client *resty.Client, identity, contractAddress, method string, body interface{}) {
@@ -184,9 +188,9 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
 
-	res, err := CreateFFI(suite.T(), suite.testState.client1, newTestFFI())
+	res, err := CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())
 	suite.interfaceID = res.(map[string]interface{})["id"].(string)
-	suite.T().Logf("contractID: %s", suite.interfaceID)
+	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
 }
 
@@ -199,7 +203,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 
 	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
 
-	sub := CreateContractSubscription(suite.T(), suite.testState.client1, newTestFFIEvent(), &fftypes.JSONObject{
+	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
@@ -237,7 +241,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 
 	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
 
-	sub := CreateContractSubscription(suite.T(), suite.testState.client1, newTestFFIEvent(), &fftypes.JSONObject{
+	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
@@ -251,9 +255,9 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		"address": suite.contractAddress,
 	}
 	locationBytes, _ := json.Marshal(location)
-	invokeContractRequest := &fftypes.InvokeContractRequest{
+	invokeContractRequest := &fftypes.ContractCallRequest{
 		Location: locationBytes,
-		Method:   newTestFFIMethod(),
+		Method:   simpleStorageFFISet(),
 		Input: map[string]interface{}{
 			"newValue": float64(2),
 		},
@@ -276,6 +280,16 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
+
+	queryContractRequest := &fftypes.ContractCallRequest{
+		Location: locationBytes,
+		Method:   simpleStorageFFIGet(),
+	}
+	res, err = QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
+	assert.NoError(suite.testState.t, err)
+	resJSON, err := json.Marshal(res)
+	assert.NoError(suite.testState.t, err)
+	assert.Equal(suite.testState.t, `{"output":"2"}`, string(resJSON))
 }
 
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
@@ -283,7 +297,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
 
-	sub := CreateContractSubscription(suite.T(), suite.testState.client1, newTestFFIEvent(), &fftypes.JSONObject{
+	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
@@ -293,12 +307,11 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	assert.Equal(suite.T(), 1, len(subs))
 	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
 
-	ffi := newTestFFI()
 	location := map[string]interface{}{
 		"address": suite.contractAddress,
 	}
 	locationBytes, _ := json.Marshal(location)
-	invokeContractRequest := &fftypes.InvokeContractRequest{
+	invokeContractRequest := &fftypes.ContractCallRequest{
 		Location: locationBytes,
 		Input: map[string]interface{}{
 			"newValue": float64(42),
@@ -307,7 +320,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	<-received1
 
-	res, err := InvokeFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, ffi.Methods[0].Name, invokeContractRequest)
+	res, err := InvokeFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, "set", invokeContractRequest)
 	assert.NoError(suite.testState.t, err)
 	assert.NotNil(suite.testState.t, res)
 
@@ -324,4 +337,14 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
+
+	queryContractRequest := &fftypes.ContractCallRequest{
+		Location: locationBytes,
+		Method:   simpleStorageFFIGet(),
+	}
+	res, err = QueryFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, "get", queryContractRequest)
+	assert.NoError(suite.testState.t, err)
+	resJSON, err := json.Marshal(res)
+	assert.NoError(suite.testState.t, err)
+	assert.Equal(suite.testState.t, `{"output":"42"}`, string(resJSON))
 }
