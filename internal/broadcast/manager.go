@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -151,7 +151,7 @@ func (bm *broadcastManager) publishBlobs(ctx context.Context, dataToPublish []*f
 		if err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage: '%s'", d.Data.Blob, d.Data.ID, publicRef)
+		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage: '%s'", d.Blob.Hash, d.Data.ID, publicRef)
 
 		// Update the data in the database, with the public reference.
 		// We do this independently for each piece of data

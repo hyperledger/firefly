@@ -220,4 +220,6 @@ var (
 	MsgHistogramInvalidTimes       = ffm("FF10300", "Start time must be before end time", 400)
 	MsgUnsupportedCollection       = ffm("FF10301", "%s collection is not supported", 400)
 	MsgQueryOpUnsupportedMod       = ffm("FF10302", "Operation '%s' on '%s' does not support modifiers", 400)
+	MsgDXBadSize                   = ffm("FF10303", "Unexpected size returned from data exchange upload. Size=%d Expected=%d")
+	MsgBlobMismatchSealingData     = ffm("FF10304", "Blob mismatch when sealing data")
 )

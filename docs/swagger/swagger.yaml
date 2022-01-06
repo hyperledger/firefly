@@ -456,8 +456,13 @@ paths:
                               blob:
                                 properties:
                                   hash: {}
+                                  name:
+                                    type: string
                                   public:
                                     type: string
+                                  size:
+                                    format: int64
+                                    type: integer
                                 type: object
                               created: {}
                               datatype:
@@ -605,8 +610,13 @@ paths:
                             blob:
                               properties:
                                 hash: {}
+                                name:
+                                  type: string
                                 public:
                                   type: string
+                                size:
+                                  format: int64
+                                  type: integer
                               type: object
                             created: {}
                             datatype:
@@ -1012,7 +1022,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blob.name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: blob.public
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: blob.size
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1094,8 +1114,13 @@ paths:
                     blob:
                       properties:
                         hash: {}
+                        name:
+                          type: string
                         public:
                           type: string
+                        size:
+                          format: int64
+                          type: integer
                       type: object
                     created: {}
                     datatype:
@@ -1145,8 +1170,13 @@ paths:
                 blob:
                   properties:
                     hash: {}
+                    name:
+                      type: string
                     public:
                       type: string
+                    size:
+                      format: int64
+                      type: integer
                   type: object
                 datatype:
                   properties:
@@ -1194,8 +1224,13 @@ paths:
                   blob:
                     properties:
                       hash: {}
+                      name:
+                        type: string
                       public:
                         type: string
+                      size:
+                        format: int64
+                        type: integer
                     type: object
                   created: {}
                   datatype:
@@ -1252,8 +1287,13 @@ paths:
                   blob:
                     properties:
                       hash: {}
+                      name:
+                        type: string
                       public:
                         type: string
+                      size:
+                        format: int64
+                        type: integer
                     type: object
                   created: {}
                   datatype:
@@ -2663,8 +2703,13 @@ paths:
                     blob:
                       properties:
                         hash: {}
+                        name:
+                          type: string
                         public:
                           type: string
+                        size:
+                          format: int64
+                          type: integer
                       type: object
                     created: {}
                     datatype:

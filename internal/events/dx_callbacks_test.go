@@ -394,7 +394,7 @@ func TestBLOBReceivedTriggersRewindOk(t *testing.T) {
 		{BatchID: batchID},
 	}, nil, nil)
 
-	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	err := em.BLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
 	assert.NoError(t, err)
 
 	bid := <-em.aggregator.offchainBatches
@@ -407,7 +407,7 @@ func TestBLOBReceivedBadEvent(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	err := em.BLOBReceived(nil, "", fftypes.Bytes32{}, "")
+	err := em.BLOBReceived(nil, "", fftypes.Bytes32{}, 12345, "")
 	assert.NoError(t, err)
 }
 
@@ -426,7 +426,7 @@ func TestBLOBReceivedGetMessagesFail(t *testing.T) {
 	}, nil, nil)
 	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	err := em.BLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
 	assert.Regexp(t, "FF10158", err)
 
 	mdi.AssertExpectations(t)
@@ -443,7 +443,7 @@ func TestBLOBReceivedGetDataRefsFail(t *testing.T) {
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	err := em.BLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
 	assert.Regexp(t, "FF10158", err)
 
 	mdi.AssertExpectations(t)
@@ -459,7 +459,7 @@ func TestBLOBReceivedInsertBlobFails(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	err := em.BLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
 	assert.Regexp(t, "FF10158", err)
 
 	mdi.AssertExpectations(t)
@@ -711,7 +711,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)
-	err = data.Seal(em.ctx)
+	err = data.Seal(em.ctx, nil)
 	assert.NoError(t, err)
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
@@ -761,7 +761,7 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)
-	err = data.Seal(em.ctx)
+	err = data.Seal(em.ctx, nil)
 	assert.NoError(t, err)
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
@@ -813,7 +813,7 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)
-	err = data.Seal(em.ctx)
+	err = data.Seal(em.ctx, nil)
 	assert.NoError(t, err)
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
@@ -855,7 +855,7 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)
-	err = data.Seal(em.ctx)
+	err = data.Seal(em.ctx, nil)
 	assert.NoError(t, err)
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
