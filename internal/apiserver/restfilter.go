@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,6 +17,7 @@
 package apiserver
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -75,12 +76,20 @@ func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (d
 	for _, field := range possibleFields {
 		values := as.getValues(req.Form, field)
 		if len(values) == 1 {
-			filter.Condition(as.getCondition(fb, field, values[0]))
+			cond, err := as.getCondition(ctx, fb, field, values[0])
+			if err != nil {
+				return nil, err
+			}
+			filter.Condition(cond)
 		} else if len(values) > 0 {
 			sort.Strings(values)
 			fs := make([]database.Filter, len(values))
 			for i, value := range values {
-				fs[i] = as.getCondition(fb, field, value)
+				cond, err := as.getCondition(ctx, fb, field, value)
+				if err != nil {
+					return nil, err
+				}
+				fs[i] = cond
 			}
 			filter.Condition(fb.Or(fs...))
 		}
@@ -123,27 +132,106 @@ func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (d
 	return filter, nil
 }
 
-func (as *apiServer) getCondition(fb database.FilterBuilder, field, value string) database.Filter {
-	switch {
-	case strings.HasPrefix(value, ">="):
-		return fb.Gte(field, value[2:])
-	case strings.HasPrefix(value, "<="):
-		return fb.Lte(field, value[2:])
-	case strings.HasPrefix(value, ">"):
-		return fb.Gt(field, value[1:])
-	case strings.HasPrefix(value, "<"):
-		return fb.Lt(field, value[1:])
-	case strings.HasPrefix(value, "@"):
-		return fb.Contains(field, value[1:])
-	case strings.HasPrefix(value, "^"):
-		return fb.IContains(field, value[1:])
-	case strings.HasPrefix(value, "!@"):
-		return fb.NotContains(field, value[2:])
-	case strings.HasPrefix(value, "!^"):
-		return fb.NotIContains(field, value[2:])
-	case strings.HasPrefix(value, "!"):
-		return fb.Neq(field, value[1:])
+func (as *apiServer) checkNoMods(ctx context.Context, negate, caseInsensitive bool, field, op string, filter database.Filter) (database.Filter, error) {
+	if negate || caseInsensitive {
+		return nil, i18n.NewError(ctx, i18n.MsgQueryOpUnsupportedMod, op, field)
+	}
+	return filter, nil
+}
+
+func (as *apiServer) getCondition(ctx context.Context, fb database.FilterBuilder, field, value string) (filter database.Filter, err error) {
+
+	negate := false
+	caseInsensitive := false
+	operator := make([]rune, 0, 2)
+	prefixLength := 0
+opFinder:
+	for _, r := range value {
+		switch r {
+		case '!':
+			negate = true
+			prefixLength++
+		case ':':
+			caseInsensitive = true
+			prefixLength++
+		case '>', '<':
+			// Terminates the opFinder if it's the second character
+			if len(operator) == 1 && operator[0] != r {
+				// Detected "><" or "<>" - which is a single char operator, followed by beginning of match string
+				break opFinder
+			}
+			operator = append(operator, r)
+			prefixLength++
+			if len(operator) > 1 {
+				// Detected ">>" or "<<" full operators
+				break opFinder
+			}
+		case '=', '@', '^', '$':
+			// Always terminates the opFinder
+			// Could be ">=" or "<=" (due to above logic continuing on '>' or '<' first char)
+			operator = append(operator, r)
+			prefixLength++
+			break opFinder
+		default:
+			// Found a normal character
+			break opFinder
+		}
+	}
+
+	op := string(operator)
+	matchString := value[prefixLength:]
+	switch op {
+	case ">=":
+		return as.checkNoMods(ctx, negate, caseInsensitive, field, op, fb.Gte(field, matchString))
+	case "<=":
+		return as.checkNoMods(ctx, negate, caseInsensitive, field, op, fb.Lte(field, matchString))
+	case ">", ">>":
+		return as.checkNoMods(ctx, negate, caseInsensitive, field, op, fb.Gt(field, matchString))
+	case "<", "<<":
+		return as.checkNoMods(ctx, negate, caseInsensitive, field, op, fb.Lt(field, matchString))
+	case "@":
+		if caseInsensitive {
+			if negate {
+				return fb.NotIContains(field, matchString), nil
+			}
+			return fb.IContains(field, matchString), nil
+		}
+		if negate {
+			return fb.NotContains(field, matchString), nil
+		}
+		return fb.Contains(field, matchString), nil
+	case "^":
+		if caseInsensitive {
+			if negate {
+				return fb.NotIStartsWith(field, matchString), nil
+			}
+			return fb.IStartsWith(field, matchString), nil
+		}
+		if negate {
+			return fb.NotStartsWith(field, matchString), nil
+		}
+		return fb.StartsWith(field, matchString), nil
+	case "$":
+		if caseInsensitive {
+			if negate {
+				return fb.NotIEndsWith(field, matchString), nil
+			}
+			return fb.IEndsWith(field, matchString), nil
+		}
+		if negate {
+			return fb.NotEndsWith(field, matchString), nil
+		}
+		return fb.EndsWith(field, matchString), nil
 	default:
-		return fb.Eq(field, value)
+		if caseInsensitive {
+			if negate {
+				return fb.NIeq(field, matchString), nil
+			}
+			return fb.IEq(field, matchString), nil
+		}
+		if negate {
+			return fb.Neq(field, matchString), nil
+		}
+		return fb.Eq(field, matchString), nil
 	}
 }

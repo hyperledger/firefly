@@ -17,6 +17,7 @@
 package apiserver
 
 import (
+	"fmt"
 	"net/http/httptest"
 	"testing"
 
@@ -35,7 +36,74 @@ func TestBuildFilterDescending(t *testing.T) {
 	fi, err := filter.Finalize()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "( confirmed != 0 ) && ( created == 0 ) && ( ( tag %! 'abc' ) || ( tag ^! 'abc' ) || ( tag <= 'abc' ) || ( tag < 'abc' ) || ( tag >= 'abc' ) || ( tag > 'abc' ) || ( tag %= 'abc' ) || ( tag ^= 'abc' ) ) sort=-tag,-sequence skip=10 limit=50", fi.String())
+	assert.Equal(t, "( confirmed != 0 ) && ( created == 0 ) && ( ( tag !% 'abc' ) || ( tag !^ 'abc' ) || ( tag <= 'abc' ) || ( tag << 'abc' ) || ( tag >= 'abc' ) || ( tag >> 'abc' ) || ( tag %= 'abc' ) || ( tag ^= 'abc' ) ) sort=-tag,-sequence skip=10 limit=50", fi.String())
+}
+
+func testIndividualFilter(t *testing.T, queryString, expectedToString string) {
+	as := &apiServer{
+		maxFilterLimit: 250,
+	}
+	req := httptest.NewRequest("GET", fmt.Sprintf("/things?%s", queryString), nil)
+	filter, err := as.buildFilter(req, database.MessageQueryFactory)
+	assert.NoError(t, err)
+	fi, err := filter.Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, expectedToString, fi.String())
+}
+
+func TestBuildFilterEachCombo(t *testing.T) {
+	testIndividualFilter(t, "tag=cat", "( tag == 'cat' )")
+	testIndividualFilter(t, "tag==cat", "( tag == 'cat' )")
+	testIndividualFilter(t, "tag===cat", "( tag == '=cat' )")
+	testIndividualFilter(t, "tag=!cat", "( tag != 'cat' )")
+	testIndividualFilter(t, "tag=!=cat", "( tag != 'cat' )")
+	testIndividualFilter(t, "tag=!=!cat", "( tag != '!cat' )")
+	testIndividualFilter(t, "tag=!==cat", "( tag != '=cat' )")
+	testIndividualFilter(t, "tag=!:=cat", "( tag ;= 'cat' )")
+	testIndividualFilter(t, "tag=:!=cat", "( tag ;= 'cat' )")
+	testIndividualFilter(t, "tag=:=cat", "( tag := 'cat' )")
+	testIndividualFilter(t, "tag=>cat", "( tag >> 'cat' )")
+	testIndividualFilter(t, "tag=>>cat", "( tag >> 'cat' )")
+	testIndividualFilter(t, "tag=>>>cat", "( tag >> '>cat' )")
+	testIndividualFilter(t, "tag=<cat", "( tag << 'cat' )")
+	testIndividualFilter(t, "tag=<<cat", "( tag << 'cat' )")
+	testIndividualFilter(t, "tag=<<<cat", "( tag << '<cat' )")
+	testIndividualFilter(t, "tag=<>cat", "( tag << '>cat' )")
+	testIndividualFilter(t, "tag=><cat", "( tag >> '<cat' )")
+	testIndividualFilter(t, "tag=>=cat", "( tag >= 'cat' )")
+	testIndividualFilter(t, "tag=<=cat", "( tag <= 'cat' )")
+	testIndividualFilter(t, "tag=>=>cat", "( tag >= '>cat' )")
+	testIndividualFilter(t, "tag=>==cat", "( tag >= '=cat' )")
+	testIndividualFilter(t, "tag=@@cat", "( tag %= '@cat' )")
+	testIndividualFilter(t, "tag=@cat", "( tag %= 'cat' )")
+	testIndividualFilter(t, "tag=!@cat", "( tag !% 'cat' )")
+	testIndividualFilter(t, "tag=:@cat", "( tag :% 'cat' )")
+	testIndividualFilter(t, "tag=!:@cat", "( tag ;% 'cat' )")
+	testIndividualFilter(t, "tag=^cat", "( tag ^= 'cat' )")
+	testIndividualFilter(t, "tag=!^cat", "( tag !^ 'cat' )")
+	testIndividualFilter(t, "tag=:^cat", "( tag :^ 'cat' )")
+	testIndividualFilter(t, "tag=!:^cat", "( tag ;^ 'cat' )")
+	testIndividualFilter(t, "tag=$cat", "( tag $= 'cat' )")
+	testIndividualFilter(t, "tag=!$cat", "( tag !$ 'cat' )")
+	testIndividualFilter(t, "tag=:$cat", "( tag :$ 'cat' )")
+	testIndividualFilter(t, "tag=!:$cat", "( tag ;$ 'cat' )")
+}
+
+func testFailFilter(t *testing.T, queryString, errCode string) {
+	as := &apiServer{
+		maxFilterLimit: 250,
+	}
+	req := httptest.NewRequest("GET", fmt.Sprintf("/things?%s", queryString), nil)
+	_, err := as.buildFilter(req, database.MessageQueryFactory)
+	assert.Regexp(t, errCode, err)
+}
+
+func TestCheckNoMods(t *testing.T) {
+	testFailFilter(t, "tag=!>=test", "FF10302")
+	testFailFilter(t, "tag=:>test", "FF10302")
+	testFailFilter(t, "tag=!<test", "FF10302")
+	testFailFilter(t, "tag=!:<=test", "FF10302")
+	testFailFilter(t, "tag=<=test&tag=!<=test", "FF10302")
 }
 
 func TestBuildFilterAscending(t *testing.T) {

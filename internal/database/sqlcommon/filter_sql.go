@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -149,10 +149,14 @@ func (s *SQLCommon) filterOp(ctx context.Context, tableName string, op *database
 		return s.filterAnd(ctx, tableName, op, tm)
 	case database.FilterOpEq:
 		return sq.Eq{s.mapField(tableName, op.Field, tm): op.Value}, nil
+	case database.FilterOpIEq:
+		return sq.ILike{s.mapField(tableName, op.Field, tm): s.escapeLike(op.Value)}, nil
 	case database.FilterOpIn:
 		return sq.Eq{s.mapField(tableName, op.Field, tm): op.Values}, nil
-	case database.FilterOpNe:
+	case database.FilterOpNeq:
 		return sq.NotEq{s.mapField(tableName, op.Field, tm): op.Value}, nil
+	case database.FilterOpNIeq:
+		return sq.NotILike{s.mapField(tableName, op.Field, tm): s.escapeLike(op.Value)}, nil
 	case database.FilterOpNotIn:
 		return sq.NotEq{s.mapField(tableName, op.Field, tm): op.Values}, nil
 	case database.FilterOpCont:
@@ -162,7 +166,23 @@ func (s *SQLCommon) filterOp(ctx context.Context, tableName string, op *database
 	case database.FilterOpICont:
 		return sq.ILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case database.FilterOpNotICont:
-		return sq.NotILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
+		return sq.NotILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%s%%", s.escapeLike(op.Value))}, nil
+	case database.FilterOpStartsWith:
+		return sq.Like{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%s%%", s.escapeLike(op.Value))}, nil
+	case database.FilterOpNotStartsWith:
+		return sq.NotLike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%s%%", s.escapeLike(op.Value))}, nil
+	case database.FilterOpIStartsWith:
+		return sq.ILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%s%%", s.escapeLike(op.Value))}, nil
+	case database.FilterOpNotIStartsWith:
+		return sq.NotILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%s%%", s.escapeLike(op.Value))}, nil
+	case database.FilterOpEndsWith:
+		return sq.Like{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s", s.escapeLike(op.Value))}, nil
+	case database.FilterOpNotEndsWith:
+		return sq.NotLike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s", s.escapeLike(op.Value))}, nil
+	case database.FilterOpIEndsWith:
+		return sq.ILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s", s.escapeLike(op.Value))}, nil
+	case database.FilterOpNotIEndsWith:
+		return sq.NotILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s", s.escapeLike(op.Value))}, nil
 	case database.FilterOpGt:
 		return sq.Gt{s.mapField(tableName, op.Field, tm): op.Value}, nil
 	case database.FilterOpGte:

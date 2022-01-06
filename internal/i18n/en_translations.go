@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -219,4 +219,5 @@ var (
 	MsgInvalidChartNumberParam     = ffm("FF10299", "Invalid %s. Must be a number.", 400)
 	MsgHistogramInvalidTimes       = ffm("FF10300", "Start time must be before end time", 400)
 	MsgUnsupportedCollection       = ffm("FF10301", "%s collection is not supported", 400)
+	MsgQueryOpUnsupportedMod       = ffm("FF10302", "Operation '%s' on '%s' does not support modifiers", 400)
 )

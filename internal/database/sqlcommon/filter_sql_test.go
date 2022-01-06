@@ -93,6 +93,34 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 	assert.Equal(t, "SELECT * FROM mytable AS mt WHERE (mt.created IN (?,?,?) AND mt.created NOT IN (?,?,?) AND mt.id = ? AND mt.id IN (?) AND mt.id IS NOT NULL AND mt.created < ? AND mt.created <= ? AND mt.created >= ? AND mt.created <> ? AND mt.seq > ? AND mt.topics LIKE ? AND mt.topics NOT LIKE ? AND mt.topics ILIKE ? AND mt.topics NOT ILIKE ?) ORDER BY mt.seq DESC", sqlFilter)
 }
 
+func TestSQLQueryFactoryEvenMoreOps(t *testing.T) {
+
+	s, _ := newMockProvider().init()
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
+	u := fftypes.MustParseUUID("4066ABDC-8BBD-4472-9D29-1A55B467F9B9")
+	f := fb.And(
+		fb.IEq("id", u),
+		fb.NIeq("id", nil),
+		fb.StartsWith("topics", "abc"),
+		fb.NotStartsWith("topics", "def"),
+		fb.IStartsWith("topics", "ghi"),
+		fb.NotIStartsWith("topics", "jkl"),
+		fb.EndsWith("topics", "mno"),
+		fb.NotEndsWith("topics", "pqr"),
+		fb.IEndsWith("topics", "sty"),
+		fb.NotIEndsWith("topics", "vwx"),
+	).
+		Descending()
+
+	sel := squirrel.Select("*").From("mytable AS mt")
+	sel, _, _, err := s.filterSelect(context.Background(), "mt", sel, f, nil, []interface{}{"sequence"})
+	assert.NoError(t, err)
+
+	sqlFilter, _, err := sel.ToSql()
+	assert.NoError(t, err)
+	assert.Equal(t, "SELECT * FROM mytable AS mt WHERE (mt.id ILIKE ? AND mt.id NOT ILIKE ? AND mt.topics LIKE ? AND mt.topics NOT LIKE ? AND mt.topics ILIKE ? AND mt.topics NOT ILIKE ? AND mt.topics LIKE ? AND mt.topics NOT LIKE ? AND mt.topics ILIKE ? AND mt.topics NOT ILIKE ?) ORDER BY mt.seq DESC", sqlFilter)
+}
+
 func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())

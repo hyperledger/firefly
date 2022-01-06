@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -68,6 +68,7 @@ type OrFilter interface{ MultiConditionFilter }
 // used in the core string formatting method (for logging etc.)
 type FilterOp string
 
+// The character pairs in this are not used anywhere externally, just in a to-string representation of queries
 const (
 	// FilterOpAnd and
 	FilterOpAnd FilterOp = "&&"
@@ -75,16 +76,20 @@ const (
 	FilterOpOr FilterOp = "||"
 	// FilterOpEq equal
 	FilterOpEq FilterOp = "=="
+	// FilterOpIEq equal
+	FilterOpIEq FilterOp = ":="
 	// FilterOpNe not equal
-	FilterOpNe FilterOp = "!="
+	FilterOpNeq FilterOp = "!="
+	// FilterOpNIeq not equal
+	FilterOpNIeq FilterOp = ";="
 	// FilterOpIn in list of values
 	FilterOpIn FilterOp = "IN"
 	// FilterOpNotIn not in list of values
 	FilterOpNotIn FilterOp = "NI"
 	// FilterOpGt greater than
-	FilterOpGt FilterOp = ">"
+	FilterOpGt FilterOp = ">>"
 	// FilterOpLt less than
-	FilterOpLt FilterOp = "<"
+	FilterOpLt FilterOp = "<<"
 	// FilterOpGte greater than or equal
 	FilterOpGte FilterOp = ">="
 	// FilterOpLte less than or equal
@@ -92,11 +97,27 @@ const (
 	// FilterOpCont contains the specified text, case sensitive
 	FilterOpCont FilterOp = "%="
 	// FilterOpNotCont does not contain the specified text, case sensitive
-	FilterOpNotCont FilterOp = "%!"
+	FilterOpNotCont FilterOp = "!%"
 	// FilterOpICont contains the specified text, case insensitive
-	FilterOpICont FilterOp = "^="
+	FilterOpICont FilterOp = ":%"
 	// FilterOpNotICont does not contain the specified text, case insensitive
-	FilterOpNotICont FilterOp = "^!"
+	FilterOpNotICont FilterOp = ";%"
+	// FilterOpStartsWith contains the specified text, case sensitive
+	FilterOpStartsWith FilterOp = "^="
+	// FilterOpNotCont does not contain the specified text, case sensitive
+	FilterOpNotStartsWith FilterOp = "!^"
+	// FilterOpICont contains the specified text, case insensitive
+	FilterOpIStartsWith FilterOp = ":^"
+	// FilterOpNotICont does not contain the specified text, case insensitive
+	FilterOpNotIStartsWith FilterOp = ";^"
+	// FilterOpEndsWith contains the specified text, case sensitive
+	FilterOpEndsWith FilterOp = "$="
+	// FilterOpNotCont does not contain the specified text, case sensitive
+	FilterOpNotEndsWith FilterOp = "!$"
+	// FilterOpICont contains the specified text, case insensitive
+	FilterOpIEndsWith FilterOp = ":$"
+	// FilterOpNotICont does not contain the specified text, case insensitive
+	FilterOpNotIEndsWith FilterOp = ";$"
 )
 
 // FilterBuilder is the syntax used to build the filter, where And() and Or() can be nested
@@ -107,10 +128,14 @@ type FilterBuilder interface {
 	And(and ...Filter) AndFilter
 	// Or requires any of the sub-filters to match
 	Or(and ...Filter) OrFilter
-	// Eq equal
+	// Eq equal - case sensitive
 	Eq(name string, value driver.Value) Filter
-	// Neq not equal
+	// Neq not equal - case sensitive
 	Neq(name string, value driver.Value) Filter
+	// IEq equal - case insensitive
+	IEq(name string, value driver.Value) Filter
+	// INeq not equal - case insensitive
+	NIeq(name string, value driver.Value) Filter
 	// In one of an array of values
 	In(name string, value []driver.Value) Filter
 	// NotIn not one of an array of values
@@ -127,10 +152,26 @@ type FilterBuilder interface {
 	Contains(name string, value driver.Value) Filter
 	// NotContains disallows the string anywhere - case sensitive
 	NotContains(name string, value driver.Value) Filter
-	// IContains allows the string anywhere - case sensitive
+	// IContains allows the string anywhere - case insensitive
 	IContains(name string, value driver.Value) Filter
-	// INotContains disallows the string anywhere - case sensitive
+	// INotContains disallows the string anywhere - case insensitive
 	NotIContains(name string, value driver.Value) Filter
+	// StartsWith allows the string at the start - case sensitive
+	StartsWith(name string, value driver.Value) Filter
+	// NotStartsWith disallows the string at the start - case sensitive
+	NotStartsWith(name string, value driver.Value) Filter
+	// IStartsWith allows the string at the start - case insensitive
+	IStartsWith(name string, value driver.Value) Filter
+	// NotIStartsWith disallows the string att the start - case insensitive
+	NotIStartsWith(name string, value driver.Value) Filter
+	// EndsWith allows the string at the end - case sensitive
+	EndsWith(name string, value driver.Value) Filter
+	// NotEndsWith disallows the string at the end - case sensitive
+	NotEndsWith(name string, value driver.Value) Filter
+	// IEndsWith allows the string at the end - case insensitive
+	IEndsWith(name string, value driver.Value) Filter
+	// NotIEndsWith disallows the string att the end - case insensitive
+	NotIEndsWith(name string, value driver.Value) Filter
 }
 
 // NullBehavior specifies whether to sort nulls first or last in a query
@@ -416,7 +457,15 @@ func (fb *filterBuilder) Eq(name string, value driver.Value) Filter {
 }
 
 func (fb *filterBuilder) Neq(name string, value driver.Value) Filter {
-	return fb.fieldFilter(FilterOpNe, name, value)
+	return fb.fieldFilter(FilterOpNeq, name, value)
+}
+
+func (fb *filterBuilder) IEq(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpIEq, name, value)
+}
+
+func (fb *filterBuilder) NIeq(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNIeq, name, value)
 }
 
 func (fb *filterBuilder) In(name string, values []driver.Value) Filter {
@@ -457,6 +506,38 @@ func (fb *filterBuilder) IContains(name string, value driver.Value) Filter {
 
 func (fb *filterBuilder) NotIContains(name string, value driver.Value) Filter {
 	return fb.fieldFilter(FilterOpNotICont, name, value)
+}
+
+func (fb *filterBuilder) StartsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpStartsWith, name, value)
+}
+
+func (fb *filterBuilder) NotStartsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNotStartsWith, name, value)
+}
+
+func (fb *filterBuilder) IStartsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpIStartsWith, name, value)
+}
+
+func (fb *filterBuilder) NotIStartsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNotIStartsWith, name, value)
+}
+
+func (fb *filterBuilder) EndsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpEndsWith, name, value)
+}
+
+func (fb *filterBuilder) NotEndsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNotEndsWith, name, value)
+}
+
+func (fb *filterBuilder) IEndsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpIEndsWith, name, value)
+}
+
+func (fb *filterBuilder) NotIEndsWith(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNotIEndsWith, name, value)
 }
 
 func (fb *filterBuilder) fieldFilter(op FilterOp, name string, value interface{}) Filter {
