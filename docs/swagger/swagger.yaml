@@ -757,12 +757,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header
@@ -2364,12 +2358,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header
@@ -2810,12 +2798,6 @@ paths:
         required: true
         schema:
           example: default
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
