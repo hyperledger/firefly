@@ -197,3 +197,31 @@ func TestSQLQueryFactoryDefaultSortBadType(t *testing.T) {
 		s.filterSelect(context.Background(), "", sel, f, nil, []interface{}{100})
 	})
 }
+
+func TestILIKE(t *testing.T) {
+	s, _ := newMockProvider().init()
+
+	s.features.UseILIKE = true
+	q := s.newILike("test", "value")
+	sqlString, _, _ := q.ToSql()
+	assert.Regexp(t, "ILIKE", sqlString)
+
+	s.features.UseILIKE = false
+	q = s.newILike("test", "value")
+	sqlString, _, _ = q.ToSql()
+	assert.Regexp(t, "lower\\(test\\)", sqlString)
+}
+
+func TestNotILIKE(t *testing.T) {
+	s, _ := newMockProvider().init()
+
+	s.features.UseILIKE = true
+	q := s.newNotILike("test", "value")
+	sqlString, _, _ := q.ToSql()
+	assert.Regexp(t, "ILIKE", sqlString)
+
+	s.features.UseILIKE = false
+	q = s.newNotILike("test", "value")
+	sqlString, _, _ = q.ToSql()
+	assert.Regexp(t, "lower\\(test\\)", sqlString)
+}

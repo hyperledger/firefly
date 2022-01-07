@@ -1070,6 +1070,11 @@ paths:
         name: validator
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: value
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
