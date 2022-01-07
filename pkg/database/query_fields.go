@@ -68,6 +68,7 @@ type FieldSerialization interface {
 
 type Field interface {
 	getSerialization() FieldSerialization
+	description() string
 	filterAsString() bool
 }
 
@@ -127,6 +128,7 @@ func (f *stringField) Value() (driver.Value, error)         { return f.s, nil }
 func (f *stringField) String() string                       { return f.s }
 func (f *StringField) getSerialization() FieldSerialization { return &stringField{} }
 func (f *StringField) filterAsString() bool                 { return true }
+func (f *StringField) description() string                  { return "String" }
 
 type UUIDField struct{}
 type uuidField struct{ u *fftypes.UUID }
@@ -168,6 +170,7 @@ func (f *uuidField) Value() (driver.Value, error)         { return f.u.Value() }
 func (f *uuidField) String() string                       { return fmt.Sprintf("%v", f.u) }
 func (f *UUIDField) getSerialization() FieldSerialization { return &uuidField{} }
 func (f *UUIDField) filterAsString() bool                 { return true }
+func (f *UUIDField) description() string                  { return "UUID" }
 
 type Bytes32Field struct{}
 type bytes32Field struct{ b32 *fftypes.Bytes32 }
@@ -197,6 +200,7 @@ func (f *bytes32Field) Value() (driver.Value, error)         { return f.b32.Valu
 func (f *bytes32Field) String() string                       { return fmt.Sprintf("%v", f.b32) }
 func (f *Bytes32Field) getSerialization() FieldSerialization { return &bytes32Field{} }
 func (f *Bytes32Field) filterAsString() bool                 { return true }
+func (f *Bytes32Field) description() string                  { return "Byte-Array" }
 
 type Int64Field struct{}
 type int64Field struct{ i int64 }
@@ -220,6 +224,8 @@ func (f *int64Field) Scan(src interface{}) (err error) {
 		if err != nil {
 			return i18n.WrapError(context.Background(), err, i18n.MsgScanFailed, src, int64(0))
 		}
+	case nil:
+		f.i = 0
 	default:
 		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.i)
 	}
@@ -229,6 +235,7 @@ func (f *int64Field) Value() (driver.Value, error)         { return f.i, nil }
 func (f *int64Field) String() string                       { return fmt.Sprintf("%d", f.i) }
 func (f *Int64Field) getSerialization() FieldSerialization { return &int64Field{} }
 func (f *Int64Field) filterAsString() bool                 { return false }
+func (f *Int64Field) description() string                  { return "Integer" }
 
 type TimeField struct{}
 type timeField struct{ t *fftypes.FFTime }
@@ -264,6 +271,7 @@ func (f *timeField) Value() (driver.Value, error) {
 func (f *timeField) String() string                       { return fmt.Sprintf("%v", f.t) }
 func (f *TimeField) getSerialization() FieldSerialization { return &timeField{} }
 func (f *TimeField) filterAsString() bool                 { return false }
+func (f *TimeField) description() string                  { return "Date-time" }
 
 type JSONField struct{}
 type jsonField struct{ b []byte }
@@ -286,7 +294,8 @@ func (f *jsonField) Scan(src interface{}) (err error) {
 func (f *jsonField) Value() (driver.Value, error)         { return f.b, nil }
 func (f *jsonField) String() string                       { return string(f.b) }
 func (f *JSONField) getSerialization() FieldSerialization { return &jsonField{} }
-func (f *JSONField) filterAsString() bool                 { return true }
+func (f *JSONField) filterAsString() bool                 { return false }
+func (f *JSONField) description() string                  { return "JSON-blob" }
 
 type FFNameArrayField struct{}
 type ffNameArrayField struct{ na fftypes.FFNameArray }
@@ -298,6 +307,7 @@ func (f *ffNameArrayField) Value() (driver.Value, error)         { return f.na.S
 func (f *ffNameArrayField) String() string                       { return f.na.String() }
 func (f *FFNameArrayField) getSerialization() FieldSerialization { return &ffNameArrayField{} }
 func (f *FFNameArrayField) filterAsString() bool                 { return true }
+func (f *FFNameArrayField) description() string                  { return "String-array" }
 
 type BoolField struct{}
 type boolField struct{ b bool }
@@ -331,3 +341,4 @@ func (f *boolField) Value() (driver.Value, error)         { return f.b, nil }
 func (f *boolField) String() string                       { return fmt.Sprintf("%t", f.b) }
 func (f *BoolField) getSerialization() FieldSerialization { return &boolField{} }
 func (f *BoolField) filterAsString() bool                 { return false }
+func (f *BoolField) description() string                  { return "Boolean" }

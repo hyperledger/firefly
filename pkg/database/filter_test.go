@@ -297,6 +297,22 @@ func TestQueryFactoryBadNestedValue(t *testing.T) {
 	assert.Regexp(t, "FF10149.*sequence", err)
 }
 
+func TestQueryFactoryStringMatchNonString(t *testing.T) {
+	fb := DataQueryFactory.NewFilter(context.Background())
+	_, err := fb.And(
+		fb.Contains("value", "stuff"),
+	).Finalize()
+	assert.Regexp(t, "FF10305", err)
+}
+
+func TestQueryFactoryNullGreaterThan(t *testing.T) {
+	fb := DataQueryFactory.NewFilter(context.Background())
+	_, err := fb.And(
+		fb.Gt("created", nil),
+	).Finalize()
+	assert.Regexp(t, "FF10306", err)
+}
+
 func TestQueryFactoryGetFields(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	assert.NotNil(t, fb.Fields())

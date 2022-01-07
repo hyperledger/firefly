@@ -42,6 +42,8 @@ func TestNullField(t *testing.T) {
 
 func TestStringField(t *testing.T) {
 
+	fd := &StringField{}
+	assert.NotEmpty(t, fd.description())
 	f := stringField{}
 
 	err := f.Scan("test")
@@ -60,6 +62,8 @@ func TestStringField(t *testing.T) {
 
 func TestUUIDField(t *testing.T) {
 
+	fd := &UUIDField{}
+	assert.NotEmpty(t, fd.description())
 	f := uuidField{}
 
 	err := f.Scan("")
@@ -85,6 +89,8 @@ func TestUUIDField(t *testing.T) {
 
 func TestBytes32Field(t *testing.T) {
 
+	fd := &Bytes32Field{}
+	assert.NotEmpty(t, fd.description())
 	f := bytes32Field{}
 
 	err := f.Scan("")
@@ -108,8 +114,30 @@ func TestBytes32Field(t *testing.T) {
 
 }
 
+func TestInt64Field(t *testing.T) {
+
+	fd := &Int64Field{}
+	assert.NotEmpty(t, fd.description())
+	f := int64Field{}
+
+	err := f.Scan("12345")
+	assert.NoError(t, err)
+	v, err := f.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(12345), v)
+
+	err = f.Scan(nil)
+	assert.NoError(t, err)
+	v, err = f.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), v)
+
+}
+
 func TestTimeField(t *testing.T) {
 
+	fd := &TimeField{}
+	assert.NotEmpty(t, fd.description())
 	f := timeField{}
 
 	now := time.Now()
@@ -129,6 +157,8 @@ func TestTimeField(t *testing.T) {
 
 func TestJSONField(t *testing.T) {
 
+	fd := &JSONField{}
+	assert.NotEmpty(t, fd.description())
 	f := jsonField{}
 
 	err := f.Scan("{}")
@@ -147,6 +177,8 @@ func TestJSONField(t *testing.T) {
 
 func TestBoolField(t *testing.T) {
 
+	fd := &BoolField{}
+	assert.NotEmpty(t, fd.description())
 	f := boolField{}
 
 	err := f.Scan("true")
@@ -160,5 +192,25 @@ func TestBoolField(t *testing.T) {
 	v, err = f.Value()
 	assert.NoError(t, err)
 	assert.False(t, v.(bool))
+
+}
+
+func TestFFNameArrayField(t *testing.T) {
+
+	fd := &FFNameArrayField{}
+	assert.NotEmpty(t, fd.description())
+	f := ffNameArrayField{}
+
+	err := f.Scan("a,b")
+	assert.NoError(t, err)
+	v, err := f.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, v, "a,b")
+
+	err = f.Scan(nil)
+	assert.NoError(t, err)
+	v, err = f.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "", v)
 
 }

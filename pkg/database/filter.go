@@ -121,6 +121,28 @@ const (
 	FilterOpNotIEndsWith FilterOp = ";$"
 )
 
+func filterOpIsStringMatch(op FilterOp) bool {
+	for _, r := range string(op) {
+		switch r {
+		case '%', '^', '$', ':':
+			// Partial or case-insensitive matches all need a string
+			return true
+		}
+	}
+	return false
+}
+
+func filterCannotAcceptNull(op FilterOp) bool {
+	for _, r := range string(op) {
+		switch r {
+		case '%', '^', '$', ':', '>', '<':
+			// string based matching, or gt/lt cannot accept null
+			return true
+		}
+	}
+	return false
+}
+
 // FilterBuilder is the syntax used to build the filter, where And() and Or() can be nested
 type FilterBuilder interface {
 	// Fields is the list of available fields
@@ -344,12 +366,18 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		skipScan := false
 		switch f.value.(type) {
 		case nil:
+			if filterCannotAcceptNull(f.op) {
+				return nil, i18n.NewError(f.fb.ctx, i18n.MsgFieldMatchNoNull, f.op, name)
+			}
 			value = &nullField{}
 			skipScan = true
 		case string:
-			if field.filterAsString() {
+			switch {
+			case field.filterAsString():
 				value = &stringField{}
-			} else {
+			case filterOpIsStringMatch(f.op):
+				return nil, i18n.NewError(f.fb.ctx, i18n.MsgFieldTypeNoStringMatching, name, field.description(), f.op)
+			default:
 				value = field.getSerialization()
 			}
 		default:
