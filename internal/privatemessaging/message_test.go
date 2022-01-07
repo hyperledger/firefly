@@ -81,7 +81,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -116,7 +116,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: dataID, Value: fftypes.Byteable(`{"some": "data"}`)},
+		{ID: dataID, Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 	}, true, nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -149,7 +149,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 			},
 		},
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -177,7 +177,7 @@ func TestSendMessageBadGroup(t *testing.T) {
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{},
 	}, true)
@@ -197,7 +197,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -245,7 +245,7 @@ func TestSendMessageFail(t *testing.T) {
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -401,7 +401,7 @@ func TestSendUnpinnedMessageMarshalFail(t *testing.T) {
 	nodeID2 := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`!Invalid JSON`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`!Invalid JSON`)},
 	}, true, nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -555,7 +555,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 			},
 		},
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -628,7 +628,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 			},
 		},
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -662,7 +662,7 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: dataID, Value: fftypes.Byteable(`{"some": "data"}`)},
+		{ID: dataID, Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 	}, true, nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -695,7 +695,7 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 			},
 		},
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{

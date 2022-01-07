@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -36,7 +36,7 @@ func (or *orchestrator) GetConfigRecords(ctx context.Context, filter database.An
 	return or.database.GetConfigRecords(ctx, filter)
 }
 
-func (or *orchestrator) PutConfigRecord(ctx context.Context, key string, value fftypes.Byteable) (outputValue fftypes.Byteable, err error) {
+func (or *orchestrator) PutConfigRecord(ctx context.Context, key string, value *fftypes.JSONAny) (outputValue *fftypes.JSONAny, err error) {
 	configRecord := &fftypes.ConfigRecord{
 		Key:   key,
 		Value: value,

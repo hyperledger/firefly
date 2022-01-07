@@ -31,7 +31,7 @@ func TestPutConfigRecord(t *testing.T) {
 	o, r := newTestAdminServer()
 	input := &fftypes.ConfigRecord{
 		Key:   "foo",
-		Value: fftypes.Byteable(`{"foo": "bar"}`),
+		Value: fftypes.JSONAnyPtr(`{"foo": "bar"}`),
 	}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

@@ -397,7 +397,7 @@ func TestPersistBatchGoodDataUpsertOptimizeExistingFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
+				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},
 	}
@@ -430,7 +430,7 @@ func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
+				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},
 	}
@@ -544,7 +544,7 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:    fftypes.NewUUID(),
-		Value: fftypes.Byteable(`"test"`),
+		Value: fftypes.JSONAnyPtr(`"test"`),
 		Hash:  fftypes.NewRandB32(),
 	}
 	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
@@ -558,7 +558,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -576,7 +576,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -593,7 +593,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -170,9 +170,11 @@ func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
 				dataItem := messageData[0]
 				if dataItem.Validator == fftypes.MessageTypeDefinition {
 					var org *fftypes.Organization
-					err := json.Unmarshal(dataItem.Value, &org)
-					if err != nil {
-						return false
+					if dataItem.Value != nil {
+						err := json.Unmarshal([]byte(*dataItem.Value), &org)
+						if err != nil {
+							return false
+						}
 					}
 					if org != nil && org.Name != "" && org.ID != nil && org.Parent == "" {
 						return true

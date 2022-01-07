@@ -44,7 +44,7 @@ type Data struct {
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value"`
+	Value     *JSONAny      `json:"value"`
 	Blob      *BlobRef      `json:"blob,omitempty"`
 }
 
@@ -84,7 +84,7 @@ func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
 
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	if d.Value == nil {
-		d.Value = Byteable(NullString)
+		d.Value = JSONAnyPtr(NullString)
 	}
 	valueIsNull := d.Value.String() == NullString
 	if valueIsNull && (d.Blob == nil || d.Blob.Hash == nil) {

@@ -106,7 +106,8 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 		do := data.Value.JSONObject()
 		do["filename"] = mpart.Filename
 		do["mimetype"] = mpart.Mimetype
-		data.Value, _ = json.Marshal(&do)
+		b, _ := json.Marshal(&do)
+		data.Value = fftypes.JSONAnyPtrBytes(b)
 	}
 	if data.Validator == "" {
 		data.Validator = fftypes.ValidatorTypeJSON

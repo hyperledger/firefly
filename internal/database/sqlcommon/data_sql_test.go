@@ -51,7 +51,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
-		Value:     []byte(val.String()),
+		Value:     fftypes.JSONAnyPtr(val.String()),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", dataID, mock.Anything).Return()
@@ -92,7 +92,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		},
 		Hash:    fftypes.NewRandB32(),
 		Created: fftypes.Now(),
-		Value:   []byte(val2.String()),
+		Value:   fftypes.JSONAnyPtr(val2.String()),
 		Blob: &fftypes.BlobRef{
 			Hash:   fftypes.NewRandB32(),
 			Public: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",

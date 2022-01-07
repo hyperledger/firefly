@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,5 +18,5 @@ package fftypes
 
 type ConfigRecord struct {
 	Key   string   `json:"key,omitempty"`
-	Value Byteable `json:"value,omitempty"`
+	Value *JSONAny `json:"value,omitempty"`
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -135,7 +135,7 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return pm.sendAndSubmitBatch(ctx, batch, nodes, payload, contexts)
+		return pm.sendAndSubmitBatch(ctx, batch, nodes, fftypes.JSONAnyPtrBytes(payload), contexts)
 	})
 }
 
@@ -174,7 +174,7 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 	return nil
 }
 
-func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload fftypes.Byteable, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
+func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload *fftypes.JSONAny, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
 	l := log.L(ctx)
 
 	// TODO: move to using DIDs consistently as the way to reference the node/organization (i.e. node.Owner becomes a DID)
@@ -199,7 +199,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 		}
 
 		// Send the payload itself
-		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload)
+		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload.Bytes())
 		if err != nil {
 			return err
 		}
@@ -222,7 +222,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 	return nil
 }
 
-func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
+func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload *fftypes.JSONAny, contexts []*fftypes.Bytes32) (err error) {
 	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, payload, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
 		return err
 	}

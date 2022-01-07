@@ -707,7 +707,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:    fftypes.NewUUID(),
-		Value: fftypes.Byteable(`{}`),
+		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)
@@ -757,7 +757,7 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:    fftypes.NewUUID(),
-		Value: fftypes.Byteable(`{}`),
+		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)
@@ -809,7 +809,7 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:    fftypes.NewUUID(),
-		Value: fftypes.Byteable(`{}`),
+		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)
@@ -851,7 +851,7 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:    fftypes.NewUUID(),
-		Value: fftypes.Byteable(`{}`),
+		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 	err := msg.Seal(em.ctx)
 	assert.NoError(t, err)

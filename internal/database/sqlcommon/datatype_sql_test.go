@@ -53,7 +53,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Hash:      randB32,
 		Created:   fftypes.Now(),
-		Value:     []byte(val.String()),
+		Value:     fftypes.JSONAnyPtr(val.String()),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionDataTypes, fftypes.ChangeEventTypeCreated, "ns1", datatypeID, mock.Anything).Return()
@@ -87,7 +87,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		Version:   "0.0.1",
 		Hash:      randB32,
 		Created:   fftypes.Now(),
-		Value:     []byte(val2.String()),
+		Value:     fftypes.JSONAnyPtr(val2.String()),
 	}
 	err = s.UpsertDatatype(context.Background(), datatypeUpdated, true)
 	assert.NoError(t, err)

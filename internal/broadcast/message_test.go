@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -68,7 +68,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 			},
 		},
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, false)
 	assert.NoError(t, err)
@@ -104,7 +104,7 @@ func TestBroadcastRootOrg(t *testing.T) {
 
 	data := &fftypes.Data{
 		ID:        fftypes.NewUUID(),
-		Value:     orgBytes,
+		Value:     fftypes.JSONAnyPtrBytes(orgBytes),
 		Validator: fftypes.MessageTypeDefinition,
 	}
 
@@ -152,7 +152,7 @@ func TestBroadcastRootOrgBadData(t *testing.T) {
 	ctx := context.Background()
 	data := &fftypes.Data{
 		ID:        fftypes.NewUUID(),
-		Value:     []byte("not an org"),
+		Value:     fftypes.JSONAnyPtr("not an org"),
 		Validator: fftypes.MessageTypeDefinition,
 	}
 
@@ -226,7 +226,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 			},
 		},
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, true)
 	assert.NoError(t, err)
@@ -324,7 +324,7 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, false)
 	assert.EqualError(t, err, "pop")
@@ -343,7 +343,7 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, false)
 	assert.Regexp(t, "FF10206", err)
@@ -438,7 +438,7 @@ func TestBroadcastPrepare(t *testing.T) {
 			},
 		},
 		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}
 	sender := bm.NewBroadcast("ns1", msg)

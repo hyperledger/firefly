@@ -82,8 +82,9 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 		Namespace: group.Namespace, // must go in the same ordering context as the message
 		Created:   fftypes.Now(),
 	}
-	data.Value, err = json.Marshal(&group)
+	b, err := json.Marshal(&group)
 	if err == nil {
+		data.Value = fftypes.JSONAnyPtrBytes(b)
 		err = group.Validate(ctx, true)
 		if err == nil {
 			err = data.Seal(ctx, nil)
@@ -207,7 +208,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 			return nil, err
 		}
 		var newGroup fftypes.Group
-		err = json.Unmarshal(data[0].Value, &newGroup)
+		err = json.Unmarshal(data[0].Value.Bytes(), &newGroup)
 		if err != nil {
 			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
 			return nil, nil

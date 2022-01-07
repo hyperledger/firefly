@@ -211,7 +211,7 @@ func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *fftypes.BlobRef
 	return nil, nil
 }
 
-func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable) error {
+func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value *fftypes.JSONAny) error {
 	if validator == "" {
 		validator = fftypes.ValidatorTypeJSON
 	}
@@ -240,7 +240,7 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 	return nil
 }
 
-func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable, blobRef *fftypes.BlobRef) (data *fftypes.Data, blob *fftypes.Blob, err error) {
+func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value *fftypes.JSONAny, blobRef *fftypes.BlobRef) (data *fftypes.Data, blob *fftypes.Blob, err error) {
 
 	if err := dm.checkValidation(ctx, ns, validator, datatype, value); err != nil {
 		return nil, nil, err

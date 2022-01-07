@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -72,7 +72,7 @@ var postData = &oapispec.Route{
 			if err := json.Unmarshal([]byte(metadata), &marshalCheck); err != nil {
 				metadata = fmt.Sprintf(`"%s"`, metadata)
 			}
-			data.Value = fftypes.Byteable(metadata)
+			data.Value = fftypes.JSONAnyPtr(metadata)
 		}
 		output, err = r.Or.Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err

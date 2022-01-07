@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -118,7 +118,7 @@ type DataRefOrValue struct {
 
 	Validator ValidatorType `json:"validator,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value,omitempty"`
+	Value     *JSONAny      `json:"value,omitempty"`
 	Blob      *BlobRef      `json:"blob,omitempty"`
 }
 

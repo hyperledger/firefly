@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in comdiliance with the License.
@@ -912,7 +912,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -966,7 +966,7 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -1010,7 +1010,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -1069,7 +1069,7 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -1151,7 +1151,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
