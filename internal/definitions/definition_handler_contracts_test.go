@@ -106,12 +106,6 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
-	rag := mbi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		ctx := a.Get(0).(context.Context)
-		fn := a.Get(1).(func(context.Context) error)
-		rag.Return(fn(ctx))
-	}
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineFFI),
@@ -150,12 +144,6 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 func TestPersistFFIUpsertFFIFail(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
-	rag := mbi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		ctx := a.Get(0).(context.Context)
-		fn := a.Get(1).(func(context.Context) error)
-		rag.Return(fn(ctx))
-	}
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
@@ -169,12 +157,6 @@ func TestPersistFFIUpsertFFIMethodFail(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
-	rag := mbi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		ctx := a.Get(0).(context.Context)
-		fn := a.Get(1).(func(context.Context) error)
-		rag.Return(fn(ctx))
-	}
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
@@ -188,12 +170,6 @@ func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
-	rag := mbi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		ctx := a.Get(0).(context.Context)
-		fn := a.Get(1).(func(context.Context) error)
-		rag.Return(fn(ctx))
-	}
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
@@ -233,12 +209,6 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 	mdi := dh.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		ctx := a.Get(0).(context.Context)
-		fn := a.Get(1).(func(context.Context) error)
-		rag.Return(fn(ctx))
-	}
 	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)

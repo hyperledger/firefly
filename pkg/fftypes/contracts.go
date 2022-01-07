@@ -66,3 +66,7 @@ func (c *ContractAPI) Topic() string {
 func (c *ContractAPI) SetBroadcastMessage(msgID *UUID) {
 	c.Message = msgID
 }
+
+func (c *ContractAPI) LocationAndLedgerEquals(a *ContractAPI) bool {
+	return c.Location.Hash().Equals(a.Location.Hash()) && c.Ledger.Hash().Equals(a.Ledger.Hash())
+}

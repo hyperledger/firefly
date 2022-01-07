@@ -30,29 +30,23 @@ func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) 
 		return false, nil
 	}
 
-	err = dh.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		err = dh.database.UpsertFFI(ctx, ffi)
-		if err != nil {
-			return err
-		}
-
-		for _, method := range ffi.Methods {
-			err := dh.database.UpsertFFIMethod(ctx, method)
-			if err != nil {
-				return err
-			}
-		}
-
-		for _, event := range ffi.Events {
-			err := dh.database.UpsertFFIEvent(ctx, event)
-			if err != nil {
-				return err
-			}
-		}
-		return err
-	})
+	err = dh.database.UpsertFFI(ctx, ffi)
 	if err != nil {
 		return false, err
+	}
+
+	for _, method := range ffi.Methods {
+		err := dh.database.UpsertFFIMethod(ctx, method)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	for _, event := range ffi.Events {
+		err := dh.database.UpsertFFIEvent(ctx, event)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
@@ -64,15 +58,12 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 		return false, err
 	}
 	if existing != nil && err == nil {
-		if !existing.Location.Hash().Equals(api.Location.Hash()) || !existing.Ledger.Hash().Equals(api.Ledger.Hash()) {
+		if !api.LocationAndLedgerEquals(existing) {
 			return false, nil
 		}
 	}
 	err = dh.database.UpsertContractAPI(ctx, api, database.UpsertOptimizationSkip)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+	return err == nil, err
 }
 
 func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (actionResult SystemBroadcastAction, err error) {
@@ -94,12 +85,12 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftyp
 	case err != nil:
 		actionResult = ActionRetry
 	case valid:
-		l.Infof("Contract definition created id=%s author=%s", broadcast.ID, msg.Header.Author)
+		l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID)
 		actionResult = ActionConfirm
 		err = dh.database.InsertEvent(ctx, event)
 	default:
-		l.Warnf("Contract definition rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
+		l.Warnf("Contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
 		event = fftypes.NewEvent(fftypes.EventTypeContractInterfaceRejected, broadcast.Namespace, broadcast.ID)
 		actionResult = ActionReject
 		err = dh.database.InsertEvent(ctx, event)
