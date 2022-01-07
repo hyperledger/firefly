@@ -7,7 +7,7 @@ CREATE TABLE nodes (
   name           VARCHAR(64)     NOT NULL,
   description    VARCHAR(4096)   NOT NULL,
   dx_peer        VARCHAR(256),
-  dx_endpoint    BYTEA,
+  dx_endpoint    TEXT,
   created        BIGINT          NOT NULL
 );
 

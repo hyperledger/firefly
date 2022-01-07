@@ -298,9 +298,9 @@ func TestQueryFactoryBadNestedValue(t *testing.T) {
 }
 
 func TestQueryFactoryStringMatchNonString(t *testing.T) {
-	fb := DataQueryFactory.NewFilter(context.Background())
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.And(
-		fb.Contains("value", "stuff"),
+		fb.Contains("sequence", "stuff"),
 	).Finalize()
 	assert.Regexp(t, "FF10305", err)
 }
