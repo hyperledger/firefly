@@ -114,6 +114,7 @@ var routes = []*oapispec.Route{
 	postNewContractAPI,
 	getContractAPIByName,
 	getContractAPIs,
+	putContractAPI,
 	postContractAPIInvoke,
 	postContractAPIQuery,
 	postContractAPISubscribe,

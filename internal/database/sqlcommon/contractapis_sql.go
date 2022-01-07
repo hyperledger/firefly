@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,7 +43,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.ContractAPI, optimization database.UpsertOptimization) (err error) {
+func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.ContractAPI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err

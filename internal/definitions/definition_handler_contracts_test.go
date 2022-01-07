@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -106,7 +106,6 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
-
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineFFI),
@@ -125,6 +124,21 @@ func TestPersistFFIValidateFFIFail(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, valid)
 	mcm.AssertExpectations(t)
+}
+
+func TestHandleFFIBroadcastReject(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
+	mbi := dh.database.(*databasemocks.Plugin)
+	mcm := dh.contracts.(*contractmocks.Manager)
+	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	action, err := dh.handleFFIBroadcast(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Tag: string(fftypes.SystemTagDefineFFI),
+		},
+	}, []*fftypes.Data{})
+	assert.Equal(t, ActionReject, action)
+	assert.NoError(t, err)
 }
 
 func TestPersistFFIUpsertFFIFail(t *testing.T) {
@@ -194,9 +208,9 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	data := &fftypes.Data{
 		Value: fftypes.Byteable(b),
 	}
-	mbi := dh.database.(*databasemocks.Plugin)
-	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi := dh.database.(*databasemocks.Plugin)
+	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -204,7 +218,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineFFI),
 		},
 	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, ActionRetry, action)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -219,6 +233,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -230,9 +245,31 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestPersistContractAPIUpsertFFIFail(t *testing.T) {
+func TestPersistContractAPIGetFail(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
+	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	_, err := dh.persistContractAPI(context.Background(), testContractAPI())
+	assert.Regexp(t, "pop", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestPersistContractAPIDifferentLocation(t *testing.T) {
+	existing := testContractAPI()
+	existing.Location = []byte(`{"existing": true}`)
+	dh := newTestDefinitionHandlers(t)
+	mbi := dh.database.(*databasemocks.Plugin)
+	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(existing, nil)
+	valid, err := dh.persistContractAPI(context.Background(), testContractAPI())
+	assert.False(t, valid)
+	assert.NoError(t, err)
+	mbi.AssertExpectations(t)
+}
+
+func TestPersistContractAPIUpsertFail(t *testing.T) {
+	dh := newTestDefinitionHandlers(t)
+	mbi := dh.database.(*databasemocks.Plugin)
+	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := dh.persistContractAPI(context.Background(), testContractAPI())
 	assert.Regexp(t, "pop", err)
@@ -268,6 +305,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
+	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -275,6 +313,6 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 			Tag: string(fftypes.SystemTagDefineContractAPI),
 		},
 	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, ActionRetry, action)
 	assert.Regexp(t, "pop", err)
 }

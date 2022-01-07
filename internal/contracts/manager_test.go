@@ -1552,6 +1552,88 @@ func TestBroadcastContractAPI(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestBroadcastContractAPIExisting(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mbm := cm.broadcast.(*broadcastmocks.Manager)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	apiID := fftypes.NewUUID()
+	existing := &fftypes.ContractAPI{
+		ID:        apiID,
+		Namespace: "ns1",
+		Ledger:    []byte{},
+		Location:  []byte{},
+		Name:      "banana",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	api := &fftypes.ContractAPI{
+		ID:        apiID,
+		Namespace: "ns1",
+		Ledger:    []byte{},
+		Location:  []byte{},
+		Name:      "banana",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
+	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
+	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
+	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
+	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	assert.NoError(t, err)
+}
+
+func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mbm := cm.broadcast.(*broadcastmocks.Manager)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	apiID := fftypes.NewUUID()
+	existing := &fftypes.ContractAPI{
+		ID:        apiID,
+		Namespace: "ns1",
+		Ledger:    []byte{},
+		Location:  []byte("old"),
+		Name:      "banana",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	api := &fftypes.ContractAPI{
+		ID:        apiID,
+		Namespace: "ns1",
+		Ledger:    []byte{},
+		Location:  []byte("new"),
+		Name:      "banana",
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
+	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
+	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
+	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
+	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	assert.Regexp(t, "FF10316", err)
+}
+
 func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
@@ -1583,25 +1665,6 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *interfaceID, *api.Interface.ID)
-}
-
-func TestBroadcastContractAPIExisting(t *testing.T) {
-	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	api := &fftypes.ContractAPI{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Ledger:    []byte{},
-		Location:  []byte{},
-		Name:      "banana",
-		Interface: &fftypes.FFIReference{
-			ID: fftypes.NewUUID(),
-		},
-	}
-	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(&fftypes.ContractAPI{}, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
-	assert.Regexp(t, "FF10316", err)
 }
 
 func TestBroadcastContractAPIResolveLocalOrgFail(t *testing.T) {

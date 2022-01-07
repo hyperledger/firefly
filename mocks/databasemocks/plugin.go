@@ -2497,13 +2497,13 @@ func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRe
 	return r0
 }
 
-// UpsertContractAPI provides a mock function with given fields: ctx, cd, optimization
-func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI, optimization database.UpsertOptimization) error {
-	ret := _m.Called(ctx, cd, optimization)
+// UpsertContractAPI provides a mock function with given fields: ctx, cd
+func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error {
+	ret := _m.Called(ctx, cd)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractAPI, database.UpsertOptimization) error); ok {
-		r0 = rf(ctx, cd, optimization)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractAPI) error); ok {
+		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)
 	}

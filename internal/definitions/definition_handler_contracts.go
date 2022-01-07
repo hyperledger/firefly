@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -53,73 +52,79 @@ func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) 
 }
 
 func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftypes.ContractAPI) (valid bool, err error) {
-	err = dh.database.UpsertContractAPI(ctx, api, database.UpsertOptimizationSkip)
+	existing, err := dh.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 	if err != nil {
 		return false, err
 	}
-	return true, nil
+	if existing != nil {
+		if !api.LocationAndLedgerEquals(existing) {
+			return false, nil
+		}
+	}
+	err = dh.database.UpsertContractAPI(ctx, api)
+	return err == nil, err
 }
 
-func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
-	var actionResult SystemBroadcastAction
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (actionResult SystemBroadcastAction, err error) {
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
-		if err := broadcast.Validate(ctx, true); err != nil {
+		if validationErr := broadcast.Validate(ctx, true); validationErr != nil {
 			l.Warnf("Unable to process contract definition broadcast %s - validate failed: %s", msg.Header.ID, err)
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistFFI(ctx, &broadcast)
-			if err != nil {
-				return ActionReject, err
-			}
 		}
 	}
 
 	var event *fftypes.Event
-	if valid {
-		l.Infof("Contract definition created id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
+	switch {
+	case err != nil:
+		actionResult = ActionRetry
+	case valid:
+		l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
+		event = fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID)
 		actionResult = ActionConfirm
-	} else {
-		l.Warnf("Contract definition rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
+		err = dh.database.InsertEvent(ctx, event)
+	default:
+		l.Warnf("Contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
+		event = fftypes.NewEvent(fftypes.EventTypeContractInterfaceRejected, broadcast.Namespace, broadcast.ID)
 		actionResult = ActionReject
+		err = dh.database.InsertEvent(ctx, event)
 	}
-	err := dh.database.InsertEvent(ctx, event)
-	return actionResult, err
+	return
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
-	var actionResult SystemBroadcastAction
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (actionResult SystemBroadcastAction, err error) {
 	l := log.L(ctx)
 	var broadcast fftypes.ContractAPI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
-		if err := broadcast.Validate(ctx, true); err != nil {
+		if validateErr := broadcast.Validate(ctx, true); validateErr != nil {
 			l.Warnf("Unable to process contract API broadcast %s - validate failed: %s", msg.Header.ID, err)
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistContractAPI(ctx, &broadcast)
-			if err != nil {
-				return ActionReject, err
-			}
 		}
 	}
 
 	var event *fftypes.Event
-	if valid {
+	switch {
+	case err != nil:
+		actionResult = ActionRetry
+	case valid:
 		l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypePoolConfirmed, broadcast.Namespace, broadcast.ID)
+		event = fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID)
 		actionResult = ActionConfirm
-	} else {
+		err = dh.database.InsertEvent(ctx, event)
+	default:
 		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypePoolRejected, broadcast.Namespace, broadcast.ID)
+		event = fftypes.NewEvent(fftypes.EventTypeContractAPIRejected, broadcast.Namespace, broadcast.ID)
 		actionResult = ActionReject
+		err = dh.database.InsertEvent(ctx, event)
 	}
-	err := dh.database.InsertEvent(ctx, event)
-	return actionResult, err
+	return
 }
