@@ -35,6 +35,8 @@ import (
 	"github.com/mattn/go-sqlite3"
 )
 
+var ffSQLiteRegistered = false
+
 type SQLite3 struct {
 	sqlcommon.SQLCommon
 }
@@ -46,10 +48,13 @@ func connHook(conn *sqlite3.SQLiteConn) error {
 
 func (sqlite *SQLite3) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 	capabilities := &database.Capabilities{}
-	sql.Register("sqlite3_ff",
-		&sqlite3.SQLiteDriver{
-			ConnectHook: connHook,
-		})
+	if !ffSQLiteRegistered {
+		sql.Register("sqlite3_ff",
+			&sqlite3.SQLiteDriver{
+				ConnectHook: connHook,
+			})
+		ffSQLiteRegistered = true
+	}
 	return sqlite.SQLCommon.Init(ctx, sqlite, prefix, callbacks, capabilities)
 }
 
