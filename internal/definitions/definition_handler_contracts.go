@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -57,12 +56,12 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	if err != nil {
 		return false, err
 	}
-	if existing != nil && err == nil {
+	if existing != nil {
 		if !api.LocationAndLedgerEquals(existing) {
 			return false, nil
 		}
 	}
-	err = dh.database.UpsertContractAPI(ctx, api, database.UpsertOptimizationSkip)
+	err = dh.database.UpsertContractAPI(ctx, api)
 	return err == nil, err
 }
 

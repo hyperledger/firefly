@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -425,7 +425,7 @@ type iFFIEventCollection interface {
 }
 
 type iContractAPICollection interface {
-	UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI, optimization UpsertOptimization) error
+	UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error
 	GetContractAPIs(ctx context.Context, ns string, filter AndFilter) ([]*fftypes.ContractAPI, *FilterResult, error)
 	GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractAPI, error)
 	GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error)

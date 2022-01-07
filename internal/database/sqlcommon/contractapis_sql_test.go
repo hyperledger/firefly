@@ -55,7 +55,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, fftypes.ChangeEventTypeCreated, "ns1", apiID, mock.Anything).Return()
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, fftypes.ChangeEventTypeUpdated, "ns1", apiID, mock.Anything).Return()
 
-	err := s.UpsertContractAPI(ctx, contractAPI, database.UpsertOptimizationSkip)
+	err := s.UpsertContractAPI(ctx, contractAPI)
 	assert.NoError(t, err)
 
 	// Check we get the exact same ContractAPI back
@@ -66,7 +66,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 
 	contractAPI.Interface.Version = "v1.1.0"
 
-	err = s.UpsertContractAPI(ctx, contractAPI, database.UpsertOptimizationSkip)
+	err = s.UpsertContractAPI(ctx, contractAPI)
 	assert.NoError(t, err)
 
 	// Check we get the exact same ContractAPI back
@@ -79,7 +79,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 func TestContractAPIDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractAPI(context.Background(), &fftypes.ContractAPI{}, database.UpsertOptimizationSkip)
+	err := s.UpsertContractAPI(context.Background(), &fftypes.ContractAPI{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -88,7 +88,7 @@ func TestContractAPIDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractAPI(context.Background(), &fftypes.ContractAPI{}, database.UpsertOptimizationSkip)
+	err := s.UpsertContractAPI(context.Background(), &fftypes.ContractAPI{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -102,7 +102,7 @@ func TestContractAPIDBFailInsert(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		Interface: &fftypes.FFIReference{},
 	}
-	err := s.UpsertContractAPI(context.Background(), api, database.UpsertOptimizationSkip)
+	err := s.UpsertContractAPI(context.Background(), api)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -117,7 +117,7 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		Interface: &fftypes.FFIReference{},
 	}
-	err := s.UpsertContractAPI(context.Background(), api, database.UpsertOptimizationSkip)
+	err := s.UpsertContractAPI(context.Background(), api)
 	assert.Regexp(t, "pop", err)
 }
 
