@@ -45,14 +45,7 @@ func Registry() *prometheus.Registry {
 // registered twice
 func GetAdminServerInstrumentation() *muxprom.Instrumentation {
 	if adminInstrumentation == nil {
-		adminInstrumentation = muxprom.NewCustomInstrumentation(
-			true,
-			"ff_apiserver",
-			"admin",
-			prometheus.DefBuckets,
-			map[string]string{},
-			Registry(),
-		)
+		adminInstrumentation = newInstrumentation("admin")
 	}
 	return adminInstrumentation
 }
@@ -61,16 +54,20 @@ func GetAdminServerInstrumentation() *muxprom.Instrumentation {
 // registered twice
 func GetRestServerInstrumentation() *muxprom.Instrumentation {
 	if restInstrumentation == nil {
-		restInstrumentation = muxprom.NewCustomInstrumentation(
-			true,
-			"ff_apiserver",
-			"rest",
-			prometheus.DefBuckets,
-			map[string]string{},
-			Registry(),
-		)
+		restInstrumentation = newInstrumentation("rest")
 	}
 	return restInstrumentation
+}
+
+func newInstrumentation(subsystem string) *muxprom.Instrumentation {
+	return muxprom.NewCustomInstrumentation(
+		true,
+		"ff_apiserver",
+		subsystem,
+		prometheus.DefBuckets,
+		map[string]string{},
+		Registry(),
+	)
 }
 
 func initMetricsCollectors() {
