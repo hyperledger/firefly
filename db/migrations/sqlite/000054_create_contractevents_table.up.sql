@@ -8,3 +8,7 @@ CREATE TABLE contractevents (
   info             BYTEA,
   timestamp        BIGINT          NOT NULL
 );
+
+CREATE UNIQUE INDEX contractevents_name ON contractevents(namespace,name);
+CREATE UNIQUE INDEX contractevents_timestamp ON contractevents(timestamp);
+CREATE UNIQUE INDEX contractevents_subscription_id ON contractevents(subscription_id);
