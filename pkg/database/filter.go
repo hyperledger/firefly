@@ -376,7 +376,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 			case field.filterAsString():
 				value = &stringField{}
 			case filterOpIsStringMatch(f.op):
-				return nil, i18n.NewError(f.fb.ctx, i18n.MsgFieldTypeNoStringMatching, name, field.description(), f.op)
+				return nil, i18n.NewError(f.fb.ctx, i18n.MsgFieldTypeNoStringMatching, name, field.description())
 			default:
 				value = field.getSerialization()
 			}

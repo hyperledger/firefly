@@ -222,6 +222,6 @@ var (
 	MsgQueryOpUnsupportedMod       = ffm("FF10302", "Operation '%s' on '%s' does not support modifiers", 400)
 	MsgDXBadSize                   = ffm("FF10303", "Unexpected size returned from data exchange upload. Size=%d Expected=%d")
 	MsgBlobMismatchSealingData     = ffm("FF10304", "Blob mismatch when sealing data")
-	MsgFieldTypeNoStringMatching   = ffm("FF10305", "Field '%s' of type '%s' does not support partial or case-insensitive string matching via '%s' operator", 400)
-	MsgFieldMatchNoNull            = ffm("FF10306", "Comparison operator '%s' for field '%s' cannot accept a null value", 400)
+	MsgFieldTypeNoStringMatching   = ffm("FF10305", "Field '%s' of type '%s' does not support partial or case-insensitive string matching", 400)
+	MsgFieldMatchNoNull            = ffm("FF10306", "Comparison operator for field '%s' cannot accept a null value", 400)
 )

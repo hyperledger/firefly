@@ -294,7 +294,7 @@ func (f *jsonField) Scan(src interface{}) (err error) {
 func (f *jsonField) Value() (driver.Value, error)         { return f.b, nil }
 func (f *jsonField) String() string                       { return string(f.b) }
 func (f *JSONField) getSerialization() FieldSerialization { return &jsonField{} }
-func (f *JSONField) filterAsString() bool                 { return false }
+func (f *JSONField) filterAsString() bool                 { return true }
 func (f *JSONField) description() string                  { return "JSON-blob" }
 
 type FFNameArrayField struct{}
