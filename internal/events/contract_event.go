@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,32 +24,32 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) ContractEvent(blockchainEvent *blockchain.ContractEvent) error {
+func (em *eventManager) ContractEvent(event *blockchain.ContractEvent) error {
 	return em.retry.Do(em.ctx, "persist contract event", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// TODO: should cache this lookup for efficiency
-			sub, err := em.database.GetContractSubscriptionByProtocolID(ctx, blockchainEvent.Subscription)
+			sub, err := em.database.GetContractSubscriptionByProtocolID(ctx, event.Subscription)
 			if err != nil {
 				return err
 			}
 			if sub == nil {
-				log.L(ctx).Warnf("Event received from unknown subscription %s", blockchainEvent.Subscription)
+				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
 				return nil // no retry
 			}
-			contractEvent := &fftypes.ContractEvent{
+			chainEvent := &fftypes.BlockchainEvent{
 				ID:           fftypes.NewUUID(),
 				Namespace:    sub.Namespace,
 				Subscription: sub.ID,
-				Name:         blockchainEvent.Name,
-				Outputs:      blockchainEvent.Outputs,
-				Info:         blockchainEvent.Info,
-				Timestamp:    blockchainEvent.Timestamp,
+				Name:         event.Name,
+				Outputs:      event.Outputs,
+				Info:         event.Info,
+				Timestamp:    event.Timestamp,
 			}
-			if err = em.database.InsertContractEvent(ctx, contractEvent); err != nil {
+			if err = em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
-			event := fftypes.NewEvent(fftypes.EventTypeContractEvent, contractEvent.Namespace, contractEvent.ID)
-			if err = em.database.InsertEvent(ctx, event); err != nil {
+			ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEvent, chainEvent.Namespace, chainEvent.ID)
+			if err = em.database.InsertEvent(ctx, ffEvent); err != nil {
 				return err
 			}
 			return nil

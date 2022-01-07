@@ -47,8 +47,8 @@ var (
 	EventTypeContractAPIConfirmed EventType = ffEnum("eventtype", "contract_api_confirmed")
 	// EventTypeContractInterfaceRejected occurs when a new contract API has been rejected
 	EventTypeContractAPIRejected EventType = ffEnum("eventtype", "contract_api_rejected")
-	// EventTypeContractEvent occurs when a new event has been emitted from a subscribed smart contract
-	EventTypeContractEvent EventType = ffEnum("eventtype", "contract_event")
+	// EventTypeBlockchainEvent occurs when a new event has been recorded from the blockchain
+	EventTypeBlockchainEvent EventType = ffEnum("eventtype", "blockchain_event")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

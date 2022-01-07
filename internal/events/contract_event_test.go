@@ -50,14 +50,14 @@ func TestContractEventWithRetries(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetContractSubscriptionByProtocolID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetContractSubscriptionByProtocolID", mock.Anything, "sb-1").Return(sub, nil).Times(3)
-	mdi.On("InsertContractEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
-	mdi.On("InsertContractEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.ContractEvent) bool {
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		eventID = e.ID
 		return *e.Subscription == *sub.ID && e.Name == "Changed" && e.Namespace == "ns"
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return e.Type == fftypes.EventTypeContractEvent && e.Reference != nil && e.Reference == eventID
+		return e.Type == fftypes.EventTypeBlockchainEvent && e.Reference != nil && e.Reference == eventID
 	})).Return(nil).Once()
 
 	err := em.ContractEvent(ev)

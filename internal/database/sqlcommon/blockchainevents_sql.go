@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	contractEventColumns = []string{
+	blockchainEventColumns = []string{
 		"id",
 		"namespace",
 		"subscription_id",
@@ -37,12 +37,12 @@ var (
 		"info",
 		"timestamp",
 	}
-	contractEventFilterFieldMap = map[string]string{
+	blockchainEventFilterFieldMap = map[string]string{
 		"subscription": "subscription_id",
 	}
 )
 
-func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) (err error) {
+func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -50,8 +50,8 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	if event.Sequence, err = s.insertTx(ctx, tx,
-		sq.Insert("contractevents").
-			Columns(contractEventColumns...).
+		sq.Insert("blockchainevents").
+			Columns(blockchainEventColumns...).
 			Values(
 				event.ID,
 				event.Namespace,
@@ -62,7 +62,7 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 				event.Timestamp,
 			),
 		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionContractEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
 		},
 	); err != nil {
 		return err
@@ -71,8 +71,8 @@ func (s *SQLCommon) InsertContractEvent(ctx context.Context, event *fftypes.Cont
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractEvent, error) {
-	var event fftypes.ContractEvent
+func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*fftypes.BlockchainEvent, error) {
+	var event fftypes.BlockchainEvent
 	err := row.Scan(
 		&event.ID,
 		&event.Namespace,
@@ -85,18 +85,18 @@ func (s *SQLCommon) contractEventResult(ctx context.Context, row *sql.Rows) (*ff
 		&event.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractevents")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "blockchainevents")
 	}
 	return &event, nil
 }
 
-func (s *SQLCommon) getContractEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractEvent, error) {
-	cols := append([]string{}, contractEventColumns...)
+func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.BlockchainEvent, error) {
+	cols := append([]string{}, blockchainEventColumns...)
 	cols = append(cols, sequenceColumn)
 
 	rows, _, err := s.query(ctx,
 		sq.Select(cols...).
-			From("contractevents").
+			From("blockchainevents").
 			Where(pred),
 	)
 	if err != nil {
@@ -109,7 +109,7 @@ func (s *SQLCommon) getContractEventPred(ctx context.Context, desc string, pred 
 		return nil, nil
 	}
 
-	event, err := s.contractEventResult(ctx, rows)
+	event, err := s.blockchainEventResult(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -117,17 +117,17 @@ func (s *SQLCommon) getContractEventPred(ctx context.Context, desc string, pred 
 	return event, nil
 }
 
-func (s *SQLCommon) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
-	return s.getContractEventPred(ctx, id.String(), sq.Eq{"id": id})
+func (s *SQLCommon) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+	return s.getBlockchainEventPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetContractEvents(ctx context.Context, filter database.Filter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
-	cols := append([]string{}, contractEventColumns...)
+func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+	cols := append([]string{}, blockchainEventColumns...)
 	cols = append(cols, sequenceColumn)
 
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(cols...).From("contractevents"),
-		filter, contractEventFilterFieldMap, []interface{}{"sequence"})
+		sq.Select(cols...).From("blockchainevents"),
+		filter, blockchainEventFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -138,14 +138,14 @@ func (s *SQLCommon) GetContractEvents(ctx context.Context, filter database.Filte
 	}
 	defer rows.Close()
 
-	events := []*fftypes.ContractEvent{}
+	events := []*fftypes.BlockchainEvent{}
 	for rows.Next() {
-		event, err := s.contractEventResult(ctx, rows)
+		event, err := s.blockchainEventResult(ctx, rows)
 		if err != nil {
 			return nil, nil, err
 		}
 		events = append(events, event)
 	}
 
-	return events, s.queryRes(ctx, tx, "contractevents", fop, fi), err
+	return events, s.queryRes(ctx, tx, "blockchainevents", fop, fi), err
 }

@@ -1,4 +1,4 @@
-CREATE TABLE contractevents (
+CREATE TABLE blockchainevents (
   seq              INTEGER         PRIMARY KEY AUTOINCREMENT,
   id               UUID            NOT NULL,
   namespace        VARCHAR(64)     NOT NULL,

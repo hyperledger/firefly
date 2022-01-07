@@ -202,7 +202,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		time.Sleep(3 * time.Second)
 	}
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|contract_event"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
 
 	wsUrl1 := url.URL{
@@ -309,7 +309,7 @@ func waitForChangeEvent(t *testing.T, client *resty.Client, c chan *fftypes.Chan
 func waitForContractEvent(t *testing.T, client *resty.Client, c chan *fftypes.EventDelivery, match map[string]interface{}) map[string]interface{} {
 	for {
 		eventDelivery := <-c
-		if eventDelivery.Type == fftypes.EventTypeContractEvent {
+		if eventDelivery.Type == fftypes.EventTypeBlockchainEvent {
 			event, err := GetContractEvent(t, client, eventDelivery.Event.Reference.String())
 			if err != nil {
 				t.Logf("WARN: unable to get event: %v", err.Error())

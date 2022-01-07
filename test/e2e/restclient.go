@@ -482,7 +482,7 @@ func GetContractSubscriptions(t *testing.T, client *resty.Client, startTime time
 	return subs
 }
 
-func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time, subscriptionID *fftypes.UUID) (events []*fftypes.ContractEvent) {
+func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time, subscriptionID *fftypes.UUID) (events []*fftypes.BlockchainEvent) {
 	path := urlContractEvents
 	resp, err := client.R().
 		SetQueryParam("timestamp", fmt.Sprintf(">%d", startTime.UnixNano())).

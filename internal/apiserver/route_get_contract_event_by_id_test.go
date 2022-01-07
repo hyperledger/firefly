@@ -36,7 +36,7 @@ func TestGetContractEventByID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetContractEventByID", mock.Anything, id).
-		Return(&fftypes.ContractEvent{}, nil)
+		Return(&fftypes.BlockchainEvent{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

@@ -451,15 +451,15 @@ type iContractSubscriptionCollection interface {
 	DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
 }
 
-type iContractEventCollection interface {
-	// InsertContractEvent - insert an event from an external smart contract
-	InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) (err error)
+type iBlockchainEventCollection interface {
+	// InsertBlockchainEvent - insert an event from an external smart contract
+	InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error)
 
-	// GetContractEventByID - get smart contract event by ID
-	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
+	// GetBlockchainEventByID - get smart contract event by ID
+	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
 
-	// GetContractEvents - get smart contract events
-	GetContractEvents(ctx context.Context, filter Filter) ([]*fftypes.ContractEvent, *FilterResult, error)
+	// GetBlockchainEvents - get smart contract events
+	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*fftypes.BlockchainEvent, *FilterResult, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
@@ -529,7 +529,7 @@ type PersistenceInterface interface {
 	iFFIEventCollection
 	iContractAPICollection
 	iContractSubscriptionCollection
-	iContractEventCollection
+	iBlockchainEventCollection
 	iChartCollection
 }
 
@@ -543,9 +543,9 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages       OrderedUUIDCollectionNS = "messages"
-	CollectionEvents         OrderedUUIDCollectionNS = "events"
-	CollectionContractEvents OrderedUUIDCollectionNS = "contractevents"
+	CollectionMessages         OrderedUUIDCollectionNS = "messages"
+	CollectionEvents           OrderedUUIDCollectionNS = "events"
+	CollectionBlockchainEvents OrderedUUIDCollectionNS = "contractevents"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -932,8 +932,8 @@ var ContractSubscriptionQueryFactory = &queryFields{
 	"created":    &TimeField{},
 }
 
-// ContractEventQueryFactory filter fields for contract events
-var ContractEventQueryFactory = &queryFields{
+// BlockchainEventQueryFactory filter fields for contract events
+var BlockchainEventQueryFactory = &queryFields{
 	"id":           &UUIDField{},
 	"namespace":    &StringField{},
 	"subscription": &StringField{},

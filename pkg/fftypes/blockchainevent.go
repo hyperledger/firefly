@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,7 +16,7 @@
 
 package fftypes
 
-type ContractEvent struct {
+type BlockchainEvent struct {
 	ID           *UUID      `json:"id,omitempty"`
 	Sequence     int64      `json:"sequence"`
 	Namespace    string     `json:"namespace,omitempty"`

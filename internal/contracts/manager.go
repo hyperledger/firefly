@@ -50,8 +50,8 @@ type Manager interface {
 	GetContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractSubscription, error)
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
-	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
-	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error)
+	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
+	GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error)
 }
 
 type contractManager struct {
@@ -528,10 +528,10 @@ func (cm *contractManager) SubscribeContractAPI(ctx context.Context, ns, apiName
 	return cm.SubscribeContract(ctx, ns, eventPath, req)
 }
 
-func (cm *contractManager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
-	return cm.database.GetContractEventByID(ctx, id)
+func (cm *contractManager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+	return cm.database.GetBlockchainEventByID(ctx, id)
 }
 
-func (cm *contractManager) GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
-	return cm.database.GetContractEvents(ctx, cm.scopeNS(ns, filter))
+func (cm *contractManager) GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+	return cm.database.GetBlockchainEvents(ctx, cm.scopeNS(ns, filter))
 }
