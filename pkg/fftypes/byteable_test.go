@@ -77,7 +77,7 @@ func TestByteableMarshalNull(t *testing.T) {
 	var pb Byteable
 	b, err := pb.MarshalJSON()
 	assert.NoError(t, err)
-	assert.Equal(t, nullString, string(b))
+	assert.Equal(t, NullString, string(b))
 }
 
 func TestByteableUnmarshalFail(t *testing.T) {
@@ -94,7 +94,7 @@ func TestScan(t *testing.T) {
 
 	var h Byteable
 	assert.NoError(t, h.Scan(nil))
-	assert.Equal(t, []byte(nullString), []byte(h))
+	assert.Equal(t, []byte(NullString), []byte(h))
 
 	assert.NoError(t, h.Scan(`{"some": "stuff"}`))
 	assert.Equal(t, "stuff", h.JSONObject().GetString("some"))

@@ -28,7 +28,7 @@ import (
 func TestDatatypeReference(t *testing.T) {
 
 	var dr *DatatypeRef
-	assert.Equal(t, nullString, dr.String())
+	assert.Equal(t, NullString, dr.String())
 	dr = &DatatypeRef{
 		Name:    "customer",
 		Version: "0.0.1",

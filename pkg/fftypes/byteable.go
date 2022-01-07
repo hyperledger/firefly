@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	nullString = "null"
+	NullString = "null"
 )
 
 // Byteable uses raw encode/decode to preserve field order, and can handle any types of field.
@@ -46,7 +46,7 @@ func (h *Byteable) UnmarshalJSON(b []byte) error {
 
 func (h Byteable) MarshalJSON() ([]byte, error) {
 	if h == nil {
-		return []byte(nullString), nil
+		return []byte(NullString), nil
 	}
 	return h, nil
 }
@@ -92,7 +92,7 @@ func (h Byteable) JSONObjectNowarn() JSONObject {
 func (h *Byteable) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case nil:
-		nullVal := []byte(nullString)
+		nullVal := []byte(NullString)
 		*h = nullVal
 		return nil
 	case []byte:

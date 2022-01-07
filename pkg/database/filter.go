@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 // Filter is the output of the builder
@@ -214,11 +215,8 @@ func valueString(f FieldSerialization) string {
 	v, _ := f.Value()
 	switch tv := v.(type) {
 	case nil:
-		return "null"
+		return fftypes.NullString
 	case []byte:
-		if tv == nil {
-			return "null"
-		}
 		return fmt.Sprintf("'%s'", tv)
 	case int64:
 		return strconv.FormatInt(tv, 10)
@@ -343,9 +341,24 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		if !ok {
 			return nil, i18n.NewError(f.fb.ctx, i18n.MsgInvalidFilterField, name)
 		}
-		value = field.getSerialization()
-		if err = value.Scan(f.value); err != nil {
-			return nil, i18n.WrapError(f.fb.ctx, err, i18n.MsgInvalidValueForFilterField, name)
+		skipScan := false
+		switch f.value.(type) {
+		case nil:
+			value = &nullField{}
+			skipScan = true
+		case string:
+			if field.filterAsString() {
+				value = &stringField{}
+			} else {
+				value = field.getSerialization()
+			}
+		default:
+			value = field.getSerialization()
+		}
+		if !skipScan {
+			if err = value.Scan(f.value); err != nil {
+				return nil, i18n.WrapError(f.fb.ctx, err, i18n.MsgInvalidValueForFilterField, name)
+			}
 		}
 	}
 

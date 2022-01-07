@@ -70,6 +70,7 @@ behavior.
 |----------|------------------------------------|
 | `!`      | Not - negates the match            |
 | `:`      | Case insensitive                   |
+| `?`      | Treat empty match string as null   |
 
 ## Detailed examples
 
@@ -85,3 +86,5 @@ behavior.
 | `$_cat`      | Ends with with "_cat"                      |
 | `!:^cats/`   | Does not start with "cats/", "CATs/" etc.  |
 | `!$-cat`     | Does not end with "-cat"                   |
+| `?=`         | Is null                                    |
+| `!?=`        | Is not null                                |

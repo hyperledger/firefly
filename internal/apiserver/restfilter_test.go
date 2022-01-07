@@ -87,6 +87,14 @@ func TestBuildFilterEachCombo(t *testing.T) {
 	testIndividualFilter(t, "tag=!$cat", "( tag !$ 'cat' )")
 	testIndividualFilter(t, "tag=:$cat", "( tag :$ 'cat' )")
 	testIndividualFilter(t, "tag=!:$cat", "( tag ;$ 'cat' )")
+	testIndividualFilter(t, "tag==", "( tag == '' )")
+	testIndividualFilter(t, "tag=!=", "( tag != '' )")
+	testIndividualFilter(t, "tag=:!=", "( tag ;= '' )")
+	testIndividualFilter(t, "tag=?", "( tag == null )")
+	testIndividualFilter(t, "tag=!?", "( tag != null )")
+	testIndividualFilter(t, "tag=?=", "( tag == null )")
+	testIndividualFilter(t, "tag=!?=", "( tag != null )")
+	testIndividualFilter(t, "tag=?:!=", "( tag ;= null )")
 }
 
 func testFailFilter(t *testing.T, queryString, errCode string) {
