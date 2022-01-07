@@ -143,6 +143,10 @@ type Location struct {
 	Chaincode string `json:"chaincode"`
 }
 
+type paramDetails struct {
+	Type string
+}
+
 var batchPinEvent = "BatchPin"
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
 var cnPatteren = regexp.MustCompile("CN=([^,]+)")
@@ -323,11 +327,15 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	sub := msgJSON.GetString("subId")
 	name := msgJSON.GetString("eventName")
 
+	// TODO: Get timestamp from blockchain once available
+	timestamp := fftypes.Now()
+
 	event := &blockchain.ContractEvent{
 		Subscription: sub,
 		Name:         name,
 		Outputs:      *payload,
 		Info:         msgJSON,
+		Timestamp:    timestamp,
 	}
 	return f.callbacks.ContractEvent(event)
 }
@@ -596,8 +604,65 @@ func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Loc
 }
 
 func (f *Fabric) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
-	// TODO: Implement validation
-	return nil
+	paramDetails, err := f.parseParamDetails(ctx, param.Details)
+	if err != nil {
+		return err
+	}
+	return f.validateParamInternal(ctx, param, paramDetails)
+}
+
+func (f *Fabric) parseParamDetails(ctx context.Context, details fftypes.Byteable) (*paramDetails, error) {
+	ethParam := paramDetails{}
+	if err := json.Unmarshal(details, &ethParam); err != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, err)
+	}
+	if ethParam.Type == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, "'type' not set")
+	}
+	return &ethParam, nil
+}
+
+func (f *Fabric) validateParamInternal(ctx context.Context, param *fftypes.FFIParam, paramDetails *paramDetails) error {
+	switch {
+	case len(param.Components) > 0:
+		// object
+		if paramDetails.Type == "object" {
+			for _, childParam := range param.Components {
+				if err := f.ValidateFFIParam(ctx, childParam); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	case strings.HasPrefix(param.Type, "byte"):
+		// byte (array)
+		if paramDetails.Type == "string" {
+			return nil
+		}
+	case strings.HasSuffix(param.Type, "[]"):
+		// array
+		if strings.Count(param.Type, "[]") == strings.Count(paramDetails.Type, "[]") {
+			param.Type = strings.TrimSuffix(param.Type, "[]")
+			paramDetails.Type = strings.TrimSuffix(paramDetails.Type, "[]")
+			return f.validateParamInternal(ctx, param, paramDetails)
+		}
+	case param.Type == "integer":
+		// integer
+		if paramDetails.Type == param.Type {
+			return nil
+		}
+	case param.Type == "string":
+		// string
+		if paramDetails.Type == param.Type {
+			return nil
+		}
+	case param.Type == "boolean":
+		// boolean
+		if paramDetails.Type == param.Type {
+			return nil
+		}
+	}
+	return i18n.NewError(ctx, i18n.MsgContractInternalType, param.Name, param.Type, paramDetails.Type)
 }
 
 func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {

@@ -1458,8 +1458,9 @@ func TestParseParam(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	param := &fftypes.FFIParam{
-		Name: "x",
-		Type: "integer",
+		Name:    "x",
+		Type:    "integer",
+		Details: []byte(`{"type": "integer"}`),
 	}
 	err := e.ValidateFFIParam(context.Background(), param)
 	assert.NoError(t, err)
