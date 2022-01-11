@@ -24,6 +24,26 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
+func (em *eventManager) persistBlockchainEvent(ctx context.Context, ns string, subID *fftypes.UUID, event *blockchain.Event) error {
+	chainEvent := &fftypes.BlockchainEvent{
+		ID:           fftypes.NewUUID(),
+		Namespace:    ns,
+		Subscription: subID,
+		Name:         event.Name,
+		Output:       event.Output,
+		Info:         event.Info,
+		Timestamp:    event.Timestamp,
+	}
+	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
+		return err
+	}
+	ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEvent, ns, chainEvent.ID)
+	if err := em.database.InsertEvent(ctx, ffEvent); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (em *eventManager) ContractEvent(event *blockchain.ContractEvent) error {
 	return em.retry.Do(em.ctx, "persist contract event", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
@@ -36,20 +56,8 @@ func (em *eventManager) ContractEvent(event *blockchain.ContractEvent) error {
 				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
 				return nil // no retry
 			}
-			chainEvent := &fftypes.BlockchainEvent{
-				ID:           fftypes.NewUUID(),
-				Namespace:    sub.Namespace,
-				Subscription: sub.ID,
-				Name:         event.Name,
-				Outputs:      event.Outputs,
-				Info:         event.Info,
-				Timestamp:    event.Timestamp,
-			}
-			if err = em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
-				return err
-			}
-			ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEvent, chainEvent.Namespace, chainEvent.ID)
-			if err = em.database.InsertEvent(ctx, ffEvent); err != nil {
+
+			if err := em.persistBlockchainEvent(ctx, sub.Namespace, sub.ID, &event.Event); err != nil {
 				return err
 			}
 			return nil

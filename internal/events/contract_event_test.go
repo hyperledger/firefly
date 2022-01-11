@@ -33,12 +33,14 @@ func TestContractEventWithRetries(t *testing.T) {
 
 	ev := &blockchain.ContractEvent{
 		Subscription: "sb-1",
-		Name:         "Changed",
-		Outputs: fftypes.JSONObject{
-			"value": "1",
-		},
-		Info: fftypes.JSONObject{
-			"blockNumber": "10",
+		Event: blockchain.Event{
+			Name: "Changed",
+			Output: fftypes.JSONObject{
+				"value": "1",
+			},
+			Info: fftypes.JSONObject{
+				"blockNumber": "10",
+			},
 		},
 	}
 	sub := &fftypes.ContractSubscription{
@@ -72,12 +74,14 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 
 	ev := &blockchain.ContractEvent{
 		Subscription: "sb-1",
-		Name:         "Changed",
-		Outputs: fftypes.JSONObject{
-			"value": "1",
-		},
-		Info: fftypes.JSONObject{
-			"blockNumber": "10",
+		Event: blockchain.Event{
+			Name: "Changed",
+			Output: fftypes.JSONObject{
+				"value": "1",
+			},
+			Info: fftypes.JSONObject{
+				"blockNumber": "10",
+			},
 		},
 	}
 

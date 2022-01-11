@@ -1216,7 +1216,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 
 	ev := em.Calls[0].Arguments[0].(*blockchain.ContractEvent)
 	assert.Equal(t, "sb-cb37cc07-e873-4f58-44ab-55add6bba320", ev.Subscription)
-	assert.Equal(t, "AssetCreated", ev.Name)
+	assert.Equal(t, "AssetCreated", ev.Event.Name)
 
 	outputs := fftypes.JSONObject{
 		"AppraisedValue": float64(10),
@@ -1225,7 +1225,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		"Owner":          "me",
 		"Size":           float64(3),
 	}
-	assert.Equal(t, outputs, ev.Outputs)
+	assert.Equal(t, outputs, ev.Event.Output)
 
 	info := fftypes.JSONObject{
 		"blockNumber":   float64(10),
@@ -1234,7 +1234,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		"subId":         "sb-cb37cc07-e873-4f58-44ab-55add6bba320",
 		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
 	}
-	assert.Equal(t, info, ev.Info)
+	assert.Equal(t, info, ev.Event.Info)
 
 	em.AssertExpectations(t)
 }

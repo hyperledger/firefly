@@ -198,6 +198,12 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	sBatchHash := dataJSON.GetString("batchHash")
 	sPayloadRef := dataJSON.GetString("payloadRef")
 	sContexts := dataJSON.GetStringArray("contexts")
+	timestampStr := msgJSON.GetString("timestamp")
+	timestamp, err := fftypes.ParseString(timestampStr)
+	if err != nil {
+		log.L(ctx).Errorf("BatchPin event is not valid - missing timestamp: %+v", msgJSON)
+		return nil // move on
+	}
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
@@ -243,6 +249,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		contexts[i] = &hash
 	}
 
+	delete(msgJSON, "data")
 	batch := &blockchain.BatchPin{
 		Namespace:       ns,
 		TransactionID:   &txnID,
@@ -250,11 +257,17 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		BatchHash:       &batchHash,
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
+		Event: blockchain.Event{
+			Source:    e.Name(),
+			Name:      "BatchPin",
+			Output:    dataJSON,
+			Info:      msgJSON,
+			Timestamp: timestamp,
+		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	delete(msgJSON, "data")
-	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash, msgJSON)
+	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash)
 }
 
 func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
@@ -271,11 +284,15 @@ func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
 
 	event := &blockchain.ContractEvent{
 		Subscription: sub,
-		Name:         name,
-		Outputs:      dataJSON,
-		Info:         msgJSON,
-		Timestamp:    timestamp,
+		Event: blockchain.Event{
+			Source:    e.Name(),
+			Name:      name,
+			Output:    dataJSON,
+			Info:      msgJSON,
+			Timestamp: timestamp,
+		},
 	}
+
 	return e.callbacks.ContractEvent(event)
 }
 

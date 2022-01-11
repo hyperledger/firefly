@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,7 +32,8 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string) error {
+	additionalInfo := batchPin.Event.Info
 
 	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, protocolTxID, signingIdentity)
 	defer func() {
@@ -118,6 +119,10 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			if err := em.persistBlockchainEvent(ctx, batchPin.Namespace, nil, &batchPin.Event); err != nil {
+				return err
+			}
+
 			valid, err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
 			// Note that in the case of a bad batch broadcast, we don't store the pin. Because we know we
 			// are never going to be able to process it (we retrieved it successfully, it's just invalid).

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,6 +45,9 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		BatchID:         fftypes.NewUUID(),
 		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Event: blockchain.Event{
+			Name: "BatchPin",
+		},
 	}
 	batchData := &fftypes.Batch{
 		ID:        batch.BatchID,
@@ -83,6 +86,12 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 			a[1].(func(ctx context.Context) error)(a[0].(context.Context)),
 		}
 	}
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == batch.Event.Name
+	})).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeBlockchainEvent
+	})).Return(nil)
 	mdi.On("GetTransactionByID", mock.Anything, batchData.Payload.TX.ID).Return(nil, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
@@ -92,7 +101,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
 
-	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -137,7 +146,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1")
 	assert.NoError(t, err)
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
@@ -164,7 +173,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1")
 	mpi.AssertExpectations(t)
 	assert.Regexp(t, "FF10158", err)
 }
@@ -185,7 +194,7 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1")
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
 }
 

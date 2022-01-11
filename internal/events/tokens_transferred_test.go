@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,8 +22,10 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,16 +38,24 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	uri := "firefly://token/1"
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		URI:        uri,
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Amount:     *fftypes.NewFFBigInt(1),
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			URI:        uri,
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Amount:     *fftypes.NewFFBigInt(1),
+		},
+		Event: blockchain.Event{
+			Name: "Transfer",
+			Info: info,
+		},
 	}
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -55,16 +65,21 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(4)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(3)
-	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
-	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
-	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Once()
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	})).Return(nil).Times(3)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+	})).Return(nil).Times(3)
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -78,21 +93,27 @@ func TestTokensTransferredIgnoreExisting(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Amount:     *fftypes.NewFFBigInt(1),
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Amount:     *fftypes.NewFFBigInt(1),
+		},
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(&fftypes.TokenTransfer{}, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -106,18 +127,25 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Amount:     *fftypes.NewFFBigInt(1),
-		TX: fftypes.TransactionRef{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Amount:     *fftypes.NewFFBigInt(1),
+			TX: fftypes.TransactionRef{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.TransactionTypeTokenTransfer,
+			},
+		},
+		Event: blockchain.Event{
+			Info: info,
 		},
 	}
 	pool := &fftypes.TokenPool{
@@ -145,8 +173,7 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 		return *t.ID == *transfer.TX.ID && t.Subject.Type == fftypes.TransactionTypeTokenTransfer && t.ProtocolID == "tx1"
 	}), false).Return(database.HashMismatch).Once()
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -160,18 +187,25 @@ func TestTokensTransferredWithTransactionLoadLocalID(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Amount:     *fftypes.NewFFBigInt(1),
-		TX: fftypes.TransactionRef{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Amount:     *fftypes.NewFFBigInt(1),
+			TX: fftypes.TransactionRef{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.TransactionTypeTokenTransfer,
+			},
+		},
+		Event: blockchain.Event{
+			Info: info,
 		},
 	}
 	pool := &fftypes.TokenPool{
@@ -193,14 +227,19 @@ func TestTokensTransferredWithTransactionLoadLocalID(t *testing.T) {
 	}), false).Return(nil).Times(2)
 	mdi.On("GetTokenTransfer", em.ctx, localID).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTokenTransfer", em.ctx, localID).Return(nil, nil).Once()
-	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Once()
-	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Once()
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	})).Return(nil).Once()
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+	})).Return(nil).Once()
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Once()
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	assert.Equal(t, *localID, *transfer.LocalID)
@@ -216,18 +255,25 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Amount:     *fftypes.NewFFBigInt(1),
-		TX: fftypes.TransactionRef{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Amount:     *fftypes.NewFFBigInt(1),
+			TX: fftypes.TransactionRef{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.TransactionTypeTokenTransfer,
+			},
+		},
+		Event: blockchain.Event{
+			Info: info,
 		},
 	}
 	pool := &fftypes.TokenPool{
@@ -248,14 +294,19 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 		return *t.ID == *transfer.TX.ID && t.Subject.Type == fftypes.TransactionTypeTokenTransfer && t.ProtocolID == "tx1"
 	}), false).Return(nil).Once()
 	mdi.On("GetTokenTransfer", em.ctx, localID).Return(&fftypes.TokenTransfer{}, nil).Once()
-	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Once()
-	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Once()
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	})).Return(nil).Once()
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+	})).Return(nil).Once()
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Once()
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	assert.NotEqual(t, *localID, *transfer.LocalID)
@@ -271,22 +322,28 @@ func TestTokensTransferredBadPool(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Amount:     *fftypes.NewFFBigInt(1),
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Amount:     *fftypes.NewFFBigInt(1),
+		},
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(nil, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -301,17 +358,24 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	uri := "firefly://token/1"
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		URI:        uri,
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Message:    fftypes.NewUUID(),
-		Amount:     *fftypes.NewFFBigInt(1),
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			URI:        uri,
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Message:    fftypes.NewUUID(),
+			Amount:     *fftypes.NewFFBigInt(1),
+		},
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -322,16 +386,21 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
-	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Times(2)
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	})).Return(nil).Times(2)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+	})).Return(nil).Times(2)
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	mdi.On("GetMessageByID", em.ctx, transfer.Message).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetMessageByID", em.ctx, transfer.Message).Return(message, nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -346,17 +415,24 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	uri := "firefly://token/1"
-	transfer := &fftypes.TokenTransfer{
-		Type:       fftypes.TokenTransferTypeTransfer,
-		TokenIndex: "0",
-		URI:        uri,
-		Connector:  "erc1155",
-		Key:        "0x12345",
-		From:       "0x1",
-		To:         "0x2",
-		ProtocolID: "123",
-		Message:    fftypes.NewUUID(),
-		Amount:     *fftypes.NewFFBigInt(1),
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			URI:        uri,
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Message:    fftypes.NewUUID(),
+			Amount:     *fftypes.NewFFBigInt(1),
+		},
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -368,8 +444,14 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
-	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(2)
-	mdi.On("UpdateTokenBalances", em.ctx, transfer).Return(nil).Times(2)
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	})).Return(nil).Times(2)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+	})).Return(nil).Times(2)
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	mdi.On("GetMessageByID", em.ctx, mock.Anything).Return(message, nil).Times(2)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 	mdi.On("UpsertMessage", em.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
@@ -379,8 +461,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokensTransferred(mti, "F1", transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

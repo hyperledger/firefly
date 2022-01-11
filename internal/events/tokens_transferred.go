@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -67,7 +67,7 @@ func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, 
 	return em.txhelper.PersistTransaction(ctx, transaction)
 }
 
-func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer, protocolTxID string) error {
 	var batchID *fftypes.UUID
 
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
@@ -81,22 +81,22 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID strin
 			}
 
 			// Check that this is from a known pool
-			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.Connector, poolProtocolID)
+			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.Connector, transfer.PoolProtocolID)
 			if err != nil {
 				return err
 			}
 			if pool == nil {
-				log.L(ctx).Infof("Token transfer received for unknown pool '%s' - ignoring: %s", poolProtocolID, protocolTxID)
+				log.L(ctx).Infof("Token transfer received for unknown pool '%s' - ignoring: %s", transfer.PoolProtocolID, protocolTxID)
 				return nil
 			}
 			transfer.Namespace = pool.Namespace
 			transfer.Pool = pool.ID
 
 			if transfer.TX.ID != nil {
-				if err := em.loadTransferOperation(ctx, transfer); err != nil {
+				if err := em.loadTransferOperation(ctx, &transfer.TokenTransfer); err != nil {
 					return err
 				}
-				if valid, err := em.persistTokenTransaction(ctx, pool.Namespace, transfer, protocolTxID, additionalInfo); err != nil || !valid {
+				if valid, err := em.persistTokenTransaction(ctx, pool.Namespace, &transfer.TokenTransfer, protocolTxID, transfer.Event.Info); err != nil || !valid {
 					return err
 				}
 
@@ -111,11 +111,15 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID strin
 				transfer.LocalID = fftypes.NewUUID()
 			}
 
-			if err := em.database.UpsertTokenTransfer(ctx, transfer); err != nil {
+			if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, &transfer.Event); err != nil {
+				return err
+			}
+
+			if err := em.database.UpsertTokenTransfer(ctx, &transfer.TokenTransfer); err != nil {
 				log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 				return err
 			}
-			if err := em.database.UpdateTokenBalances(ctx, transfer); err != nil {
+			if err := em.database.UpdateTokenBalances(ctx, &transfer.TokenTransfer); err != nil {
 				log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.ProtocolID, err)
 				return err
 			}

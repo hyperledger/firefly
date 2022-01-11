@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
@@ -38,19 +39,22 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 
 	txID := fftypes.NewUUID()
 	operations := []*fftypes.Operation{}
+	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
 		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -62,18 +66,21 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
+	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
 		Key:           "0x0",
 		TransactionID: nil,
 		Connector:     "erc1155",
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -86,11 +93,16 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
+	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "123",
 		Key:        "0x0",
 		Connector:  "erc1155",
+		Event: blockchain.Event{
+			Name: "TokenPool",
+			Info: info,
+		},
 	}
 	storedPool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -118,18 +130,23 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil).Times(2)
 	mdi.On("GetTransactionByID", em.ctx, txID).Return(storedTX, nil)
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == chainPool.Event.Name
+	})).Return(nil).Once()
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeBlockchainEvent
+	})).Return(nil).Once()
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return *tx.Subject.Reference == *storedTX.Subject.Reference
-	}), false).Return(nil)
-	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil)
+	}), false).Return(nil).Once()
+	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
-	})).Return(nil)
+	})).Return(nil).Once()
 	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(storedMessage, nil).Once()
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)
+	err := em.TokenPoolCreated(mti, chainPool, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -142,11 +159,15 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
+	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "123",
 		Key:        "0x0",
 		Connector:  "erc1155",
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 	storedPool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -161,8 +182,7 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)
+	err := em.TokenPoolCreated(mti, chainPool, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -176,11 +196,15 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	txID := fftypes.NewUUID()
+	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "123",
 		Key:        "0x0",
 		Connector:  "magic-tokens",
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 	storedPool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -207,6 +231,12 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "magic-tokens", "123").Return(storedPool, nil).Times(3)
 	mdi.On("GetTransactionByID", em.ctx, storedPool.TX.ID).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTransactionByID", em.ctx, storedPool.TX.ID).Return(storedTX, nil).Times(3)
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == chainPool.Event.Name
+	})).Return(nil).Once()
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeBlockchainEvent
+	})).Return(nil).Once()
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return *tx.Subject.Reference == *storedTX.Subject.Reference
 	}), false).Return(nil).Once()
@@ -218,8 +248,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mam.On("ActivateTokenPool", em.ctx, storedPool, storedTX).Return(nil).Once()
 	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(storedMessage, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, chainPool, "tx1", info)
+	err := em.TokenPoolCreated(mti, chainPool, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -242,11 +271,19 @@ func TestConfirmPoolTxFail(t *testing.T) {
 			ID:   txID,
 		},
 	}
+	event := &blockchain.Event{
+		Name: "TokenPool",
+	}
 
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == event.Name
+	})).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeBlockchainEvent
+	})).Return(nil)
 	mdi.On("GetTransactionByID", em.ctx, txID).Return(nil, fmt.Errorf("pop"))
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.confirmPool(em.ctx, storedPool, "tx1", info)
+	err := em.confirmPool(em.ctx, storedPool, "tx1", event)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -276,15 +313,23 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 			Type:      fftypes.TransactionTypeTokenPool,
 		},
 	}
+	event := &blockchain.Event{
+		Name: "TokenPool",
+	}
 
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == event.Name
+	})).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeBlockchainEvent
+	})).Return(nil)
 	mdi.On("GetTransactionByID", em.ctx, txID).Return(storedTX, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return *tx.Subject.Reference == *storedTX.Subject.Reference
 	}), false).Return(nil)
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.confirmPool(em.ctx, storedPool, "tx1", info)
+	err := em.confirmPool(em.ctx, storedPool, "tx1", event)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -309,12 +354,16 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 			},
 		},
 	}
+	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
 		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 
 	mti.On("Name").Return("mock-tokens")
@@ -328,8 +377,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 		return pool.Pool.Namespace == "test-ns" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1")
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
@@ -351,19 +399,22 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 			Input: fftypes.JSONObject{},
 		},
 	}
+	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
 		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -385,19 +436,22 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 			},
 		},
 	}
+	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
 		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
+		Event: blockchain.Event{
+			Info: info,
+		},
 	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
 
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mti, pool, "tx1", info)
+	err := em.TokenPoolCreated(mti, pool, "tx1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

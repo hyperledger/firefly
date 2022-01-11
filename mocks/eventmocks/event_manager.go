@@ -51,13 +51,13 @@ func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: bi, batch, author, protocolTxID, additionalInfo
-func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(bi, batch, author, protocolTxID, additionalInfo)
+// BatchPinComplete provides a mock function with given fields: bi, batch, author, protocolTxID
+func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string) error {
+	ret := _m.Called(bi, batch, author, protocolTxID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(bi, batch, author, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string, string) error); ok {
+		r0 = rf(bi, batch, author, protocolTxID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -245,13 +245,13 @@ func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 	return r0
 }
 
-// TokenPoolCreated provides a mock function with given fields: ti, pool, protocolTxID, additionalInfo
-func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(ti, pool, protocolTxID, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: ti, pool, protocolTxID
+func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string) error {
+	ret := _m.Called(ti, pool, protocolTxID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string, fftypes.JSONObject) error); ok {
-		r0 = rf(ti, pool, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string) error); ok {
+		r0 = rf(ti, pool, protocolTxID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -259,13 +259,13 @@ func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: ti, poolProtocolID, transfer, protocolTxID, additionalInfo
-func (_m *EventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(ti, poolProtocolID, transfer, protocolTxID, additionalInfo)
+// TokensTransferred provides a mock function with given fields: ti, transfer, protocolTxID
+func (_m *EventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer, protocolTxID string) error {
+	ret := _m.Called(ti, transfer, protocolTxID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(ti, poolProtocolID, transfer, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenTransfer, string) error); ok {
+		r0 = rf(ti, transfer, protocolTxID)
 	} else {
 		r0 = ret.Error(0)
 	}

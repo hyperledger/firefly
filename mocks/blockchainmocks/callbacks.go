@@ -14,13 +14,13 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// BatchPinComplete provides a mock function with given fields: batch, signingIdentity, protocolTxID, additionalInfo
-func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(batch, signingIdentity, protocolTxID, additionalInfo)
+// BatchPinComplete provides a mock function with given fields: batch, signingIdentity, protocolTxID
+func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string) error {
+	ret := _m.Called(batch, signingIdentity, protocolTxID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(batch, signingIdentity, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, string, string) error); ok {
+		r0 = rf(batch, signingIdentity, protocolTxID)
 	} else {
 		r0 = ret.Error(0)
 	}

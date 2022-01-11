@@ -1721,6 +1721,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: source
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: subscription
         schema:
           type: string
@@ -1783,6 +1788,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  source:
+                    type: string
                   subscription: {}
                   timestamp: {}
                 type: object
@@ -1834,6 +1841,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  source:
+                    type: string
                   subscription: {}
                   timestamp: {}
                 type: object

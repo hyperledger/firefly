@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -75,12 +76,12 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenPoolCreated(plugin Plugin, pool *TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(plugin Plugin, pool *TokenPool, protocolTxID string) error
 
 	// TokensTransferred notifies on a transfer between token accounts.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokensTransferred(plugin Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokensTransferred(plugin Plugin, transfer *TokenTransfer, protocolTxID string) error
 }
 
 // Capabilities the supported featureset of the tokens
@@ -108,4 +109,17 @@ type TokenPool struct {
 
 	// Standard is the well-defined token standard that this pool conforms to (optional)
 	Standard string
+
+	// Event contains info on the underlying blockchain event for this pool creation
+	Event blockchain.Event
+}
+
+type TokenTransfer struct {
+	fftypes.TokenTransfer
+
+	// PoolProtocolID is the ID assigned to the token pool by the connector
+	PoolProtocolID string
+
+	// Event contains info on the underlying blockchain event for this transfer
+	Event blockchain.Event
 }

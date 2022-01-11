@@ -58,7 +58,8 @@ type EventManager interface {
 
 	// Bound blockchain callbacks
 	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
-	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string) error
+	ContractEvent(event *blockchain.ContractEvent) error
 
 	// Bound dataexchange callbacks
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
@@ -66,11 +67,8 @@ type EventManager interface {
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
 
 	// Bound token callbacks
-	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
-	TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
-
-	// Bound contract callbacks
-	ContractEvent(event *blockchain.ContractEvent) error
+	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string) error
+	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer, protocolTxID string) error
 
 	// Internal events
 	sysmessaging.SystemEvents

@@ -30,6 +30,7 @@ import (
 var (
 	blockchainEventColumns = []string{
 		"id",
+		"source",
 		"namespace",
 		"subscription_id",
 		"name",
@@ -54,10 +55,11 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 			Columns(blockchainEventColumns...).
 			Values(
 				event.ID,
+				event.Source,
 				event.Namespace,
 				event.Subscription,
 				event.Name,
-				event.Outputs,
+				event.Output,
 				event.Info,
 				event.Timestamp,
 			),
@@ -75,10 +77,11 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 	var event fftypes.BlockchainEvent
 	err := row.Scan(
 		&event.ID,
+		&event.Source,
 		&event.Namespace,
 		&event.Subscription,
 		&event.Name,
-		&event.Outputs,
+		&event.Output,
 		&event.Info,
 		&event.Timestamp,
 		// Must be added to the list of columns in all selects

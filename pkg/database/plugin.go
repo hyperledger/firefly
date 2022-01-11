@@ -935,6 +935,7 @@ var ContractSubscriptionQueryFactory = &queryFields{
 // BlockchainEventQueryFactory filter fields for contract events
 var BlockchainEventQueryFactory = &queryFields{
 	"id":           &UUIDField{},
+	"source":       &StringField{},
 	"namespace":    &StringField{},
 	"subscription": &StringField{},
 	"name":         &StringField{},

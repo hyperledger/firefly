@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -55,8 +56,11 @@ func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus, protocolT
 	}
 }
 
-func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	tx := poolTransaction(pool, fftypes.OpStatusSucceeded, protocolTxID, additionalInfo)
+func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string, ev *blockchain.Event) error {
+	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, ev); err != nil {
+		return nil
+	}
+	tx := poolTransaction(pool, fftypes.OpStatusSucceeded, protocolTxID, ev.Info)
 	if valid, err := em.txhelper.PersistTransaction(ctx, tx); !valid || err != nil {
 		return err
 	}
@@ -139,7 +143,7 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, po
 // It will be at least invoked on the submitter when the pool is first created, to trigger the submitter to announce it.
 // It will be invoked on every node (including the submitter) after the pool is announced+activated, to trigger confirmation of the pool.
 // When received in any other scenario, it should be ignored.
-func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) (err error) {
+func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string) (err error) {
 	var batchID *fftypes.UUID
 	var announcePool *fftypes.TokenPool
 
@@ -157,7 +161,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				} else if msg != nil {
 					batchID = msg.BatchID // trigger rewind after completion of database transaction
 				}
-				return em.confirmPool(ctx, existingPool, protocolTxID, additionalInfo)
+				return em.confirmPool(ctx, existingPool, protocolTxID, &pool.Event)
 			}
 
 			// See if this pool was submitted locally and needs to be announced
@@ -186,7 +190,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		if announcePool != nil {
 			broadcast := &fftypes.TokenPoolAnnouncement{
 				Pool: announcePool,
-				TX:   poolTransaction(announcePool, fftypes.OpStatusPending, protocolTxID, additionalInfo),
+				TX:   poolTransaction(announcePool, fftypes.OpStatusPending, protocolTxID, pool.Event.Info),
 			}
 			log.L(em.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
 			_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)

@@ -28,13 +28,13 @@ func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UU
 	return r0
 }
 
-// TokenPoolCreated provides a mock function with given fields: plugin, pool, protocolTxID, additionalInfo
-func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, pool, protocolTxID, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: plugin, pool, protocolTxID
+func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool, protocolTxID string) error {
+	ret := _m.Called(plugin, pool, protocolTxID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, pool, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string) error); ok {
+		r0 = rf(plugin, pool, protocolTxID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -42,13 +42,13 @@ func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPo
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: plugin, poolProtocolID, transfer, protocolTxID, additionalInfo
-func (_m *Callbacks) TokensTransferred(plugin tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
+// TokensTransferred provides a mock function with given fields: plugin, transfer, protocolTxID
+func (_m *Callbacks) TokensTransferred(plugin tokens.Plugin, transfer *tokens.TokenTransfer, protocolTxID string) error {
+	ret := _m.Called(plugin, transfer, protocolTxID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenTransfer, string) error); ok {
+		r0 = rf(plugin, transfer, protocolTxID)
 	} else {
 		r0 = ret.Error(0)
 	}

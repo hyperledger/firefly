@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/hyperledger/firefly/pkg/wsclient"
@@ -176,6 +177,13 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	operatorAddress := data.GetString("operator")
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
+	rawOutput := data.GetObject("rawOutput") // optional
+
+	timestampStr := data.GetString("timestamp")
+	timestamp, err := fftypes.ParseString(timestampStr)
+	if err != nil {
+		timestamp = fftypes.Now()
+	}
 
 	if tokenType == "" ||
 		protocolID == "" ||
@@ -201,10 +209,17 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Key:           operatorAddress,
 		Connector:     ft.configuredName,
 		Standard:      standard,
+		Event: blockchain.Event{
+			Source:    ft.Name() + ":" + ft.configuredName,
+			Name:      "TokenPool",
+			Output:    rawOutput,
+			Info:      tx,
+			Timestamp: timestamp,
+		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokenPoolCreated(ft, pool, txHash, tx)
+	return ft.callbacks.TokenPoolCreated(ft, pool, txHash)
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
@@ -218,6 +233,13 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	txHash := tx.GetString("transactionHash")
 	tokenIndex := data.GetString("tokenIndex") // optional
 	uri := data.GetString("uri")               // optional
+	rawOutput := data.GetObject("rawOutput")   // optional
+
+	timestampStr := data.GetString("timestamp")
+	timestamp, err := fftypes.ParseString(timestampStr)
+	if err != nil {
+		timestamp = fftypes.Now()
+	}
 
 	var eventName string
 	switch t {
@@ -249,31 +271,43 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		transferData = tokenData{}
 	}
 
-	transfer := &fftypes.TokenTransfer{
-		Type:        t,
-		TokenIndex:  tokenIndex,
-		URI:         uri,
-		Connector:   ft.configuredName,
-		From:        fromAddress,
-		To:          toAddress,
-		ProtocolID:  protocolID,
-		Key:         operatorAddress,
-		Message:     transferData.Message,
-		MessageHash: transferData.MessageHash,
-		TX: fftypes.TransactionRef{
-			ID:   transferData.TX,
-			Type: fftypes.TransactionTypeTokenTransfer,
-		},
-	}
-
-	_, ok := transfer.Amount.Int().SetString(value, 10)
+	var amount fftypes.FFBigInt
+	_, ok := amount.Int().SetString(value, 10)
 	if !ok {
 		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", eventName, data)
 		return nil // move on
 	}
 
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: poolProtocolID,
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:        t,
+			TokenIndex:  tokenIndex,
+			URI:         uri,
+			Connector:   ft.configuredName,
+			From:        fromAddress,
+			To:          toAddress,
+			Amount:      amount,
+			ProtocolID:  protocolID,
+			Key:         operatorAddress,
+			Message:     transferData.Message,
+			MessageHash: transferData.MessageHash,
+			TX: fftypes.TransactionRef{
+				ID:   transferData.TX,
+				Type: fftypes.TransactionTypeTokenTransfer,
+			},
+		},
+		Event: blockchain.Event{
+			Source:    ft.Name() + ":" + ft.configuredName,
+			Name:      eventName,
+			Output:    rawOutput,
+			Info:      tx,
+			Timestamp: timestamp,
+		},
+	}
+
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokensTransferred(ft, poolProtocolID, transfer, txHash, tx)
+	return ft.callbacks.TokensTransferred(ft, transfer, txHash)
 }
 
 func (ft *FFTokens) eventLoop() {

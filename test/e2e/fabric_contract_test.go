@@ -131,7 +131,7 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime, sub.ID)
 	assert.Equal(suite.T(), 1, len(events))
 	assert.Equal(suite.T(), "AssetCreated", events[0].Name)
-	assert.Equal(suite.T(), asset, events[0].Outputs.GetString("name"))
+	assert.Equal(suite.T(), asset, events[0].Output.GetString("name"))
 
 	DeleteContractSubscription(suite.T(), suite.testState.client1, subs[0].ID)
 	subs = GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
