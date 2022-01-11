@@ -104,6 +104,9 @@ func TestScan(t *testing.T) {
 	assert.NoError(t, h.Scan([]byte(`{"some": "stuff"}`)))
 	assert.Equal(t, "stuff", h.JSONObject().GetString("some"))
 
+	assert.NoError(t, h.Scan(`"plainstring"`))
+	assert.Equal(t, "", h.JSONObjectNowarn().GetString("some"))
+
 	assert.Regexp(t, "FF10125", h.Scan(12345))
 
 }

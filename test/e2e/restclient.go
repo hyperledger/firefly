@@ -229,27 +229,29 @@ func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *ff
 	if dt == nil {
 		assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
 		assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
-		assert.Equal(t, float64(len(blob)), data.Value.JSONObject()["size"])
+		assert.Equal(t, "myfile.txt", data.Blob.Name)
 	} else {
 		assert.Equal(t, fftypes.ValidatorTypeNone, data.Validator)
 		assert.Equal(t, *dt, *data.Datatype)
 	}
+	assert.Equal(t, int64(len(blob)), data.Blob.Size)
 	assert.Equal(t, blobHash, *data.Blob.Hash)
 	return &data
 }
 
-func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, error) {
+func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*fftypes.Data, *resty.Response, error) {
 	data := CreateBlob(t, client, nil)
-	return client.R().
+	res, err := client.R().
 		SetBody(fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{DataRef: fftypes.DataRef{ID: data.ID}},
 			},
 		}).
 		Post(urlBroadcastMessage)
+	return data, res, err
 }
 
-func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNames []string) (*resty.Response, error) {
+func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNames []string) (*fftypes.Data, *resty.Response, error) {
 	data := CreateBlob(t, client, &fftypes.DatatypeRef{Name: "myblob"})
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
@@ -258,7 +260,7 @@ func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNam
 			Identity: oName,
 		}
 	}
-	return client.R().
+	res, err := client.R().
 		SetBody(fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{DataRef: fftypes.DataRef{ID: data.ID}},
@@ -269,6 +271,7 @@ func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNam
 			},
 		}).
 		Post(urlPrivateMessage)
+	return data, res, err
 }
 
 func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {

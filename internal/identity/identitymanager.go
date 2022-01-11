@@ -37,7 +37,7 @@ type Manager interface {
 	ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error)
 	ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error)
 	ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error)
-	GetOrgKey(ctx context.Context) string
+	GetLocalOrgKey(ctx context.Context) (string, error)
 	OrgDID(org *fftypes.Organization) string
 	GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error)
 }
@@ -47,6 +47,7 @@ type identityManager struct {
 	plugin     identity.Plugin
 	blockchain blockchain.Plugin
 
+	localOrgSigningKey string
 	localOrgDID        string
 	identityCacheTTL   time.Duration
 	identityCache      *ccache.Cache
@@ -124,7 +125,7 @@ func (im *identityManager) ResolveSigningKeyIdentity(ctx context.Context, signin
 
 }
 
-func (im *identityManager) GetOrgKey(ctx context.Context) string {
+func (im *identityManager) getConfigOrgKey() string {
 	orgKey := config.GetString(config.OrgKey)
 	if orgKey == "" {
 		orgKey = config.GetString(config.OrgIdentityDeprecated)
@@ -132,11 +133,23 @@ func (im *identityManager) GetOrgKey(ctx context.Context) string {
 	return orgKey
 }
 
+func (im *identityManager) GetLocalOrgKey(ctx context.Context) (string, error) {
+	if im.localOrgSigningKey != "" {
+		return im.localOrgSigningKey, nil
+	}
+	resolvedSigningKey, err := im.blockchain.ResolveSigningKey(ctx, im.getConfigOrgKey())
+	if err != nil {
+		return "", err
+	}
+	im.localOrgSigningKey = resolvedSigningKey
+	return im.localOrgSigningKey, nil
+}
+
 func (im *identityManager) ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error) {
 	if im.localOrgDID != "" {
 		return im.localOrgDID, nil
 	}
-	orgKey := im.GetOrgKey(ctx)
+	orgKey := im.getConfigOrgKey()
 
 	im.localOrgDID, err = im.ResolveSigningKeyIdentity(ctx, orgKey)
 	if err != nil {

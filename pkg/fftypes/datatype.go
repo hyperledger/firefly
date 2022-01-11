@@ -53,7 +53,7 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, dt.Namespace, "namespace"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameField(ctx, dt.Name, "name"); err != nil {
+	if err = ValidateFFNameFieldNoUUID(ctx, dt.Name, "name"); err != nil {
 		return err
 	}
 	if err = ValidateFFNameField(ctx, dt.Version, "version"); err != nil {

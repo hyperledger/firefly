@@ -48,8 +48,7 @@ func TestNodeValidation(t *testing.T) {
 	assert.Regexp(t, "FF10203", n.Validate(context.Background(), true))
 
 	var def Definition = n
-	n.Owner = "owner"
-	assert.Equal(t, "ff_org_owner", def.Topic())
+	assert.Equal(t, "ff_organizations", def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, n.Message)
 }

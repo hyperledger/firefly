@@ -85,10 +85,10 @@ There are sub-communities building the blockchain interfaces for each of the "bi
   - Repo: [hyperledger/firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect)
 - Hyperledger Fabric
   - Status: Under active development
-  - Repo: [hyperledger/firefly-fabricconnect](https://github.com/hyperledger/firefly-fabricconnect)
+  - Repo: [hyperledger/firefly-fabconnect](https://github.com/hyperledger/firefly-fabconnect)
 - Corda
   - Status: Core transactions+events proved out. Seeking contributors
-  - Repo: [hyperledger/firefly-fabricconnect](https://github.com/hyperledger/firefly-fabricconnect)
+  - Repo: [hyperledger/firefly-cordaconnect](https://github.com/hyperledger/firefly-cordaconnect)
 
 > _Each FireFly network is tied to a single blockchain technology. Watch this space for
 > evolution of pluggable bridges for tokens, assets and data between networks through

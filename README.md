@@ -128,6 +128,7 @@ list is likely to grow as additional pluggable extensions come online in the com
 - Ethereum (Hyperledger Besu / Quorum) connector - https://github.com/hyperledger/firefly-ethconnect
 - Corda connector: https://github.com/hyperledger/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
 - FireFly Explorer UI - https://github.com/hyperledger/firefly-ui
+- Firefly Performance CLI (https://github.com/hyperledger/firefly-perf-cli)
 
 ## Contributing
 

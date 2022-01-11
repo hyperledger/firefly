@@ -80,12 +80,12 @@ func TestPrivateMessagingPassthroughs(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 	mpm := dh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("GetGroupByID", ctx, mock.Anything).Return(nil, nil)
-	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil, nil)
+	mpm.On("GetGroupsNS", ctx, "ns1", mock.Anything).Return(nil, nil, nil)
 	mpm.On("ResolveInitGroup", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("EnsureLocalGroup", ctx, mock.Anything).Return(false, nil)
 
 	_, _ = dh.GetGroupByID(ctx, fftypes.NewUUID().String())
-	_, _, _ = dh.GetGroups(ctx, nil)
+	_, _, _ = dh.GetGroupsNS(ctx, "ns1", nil)
 	_, _ = dh.ResolveInitGroup(ctx, nil)
 	_, _ = dh.EnsureLocalGroup(ctx, nil)
 

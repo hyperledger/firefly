@@ -852,6 +852,7 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	r := make(<-chan []byte)
 	wsm := e.wsconn.(*wsmocks.WSClient)
 	wsm.On("Receive").Return(r)
+	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
 }
@@ -863,6 +864,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm := e.wsconn.(*wsmocks.WSClient)
 	close(r)
 	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
 }
@@ -874,6 +876,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	wsm := e.wsconn.(*wsmocks.WSClient)
 	close(r)
 	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Close").Return()
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
@@ -885,6 +888,7 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 	r := make(chan []byte)
 	wsm := e.wsconn.(*wsmocks.WSClient)
 	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	operationID := fftypes.NewUUID()
 	data := []byte(`{

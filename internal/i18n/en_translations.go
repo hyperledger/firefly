@@ -239,4 +239,6 @@ var (
 	MsgEventNameMustBeSet           = ffm("FF10319", "Event name must be set", 400)
 	MsgMethodNameMustBeSet          = ffm("FF10320", "Method name must be set", 400)
 	MsgContractEventResolveError    = ffm("FF10321", "Unable to resolve contract event", 400)
+	MsgDXBadSize                    = ffm("FF10322", "Unexpected size returned from data exchange upload. Size=%d Expected=%d")
+	MsgBlobMismatchSealingData      = ffm("FF10323", "Blob mismatch when sealing data")
 )

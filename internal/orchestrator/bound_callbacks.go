@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -46,8 +46,8 @@ func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpSta
 	return bc.ei.TransferResult(bc.dx, trackingID, status, info, opOutput)
 }
 
-func (bc *boundCallbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error {
-	return bc.ei.BLOBReceived(bc.dx, peerID, hash, payloadRef)
+func (bc *boundCallbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
+	return bc.ei.BLOBReceived(bc.dx, peerID, hash, size, payloadRef)
 }
 
 func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) error {

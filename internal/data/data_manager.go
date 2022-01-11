@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,7 +43,7 @@ type Manager interface {
 	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
 	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
 	CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error)
-	DownloadBLOB(ctx context.Context, ns, dataID string) (io.ReadCloser, error)
+	DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error)
 }
 
 type dataManager struct {
@@ -258,7 +258,7 @@ func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validato
 		Value:     value,
 		Blob:      blobRef,
 	}
-	err = data.Seal(ctx)
+	err = data.Seal(ctx, blob)
 	if err == nil {
 		err = dm.database.UpsertData(ctx, data, database.UpsertOptimizationNew)
 	}

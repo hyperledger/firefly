@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,9 +19,12 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	muxprom "gitlab.com/hfuss/mux-prometheus/pkg/middleware"
 )
 
 var registry *prometheus.Registry
+var adminInstrumentation *muxprom.Instrumentation
+var restInstrumentation *muxprom.Instrumentation
 var BatchPinCounter prometheus.Counter
 
 // MetricsBatchPin is the prometheus metric for total number of batch pins submitted
@@ -38,6 +41,35 @@ func Registry() *prometheus.Registry {
 	return registry
 }
 
+// GetAdminServerInstrumentation returns the admin server's Prometheus middleware, ensuring its metrics are never
+// registered twice
+func GetAdminServerInstrumentation() *muxprom.Instrumentation {
+	if adminInstrumentation == nil {
+		adminInstrumentation = newInstrumentation("admin")
+	}
+	return adminInstrumentation
+}
+
+// GetRestServerInstrumentation returns the REST server's Prometheus middleware, ensuring its metrics are never
+// registered twice
+func GetRestServerInstrumentation() *muxprom.Instrumentation {
+	if restInstrumentation == nil {
+		restInstrumentation = newInstrumentation("rest")
+	}
+	return restInstrumentation
+}
+
+func newInstrumentation(subsystem string) *muxprom.Instrumentation {
+	return muxprom.NewCustomInstrumentation(
+		true,
+		"ff_apiserver",
+		subsystem,
+		prometheus.DefBuckets,
+		map[string]string{},
+		Registry(),
+	)
+}
+
 func initMetricsCollectors() {
 	BatchPinCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: MetricsBatchPin,
@@ -51,7 +83,9 @@ func registerMetricsCollectors() {
 	registry.MustRegister(BatchPinCounter)
 }
 
-// Clear will reset the Prometheus metrics registry, useful for testing
+// Clear will reset the Prometheus metrics registry and instrumentations, useful for testing
 func Clear() {
 	registry = nil
+	adminInstrumentation = nil
+	restInstrumentation = nil
 }

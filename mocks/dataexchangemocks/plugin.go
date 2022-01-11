@@ -52,7 +52,7 @@ func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 }
 
 // CheckBLOBReceived provides a mock function with given fields: ctx, peerID, ns, id
-func (_m *Plugin) CheckBLOBReceived(ctx context.Context, peerID string, ns string, id fftypes.UUID) (*fftypes.Bytes32, error) {
+func (_m *Plugin) CheckBLOBReceived(ctx context.Context, peerID string, ns string, id fftypes.UUID) (*fftypes.Bytes32, int64, error) {
 	ret := _m.Called(ctx, peerID, ns, id)
 
 	var r0 *fftypes.Bytes32
@@ -64,14 +64,21 @@ func (_m *Plugin) CheckBLOBReceived(ctx context.Context, peerID string, ns strin
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, fftypes.UUID) error); ok {
+	var r1 int64
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, fftypes.UUID) int64); ok {
 		r1 = rf(ctx, peerID, ns, id)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int64)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, fftypes.UUID) error); ok {
+		r2 = rf(ctx, peerID, ns, id)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // DownloadBLOB provides a mock function with given fields: ctx, payloadRef
@@ -217,7 +224,7 @@ func (_m *Plugin) TransferBLOB(ctx context.Context, peerID string, payloadRef st
 }
 
 // UploadBLOB provides a mock function with given fields: ctx, ns, id, content
-func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (string, *fftypes.Bytes32, error) {
+func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (string, *fftypes.Bytes32, int64, error) {
 	ret := _m.Called(ctx, ns, id, content)
 
 	var r0 string
@@ -236,12 +243,19 @@ func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, co
 		}
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, fftypes.UUID, io.Reader) error); ok {
+	var r2 int64
+	if rf, ok := ret.Get(2).(func(context.Context, string, fftypes.UUID, io.Reader) int64); ok {
 		r2 = rf(ctx, ns, id, content)
 	} else {
-		r2 = ret.Error(2)
+		r2 = ret.Get(2).(int64)
 	}
 
-	return r0, r1, r2
+	var r3 error
+	if rf, ok := ret.Get(3).(func(context.Context, string, fftypes.UUID, io.Reader) error); ok {
+		r3 = rf(ctx, ns, id, content)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }

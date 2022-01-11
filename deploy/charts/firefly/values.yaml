@@ -6,6 +6,12 @@ config:
   # Enables the Admin API port for dynamic configuration
   adminEnabled: true
 
+  # Enables the metrics server / port for Prometheus scraping
+  metricsEnabled: true
+
+  # Configures the path on which Prometheus metrics are served, useful if you need to change it to match existing Prometheus scrape configs
+  metricsPath: /metrics
+
   # Puts a fresh FireFly node into the preinit state, allowing an operator to then setup smart contracts, apply database migrations, etc. before re-configuring the node to proceed.
   # It is _not_ recommended to configure FireFly nodes in a preinit state for non-development scenarios.
   preInit: false
@@ -13,20 +19,20 @@ config:
   # The name of the organization the FireFly node belongs to
   organizationName: ""
 
-  # The blockchain signing key of the organization e.g. the Ethereum account address
+  # The blockchain signing key of the organization e.g. the Ethereum account address or the Fabric membership
   organizationKey: ""
 
   # The Ethereum address of the pre-deployed FireFly smart contract
   fireflyContractAddress: "/instances/contractAddress"
+
+  # The name of the Fabric chaincode deployment for the FireFly chaincode
+  fireflyChaincode: firefly_go
 
   # The Postgres URL (including credentials and DB) for FireFly to for the database plugin
   postgresUrl: ""
 
   # Whether or not to apply schema migrations automatically on startup, not recommended for production
   postgresAutomigrate: false
-
-  # Whether to create a migration job to perform migrations each time a new tag is pushed for the FireFly image (supports DB creation)
-  postgresMigrationJob: false
 
   # The URL of the HTTPS DataExchange for the node to use for the dataexchange plugin i.e. private messaging, only needed if `dataexchange.enabled` is set to false
   dataexchangeUrl: ""
@@ -61,15 +67,38 @@ config:
   # The basic auth password to use for authenticating to Ethconnect
   ethconnectPassword: ""
 
+  # Enables retries when communicating with Ethconnect
+  ethconnectRetry: true
+
+  # The Ethconnect topic to use for blockchain event subscriptions
+  ethconnectTopic: 0
+
   # The short prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. ff or kld
   ethconnectPrefixShort: ""
 
   # The long prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. FireFly or Kaleido
   ethconnectPrefixLong: ""
 
-  # Whether to use a Job to perform auto-registration of the FireFly runtime.
-  # Note registration will not be successful until the new node has caught up with the head of the chain.
-  registrationJob: false
+  # The URL of the Fabconnect API and WS server to use for the blockchain plugin of type `fabric`
+  fabconnectUrl: ""
+
+  # The Fabric channel to use when communicating with peers and running chaincodes
+  fabconnectChannel: default-channel
+
+  # Enables retries when communicating with Fabconnect
+  fabconnectRetry: true
+
+  # The basic auth username to use for authenticating to Fabconnect
+  fabconnectUsername: ""
+
+  # The basic auth password to use for authenticating to Fabconnect
+  fabconnectPassword: ""
+
+  # The Fabconnect topic to use for blockchain event subscriptions
+  fabconnectTopic: 0
+
+  # The Fabric to use for signing transactions, must be pre-registered and enrolled
+  fabconnectSigner: ""
 
   # The following values can be used to override the templating of specific plugin sections, in the case where
   # the user wants greater control to template the sections using global values, additional helpers, etc. OR if they
@@ -127,6 +156,12 @@ core:
     httpPort: 5000
     adminPort: 5001
     debugPort: 6060
+    metricsPort: 5100
+
+  metrics:
+    serviceMonitor:
+      enabled: false
+      scrapeInterval: 10s
 
   # NOTE: The Ingress will only expose the HTTP API and never the Admin or Debug APIs
   ingress:
@@ -160,6 +195,16 @@ core:
 
   affinity: {}
 
+  jobs:
+    # Whether to create a migration job to perform migrations each time a new tag is pushed for the FireFly image (supports DB creation)
+    postgresMigrations:
+      enabled: false
+
+    # Whether to use a Job to perform auto-registration of the FireFly runtime.
+    # Note registration will not be successful until the new node has caught up with the head of the chain.
+    registration:
+      enabled: false
+
 # Configures the properties of the StatefulSet, Service, and optionally Ingress used to deploy and expose FireFly HTTPS DataExchange
 dataexchange:
 
@@ -189,8 +234,7 @@ dataexchange:
   image:
     repository: ghcr.io/hyperledger/firefly-dataexchange-https
     pullPolicy: Always
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: v0.9.2
+    tag: v0.9.3
 
   imagePullSecrets: []
   nameOverride: ""
@@ -243,3 +287,20 @@ dataexchange:
   tolerations: []
 
   affinity: {}
+
+  persistentVolumes:
+    # split into two mounts: /data/peers and /data/peer-certs
+    peers:
+      accessModes:
+        - ReadWriteOnce
+      annotations: {}
+      size: 1Gi
+      storageClass: ""
+    blobs:
+      enabled: true
+      accessModes:
+        - ReadWriteOnce
+      annotations: {}
+      subPath: ""
+      size: 2Gi
+      storageClass: ""

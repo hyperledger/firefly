@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,19 +20,22 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type APIRequest struct {
-	Ctx           context.Context
-	Req           *http.Request
-	QP            map[string]string
-	PP            map[string]string
-	FP            map[string]string
-	Filter        database.AndFilter
-	Input         interface{}
-	Part          *fftypes.Multipart
-	SuccessStatus int
-	APIBaseURL    string
+	Ctx             context.Context
+	Or              orchestrator.Orchestrator
+	Req             *http.Request
+	QP              map[string]string
+	PP              map[string]string
+	FP              map[string]string
+	Filter          database.AndFilter
+	Input           interface{}
+	Part            *fftypes.Multipart
+	SuccessStatus   int
+	APIBaseURL      string
+	ResponseHeaders http.Header
 }

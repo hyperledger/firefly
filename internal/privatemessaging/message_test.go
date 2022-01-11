@@ -100,7 +100,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*fftypes.Identity)
 		identity.Author = "localorg"
@@ -124,13 +124,13 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
-				{Node: nodeID1, Identity: "localorg"},
+				{Node: nodeID1, Identity: "localorgkey"},
 				{Node: nodeID2, Identity: "remoteorg"},
 			},
 		},
 	}, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, nodeID1).Return(&fftypes.Node{
-		ID: nodeID1, Name: "node1", Owner: "localorg", DX: fftypes.DXInfo{Peer: "peer1-local"},
+		ID: nodeID1, Name: "node1", Owner: "localorgkey", DX: fftypes.DXInfo{Peer: "peer1-local"},
 	}, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
@@ -651,7 +651,7 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
@@ -670,13 +670,13 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
-				{Node: nodeID1, Identity: "localorg"},
+				{Node: nodeID1, Identity: "localorgkey"},
 				{Node: nodeID2, Identity: "remoteorg"},
 			},
 		},
 	}, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, nodeID1).Return(&fftypes.Node{
-		ID: nodeID1, Name: "node1", Owner: "localorg", DX: fftypes.DXInfo{Peer: "peer1-local"},
+		ID: nodeID1, Name: "node1", Owner: "localorgkey", DX: fftypes.DXInfo{Peer: "peer1-local"},
 	}, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},

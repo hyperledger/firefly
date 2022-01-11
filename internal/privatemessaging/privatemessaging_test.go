@@ -100,7 +100,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		assert.Equal(t, "org1", identity.Author)
 		identity.Key = "0x12345"
 	}).Return(nil)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: fftypes.GroupIdentity{
@@ -210,7 +210,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
 		assert.Equal(t, "badauthor", identity.Author)
 		return true
@@ -235,7 +235,7 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("", fmt.Errorf("pop"))
+	mim.On("GetLocalOrgKey", pm.ctx).Return("", fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
@@ -250,7 +250,7 @@ func TestSendImmediateFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
@@ -275,7 +275,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil)
@@ -308,7 +308,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))

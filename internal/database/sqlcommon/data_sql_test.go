@@ -96,6 +96,8 @@ func TestDataE2EWithDB(t *testing.T) {
 		Blob: &fftypes.BlobRef{
 			Hash:   fftypes.NewRandB32(),
 			Public: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+			Name:   "path/to/myfile.ext",
+			Size:   12345,
 		},
 	}
 

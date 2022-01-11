@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,6 +33,7 @@ var (
 		"payload_ref",
 		"peer",
 		"created",
+		"size",
 	}
 	blobFilterFieldMap = map[string]string{
 		"payloadref": "payload_ref",
@@ -54,6 +55,7 @@ func (s *SQLCommon) InsertBlob(ctx context.Context, blob *fftypes.Blob) (err err
 				blob.PayloadRef,
 				blob.Peer,
 				blob.Created,
+				blob.Size,
 			),
 		nil, // no change events for blobs
 	)
@@ -72,6 +74,7 @@ func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*fftypes.Blo
 		&blob.PayloadRef,
 		&blob.Peer,
 		&blob.Created,
+		&blob.Size,
 		&blob.Sequence,
 	)
 	if err != nil {

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -147,7 +147,7 @@ func (em *eventManager) pinedBatchReceived(peerID string, batch *fftypes.Batch) 
 
 }
 
-func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error {
+func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
 	l := log.L(em.ctx)
 	l.Debugf("Blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", peerID, &hash, payloadRef)
 
@@ -168,6 +168,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 				Peer:       peerID,
 				PayloadRef: payloadRef,
 				Hash:       &hash,
+				Size:       size,
 				Created:    fftypes.Now(),
 			})
 			if err != nil {

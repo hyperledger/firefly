@@ -61,8 +61,8 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BLOBReceived", mdx, "peer1", *hash, "ns1/id1").Return(fmt.Errorf("pop"))
-	err = bc.BLOBReceived("peer1", *hash, "ns1/id1")
+	mei.On("BLOBReceived", mdx, "peer1", *hash, int64(12345), "ns1/id1").Return(fmt.Errorf("pop"))
+	err = bc.BLOBReceived("peer1", *hash, 12345, "ns1/id1")
 	assert.EqualError(t, err, "pop")
 
 	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return(fmt.Errorf("pop"))

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package fftypes
 
 type Blob struct {
 	Hash       *Bytes32 `json:"hash"`
+	Size       int64    `json:"size"`
 	PayloadRef string   `json:"payloadRef,omitempty"`
 	Peer       string   `json:"peer,omitempty"`
 	Created    *FFTime  `json:"created,omitempty"`

@@ -374,6 +374,25 @@ func TestGetGroupsOk(t *testing.T) {
 	assert.Empty(t, groups)
 }
 
+func TestGetGroupsNSOk(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroups", pm.ctx, mock.MatchedBy(func(filter database.AndFilter) bool {
+		f, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Contains(t, f.String(), "namespace")
+		assert.Contains(t, f.String(), "ns1")
+		return true
+	})).Return([]*fftypes.Group{}, nil, nil)
+
+	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
+	groups, _, err := pm.GetGroupsNS(pm.ctx, "ns1", fb.And(fb.Eq("description", "mygroup")))
+	assert.NoError(t, err)
+	assert.Empty(t, groups)
+}
+
 func TestGetGroupNodesCache(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()

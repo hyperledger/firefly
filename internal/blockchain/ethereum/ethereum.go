@@ -340,6 +340,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 }
 
 func (e *Ethereum) eventLoop() {
+	defer e.wsconn.Close()
 	defer close(e.closed)
 	l := log.L(e.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(e.ctx, l)

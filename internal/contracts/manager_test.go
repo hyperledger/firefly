@@ -63,7 +63,7 @@ func TestBroadcastFFI(t *testing.T) {
 
 	mdb.On("GetFFI", mock.Anything, "ns1", "", "").Return(nil, nil)
 	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -174,7 +174,7 @@ func TestBroadcastFFIFail(t *testing.T) {
 
 	mdb.On("GetFFI", mock.Anything, "ns1", "", "").Return(nil, nil)
 	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 
 	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
 	ffi := &fftypes.FFI{
@@ -1108,7 +1108,7 @@ func TestInvokeContract(t *testing.T) {
 		},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", req.Location, req.Method, req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1128,7 +1128,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 		Location:  []byte{},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", req.Location, req.Method, req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1150,7 +1150,7 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 		},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", mock.Anything, mock.AnythingOfType("*fftypes.FFIMethod"), mock.Anything).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1173,7 +1173,7 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 		},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.Method.Name).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1215,7 +1215,7 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 			},
 		},
 	}
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbi.On("ValidateFFIParam", mock.Anything, mock.AnythingOfType("*fftypes.FFIParam")).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1240,7 +1240,7 @@ func TestQueryContract(t *testing.T) {
 		},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1264,7 +1264,7 @@ func TestCallContractInvalidType(t *testing.T) {
 		},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 
 	assert.PanicsWithValue(t, "unknown call type: ", func() {
 		cm.InvokeContract(context.Background(), "ns1", req)
@@ -1430,7 +1430,7 @@ func TestInvokeContractAPI(t *testing.T) {
 		Location: []byte{},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(&fftypes.FFIMethod{Name: "peel"}, nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key", req.Location, mock.AnythingOfType("*fftypes.FFIMethod"), req.Input).Return(struct{}{}, nil)
@@ -1454,7 +1454,7 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 		},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
@@ -1476,7 +1476,7 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 		},
 	}
 
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
@@ -1546,7 +1546,7 @@ func TestBroadcastContractAPI(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
 	assert.NoError(t, err)
@@ -1587,7 +1587,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
 	assert.NoError(t, err)
@@ -1628,7 +1628,7 @@ func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
 	assert.Regexp(t, "FF10316", err)
@@ -1660,7 +1660,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&fftypes.FFI{ID: interfaceID}, nil)
 	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
 	assert.NoError(t, err)
@@ -1708,7 +1708,7 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mim.On("ResolveLocalOrgDID", mock.Anything).Return("firefly:org1/id", nil)
-	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
+	mim.On("GetLocalOrgKey", mock.Anything).Return("key", nil)
 	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), mock.AnythingOfType("*fftypes.Identity"), fftypes.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
 	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
 	assert.Regexp(t, "pop", err)

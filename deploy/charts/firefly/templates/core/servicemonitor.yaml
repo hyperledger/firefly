@@ -1,0 +1,39 @@
+{{- if and .Values.core.metrics.serviceMonitor.enabled .Values.config.metricsEnabled }}
+{{- if not (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") }}
+# WARNING: prometheus-operator is not installed but serivcemonitor has been enabled, this will fail. Please install
+#          prometheus-operator to resolve this.
+{{- end }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "firefly.fullname" . }}
+  labels:
+  {{- include "firefly.coreLabels" . | nindent 4 }}
+spec:
+  endpoints:
+    - port: metrics
+      path: {{ .Values.config.metricsPath }}
+      interval: {{ .Values.core.metrics.serviceMonitor.scrapeInterval }}
+      {{- if .Values.core.metrics.serviceMonitor.honorLabels }}
+      honorLabels: true
+      {{- end }}
+      {{- if .Values.core.metrics.serviceMonitor.metricRelabelings }}
+      metricRelabelings: {{ toYaml .Values.core.metrics.serviceMonitor.metricRelabelings | nindent 8 }}
+      {{- end }}
+  {{- if .Values.core.metrics.serviceMonitor.jobLabel }}
+  jobLabel: {{ .Values.core.metrics.serviceMonitor.jobLabel | quote }}
+  {{- end }}
+  {{- if .Values.core.metrics.serviceMonitor.namespaceSelector }}
+  namespaceSelector: {{ toYaml .Values.core.metrics.serviceMonitor.namespaceSelector | nindent 4 }}
+  {{- end }}
+  {{- if .Values.core.metrics.serviceMonitor.targetLabels }}
+  targetLabels:
+    {{- range .Values.core.metrics.serviceMonitor.targetLabels }}
+    - {{ . }}
+      {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+    {{- include "firefly.coreSelectorLabels" . | nindent 6 }}
+{{- end }}
+

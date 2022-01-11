@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -57,7 +57,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 	}
 	data.Value, err = json.Marshal(&def)
 	if err == nil {
-		err = data.Seal(ctx)
+		err = data.Seal(ctx, nil)
 	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)

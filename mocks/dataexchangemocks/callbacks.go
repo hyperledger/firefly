@@ -12,13 +12,13 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// BLOBReceived provides a mock function with given fields: peerID, hash, payloadRef
-func (_m *Callbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error {
-	ret := _m.Called(peerID, hash, payloadRef)
+// BLOBReceived provides a mock function with given fields: peerID, hash, size, payloadRef
+func (_m *Callbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
+	ret := _m.Called(peerID, hash, size, payloadRef)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, fftypes.Bytes32, string) error); ok {
-		r0 = rf(peerID, hash, payloadRef)
+	if rf, ok := ret.Get(0).(func(string, fftypes.Bytes32, int64, string) error); ok {
+		r0 = rf(peerID, hash, size, payloadRef)
 	} else {
 		r0 = ret.Error(0)
 	}
