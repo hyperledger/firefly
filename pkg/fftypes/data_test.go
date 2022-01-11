@@ -29,7 +29,8 @@ func TestEstimateDataSize(t *testing.T) {
 	d := Data{}
 	assert.Equal(t, dataSizeEstimateBase, d.EstimateSize())
 	d = Data{
-		Value: []byte("Test"),
+		Value:     JSONAnyPtr("Test"),
+		ValueSize: 4,
 	}
 	assert.Equal(t, dataSizeEstimateBase+int64(4), d.EstimateSize())
 }

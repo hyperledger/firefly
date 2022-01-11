@@ -27,7 +27,13 @@ import (
 
 func TestEstimateMessageSize(t *testing.T) {
 	msg := Message{}
-	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize())
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(false))
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(true))
+	msg.Data = DataRefs{
+		{ID: NewUUID(), Hash: NewRandB32(), ValueSize: 1000},
+	}
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(false))
+	assert.Equal(t, messageSizeEstimateBase+int64(1000), msg.EstimateSize(true))
 }
 
 func TestSealBareMessage(t *testing.T) {

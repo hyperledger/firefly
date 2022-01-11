@@ -91,7 +91,7 @@ func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di da
 }
 
 func (bw *batchWork) estimateSize() int64 {
-	sizeEstimate := bw.msg.EstimateSize()
+	sizeEstimate := bw.msg.EstimateSize(false /* we calculate data size separately, as we have the full data objects */)
 	for _, d := range bw.data {
 		sizeEstimate += d.EstimateSize()
 	}

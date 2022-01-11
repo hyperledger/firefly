@@ -28,6 +28,8 @@ import (
 type DataRef struct {
 	ID   *UUID    `json:"id,omitempty"`
 	Hash *Bytes32 `json:"hash,omitempty"`
+
+	ValueSize int64 `json:"-"` // used internally for message size calculation, without full payload retrieval
 }
 
 type BlobRef struct {
@@ -46,6 +48,8 @@ type Data struct {
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
 	Value     *JSONAny      `json:"value"`
 	Blob      *BlobRef      `json:"blob,omitempty"`
+
+	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
 }
 
 type DataAndBlob struct {
@@ -85,9 +89,9 @@ func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
 const dataSizeEstimateBase = int64(256)
 
 func (d *Data) EstimateSize() int64 {
-	// For now we have a static estimate for the size of the serialized outer structure,
-	// plus the byte-length of the string
-	return dataSizeEstimateBase + int64(len(d.Value))
+	// For now we have a static estimate for the size of the serialized outer structure.
+	// As long as this has been persisted, the value size will represent the length
+	return dataSizeEstimateBase + d.ValueSize
 }
 
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {

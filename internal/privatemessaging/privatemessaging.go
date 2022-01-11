@@ -49,19 +49,20 @@ type Manager interface {
 type privateMessaging struct {
 	groupManager
 
-	ctx                  context.Context
-	database             database.Plugin
-	identity             identity.Manager
-	exchange             dataexchange.Plugin
-	blockchain           blockchain.Plugin
-	batch                batch.Manager
-	data                 data.Manager
-	syncasync            syncasync.Bridge
-	batchpin             batchpin.Submitter
-	retry                retry.Retry
-	localNodeName        string
-	localNodeID          *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
-	opCorrelationRetries int
+	ctx                   context.Context
+	database              database.Plugin
+	identity              identity.Manager
+	exchange              dataexchange.Plugin
+	blockchain            blockchain.Plugin
+	batch                 batch.Manager
+	data                  data.Manager
+	syncasync             syncasync.Bridge
+	batchpin              batchpin.Submitter
+	retry                 retry.Retry
+	localNodeName         string
+	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
+	opCorrelationRetries  int
+	maxBatchPayloadLength int64
 }
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
@@ -90,7 +91,8 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 			MaximumDelay: config.GetDuration(config.PrivateMessagingRetryMaxDelay),
 			Factor:       config.GetFloat64(config.PrivateMessagingRetryFactor),
 		},
-		opCorrelationRetries: config.GetInt(config.PrivateMessagingOpCorrelationRetries),
+		opCorrelationRetries:  config.GetInt(config.PrivateMessagingOpCorrelationRetries),
+		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
 	}
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -100,7 +102,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.PrivateMessagingBatchSize),
-		BatchMaxBytes:  config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
+		BatchMaxBytes:  pm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(config.PrivateMessagingBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.PrivateMessagingBatchAgentTimeout),
 	}

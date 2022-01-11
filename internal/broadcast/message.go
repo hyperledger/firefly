@@ -100,6 +100,10 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 			if dataToPublish, err = s.resolve(ctx); err != nil {
 				return err
 			}
+			msgSizeEstimate := s.msg.EstimateSize(true)
+			if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
+				return i18n.NewError(ctx, i18n.MsgTooLargeBroadcast, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
+			}
 			s.resolved = true
 		}
 

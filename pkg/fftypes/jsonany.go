@@ -76,6 +76,13 @@ func (h JSONAny) String() string {
 	return string(b)
 }
 
+func (h *JSONAny) Length() int64 {
+	if h == nil {
+		return 0
+	}
+	return int64(len(*h))
+}
+
 func (h *JSONAny) Bytes() []byte {
 	if h == nil {
 		return nil

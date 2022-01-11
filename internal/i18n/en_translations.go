@@ -224,4 +224,6 @@ var (
 	MsgBlobMismatchSealingData     = ffm("FF10304", "Blob mismatch when sealing data")
 	MsgFieldTypeNoStringMatching   = ffm("FF10305", "Field '%s' of type '%s' does not support partial or case-insensitive string matching", 400)
 	MsgFieldMatchNoNull            = ffm("FF10306", "Comparison operator for field '%s' cannot accept a null value", 400)
+	MsgTooLargeBroadcast           = ffm("FF10307", "Message size %.2fkb is too large for the max broadcast batch size of %.2fkb", 400)
+	MsgTooLargePrivate             = ffm("FF10308", "Message size %.2fkb is too large for the max private message size of %.2fkb", 400)
 )

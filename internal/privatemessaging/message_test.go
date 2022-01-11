@@ -312,6 +312,49 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 
 }
 
+func TestSendUnpinnedMessageTooLarge(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	pm.maxBatchPayloadLength = 100000
+	defer cancel()
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*fftypes.Identity)
+		identity.Author = "localorg"
+		identity.Key = "localkey"
+	}).Return(nil)
+
+	dataID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID, Hash: fftypes.NewRandB32(), ValueSize: 100001},
+	}, nil)
+
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				TxType: fftypes.TransactionTypeNone,
+				Group:  groupID,
+			},
+		},
+		InlineData: fftypes.InlineData{
+			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
+		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	}, false)
+	assert.Regexp(t, "FF10308", err)
+
+	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+
+}
+
 func TestSealFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)

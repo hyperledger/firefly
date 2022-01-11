@@ -152,9 +152,17 @@ func (m *MessageInOut) SetInlineData(data []*Data) {
 
 const messageSizeEstimateBase = int64(1024)
 
-func (m *Message) EstimateSize() int64 {
+func (m *Message) EstimateSize(includeDataRefs bool) int64 {
 	// For now we have a static estimate for the size of the serialized header structure.
-	return messageSizeEstimateBase
+	//
+	// includeDataRefs should only be set when the data has been resolved from the database.
+	size := messageSizeEstimateBase
+	if includeDataRefs {
+		for _, dr := range m.Data {
+			size += dr.ValueSize
+		}
+	}
+	return size
 }
 
 func (m *Message) Seal(ctx context.Context) (err error) {

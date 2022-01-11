@@ -51,16 +51,17 @@ type Manager interface {
 }
 
 type broadcastManager struct {
-	ctx           context.Context
-	database      database.Plugin
-	identity      identity.Manager
-	data          data.Manager
-	blockchain    blockchain.Plugin
-	exchange      dataexchange.Plugin
-	publicstorage publicstorage.Plugin
-	batch         batch.Manager
-	syncasync     syncasync.Bridge
-	batchpin      batchpin.Submitter
+	ctx                   context.Context
+	database              database.Plugin
+	identity              identity.Manager
+	data                  data.Manager
+	blockchain            blockchain.Plugin
+	exchange              dataexchange.Plugin
+	publicstorage         publicstorage.Plugin
+	batch                 batch.Manager
+	syncasync             syncasync.Bridge
+	batchpin              batchpin.Submitter
+	maxBatchPayloadLength int64
 }
 
 func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
@@ -68,20 +69,21 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
-		ctx:           ctx,
-		database:      di,
-		identity:      im,
-		data:          dm,
-		blockchain:    bi,
-		exchange:      dx,
-		publicstorage: pi,
-		batch:         ba,
-		syncasync:     sa,
-		batchpin:      bp,
+		ctx:                   ctx,
+		database:              di,
+		identity:              im,
+		data:                  dm,
+		blockchain:            bi,
+		exchange:              dx,
+		publicstorage:         pi,
+		batch:                 ba,
+		syncasync:             sa,
+		batchpin:              bp,
+		maxBatchPayloadLength: config.GetByteSize(config.BroadcastBatchPayloadLimit),
 	}
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
-		BatchMaxBytes:  config.GetByteSize(config.BroadcastBatchSize),
+		BatchMaxBytes:  bm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}

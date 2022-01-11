@@ -72,6 +72,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataJson, _ := json.Marshal(&data)
 	dataReadJson, _ := json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
+	assert.Equal(t, int64(data.Value.Length()), dataRead.ValueSize)
 
 	// Update the data (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
@@ -117,6 +118,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataJson, _ = json.Marshal(&dataUpdated)
 	dataReadJson, _ = json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
+	assert.Equal(t, int64(dataUpdated.Value.Length()), dataRead.ValueSize)
 
 	valRestored, ok := dataRead.Value.JSONObjectOk()
 	assert.True(t, ok)

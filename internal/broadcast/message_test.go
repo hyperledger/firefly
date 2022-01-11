@@ -306,6 +306,44 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
+func TestBroadcastMessageTooLarge(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	bm.maxBatchPayloadLength = 1000000
+	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	ctx := context.Background()
+	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		var fn = a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), ValueSize: 1000001},
+	}, []*fftypes.DataAndBlob{}, nil)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+
+	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
+			},
+		},
+		InlineData: fftypes.InlineData{
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
+		},
+	}, true)
+	assert.Regexp(t, "FF10307", err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
 func TestBroadcastMessageBadInput(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()

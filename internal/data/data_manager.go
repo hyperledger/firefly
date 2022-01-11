@@ -276,8 +276,9 @@ func (dm *dataManager) validateAndStoreInlined(ctx context.Context, ns string, v
 
 	// Return a ref to the newly saved data
 	return data, blob, &fftypes.DataRef{
-		ID:   data.ID,
-		Hash: data.Hash,
+		ID:        data.ID,
+		Hash:      data.Hash,
+		ValueSize: data.ValueSize,
 	}, nil
 }
 
@@ -319,8 +320,9 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData 
 				return nil, nil, i18n.NewError(ctx, i18n.MsgDataReferenceUnresolvable, i)
 			}
 			refs[i] = &fftypes.DataRef{
-				ID:   data.ID,
-				Hash: data.Hash,
+				ID:        data.ID,
+				Hash:      data.Hash,
+				ValueSize: data.ValueSize,
 			}
 			if blob, err = dm.resolveBlob(ctx, data.Blob); err != nil {
 				return nil, nil, err

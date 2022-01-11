@@ -118,6 +118,10 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 			if err := s.resolve(ctx); err != nil {
 				return err
 			}
+			msgSizeEstimate := s.msg.EstimateSize(true)
+			if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
+				return i18n.NewError(ctx, i18n.MsgTooLargePrivate, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
+			}
 			s.resolved = true
 		}
 
