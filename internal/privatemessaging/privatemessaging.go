@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -100,6 +100,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.PrivateMessagingBatchSize),
+		BatchMaxBytes:  config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
 		BatchTimeout:   config.GetDuration(config.PrivateMessagingBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.PrivateMessagingBatchAgentTimeout),
 	}

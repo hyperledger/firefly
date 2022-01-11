@@ -82,6 +82,14 @@ func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
 	}
 }
 
+const dataSizeEstimateBase = int64(256)
+
+func (d *Data) EstimateSize() int64 {
+	// For now we have a static estimate for the size of the serialized outer structure,
+	// plus the byte-length of the string
+	return dataSizeEstimateBase + int64(len(d.Value))
+}
+
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	if d.Value == nil {
 		d.Value = Byteable(nullString)

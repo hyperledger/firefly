@@ -68,14 +68,18 @@ var (
 	BlockchainType = rootKey("blockchain.type")
 	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	BroadcastBatchAgentTimeout = rootKey("broadcast.batch.agentTimeout")
-	// BroadcastBatchSize is the maximum size of a batch for broadcast messages
+	// BroadcastBatchSize is the maximum number of messages that can be packed into a batch
 	BroadcastBatchSize = rootKey("broadcast.batch.size")
+	// BroadcastBatchPayloadLimit is the maximum payload size of a batch for broadcast messages
+	BroadcastBatchPayloadLimit = rootKey("broadcast.batch.payloadLimit")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
 	// PrivateMessagingBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	PrivateMessagingBatchAgentTimeout = rootKey("privatemessaging.batch.agentTimeout")
 	// PrivateMessagingBatchSize is the maximum size of a batch for broadcast messages
 	PrivateMessagingBatchSize = rootKey("privatemessaging.batch.size")
+	// PrivateMessagingBatchPayloadLimit is the maximum payload size of a batch for broadcast messages
+	PrivateMessagingBatchPayloadLimit = rootKey("privatemessaging.batch.payloadLimit")
 	// PrivateMessagingBatchTimeout is the timeout to wait for a batch to fill, before sending
 	PrivateMessagingBatchTimeout = rootKey("privatemessaging.batch.timeout")
 	// PrivateMessagingOpCorrelationRetries how many times to correlate an event for an operation (such as tx submission) back to an operation.
@@ -293,6 +297,7 @@ func Reset() {
 	viper.SetDefault(string(BatchRetryMaxDelay), "30s")
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
 	viper.SetDefault(string(BroadcastBatchSize), 200)
+	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
 	viper.SetDefault(string(BroadcastBatchTimeout), "1s")
 	viper.SetDefault(string(CorsAllowCredentials), true)
 	viper.SetDefault(string(CorsAllowedHeaders), []string{"*"})
@@ -337,6 +342,7 @@ func Reset() {
 	viper.SetDefault(string(PrivateMessagingBatchAgentTimeout), "2m")
 	viper.SetDefault(string(PrivateMessagingBatchSize), 200)
 	viper.SetDefault(string(PrivateMessagingBatchTimeout), "1s")
+	viper.SetDefault(string(PrivateMessagingBatchPayloadLimit), "800Kb")
 	viper.SetDefault(string(SubscriptionDefaultsReadAhead), 0)
 	viper.SetDefault(string(SubscriptionMax), 500)
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")

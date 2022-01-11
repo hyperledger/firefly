@@ -25,6 +25,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEstimateDataSize(t *testing.T) {
+	d := Data{}
+	assert.Equal(t, dataSizeEstimateBase, d.EstimateSize())
+	d = Data{
+		Value: []byte("Test"),
+	}
+	assert.Equal(t, dataSizeEstimateBase+int64(4), d.EstimateSize())
+}
+
 func TestDatatypeReference(t *testing.T) {
 
 	var dr *DatatypeRef

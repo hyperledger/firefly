@@ -25,6 +25,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEstimateMessageSize(t *testing.T) {
+	msg := Message{}
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize())
+}
+
 func TestSealBareMessage(t *testing.T) {
 	msg := Message{}
 	err := msg.Seal(context.Background())

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -148,6 +148,13 @@ func (m *MessageInOut) SetInlineData(data []*Data) {
 			Value:     d.Value,
 		}
 	}
+}
+
+const messageSizeEstimateBase = int64(1024)
+
+func (m *Message) EstimateSize() int64 {
+	// For now we have a static estimate for the size of the serialized header structure.
+	return messageSizeEstimateBase
 }
 
 func (m *Message) Seal(ctx context.Context) (err error) {

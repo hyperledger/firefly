@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -92,6 +92,7 @@ type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) e
 
 type Options struct {
 	BatchMaxSize   uint
+	BatchMaxBytes  int64
 	BatchTimeout   time.Duration
 	DisposeTimeout time.Duration
 }

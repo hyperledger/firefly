@@ -81,6 +81,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 	}
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
+		BatchMaxBytes:  config.GetByteSize(config.BroadcastBatchSize),
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
