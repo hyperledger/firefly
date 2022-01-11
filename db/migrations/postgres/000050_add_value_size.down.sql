@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE data DROP COLUMN value_size;
+COMMIT;

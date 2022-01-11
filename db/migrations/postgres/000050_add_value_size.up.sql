@@ -1,0 +1,7 @@
+BEGIN;
+ALTER TABLE data ADD COLUMN value_size BIGINT;
+
+UPDATE data SET value_size = 0;
+
+ALTER TABLE data ALTER COLUMN value_size SET NOT NULL;
+COMMIT;
