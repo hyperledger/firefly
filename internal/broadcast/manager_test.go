@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -125,7 +125,7 @@ func TestDispatchBatchInvalidData(t *testing.T) {
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{Value: fftypes.Byteable(`!json`)},
+				{Value: fftypes.JSONAnyPtr(`!json`)},
 			},
 		},
 	}, []*fftypes.Bytes32{fftypes.NewRandB32()})

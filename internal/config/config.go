@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -387,12 +387,14 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 		s := viper.New()
 		s.SetConfigType("json")
 		var val interface{}
-		if err := json.Unmarshal(c.Value, &val); err != nil {
-			return err
+		if c.Value != nil {
+			if err := json.Unmarshal([]byte(*c.Value), &val); err != nil {
+				return err
+			}
 		}
 		switch v := val.(type) {
 		case map[string]interface{}:
-			_ = s.ReadConfig(bytes.NewBuffer(c.Value))
+			_ = s.ReadConfig(bytes.NewBuffer([]byte(*c.Value)))
 			for _, k := range s.AllKeys() {
 				value := s.Get(k)
 				if reflect.TypeOf(value).Kind() == reflect.Slice {
@@ -405,7 +407,7 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 				}
 			}
 		case []interface{}:
-			_ = s.ReadConfig(bytes.NewBuffer(c.Value))
+			_ = s.ReadConfig(bytes.NewBuffer([]byte(*c.Value)))
 			for i := range v {
 				viper.Set(fmt.Sprintf("%s.%d", c.Key, i), v[i])
 			}

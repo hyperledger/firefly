@@ -20,6 +20,7 @@ nav_order: 1
 
 REST collections provide filter, `skip`, `limit` and `sort` support.
 - The field in the message is used as the query parameter
+  - Syntax: `field=[modifiers][operator]match-string`
 - When multiple query parameters are supplied these are combined with AND
 - When the same query parameter is supplied multiple times, these are combined with OR
 
@@ -38,15 +39,52 @@ This states:
 
 Table of filter operations, which must be the first character of the query string (after the `=` in the above URL path example)
 
-| Operator | Description                       |
-|----------|-----------------------------------|
-| (none)   | Equal                             |
-| `!`      | Not equal                         |
-| `<`      | Less than                         |
-| `<=`     | Less than or equal                |
-| `>`      | Greater than                      |
-| `>=`     | Greater than or equal             |
-| `@`      | Containing - case sensitive       |
-| `!@`     | Not containing - case sensitive   |
-| `^`      | Containing - case insensitive     |
-| `!^`     | Not containing - case insensitive |
+### Operators
+
+Operators are a type of comparison operation to
+perform against the match string.
+
+| Operator | Description                        |
+|----------|------------------------------------|
+| `=`      | Equal                              |
+| (none)   | Equal (shortcut)                   |
+| `@`      | Containing                         |
+| `^`      | Starts with                        |
+| `$`      | Ends with                          |
+| `<<`     | Less than                          |
+| `<`      | Less than (shortcut)               |
+| `<=`     | Less than or equal                 |
+| `>>`     | Greater than                       |
+| `>`      | Greater than (shortcut)            |
+| `>=`     | Greater than or equal              |
+
+> Shortcuts are only safe to use when your match
+> string starts with `a-z`, `A-Z`, `0-9`, `-` or `_`.
+
+### Modifiers
+
+Modifiers can appear before the operator, to change its
+behavior.
+
+| Modifier | Description                        |
+|----------|------------------------------------|
+| `!`      | Not - negates the match            |
+| `:`      | Case insensitive                   |
+| `?`      | Treat empty match string as null   |
+
+## Detailed examples
+
+| Example      | Description                                |
+|--------------|--------------------------------------------|
+| `cat`        | Equals "cat"                               |
+| `=cat`       | Equals "cat" (same)                        |
+| `!=cat`      | Not equal to "cat"                         |
+| `:=cat`      | Equal to "CAT", "cat", "CaT etc.           |
+| `!:cat`      | Not equal to "CAT", "cat", "CaT etc.       |
+| `=!cat`      | Equal to "!cat" (! is after operator)      |
+| `^cats/`     | Starts with "cats/"                        |
+| `$_cat`      | Ends with with "_cat"                      |
+| `!:^cats/`   | Does not start with "cats/", "CATs/" etc.  |
+| `!$-cat`     | Does not end with "-cat"                   |
+| `?=`         | Is null                                    |
+| `!?=`        | Is not null                                |

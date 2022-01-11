@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -219,5 +219,5 @@ func (s *messageSender) sendUnpinned(ctx context.Context) (err error) {
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
-	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, payload, nil, data)
+	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, fftypes.JSONAnyPtrBytes(payload), nil, data)
 }

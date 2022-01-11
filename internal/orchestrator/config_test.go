@@ -31,12 +31,12 @@ func TestGetConfigRecord(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecord", mock.Anything, mock.Anything).Return(&fftypes.ConfigRecord{
 		Key:   "foobar",
-		Value: []byte(`{"foo": "bar"}`),
+		Value: fftypes.JSONAnyPtr(`{"foo": "bar"}`),
 	}, nil)
 	ctx := context.Background()
 	configRecord, err := or.GetConfigRecord(ctx, "foo")
 	assert.NoError(t, err)
-	assert.Equal(t, fftypes.Byteable(`{"foo": "bar"}`), configRecord.Value)
+	assert.Equal(t, fftypes.JSONAnyPtr(`{"foo": "bar"}`), configRecord.Value)
 }
 
 func TestGetConfigRecords(t *testing.T) {
@@ -44,17 +44,17 @@ func TestGetConfigRecords(t *testing.T) {
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{
 		{
 			Key:   "foobar",
-			Value: []byte(`{"foo": "bar"}`),
+			Value: fftypes.JSONAnyPtr(`{"foo": "bar"}`),
 		},
 	}, nil, nil)
 	ctx := context.Background()
 	configRecords, _, err := or.GetConfigRecords(ctx, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, fftypes.Byteable(`{"foo": "bar"}`), configRecords[0].Value)
+	assert.Equal(t, fftypes.JSONAnyPtr(`{"foo": "bar"}`), configRecords[0].Value)
 }
 
 func TestPutConfigRecord(t *testing.T) {
-	testValue := fftypes.Byteable(`{"foo": "bar"}`)
+	testValue := fftypes.JSONAnyPtr(`{"foo": "bar"}`)
 	or := newTestOrchestrator()
 	or.mdi.On("UpsertConfigRecord", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx := context.Background()
@@ -64,7 +64,7 @@ func TestPutConfigRecord(t *testing.T) {
 }
 
 func TestPutConfigRecordFail(t *testing.T) {
-	testValue := fftypes.Byteable(`{"foo": "bar"}`)
+	testValue := fftypes.JSONAnyPtr(`{"foo": "bar"}`)
 	or := newTestOrchestrator()
 	or.mdi.On("UpsertConfigRecord", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx := context.Background()

@@ -111,7 +111,7 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 	}
 
 	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{
-		Value: fftypes.Byteable(`{"custom": "value1"}`),
+		Value: fftypes.JSONAnyPtr(`{"custom": "value1"}`),
 	}, &fftypes.Multipart{
 		Data:     bytes.NewReader([]byte(`hello`)),
 		Filename: "myfile.csv",
@@ -146,7 +146,7 @@ func TestUploadBlobBadValidator(t *testing.T) {
 	}
 
 	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{
-		Value:     fftypes.Byteable(`{"custom": "value1"}`),
+		Value:     fftypes.JSONAnyPtr(`{"custom": "value1"}`),
 		Validator: "wrong",
 	}, &fftypes.Multipart{
 		Data:     bytes.NewReader([]byte(`hello`)),
@@ -222,7 +222,7 @@ func TestUploadBlobSizeMismatch(t *testing.T) {
 	}
 
 	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
-	assert.Regexp(t, "FF10302", err)
+	assert.Regexp(t, "FF10303", err)
 
 }
 

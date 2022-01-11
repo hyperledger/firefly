@@ -44,7 +44,7 @@ type Data struct {
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value"`
+	Value     *JSONAny      `json:"value"`
 	Blob      *BlobRef      `json:"blob,omitempty"`
 }
 
@@ -60,7 +60,7 @@ type DatatypeRef struct {
 
 func (dr *DatatypeRef) String() string {
 	if dr == nil {
-		return nullString
+		return NullString
 	}
 	return fmt.Sprintf("%s/%s", dr.Name, dr.Version)
 }
@@ -92,9 +92,9 @@ func (d *Data) EstimateSize() int64 {
 
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	if d.Value == nil {
-		d.Value = Byteable(nullString)
+		d.Value = JSONAnyPtr(NullString)
 	}
-	valueIsNull := d.Value.String() == nullString
+	valueIsNull := d.Value.String() == NullString
 	if valueIsNull && (d.Blob == nil || d.Blob.Hash == nil) {
 		return nil, i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}

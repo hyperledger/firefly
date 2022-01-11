@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -232,7 +232,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		log.L(ctx).Errorf("BatchPin event is not valid - bad payload content: %s", payloadString)
 		return nil // move on
 	}
-	dataBytes := fftypes.Byteable(bytes)
+	dataBytes := fftypes.JSONAnyPtrBytes(bytes)
 	payload, ok := dataBytes.JSONObjectOk()
 	if !ok {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad JSON payload: %s", bytes)

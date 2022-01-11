@@ -207,7 +207,7 @@ func TestSealKnownMessage(t *testing.T) {
 func TestSetInlineData(t *testing.T) {
 	msg := &MessageInOut{}
 	msg.SetInlineData([]*Data{
-		{ID: NewUUID(), Value: Byteable(`"some data"`)},
+		{ID: NewUUID(), Value: JSONAnyPtr(`"some data"`)},
 	})
 	b, err := json.Marshal(&msg)
 	assert.NoError(t, err)

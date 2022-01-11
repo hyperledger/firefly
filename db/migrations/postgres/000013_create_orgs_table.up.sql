@@ -7,7 +7,7 @@ CREATE TABLE orgs (
   parent         VARCHAR(1024),
   identity       VARCHAR(1024)   NOT NULL,
   description    VARCHAR(4096)   NOT NULL,
-  profile        BYTEA,
+  profile        TEXT,
   created        BIGINT          NOT NULL
 );
 

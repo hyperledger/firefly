@@ -107,7 +107,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
-					Value: fftypes.Byteable(`"payment for data"`),
+					Value: fftypes.JSONAnyPtr(`"payment for data"`),
 				},
 			},
 		},
@@ -238,7 +238,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
-					Value: fftypes.Byteable(`"ownership change"`),
+					Value: fftypes.JSONAnyPtr(`"ownership change"`),
 				},
 			},
 		},

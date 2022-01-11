@@ -189,7 +189,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID: dataID,
-		Value: fftypes.Byteable(`{
+		Value: fftypes.JSONAnyPtr(`{
 			"in_body": {
 				"inputfield": "inputvalue"
 			},
@@ -294,7 +294,7 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID: dataID,
-		Value: fftypes.Byteable(`{
+		Value: fftypes.JSONAnyPtr(`{
 			"in_body": {
 				"inputfield": ""
 			},
@@ -371,7 +371,7 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID: dataID,
-		Value: fftypes.Byteable(`{
+		Value: fftypes.JSONAnyPtr(`{
 			"inputfield": "inputvalue"
 		}`),
 	}
@@ -541,8 +541,8 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	})).Return(nil)
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
 	assert.NoError(t, err)
 	assert.True(t, called)
@@ -589,8 +589,8 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	})).Return(nil)
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
 	assert.NoError(t, err)
 
@@ -639,8 +639,8 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 	}
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
 	assert.NoError(t, err)
 	<-waiter

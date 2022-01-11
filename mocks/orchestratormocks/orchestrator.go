@@ -1091,20 +1091,20 @@ func (_m *Orchestrator) PrivateMessaging() privatemessaging.Manager {
 }
 
 // PutConfigRecord provides a mock function with given fields: ctx, key, configRecord
-func (_m *Orchestrator) PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (fftypes.Byteable, error) {
+func (_m *Orchestrator) PutConfigRecord(ctx context.Context, key string, configRecord *fftypes.JSONAny) (*fftypes.JSONAny, error) {
 	ret := _m.Called(ctx, key, configRecord)
 
-	var r0 fftypes.Byteable
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Byteable) fftypes.Byteable); ok {
+	var r0 *fftypes.JSONAny
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny) *fftypes.JSONAny); ok {
 		r0 = rf(ctx, key, configRecord)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.Byteable)
+			r0 = ret.Get(0).(*fftypes.JSONAny)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Byteable) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.JSONAny) error); ok {
 		r1 = rf(ctx, key, configRecord)
 	} else {
 		r1 = ret.Error(1)

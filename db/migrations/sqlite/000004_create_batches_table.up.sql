@@ -7,7 +7,7 @@ CREATE TABLE batches (
   group_hash  CHAR(64),
   hash        CHAR(64),
   created     BIGINT          NOT NULL,
-  payload     BYTEA           NOT NULL,
+  payload     TEXT           NOT NULL,
   payload_ref VARCHAR(256),
   confirmed   BIGINT,
   tx_type     VARCHAR(64)     NOT NULL,

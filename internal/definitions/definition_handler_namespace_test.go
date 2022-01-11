@@ -38,7 +38,7 @@ func TestHandleDefinitionBroadcastNSOk(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -66,7 +66,7 @@ func TestHandleDefinitionBroadcastNSEventFail(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -94,7 +94,7 @@ func TestHandleDefinitionBroadcastNSUpsertFail(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -130,7 +130,7 @@ func TestHandleDefinitionBroadcastNSBadID(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -146,7 +146,7 @@ func TestHandleDefinitionBroadcastNSBadData(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(`!{json`),
+		Value: fftypes.JSONAnyPtr(`!{json`),
 	}
 
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -168,7 +168,7 @@ func TestHandleDefinitionBroadcastDuplicate(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -195,7 +195,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocal(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -225,7 +225,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocalFail(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -252,7 +252,7 @@ func TestHandleDefinitionBroadcastDupCheckFail(t *testing.T) {
 	b, err := json.Marshal(&ns)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)

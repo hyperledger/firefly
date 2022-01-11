@@ -258,7 +258,7 @@ func (h *HTTPS) eventLoop() {
 			case messageDelivered:
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
 			case messageReceived:
-				err = h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
+				err = h.callbacks.MessageReceived(msg.Sender, []byte(msg.Message))
 			case blobFailed:
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
 			case blobDelivered:

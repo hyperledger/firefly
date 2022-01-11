@@ -184,7 +184,7 @@ func TestDispatchBatchBadData(t *testing.T) {
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{Value: fftypes.Byteable(`{!json}`)},
+				{Value: fftypes.JSONAnyPtr(`{!json}`)},
 			},
 		},
 	}, []*fftypes.Bytes32{})
@@ -223,7 +223,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, []*fftypes.Node{}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -241,7 +241,7 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, []*fftypes.Node{}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -266,7 +266,7 @@ func TestSendImmediateFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -299,7 +299,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -329,7 +329,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 

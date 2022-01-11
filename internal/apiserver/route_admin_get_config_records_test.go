@@ -40,7 +40,7 @@ func TestGetConfigRecords(t *testing.T) {
 		Return([]*fftypes.ConfigRecord{
 			{
 				Key:   "foo",
-				Value: fftypes.Byteable(`{"foo": "bar"}`),
+				Value: fftypes.JSONAnyPtr(`{"foo": "bar"}`),
 			},
 		}, nil, nil)
 	r.ServeHTTP(res, req)

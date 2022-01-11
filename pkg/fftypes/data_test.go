@@ -37,7 +37,7 @@ func TestEstimateDataSize(t *testing.T) {
 func TestDatatypeReference(t *testing.T) {
 
 	var dr *DatatypeRef
-	assert.Equal(t, nullString, dr.String())
+	assert.Equal(t, NullString, dr.String())
 	dr = &DatatypeRef{
 		Name:    "customer",
 		Version: "0.0.1",
@@ -59,7 +59,7 @@ func TestSealNoData(t *testing.T) {
 
 func TestSealValueOnly(t *testing.T) {
 	d := &Data{
-		Value: []byte("{}"),
+		Value: JSONAnyPtr("{}"),
 		Blob:  &BlobRef{},
 	}
 	err := d.Seal(context.Background(), nil)
@@ -87,7 +87,7 @@ func TestSealBlobExplictlyNamed(t *testing.T) {
 		Blob: &BlobRef{
 			Hash: blobHash,
 		},
-		Value: Byteable(`{
+		Value: JSONAnyPtr(`{
 			"name": "use this",
 			"filename": "ignore this",
 			"path": "ignore this too"
@@ -107,7 +107,7 @@ func TestSealBlobPathNamed(t *testing.T) {
 		Blob: &BlobRef{
 			Hash: blobHash,
 		},
-		Value: Byteable(`{
+		Value: JSONAnyPtr(`{
 			"filename": "file.ext",
 			"path": "/path/to"
 		}`),
@@ -126,7 +126,7 @@ func TestSealBlobFileNamed(t *testing.T) {
 		Blob: &BlobRef{
 			Hash: blobHash,
 		},
-		Value: Byteable(`{
+		Value: JSONAnyPtr(`{
 			"filename": "file.ext"
 		}`),
 	}
@@ -148,7 +148,7 @@ func TestSealBlobMismatch1(t *testing.T) {
 	err := d.Seal(context.Background(), &Blob{
 		Hash: NewRandB32(),
 	})
-	assert.Regexp(t, "FF10303", err)
+	assert.Regexp(t, "FF10304", err)
 }
 
 func TestSealBlobMismatch2(t *testing.T) {
@@ -156,7 +156,7 @@ func TestSealBlobMismatch2(t *testing.T) {
 		Blob: &BlobRef{Hash: NewRandB32()},
 	}
 	err := d.Seal(context.Background(), nil)
-	assert.Regexp(t, "FF10303", err)
+	assert.Regexp(t, "FF10304", err)
 }
 
 func TestSealBlobAndHashOnly(t *testing.T) {
@@ -165,7 +165,7 @@ func TestSealBlobAndHashOnly(t *testing.T) {
 		Blob: &BlobRef{
 			Hash: blobHash,
 		},
-		Value: []byte("{}"),
+		Value: JSONAnyPtr("{}"),
 	}
 	h := sha256.Sum256([]byte(`44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9`))
 	err := d.Seal(context.Background(), &Blob{
