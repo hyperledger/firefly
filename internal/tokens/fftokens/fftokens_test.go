@@ -232,12 +232,9 @@ func TestMintTokens(t *testing.T) {
 		To:      "user1",
 		Key:     "0x123",
 		Amount:  *fftypes.NewFFBigInt(10),
-		TX: fftypes.TransactionRef{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
-		},
 	}
 	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -250,7 +247,7 @@ func TestMintTokens(t *testing.T) {
 				"amount":    "10",
 				"operator":  "0x123",
 				"requestId": opID.String(),
-				"data":      `{"tx":"` + mint.TX.ID.String() + `"}`,
+				"data":      `{"tx":"` + txID.String() + `"}`,
 			}, body)
 
 			res := &http.Response{
@@ -263,7 +260,7 @@ func TestMintTokens(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.MintTokens(context.Background(), opID, "123", mint)
+	err := h.MintTokens(context.Background(), opID, txID, "123", mint)
 	assert.NoError(t, err)
 }
 
@@ -276,7 +273,7 @@ func TestMintTokensError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.MintTokens(context.Background(), fftypes.NewUUID(), "F1", mint)
+	err := h.MintTokens(context.Background(), fftypes.NewUUID(), fftypes.NewUUID(), "F1", mint)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -290,12 +287,9 @@ func TestBurnTokens(t *testing.T) {
 		From:       "user1",
 		Key:        "0x123",
 		Amount:     *fftypes.NewFFBigInt(10),
-		TX: fftypes.TransactionRef{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
-		},
 	}
 	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -309,7 +303,7 @@ func TestBurnTokens(t *testing.T) {
 				"amount":     "10",
 				"operator":   "0x123",
 				"requestId":  opID.String(),
-				"data":       `{"tx":"` + burn.TX.ID.String() + `"}`,
+				"data":       `{"tx":"` + txID.String() + `"}`,
 			}, body)
 
 			res := &http.Response{
@@ -322,7 +316,7 @@ func TestBurnTokens(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.BurnTokens(context.Background(), opID, "123", burn)
+	err := h.BurnTokens(context.Background(), opID, txID, "123", burn)
 	assert.NoError(t, err)
 }
 
@@ -335,7 +329,7 @@ func TestBurnTokensError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.BurnTokens(context.Background(), fftypes.NewUUID(), "F1", burn)
+	err := h.BurnTokens(context.Background(), fftypes.NewUUID(), fftypes.NewUUID(), "F1", burn)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -350,12 +344,9 @@ func TestTransferTokens(t *testing.T) {
 		To:         "user2",
 		Key:        "0x123",
 		Amount:     *fftypes.NewFFBigInt(10),
-		TX: fftypes.TransactionRef{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
-		},
 	}
 	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -370,7 +361,7 @@ func TestTransferTokens(t *testing.T) {
 				"amount":     "10",
 				"operator":   "0x123",
 				"requestId":  opID.String(),
-				"data":       `{"tx":"` + transfer.TX.ID.String() + `"}`,
+				"data":       `{"tx":"` + txID.String() + `"}`,
 			}, body)
 
 			res := &http.Response{
@@ -383,7 +374,7 @@ func TestTransferTokens(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.TransferTokens(context.Background(), opID, "123", transfer)
+	err := h.TransferTokens(context.Background(), opID, txID, "123", transfer)
 	assert.NoError(t, err)
 }
 
@@ -396,7 +387,7 @@ func TestTransferTokensError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.TransferTokens(context.Background(), fftypes.NewUUID(), "F1", transfer)
+	err := h.TransferTokens(context.Background(), fftypes.NewUUID(), fftypes.NewUUID(), "F1", transfer)
 	assert.Regexp(t, "FF10274", err)
 }
 

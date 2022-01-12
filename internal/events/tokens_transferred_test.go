@@ -43,10 +43,10 @@ func newTransfer() *tokens.TokenTransfer {
 			ProtocolID: "123",
 			URI:        "firefly://token/1",
 			Amount:     *fftypes.NewFFBigInt(1),
-			TX: fftypes.TransactionRef{
-				ID:   fftypes.NewUUID(),
-				Type: fftypes.TransactionTypeTokenTransfer,
-			},
+		},
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenTransfer,
 		},
 		Event: blockchain.Event{
 			Name:       "Transfer",

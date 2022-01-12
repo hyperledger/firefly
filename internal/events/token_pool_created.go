@@ -51,7 +51,8 @@ func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus) *fftypes.
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event) error {
-	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, ev, &pool.TX); err != nil {
+	chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
+	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
 	tx := poolTransaction(pool, fftypes.OpStatusSucceeded)

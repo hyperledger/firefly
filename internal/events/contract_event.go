@@ -41,12 +41,11 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 	return ev
 }
 
-func (em *eventManager) persistBlockchainEvent(ctx context.Context, ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.TransactionRef) error {
-	chainEvent := buildBlockchainEvent(ns, subID, event, tx)
+func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
 	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
-	ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEvent, ns, chainEvent.ID)
+	ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEvent, chainEvent.Namespace, chainEvent.ID)
 	if err := em.database.InsertEvent(ctx, ffEvent); err != nil {
 		return err
 	}
@@ -66,7 +65,8 @@ func (em *eventManager) ContractEvent(event *blockchain.ContractEvent) error {
 				return nil // no retry
 			}
 
-			if err := em.persistBlockchainEvent(ctx, sub.Namespace, sub.ID, &event.Event, nil); err != nil {
+			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, nil)
+			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
 			return nil

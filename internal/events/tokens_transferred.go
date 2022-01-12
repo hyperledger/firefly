@@ -26,13 +26,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func (em *eventManager) loadTransferOperation(ctx context.Context, transfer *fftypes.TokenTransfer) error {
+func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.UUID, transfer *fftypes.TokenTransfer) error {
 	transfer.LocalID = nil
 
 	// Find a matching operation within this transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("tx", transfer.TX.ID),
+		fb.Eq("tx", tx),
 		fb.Eq("type", fftypes.OpTypeTokenTransfer),
 	)
 	operations, _, err := em.database.GetOperations(ctx, filter)
@@ -74,7 +74,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	transfer.Pool = pool.ID
 
 	if transfer.TX.ID != nil {
-		if err := em.loadTransferOperation(ctx, &transfer.TokenTransfer); err != nil {
+		if err := em.loadTransferOperation(ctx, transfer.TX.ID, &transfer.TokenTransfer); err != nil {
 			return false, err
 		}
 
@@ -99,7 +99,9 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		transfer.LocalID = fftypes.NewUUID()
 	}
 
-	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, &transfer.Event, &transfer.TX); err != nil {
+	chainEvent := buildBlockchainEvent(pool.Namespace, nil, &transfer.Event, &transfer.TX)
+	transfer.BlockchainEvent = chainEvent.ID
+	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
 

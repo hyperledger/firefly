@@ -43,21 +43,19 @@ var (
 		"protocol_id",
 		"message_id",
 		"message_hash",
-		"tx_type",
-		"tx_id",
+		"blockchain_event",
 		"created",
 	}
 	tokenTransferFilterFieldMap = map[string]string{
-		"localid":     "local_id",
-		"pool":        "pool_id",
-		"tokenindex":  "token_index",
-		"from":        "from_key",
-		"to":          "to_key",
-		"protocolid":  "protocol_id",
-		"message":     "message_id",
-		"messagehash": "message_hash",
-		"tx.type":     "tx_type",
-		"tx.id":       "tx_id",
+		"localid":         "local_id",
+		"pool":            "pool_id",
+		"tokenindex":      "token_index",
+		"from":            "from_key",
+		"to":              "to_key",
+		"protocolid":      "protocol_id",
+		"message":         "message_id",
+		"messagehash":     "message_hash",
+		"blockchainevent": "blockchain_event",
 	}
 )
 
@@ -95,8 +93,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("amount", transfer.Amount).
 				Set("message_id", transfer.Message).
 				Set("message_hash", transfer.MessageHash).
-				Set("tx_type", transfer.TX.Type).
-				Set("tx_id", transfer.TX.ID).
+				Set("blockchain_event", transfer.BlockchainEvent).
 				Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
 			func() {
 				s.callbacks.UUIDCollectionEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.LocalID)
@@ -124,8 +121,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.ProtocolID,
 					transfer.Message,
 					transfer.MessageHash,
-					transfer.TX.Type,
-					transfer.TX.ID,
+					transfer.BlockchainEvent,
 					transfer.Created,
 				),
 			func() {
@@ -156,8 +152,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.ProtocolID,
 		&transfer.Message,
 		&transfer.MessageHash,
-		&transfer.TX.Type,
-		&transfer.TX.ID,
+		&transfer.BlockchainEvent,
 		&transfer.Created,
 	)
 	if err != nil {

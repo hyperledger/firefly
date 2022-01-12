@@ -253,8 +253,6 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		Created:   fftypes.Now(),
 		Status:    fftypes.OpStatusPending,
 	}
-	s.transfer.TX.ID = tx.ID
-	s.transfer.TX.Type = tx.Type
 
 	op := fftypes.NewTXOperation(
 		plugin,
@@ -294,11 +292,11 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	switch s.transfer.Type {
 	case fftypes.TokenTransferTypeMint:
-		err = plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.MintTokens(ctx, op.ID, tx.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeTransfer:
-		err = plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.TransferTokens(ctx, op.ID, tx.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeBurn:
-		err = plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.BurnTokens(ctx, op.ID, tx.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	default:
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}

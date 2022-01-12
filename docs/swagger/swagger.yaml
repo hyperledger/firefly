@@ -7432,6 +7432,7 @@ paths:
             schema:
               properties:
                 amount: {}
+                blockchainEvent: {}
                 connector:
                   type: string
                 created: {}
@@ -7440,23 +7441,88 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
                 messageHash: {}
                 namespace:
                   type: string
-                pool: {}
+                pool:
+                  type: string
                 protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
                   type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
                 type:
                   enum:
                   - mint
@@ -7473,6 +7539,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -7492,12 +7559,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -7514,6 +7575,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -7533,12 +7595,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -7594,6 +7650,7 @@ paths:
             schema:
               properties:
                 amount: {}
+                blockchainEvent: {}
                 connector:
                   type: string
                 created: {}
@@ -7602,23 +7659,88 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
                 messageHash: {}
                 namespace:
                   type: string
-                pool: {}
+                pool:
+                  type: string
                 protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
                   type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
                 type:
                   enum:
                   - mint
@@ -7635,6 +7757,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -7654,12 +7777,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -7676,6 +7793,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -7695,12 +7813,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -7748,6 +7860,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: amount
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: blockchainevent
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7812,16 +7929,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: tx.id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: tx.type
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: uri
         schema:
           type: string
@@ -7866,6 +7973,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -7885,12 +7993,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -7945,6 +8047,7 @@ paths:
             schema:
               properties:
                 amount: {}
+                blockchainEvent: {}
                 connector:
                   type: string
                 created: {}
@@ -7953,23 +8056,88 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
                 messageHash: {}
                 namespace:
                   type: string
-                pool: {}
+                pool:
+                  type: string
                 protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
                   type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
                 type:
                   enum:
                   - mint
@@ -7986,6 +8154,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -8005,12 +8174,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -8027,6 +8190,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -8046,12 +8210,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -8425,6 +8583,7 @@ paths:
             schema:
               properties:
                 amount: {}
+                blockchainEvent: {}
                 connector:
                   type: string
                 created: {}
@@ -8433,23 +8592,88 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
                 messageHash: {}
                 namespace:
                   type: string
-                pool: {}
+                pool:
+                  type: string
                 protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
                   type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
                 type:
                   enum:
                   - mint
@@ -8466,6 +8690,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -8485,12 +8710,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -8507,6 +8726,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -8526,12 +8746,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -8605,6 +8819,7 @@ paths:
             schema:
               properties:
                 amount: {}
+                blockchainEvent: {}
                 connector:
                   type: string
                 created: {}
@@ -8613,23 +8828,88 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
                 messageHash: {}
                 namespace:
                   type: string
-                pool: {}
+                pool:
+                  type: string
                 protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
                   type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
                 type:
                   enum:
                   - mint
@@ -8646,6 +8926,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -8665,12 +8946,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -8687,6 +8962,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -8706,12 +8982,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -9123,6 +9393,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blockchainevent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: connector
         schema:
           type: string
@@ -9183,16 +9458,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: tx.id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: tx.type
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: uri
         schema:
           type: string
@@ -9237,6 +9502,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -9256,12 +9522,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -9303,6 +9563,7 @@ paths:
             schema:
               properties:
                 amount: {}
+                blockchainEvent: {}
                 connector:
                   type: string
                 created: {}
@@ -9311,23 +9572,88 @@ paths:
                 key:
                   type: string
                 localId: {}
-                message: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    state:
+                      enum:
+                      - staged
+                      - ready
+                      - pending
+                      - confirmed
+                      - rejected
+                      type: string
+                  type: object
                 messageHash: {}
                 namespace:
                   type: string
-                pool: {}
+                pool:
+                  type: string
                 protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
                   type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
                 type:
                   enum:
                   - mint
@@ -9344,6 +9670,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -9363,12 +9690,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -9385,6 +9706,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -9404,12 +9726,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint
@@ -9454,6 +9770,7 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  blockchainEvent: {}
                   connector:
                     type: string
                   created: {}
@@ -9473,12 +9790,6 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
                   type:
                     enum:
                     - mint

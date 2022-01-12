@@ -873,22 +873,21 @@ var TokenBalanceQueryFactory = &queryFields{
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
-	"localid":     &StringField{},
-	"pool":        &UUIDField{},
-	"tokenindex":  &StringField{},
-	"uri":         &StringField{},
-	"connector":   &StringField{},
-	"namespace":   &StringField{},
-	"key":         &StringField{},
-	"from":        &StringField{},
-	"to":          &StringField{},
-	"amount":      &Int64Field{},
-	"protocolid":  &StringField{},
-	"message":     &UUIDField{},
-	"messagehash": &Bytes32Field{},
-	"created":     &TimeField{},
-	"tx.type":     &StringField{},
-	"tx.id":       &UUIDField{},
+	"localid":         &StringField{},
+	"pool":            &UUIDField{},
+	"tokenindex":      &StringField{},
+	"uri":             &StringField{},
+	"connector":       &StringField{},
+	"namespace":       &StringField{},
+	"key":             &StringField{},
+	"from":            &StringField{},
+	"to":              &StringField{},
+	"amount":          &Int64Field{},
+	"protocolid":      &StringField{},
+	"message":         &UUIDField{},
+	"messagehash":     &Bytes32Field{},
+	"created":         &TimeField{},
+	"blockchainevent": &UUIDField{},
 }
 
 // FFIQueryFactory filter fields for contract definitions

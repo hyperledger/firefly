@@ -14,13 +14,13 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// TokenOpUpdate provides a mock function with given fields: plugin, operationID, txState, errorMessage, opOutput
-func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(plugin, operationID, txState, errorMessage, opOutput)
+// TokenOpUpdate provides a mock function with given fields: plugin, opID, txState, errorMessage, opOutput
+func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, opID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(plugin, opID, txState, errorMessage, opOutput)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, operationID, txState, errorMessage, opOutput)
+		r0 = rf(plugin, opID, txState, errorMessage, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}
