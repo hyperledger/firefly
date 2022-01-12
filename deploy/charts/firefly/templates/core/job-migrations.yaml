@@ -16,11 +16,18 @@ spec:
         - -ce
         - |
 {{ .Files.Get "scripts/ff-db-migrations.sh" | indent 10 }}
+        {{- if or .Values.config.postgresUrl .Values.core.jobs.postgresMigrations.extraEnv }}
         env:
-        - name: PSQL_URL
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "firefly.fullname" . }}-config
-              key: psql_url
+          {{- if .Values.config.postgresUrl }}
+          - name: PSQL_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "firefly.fullname" . }}-config
+                key: psql_url
+          {{- end }}
+          {{- if .Values.core.jobs.postgresMigrations.extraEnv }}
+            {{- toYaml .Values.core.jobs.postgresMigrations.extraEnv | nindent 12 }}
+          {{- end }}
+        {{- end }}
       restartPolicy: Never
 {{- end }}

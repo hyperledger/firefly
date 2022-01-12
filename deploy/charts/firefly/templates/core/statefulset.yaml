@@ -39,9 +39,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-          {{- if .Values.core.extraEnv }}
+            {{- if .Values.core.extraEnv }}
             {{- toYaml .Values.core.extraEnv | nindent 12 }}
-          {{- end }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.core.service.httpPort }}

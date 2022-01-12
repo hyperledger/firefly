@@ -199,6 +199,12 @@ core:
     # Whether to create a migration job to perform migrations each time a new tag is pushed for the FireFly image (supports DB creation)
     postgresMigrations:
       enabled: false
+      extraEnv: []
+      #  - name: PSQL_URL
+      #    valueFrom:
+      #      secretKeyRef:
+      #        name: custom-psql-config
+      #        key: psql_url
 
     # Whether to use a Job to perform auto-registration of the FireFly runtime.
     # Note registration will not be successful until the new node has caught up with the head of the chain.
