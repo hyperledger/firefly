@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -174,6 +174,8 @@ func (im *identityManager) ResolveSigningKey(ctx context.Context, inputKey strin
 			}
 			im.signingKeyCache.Set(inputKey, outputKey, im.identityCacheTTL)
 		}
+	} else {
+		return im.localOrgSigningKey, nil
 	}
 	return
 }
