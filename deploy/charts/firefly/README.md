@@ -194,13 +194,35 @@ core:
     - name: FIREFLY_PUBLICSTORAGE_IPFS_API_AUTH_USERNAME
       valueFrom:
         secretKeyRef:
-          name: my-ipfs-basic-auth
+          name: custom-ipfs-basic-auth
           key: username
     - name: FIREFLY_PUBLICSTORAGE_IPFS_API_AUTH_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: my-ipfs-basic-auth
+          name: custom-ipfs-basic-auth
           key: password
+```
+
+In the case of PostgreSQL credentials, environment variablels will have to be set for FireFly and its [migrations `Job`](#database-migrations):
+
+```yaml
+core:
+  extraEnv:
+    - name: FIREFLY_DATABASE_POSTGRES_URL
+      valueFrom:
+      secretKeyRef:
+        name: custom-psql-config
+        key: url    
+
+  jobs:
+    postgresMigrations:
+      enabled: true
+      extraEnv:
+        - name: PSQL_URL
+          valueFrom:
+            secretKeyRef:
+              name: custom-psql-config
+              key: url
 ```
 
 ### Ethereum
