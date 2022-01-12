@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestBoundCallbacks(t *testing.T) {
@@ -56,7 +57,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
 	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info", Info: info.String(),
 	})
@@ -66,7 +67,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.BLOBReceived("peer1", *hash, 12345, "ns1/id1")
 	assert.EqualError(t, err, "pop")
 
-	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return(nil, fmt.Errorf("pop"))
+	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return("manifest data", fmt.Errorf("pop"))
 	_, err = bc.MessageReceived("peer1", []byte{})
 	assert.EqualError(t, err, "pop")
 
