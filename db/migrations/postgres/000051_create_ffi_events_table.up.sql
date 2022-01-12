@@ -7,7 +7,7 @@ CREATE TABLE ffievents (
   name              VARCHAR(1024)   NOT NULL,
   pathname          VARCHAR(1024)   NOT NULL,
   description       TEXT            NOT NULL,
-  params            TEXT           NOT NULL
+  params            TEXT            NOT NULL
 );
 
 CREATE UNIQUE INDEX ffievents_pathname ON ffievents(interface_id,pathname);
