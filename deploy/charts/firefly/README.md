@@ -206,6 +206,15 @@ core:
 In the case of PostgreSQL credentials, environment variablels will have to be set for FireFly and its [migrations `Job`](#database-migrations):
 
 ```yaml
+# database section of the config still needs to be set to indicate Postgres
+config:
+  databaseOverride:
+    type: postgres
+    postgres:
+      migrations:
+        auto: false
+
+# pass Postgres URL as a secret to both FireFly and the migrations job
 core:
   extraEnv:
     - name: FIREFLY_DATABASE_POSTGRES_URL
