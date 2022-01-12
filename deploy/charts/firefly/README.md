@@ -203,7 +203,7 @@ core:
           key: password
 ```
 
-In the case of PostgreSQL credentials, environment variablels will have to be set for FireFly and its [migrations `Job`](#database-migrations):
+In the case of PostgreSQL credentials, environment variables will have to be set for FireFly and its [migrations `Job`](#database-migrations):
 
 ```yaml
 # database section of the config still needs to be set to indicate Postgres
