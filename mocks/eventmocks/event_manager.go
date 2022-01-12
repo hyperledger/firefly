@@ -51,13 +51,13 @@ func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: bi, batch, author, protocolTxID
-func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string) error {
-	ret := _m.Called(bi, batch, author, protocolTxID)
+// BatchPinComplete provides a mock function with given fields: bi, batch, signingIdentity
+func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string) error {
+	ret := _m.Called(bi, batch, signingIdentity)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string, string) error); ok {
-		r0 = rf(bi, batch, author, protocolTxID)
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string) error); ok {
+		r0 = rf(bi, batch, signingIdentity)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -245,13 +245,13 @@ func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 	return r0
 }
 
-// TokenPoolCreated provides a mock function with given fields: ti, pool, protocolTxID
-func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string) error {
-	ret := _m.Called(ti, pool, protocolTxID)
+// TokenPoolCreated provides a mock function with given fields: ti, pool
+func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error {
+	ret := _m.Called(ti, pool)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool, string) error); ok {
-		r0 = rf(ti, pool, protocolTxID)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenPool) error); ok {
+		r0 = rf(ti, pool)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -259,13 +259,13 @@ func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: ti, transfer, protocolTxID
-func (_m *EventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer, protocolTxID string) error {
-	ret := _m.Called(ti, transfer, protocolTxID)
+// TokensTransferred provides a mock function with given fields: ti, transfer
+func (_m *EventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error {
+	ret := _m.Called(ti, transfer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenTransfer, string) error); ok {
-		r0 = rf(ti, transfer, protocolTxID)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenTransfer) error); ok {
+		r0 = rf(ti, transfer)
 	} else {
 		r0 = ret.Error(0)
 	}

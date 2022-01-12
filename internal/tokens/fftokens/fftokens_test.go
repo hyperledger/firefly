@@ -174,7 +174,7 @@ func TestActivateTokenPool(t *testing.T) {
 	txInfo := map[string]interface{}{
 		"foo": "bar",
 	}
-	tx := &fftypes.Transaction{
+	ev := &fftypes.BlockchainEvent{
 		Info: txInfo,
 	}
 
@@ -199,7 +199,7 @@ func TestActivateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.ActivateTokenPool(context.Background(), opID, pool, tx)
+	err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
 	assert.NoError(t, err)
 }
 
@@ -214,12 +214,12 @@ func TestActivateTokenPoolError(t *testing.T) {
 			Type: fftypes.TransactionTypeTokenPool,
 		},
 	}
-	tx := &fftypes.Transaction{}
+	ev := &fftypes.BlockchainEvent{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, tx)
+	err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, ev)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -461,8 +461,8 @@ func TestEvents(t *testing.T) {
 
 	// token-pool: invalid uuid (success)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && p.TransactionID == nil
-	}), "abc").Return(nil).Once()
+		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && p.TransactionID == nil && p.Event.ProtocolID == "abc"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "7",
 		"event": "token-pool",
@@ -481,8 +481,8 @@ func TestEvents(t *testing.T) {
 
 	// token-pool: success
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && txID.Equals(p.TransactionID)
-	}), "abc").Return(nil).Once()
+		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.Key == "0x0" && txID.Equals(p.TransactionID) && p.Event.ProtocolID == "abc"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "8",
 		"event": "token-pool",
@@ -529,8 +529,8 @@ func TestEvents(t *testing.T) {
 
 	// token-mint: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.To == "0x0" && t.TokenIndex == "" && *t.TX.ID == *txID && t.PoolProtocolID == "F1"
-	}), "abc").Return(nil).Once()
+		return t.Amount.Int().Int64() == 2 && t.To == "0x0" && t.TokenIndex == "" && *t.TX.ID == *txID && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "abc"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "11",
 		"event": "token-mint",
@@ -551,8 +551,8 @@ func TestEvents(t *testing.T) {
 
 	// token-mint: invalid uuid (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 1 && t.To == "0x0" && t.TokenIndex == "1" && t.PoolProtocolID == "N1"
-	}), "abc").Return(nil).Once()
+		return t.Amount.Int().Int64() == 1 && t.To == "0x0" && t.TokenIndex == "1" && t.PoolProtocolID == "N1" && t.Event.ProtocolID == "abc"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "12",
 		"event": "token-mint",
@@ -594,8 +594,8 @@ func TestEvents(t *testing.T) {
 
 	// token-transfer: bad message hash (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && t.PoolProtocolID == "F1"
-	}), "abc").Return(nil).Once()
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "abc"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "14",
 		"event": "token-transfer",
@@ -618,8 +618,8 @@ func TestEvents(t *testing.T) {
 	// token-transfer: success
 	messageID := fftypes.NewUUID()
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && messageID.Equals(t.Message) && t.PoolProtocolID == "F1"
-	}), "abc").Return(nil).Once()
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && messageID.Equals(t.Message) && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "abc"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "15",
 		"event": "token-transfer",
@@ -641,8 +641,8 @@ func TestEvents(t *testing.T) {
 
 	// token-burn: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.TokenIndex == "0" && t.PoolProtocolID == "F1"
-	}), "abc").Return(nil).Once()
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.TokenIndex == "0" && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "abc"
+	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "16",
 		"event": "token-burn",

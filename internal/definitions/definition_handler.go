@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
-	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -57,7 +56,6 @@ type definitionHandlers struct {
 	messaging privatemessaging.Manager
 	assets    assets.Manager
 	contracts contracts.Manager
-	txhelper  txcommon.Helper
 }
 
 func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
@@ -69,7 +67,6 @@ func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.M
 		messaging: pm,
 		assets:    am,
 		contracts: cm,
-		txhelper:  txcommon.NewTransactionHelper(di),
 	}
 }
 

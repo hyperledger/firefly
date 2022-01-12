@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -85,19 +85,14 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	}
 
 	tx := &fftypes.Transaction{
-		ID: fftypes.NewUUID(),
-		Subject: fftypes.TransactionSubject{
-			Namespace: pool.Namespace,
-			Type:      fftypes.TransactionTypeTokenPool,
-			Signer:    pool.Key,
-			Reference: pool.ID,
-		},
-		Created: fftypes.Now(),
-		Status:  fftypes.OpStatusPending,
+		ID:        fftypes.NewUUID(),
+		Namespace: pool.Namespace,
+		Type:      fftypes.TransactionTypeTokenPool,
+		Created:   fftypes.Now(),
+		Status:    fftypes.OpStatusPending,
 	}
-	tx.Hash = tx.Subject.Hash()
 	pool.TX.ID = tx.ID
-	pool.TX.Type = tx.Subject.Type
+	pool.TX.Type = tx.Type
 
 	op := fftypes.NewTXOperation(
 		plugin,
@@ -109,7 +104,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	txcommon.AddTokenPoolCreateInputs(op, pool)
 
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		err = am.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+		err = am.database.UpsertTransaction(ctx, tx)
 		if err == nil {
 			err = am.database.InsertOperation(ctx, op)
 		}
@@ -122,12 +117,12 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	return pool, plugin.CreateTokenPool(ctx, op.ID, pool)
 }
 
-func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, tx *fftypes.Transaction) error {
+func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return err
 	}
-	return plugin.ActivateTokenPool(ctx, nil, pool, tx)
+	return plugin.ActivateTokenPool(ctx, nil, pool, event)
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {

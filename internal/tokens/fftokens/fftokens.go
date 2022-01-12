@@ -210,16 +210,17 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Connector:     ft.configuredName,
 		Standard:      standard,
 		Event: blockchain.Event{
-			Source:    ft.Name() + ":" + ft.configuredName,
-			Name:      "TokenPool",
-			Output:    rawOutput,
-			Info:      tx,
-			Timestamp: timestamp,
+			Source:     ft.Name() + ":" + ft.configuredName,
+			Name:       "TokenPool",
+			ProtocolID: txHash,
+			Output:     rawOutput,
+			Info:       tx,
+			Timestamp:  timestamp,
 		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokenPoolCreated(ft, pool, txHash)
+	return ft.callbacks.TokenPoolCreated(ft, pool)
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
@@ -298,16 +299,17 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			},
 		},
 		Event: blockchain.Event{
-			Source:    ft.Name() + ":" + ft.configuredName,
-			Name:      eventName,
-			Output:    rawOutput,
-			Info:      tx,
-			Timestamp: timestamp,
+			Source:     ft.Name() + ":" + ft.configuredName,
+			Name:       eventName,
+			ProtocolID: txHash,
+			Output:     rawOutput,
+			Info:       tx,
+			Timestamp:  timestamp,
 		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokensTransferred(ft, transfer, txHash)
+	return ft.callbacks.TokensTransferred(ft, transfer)
 }
 
 func (ft *FFTokens) eventLoop() {
@@ -385,12 +387,12 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UU
 	return nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, tx *fftypes.Transaction) error {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			RequestID:   operationID.String(),
 			PoolID:      pool.ProtocolID,
-			Transaction: tx.Info,
+			Transaction: event.Info,
 		}).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {

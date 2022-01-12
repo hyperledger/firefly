@@ -132,8 +132,7 @@ type iBatchCollection interface {
 
 type iTransactionCollection interface {
 	// UpsertTransaction - Upsert a transaction
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) (err error)
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -692,16 +691,11 @@ var BatchQueryFactory = &queryFields{
 
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"type":       &StringField{},
-	"signer":     &StringField{},
-	"status":     &StringField{},
-	"reference":  &UUIDField{},
-	"protocolid": &StringField{},
-	"created":    &TimeField{},
-	"sequence":   &Int64Field{},
-	"info":       &JSONField{},
-	"namespace":  &StringField{},
+	"id":        &UUIDField{},
+	"type":      &StringField{},
+	"status":    &StringField{},
+	"created":   &TimeField{},
+	"namespace": &StringField{},
 }
 
 // DataQueryFactory filter fields for data
@@ -937,8 +931,9 @@ var BlockchainEventQueryFactory = &queryFields{
 	"id":           &UUIDField{},
 	"source":       &StringField{},
 	"namespace":    &StringField{},
-	"subscription": &StringField{},
 	"name":         &StringField{},
+	"protocolid":   &StringField{},
+	"subscription": &StringField{},
 	"timestamp":    &TimeField{},
 }
 

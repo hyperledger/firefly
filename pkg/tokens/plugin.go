@@ -45,7 +45,7 @@ type Plugin interface {
 	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, tx *fftypes.Transaction) error
+	ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
 	MintTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
@@ -76,12 +76,12 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenPoolCreated(plugin Plugin, pool *TokenPool, protocolTxID string) error
+	TokenPoolCreated(plugin Plugin, pool *TokenPool) error
 
 	// TokensTransferred notifies on a transfer between token accounts.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokensTransferred(plugin Plugin, transfer *TokenTransfer, protocolTxID string) error
+	TokensTransferred(plugin Plugin, transfer *TokenTransfer) error
 }
 
 // Capabilities the supported featureset of the tokens

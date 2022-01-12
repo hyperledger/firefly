@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -247,19 +247,14 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 	}
 
 	tx := &fftypes.Transaction{
-		ID: fftypes.NewUUID(),
-		Subject: fftypes.TransactionSubject{
-			Namespace: s.namespace,
-			Type:      fftypes.TransactionTypeTokenTransfer,
-			Signer:    s.transfer.Key,
-			Reference: s.transfer.LocalID,
-		},
-		Created: fftypes.Now(),
-		Status:  fftypes.OpStatusPending,
+		ID:        fftypes.NewUUID(),
+		Namespace: s.namespace,
+		Type:      fftypes.TransactionTypeTokenTransfer,
+		Created:   fftypes.Now(),
+		Status:    fftypes.OpStatusPending,
 	}
-	tx.Hash = tx.Subject.Hash()
 	s.transfer.TX.ID = tx.ID
-	s.transfer.TX.Type = tx.Subject.Type
+	s.transfer.TX.Type = tx.Type
 
 	op := fftypes.NewTXOperation(
 		plugin,
@@ -280,7 +275,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
 		}
 
-		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+		err = s.mgr.database.UpsertTransaction(ctx, tx)
 		if err != nil {
 			return err
 		}

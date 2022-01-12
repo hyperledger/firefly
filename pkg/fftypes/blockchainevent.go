@@ -23,6 +23,7 @@ type BlockchainEvent struct {
 	Namespace    string     `json:"namespace,omitempty"`
 	Name         string     `json:"name,omitempty"`
 	Subscription *UUID      `json:"subscription,omitempty"`
+	ProtocolID   string     `json:"protocolId,omitempty"`
 	Output       JSONObject `json:"outputs,omitempty"`
 	Info         JSONObject `json:"info,omitempty"`
 	Timestamp    *FFTime    `json:"timestamp,omitempty"`

@@ -19,13 +19,13 @@ type Plugin struct {
 	mock.Mock
 }
 
-// ActivateTokenPool provides a mock function with given fields: ctx, operationID, pool, tx
-func (_m *Plugin) ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, tx *fftypes.Transaction) error {
-	ret := _m.Called(ctx, operationID, pool, tx)
+// ActivateTokenPool provides a mock function with given fields: ctx, operationID, pool, event
+func (_m *Plugin) ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
+	ret := _m.Called(ctx, operationID, pool, event)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.Transaction) error); ok {
-		r0 = rf(ctx, operationID, pool, tx)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.BlockchainEvent) error); ok {
+		r0 = rf(ctx, operationID, pool, event)
 	} else {
 		r0 = ret.Error(0)
 	}

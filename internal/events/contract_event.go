@@ -24,16 +24,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) persistBlockchainEvent(ctx context.Context, ns string, subID *fftypes.UUID, event *blockchain.Event) error {
-	chainEvent := &fftypes.BlockchainEvent{
+func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event) *fftypes.BlockchainEvent {
+	return &fftypes.BlockchainEvent{
 		ID:           fftypes.NewUUID(),
 		Namespace:    ns,
 		Subscription: subID,
+		ProtocolID:   event.ProtocolID,
 		Name:         event.Name,
 		Output:       event.Output,
 		Info:         event.Info,
 		Timestamp:    event.Timestamp,
 	}
+}
+
+func (em *eventManager) persistBlockchainEvent(ctx context.Context, ns string, subID *fftypes.UUID, event *blockchain.Event) error {
+	chainEvent := buildBlockchainEvent(ns, subID, event)
 	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}

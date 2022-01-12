@@ -1721,6 +1721,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: source
         schema:
           type: string
@@ -1785,6 +1790,8 @@ paths:
                   outputs:
                     additionalProperties: {}
                     type: object
+                  protocolId:
+                    type: string
                   sequence:
                     format: int64
                     type: integer
@@ -1838,6 +1845,8 @@ paths:
                   outputs:
                     additionalProperties: {}
                     type: object
+                  protocolId:
+                    type: string
                   sequence:
                     format: int64
                     type: integer
@@ -5131,30 +5140,18 @@ paths:
               schema:
                 properties:
                   created: {}
-                  hash: {}
                   id: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  protocolId:
+                  namespace:
                     type: string
                   status:
                     type: string
-                  subject:
-                    properties:
-                      namespace:
-                        type: string
-                      reference: {}
-                      signer:
-                        type: string
-                      type:
-                        enum:
-                        - none
-                        - batch_pin
-                        - token_pool
-                        - token_transfer
-                        type: string
-                    type: object
+                  type:
+                    enum:
+                    - none
+                    - batch_pin
+                    - token_pool
+                    - token_transfer
+                    type: string
                 type: object
           description: Success
         default:
@@ -9483,32 +9480,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: info
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: protocolid
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: reference
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: sequence
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: signer
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -9562,30 +9534,18 @@ paths:
               schema:
                 properties:
                   created: {}
-                  hash: {}
                   id: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  protocolId:
+                  namespace:
                     type: string
                   status:
                     type: string
-                  subject:
-                    properties:
-                      namespace:
-                        type: string
-                      reference: {}
-                      signer:
-                        type: string
-                      type:
-                        enum:
-                        - none
-                        - batch_pin
-                        - token_pool
-                        - token_transfer
-                        type: string
-                    type: object
+                  type:
+                    enum:
+                    - none
+                    - batch_pin
+                    - token_pool
+                    - token_transfer
+                    type: string
                 type: object
           description: Success
         default:
@@ -9627,32 +9587,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: info
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: protocolid
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: reference
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: sequence
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: signer
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -9706,30 +9641,18 @@ paths:
               schema:
                 properties:
                   created: {}
-                  hash: {}
                   id: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  protocolId:
+                  namespace:
                     type: string
                   status:
                     type: string
-                  subject:
-                    properties:
-                      namespace:
-                        type: string
-                      reference: {}
-                      signer:
-                        type: string
-                      type:
-                        enum:
-                        - none
-                        - batch_pin
-                        - token_pool
-                        - token_transfer
-                        type: string
-                    type: object
+                  type:
+                    enum:
+                    - none
+                    - batch_pin
+                    - token_pool
+                    - token_transfer
+                    type: string
                 type: object
           description: Success
         default:
@@ -9767,30 +9690,18 @@ paths:
                 items:
                   properties:
                     created: {}
-                    hash: {}
                     id: {}
-                    info:
-                      additionalProperties: {}
-                      type: object
-                    protocolId:
+                    namespace:
                       type: string
                     status:
                       type: string
-                    subject:
-                      properties:
-                        namespace:
-                          type: string
-                        reference: {}
-                        signer:
-                          type: string
-                        type:
-                          enum:
-                          - none
-                          - batch_pin
-                          - token_pool
-                          - token_transfer
-                          type: string
-                      type: object
+                    type:
+                      enum:
+                      - none
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      type: string
                   type: object
                 type: array
           description: Success

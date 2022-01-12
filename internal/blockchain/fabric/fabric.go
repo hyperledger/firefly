@@ -308,15 +308,16 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
 		Event: blockchain.Event{
-			Source: f.Name(),
-			Name:   "BatchPin",
-			Output: *payload,
-			Info:   msgJSON,
+			Source:     f.Name(),
+			Name:       "BatchPin",
+			ProtocolID: sTransactionHash,
+			Output:     *payload,
+			Info:       msgJSON,
 		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, signer, sTransactionHash)
+	return f.callbacks.BatchPinComplete(batch, signer)
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -327,16 +328,18 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 	delete(msgJSON, "payload")
 
+	sTransactionHash := msgJSON.GetString("transactionId")
 	sub := msgJSON.GetString("subId")
 	name := msgJSON.GetString("eventName")
 
 	event := &blockchain.ContractEvent{
 		Subscription: sub,
 		Event: blockchain.Event{
-			Source: f.Name(),
-			Name:   name,
-			Output: *payload,
-			Info:   msgJSON,
+			Source:     f.Name(),
+			Name:       name,
+			ProtocolID: sTransactionHash,
+			Output:     *payload,
+			Info:       msgJSON,
 		},
 	}
 

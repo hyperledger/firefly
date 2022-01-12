@@ -32,13 +32,15 @@ var (
 		"id",
 		"source",
 		"namespace",
-		"subscription_id",
 		"name",
-		"outputs",
+		"protocol_id",
+		"subscription_id",
+		"output",
 		"info",
 		"timestamp",
 	}
 	blockchainEventFilterFieldMap = map[string]string{
+		"protocolid":   "protocol_id",
 		"subscription": "subscription_id",
 	}
 )
@@ -57,8 +59,9 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 				event.ID,
 				event.Source,
 				event.Namespace,
-				event.Subscription,
 				event.Name,
+				event.ProtocolID,
+				event.Subscription,
 				event.Output,
 				event.Info,
 				event.Timestamp,
@@ -79,8 +82,9 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 		&event.ID,
 		&event.Source,
 		&event.Namespace,
-		&event.Subscription,
 		&event.Name,
+		&event.ProtocolID,
+		&event.Subscription,
 		&event.Output,
 		&event.Info,
 		&event.Timestamp,
@@ -108,7 +112,7 @@ func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pre
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Contract event '%s' not found", desc)
+		log.L(ctx).Debugf("Blockchain event '%s' not found", desc)
 		return nil, nil
 	}
 

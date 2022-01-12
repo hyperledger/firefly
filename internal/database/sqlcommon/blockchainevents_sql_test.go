@@ -39,6 +39,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 		Namespace:    "ns",
 		Subscription: fftypes.NewUUID(),
 		Name:         "Changed",
+		ProtocolID:   "tx1",
 		Output:       fftypes.JSONObject{"value": 1},
 		Info:         fftypes.JSONObject{"blockNumber": 1},
 		Timestamp:    fftypes.Now(),

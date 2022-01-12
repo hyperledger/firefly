@@ -45,8 +45,8 @@ func TestBoundCallbacks(t *testing.T) {
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
-	mei.On("BatchPinComplete", mbi, batch, "0x12345", "tx12345").Return(fmt.Errorf("pop"))
-	err := bc.BatchPinComplete(batch, "0x12345", "tx12345")
+	mei.On("BatchPinComplete", mbi, batch, "0x12345").Return(fmt.Errorf("pop"))
+	err := bc.BatchPinComplete(batch, "0x12345")
 	assert.EqualError(t, err, "pop")
 
 	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
@@ -69,12 +69,12 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.MessageReceived("peer1", []byte{})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TokenPoolCreated", mti, pool, "tx12345").Return(fmt.Errorf("pop"))
-	err = bc.TokenPoolCreated(mti, pool, "tx12345")
+	mei.On("TokenPoolCreated", mti, pool).Return(fmt.Errorf("pop"))
+	err = bc.TokenPoolCreated(mti, pool)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TokensTransferred", mti, transfer, "tx12345").Return(fmt.Errorf("pop"))
-	err = bc.TokensTransferred(mti, transfer, "tx12345")
+	mei.On("TokensTransferred", mti, transfer).Return(fmt.Errorf("pop"))
+	err = bc.TokensTransferred(mti, transfer)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("ContractEvent", mock.AnythingOfType("*blockchain.ContractEvent")).Return(fmt.Errorf("pop"))

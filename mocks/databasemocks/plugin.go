@@ -2749,13 +2749,13 @@ func (_m *Plugin) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.Tok
 	return r0
 }
 
-// UpsertTransaction provides a mock function with given fields: ctx, data, allowHashUpdate
-func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowHashUpdate)
+// UpsertTransaction provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction) error {
+	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction, bool) error); ok {
-		r0 = rf(ctx, data, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

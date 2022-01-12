@@ -41,27 +41,21 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	}
 }
 
-func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus, protocolTxID string, additionalInfo fftypes.JSONObject) *fftypes.Transaction {
+func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus) *fftypes.Transaction {
 	return &fftypes.Transaction{
-		ID:     pool.TX.ID,
-		Status: status,
-		Subject: fftypes.TransactionSubject{
-			Namespace: pool.Namespace,
-			Type:      pool.TX.Type,
-			Signer:    pool.Key,
-			Reference: pool.ID,
-		},
-		ProtocolID: protocolTxID,
-		Info:       additionalInfo,
+		ID:        pool.TX.ID,
+		Status:    status,
+		Namespace: pool.Namespace,
+		Type:      pool.TX.Type,
 	}
 }
 
-func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string, ev *blockchain.Event) error {
+func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event) error {
 	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, ev); err != nil {
-		return nil
+		return err
 	}
-	tx := poolTransaction(pool, fftypes.OpStatusSucceeded, protocolTxID, ev.Info)
-	if valid, err := em.txhelper.PersistTransaction(ctx, tx); !valid || err != nil {
+	tx := poolTransaction(pool, fftypes.OpStatusSucceeded)
+	if err := em.database.UpsertTransaction(ctx, tx); err != nil {
 		return err
 	}
 	pool.State = fftypes.TokenPoolStateConfirmed
@@ -98,11 +92,8 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 		// Unknown pool state - should only happen on first run after database migration
 		// Activate the pool, then immediately confirm
 		// TODO: can this state eventually be removed?
-		tx, err := em.database.GetTransactionByID(ctx, existingPool.TX.ID)
-		if err != nil {
-			return nil, err
-		}
-		if err = em.assets.ActivateTokenPool(ctx, existingPool, tx); err != nil {
+		ev := buildBlockchainEvent(existingPool.Namespace, nil, &pool.Event)
+		if err = em.assets.ActivateTokenPool(ctx, existingPool, ev); err != nil {
 			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
 			return nil, err
 		}
@@ -111,10 +102,6 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 }
 
 func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, pool *tokens.TokenPool) (announcePool *fftypes.TokenPool, err error) {
-	if pool.TransactionID == nil {
-		return nil, nil
-	}
-
 	op, err := em.findTokenPoolCreateOp(ctx, pool.TransactionID)
 	if err != nil {
 		return nil, err
@@ -143,7 +130,12 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, po
 // It will be at least invoked on the submitter when the pool is first created, to trigger the submitter to announce it.
 // It will be invoked on every node (including the submitter) after the pool is announced+activated, to trigger confirmation of the pool.
 // When received in any other scenario, it should be ignored.
-func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string) (err error) {
+func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) (err error) {
+	if pool.TransactionID == nil {
+		log.L(em.ctx).Errorf("Invalid token pool transaction - ID is nil")
+		return nil // move on
+	}
+
 	var batchID *fftypes.UUID
 	var announcePool *fftypes.TokenPool
 
@@ -161,7 +153,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				} else if msg != nil {
 					batchID = msg.BatchID // trigger rewind after completion of database transaction
 				}
-				return em.confirmPool(ctx, existingPool, protocolTxID, &pool.Event)
+				return em.confirmPool(ctx, existingPool, &pool.Event)
 			}
 
 			// See if this pool was submitted locally and needs to be announced
@@ -172,7 +164,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 
 			// Otherwise this event can be ignored
-			log.L(ctx).Debugf("Ignoring token pool transaction '%s' - pool %s is not active", protocolTxID, pool.ProtocolID)
+			log.L(ctx).Debugf("Ignoring token pool transaction '%s' - pool %s is not active", pool.Event.ProtocolID, pool.ProtocolID)
 			return nil
 		})
 		return err != nil, err
@@ -189,8 +181,8 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		// Other nodes will pass these details to their own token connector for validation/activation of the pool
 		if announcePool != nil {
 			broadcast := &fftypes.TokenPoolAnnouncement{
-				Pool: announcePool,
-				TX:   poolTransaction(announcePool, fftypes.OpStatusPending, protocolTxID, pool.Event.Info),
+				Pool:  announcePool,
+				Event: buildBlockchainEvent(announcePool.Namespace, nil, &pool.Event),
 			}
 			log.L(em.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
 			_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)

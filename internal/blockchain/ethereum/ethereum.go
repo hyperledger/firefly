@@ -258,19 +258,21 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
 		Event: blockchain.Event{
-			Source:    e.Name(),
-			Name:      "BatchPin",
-			Output:    dataJSON,
-			Info:      msgJSON,
-			Timestamp: timestamp,
+			Source:     e.Name(),
+			Name:       "BatchPin",
+			ProtocolID: sTransactionHash,
+			Output:     dataJSON,
+			Info:       msgJSON,
+			Timestamp:  timestamp,
 		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash)
+	return e.callbacks.BatchPinComplete(batch, authorAddress)
 }
 
 func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
+	sTransactionHash := msgJSON.GetString("transactionHash")
 	sub := msgJSON.GetString("subId")
 	signature := msgJSON.GetString("signature")
 	dataJSON := msgJSON.GetObject("data")
@@ -285,11 +287,12 @@ func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
 	event := &blockchain.ContractEvent{
 		Subscription: sub,
 		Event: blockchain.Event{
-			Source:    e.Name(),
-			Name:      name,
-			Output:    dataJSON,
-			Info:      msgJSON,
-			Timestamp: timestamp,
+			Source:     e.Name(),
+			Name:       name,
+			ProtocolID: sTransactionHash,
+			Output:     dataJSON,
+			Info:       msgJSON,
+			Timestamp:  timestamp,
 		},
 	}
 

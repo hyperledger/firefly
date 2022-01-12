@@ -81,11 +81,9 @@ type Callbacks interface {
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
-	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
-	// For example a padded block number, followed by a padded transaction index within that block.
 	//
 	// Error should will only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, signingIdentity string, protocolTxID string) error
+	BatchPinComplete(batch *BatchPin, signingIdentity string) error
 
 	// ContractEvent notifies on the arrival of any event from a user-created subscription
 	ContractEvent(event *ContractEvent) error
@@ -150,6 +148,9 @@ type Event struct {
 
 	// Name is a short name for the event
 	Name string
+
+	// ProtocolID is a protocol-specific identifier for the event
+	ProtocolID string
 
 	// Output is the raw output data from the event
 	Output fftypes.JSONObject
