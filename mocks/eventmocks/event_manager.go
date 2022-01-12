@@ -126,17 +126,24 @@ func (_m *EventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 }
 
 // MessageReceived provides a mock function with given fields: dx, peerID, data
-func (_m *EventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error {
+func (_m *EventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (string, error) {
 	ret := _m.Called(dx, peerID, data)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, []byte) error); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, []byte) string); ok {
 		r0 = rf(dx, peerID, data)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(dataexchange.Plugin, string, []byte) error); ok {
+		r1 = rf(dx, peerID, data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewEvents provides a mock function with given fields:
@@ -259,13 +266,13 @@ func (_m *EventManager) TokensTransferred(ti tokens.Plugin, poolProtocolID strin
 	return r0
 }
 
-// TransferResult provides a mock function with given fields: dx, trackingID, status, info, opOutput
-func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(dx, trackingID, status, info, opOutput)
+// TransferResult provides a mock function with given fields: dx, trackingID, status, update
+func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
+	ret := _m.Called(dx, trackingID, status, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(dx, trackingID, status, info, opOutput)
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
+		r0 = rf(dx, trackingID, status, update)
 	} else {
 		r0 = ret.Error(0)
 	}

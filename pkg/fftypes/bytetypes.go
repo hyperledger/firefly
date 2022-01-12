@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -67,6 +67,14 @@ func ParseBytes32(ctx context.Context, hexStr string) (*Bytes32, error) {
 		return nil, i18n.WrapError(context.Background(), err, i18n.MsgInvalidHex)
 	}
 	return &b32, nil
+}
+
+func MustParseBytes32(hexStr string) *Bytes32 {
+	b32, err := ParseBytes32(context.Background(), hexStr)
+	if err != nil {
+		panic(err)
+	}
+	return b32
 }
 
 // Scan implements sql.Scanner

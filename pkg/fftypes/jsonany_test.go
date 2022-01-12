@@ -93,6 +93,7 @@ func TestJSONAnyUnmarshalFail(t *testing.T) {
 func TestScan(t *testing.T) {
 
 	var h JSONAny
+	assert.Equal(t, int64(0), h.Length())
 	assert.NoError(t, h.Scan(nil))
 	assert.Equal(t, []byte(NullString), []byte(h))
 
@@ -109,8 +110,10 @@ func TestScan(t *testing.T) {
 
 	assert.Equal(t, "test", JSONAnyPtrBytes([]byte(`{"val": "test"}`)).JSONObject().GetString("val"))
 	assert.Nil(t, JSONAnyPtrBytes(nil))
+	assert.Equal(t, int64(0), JSONAnyPtrBytes(nil).Length())
 
 	assert.Nil(t, JSONAnyPtrBytes(nil).Bytes())
 	assert.NotEmpty(t, JSONAnyPtr("{}").Bytes())
+	assert.Equal(t, int64(2), JSONAnyPtr("{}").Length())
 
 }

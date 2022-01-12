@@ -123,12 +123,9 @@ func (pm *privateMessaging) Start() error {
 func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
-	payload, err := json.Marshal(&fftypes.TransportWrapper{
+	tw := &fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
 		Batch: batch,
-	})
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
 	// Retrieve the group
@@ -138,7 +135,7 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return pm.sendAndSubmitBatch(ctx, batch, nodes, fftypes.JSONAnyPtrBytes(payload), contexts)
+		return pm.sendAndSubmitBatch(ctx, batch, nodes, tw, contexts)
 	})
 }
 
@@ -177,8 +174,13 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 	return nil
 }
 
-func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload *fftypes.JSONAny, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
+func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, tw *fftypes.TransportWrapper, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
 	l := log.L(ctx)
+
+	payload, err := json.Marshal(tw)
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+	}
 
 	// TODO: move to using DIDs consistently as the way to reference the node/organization (i.e. node.Owner becomes a DID)
 	localOrgSigingKey, err := pm.identity.GetLocalOrgKey(ctx)
@@ -202,7 +204,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 		}
 
 		// Send the payload itself
-		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload.Bytes())
+		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload)
 		if err != nil {
 			return err
 		}
@@ -215,6 +217,9 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 				trackingID,
 				fftypes.OpTypeDataExchangeBatchSend,
 				fftypes.OpStatusPending)
+			op.Input = fftypes.JSONObject{
+				"manifest": tw.Manifest().String(),
+			}
 			if err = pm.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
@@ -225,8 +230,8 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 	return nil
 }
 
-func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload *fftypes.JSONAny, contexts []*fftypes.Bytes32) (err error) {
-	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, payload, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
+func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, tw *fftypes.TransportWrapper, contexts []*fftypes.Bytes32) (err error) {
+	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, tw, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
 		return err
 	}
 	return pm.writeTransaction(ctx, batch, contexts)

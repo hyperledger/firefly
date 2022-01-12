@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,19 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxhttps
+package fftypes
 
-import (
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-)
+import "encoding/json"
 
-const (
-	// DataExchangeManifestEnabled determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector
-	DataExchangeManifestEnabled = "manifestEnabled"
-)
+// Manifest is a list of references to messages and data
+type Manifest struct {
+	Messages []MessageRef `json:"messages"`
+	Data     []DataRef    `json:"data"`
+}
 
-func (h *HTTPS) InitPrefix(prefix config.Prefix) {
-	wsconfig.InitPrefix(prefix)
-	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
+func (mf *Manifest) String() string {
+	b, _ := json.Marshal(&mf)
+	return string(b)
 }

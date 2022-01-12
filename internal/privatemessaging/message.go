@@ -18,7 +18,6 @@ package privatemessaging
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -213,15 +212,12 @@ func (s *messageSender) sendUnpinned(ctx context.Context) (err error) {
 		return err
 	}
 
-	payload, err := json.Marshal(&fftypes.TransportWrapper{
+	tw := &fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: &s.msg.Message,
 		Data:    data,
 		Group:   group,
-	})
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
-	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, fftypes.JSONAnyPtrBytes(payload), nil, data)
+	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, tw, nil, data)
 }

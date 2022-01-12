@@ -124,9 +124,8 @@ type DataRefOrValue struct {
 
 // MessageRef is a lightweight data structure that can be used to refer to a message
 type MessageRef struct {
-	ID       *UUID    `json:"id,omitempty"`
-	Sequence int64    `json:"sequence,omitempty"`
-	Hash     *Bytes32 `json:"hash,omitempty"`
+	ID   *UUID    `json:"id,omitempty"`
+	Hash *Bytes32 `json:"hash,omitempty"`
 }
 
 func (h *MessageHeader) Hash() *Bytes32 {

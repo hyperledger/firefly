@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -64,8 +65,9 @@ func TestMessageReceiveOK(t *testing.T) {
 		Identity: "parentOrg",
 	}, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything, false).Return(nil, nil)
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.NotNil(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -98,8 +100,9 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
 	}, nil)
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -139,8 +142,9 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 		Identity: "parentOrg",
 	}, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -151,8 +155,9 @@ func TestMessageReceivedBadData(t *testing.T) {
 	defer cancel()
 
 	mdx := &dataexchangemocks.Plugin{}
-	err := em.MessageReceived(mdx, "peer1", []byte(`!{}`))
+	m, err := em.MessageReceived(mdx, "peer1", []byte(`!{}`))
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 }
 
@@ -161,10 +166,11 @@ func TestMessageReceivedUnknownType(t *testing.T) {
 	defer cancel()
 
 	mdx := &dataexchangemocks.Plugin{}
-	err := em.MessageReceived(mdx, "peer1", []byte(`{
+	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
 		"type": "unknown"
 	}`))
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 }
 
@@ -173,10 +179,11 @@ func TestMessageReceivedNilBatch(t *testing.T) {
 	defer cancel()
 
 	mdx := &dataexchangemocks.Plugin{}
-	err := em.MessageReceived(mdx, "peer1", []byte(`{
+	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
 		"type": "batch"
 	}`))
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 }
 
@@ -185,10 +192,11 @@ func TestMessageReceivedNilMessage(t *testing.T) {
 	defer cancel()
 
 	mdx := &dataexchangemocks.Plugin{}
-	err := em.MessageReceived(mdx, "peer1", []byte(`{
+	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
 		"type": "message"
 	}`))
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 }
 
@@ -197,11 +205,12 @@ func TestMessageReceivedNilGroup(t *testing.T) {
 	defer cancel()
 
 	mdx := &dataexchangemocks.Plugin{}
-	err := em.MessageReceived(mdx, "peer1", []byte(`{
+	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
 		"type": "message",
 		"message": {}
 	}`))
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 }
 
 func TestMessageReceiveNodeLookupError(t *testing.T) {
@@ -217,8 +226,9 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 }
 
 func TestMessageReceiveNodeNotFound(t *testing.T) {
@@ -234,8 +244,9 @@ func TestMessageReceiveNodeNotFound(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, nil)
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 }
 
 func TestMessageReceiveAuthorLookupError(t *testing.T) {
@@ -254,8 +265,9 @@ func TestMessageReceiveAuthorLookupError(t *testing.T) {
 		{Name: "node1", Owner: "org1"},
 	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 }
 
 func TestMessageReceiveAuthorNotFound(t *testing.T) {
@@ -274,8 +286,9 @@ func TestMessageReceiveAuthorNotFound(t *testing.T) {
 		{Name: "node1", Owner: "org1"},
 	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, nil)
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 }
 
 func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
@@ -303,8 +316,9 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, fmt.Errorf("pop"))
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -335,8 +349,9 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, nil)
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -369,8 +384,9 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
 	}, nil)
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -481,7 +497,40 @@ func TestTransferResultOk(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+		Error: "error info",
+		Info:  `{"extra": "info"}`,
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestTransferResultManifestMismatch(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	id := fftypes.NewUUID()
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:        id,
+			BackendID: "tracking12345",
+			Input: fftypes.JSONObject{
+				"maniest": "Bob",
+			},
+		},
+	}, nil, nil)
+	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+		Info:     `{"extra": "info"}`,
+		Manifest: "Sally",
+	})
 	assert.NoError(t, err)
 
 }
@@ -497,22 +546,28 @@ func TestTransferResultNotCorrelated(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+		Error: "error info",
+		Info:  `{"extra": "info"}`,
+	})
 	assert.NoError(t, err)
 
 }
 
 func TestTransferResultNotFound(t *testing.T) {
 	em, cancel := newTestEventManager(t)
-	cancel() // avoid retries
+	defer cancel() // we want to retry until the count
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
-	assert.Regexp(t, "FF10158", err)
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+		Error: "error info",
+		Info:  `{"extra": "info"}`,
+	})
+	assert.NoError(t, err)
 
 }
 
@@ -525,7 +580,10 @@ func TestTransferGetOpFail(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+		Error: "error info",
+		Info:  `{"extra": "info"}`,
+	})
 	assert.Regexp(t, "FF10158", err)
 
 }
@@ -546,7 +604,10 @@ func TestTransferUpdateFail(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+		Error: "error info",
+		Info:  `{"extra": "info"}`,
+	})
 	assert.Regexp(t, "FF10158", err)
 
 }
@@ -568,8 +629,9 @@ func TestMessageReceiveMessageWrongType(t *testing.T) {
 	})
 
 	mdx := &dataexchangemocks.Plugin{}
-	err := em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 	mdx.AssertExpectations(t)
 }
@@ -604,8 +666,9 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	err = em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -641,8 +704,9 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
 
-	err = em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -684,8 +748,9 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	}, nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
 
-	err = em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -734,8 +799,9 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	}, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
 
-	err = em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -786,8 +852,9 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err = em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -828,8 +895,9 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
 
-	err = em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -870,8 +938,9 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, nil)
 
-	err = em.MessageReceived(mdx, "peer1", b)
+	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
+	assert.Empty(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)

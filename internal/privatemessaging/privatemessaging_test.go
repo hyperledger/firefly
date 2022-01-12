@@ -181,7 +181,12 @@ func TestDispatchBatchBadData(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	groupID := fftypes.NewRandB32()
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{}, nil)
+
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
+		Group: groupID,
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
 				{Value: fftypes.JSONAnyPtr(`{!json}`)},
@@ -223,7 +228,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
+	}, []*fftypes.Node{}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -241,7 +246,7 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
+	}, []*fftypes.Node{}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -266,7 +271,7 @@ func TestSendImmediateFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
+	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -299,7 +304,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
+	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -329,7 +334,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.JSONAnyPtr(`{}`), []*fftypes.Bytes32{})
+	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
