@@ -43,4 +43,10 @@ const (
 
 	// SystemTagDefinePool is the topic for messages that broadcast data definitions
 	SystemTagDefinePool SystemTag = "ff_define_pool"
+
+	// SystemTagDefineFFI is the topic for messages that broadcast contract FFIs
+	SystemTagDefineFFI SystemTag = "ff_define_ffi"
+
+	// SystemTagDefineContractAPI is the topic for messages that broadcast contract APIs
+	SystemTagDefineContractAPI SystemTag = "ff_define_contract_api"
 )

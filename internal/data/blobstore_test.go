@@ -222,7 +222,7 @@ func TestUploadBlobSizeMismatch(t *testing.T) {
 	}
 
 	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
-	assert.Regexp(t, "FF10303", err)
+	assert.Regexp(t, "FF10323", err)
 
 }
 

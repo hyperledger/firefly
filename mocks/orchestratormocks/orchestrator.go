@@ -8,6 +8,8 @@ import (
 
 	context "context"
 
+	contracts "github.com/hyperledger/firefly/internal/contracts"
+
 	data "github.com/hyperledger/firefly/internal/data"
 
 	database "github.com/hyperledger/firefly/pkg/database"
@@ -54,6 +56,22 @@ func (_m *Orchestrator) Broadcast() broadcast.Manager {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(broadcast.Manager)
+		}
+	}
+
+	return r0
+}
+
+// Contracts provides a mock function with given fields:
+func (_m *Orchestrator) Contracts() contracts.Manager {
+	ret := _m.Called()
+
+	var r0 contracts.Manager
+	if rf, ok := ret.Get(0).(func() contracts.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(contracts.Manager)
 		}
 	}
 

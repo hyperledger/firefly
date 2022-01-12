@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -44,8 +44,8 @@ var getMsgs = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["fetchdata"], "true") {
-			return filterResult(r.Or.GetMessagesWithData(r.Ctx, r.PP["ns"], r.Filter))
+			return filterResult(getOr(r.Ctx).GetMessagesWithData(r.Ctx, r.PP["ns"], r.Filter))
 		}
-		return filterResult(r.Or.GetMessages(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetMessages(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

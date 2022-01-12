@@ -78,6 +78,17 @@ func TestJSONAnyMarshalNull(t *testing.T) {
 	b, err := pb.MarshalJSON()
 	assert.NoError(t, err)
 	assert.Equal(t, NullString, string(b))
+	assert.Equal(t, NullString, pb.String())
+	assert.True(t, pb.IsNil())
+
+	err = pb.UnmarshalJSON([]byte(""))
+	assert.NoError(t, err)
+	assert.True(t, pb.IsNil())
+
+	var ppb *JSONAny
+	assert.Equal(t, NullString, ppb.String())
+	assert.True(t, pb.IsNil())
+
 }
 
 func TestJSONAnyUnmarshalFail(t *testing.T) {

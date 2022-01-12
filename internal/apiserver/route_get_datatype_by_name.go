@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,7 +41,7 @@ var getDatatypeByName = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDatatypeByName(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+		output, err = getOr(r.Ctx).GetDatatypeByName(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
 		return output, err
 	},
 }

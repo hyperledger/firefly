@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,7 +40,7 @@ var postBroadcastDatatype = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		// This (old) route is always async, and returns the message
-		output, err = r.Or.Broadcast().BroadcastDatatype(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Datatype), false)
+		output, err = getOr(r.Ctx).Broadcast().BroadcastDatatype(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Datatype), false)
 		return output, err
 	},
 	Deprecated: true, // moving to more intutitive route/return structure

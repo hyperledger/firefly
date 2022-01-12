@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -46,8 +46,8 @@ var getMsgByID = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["data"], "true") || strings.EqualFold(r.QP["fetchdata"], "true") {
-			return r.Or.GetMessageByIDWithData(r.Ctx, r.PP["ns"], r.PP["msgid"])
+			return getOr(r.Ctx).GetMessageByIDWithData(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		}
-		return r.Or.GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"])
+		return getOr(r.Ctx).GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"])
 	},
 }

@@ -73,7 +73,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
 	transfer := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
 	}
 	MintTokens(suite.T(), suite.testState.client1, transfer, false)
@@ -101,7 +101,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	transfer = &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
 			To:     suite.testState.org2.Identity,
-			Amount: *fftypes.NewBigInt(1),
+			Amount: *fftypes.NewFFBigInt(1),
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{
@@ -142,7 +142,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	})
 
 	transfer = &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
 	}
 	BurnTokens(suite.T(), suite.testState.client2, transfer, false)
@@ -206,7 +206,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
 	transfer := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewBigInt(1)},
+		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
 	}
 	transferOut := MintTokens(suite.T(), suite.testState.client1, transfer, true)
@@ -232,7 +232,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		TokenTransfer: fftypes.TokenTransfer{
 			TokenIndex: "1",
 			To:         suite.testState.org2.Identity,
-			Amount:     *fftypes.NewBigInt(1),
+			Amount:     *fftypes.NewFFBigInt(1),
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{
@@ -272,7 +272,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	transfer = &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
 			TokenIndex: "1",
-			Amount:     *fftypes.NewBigInt(1),
+			Amount:     *fftypes.NewFFBigInt(1),
 		},
 		Pool: poolName,
 	}

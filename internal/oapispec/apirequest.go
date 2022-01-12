@@ -36,5 +36,6 @@ type APIRequest struct {
 	Input           interface{}
 	Part            *fftypes.Multipart
 	SuccessStatus   int
+	APIBaseURL      string
 	ResponseHeaders http.Header
 }

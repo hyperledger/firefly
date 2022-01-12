@@ -107,11 +107,11 @@ func testFailFilter(t *testing.T, queryString, errCode string) {
 }
 
 func TestCheckNoMods(t *testing.T) {
-	testFailFilter(t, "tag=!>=test", "FF10302")
-	testFailFilter(t, "tag=:>test", "FF10302")
-	testFailFilter(t, "tag=!<test", "FF10302")
-	testFailFilter(t, "tag=!:<=test", "FF10302")
-	testFailFilter(t, "tag=<=test&tag=!<=test", "FF10302")
+	testFailFilter(t, "tag=!>=test", "FF10322")
+	testFailFilter(t, "tag=:>test", "FF10322")
+	testFailFilter(t, "tag=!<test", "FF10322")
+	testFailFilter(t, "tag=!:<=test", "FF10322")
+	testFailFilter(t, "tag=<=test&tag=!<=test", "FF10322")
 }
 
 func TestBuildFilterAscending(t *testing.T) {

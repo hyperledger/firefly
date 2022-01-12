@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,7 +41,7 @@ var postNewNamespace = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = r.Or.Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace), waitConfirm)
+		_, err = getOr(r.Ctx).Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace), waitConfirm)
 		return r.Input, err
 	},
 }

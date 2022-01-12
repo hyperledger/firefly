@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -50,6 +50,6 @@ var getTokenTransfers = &oapispec.Route{
 					Condition(fb.Eq("from", fromOrTo)).
 					Condition(fb.Eq("to", fromOrTo)))
 		}
-		return filterResult(r.Or.Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], filter))
+		return filterResult(getOr(r.Ctx).Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], filter))
 	},
 }

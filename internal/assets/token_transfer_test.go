@@ -112,7 +112,7 @@ func TestMintTokensSuccess(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -142,7 +142,7 @@ func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -172,7 +172,7 @@ func TestMintTokenUnknownConnectorNoConnectors(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -192,7 +192,7 @@ func TestMintTokenUnknownConnectorMultipleConnectors(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -213,7 +213,7 @@ func TestMintTokenUnknownConnectorBadNamespace(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -232,7 +232,7 @@ func TestMintTokenBadConnector(t *testing.T) {
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
 			Connector: "bad",
-			Amount:    *fftypes.NewBigInt(5),
+			Amount:    *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -250,7 +250,7 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 
@@ -293,7 +293,7 @@ func TestMintTokenUnknownPoolNoPools(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 
@@ -323,7 +323,7 @@ func TestMintTokenUnknownPoolMultiplePools(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 
@@ -361,7 +361,7 @@ func TestMintTokenUnknownPoolBadNamespace(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 
@@ -378,7 +378,7 @@ func TestMintTokensGetPoolsError(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 
@@ -397,7 +397,7 @@ func TestMintTokensBadPool(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -417,7 +417,7 @@ func TestMintTokensIdentityFail(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -435,7 +435,7 @@ func TestMintTokensFail(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -467,7 +467,7 @@ func TestMintTokensFailAndDbFail(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -499,7 +499,7 @@ func TestMintTokensOperationFail(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -527,7 +527,7 @@ func TestMintTokensConfirm(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -570,7 +570,7 @@ func TestMintTokensByTypeSuccess(t *testing.T) {
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 	pool := &fftypes.TokenPool{
@@ -599,7 +599,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 
 	burn := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -633,7 +633,7 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 
 	burn := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -651,7 +651,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 
 	burn := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -694,7 +694,7 @@ func TestBurnTokensByTypeSuccess(t *testing.T) {
 
 	burn := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 	pool := &fftypes.TokenPool{
@@ -729,7 +729,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -765,7 +765,7 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -794,7 +794,7 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -832,7 +832,7 @@ func TestTransferTokensInvalidType(t *testing.T) {
 			From:      "A",
 			To:        "B",
 			Connector: "magic-tokens",
-			Amount:    *fftypes.NewBigInt(5),
+			Amount:    *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -866,7 +866,7 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -900,7 +900,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
@@ -960,7 +960,7 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
@@ -997,7 +997,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
@@ -1058,7 +1058,7 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
@@ -1092,7 +1092,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -1139,7 +1139,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 		Message: &fftypes.MessageInOut{
@@ -1213,7 +1213,7 @@ func TestTransferTokensByTypeSuccess(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 	}
 	pool := &fftypes.TokenPool{
@@ -1248,7 +1248,7 @@ func TestTransferTokensPoolNotFound(t *testing.T) {
 		TokenTransfer: fftypes.TokenTransfer{
 			From:   "A",
 			To:     "B",
-			Amount: *fftypes.NewBigInt(5),
+			Amount: *fftypes.NewFFBigInt(5),
 		},
 		Pool: "pool1",
 	}
@@ -1275,7 +1275,7 @@ func TestTransferPrepare(t *testing.T) {
 			From:      "A",
 			To:        "B",
 			Connector: "magic-tokens",
-			Amount:    *fftypes.NewBigInt(5),
+			Amount:    *fftypes.NewFFBigInt(5),
 		},
 	}
 

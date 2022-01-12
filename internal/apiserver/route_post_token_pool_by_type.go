@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -46,7 +46,7 @@ var postTokenPoolByType = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().CreateTokenPoolByType(r.Ctx, r.PP["ns"], r.PP["type"], r.Input.(*fftypes.TokenPool), waitConfirm)
+		return getOr(r.Ctx).Assets().CreateTokenPoolByType(r.Ctx, r.PP["ns"], r.PP["type"], r.Input.(*fftypes.TokenPool), waitConfirm)
 	},
 	Deprecated: true,
 }

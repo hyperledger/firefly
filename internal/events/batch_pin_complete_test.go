@@ -40,11 +40,11 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	defer cancel()
 
 	batch := &blockchain.BatchPin{
-		Namespace:      "ns1",
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Namespace:       "ns1",
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchData := &fftypes.Batch{
 		ID:        batch.BatchID,
@@ -53,7 +53,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 			Author: "author1",
 			Key:    "0x12345",
 		},
-		PayloadRef: batch.BatchPaylodRef,
+		PayloadRef: batch.BatchPayloadRef,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -71,7 +71,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -111,7 +111,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	batchData := &fftypes.Batch{
 		ID:         batch.BatchID,
 		Namespace:  "ns1",
-		PayloadRef: batch.BatchPaylodRef,
+		PayloadRef: batch.BatchPayloadRef,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -127,7 +127,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -153,10 +153,10 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 
 	batch := &blockchain.BatchPin{
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
 	cancel() // to avoid retry
@@ -174,10 +174,10 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	defer cancel()
 
 	batch := &blockchain.BatchPin{
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
 

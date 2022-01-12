@@ -1,6 +1,19 @@
-components: {}
+components:
+  schemas:
+    FFIParam:
+      properties:
+        components:
+          items:
+            $ref: '#/components/schemas/FFIParam'
+          type: array
+        details:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+      type: object
 info:
-  description: Copyright © 2021 Kaleido, Inc.
   title: FireFly
   version: "1.0"
 openapi: 3.0.2
@@ -177,23 +190,21 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    description:
-                      type: string
-                    id: {}
-                    message: {}
-                    name:
-                      type: string
-                    type:
-                      enum:
-                      - local
-                      - broadcast
-                      - system
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  type:
+                    enum:
+                    - local
+                    - broadcast
+                    - system
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -305,6 +316,673 @@ paths:
                     - broadcast
                     - system
                     type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractAPIs
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: interface
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  description:
+                    type: string
+                  events:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                      type: object
+                    type: array
+                  id: {}
+                  message: {}
+                  methods:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                        returns:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewContractAPI
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                interface:
+                  properties:
+                    id: {}
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                ledger:
+                  type: string
+                location:
+                  type: string
+                name:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  ledger:
+                    type: string
+                  location:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  ledger:
+                    type: string
+                  location:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{apiName}:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractAPIByName
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: apiName
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  ledger:
+                    type: string
+                  location:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{apiName}/invoke/{methodPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractAPIInvoke
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: apiName
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: methodPath
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{apiName}/query/{methodPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractAPIQuery
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: apiName
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: methodPath
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{apiName}/subscribe/{eventPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractAPISubscribe
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: apiName
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: eventPath
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                location:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/apis/{id}:
+    put:
+      description: 'TODO: Description'
+      operationId: putContractAPI
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: id
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                interface:
+                  properties:
+                    id: {}
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                ledger:
+                  type: string
+                location:
+                  type: string
+                name:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  ledger:
+                    type: string
+                  location:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  ledger:
+                    type: string
+                  location:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  urls:
+                    properties:
+                      openapi:
+                        type: string
+                      ui:
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -432,127 +1110,125 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    author:
-                      type: string
-                    blobs:
-                      items: {}
-                      type: array
-                    confirmed: {}
-                    created: {}
-                    hash: {}
-                    id: {}
-                    key:
-                      type: string
-                    namespace:
-                      type: string
-                    node: {}
-                    payload:
-                      properties:
-                        data:
-                          items:
-                            properties:
-                              blob:
-                                properties:
-                                  hash: {}
-                                  name:
-                                    type: string
-                                  public:
-                                    type: string
-                                  size:
-                                    format: int64
-                                    type: integer
-                                type: object
-                              created: {}
-                              datatype:
-                                properties:
-                                  name:
-                                    type: string
-                                  version:
-                                    type: string
-                                type: object
-                              hash: {}
-                              id: {}
-                              namespace:
-                                type: string
-                              validator:
-                                type: string
-                              value:
-                                type: string
-                            type: object
-                          type: array
-                        messages:
-                          items:
-                            properties:
-                              batch: {}
-                              confirmed: {}
-                              data:
-                                items:
-                                  properties:
-                                    hash: {}
-                                    id: {}
-                                  type: object
-                                type: array
-                              hash: {}
-                              header:
-                                properties:
-                                  author:
-                                    type: string
-                                  cid: {}
-                                  created: {}
-                                  datahash: {}
-                                  group: {}
-                                  id: {}
-                                  key:
-                                    type: string
-                                  namespace:
-                                    type: string
-                                  tag:
-                                    type: string
-                                  topics:
-                                    items:
-                                      type: string
-                                    type: array
-                                  txtype:
-                                    type: string
-                                  type:
-                                    enum:
-                                    - definition
-                                    - broadcast
-                                    - private
-                                    - groupinit
-                                    - transfer_broadcast
-                                    - transfer_private
-                                    type: string
-                                type: object
-                              pins:
-                                items:
-                                  type: string
-                                type: array
-                              state:
-                                enum:
-                                - staged
-                                - ready
-                                - pending
-                                - confirmed
-                                - rejected
-                                type: string
-                            type: object
-                          type: array
-                        tx:
+                properties:
+                  author:
+                    type: string
+                  blobs:
+                    items: {}
+                    type: array
+                  confirmed: {}
+                  created: {}
+                  hash: {}
+                  id: {}
+                  key:
+                    type: string
+                  namespace:
+                    type: string
+                  node: {}
+                  payload:
+                    properties:
+                      data:
+                        items:
                           properties:
+                            blob:
+                              properties:
+                                hash: {}
+                                name:
+                                  type: string
+                                public:
+                                  type: string
+                                size:
+                                  format: int64
+                                  type: integer
+                              type: object
+                            created: {}
+                            datatype:
+                              properties:
+                                name:
+                                  type: string
+                                version:
+                                  type: string
+                              type: object
+                            hash: {}
                             id: {}
-                            type:
+                            namespace:
+                              type: string
+                            validator:
+                              type: string
+                            value:
                               type: string
                           type: object
-                      type: object
-                    payloadRef:
-                      type: string
-                    type:
-                      type: string
-                  type: object
-                type: array
+                        type: array
+                      messages:
+                        items:
+                          properties:
+                            batch: {}
+                            confirmed: {}
+                            data:
+                              items:
+                                properties:
+                                  hash: {}
+                                  id: {}
+                                type: object
+                              type: array
+                            hash: {}
+                            header:
+                              properties:
+                                author:
+                                  type: string
+                                cid: {}
+                                created: {}
+                                datahash: {}
+                                group: {}
+                                id: {}
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                                tag:
+                                  type: string
+                                topics:
+                                  items:
+                                    type: string
+                                  type: array
+                                txtype:
+                                  type: string
+                                type:
+                                  enum:
+                                  - definition
+                                  - broadcast
+                                  - private
+                                  - groupinit
+                                  - transfer_broadcast
+                                  - transfer_private
+                                  type: string
+                              type: object
+                            pins:
+                              items:
+                                type: string
+                              type: array
+                            state:
+                              enum:
+                              - staged
+                              - ready
+                              - pending
+                              - confirmed
+                              - rejected
+                              type: string
+                          type: object
+                        type: array
+                      tx:
+                        properties:
+                          id: {}
+                          type:
+                            type: string
+                        type: object
+                    type: object
+                  payloadRef:
+                    type: string
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -983,13 +1659,1638 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    count:
-                      type: string
-                    timestamp: {}
+                properties:
+                  count:
+                    type: string
+                  timestamp: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/events:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractEvents
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: subscription
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: timestamp
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  outputs:
+                    additionalProperties: {}
+                    type: object
+                  sequence:
+                    format: int64
+                    type: integer
+                  subscription: {}
+                  timestamp: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/events/{id}:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractEventByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  outputs:
+                    additionalProperties: {}
+                    type: object
+                  sequence:
+                    format: int64
+                    type: integer
+                  subscription: {}
+                  timestamp: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractInterfaces
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: version
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  description:
+                    type: string
+                  events:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                      type: object
+                    type: array
+                  id: {}
+                  message: {}
+                  methods:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                        returns:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewContractInterface
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                description:
+                  type: string
+                events:
+                  items:
+                    properties:
+                      contract: {}
+                      description:
+                        type: string
+                      id: {}
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                      pathname:
+                        type: string
+                    type: object
+                  type: array
+                methods:
+                  items:
+                    properties:
+                      contract: {}
+                      description:
+                        type: string
+                      id: {}
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                      pathname:
+                        type: string
+                      returns:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  type: array
+                name:
+                  type: string
+                version:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  description:
+                    type: string
+                  events:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                      type: object
+                    type: array
+                  id: {}
+                  message: {}
+                  methods:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                        returns:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractInterface
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: query
+        name: fetchchildren
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  description:
+                    type: string
+                  events:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                      type: object
+                    type: array
+                  id: {}
+                  message: {}
+                  methods:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                        returns:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}/invoke/{methodPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInterfaceInvoke
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: methodPath
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
                   type: object
-                type: array
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}/query/{methodPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInterfaceQuery
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: methodPath
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{interfaceId}/subscribe/{eventPath}:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInterfaceSubscribe
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: interfaceId
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: eventPath
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                event:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                  type: object
+                location:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/interfaces/{name}/{version}:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractInterfaceByNameAndVersion
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: version
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  description:
+                    type: string
+                  events:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                      type: object
+                    type: array
+                  id: {}
+                  message: {}
+                  methods:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                        returns:
+                          items:
+                            properties:
+                              components:
+                                items:
+                                  $ref: '#/components/schemas/FFIParam'
+                                type: array
+                              details:
+                                type: string
+                              name:
+                                type: string
+                              type:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/invoke:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractInvoke
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                interface: {}
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/query:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractQuery
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                interface: {}
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/subscriptions:
+    get:
+      description: 'TODO: Description'
+      operationId: getContractSubscriptions
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: interface
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: protocolid
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewContractSubscription
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                created: {}
+                event:
+                  properties:
+                    description:
+                      type: string
+                    name:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          components:
+                            items:
+                              $ref: '#/components/schemas/FFIParam'
+                            type: array
+                          details:
+                            type: string
+                          name:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                eventId: {}
+                id: {}
+                interface:
+                  properties:
+                    id: {}
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                location:
+                  type: string
+                name:
+                  type: string
+                namespace:
+                  type: string
+                protocolId:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/subscriptions/{nameOrId}:
+    delete:
+      description: 'TODO: Description'
+      operationId: deleteContractSubscription
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: nameOrId
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        default:
+          description: ""
+    get:
+      description: 'TODO: Description'
+      operationId: getContractSubscriptionByNameOrID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: nameOrId
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  event:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                      params:
+                        items:
+                          properties:
+                            components:
+                              items:
+                                $ref: '#/components/schemas/FFIParam'
+                              type: array
+                            details:
+                              type: string
+                            name:
+                              type: string
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  id: {}
+                  interface:
+                    properties:
+                      id: {}
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  location:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -1111,37 +3412,35 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    blob:
-                      properties:
-                        hash: {}
-                        name:
-                          type: string
-                        public:
-                          type: string
-                        size:
-                          format: int64
-                          type: integer
-                      type: object
-                    created: {}
-                    datatype:
-                      properties:
-                        name:
-                          type: string
-                        version:
-                          type: string
-                      type: object
-                    hash: {}
-                    id: {}
-                    namespace:
-                      type: string
-                    validator:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  blob:
+                    properties:
+                      hash: {}
+                      name:
+                        type: string
+                      public:
+                        type: string
+                      size:
+                        format: int64
+                        type: integer
+                    type: object
+                  created: {}
+                  datatype:
+                    properties:
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  hash: {}
+                  id: {}
+                  namespace:
+                    type: string
+                  validator:
+                    type: string
+                  value:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -1463,8 +3762,9 @@ paths:
           content:
             application/json:
               schema:
-                format: byte
-                type: string
+                maximum: 255
+                minimum: 0
+                type: integer
           description: Success
         default:
           description: ""
@@ -1768,28 +4068,26 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    hash: {}
-                    id: {}
-                    message: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    validator:
-                      enum:
-                      - json
-                      - none
-                      - definition
-                      type: string
-                    value:
-                      type: string
-                    version:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  hash: {}
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  validator:
+                    enum:
+                    - json
+                    - none
+                    - definition
+                    type: string
+                  value:
+                    type: string
+                  version:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -2094,30 +4392,33 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    id: {}
-                    namespace:
-                      type: string
-                    reference: {}
-                    sequence:
-                      format: int64
-                      type: integer
-                    type:
-                      enum:
-                      - message_confirmed
-                      - message_rejected
-                      - namespace_confirmed
-                      - datatype_confirmed
-                      - group_confirmed
-                      - token_pool_confirmed
-                      - token_pool_rejected
-                      - token_transfer_confirmed
-                      - token_transfer_op_failed
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  id: {}
+                  namespace:
+                    type: string
+                  reference: {}
+                  sequence:
+                    format: int64
+                    type: integer
+                  type:
+                    enum:
+                    - message_confirmed
+                    - message_rejected
+                    - namespace_confirmed
+                    - datatype_confirmed
+                    - group_confirmed
+                    - token_pool_confirmed
+                    - token_pool_rejected
+                    - token_transfer_confirmed
+                    - token_transfer_op_failed
+                    - contract_interface_confirmed
+                    - contract_interface_rejected
+                    - contract_api_confirmed
+                    - contract_api_rejected
+                    - contract_event
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -2171,6 +4472,11 @@ paths:
                     - token_pool_rejected
                     - token_transfer_confirmed
                     - token_transfer_op_failed
+                    - contract_interface_confirmed
+                    - contract_interface_rejected
+                    - contract_api_confirmed
+                    - contract_api_rejected
+                    - contract_event
                     type: string
                 type: object
           description: Success
@@ -2264,26 +4570,24 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    hash: {}
-                    ledger: {}
-                    members:
-                      items:
-                        properties:
-                          identity:
-                            type: string
-                          node: {}
-                        type: object
-                      type: array
-                    message: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  hash: {}
+                  ledger: {}
+                  members:
+                    items:
+                      properties:
+                        identity:
+                          type: string
+                        node: {}
+                      type: object
+                    type: array
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -2486,63 +4790,61 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    batch: {}
-                    confirmed: {}
-                    data:
-                      items:
-                        properties:
-                          hash: {}
-                          id: {}
-                        type: object
-                      type: array
-                    hash: {}
-                    header:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
                       properties:
-                        author:
-                          type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
+                        hash: {}
                         id: {}
-                        key:
-                          type: string
-                        namespace:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          items:
-                            type: string
-                          type: array
-                        txtype:
-                          type: string
-                        type:
-                          enum:
-                          - definition
-                          - broadcast
-                          - private
-                          - groupinit
-                          - transfer_broadcast
-                          - transfer_private
-                          type: string
                       type: object
-                    pins:
-                      items:
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
                         type: string
-                      type: array
-                    state:
-                      enum:
-                      - staged
-                      - ready
-                      - pending
-                      - confirmed
-                      - rejected
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      key:
+                        type: string
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        enum:
+                        - definition
+                        - broadcast
+                        - private
+                        - groupinit
+                        - transfer_broadcast
+                        - transfer_private
+                        type: string
+                    type: object
+                  pins:
+                    items:
                       type: string
-                  type: object
-                type: array
+                    type: array
+                  state:
+                    enum:
+                    - staged
+                    - ready
+                    - pending
+                    - confirmed
+                    - rejected
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -2690,37 +4992,35 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    blob:
-                      properties:
-                        hash: {}
-                        name:
-                          type: string
-                        public:
-                          type: string
-                        size:
-                          format: int64
-                          type: integer
-                      type: object
-                    created: {}
-                    datatype:
-                      properties:
-                        name:
-                          type: string
-                        version:
-                          type: string
-                      type: object
-                    hash: {}
-                    id: {}
-                    namespace:
-                      type: string
-                    validator:
-                      type: string
-                    value:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  blob:
+                    properties:
+                      hash: {}
+                      name:
+                        type: string
+                      public:
+                        type: string
+                      size:
+                        format: int64
+                        type: integer
+                    type: object
+                  created: {}
+                  datatype:
+                    properties:
+                      name:
+                        type: string
+                      version:
+                        type: string
+                    type: object
+                  hash: {}
+                  id: {}
+                  namespace:
+                    type: string
+                  validator:
+                    type: string
+                  value:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -2823,30 +5123,33 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    id: {}
-                    namespace:
-                      type: string
-                    reference: {}
-                    sequence:
-                      format: int64
-                      type: integer
-                    type:
-                      enum:
-                      - message_confirmed
-                      - message_rejected
-                      - namespace_confirmed
-                      - datatype_confirmed
-                      - group_confirmed
-                      - token_pool_confirmed
-                      - token_pool_rejected
-                      - token_transfer_confirmed
-                      - token_transfer_op_failed
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  id: {}
+                  namespace:
+                    type: string
+                  reference: {}
+                  sequence:
+                    format: int64
+                    type: integer
+                  type:
+                    enum:
+                    - message_confirmed
+                    - message_rejected
+                    - namespace_confirmed
+                    - datatype_confirmed
+                    - group_confirmed
+                    - token_pool_confirmed
+                    - token_pool_rejected
+                    - token_transfer_confirmed
+                    - token_transfer_op_failed
+                    - contract_interface_confirmed
+                    - contract_interface_rejected
+                    - contract_api_confirmed
+                    - contract_api_rejected
+                    - contract_event
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -2880,40 +5183,38 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    backendId:
-                      type: string
-                    created: {}
-                    error:
-                      type: string
-                    id: {}
-                    input:
-                      additionalProperties: {}
-                      type: object
-                    namespace:
-                      type: string
-                    output:
-                      additionalProperties: {}
-                      type: object
-                    plugin:
-                      type: string
-                    status:
-                      type: string
-                    tx: {}
-                    type:
-                      enum:
-                      - blockchain_batch_pin
-                      - publicstorage_batch_broadcast
-                      - dataexchange_batch_send
-                      - dataexchange_blob_send
-                      - token_create_pool
-                      - token_announce_pool
-                      - token_transfer
-                      type: string
-                    updated: {}
-                  type: object
-                type: array
+                properties:
+                  backendId:
+                    type: string
+                  created: {}
+                  error:
+                    type: string
+                  id: {}
+                  input:
+                    additionalProperties: {}
+                    type: object
+                  namespace:
+                    type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
+                  plugin:
+                    type: string
+                  status:
+                    type: string
+                  tx: {}
+                  type:
+                    enum:
+                    - blockchain_batch_pin
+                    - publicstorage_batch_broadcast
+                    - dataexchange_batch_send
+                    - dataexchange_blob_send
+                    - token_create_pool
+                    - token_announce_pool
+                    - token_transfer
+                    type: string
+                  updated: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -3652,40 +5953,38 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    backendId:
-                      type: string
-                    created: {}
-                    error:
-                      type: string
-                    id: {}
-                    input:
-                      additionalProperties: {}
-                      type: object
-                    namespace:
-                      type: string
-                    output:
-                      additionalProperties: {}
-                      type: object
-                    plugin:
-                      type: string
-                    status:
-                      type: string
-                    tx: {}
-                    type:
-                      enum:
-                      - blockchain_batch_pin
-                      - publicstorage_batch_broadcast
-                      - dataexchange_batch_send
-                      - dataexchange_blob_send
-                      - token_create_pool
-                      - token_announce_pool
-                      - token_transfer
-                      type: string
-                    updated: {}
-                  type: object
-                type: array
+                properties:
+                  backendId:
+                    type: string
+                  created: {}
+                  error:
+                    type: string
+                  id: {}
+                  input:
+                    additionalProperties: {}
+                    type: object
+                  namespace:
+                    type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
+                  plugin:
+                    type: string
+                  status:
+                    type: string
+                  tx: {}
+                  type:
+                    enum:
+                    - blockchain_batch_pin
+                    - publicstorage_batch_broadcast
+                    - dataexchange_batch_send
+                    - dataexchange_blob_send
+                    - token_create_pool
+                    - token_announce_pool
+                    - token_transfer
+                    type: string
+                  updated: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -4163,45 +6462,43 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    ephemeral:
-                      type: boolean
-                    filter:
-                      properties:
-                        author:
-                          type: string
-                        events:
-                          type: string
-                        group:
-                          type: string
-                        tag:
-                          type: string
-                        topics:
-                          type: string
-                      type: object
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    options:
-                      properties:
-                        firstEvent:
-                          type: string
-                        readAhead:
-                          maximum: 65535
-                          minimum: 0
-                          type: integer
-                        withData:
-                          type: boolean
-                      type: object
-                    transport:
-                      type: string
-                    updated: {}
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  ephemeral:
+                    type: boolean
+                  filter:
+                    properties:
+                      author:
+                        type: string
+                      events:
+                        type: string
+                      group:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        type: string
+                    type: object
+                  id: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                      readAhead:
+                        maximum: 65535
+                        minimum: 0
+                        type: integer
+                      withData:
+                        type: boolean
+                    type: object
+                  transport:
+                    type: string
+                  updated: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -4801,47 +7098,45 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    config:
-                      additionalProperties: {}
-                      type: object
-                    connector:
-                      type: string
-                    created: {}
-                    id: {}
-                    key:
-                      type: string
-                    message: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    protocolId:
-                      type: string
-                    standard:
-                      type: string
-                    state:
-                      enum:
-                      - unknown
-                      - pending
-                      - confirmed
-                      type: string
-                    symbol:
-                      type: string
-                    tx:
-                      properties:
-                        id: {}
-                        type:
-                          type: string
-                      type: object
-                    type:
-                      enum:
-                      - fungible
-                      - nonfungible
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  id: {}
+                  key:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                  standard:
+                    type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
+                  symbol:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    enum:
+                    - fungible
+                    - nonfungible
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -5176,23 +7471,21 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    balance: {}
-                    connector:
-                      type: string
-                    key:
-                      type: string
-                    namespace:
-                      type: string
-                    pool: {}
-                    tokenIndex:
-                      type: string
-                    updated: {}
-                    uri:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  balance: {}
+                  connector:
+                    type: string
+                  key:
+                    type: string
+                  namespace:
+                    type: string
+                  pool: {}
+                  tokenIndex:
+                    type: string
+                  updated: {}
+                  uri:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -5661,44 +7954,42 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    amount: {}
-                    connector:
-                      type: string
-                    created: {}
-                    from:
-                      type: string
-                    key:
-                      type: string
-                    localId: {}
-                    message: {}
-                    messageHash: {}
-                    namespace:
-                      type: string
-                    pool: {}
-                    protocolId:
-                      type: string
-                    to:
-                      type: string
-                    tokenIndex:
-                      type: string
-                    tx:
-                      properties:
-                        id: {}
-                        type:
-                          type: string
-                      type: object
-                    type:
-                      enum:
-                      - mint
-                      - burn
-                      - transfer
-                      type: string
-                    uri:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  message: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  pool: {}
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -5961,12 +8252,10 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    key:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  key:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -6074,11 +8363,9 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    pool: {}
-                  type: object
-                type: array
+                properties:
+                  pool: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -6180,23 +8467,21 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    balance: {}
-                    connector:
-                      type: string
-                    key:
-                      type: string
-                    namespace:
-                      type: string
-                    pool: {}
-                    tokenIndex:
-                      type: string
-                    updated: {}
-                    uri:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  balance: {}
+                  connector:
+                    type: string
+                  key:
+                    type: string
+                  namespace:
+                    type: string
+                  pool: {}
+                  tokenIndex:
+                    type: string
+                  updated: {}
+                  uri:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -6373,12 +8658,10 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    name:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  name:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -6649,47 +8932,45 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    config:
-                      additionalProperties: {}
-                      type: object
-                    connector:
-                      type: string
-                    created: {}
-                    id: {}
-                    key:
-                      type: string
-                    message: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    protocolId:
-                      type: string
-                    standard:
-                      type: string
-                    state:
-                      enum:
-                      - unknown
-                      - pending
-                      - confirmed
-                      type: string
-                    symbol:
-                      type: string
-                    tx:
-                      properties:
-                        id: {}
-                        type:
-                          type: string
-                      type: object
-                    type:
-                      enum:
-                      - fungible
-                      - nonfungible
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  id: {}
+                  key:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                  standard:
+                    type: string
+                  state:
+                    enum:
+                    - unknown
+                    - pending
+                    - confirmed
+                    type: string
+                  symbol:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    enum:
+                    - fungible
+                    - nonfungible
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -6829,7 +9110,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/pools/{nameOrID}:
+  /namespaces/{ns}/tokens/pools/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getTokenPoolByNameOrID
@@ -6843,7 +9124,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: nameOrID
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -7034,44 +9315,42 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    amount: {}
-                    connector:
-                      type: string
-                    created: {}
-                    from:
-                      type: string
-                    key:
-                      type: string
-                    localId: {}
-                    message: {}
-                    messageHash: {}
-                    namespace:
-                      type: string
-                    pool: {}
-                    protocolId:
-                      type: string
-                    to:
-                      type: string
-                    tokenIndex:
-                      type: string
-                    tx:
-                      properties:
-                        id: {}
-                        type:
-                          type: string
-                      type: object
-                    type:
-                      enum:
-                      - mint
-                      - burn
-                      - transfer
-                      type: string
-                    uri:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  message: {}
+                  messageHash: {}
+                  namespace:
+                    type: string
+                  pool: {}
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    enum:
+                    - mint
+                    - burn
+                    - transfer
+                    type: string
+                  uri:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -7223,7 +9502,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/transfers/{transferID}:
+  /namespaces/{ns}/tokens/transfers/{transferId}:
     get:
       description: 'TODO: Description'
       operationId: getTokenTransferByID
@@ -7237,7 +9516,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: transferID
+        name: transferId
         required: true
         schema:
           type: string
@@ -7400,35 +9679,33 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    hash: {}
-                    id: {}
-                    info:
-                      additionalProperties: {}
-                      type: object
-                    protocolId:
-                      type: string
-                    status:
-                      type: string
-                    subject:
-                      properties:
-                        namespace:
-                          type: string
-                        reference: {}
-                        signer:
-                          type: string
-                        type:
-                          enum:
-                          - none
-                          - batch_pin
-                          - token_pool
-                          - token_transfer
-                          type: string
-                      type: object
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  hash: {}
+                  id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  protocolId:
+                    type: string
+                  status:
+                    type: string
+                  subject:
+                    properties:
+                      namespace:
+                        type: string
+                      reference: {}
+                      signer:
+                        type: string
+                      type:
+                        enum:
+                        - none
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        type: string
+                    type: object
+                type: object
           description: Success
         default:
           description: ""
@@ -7729,27 +10006,25 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    description:
-                      type: string
-                    dx:
-                      properties:
-                        endpoint:
-                          additionalProperties: {}
-                          type: object
-                        peer:
-                          type: string
-                      type: object
-                    id: {}
-                    message: {}
-                    name:
-                      type: string
-                    owner:
-                      type: string
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  dx:
+                    properties:
+                      endpoint:
+                        additionalProperties: {}
+                        type: object
+                      peer:
+                        type: string
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  owner:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -7958,24 +10233,22 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    created: {}
-                    description:
-                      type: string
-                    id: {}
-                    identity:
-                      type: string
-                    message: {}
-                    name:
-                      type: string
-                    parent:
-                      type: string
-                    profile:
-                      additionalProperties: {}
-                      type: object
-                  type: object
-                type: array
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                type: object
           description: Success
         default:
           description: ""
@@ -8469,4 +10742,4 @@ paths:
         default:
           description: ""
 servers:
-- url: http://localhost:12345/api/v1
+- url: http://localhost:12345

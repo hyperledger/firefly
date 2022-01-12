@@ -47,6 +47,10 @@ func JSONAnyPtrBytes(b []byte) *JSONAny {
 }
 
 func (h *JSONAny) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 {
+		*h = JSONAny(NullString)
+		return nil
+	}
 	var flattener json.RawMessage
 	err := json.Unmarshal(b, &flattener)
 	if err != nil {
@@ -66,12 +70,18 @@ func (h JSONAny) MarshalJSON() ([]byte, error) {
 	return []byte(h), nil
 }
 
-func (h JSONAny) Hash() *Bytes32 {
-	var b32 Bytes32 = sha256.Sum256([]byte(h))
+func (h *JSONAny) Hash() *Bytes32 {
+	if h == nil {
+		return nil
+	}
+	var b32 Bytes32 = sha256.Sum256([]byte(*h))
 	return &b32
 }
 
-func (h JSONAny) String() string {
+func (h *JSONAny) String() string {
+	if h == nil {
+		return NullString
+	}
 	b, _ := h.MarshalJSON()
 	return string(b)
 }
@@ -88,6 +98,10 @@ func (h *JSONAny) Bytes() []byte {
 		return nil
 	}
 	return []byte(*h)
+}
+
+func (h *JSONAny) IsNil() bool {
+	return h == nil || *h == "" || *h == NullString
 }
 
 func (h JSONAny) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {

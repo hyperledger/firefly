@@ -61,3 +61,7 @@ func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.To
 func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	return bc.ei.TokensTransferred(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
 }
+
+func (bc *boundCallbacks) ContractEvent(event *blockchain.ContractEvent) error {
+	return bc.ei.ContractEvent(event)
+}

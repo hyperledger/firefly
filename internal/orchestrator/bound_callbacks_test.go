@@ -78,4 +78,8 @@ func TestBoundCallbacks(t *testing.T) {
 	mei.On("TokensTransferred", mti, "N1", transfer, "tx12345", info).Return(fmt.Errorf("pop"))
 	err = bc.TokensTransferred(mti, "N1", transfer, "tx12345", info)
 	assert.EqualError(t, err, "pop")
+
+	mei.On("ContractEvent", mock.AnythingOfType("*blockchain.ContractEvent")).Return(fmt.Errorf("pop"))
+	err = bc.ContractEvent(&blockchain.ContractEvent{})
+	assert.EqualError(t, err, "pop")
 }

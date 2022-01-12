@@ -302,7 +302,7 @@ func TestQueryFactoryStringMatchNonString(t *testing.T) {
 	_, err := fb.And(
 		fb.Contains("sequence", "stuff"),
 	).Finalize()
-	assert.Regexp(t, "FF10305", err)
+	assert.Regexp(t, "FF10325", err)
 }
 
 func TestQueryFactoryNullGreaterThan(t *testing.T) {
@@ -310,7 +310,7 @@ func TestQueryFactoryNullGreaterThan(t *testing.T) {
 	_, err := fb.And(
 		fb.Gt("created", nil),
 	).Finalize()
-	assert.Regexp(t, "FF10306", err)
+	assert.Regexp(t, "FF10326", err)
 }
 
 func TestQueryFactoryGetFields(t *testing.T) {

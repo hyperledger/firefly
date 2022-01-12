@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -37,6 +37,6 @@ var getNamespaces = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetNamespaces(r.Ctx, r.Filter))
+		return filterResult(getOr(r.Ctx).GetNamespaces(r.Ctx, r.Filter))
 	},
 }

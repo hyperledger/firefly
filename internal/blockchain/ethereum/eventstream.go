@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,12 +26,11 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type streamManager struct {
-	ctx          context.Context
-	client       *resty.Client
-	instancePath string
+	client *resty.Client
 }
 
 type eventStream struct {
@@ -42,27 +41,42 @@ type eventStream struct {
 	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
 	Type           string               `json:"type"`
 	WebSocket      eventStreamWebsocket `json:"websocket"`
+	Timestamps     bool                 `json:"timestamps"`
+}
+
+type subscriptionEventArg struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Indexed bool   `json:"indexed"`
+}
+
+type subscriptionEvent struct {
+	Name   string                 `json:"name"`
+	Type   string                 `json:"type"`
+	Inputs []subscriptionEventArg `json:"inputs"`
 }
 
 type subscription struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Stream    string `json:"stream"`
-	FromBlock string `json:"fromBlock"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name,omitempty"`
+	Stream    string            `json:"stream"`
+	FromBlock string            `json:"fromBlock"`
+	Address   string            `json:"address"`
+	Event     subscriptionEvent `json:"event"`
 }
 
-func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
+func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return streams, nil
 }
 
-func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
 	stream := eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",
@@ -70,91 +84,159 @@ func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout 
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
 		WebSocket:      eventStreamWebsocket{Topic: topic},
+		Timestamps:     true,
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&stream).
 		SetResult(&stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &stream, nil
 }
 
-func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
-	existingStreams, err := s.getEventStreams()
+func (s *streamManager) updateEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint, eventStreamID string) (*eventStream, error) {
+	stream := eventStream{
+		Name:           topic,
+		ErrorHandling:  "block",
+		BatchSize:      batchSize,
+		BatchTimeoutMS: batchTimeout,
+		Type:           "websocket",
+		WebSocket:      eventStreamWebsocket{Topic: topic},
+		Timestamps:     true,
+	}
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetBody(&stream).
+		SetResult(&stream).
+		Patch("/eventstreams/" + eventStreamID)
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return &stream, nil
+}
+
+func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+	existingStreams, err := s.getEventStreams(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for _, stream := range existingStreams {
 		if stream.WebSocket.Topic == topic {
+			stream, err = s.updateEventStream(ctx, topic, batchSize, batchTimeout, stream.ID)
+			if err != nil {
+				return nil, err
+			}
 			return stream, nil
 		}
 	}
-	return s.createEventStream(topic, batchSize, batchTimeout)
+	return s.createEventStream(ctx, topic, batchSize, batchTimeout)
 }
 
-func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
+func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscription, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(name, stream, event string) (*subscription, error) {
+func (s *streamManager) createInstanceSubscription(ctx context.Context, instancePath, name, stream, event string) (*subscription, error) {
 	sub := subscription{
 		Name:      name,
 		Stream:    stream,
 		FromBlock: "0",
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&sub).
 		SetResult(&sub).
-		Post(fmt.Sprintf("%s/%s", s.instancePath, event))
+		Post(fmt.Sprintf("%s/%s", instancePath, event))
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscriptions(stream string, subscriptions []string) (subs []*subscription, err error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream string, event fftypes.FFIEventDefinition) (*subscription, error) {
+	inputs := make([]subscriptionEventArg, 0, len(event.Params))
+	for _, param := range event.Params {
+		paramDetails, err := parseParamDetails(ctx, param.Details)
+		if err != nil {
+			return nil, err
+		}
+		inputs = append(inputs, subscriptionEventArg{
+			Name:    param.Name,
+			Type:    paramDetails.Type,
+			Indexed: paramDetails.Indexed,
+		})
+	}
+
+	sub := subscription{
+		Stream:    stream,
+		FromBlock: "0",
+		Address:   location.Address,
+		Event: subscriptionEvent{
+			Type:   "event",
+			Name:   event.Name,
+			Inputs: inputs,
+		},
+	}
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetBody(&sub).
+		SetResult(&sub).
+		Post("/subscriptions")
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return &sub, nil
+}
+
+func (s *streamManager) deleteSubscription(ctx context.Context, subID string) error {
+	res, err := s.client.R().
+		SetContext(ctx).
+		Delete("/subscriptions/" + subID)
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return nil
+}
+
+func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, stream, event string) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
-	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(s.instancePath)))[0:16]
+	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(instancePath)))[0:16]
 
-	existingSubs, err := s.getSubscriptions()
+	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, eventType := range subscriptions {
-		var sub *subscription
-		subName := fmt.Sprintf("%s_%s", eventType, instanceUniqueHash)
-		for _, s := range existingSubs {
-			if s.Name == subName ||
-				/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
-				   If one of these very early environments needed a new subscription, the existing one would need to
-					 be deleted manually. */
-				s.Name == eventType {
-				sub = s
-			}
-		}
+	subName := fmt.Sprintf("%s_%s", event, instanceUniqueHash)
 
-		if sub == nil {
-			if sub, err = s.createSubscription(subName, stream, eventType); err != nil {
-				return nil, err
-			}
+	for _, s := range existingSubs {
+		if s.Name == subName ||
+			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
+			   If one of these very early environments needed a new subscription, the existing one would need to
+				 be deleted manually. */
+			s.Name == event {
+			sub = s
 		}
-
-		log.L(s.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		subs = append(subs, sub)
 	}
-	return subs, nil
+
+	if sub == nil {
+		if sub, err = s.createInstanceSubscription(ctx, instancePath, subName, stream, event); err != nil {
+			return nil, err
+		}
+	}
+
+	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
+	return sub, nil
 }

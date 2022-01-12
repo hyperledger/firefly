@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,6 +40,31 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("eth_unit_tests")
 var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
+
+func testFFIMethod() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name: "sum",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:    "x",
+				Type:    "integer",
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+			},
+			{
+				Name:    "y",
+				Type:    "integer",
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{
+			{
+				Name:    "z",
+				Type:    "integer",
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+			},
+		},
+	}
+}
 
 func resetConf() {
 	config.Reset()
@@ -143,7 +168,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 	assert.True(t, e.Capabilities().GlobalSequencer)
 
 	err = e.Start()
@@ -207,6 +232,8 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Name: "BatchPin_2f696e7374616e63" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
+	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
 
 	resetConf()
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
@@ -216,9 +243,9 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 
 	assert.NoError(t, err)
 
@@ -262,6 +289,34 @@ func TestStreamCreateError(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewStringResponder(500, `pop`))
+
+	resetConf()
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
+
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestStreamUpdateError(t *testing.T) {
+
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
@@ -349,10 +404,10 @@ func TestSubmitBatchPinOK(t *testing.T) {
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BatchPin{
-		TransactionID:  fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
-		BatchID:        fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
-		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		TransactionID:   fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		BatchID:         fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 			fftypes.NewRandB32(),
@@ -422,10 +477,10 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BatchPin{
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 			fftypes.NewRandB32(),
@@ -456,7 +511,7 @@ func TestVerifyEthAddress(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinOK(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -475,7 +530,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 			],
       "timestamp": "1620576488"
     },
-    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "50"
   },
@@ -495,7 +550,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 				"0x8a63eb509713b0cf9250a8eee24ee2dfc4b37225e3ad5c29c95127699d382f85"
 			]
     },
-    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "51"
   },
@@ -515,7 +570,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 				"0xdab67320f1a0d0f1da572975e3a9ab6ef0fed315771c99fea0bfb54886c1aa94"
 			]
     },
-    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "Random(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
   }
@@ -525,11 +580,14 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
 
 	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -539,7 +597,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
-	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPaylodRef)
+	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
 	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
 	assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
@@ -551,7 +609,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		"blockNumber":      "38011",
 		"logIndex":         "50",
 		"signature":        "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
-		"subID":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"subId":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"transactionHash":  "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
 		"transactionIndex": "0x0",
 	}
@@ -561,7 +619,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		"blockNumber":      "38011",
 		"logIndex":         "51",
 		"signature":        "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
-		"subID":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"subId":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"transactionHash":  "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"transactionIndex": "0x1",
 	}
@@ -572,7 +630,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 }
 
 func TestHandleMessageEmptyPayloadRef(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -591,7 +649,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 			],
       "timestamp": "1620576488"
     },
-    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "50"
   }
@@ -601,11 +659,14 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
 
 	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -615,7 +676,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
-	assert.Empty(t, b.BatchPaylodRef)
+	assert.Empty(t, b.BatchPayloadRef)
 	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
 	assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
@@ -627,7 +688,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinExit(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -642,7 +703,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
       "payloadRef": "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
       "timestamp": "1620576488"
     },
-    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "51"
   }
@@ -652,11 +713,14 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
 
 	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.EqualError(t, err, "pop")
@@ -666,8 +730,18 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+
 	var events []interface{}
-	err := json.Unmarshal([]byte(`[{"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"}]`), &events)
+	err := json.Unmarshal([]byte(`
+	[
+		{
+			"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+			"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
+		}
+	]`), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -677,7 +751,11 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	data := []byte(`[{
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+	data := fftypes.JSONAnyPtr(`[{
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
@@ -696,7 +774,7 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -706,7 +784,11 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	data := []byte(`[{
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+	data := fftypes.JSONAnyPtr(`[{
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
@@ -725,7 +807,7 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -735,7 +817,11 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	data := []byte(`[{
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+	data := fftypes.JSONAnyPtr(`[{
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
@@ -754,7 +840,7 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -764,7 +850,11 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	data := []byte(`[{
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+	data := fftypes.JSONAnyPtr(`[{
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
@@ -783,7 +873,7 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -846,7 +936,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	var reply fftypes.JSONObject
 	operationID := fftypes.NewUUID()
-	data := []byte(`{
+	data := fftypes.JSONAnyPtr(`{
     "_id": "4373614c-e0f7-47b0-640e-7eacec417a9e",
     "blockHash": "0xad269b2b43481e44500f583108e8d24bd841fb767c7f526772959d195b9c72d5",
     "blockNumber": "209696",
@@ -875,7 +965,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"",
 		mock.Anything).Return(nil)
 
-	err := json.Unmarshal(data, &reply)
+	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)
 	assert.NoError(t, err)
@@ -892,7 +982,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
 	operationID := fftypes.NewUUID()
-	data := []byte(`{
+	data := fftypes.JSONAnyPtr(`{
 		"_id": "6fb94fff-81d3-4094-567d-e031b1871694",
 		"errorMessage": "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		"headers": {
@@ -921,7 +1011,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	go e.eventLoop()
 	r <- []byte(`!badjson`)        // ignored bad json
 	r <- []byte(`"not an object"`) // ignored wrong type
-	r <- data
+	r <- data.Bytes()
 	<-done
 }
 
@@ -936,8 +1026,8 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	}
 
 	var reply fftypes.JSONObject
-	data := []byte(`{}`)
-	err := json.Unmarshal(data, &reply)
+	data := fftypes.JSONAnyPtr(`{}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)
 	assert.NoError(t, err)
@@ -954,8 +1044,8 @@ func TestHandleReceiptBadRequestID(t *testing.T) {
 	}
 
 	var reply fftypes.JSONObject
-	data := []byte(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
-	err := json.Unmarshal(data, &reply)
+	data := fftypes.JSONAnyPtr(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)
 	assert.NoError(t, err)
@@ -963,4 +1053,747 @@ func TestHandleReceiptBadRequestID(t *testing.T) {
 
 func TestFormatNil(t *testing.T) {
 	assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", ethHexFormatB32(nil))
+}
+
+func encodeDetails(internalType string) *fftypes.JSONAny {
+	result, _ := json.Marshal(&paramDetails{Type: internalType})
+	return fftypes.JSONAnyPtrBytes(result)
+}
+
+func TestValidateFFIParamInteger(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "integer",
+		Details: encodeDetails("uint32"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "integer",
+		Details: encodeDetails("int16"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "integer",
+		Details: encodeDetails("uint256"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamIntegerInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "integer",
+		Details: encodeDetails("string"),
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "integer",
+		Details: encodeDetails("uintfoo"),
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "integer",
+		Details: encodeDetails("int7"),
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamByteArray(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "byte[]",
+		Details: encodeDetails("byte[]"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Type:    "byte[]",
+		Details: encodeDetails("bytes"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "byte[]",
+		Details: encodeDetails("bytes32"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamByteArrayInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "byte[]",
+		Details: encodeDetails("bool"),
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamArray(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "string[]",
+		Details: encodeDetails("string[]"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "integer[]",
+		Details: encodeDetails("uint256[]"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamArrayInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "string[][]",
+		Details: encodeDetails("string[]"),
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+
+	param = &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "string[]",
+		Details: encodeDetails("uint32[]"),
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamBoolean(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "boolean",
+		Details: encodeDetails("bool"),
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamBooleanInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "TestParam",
+		Type:    "boolean",
+		Details: encodeDetails("boolean"),
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamStruct(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "myWidget",
+		Type:    "Widget",
+		Details: encodeDetails("struct Widget"),
+		Components: []*fftypes.FFIParam{
+			{
+				Name:    "Size",
+				Type:    "integer",
+				Details: encodeDetails("uint8"),
+			},
+			{
+				Name:    "Teeth",
+				Type:    "integer",
+				Details: encodeDetails("uint16"),
+			},
+			{
+				Name:    "Ddescription",
+				Type:    "string",
+				Details: encodeDetails("string"),
+			},
+		},
+	}
+	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestValidateFFIParamStructInvalid(t *testing.T) {
+	e := &Ethereum{}
+	param := &fftypes.FFIParam{
+		Name:    "myWidget",
+		Type:    "Widget",
+		Details: encodeDetails("struct Widget"),
+		Components: []*fftypes.FFIParam{
+			{
+				Name:    "Size",
+				Type:    "integer",
+				Details: encodeDetails("uint8"),
+			},
+			{
+				Name:    "Teeth",
+				Type:    "integer",
+				Details: encodeDetails("string"),
+			},
+			{
+				Name:    "Description",
+				Type:    "string",
+				Details: encodeDetails("string"),
+			},
+		},
+	}
+	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
+}
+
+func TestAddSubscription(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Changed",
+					Params: fftypes.FFIParams{
+						{
+							Name: "value",
+							Type: "string",
+							Details: fftypes.JSONAnyPtr(fftypes.JSONObject{
+								"type": "string",
+							}.String()),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddSubscription(context.Background(), sub)
+
+	assert.NoError(t, err)
+}
+
+func TestAddSubscriptionBaddParamDetails(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:    "value",
+							Type:    "string",
+							Details: fftypes.JSONAnyPtr(""),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10311", err)
+}
+
+func TestAddSubscriptionBadLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.JSONAnyPtr(""),
+			Event:    &fftypes.FFISerializedEvent{},
+		},
+	}
+
+	err := e.AddSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestAddSubscriptionFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscriptionInput{
+		ContractSubscription: fftypes.ContractSubscription{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &fftypes.FFISerializedEvent{},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewStringResponder(500, "pop"))
+
+	err := e.AddSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
+}
+
+func TestDeleteSubscription(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscription{
+		ProtocolID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(204, ""))
+
+	err := e.DeleteSubscription(context.Background(), sub)
+
+	assert.NoError(t, err)
+}
+
+func TestDeleteSubscriptionFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.initInfo.stream = &eventStream{
+		ID: "es-1",
+	}
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &fftypes.ContractSubscription{
+		ProtocolID: "sb-1",
+	}
+
+	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
+		httpmock.NewStringResponder(500, ""))
+
+	err := e.DeleteSubscription(context.Background(), sub)
+
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestHandleMessageContractEvent(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x0",
+    "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+    "data": {
+      "from": "0x91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"value": "1"
+    },
+    "subId": "sub2",
+    "signature": "Changed(address,uint256)",
+    "logIndex": "50",
+	"timestamp": "1640811383"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: em,
+	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+
+	em.On("ContractEvent", mock.Anything).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+	ev := em.Calls[0].Arguments[0].(*blockchain.ContractEvent)
+	assert.Equal(t, "sub2", ev.Subscription)
+	assert.Equal(t, "Changed", ev.Name)
+
+	outputs := fftypes.JSONObject{
+		"from":  "0x91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+		"value": "1",
+	}
+	assert.Equal(t, outputs, ev.Outputs)
+
+	info := fftypes.JSONObject{
+		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber":      "38011",
+		"logIndex":         "50",
+		"signature":        "Changed(address,uint256)",
+		"subId":            "sub2",
+		"transactionHash":  "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"transactionIndex": "0x0",
+		"timestamp":        "1640811383",
+	}
+	assert.Equal(t, info, ev.Info)
+
+	em.AssertExpectations(t)
+}
+
+func TestHandleMessageContractEventNoTimestamp(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x0",
+    "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+    "data": {
+      "from": "0x91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"value": "1"
+    },
+    "subId": "sub2",
+    "signature": "Changed(address,uint256)",
+    "logIndex": "50"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: em,
+	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+
+	em.On("ContractEvent", mock.Anything).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.Regexp(t, "FF10165", err)
+}
+
+func TestHandleMessageContractEventError(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x0",
+    "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+    "data": {
+      "from": "0x91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"value": "1"
+    },
+    "subId": "sub2",
+    "signature": "Changed(address,uint256)",
+    "logIndex": "50",
+	"timestamp": "1640811383"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: em,
+	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+
+	em.On("ContractEvent", mock.Anything).Return(fmt.Errorf("pop"))
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.EqualError(t, err, "pop")
+
+	em.AssertExpectations(t)
+}
+
+func TestInvokeContractOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
+			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.NoError(t, err)
+}
+
+func TestInvokeContractAddressNotSet(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "'address' not set", err)
+}
+
+func TestInvokeContractEthconnectError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestInvokeContractUnmarshalResponseError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
+			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
+		})
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "invalid character", err)
+}
+
+func TestQueryContractOK(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
+		})
+	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.NoError(t, err)
+	j, err := json.Marshal(result)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"output":"3"}`, string(j))
+}
+
+func TestQueryContractAddressNotSet(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "'address' not set", err)
+}
+
+func TestQueryContractEthconnectError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
+		})
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestQueryContractUnmarshalResponseError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
+			assert.Equal(t, float64(1), body["x"])
+			assert.Equal(t, float64(2), body["y"])
+			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
+		})
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "invalid character", err)
+}
+
+func TestValidateContractLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{
+		Address: "0x12345",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+}
+
+func TestParseParamErr(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	param := &fftypes.FFIParam{
+		Name: "x",
+		Type: "integer",
+	}
+	err := e.ValidateFFIParam(context.Background(), param)
+	assert.Regexp(t, "FF10311", err)
+
+	param = &fftypes.FFIParam{
+		Name:    "x",
+		Type:    "integer",
+		Details: fftypes.JSONAnyPtr(`{"type":""}`),
+	}
+	err = e.ValidateFFIParam(context.Background(), param)
+	assert.Regexp(t, "FF10311", err)
 }

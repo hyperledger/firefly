@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,6 +39,16 @@ var (
 	EventTypeTransferConfirmed EventType = ffEnum("eventtype", "token_transfer_confirmed")
 	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)
 	EventTypeTransferOpFailed EventType = ffEnum("eventtype", "token_transfer_op_failed")
+	// EventTypeContractInterfaceConfirmed occurs when a new contract interface has been confirmed
+	EventTypeContractInterfaceConfirmed EventType = ffEnum("eventtype", "contract_interface_confirmed")
+	// EventTypeContractInterfaceRejected occurs when a new contract interface has been rejected
+	EventTypeContractInterfaceRejected EventType = ffEnum("eventtype", "contract_interface_rejected")
+	// EventTypeContractAPIConfirmed occurs when a new contract API has been confirmed
+	EventTypeContractAPIConfirmed EventType = ffEnum("eventtype", "contract_api_confirmed")
+	// EventTypeContractInterfaceRejected occurs when a new contract API has been rejected
+	EventTypeContractAPIRejected EventType = ffEnum("eventtype", "contract_api_rejected")
+	// EventTypeContractEvent occurs when a new event has been emitted from a subscribed smart contract
+	EventTypeContractEvent EventType = ffEnum("eventtype", "contract_event")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

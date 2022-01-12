@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
@@ -69,6 +70,7 @@ type Orchestrator interface {
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
 	Assets() assets.Manager
+	Contracts() contracts.Manager
 	IsPreInit() bool
 
 	// Status
@@ -146,6 +148,7 @@ type orchestrator struct {
 	tokens         map[string]tokens.Plugin
 	bc             boundCallbacks
 	preInitMode    bool
+	contracts      contracts.Manager
 	node           *fftypes.UUID
 }
 
@@ -252,6 +255,10 @@ func (or *orchestrator) Data() data.Manager {
 
 func (or *orchestrator) Assets() assets.Manager {
 	return or.assets
+}
+
+func (or *orchestrator) Contracts() contracts.Manager {
+	return or.contracts
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
@@ -416,7 +423,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
+	if or.contracts == nil {
+		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.publicstorage, or.broadcast, or.identity, or.blockchain)
+		if err != nil {
+			return err
+		}
+	}
+
+	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets, or.contracts)
 
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets)

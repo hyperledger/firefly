@@ -5,6 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug E2E Tests",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/test/e2e",
+      "args": ["-test.run"],
+      "env": {
+        "STACK_FILE": "{env:HOME}/.firefly/stacks/firefly-e2e/stack.json"
+      },
+      "showLog": true
+    },
+    {
       "name": "Run FireFly Core",
       "type": "go",
       "request": "launch",

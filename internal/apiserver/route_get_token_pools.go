@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,6 +40,6 @@ var getTokenPools = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenPools(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).Assets().GetTokenPools(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

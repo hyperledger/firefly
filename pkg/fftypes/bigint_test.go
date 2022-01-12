@@ -25,9 +25,9 @@ import (
 func TestBigIntEmptyJSON(t *testing.T) {
 
 	var myStruct struct {
-		Field1 BigInt  `json:"field1,omitempty"`
-		Field2 *BigInt `json:"field2,omitempty"`
-		Field3 *BigInt `json:"field3"`
+		Field1 FFBigInt  `json:"field1,omitempty"`
+		Field2 *FFBigInt `json:"field2,omitempty"`
+		Field3 *FFBigInt `json:"field3"`
 	}
 
 	jsonVal := []byte(`{}`)
@@ -43,10 +43,10 @@ func TestBigIntEmptyJSON(t *testing.T) {
 func TestBigIntSetJSONOk(t *testing.T) {
 
 	var myStruct struct {
-		Field1 BigInt  `json:"field1"`
-		Field2 *BigInt `json:"field2"`
-		Field3 *BigInt `json:"field3"`
-		Field4 *BigInt `json:"field4"`
+		Field1 FFBigInt  `json:"field1"`
+		Field2 *FFBigInt `json:"field2"`
+		Field3 *FFBigInt `json:"field3"`
+		Field4 *FFBigInt `json:"field4"`
 	}
 
 	jsonVal := []byte(`{
@@ -78,7 +78,7 @@ func TestBigIntJSONBadString(t *testing.T) {
 
 	jsonVal := []byte(`"0xZZ"`)
 
-	var bi BigInt
+	var bi FFBigInt
 	err := json.Unmarshal(jsonVal, &bi)
 	assert.Regexp(t, "FF10283", err)
 
@@ -90,7 +90,7 @@ func TestBigIntJSONBadType(t *testing.T) {
 		"field1": { "not": "valid" }
 	}`)
 
-	var bi BigInt
+	var bi FFBigInt
 	err := json.Unmarshal(jsonVal, &bi)
 	assert.Regexp(t, "FF10283", err)
 
@@ -100,7 +100,7 @@ func TestBigIntJSONBadJSON(t *testing.T) {
 
 	jsonVal := []byte(`!JSON`)
 
-	var bi BigInt
+	var bi FFBigInt
 	err := bi.UnmarshalJSON(jsonVal)
 	assert.Regexp(t, "FF10283", err)
 
@@ -108,7 +108,7 @@ func TestBigIntJSONBadJSON(t *testing.T) {
 
 func TestLagePositiveBigIntValue(t *testing.T) {
 
-	var iMax BigInt
+	var iMax FFBigInt
 	_ = iMax.Int().Exp(big.NewInt(2), big.NewInt(256), nil)
 	iMax.Int().Sub(iMax.Int(), big.NewInt(1))
 	iMaxVal, err := iMax.Value()
@@ -123,7 +123,7 @@ func TestLagePositiveBigIntValue(t *testing.T) {
 
 func TestLargeNegativeBigIntValue(t *testing.T) {
 
-	var iMax BigInt
+	var iMax FFBigInt
 	_ = iMax.Int().Exp(big.NewInt(2), big.NewInt(256), nil)
 	iMax.Int().Neg(iMax.Int())
 	iMax.Int().Add(iMax.Int(), big.NewInt(1))
@@ -139,7 +139,7 @@ func TestLargeNegativeBigIntValue(t *testing.T) {
 }
 func TestTooLargeInteger(t *testing.T) {
 
-	var iMax BigInt
+	var iMax FFBigInt
 	_ = iMax.Int().Exp(big.NewInt(2), big.NewInt(256), nil)
 	iMax.Int().Neg(iMax.Int())
 	_, err := iMax.Value()
@@ -150,7 +150,7 @@ func TestTooLargeInteger(t *testing.T) {
 func TestScanNil(t *testing.T) {
 
 	var nilVal interface{}
-	var i BigInt
+	var i FFBigInt
 	err := i.Scan(nilVal)
 	assert.NoError(t, err)
 	assert.Zero(t, i.Int().Int64())
@@ -159,7 +159,7 @@ func TestScanNil(t *testing.T) {
 
 func TestScanString(t *testing.T) {
 
-	var i BigInt
+	var i FFBigInt
 	err := i.Scan("-feedbeef")
 	assert.NoError(t, err)
 	assert.Equal(t, int64(-4276993775), i.Int().Int64())
@@ -168,7 +168,7 @@ func TestScanString(t *testing.T) {
 
 func TestScanEmptyString(t *testing.T) {
 
-	var i BigInt
+	var i FFBigInt
 	err := i.Scan("")
 	assert.NoError(t, err)
 	assert.Zero(t, i.Int().Int64())
@@ -177,7 +177,7 @@ func TestScanEmptyString(t *testing.T) {
 
 func TestScanBadString(t *testing.T) {
 
-	var i BigInt
+	var i FFBigInt
 	err := i.Scan("!hex")
 	assert.Regexp(t, "FF10125", err)
 
@@ -185,7 +185,7 @@ func TestScanBadString(t *testing.T) {
 
 func TestScanBadType(t *testing.T) {
 
-	var i BigInt
+	var i FFBigInt
 	err := i.Scan(123456)
 	assert.Regexp(t, "FF10125", err)
 
@@ -193,16 +193,16 @@ func TestScanBadType(t *testing.T) {
 
 func TestEquals(t *testing.T) {
 
-	var pi1, pi2 *BigInt
+	var pi1, pi2 *FFBigInt
 	assert.True(t, pi1.Equals(pi2))
 
-	var i1 BigInt
+	var i1 FFBigInt
 	i1.Int().Set(big.NewInt(1))
 
 	assert.False(t, i1.Equals(pi2))
 	assert.False(t, pi2.Equals(&i1))
 
-	var i2 BigInt
+	var i2 FFBigInt
 	i2.Int().Set(big.NewInt(1))
 
 	assert.True(t, i1.Equals(&i2))
@@ -212,7 +212,7 @@ func TestEquals(t *testing.T) {
 
 func TestNewBigInt(t *testing.T) {
 
-	n := NewBigInt(10)
+	n := NewFFBigInt(10)
 	assert.Equal(t, int64(10), n.Int().Int64())
 
 }

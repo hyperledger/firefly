@@ -338,7 +338,7 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, true)
-	assert.Regexp(t, "FF10307", err)
+	assert.Regexp(t, "FF10327", err)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)

@@ -29,7 +29,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/oapiffi"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/ghodss/yaml"
@@ -45,6 +47,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
+
+type orchestratorContextKey struct{}
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
@@ -67,6 +71,7 @@ type apiServer struct {
 	apiTimeout         time.Duration
 	apiMaxTimeout      time.Duration
 	metricsEnabled     bool
+	ffiSwaggerGen      oapiffi.FFISwaggerGen
 }
 
 func InitConfig() {
@@ -84,7 +89,12 @@ func NewAPIServer() Server {
 		apiTimeout:         config.GetDuration(config.APIRequestTimeout),
 		apiMaxTimeout:      config.GetDuration(config.APIRequestMaxTimeout),
 		metricsEnabled:     config.GetBool(config.MetricsEnabled),
+		ffiSwaggerGen:      oapiffi.NewFFISwaggerGen(),
 	}
+}
+
+func getOr(ctx context.Context) orchestrator.Orchestrator {
+	return ctx.Value(orchestratorContextKey{}).(orchestrator.Orchestrator)
 }
 
 // Serve is the main entry point for the API Server
@@ -197,7 +207,7 @@ func (as *apiServer) getParams(req *http.Request, route *oapispec.Route) (queryP
 	return queryParams, pathParams
 }
 
-func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
+func (as *apiServer) routeHandler(o orchestrator.Orchestrator, apiBaseURL string, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	return as.apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
 
@@ -237,8 +247,9 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 		}
 
 		if err == nil {
+			rCtx := context.WithValue(req.Context(), orchestratorContextKey{}, o)
 			r := &oapispec.APIRequest{
-				Ctx:             req.Context(),
+				Ctx:             rCtx,
 				Or:              o,
 				Req:             req,
 				PP:              pathParams,
@@ -246,6 +257,7 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 				Filter:          filter,
 				Input:           jsonInput,
 				SuccessStatus:   http.StatusOK,
+				APIBaseURL:      apiBaseURL,
 				ResponseHeaders: res.Header(),
 			}
 			if len(route.JSONOutputCodes) > 0 {
@@ -416,21 +428,58 @@ func (as *apiServer) getPublicURL(conf config.Prefix, pathPrefix string) string 
 	return publicURL
 }
 
-func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) swaggerGenConf(apiBaseURL string) *oapispec.SwaggerGenConfig {
+	return &oapispec.SwaggerGenConfig{
+		BaseURL: apiBaseURL,
+		Title:   "FireFly",
+		Version: "1.0",
+	}
+}
+
+func (as *apiServer) swaggerHandler(generator func(req *http.Request) (*openapi3.T, error)) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		vars := mux.Vars(req)
+		doc, err := generator(req)
+		if err != nil {
+			return 500, err
+		}
 		if vars["ext"] == ".json" {
 			res.Header().Add("Content-Type", "application/json")
-			doc := oapispec.SwaggerGen(req.Context(), routes, url)
 			b, _ := json.Marshal(&doc)
 			_, _ = res.Write(b)
 		} else {
 			res.Header().Add("Content-Type", "application/x-yaml")
-			doc := oapispec.SwaggerGen(req.Context(), routes, url)
 			b, _ := yaml.Marshal(&doc)
 			_, _ = res.Write(b)
 		}
 		return 200, nil
+	}
+}
+
+func (as *apiServer) swaggerGenerator(routes []*oapispec.Route, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+	return func(req *http.Request) (*openapi3.T, error) {
+		return oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf(apiBaseURL)), nil
+	}
+}
+
+func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+	return func(req *http.Request) (*openapi3.T, error) {
+		cm := o.Contracts()
+		vars := mux.Vars(req)
+		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
+		if err != nil {
+			return nil, err
+		} else if api == nil || api.Interface == nil {
+			return nil, i18n.NewError(req.Context(), i18n.Msg404NoResult)
+		}
+
+		ffi, err := cm.GetFFIByIDWithChildren(req.Context(), api.Interface.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		baseURL := fmt.Sprintf("%s/namespaces/%s/apis/%s", apiBaseURL, vars["ns"], vars["apiName"])
+		return as.ffiSwaggerGen.Generate(req.Context(), baseURL, api, ffi), nil
 	}
 }
 
@@ -441,18 +490,27 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 		r.Use(metrics.GetRestServerInstrumentation().Middleware)
 	}
 
+	publicURL := as.getPublicURL(apiConfigPrefix, "")
+	apiBaseURL := fmt.Sprintf("%s/api/v1", publicURL)
 	for _, route := range routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(o, route)).
+			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
 				Methods(route.Method)
 		}
 	}
-	ws, _ := eifactory.GetPlugin(ctx, "websockets")
-	publicURL := as.getPublicURL(apiConfigPrefix, "")
-	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, publicURL)))
-	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
+
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.contractSwaggerGenerator(o, apiBaseURL))))
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api`, func(rw http.ResponseWriter, req *http.Request) {
+		url := req.URL.String() + "/swagger.yaml"
+		handler := as.apiWrapper(as.swaggerUIHandler(url))
+		handler(rw, req)
+	})
+
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, apiBaseURL))))
+	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
+	ws, _ := eifactory.GetPlugin(ctx, "websockets")
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
 
 	uiPath := config.GetString(config.UIPath)
@@ -470,15 +528,16 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
 	}
 
+	publicURL := as.getPublicURL(adminConfigPrefix, "admin")
+	apiBaseURL := fmt.Sprintf("%s/admin/api/v1", publicURL)
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, route)).
+			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
 				Methods(route.Method)
 		}
 	}
-	publicURL := as.getPublicURL(adminConfigPrefix, "admin")
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, publicURL)))
-	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(adminRoutes, apiBaseURL))))
+	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	return r

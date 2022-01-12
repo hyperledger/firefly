@@ -348,7 +348,7 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 			},
 		},
 	}, false)
-	assert.Regexp(t, "FF10308", err)
+	assert.Regexp(t, "FF10328", err)
 
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)

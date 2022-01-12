@@ -51,6 +51,8 @@ type Route struct {
 	JSONInputMask []string
 	// JSONInputSchema is a custom schema definition, for the case where the auto-gen + mask isn't good enough
 	JSONInputSchema func(ctx context.Context) string
+	// JSONOutputSchema is a custom schema definition, for the case where the auto-gen + mask isn't good enough
+	JSONOutputSchema func(ctx context.Context) string
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONOutputCodes is the success response code

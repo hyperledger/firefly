@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
@@ -55,10 +56,11 @@ type definitionHandlers struct {
 	broadcast broadcast.Manager
 	messaging privatemessaging.Manager
 	assets    assets.Manager
+	contracts contracts.Manager
 	txhelper  txcommon.Helper
 }
 
-func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) DefinitionHandlers {
+func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
 	return &definitionHandlers{
 		database:  di,
 		exchange:  dx,
@@ -66,6 +68,7 @@ func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.M
 		broadcast: bm,
 		messaging: pm,
 		assets:    am,
+		contracts: cm,
 		txhelper:  txcommon.NewTransactionHelper(di),
 	}
 }
@@ -102,6 +105,10 @@ func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *ff
 		valid, err = dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
+	case fftypes.SystemTagDefineFFI:
+		return dh.handleFFIBroadcast(ctx, msg, data)
+	case fftypes.SystemTagDefineContractAPI:
+		return dh.handleContractAPIBroadcast(ctx, msg, data)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 		return ActionReject, nil
@@ -119,7 +126,7 @@ func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *ff
 func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
-		l.Warnf("Unable to process system broadcast %s - expecting 1 attachement, found %d", msg.Header.ID, len(data))
+		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))
 		return false
 	}
 	err := json.Unmarshal(data[0].Value.Bytes(), &res)

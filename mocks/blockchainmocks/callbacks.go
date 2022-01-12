@@ -41,3 +41,17 @@ func (_m *Callbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState fftyp
 
 	return r0
 }
+
+// ContractEvent provides a mock function with given fields: event
+func (_m *Callbacks) ContractEvent(event *blockchain.ContractEvent) error {
+	ret := _m.Called(event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*blockchain.ContractEvent) error); ok {
+		r0 = rf(event)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

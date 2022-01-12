@@ -34,17 +34,24 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func SwaggerGen(ctx context.Context, routes []*Route, url string) *openapi3.T {
+type SwaggerGenConfig struct {
+	BaseURL     string
+	Title       string
+	Version     string
+	Description string
+}
+
+func SwaggerGen(ctx context.Context, routes []*Route, conf *SwaggerGenConfig) *openapi3.T {
 
 	doc := &openapi3.T{
 		OpenAPI: "3.0.2",
 		Servers: openapi3.Servers{
-			{URL: url + "/api/v1"},
+			{URL: conf.BaseURL},
 		},
 		Info: &openapi3.Info{
-			Title:       "FireFly",
-			Version:     "1.0",
-			Description: "Copyright © 2021 Kaleido, Inc.",
+			Title:       conf.Title,
+			Version:     conf.Version,
+			Description: conf.Description,
 		},
 		Components: openapi3.Components{
 			Schemas: make(openapi3.Schemas),
@@ -92,19 +99,23 @@ func ffTagHandler(name string, t reflect.Type, tag reflect.StructTag, schema *op
 	return nil
 }
 
-func addInput(ctx context.Context, doc *openapi3.T, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
+func genSchemaRef(ctx context.Context, doc *openapi3.T, obj interface{}, mask []string, schemaDef func(context.Context) string) *openapi3.SchemaRef {
 	var schemaRef *openapi3.SchemaRef
 	if schemaDef != nil {
 		err := json.Unmarshal([]byte(schemaDef(ctx)), &schemaRef)
 		if err != nil {
-			panic(fmt.Sprintf("invalid schema for %T: %s", input, err))
+			panic(fmt.Sprintf("invalid schema for %T: %s", obj, err))
 		}
 	}
 	if schemaRef == nil {
-		schemaRef, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask), doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
+		schemaRef, _ = openapi3gen.NewSchemaRefForValue(maskFields(obj, mask), doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
 	}
+	return schemaRef
+}
+
+func addInput(ctx context.Context, doc *openapi3.T, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
 	op.RequestBody.Value.Content["application/json"] = &openapi3.MediaType{
-		Schema: schemaRef,
+		Schema: genSchemaRef(ctx, doc, input, mask, schemaDef),
 	}
 }
 
@@ -136,8 +147,7 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 	}
 }
 
-func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, op *openapi3.Operation) {
-	schemaRef, _ := openapi3gen.NewSchemaRefForValue(output, doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
+func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, schemaDef func(context.Context) string, op *openapi3.Operation) {
 	s := i18n.Expand(ctx, i18n.MsgSuccessResponse)
 	for _, code := range route.JSONOutputCodes {
 		op.Responses[strconv.FormatInt(int64(code), 10)] = &openapi3.ResponseRef{
@@ -145,7 +155,7 @@ func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interf
 				Description: &s,
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
-						Schema: schemaRef,
+						Schema: genSchemaRef(ctx, doc, output, nil, schemaDef),
 					},
 				},
 			},
@@ -210,7 +220,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		output = route.JSONOutputValue()
 	}
 	if output != nil {
-		addOutput(ctx, doc, route, output, op)
+		addOutput(ctx, doc, route, output, route.JSONOutputSchema, op)
 	}
 	for _, p := range route.PathParams {
 		example := p.Example
@@ -253,6 +263,9 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 }
 
 func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
+	if mask == nil {
+		return t
+	}
 	fieldCount := t.NumField()
 	newFields := make([]reflect.StructField, fieldCount)
 	for i := 0; i < fieldCount; i++ {
