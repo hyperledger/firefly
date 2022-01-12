@@ -24,8 +24,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event) *fftypes.BlockchainEvent {
-	return &fftypes.BlockchainEvent{
+func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.TransactionRef) *fftypes.BlockchainEvent {
+	ev := &fftypes.BlockchainEvent{
 		ID:           fftypes.NewUUID(),
 		Namespace:    ns,
 		Subscription: subID,
@@ -35,10 +35,14 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 		Info:         event.Info,
 		Timestamp:    event.Timestamp,
 	}
+	if tx != nil {
+		ev.TX = *tx
+	}
+	return ev
 }
 
-func (em *eventManager) persistBlockchainEvent(ctx context.Context, ns string, subID *fftypes.UUID, event *blockchain.Event) error {
-	chainEvent := buildBlockchainEvent(ns, subID, event)
+func (em *eventManager) persistBlockchainEvent(ctx context.Context, ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.TransactionRef) error {
+	chainEvent := buildBlockchainEvent(ns, subID, event, tx)
 	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
@@ -62,7 +66,7 @@ func (em *eventManager) ContractEvent(event *blockchain.ContractEvent) error {
 				return nil // no retry
 			}
 
-			if err := em.persistBlockchainEvent(ctx, sub.Namespace, sub.ID, &event.Event); err != nil {
+			if err := em.persistBlockchainEvent(ctx, sub.Namespace, sub.ID, &event.Event, nil); err != nil {
 				return err
 			}
 			return nil

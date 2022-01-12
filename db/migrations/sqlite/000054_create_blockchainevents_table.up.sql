@@ -5,10 +5,12 @@ CREATE TABLE blockchainevents (
   namespace        VARCHAR(64)     NOT NULL,
   name             VARCHAR(256)    NOT NULL,
   protocol_id      VARCHAR(256)    NOT NULL,
+  timestamp        BIGINT          NOT NULL,
   subscription_id  UUID,
   output           BYTEA,
   info             BYTEA,
-  timestamp        BIGINT          NOT NULL
+  tx_type          VARCHAR(64),
+  tx_id            UUID
 );
 
 CREATE UNIQUE INDEX contractevents_name ON contractevents(namespace,name);

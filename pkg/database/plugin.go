@@ -887,6 +887,8 @@ var TokenTransferQueryFactory = &queryFields{
 	"message":     &UUIDField{},
 	"messagehash": &Bytes32Field{},
 	"created":     &TimeField{},
+	"tx.type":     &StringField{},
+	"tx.id":       &UUIDField{},
 }
 
 // FFIQueryFactory filter fields for contract definitions
@@ -934,6 +936,8 @@ var BlockchainEventQueryFactory = &queryFields{
 	"name":         &StringField{},
 	"protocolid":   &StringField{},
 	"subscription": &StringField{},
+	"tx.type":      &StringField{},
+	"tx.id":        &UUIDField{},
 	"timestamp":    &TimeField{},
 }
 

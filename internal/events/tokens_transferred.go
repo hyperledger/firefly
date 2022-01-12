@@ -61,6 +61,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	}
 
 	// Check that this is from a known pool
+	// TODO: should cache this lookup for efficiency
 	pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.Connector, transfer.PoolProtocolID)
 	if err != nil {
 		return false, err
@@ -98,7 +99,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		transfer.LocalID = fftypes.NewUUID()
 	}
 
-	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, &transfer.Event); err != nil {
+	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, &transfer.Event, &transfer.TX); err != nil {
 		return false, err
 	}
 

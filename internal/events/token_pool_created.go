@@ -51,7 +51,7 @@ func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus) *fftypes.
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event) error {
-	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, ev); err != nil {
+	if err := em.persistBlockchainEvent(ctx, pool.Namespace, nil, ev, &pool.TX); err != nil {
 		return err
 	}
 	tx := poolTransaction(pool, fftypes.OpStatusSucceeded)
@@ -92,7 +92,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 		// Unknown pool state - should only happen on first run after database migration
 		// Activate the pool, then immediately confirm
 		// TODO: can this state eventually be removed?
-		ev := buildBlockchainEvent(existingPool.Namespace, nil, &pool.Event)
+		ev := buildBlockchainEvent(existingPool.Namespace, nil, &pool.Event, &existingPool.TX)
 		if err = em.assets.ActivateTokenPool(ctx, existingPool, ev); err != nil {
 			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
 			return nil, err
@@ -177,12 +177,12 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			em.aggregator.offchainBatches <- batchID
 		}
 
-		// Announce the details of the new token pool and the transaction object
+		// Announce the details of the new token pool with the blockchain event details
 		// Other nodes will pass these details to their own token connector for validation/activation of the pool
 		if announcePool != nil {
 			broadcast := &fftypes.TokenPoolAnnouncement{
 				Pool:  announcePool,
-				Event: buildBlockchainEvent(announcePool.Namespace, nil, &pool.Event),
+				Event: buildBlockchainEvent(announcePool.Namespace, nil, &pool.Event, &announcePool.TX),
 			}
 			log.L(em.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
 			_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)

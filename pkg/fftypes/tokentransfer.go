@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,7 +40,7 @@ type TokenTransfer struct {
 	Message     *UUID             `json:"message,omitempty"`
 	MessageHash *Bytes32          `json:"messageHash,omitempty"`
 	Created     *FFTime           `json:"created,omitempty"`
-	TX          TransactionRef    `json:"tx,omitempty"`
+	TX          TransactionRef    `json:"tx"`
 }
 
 type TokenTransferInput struct {

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,16 +48,16 @@ var (
 		"created",
 	}
 	tokenTransferFilterFieldMap = map[string]string{
-		"localid":          "local_id",
-		"pool":             "pool_id",
-		"tokenindex":       "token_index",
-		"from":             "from_key",
-		"to":               "to_key",
-		"protocolid":       "protocol_id",
-		"message":          "message_id",
-		"messagehash":      "message_hash",
-		"transaction.type": "tx_type",
-		"transaction.id":   "tx_id",
+		"localid":     "local_id",
+		"pool":        "pool_id",
+		"tokenindex":  "token_index",
+		"from":        "from_key",
+		"to":          "to_key",
+		"protocolid":  "protocol_id",
+		"message":     "message_id",
+		"messagehash": "message_hash",
+		"tx.type":     "tx_type",
+		"tx.id":       "tx_id",
 	}
 )
 

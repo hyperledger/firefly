@@ -121,7 +121,7 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			if err := em.persistBlockchainEvent(ctx, batchPin.Namespace, nil, &batchPin.Event); err != nil {
+			if err := em.persistBlockchainEvent(ctx, batchPin.Namespace, nil, &batchPin.Event, &batch.Payload.TX); err != nil {
 				return err
 			}
 			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
