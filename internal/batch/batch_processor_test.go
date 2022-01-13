@@ -77,7 +77,7 @@ func TestUnfilledBatch(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 
-	// Generate the work the work
+	// Generate the work
 	work := make([]*batchWork, 5)
 	for i := 0; i < len(work); i++ {
 		msgid := fftypes.NewUUID()
@@ -129,7 +129,7 @@ func TestBatchSizeOverflow(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 
-	// Generate the work the work
+	// Generate the work
 	work := make([]*batchWork, 2)
 	for i := 0; i < 2; i++ {
 		msgid := fftypes.NewUUID()
@@ -185,7 +185,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	// Generate the work the work
+	// Generate the work
 	work := make([]*batchWork, 10)
 	for i := 0; i < 10; i++ {
 		msgid := fftypes.NewUUID()
@@ -259,7 +259,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 		<-waitForCall
 	}
 
-	// Generate the work the work
+	// Generate the work
 	msgid := fftypes.NewUUID()
 	work := &batchWork{
 		msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},

@@ -78,7 +78,7 @@ var (
 	PrivateMessagingBatchAgentTimeout = rootKey("privatemessaging.batch.agentTimeout")
 	// PrivateMessagingBatchSize is the maximum size of a batch for broadcast messages
 	PrivateMessagingBatchSize = rootKey("privatemessaging.batch.size")
-	// PrivateMessagingBatchPayloadLimit is the maximum payload size of a batch for broadcast messages
+	// PrivateMessagingBatchPayloadLimit is the maximum payload size of a private message data exchange payload
 	PrivateMessagingBatchPayloadLimit = rootKey("privatemessaging.batch.payloadLimit")
 	// PrivateMessagingBatchTimeout is the timeout to wait for a batch to fill, before sending
 	PrivateMessagingBatchTimeout = rootKey("privatemessaging.batch.timeout")

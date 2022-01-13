@@ -54,7 +54,7 @@ type Provider interface {
 	// GetDriver returns the driver implementation
 	GetMigrationDriver(*sql.DB) (migratedb.Driver, error)
 
-	// Features returns fields
+	// Features returns database specific configuration switches
 	Features() SQLFeatures
 
 	// UpdateInsertForSequenceReturn updates the INSERT query for returning the Sequence, and returns whether it needs to be run as a query to return the Sequence field
