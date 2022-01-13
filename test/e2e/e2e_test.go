@@ -239,17 +239,6 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgType fftypes.MessageType) *fftypes.EventDelivery {
-	for {
-		ed := <-c
-		if ed.Type == fftypes.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
-			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
-			return ed
-		}
-		t.Logf("Ignored event '%s'", ed.ID)
-	}
-}
-
 func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
 	events := make(chan *fftypes.EventDelivery, 100)
 	changeEvents := make(chan *fftypes.ChangeEvent, 100)
@@ -283,6 +272,26 @@ func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, 
 		}
 	}()
 	return events, changeEvents
+}
+
+func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, ref *fftypes.UUID) {
+	for {
+		eventDelivery := <-c
+		if eventDelivery.Type == eventType && (ref == nil || *ref == *eventDelivery.Reference) {
+			return
+		}
+	}
+}
+
+func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgType fftypes.MessageType) *fftypes.EventDelivery {
+	for {
+		ed := <-c
+		if ed.Type == fftypes.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
+			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
+			return ed
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
 }
 
 func waitForChangeEvent(t *testing.T, client *resty.Client, c chan *fftypes.ChangeEvent, match map[string]interface{}) map[string]interface{} {
