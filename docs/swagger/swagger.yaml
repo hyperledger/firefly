@@ -1779,7 +1779,7 @@ paths:
                     type: string
                   namespace:
                     type: string
-                  outputs:
+                  output:
                     additionalProperties: {}
                     type: object
                   protocolId:
@@ -1840,7 +1840,7 @@ paths:
                     type: string
                   namespace:
                     type: string
-                  outputs:
+                  output:
                     additionalProperties: {}
                     type: object
                   protocolId:

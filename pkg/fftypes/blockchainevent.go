@@ -24,7 +24,7 @@ type BlockchainEvent struct {
 	Name         string         `json:"name,omitempty"`
 	Subscription *UUID          `json:"subscription,omitempty"`
 	ProtocolID   string         `json:"protocolId,omitempty"`
-	Output       JSONObject     `json:"outputs,omitempty"`
+	Output       JSONObject     `json:"output,omitempty"`
 	Info         JSONObject     `json:"info,omitempty"`
 	Timestamp    *FFTime        `json:"timestamp,omitempty"`
 	TX           TransactionRef `json:"tx"`
