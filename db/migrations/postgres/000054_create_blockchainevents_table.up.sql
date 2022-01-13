@@ -13,4 +13,9 @@ CREATE TABLE blockchainevents (
   tx_type          VARCHAR(64),
   tx_id            UUID
 );
+
+CREATE INDEX blockchainevents_id ON blockchainevents(id);
+CREATE INDEX blockchainevents_tx ON blockchainevents(tx_id);
+CREATE INDEX blockchainevents_timestamp ON blockchainevents(timestamp);
+CREATE INDEX blockchainevents_subscription_id ON blockchainevents(subscription_id);
 COMMIT;
