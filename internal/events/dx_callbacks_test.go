@@ -516,7 +516,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 			ID:        id,
 			BackendID: "tracking12345",
 			Input: fftypes.JSONObject{
-				"maniest": "Bob",
+				"manifest": "Bob",
 			},
 		},
 	}, nil, nil)
