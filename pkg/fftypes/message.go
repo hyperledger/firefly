@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -118,15 +118,14 @@ type DataRefOrValue struct {
 
 	Validator ValidatorType `json:"validator,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value,omitempty"`
+	Value     *JSONAny      `json:"value,omitempty"`
 	Blob      *BlobRef      `json:"blob,omitempty"`
 }
 
 // MessageRef is a lightweight data structure that can be used to refer to a message
 type MessageRef struct {
-	ID       *UUID    `json:"id,omitempty"`
-	Sequence int64    `json:"sequence,omitempty"`
-	Hash     *Bytes32 `json:"hash,omitempty"`
+	ID   *UUID    `json:"id,omitempty"`
+	Hash *Bytes32 `json:"hash,omitempty"`
 }
 
 func (h *MessageHeader) Hash() *Bytes32 {
@@ -148,6 +147,21 @@ func (m *MessageInOut) SetInlineData(data []*Data) {
 			Value:     d.Value,
 		}
 	}
+}
+
+const messageSizeEstimateBase = int64(1024)
+
+func (m *Message) EstimateSize(includeDataRefs bool) int64 {
+	// For now we have a static estimate for the size of the serialized header structure.
+	//
+	// includeDataRefs should only be set when the data has been resolved from the database.
+	size := messageSizeEstimateBase
+	if includeDataRefs {
+		for _, dr := range m.Data {
+			size += dr.ValueSize
+		}
+	}
+	return size
 }
 
 func (m *Message) Seal(ctx context.Context) (err error) {

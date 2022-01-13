@@ -25,6 +25,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEstimateMessageSize(t *testing.T) {
+	msg := Message{}
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(false))
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(true))
+	msg.Data = DataRefs{
+		{ID: NewUUID(), Hash: NewRandB32(), ValueSize: 1000},
+	}
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(false))
+	assert.Equal(t, messageSizeEstimateBase+int64(1000), msg.EstimateSize(true))
+}
+
 func TestSealBareMessage(t *testing.T) {
 	msg := Message{}
 	err := msg.Seal(context.Background())
@@ -202,7 +213,7 @@ func TestSealKnownMessage(t *testing.T) {
 func TestSetInlineData(t *testing.T) {
 	msg := &MessageInOut{}
 	msg.SetInlineData([]*Data{
-		{ID: NewUUID(), Value: Byteable(`"some data"`)},
+		{ID: NewUUID(), Value: JSONAnyPtr(`"some data"`)},
 	})
 	b, err := json.Marshal(&msg)
 	assert.NoError(t, err)

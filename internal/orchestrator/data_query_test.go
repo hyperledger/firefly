@@ -123,8 +123,8 @@ func TestGetMessageByIDWithDataOk(t *testing.T) {
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.MatchedBy(func(u *fftypes.UUID) bool { return u.Equals(msgID) })).Return(msg, nil)
 	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.Byteable("{}")},
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.Byteable("{}")},
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.JSONAnyPtr("{}")},
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.JSONAnyPtr("{}")},
 	}, true, nil)
 
 	msgI, err := or.GetMessageByIDWithData(context.Background(), "ns1", msgID.String())

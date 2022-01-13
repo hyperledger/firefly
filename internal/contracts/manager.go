@@ -94,21 +94,8 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 		return nil, err
 	}
 
-	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	localOrgKey, err := cm.identity.GetLocalOrgKey(ctx)
-	if err != nil {
-		return nil, err
-	}
-	identity := &fftypes.Identity{
-		Author: localOrgDID,
-		Key:    localOrgKey,
-	}
-
 	output = ffi
-	msg, err := cm.broadcast.BroadcastDefinition(ctx, ns, ffi, identity, fftypes.SystemTagDefineFFI, waitConfirm)
+	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, ns, ffi, fftypes.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
@@ -157,14 +144,11 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {
-
-	if req.Key == "" {
-		if localOrgKey, err := cm.identity.GetLocalOrgKey(ctx); err == nil {
-			req.Key = localOrgKey
-		} else {
-			return nil, err
-		}
+	req.Key, err = cm.identity.ResolveSigningKey(ctx, req.Key)
+	if err != nil {
+		return nil, err
 	}
+
 	if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
 		return nil, err
 	}
@@ -297,20 +281,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 		return nil, err
 	}
 
-	localOrgDID, err := cm.identity.ResolveLocalOrgDID(ctx)
-	if err != nil {
-		return nil, err
-	}
-	localOrgKey, err := cm.identity.GetLocalOrgKey(ctx)
-	if err != nil {
-		return nil, err
-	}
-	identity := &fftypes.Identity{
-		Author: localOrgDID,
-		Key:    localOrgKey,
-	}
-
-	msg, err := cm.broadcast.BroadcastDefinition(ctx, ns, api, identity, fftypes.SystemTagDefineContractAPI, waitConfirm)
+	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, ns, api, fftypes.SystemTagDefineContractAPI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}

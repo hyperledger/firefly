@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -59,6 +59,7 @@ func (na *FFNameArray) Scan(src interface{}) error {
 		*na = st
 		return nil
 	case nil:
+		*na = []string{}
 		return nil
 	default:
 		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, na)

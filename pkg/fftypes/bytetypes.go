@@ -69,6 +69,14 @@ func ParseBytes32(ctx context.Context, hexStr string) (*Bytes32, error) {
 	return &b32, nil
 }
 
+func MustParseBytes32(hexStr string) *Bytes32 {
+	b32, err := ParseBytes32(context.Background(), hexStr)
+	if err != nil {
+		panic(err)
+	}
+	return b32
+}
+
 // Scan implements sql.Scanner
 func (b32 *Bytes32) Scan(src interface{}) error {
 	switch src := src.(type) {

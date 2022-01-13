@@ -7,7 +7,7 @@ CREATE TABLE data (
   datatype_version VARCHAR(64)     NOT NULL,
   hash             CHAR(64)        NOT NULL,
   created          BIGINT          NOT NULL,
-  value            BYTEA           NOT NULL,
+  value            TEXT            NOT NULL,
   blob_hash        CHAR(64),
   blob_public      VARCHAR(1024)
 );

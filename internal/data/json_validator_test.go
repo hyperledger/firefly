@@ -39,7 +39,7 @@ func TestJSONValidator(t *testing.T) {
 		Validator: fftypes.ValidatorTypeJSON,
 		Name:      "customer",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(schemaBinary),
+		Value:     fftypes.JSONAnyPtrBytes(schemaBinary),
 	}
 
 	jv, err := newJSONValidator(context.Background(), "ns1", dt)
@@ -64,7 +64,7 @@ func TestJSONValidatorParseSchemaFail(t *testing.T) {
 		Validator: fftypes.ValidatorTypeJSON,
 		Name:      "customer",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(`{!json`),
+		Value:     fftypes.JSONAnyPtr(`{!json`),
 	}
 
 	_, err := newJSONValidator(context.Background(), "ns1", dt)

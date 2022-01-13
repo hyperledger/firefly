@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -49,8 +49,11 @@ func (psql *Postgres) MigrationsDir() string {
 	return psql.Name()
 }
 
-func (psql *Postgres) PlaceholderFormat() sq.PlaceholderFormat {
-	return sq.Dollar
+func (psql *Postgres) Features() sqlcommon.SQLFeatures {
+	features := sqlcommon.DefaultSQLProviderFeatures()
+	features.PlaceholderFormat = sq.Dollar
+	features.UseILIKE = false // slower than lower()
+	return features
 }
 
 func (psql *Postgres) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {

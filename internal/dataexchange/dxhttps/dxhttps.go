@@ -53,6 +53,8 @@ type wsEvent struct {
 	Hash      string  `json:"hash"`
 	Size      int64   `json:"size"`
 	Error     string  `json:"error"`
+	Manifest  string  `json:"manifest"`
+	Info      string  `json:"info"`
 }
 
 const (
@@ -91,6 +93,11 @@ type transferBlob struct {
 	Recipient string `json:"recipient"`
 }
 
+type wsAck struct {
+	Action   string `json:"action"`
+	Manifest string `json:"manifest,omitempty"` // FireFly core determined that DX should propagate opaquely to TransferResult, if this DX supports delivery acknowledgements.
+}
+
 func (h *HTTPS) Name() string {
 	return "https"
 }
@@ -104,7 +111,9 @@ func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataex
 	}
 
 	h.client = restclient.New(h.ctx, prefix)
-	h.capabilities = &dataexchange.Capabilities{}
+	h.capabilities = &dataexchange.Capabilities{
+		Manifest: prefix.GetBool(DataExchangeManifestEnabled),
+	}
 
 	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
 
@@ -232,7 +241,6 @@ func (h *HTTPS) eventLoop() {
 	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)
-	ack, _ := json.Marshal(map[string]string{"action": "commit"})
 	for {
 		select {
 		case <-ctx.Done():
@@ -252,17 +260,21 @@ func (h *HTTPS) eventLoop() {
 				continue // Swallow this and move on
 			}
 			l.Debugf("Received %s event from DX sender=%s", msg.Type, msg.Sender)
+			var manifest string
 			switch msg.Type {
 			case messageFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
 			case messageDelivered:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+					Manifest: msg.Manifest,
+					Info:     msg.Info,
+				})
 			case messageReceived:
-				err = h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
+				manifest, err = h.callbacks.MessageReceived(msg.Sender, []byte(msg.Message))
 			case blobFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
 			case blobDelivered:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{})
 			case blobReceived:
 				var hash *fftypes.Bytes32
 				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)
@@ -279,7 +291,11 @@ func (h *HTTPS) eventLoop() {
 			// Send the ack - as long as we didn't fail processing (which should only happen in core
 			// if core itself is shutting down)
 			if err == nil {
-				err = h.wsconn.Send(ctx, ack)
+				ackBytes, _ := json.Marshal(&wsAck{
+					Action:   "commit",
+					Manifest: manifest,
+				})
+				err = h.wsconn.Send(ctx, ackBytes)
 			}
 			if err != nil {
 				l.Errorf("Event loop exiting: %s", err)

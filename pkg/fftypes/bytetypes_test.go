@@ -151,10 +151,13 @@ func TestParseBytes32(t *testing.T) {
 	b32, err := ParseBytes32(context.Background(), "0xd907ee03ecbcfb416ce89d957682e8ef41ac548b0b571f65cb196f2b0ab4da05")
 	assert.NoError(t, err)
 	assert.Equal(t, "d907ee03ecbcfb416ce89d957682e8ef41ac548b0b571f65cb196f2b0ab4da05", b32.String())
+	assert.Equal(t, "d907ee03ecbcfb416ce89d957682e8ef41ac548b0b571f65cb196f2b0ab4da05", MustParseBytes32("0xd907ee03ecbcfb416ce89d957682e8ef41ac548b0b571f65cb196f2b0ab4da05").String())
 
 	_, err = ParseBytes32(context.Background(), "")
 	assert.Regexp(t, "FF10232", err)
 
 	_, err = ParseBytes32(context.Background(), "!!!!d907ee03ecbcfb416ce89d957682e8ef41ac548b0b571f65cb196f2b0ab4")
 	assert.Regexp(t, "FF10231", err)
+
+	assert.Panics(t, func() { MustParseBytes32("!!!!stuff") })
 }

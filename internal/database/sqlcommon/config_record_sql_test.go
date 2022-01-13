@@ -39,7 +39,7 @@ func TestConfigRecordE2EWithDB(t *testing.T) {
 	// Create a new namespace entry
 	configRecord := &fftypes.ConfigRecord{
 		Key:   "foo",
-		Value: fftypes.Byteable(`{"foo":"bar"}`),
+		Value: fftypes.JSONAnyPtr(`{"foo":"bar"}`),
 	}
 	err := s.UpsertConfigRecord(ctx, configRecord, true)
 	assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestConfigRecordE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	configRecordUpdated := &fftypes.ConfigRecord{
 		Key:   "foo",
-		Value: fftypes.Byteable(`{"fiz":"buzz"}`),
+		Value: fftypes.JSONAnyPtr(`{"fiz":"buzz"}`),
 	}
 	err = s.UpsertConfigRecord(context.Background(), configRecordUpdated, true)
 	assert.NoError(t, err)

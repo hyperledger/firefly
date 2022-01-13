@@ -46,6 +46,12 @@ var putContractAPI = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.PP["ns"], r.Input.(*fftypes.ContractAPI), waitConfirm)
+		api := r.Input.(*fftypes.ContractAPI)
+		api.ID, err = fftypes.ParseUUID(r.Ctx, r.PP["id"])
+		var res interface{}
+		if err == nil {
+			res, err = getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.PP["ns"], api, waitConfirm)
+		}
+		return res, err
 	},
 }

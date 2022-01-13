@@ -213,7 +213,7 @@ func TestBlockchainInitMergeConfigRecordsFail(t *testing.T) {
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{
 		{
 			Key:   "pizza.toppings",
-			Value: []byte("cheese, pepperoni, mushrooms"),
+			Value: fftypes.JSONAnyPtr("cheese, pepperoni, mushrooms"),
 		},
 	}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)

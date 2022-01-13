@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,12 @@ import (
 	"github.com/hyperledger/firefly/internal/config/wsconfig"
 )
 
+const (
+	// DataExchangeManifestEnabled determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector
+	DataExchangeManifestEnabled = "manifestEnabled"
+)
+
 func (h *HTTPS) InitPrefix(prefix config.Prefix) {
 	wsconfig.InitPrefix(prefix)
+	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
 }

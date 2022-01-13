@@ -54,13 +54,13 @@ func TestValidateE2E(t *testing.T) {
 			Name:    "customer",
 			Version: "0.0.1",
 		},
-		Value: fftypes.Byteable(`{"some":"json"}`),
+		Value: fftypes.JSONAnyPtr(`{"some":"json"}`),
 	}
 	data.Seal(ctx, nil)
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
-		Value: fftypes.Byteable(`{
+		Value: fftypes.JSONAnyPtr(`{
 			"properties": {
 				"field1": {
 					"type": "string"
@@ -81,7 +81,7 @@ func TestValidateE2E(t *testing.T) {
 	err = v.Validate(ctx, data)
 	assert.Regexp(t, "FF10198", err)
 
-	data.Value = fftypes.Byteable(`{"field1":"value1"}`)
+	data.Value = fftypes.JSONAnyPtr(`{"field1":"value1"}`)
 	data.Seal(context.Background(), nil)
 	err = v.Validate(ctx, data)
 	assert.NoError(t, err)
@@ -110,7 +110,7 @@ func TestValidatorLookupCached(t *testing.T) {
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 		Name:      "customer",
 		Namespace: "0.0.1",
 	}
@@ -138,13 +138,13 @@ func TestValidateBadHash(t *testing.T) {
 			Name:    "customer",
 			Version: "0.0.1",
 		},
-		Value: fftypes.Byteable(`{}`),
+		Value: fftypes.JSONAnyPtr(`{}`),
 		Hash:  fftypes.NewRandB32(),
 	}
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 		Name:      "customer",
 		Namespace: "0.0.1",
 	}
@@ -409,7 +409,7 @@ func TestResolveInlineDataValueNoValidatorOK(t *testing.T) {
 	mdi.On("UpsertData", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
-		{Value: fftypes.Byteable(`{"some":"json"}`)},
+		{Value: fftypes.JSONAnyPtr(`{"some":"json"}`)},
 	})
 	assert.NoError(t, err)
 	assert.Len(t, refs, 1)
@@ -425,7 +425,7 @@ func TestResolveInlineDataValueNoValidatorStoreFail(t *testing.T) {
 	mdi.On("UpsertData", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	_, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
-		{Value: fftypes.Byteable(`{"some":"json"}`)},
+		{Value: fftypes.JSONAnyPtr(`{"some":"json"}`)},
 	})
 	assert.EqualError(t, err, "pop")
 }
@@ -442,7 +442,7 @@ func TestResolveInlineDataValueWithValidation(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "customer",
 		Version:   "0.0.1",
-		Value: fftypes.Byteable(`{
+		Value: fftypes.JSONAnyPtr(`{
 			"properties": {
 				"field1": {
 					"type": "string"
@@ -458,7 +458,7 @@ func TestResolveInlineDataValueWithValidation(t *testing.T) {
 				Name:    "customer",
 				Version: "0.0.1",
 			},
-			Value: fftypes.Byteable(`{"field1":"value1"}`),
+			Value: fftypes.JSONAnyPtr(`{"field1":"value1"}`),
 		},
 	})
 	assert.NoError(t, err)
@@ -472,7 +472,7 @@ func TestResolveInlineDataValueWithValidation(t *testing.T) {
 				Name:    "customer",
 				Version: "0.0.1",
 			},
-			Value: fftypes.Byteable(`{"not_allowed":"value"}`),
+			Value: fftypes.JSONAnyPtr(`{"not_allowed":"value"}`),
 		},
 	})
 	assert.Regexp(t, "FF10198", err)
@@ -603,7 +603,7 @@ func TestValidateAllLookupError(t *testing.T) {
 			Name:    "customer",
 			Version: "0.0.1",
 		},
-		Value: fftypes.Byteable(`anything`),
+		Value: fftypes.JSONAnyPtr(`anything`),
 	}
 	data.Seal(ctx, nil)
 	_, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
@@ -627,7 +627,7 @@ func TestValidateAllStoredValidatorInvalid(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(&fftypes.Datatype{
-		Value: fftypes.Byteable(`{"not": "a", "schema": true}`),
+		Value: fftypes.JSONAnyPtr(`{"not": "a", "schema": true}`),
 	}, nil)
 	data := &fftypes.Data{
 		Namespace: "ns1",

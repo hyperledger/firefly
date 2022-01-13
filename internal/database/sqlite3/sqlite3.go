@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,15 +32,29 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 
 	// Import the derivation of SQLite3 CGO suported by golang-migrate
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/mattn/go-sqlite3"
 )
+
+var ffSQLiteRegistered = false
 
 type SQLite3 struct {
 	sqlcommon.SQLCommon
 }
 
+func connHook(conn *sqlite3.SQLiteConn) error {
+	_, err := conn.Exec("PRAGMA case_sensitive_like=ON;", nil)
+	return err
+}
+
 func (sqlite *SQLite3) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 	capabilities := &database.Capabilities{}
+	if !ffSQLiteRegistered {
+		sql.Register("sqlite3_ff",
+			&sqlite3.SQLiteDriver{
+				ConnectHook: connHook,
+			})
+		ffSQLiteRegistered = true
+	}
 	return sqlite.SQLCommon.Init(ctx, sqlite, prefix, callbacks, capabilities)
 }
 
@@ -52,8 +66,11 @@ func (sqlite *SQLite3) MigrationsDir() string {
 	return "sqlite"
 }
 
-func (sqlite *SQLite3) PlaceholderFormat() sq.PlaceholderFormat {
-	return sq.Dollar
+func (sqlite *SQLite3) Features() sqlcommon.SQLFeatures {
+	features := sqlcommon.DefaultSQLProviderFeatures()
+	features.PlaceholderFormat = sq.Dollar
+	features.UseILIKE = false // Not supported
+	return features
 }
 
 func (sqlite *SQLite3) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
@@ -61,7 +78,7 @@ func (sqlite *SQLite3) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (s
 }
 
 func (sqlite *SQLite3) Open(url string) (*sql.DB, error) {
-	return sql.Open("sqlite3", url)
+	return sql.Open("sqlite3_ff", url)
 }
 
 func (sqlite *SQLite3) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {

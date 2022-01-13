@@ -27,26 +27,33 @@ func (_m *Callbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, size int6
 }
 
 // MessageReceived provides a mock function with given fields: peerID, data
-func (_m *Callbacks) MessageReceived(peerID string, data []byte) error {
+func (_m *Callbacks) MessageReceived(peerID string, data []byte) (string, error) {
 	ret := _m.Called(peerID, data)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, []byte) error); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, []byte) string); ok {
 		r0 = rf(peerID, data)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, []byte) error); ok {
+		r1 = rf(peerID, data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// TransferResult provides a mock function with given fields: trackingID, status, info, opOutput
-func (_m *Callbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(trackingID, status, info, opOutput)
+// TransferResult provides a mock function with given fields: trackingID, status, info
+func (_m *Callbacks) TransferResult(trackingID string, status fftypes.OpStatus, info fftypes.TransportStatusUpdate) error {
+	ret := _m.Called(trackingID, status, info)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(trackingID, status, info, opOutput)
+	if rf, ok := ret.Get(0).(func(string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
+		r0 = rf(trackingID, status, info)
 	} else {
 		r0 = ret.Error(0)
 	}

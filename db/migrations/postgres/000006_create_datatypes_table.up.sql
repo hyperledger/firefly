@@ -9,7 +9,7 @@ CREATE TABLE datatypes (
   version     VARCHAR(64)     NOT NULL,
   hash        CHAR(64)        NOT NULL,
   created     BIGINT          NOT NULL,
-  value       BYTEA
+  value       TEXT
 );
 
 CREATE UNIQUE INDEX datatypes_id ON data(id);

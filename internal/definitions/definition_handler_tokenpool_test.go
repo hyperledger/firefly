@@ -61,7 +61,7 @@ func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftyp
 		return nil, nil, err
 	}
 	data := []*fftypes.Data{{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}}
 	return msg, data, nil
 }

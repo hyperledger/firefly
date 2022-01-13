@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -44,7 +44,10 @@ func newJSONValidator(ctx context.Context, ns string, datatype *fftypes.Datatype
 		},
 	}
 
-	schemaBytes := []byte(datatype.Value)
+	var schemaBytes []byte
+	if datatype.Value != nil {
+		schemaBytes = []byte(*datatype.Value)
+	}
 	sl := gojsonschema.NewBytesLoader(schemaBytes)
 	schema, err := gojsonschema.NewSchema(sl)
 	if err != nil {
@@ -61,7 +64,7 @@ func (jv *jsonValidator) Validate(ctx context.Context, data *fftypes.Data) error
 	return jv.ValidateValue(ctx, data.Value, data.Hash)
 }
 
-func (jv *jsonValidator) ValidateValue(ctx context.Context, value fftypes.Byteable, expectedHash *fftypes.Bytes32) error {
+func (jv *jsonValidator) ValidateValue(ctx context.Context, value *fftypes.JSONAny, expectedHash *fftypes.Bytes32) error {
 	if value == nil {
 		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
@@ -73,7 +76,7 @@ func (jv *jsonValidator) ValidateValue(ctx context.Context, value fftypes.Byteab
 		}
 	}
 
-	err := jv.validateBytes(ctx, []byte(value))
+	err := jv.validateBytes(ctx, []byte(*value))
 	if err != nil {
 		log.L(ctx).Warnf("JSON schema %s [%v] validation failed: %s", jv.datatype, jv.id, err)
 	}

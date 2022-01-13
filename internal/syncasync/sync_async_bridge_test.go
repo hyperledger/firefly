@@ -69,7 +69,7 @@ func TestRequestReplyOk(t *testing.T) {
 
 	mdm := sa.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
+		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
 	reply, err := sa.WaitForReply(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
@@ -87,7 +87,7 @@ func TestRequestReplyOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, *replyID, *reply.Header.ID)
-	assert.Equal(t, `"response data"`, string(reply.InlineData[0].Value))
+	assert.Equal(t, `"response data"`, reply.InlineData[0].Value.String())
 
 }
 
@@ -116,7 +116,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 
 	mdm := sa.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
+		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
 	reply, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
@@ -162,7 +162,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 
 	mdm := sa.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
+		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
 	_, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {

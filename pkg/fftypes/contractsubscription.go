@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -30,7 +30,7 @@ type ContractSubscription struct {
 	Namespace  string              `json:"namespace,omitempty"`
 	Name       string              `json:"name,omitempty"`
 	ProtocolID string              `json:"protocolId,omitempty"`
-	Location   Byteable            `json:"location,omitempty"`
+	Location   *JSONAny            `json:"location,omitempty"`
 	Created    *FFTime             `json:"created,omitempty"`
 	Event      *FFISerializedEvent `json:"event,omitempty"`
 }

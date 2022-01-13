@@ -40,8 +40,14 @@ func TestSQLite3GoProvider(t *testing.T) {
 	_, err = sqlite.GetMigrationDriver(sqlite.DB())
 	assert.Error(t, err)
 
+	db, err := sqlite.Open("file::memory:")
+	assert.NoError(t, err)
+	conn, err := db.Conn(context.Background())
+	assert.NoError(t, err)
+	conn.Close()
+
 	assert.Equal(t, "sqlite3", sqlite.Name())
-	assert.Equal(t, sq.Dollar, sqlite.PlaceholderFormat())
+	assert.Equal(t, sq.Dollar, sqlite.Features().PlaceholderFormat)
 
 	insert := sq.Insert("test").Columns("col1").Values("val1")
 	insert, query := sqlite.UpdateInsertForSequenceReturn(insert)

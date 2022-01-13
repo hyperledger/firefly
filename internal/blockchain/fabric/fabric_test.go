@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -80,19 +80,19 @@ func testFFIMethod() *fftypes.FFIMethod {
 			{
 				Name:    "x",
 				Type:    "integer",
-				Details: []byte(`{"type": "int"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "int"}`),
 			},
 			{
 				Name:    "y",
 				Type:    "integer",
-				Details: []byte(`{"type": "int"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "int"}`),
 			},
 		},
 		Returns: []*fftypes.FFIParam{
 			{
 				Name:    "z",
 				Type:    "integer",
-				Details: []byte(`{"type": "int"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "int"}`),
 			},
 		},
 	}
@@ -1065,7 +1065,7 @@ func TestAddSubscription(t *testing.T) {
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable(fftypes.JSONObject{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
 			}.String()),
@@ -1096,7 +1096,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable{},
+			Location: fftypes.JSONAnyPtr(""),
 			Event:    &fftypes.FFISerializedEvent{},
 		},
 	}
@@ -1121,7 +1121,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable(fftypes.JSONObject{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
 			}.String()),
@@ -1334,7 +1334,7 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.NoError(t, err)
 }
 
@@ -1350,7 +1350,7 @@ func TestInvokeContractChaincodeNotSet(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1375,7 +1375,7 @@ func TestInvokeContractFabconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10284", err)
 }
 
@@ -1409,7 +1409,7 @@ func TestInvokeContractUnmarshalResponseError(t *testing.T) {
 			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "invalid character", err)
 }
 
@@ -1429,7 +1429,7 @@ func TestQueryContractOK(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), locationBytes, method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.EqualError(t, err, "not yet supported")
 }
 
@@ -1442,7 +1442,7 @@ func TestValidateContractLocation(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), locationBytes)
+	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
 }
 
@@ -1454,7 +1454,7 @@ func TestValidateNoContractLocationChaincode(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), locationBytes)
+	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1490,6 +1490,6 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10151", err)
 }

@@ -457,7 +457,7 @@ func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, t
 func CreateContractSubscription(t *testing.T, client *resty.Client, event *fftypes.FFIEvent, location *fftypes.JSONObject) *fftypes.ContractSubscription {
 	body := fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable(location.String()),
+			Location: fftypes.JSONAnyPtr(location.String()),
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},

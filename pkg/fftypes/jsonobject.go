@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -176,45 +176,6 @@ func (jd JSONObject) String() string {
 }
 
 func (jd JSONObject) Hash(jsonDesc string) (*Bytes32, error) {
-	b, err := json.Marshal(&jd)
-	if err != nil {
-		return nil, i18n.NewError(context.Background(), i18n.MsgJSONObjectParseFailed, jsonDesc)
-	}
-	var b32 Bytes32 = sha256.Sum256(b)
-	return &b32, nil
-}
-
-// JSONObjectArray is an array of JSONObject
-type JSONObjectArray []JSONObject
-
-// Scan implements sql.Scanner
-func (jd *JSONObjectArray) Scan(src interface{}) error {
-	switch src := src.(type) {
-	case nil:
-		return nil
-
-	case string, []byte:
-		if src == "" {
-			return nil
-		}
-		return json.Unmarshal(src.([]byte), &jd)
-
-	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, jd)
-	}
-
-}
-
-func (jd JSONObjectArray) Value() (driver.Value, error) {
-	return json.Marshal(&jd)
-}
-
-func (jd JSONObjectArray) String() string {
-	b, _ := json.Marshal(&jd)
-	return string(b)
-}
-
-func (jd JSONObjectArray) Hash(jsonDesc string) (*Bytes32, error) {
 	b, err := json.Marshal(&jd)
 	if err != nil {
 		return nil, i18n.NewError(context.Background(), i18n.MsgJSONObjectParseFailed, jsonDesc)

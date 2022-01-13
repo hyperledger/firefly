@@ -1,5 +1,7 @@
 run:
   tests: false
+  skip-dirs:
+  - "mocks"
 linters-settings:
   golint: {}
   gocritic:

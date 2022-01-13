@@ -64,7 +64,7 @@ func TestDatatypeValidation(t *testing.T) {
 		Namespace: "ok",
 		Name:      "ok",
 		Version:   "ok",
-		Value:     Byteable(`{}`),
+		Value:     JSONAnyPtr(`{}`),
 	}
 	assert.NoError(t, dt.Validate(context.Background(), false))
 

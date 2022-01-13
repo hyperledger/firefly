@@ -98,7 +98,7 @@ func TestGenerate(t *testing.T) {
 
 func TestGenerateWithLocation(t *testing.T) {
 	g := NewFFISwaggerGen()
-	api := &fftypes.ContractAPI{Location: []byte(`{}`)}
+	api := &fftypes.ContractAPI{Location: fftypes.JSONAnyPtr(`{}`)}
 	doc := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
 
 	b, err := yaml.Marshal(doc)

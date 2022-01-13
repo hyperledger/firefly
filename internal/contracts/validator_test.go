@@ -75,17 +75,17 @@ func TestCustomTypeSimple(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType",
-		Details: []byte("{\"type\":\"struct\"}"),
+		Details: fftypes.JSONAnyPtr("{\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "foo",
 				Type:    "string",
-				Details: []byte("{\"type\":\"string\"}"),
+				Details: fftypes.JSONAnyPtr("{\"type\":\"string\"}"),
 			},
 			{
 				Name:    "count",
 				Type:    "integer",
-				Details: []byte("{\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("{\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -101,17 +101,17 @@ func TestCustomTypeWrongType(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType",
-		Details: []byte("\"type\":\"struct\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "foo",
 				Type:    "string",
-				Details: []byte("\"type\":\"string\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"string\"}"),
 			},
 			{
 				Name:    "count",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -127,17 +127,17 @@ func TestCustomTypeFieldMissing(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType",
-		Details: []byte("\"type\":\"struct\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "foo",
 				Type:    "string",
-				Details: []byte("\"type\":\"string\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"string\"}"),
 			},
 			{
 				Name:    "count",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -153,17 +153,17 @@ func TestCustomTypeInvalid(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType",
-		Details: []byte("\"type\":\"struct\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "foo",
 				Type:    "string",
-				Details: []byte("\"type\":\"string\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"string\"}"),
 			},
 			{
 				Name:    "count",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -179,17 +179,17 @@ func TestArrayOfCustomType(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType[]",
-		Details: []byte("\"type\":\"struct[]\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"struct[]\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "foo",
 				Type:    "string",
-				Details: []byte("\"type\":\"string\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"string\"}"),
 			},
 			{
 				Name:    "count",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 		},
 	}
@@ -215,12 +215,12 @@ func TestNullValue(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType",
-		Details: []byte("\"type\":\"struct\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "foo",
 				Type:    "string",
-				Details: []byte("\"type\":\"string\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"string\"}"),
 			},
 		},
 	}
@@ -236,7 +236,7 @@ func TestInvalidTypeMapping(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "foo",
 		Type:    "integer",
-		Details: []byte("\"type\":\"uint256\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 	}
 	var i float32 = 32
 	err := checkParam(context.Background(), i, param)
@@ -247,27 +247,27 @@ func TestComplexCustomType(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType[][]",
-		Details: []byte("\"type\":\"struct\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "x",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 			{
 				Name:    "y",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 			{
 				Name:    "foo",
 				Type:    "struct Foo",
-				Details: []byte("\"type\":\"struct\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 				Components: []*fftypes.FFIParam{
 					{
 						Name:    "bar",
 						Type:    "string",
-						Details: []byte("\"type\":\"string\"}"),
+						Details: fftypes.JSONAnyPtr("\"type\":\"string\"}"),
 					},
 				},
 			},
@@ -288,27 +288,27 @@ func TestBadComplexCustomType(t *testing.T) {
 	param := &fftypes.FFIParam{
 		Name:    "testParam",
 		Type:    "struct CustomType[][]",
-		Details: []byte("\"type\":\"struct\"}"),
+		Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 		Components: []*fftypes.FFIParam{
 			{
 				Name:    "x",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 			{
 				Name:    "y",
 				Type:    "integer",
-				Details: []byte("\"type\":\"uint256\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"uint256\"}"),
 			},
 			{
 				Name:    "foo",
 				Type:    "struct Foo",
-				Details: []byte("\"type\":\"struct\"}"),
+				Details: fftypes.JSONAnyPtr("\"type\":\"struct\"}"),
 				Components: []*fftypes.FFIParam{
 					{
 						Name:    "bar",
 						Type:    "string",
-						Details: []byte("\"type\":\"string\"}"),
+						Details: fftypes.JSONAnyPtr("\"type\":\"string\"}"),
 					},
 				},
 			},

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -129,7 +129,7 @@ func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))
 		return false
 	}
-	err := json.Unmarshal(data[0].Value, &res)
+	err := json.Unmarshal(data[0].Value.Bytes(), &res)
 	if err != nil {
 		l.Warnf("Unable to process system broadcast %s - unmarshal failed: %s", msg.Header.ID, err)
 		return false

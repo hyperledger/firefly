@@ -5,11 +5,11 @@ CREATE TABLE contractevents (
   namespace        VARCHAR(64)     NOT NULL,
   name             VARCHAR(1024)   NOT NULL,
   subscription_id  UUID            NOT NULL,
-  outputs          BYTEA,
-  info             BYTEA,
+  outputs          TEXT,
+  info             TEXT,
   timestamp        BIGINT          NOT NULL
 );
-CREATE UNIQUE INDEX contractevents_name ON contractevents(namespace,name);
-CREATE UNIQUE INDEX contractevents_timestamp ON contractevents(timestamp);
-CREATE UNIQUE INDEX contractevents_subscription_id ON contractevents(subscription_id);
+CREATE INDEX contractevents_name ON contractevents(namespace,name);
+CREATE INDEX contractevents_timestamp ON contractevents(timestamp);
+CREATE INDEX contractevents_subscription_id ON contractevents(subscription_id);
 COMMIT;

@@ -35,7 +35,7 @@ func TestPutContractAPI(t *testing.T) {
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/apis", &buf)
+	req := httptest.NewRequest("PUT", "/api/v1/namespaces/ns1/apis/99EEE458-037C-4C78-B66B-31E52F93D2E9", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
@@ -53,7 +53,7 @@ func TestPutContractAPISync(t *testing.T) {
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/apis?confirm", &buf)
+	req := httptest.NewRequest("PUT", "/api/v1/namespaces/ns1/apis/99EEE458-037C-4C78-B66B-31E52F93D2E9?confirm", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

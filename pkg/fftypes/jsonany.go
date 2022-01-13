@@ -26,48 +26,87 @@ import (
 )
 
 const (
-	nullString = "null"
+	NullString = "null"
 )
 
-// Byteable uses raw encode/decode to preserve field order, and can handle any types of field.
+// JSONAny uses raw encode/decode to preserve field order, and can handle any types of field.
 // It validates the JSON can be unmarshalled, but does not change the order.
 // It does however trim out whitespace
-type Byteable []byte
+type JSONAny string
 
-func (h *Byteable) UnmarshalJSON(b []byte) error {
+func JSONAnyPtr(str string) *JSONAny {
+	return (*JSONAny)(&str)
+}
+
+func JSONAnyPtrBytes(b []byte) *JSONAny {
+	if b == nil {
+		return nil
+	}
+	ja := JSONAny(b)
+	return &ja
+}
+
+func (h *JSONAny) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 {
+		*h = JSONAny(NullString)
+		return nil
+	}
 	var flattener json.RawMessage
 	err := json.Unmarshal(b, &flattener)
 	if err != nil {
 		return err
 	}
-	*h, err = json.Marshal(flattener)
+	standardizedBytes, err := json.Marshal(flattener)
+	if err == nil {
+		*h = JSONAny(standardizedBytes)
+	}
 	return err
 }
 
-func (h Byteable) MarshalJSON() ([]byte, error) {
-	if h == nil {
-		return []byte(nullString), nil
+func (h JSONAny) MarshalJSON() ([]byte, error) {
+	if h == "" {
+		h = NullString
 	}
-	return h, nil
+	return []byte(h), nil
 }
 
-func (h Byteable) Hash() *Bytes32 {
-	var b32 Bytes32 = sha256.Sum256([]byte(h))
+func (h *JSONAny) Hash() *Bytes32 {
+	if h == nil {
+		return nil
+	}
+	var b32 Bytes32 = sha256.Sum256([]byte(*h))
 	return &b32
 }
 
-func (h Byteable) String() string {
+func (h *JSONAny) String() string {
+	if h == nil {
+		return NullString
+	}
 	b, _ := h.MarshalJSON()
 	return string(b)
 }
 
-func (h Byteable) IsNil() bool {
-	return h.String() == nullString
+func (h *JSONAny) Length() int64 {
+	if h == nil {
+		return 0
+	}
+	return int64(len(*h))
 }
 
-func (h Byteable) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {
+func (h *JSONAny) Bytes() []byte {
+	if h == nil {
+		return nil
+	}
+	return []byte(*h)
+}
+
+func (h *JSONAny) IsNil() bool {
+	return h == nil || *h == "" || *h == NullString
+}
+
+func (h JSONAny) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {
 	var jo JSONObject
-	err := json.Unmarshal(h, &jo)
+	err := json.Unmarshal([]byte(h), &jo)
 	if err != nil {
 		if len(noWarn) == 0 || !noWarn[0] {
 			log.L(context.Background()).Warnf("Unable to deserialize as JSON object: %s", string(h))
@@ -80,24 +119,23 @@ func (h Byteable) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {
 // JSONObject attempts to de-serailize the contained structure as a JSON Object (map)
 // Safe and will never return nil
 // Will return an empty object if the type is array, string, bool, number etc.
-func (h Byteable) JSONObject() JSONObject {
+func (h JSONAny) JSONObject() JSONObject {
 	jo, _ := h.JSONObjectOk()
 	return jo
 }
 
 // JSONObjectNowarn acts the same as JSONObject, but does not warn if the value cannot
 // be parsed as an object
-func (h Byteable) JSONObjectNowarn() JSONObject {
+func (h JSONAny) JSONObjectNowarn() JSONObject {
 	jo, _ := h.JSONObjectOk(true)
 	return jo
 }
 
 // Scan implements sql.Scanner
-func (h *Byteable) Scan(src interface{}) error {
+func (h *JSONAny) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case nil:
-		nullVal := []byte(nullString)
-		*h = nullVal
+		*h = NullString
 		return nil
 	case []byte:
 		return h.UnmarshalJSON(src)

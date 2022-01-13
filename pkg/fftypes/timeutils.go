@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -67,7 +67,7 @@ func (ft *FFTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ft.String())
 }
 
-func ParseString(str string) (*FFTime, error) {
+func ParseTimeString(str string) (*FFTime, error) {
 	t, err := time.Parse(time.RFC3339Nano, str)
 	if err != nil {
 		var unixTime int64
@@ -96,7 +96,7 @@ func (ft *FFTime) UnixNano() int64 {
 }
 
 func (ft *FFTime) UnmarshalText(b []byte) error {
-	t, err := ParseString(string(b))
+	t, err := ParseTimeString(string(b))
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (ft *FFTime) Scan(src interface{}) error {
 		return nil
 
 	case string:
-		t, err := ParseString(src)
+		t, err := ParseTimeString(src)
 		if err != nil {
 			return err
 		}

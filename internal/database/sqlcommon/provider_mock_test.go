@@ -67,8 +67,10 @@ func (mp *mockProvider) MigrationsDir() string {
 	return mp.Name()
 }
 
-func (mp *mockProvider) PlaceholderFormat() sq.PlaceholderFormat {
-	return sq.Dollar
+func (psql *mockProvider) Features() SQLFeatures {
+	features := DefaultSQLProviderFeatures()
+	features.UseILIKE = true
+	return features
 }
 
 func (mp *mockProvider) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {

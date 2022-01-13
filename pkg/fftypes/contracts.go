@@ -30,8 +30,8 @@ var (
 type ContractCallRequest struct {
 	Type      ContractCallType       `json:"type,omitempty" ffenum:"contractcalltype"`
 	Interface *UUID                  `json:"interface,omitempty"`
-	Ledger    Byteable               `json:"ledger,omitempty"`
-	Location  Byteable               `json:"location,omitempty"`
+	Ledger    *JSONAny               `json:"ledger,omitempty"`
+	Location  *JSONAny               `json:"location,omitempty"`
 	Key       string                 `json:"key,omitempty"`
 	Method    *FFIMethod             `json:"method,omitempty"`
 	Input     map[string]interface{} `json:"input"`
@@ -39,7 +39,7 @@ type ContractCallRequest struct {
 
 type ContractSubscribeRequest struct {
 	Interface *UUID     `json:"interface,omitempty"`
-	Location  Byteable  `json:"location,omitempty"`
+	Location  *JSONAny  `json:"location,omitempty"`
 	Event     *FFIEvent `json:"event,omitempty"`
 }
 
@@ -52,8 +52,8 @@ type ContractAPI struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Namespace string        `json:"namespace,omitempty"`
 	Interface *FFIReference `json:"interface"`
-	Ledger    Byteable      `json:"ledger,omitempty"`
-	Location  Byteable      `json:"location,omitempty"`
+	Ledger    *JSONAny      `json:"ledger,omitempty"`
+	Location  *JSONAny      `json:"location,omitempty"`
 	Name      string        `json:"name"`
 	Message   *UUID         `json:"message,omitempty"`
 	URLs      ContractURLs  `json:"urls"`
@@ -78,5 +78,8 @@ func (c *ContractAPI) SetBroadcastMessage(msgID *UUID) {
 }
 
 func (c *ContractAPI) LocationAndLedgerEquals(a *ContractAPI) bool {
+	if c == nil || a == nil {
+		return false
+	}
 	return c.Location.Hash().Equals(a.Location.Hash()) && c.Ledger.Hash().Equals(a.Ledger.Hash())
 }

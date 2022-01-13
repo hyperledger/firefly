@@ -48,14 +48,14 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 			{
 				Name:    "value",
 				Type:    "integer",
-				Details: []byte("\"internal-type-info\""),
+				Details: fftypes.JSONAnyPtr("\"internal-type-info\""),
 			},
 		},
 		Returns: fftypes.FFIParams{
 			{
 				Name:    "value",
 				Type:    "integer",
-				Details: []byte("\"internal-type-info\""),
+				Details: fftypes.JSONAnyPtr("\"internal-type-info\""),
 			},
 		},
 	}

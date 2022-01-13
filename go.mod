@@ -23,7 +23,6 @@ require (
 	github.com/karlseguin/expect v1.0.8 // indirect
 	github.com/lib/pq v1.10.4
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/microcosm-cc/bluemonday v1.0.16

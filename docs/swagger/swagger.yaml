@@ -7,7 +7,6 @@ components:
             $ref: '#/components/schemas/FFIParam'
           type: array
         details:
-          format: byte
           type: string
         name:
           type: string
@@ -421,7 +420,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -454,7 +452,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -472,7 +469,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -530,10 +526,8 @@ paths:
                       type: string
                   type: object
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
                 name:
                   type: string
@@ -554,10 +548,8 @@ paths:
                         type: string
                     type: object
                   ledger:
-                    format: byte
                     type: string
                   location:
-                    format: byte
                     type: string
                   message: {}
                   name:
@@ -588,10 +580,8 @@ paths:
                         type: string
                     type: object
                   ledger:
-                    format: byte
                     type: string
                   location:
-                    format: byte
                     type: string
                   message: {}
                   name:
@@ -650,10 +640,8 @@ paths:
                         type: string
                     type: object
                   ledger:
-                    format: byte
                     type: string
                   location:
-                    format: byte
                     type: string
                   message: {}
                   name:
@@ -719,10 +707,8 @@ paths:
                 key:
                   type: string
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
               type: object
       responses:
@@ -775,10 +761,8 @@ paths:
                 key:
                   type: string
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
               type: object
       responses:
@@ -832,7 +816,6 @@ paths:
             schema:
               properties:
                 location:
-                  format: byte
                   type: string
               type: object
       responses:
@@ -856,7 +839,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -875,7 +857,6 @@ paths:
                         type: string
                     type: object
                   location:
-                    format: byte
                     type: string
                   name:
                     type: string
@@ -933,10 +914,8 @@ paths:
                       type: string
                   type: object
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
                 name:
                   type: string
@@ -957,10 +936,8 @@ paths:
                         type: string
                     type: object
                   ledger:
-                    format: byte
                     type: string
                   location:
-                    format: byte
                     type: string
                   message: {}
                   name:
@@ -991,10 +968,8 @@ paths:
                         type: string
                     type: object
                   ledger:
-                    format: byte
                     type: string
                   location:
-                    format: byte
                     type: string
                   message: {}
                   name:
@@ -1181,7 +1156,6 @@ paths:
                             validator:
                               type: string
                             value:
-                              format: byte
                               type: string
                           type: object
                         type: array
@@ -1334,7 +1308,6 @@ paths:
                             validator:
                               type: string
                             value:
-                              format: byte
                               type: string
                           type: object
                         type: array
@@ -1445,7 +1418,6 @@ paths:
                   - definition
                   type: string
                 value:
-                  format: byte
                   type: string
                 version:
                   type: string
@@ -1950,7 +1922,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -1983,7 +1954,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2001,7 +1971,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2071,7 +2040,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -2102,7 +2070,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -2120,7 +2087,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -2162,7 +2128,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2195,7 +2160,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2213,7 +2177,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2291,7 +2254,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2324,7 +2286,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2342,7 +2303,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2410,10 +2370,8 @@ paths:
                 key:
                   type: string
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
                 method:
                   properties:
@@ -2433,7 +2391,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2451,7 +2408,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2511,10 +2467,8 @@ paths:
                 key:
                   type: string
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
                 method:
                   properties:
@@ -2534,7 +2488,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2552,7 +2505,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2630,7 +2582,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2642,7 +2593,6 @@ paths:
                       type: string
                   type: object
                 location:
-                  format: byte
                   type: string
               type: object
       responses:
@@ -2666,7 +2616,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -2685,7 +2634,6 @@ paths:
                         type: string
                     type: object
                   location:
-                    format: byte
                     type: string
                   name:
                     type: string
@@ -2755,7 +2703,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2788,7 +2735,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2806,7 +2752,6 @@ paths:
                                   $ref: '#/components/schemas/FFIParam'
                                 type: array
                               details:
-                                format: byte
                                 type: string
                               name:
                                 type: string
@@ -2863,10 +2808,8 @@ paths:
                 key:
                   type: string
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
                 method:
                   properties:
@@ -2886,7 +2829,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2904,7 +2846,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2953,10 +2894,8 @@ paths:
                 key:
                   type: string
                 ledger:
-                  format: byte
                   type: string
                 location:
-                  format: byte
                   type: string
                 method:
                   properties:
@@ -2976,7 +2915,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -2994,7 +2932,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -3111,7 +3048,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -3130,7 +3066,6 @@ paths:
                         type: string
                     type: object
                   location:
-                    format: byte
                     type: string
                   name:
                     type: string
@@ -3180,7 +3115,6 @@ paths:
                               $ref: '#/components/schemas/FFIParam'
                             type: array
                           details:
-                            format: byte
                             type: string
                           name:
                             type: string
@@ -3200,7 +3134,6 @@ paths:
                       type: string
                   type: object
                 location:
-                  format: byte
                   type: string
                 name:
                   type: string
@@ -3230,7 +3163,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -3249,7 +3181,6 @@ paths:
                         type: string
                     type: object
                   location:
-                    format: byte
                     type: string
                   name:
                     type: string
@@ -3334,7 +3265,6 @@ paths:
                                 $ref: '#/components/schemas/FFIParam'
                               type: array
                             details:
-                              format: byte
                               type: string
                             name:
                               type: string
@@ -3353,7 +3283,6 @@ paths:
                         type: string
                     type: object
                   location:
-                    format: byte
                     type: string
                   name:
                     type: string
@@ -3439,6 +3368,11 @@ paths:
         name: validator
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: value
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -3505,7 +3439,6 @@ paths:
                   validator:
                     type: string
                   value:
-                    format: byte
                     type: string
                 type: object
           description: Success
@@ -3557,7 +3490,6 @@ paths:
                 validator:
                   type: string
                 value:
-                  format: byte
                   type: string
               type: object
           multipart/form-data:
@@ -3614,7 +3546,6 @@ paths:
                   validator:
                     type: string
                   value:
-                    format: byte
                     type: string
                 type: object
           description: Success
@@ -3677,7 +3608,6 @@ paths:
                   validator:
                     type: string
                   value:
-                    format: byte
                     type: string
                 type: object
           description: Success
@@ -4154,7 +4084,6 @@ paths:
                     - definition
                     type: string
                   value:
-                    format: byte
                     type: string
                   version:
                     type: string
@@ -4200,7 +4129,6 @@ paths:
                   - definition
                   type: string
                 value:
-                  format: byte
                   type: string
                 version:
                   type: string
@@ -4226,7 +4154,6 @@ paths:
                     - definition
                     type: string
                   value:
-                    format: byte
                     type: string
                   version:
                     type: string
@@ -4252,7 +4179,6 @@ paths:
                     - definition
                     type: string
                   value:
-                    format: byte
                     type: string
                   version:
                     type: string
@@ -4307,7 +4233,6 @@ paths:
                     - definition
                     type: string
                   value:
-                    format: byte
                     type: string
                   version:
                     type: string
@@ -4367,7 +4292,6 @@ paths:
                     - definition
                     type: string
                   value:
-                    format: byte
                     type: string
                   version:
                     type: string
@@ -5095,7 +5019,6 @@ paths:
                   validator:
                     type: string
                   value:
-                    format: byte
                     type: string
                 type: object
           description: Success

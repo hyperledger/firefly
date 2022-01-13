@@ -12,7 +12,7 @@ CREATE TABLE operations (
   created     BIGINT          NOT NULL,
   updated     BIGINT,
   error       VARCHAR         NOT NULL,
-  info        BYTEA
+  info        TEXT
 );
 
 CREATE UNIQUE INDEX operations_id ON operations(id);

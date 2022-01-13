@@ -61,9 +61,9 @@ type EventManager interface {
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
+	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
 	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
-	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
+	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (manifest string, err error)
 
 	// Bound token callbacks
 	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error

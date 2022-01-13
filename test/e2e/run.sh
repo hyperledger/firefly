@@ -5,7 +5,6 @@ set -o pipefail
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 STACK_DIR=~/.firefly/stacks
-STACK_NAME=firefly_e2e
 
 checkOk() {
   local rc=$1
@@ -19,6 +18,10 @@ checkOk() {
 
   if [ $rc -ne 0 ]; then exit $rc; fi
 }
+
+if [ -z "${STACK_NAME}" ]; then
+  STACK_NAME=firefly_e2e
+fi
 
 if [ -z "${DOWNLOAD_CLI}" ]; then
   DOWNLOAD_CLI=true

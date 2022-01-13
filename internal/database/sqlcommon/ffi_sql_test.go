@@ -52,19 +52,19 @@ func TestFFIE2EWithDB(t *testing.T) {
 					{
 						Name:    "x",
 						Type:    "integer",
-						Details: []byte{},
+						Details: fftypes.JSONAnyPtr(""),
 					},
 					{
 						Name:    "y",
 						Type:    "integer",
-						Details: []byte{},
+						Details: fftypes.JSONAnyPtr(""),
 					},
 				},
 				Returns: fftypes.FFIParams{
 					{
 						Name:    "result",
 						Type:    "integer",
-						Details: []byte{},
+						Details: fftypes.JSONAnyPtr(""),
 					},
 				},
 			},

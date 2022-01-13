@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -67,6 +67,8 @@ type batchProcessor struct {
 	conf        *batchProcessorConf
 }
 
+const batchSizeEstimateBase = int64(512)
+
 func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
 	pCtx := log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key))
 	pCtx, cancelCtx := context.WithCancel(pCtx)
@@ -88,6 +90,14 @@ func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di da
 	return bp
 }
 
+func (bw *batchWork) estimateSize() int64 {
+	sizeEstimate := bw.msg.EstimateSize(false /* we calculate data size separately, as we have the full data objects */)
+	for _, d := range bw.data {
+		sizeEstimate += d.EstimateSize()
+	}
+	return sizeEstimate
+}
+
 // The assemblyLoop accepts work into the pipe as quickly as possible.
 // It dispatches work asynchronously to the persistenceLoop, which is responsible for
 // calling back each piece of work once persisted into a batch
@@ -98,37 +108,55 @@ func (bp *batchProcessor) assemblyLoop() {
 	defer close(bp.sealBatch) // close persitenceLoop when we exit
 	l := log.L(bp.ctx)
 	var batchSize uint
+	var batchPayloadEstimate = batchSizeEstimateBase
 	var lastBatchSealed = time.Now()
 	var quiescing bool
+	var overflowedWork *batchWork
 	for {
-		// We timeout waiting at the point we think we're ready for disposal,
-		// unless we've started a batch in which case we wait for what's left
-		// of the batch timeout
-		timeToWait := bp.conf.DisposeTimeout
-		if quiescing {
-			timeToWait = 100 * time.Millisecond
-		} else if batchSize > 0 {
-			timeToWait = bp.conf.BatchTimeout - time.Since(lastBatchSealed)
-		}
-		timeout := time.NewTimer(timeToWait)
-
-		// Wait for work, the timeout, or close
 		var timedOut, closed bool
-		select {
-		case <-timeout.C:
-			timedOut = true
-		case work, ok := <-bp.newWork:
-			if ok && !work.abandoned {
-				batchSize++
-				bp.persistWork <- work
-			} else {
-				closed = true
+		if overflowedWork != nil {
+			// We overflowed the size cap when we took this message out the newWork
+			// queue last time round the lop
+			bp.persistWork <- overflowedWork
+			batchSize++
+			batchPayloadEstimate += overflowedWork.estimateSize()
+			overflowedWork = nil
+		} else {
+			// We timeout waiting at the point we think we're ready for disposal,
+			// unless we've started a batch in which case we wait for what's left
+			// of the batch timeout
+			timeToWait := bp.conf.DisposeTimeout
+			if quiescing {
+				timeToWait = 100 * time.Millisecond
+			} else if batchSize > 0 {
+				timeToWait = bp.conf.BatchTimeout - time.Since(lastBatchSealed)
 			}
+			timeout := time.NewTimer(timeToWait)
+
+			// Wait for work, the timeout, or close
+			select {
+			case <-timeout.C:
+				timedOut = true
+			case work, ok := <-bp.newWork:
+				if ok && !work.abandoned {
+					workSize := work.estimateSize()
+					if batchSize > 0 && batchPayloadEstimate+workSize > bp.conf.BatchMaxBytes {
+						overflowedWork = work
+					} else {
+						batchSize++
+						batchPayloadEstimate += workSize
+						bp.persistWork <- work
+					}
+				} else {
+					closed = true
+				}
+			}
+
 		}
 
 		// Don't include the sealing time in the duration
-		batchFull := batchSize >= bp.conf.BatchMaxSize
-		l.Debugf("Assembly batch loop: Size=%d Full=%t", batchSize, batchFull)
+		batchFull := overflowedWork != nil || batchSize >= bp.conf.BatchMaxSize
+		l.Debugf("Assembly batch loop: Size=%d Full=%t Bytes=%.2fkb (est) Overflow=%t", batchSize, batchFull, float64(batchPayloadEstimate)/1024, overflowedWork != nil)
 
 		batchDuration := time.Since(lastBatchSealed)
 		if quiescing && batchSize == 0 {
@@ -147,6 +175,7 @@ func (bp *batchProcessor) assemblyLoop() {
 			l.Debugf("Assembly batch sealed")
 			lastBatchSealed = time.Now()
 			batchSize = 0
+			batchPayloadEstimate = batchSizeEstimateBase
 		}
 
 	}
