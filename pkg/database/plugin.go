@@ -129,8 +129,7 @@ type iBatchCollection interface {
 
 type iTransactionCollection interface {
 	// UpsertTransaction - Upsert a transaction
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) (err error)
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -448,15 +447,15 @@ type iContractSubscriptionCollection interface {
 	DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
 }
 
-type iContractEventCollection interface {
-	// InsertContractEvent - insert an event from an external smart contract
-	InsertContractEvent(ctx context.Context, event *fftypes.ContractEvent) (err error)
+type iBlockchainEventCollection interface {
+	// InsertBlockchainEvent - insert an event from an external smart contract
+	InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error)
 
-	// GetContractEventByID - get smart contract event by ID
-	GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error)
+	// GetBlockchainEventByID - get smart contract event by ID
+	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
 
-	// GetContractEvents - get smart contract events
-	GetContractEvents(ctx context.Context, filter Filter) ([]*fftypes.ContractEvent, *FilterResult, error)
+	// GetBlockchainEvents - get smart contract events
+	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*fftypes.BlockchainEvent, *FilterResult, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
@@ -526,7 +525,7 @@ type PersistenceInterface interface {
 	iFFIEventCollection
 	iContractAPICollection
 	iContractSubscriptionCollection
-	iContractEventCollection
+	iBlockchainEventCollection
 	iChartCollection
 }
 
@@ -540,9 +539,9 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages       OrderedUUIDCollectionNS = "messages"
-	CollectionEvents         OrderedUUIDCollectionNS = "events"
-	CollectionContractEvents OrderedUUIDCollectionNS = "contractevents"
+	CollectionMessages         OrderedUUIDCollectionNS = "messages"
+	CollectionEvents           OrderedUUIDCollectionNS = "events"
+	CollectionBlockchainEvents OrderedUUIDCollectionNS = "contractevents"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -689,16 +688,11 @@ var BatchQueryFactory = &queryFields{
 
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"type":       &StringField{},
-	"signer":     &StringField{},
-	"status":     &StringField{},
-	"reference":  &UUIDField{},
-	"protocolid": &StringField{},
-	"created":    &TimeField{},
-	"sequence":   &Int64Field{},
-	"info":       &JSONField{},
-	"namespace":  &StringField{},
+	"id":        &UUIDField{},
+	"type":      &StringField{},
+	"status":    &StringField{},
+	"created":   &TimeField{},
+	"namespace": &StringField{},
 }
 
 // DataQueryFactory filter fields for data
@@ -880,20 +874,21 @@ var TokenBalanceQueryFactory = &queryFields{
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
-	"localid":     &StringField{},
-	"pool":        &UUIDField{},
-	"tokenindex":  &StringField{},
-	"uri":         &StringField{},
-	"connector":   &StringField{},
-	"namespace":   &StringField{},
-	"key":         &StringField{},
-	"from":        &StringField{},
-	"to":          &StringField{},
-	"amount":      &Int64Field{},
-	"protocolid":  &StringField{},
-	"message":     &UUIDField{},
-	"messagehash": &Bytes32Field{},
-	"created":     &TimeField{},
+	"localid":         &StringField{},
+	"pool":            &UUIDField{},
+	"tokenindex":      &StringField{},
+	"uri":             &StringField{},
+	"connector":       &StringField{},
+	"namespace":       &StringField{},
+	"key":             &StringField{},
+	"from":            &StringField{},
+	"to":              &StringField{},
+	"amount":          &Int64Field{},
+	"protocolid":      &StringField{},
+	"message":         &UUIDField{},
+	"messagehash":     &Bytes32Field{},
+	"created":         &TimeField{},
+	"blockchainevent": &UUIDField{},
 }
 
 // FFIQueryFactory filter fields for contract definitions
@@ -933,12 +928,16 @@ var ContractSubscriptionQueryFactory = &queryFields{
 	"created":    &TimeField{},
 }
 
-// ContractEventQueryFactory filter fields for contract events
-var ContractEventQueryFactory = &queryFields{
+// BlockchainEventQueryFactory filter fields for contract events
+var BlockchainEventQueryFactory = &queryFields{
 	"id":           &UUIDField{},
+	"source":       &StringField{},
 	"namespace":    &StringField{},
-	"subscription": &StringField{},
 	"name":         &StringField{},
+	"protocolid":   &StringField{},
+	"subscription": &StringField{},
+	"tx.type":      &StringField{},
+	"tx.id":        &UUIDField{},
 	"timestamp":    &TimeField{},
 }
 

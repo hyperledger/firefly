@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -58,8 +58,8 @@ type TokenPool struct {
 }
 
 type TokenPoolAnnouncement struct {
-	Pool *TokenPool   `json:"pool"`
-	TX   *Transaction `json:"tx"`
+	Pool  *TokenPool       `json:"pool"`
+	Event *BlockchainEvent `json:"event"`
 }
 
 func (t *TokenPool) Validate(ctx context.Context) (err error) {

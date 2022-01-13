@@ -34,11 +34,11 @@ var getContractEvents = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.ContractEventQueryFactory,
+	FilterFactory:   database.BlockchainEventQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONInputMask:   nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.ContractEvent{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).Contracts().GetContractEvents(r.Ctx, r.PP["ns"], r.Filter))

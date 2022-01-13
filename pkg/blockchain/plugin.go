@@ -81,12 +81,9 @@ type Callbacks interface {
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
-	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
-	// For example a padded block number, followed by a padded transaction index within that block.
-	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
 	//
 	// Error should will only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	BatchPinComplete(batch *BatchPin, signingIdentity string) error
 
 	// ContractEvent notifies on the arrival of any event from a user-created subscription
 	ContractEvent(event *ContractEvent) error
@@ -129,7 +126,7 @@ type BatchPin struct {
 	// - The context is a function of:
 	//   - A single topic declared in a message - topics are just a string representing a sequence of events that must be processed in order
 	//   - A ledger - everone with access to this ledger will see these hashes (Fabric channel, Ethereum chain, EEA privacy group, Corda linear ID)
-	//   - A restricted group - if the mesage is private, these are the nodes that are elible to receive a copy of the private message+data
+	//   - A restricted group - if the mesage is private, these are the nodes that are eligible to receive a copy of the private message+data
 	// - Each message might choose to include multiple topics (and hence attach to multiple contexts)
 	//   - This allows multiple contexts to merge - very important in multi-party data matching scenarios
 	// - A batch contains many messages, each with one or more topics
@@ -137,15 +134,37 @@ type BatchPin struct {
 	// - For private group communications, the hash is augmented as follow:
 	//   - The hashes are salted with a UUID that is only passed off chain (the UUID of the Group).
 	//   - The hashes are made unique to the sender
-	//   - The hashes contain a sender specific nonce that is a monotomically increasing number
+	//   - The hashes contain a sender specific nonce that is a monotonically increasing number
 	//     for batches sent by that sender, within the context (maintined by the sender FireFly node)
 	Contexts []*fftypes.Bytes32
+
+	// Event contains info on the underlying blockchain event for this batch pin
+	Event Event
+}
+
+type Event struct {
+	// Source indicates where the event originated (ie plugin name)
+	Source string
+
+	// Name is a short name for the event
+	Name string
+
+	// ProtocolID is a protocol-specific identifier for the event
+	ProtocolID string
+
+	// Output is the raw output data from the event
+	Output fftypes.JSONObject
+
+	// Info is any additional blockchain info for the event (transaction hash, block number, etc)
+	Info fftypes.JSONObject
+
+	// Timestamp is the time the event was emitted from the blockchain
+	Timestamp *fftypes.FFTime
 }
 
 type ContractEvent struct {
+	Event
+
+	// Subscription is the ID assigned to a custom contract subscription by the connector
 	Subscription string
-	Name         string
-	Outputs      fftypes.JSONObject
-	Info         fftypes.JSONObject
-	Timestamp    *fftypes.FFTime
 }

@@ -38,8 +38,8 @@ func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftyp
 	return bc.ei.OperationUpdate(plugin, operationID, txState, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.BatchPinComplete(bc.bi, batch, author, protocolTxID, additionalInfo)
+func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string) error {
+	return bc.ei.BatchPinComplete(bc.bi, batch, signingIdentity)
 }
 
 func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
@@ -54,12 +54,12 @@ func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) (manifest 
 	return bc.ei.MessageReceived(bc.dx, peerID, data)
 }
 
-func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TokenPoolCreated(plugin, pool, protocolTxID, additionalInfo)
+func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool) error {
+	return bc.ei.TokenPoolCreated(plugin, pool)
 }
 
-func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TokensTransferred(plugin, poolProtocolID, transfer, protocolTxID, additionalInfo)
+func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
+	return bc.ei.TokensTransferred(plugin, transfer)
 }
 
 func (bc *boundCallbacks) ContractEvent(event *blockchain.ContractEvent) error {

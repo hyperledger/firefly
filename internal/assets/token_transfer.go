@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -247,19 +247,12 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 	}
 
 	tx := &fftypes.Transaction{
-		ID: fftypes.NewUUID(),
-		Subject: fftypes.TransactionSubject{
-			Namespace: s.namespace,
-			Type:      fftypes.TransactionTypeTokenTransfer,
-			Signer:    s.transfer.Key,
-			Reference: s.transfer.LocalID,
-		},
-		Created: fftypes.Now(),
-		Status:  fftypes.OpStatusPending,
+		ID:        fftypes.NewUUID(),
+		Namespace: s.namespace,
+		Type:      fftypes.TransactionTypeTokenTransfer,
+		Created:   fftypes.Now(),
+		Status:    fftypes.OpStatusPending,
 	}
-	tx.Hash = tx.Subject.Hash()
-	s.transfer.TX.ID = tx.ID
-	s.transfer.TX.Type = tx.Subject.Type
 
 	op := fftypes.NewTXOperation(
 		plugin,
@@ -280,7 +273,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
 		}
 
-		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+		err = s.mgr.database.UpsertTransaction(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -299,11 +292,11 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	switch s.transfer.Type {
 	case fftypes.TokenTransferTypeMint:
-		err = plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.MintTokens(ctx, op.ID, tx.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeTransfer:
-		err = plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.TransferTokens(ctx, op.ID, tx.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	case fftypes.TokenTransferTypeBurn:
-		err = plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
+		err = plugin.BurnTokens(ctx, op.ID, tx.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
 	default:
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}

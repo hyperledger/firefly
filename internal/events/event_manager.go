@@ -35,7 +35,6 @@ import (
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
-	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -58,7 +57,8 @@ type EventManager interface {
 
 	// Bound blockchain callbacks
 	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
-	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string) error
+	ContractEvent(event *blockchain.ContractEvent) error
 
 	// Bound dataexchange callbacks
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
@@ -66,11 +66,8 @@ type EventManager interface {
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (manifest string, err error)
 
 	// Bound token callbacks
-	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
-	TokensTransferred(ti tokens.Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
-
-	// Bound contract callbacks
-	ContractEvent(event *blockchain.ContractEvent) error
+	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error
+	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
 
 	// Internal events
 	sysmessaging.SystemEvents
@@ -86,7 +83,6 @@ type eventManager struct {
 	data                 data.Manager
 	subManager           *subscriptionManager
 	retry                retry.Retry
-	txhelper             txcommon.Helper
 	aggregator           *aggregator
 	broadcast            broadcast.Manager
 	messaging            privatemessaging.Manager
@@ -120,7 +116,6 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publ
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		txhelper:             txcommon.NewTransactionHelper(di),
 		defaultTransport:     config.GetString(config.EventTransportsDefault),
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,

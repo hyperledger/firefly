@@ -156,15 +156,15 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns
 }
 
 // GetContractEventByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractEvent, error) {
+func (_m *Manager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractEvent); ok {
+	var r0 *fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BlockchainEvent); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractEvent)
+			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
 		}
 	}
 
@@ -179,15 +179,15 @@ func (_m *Manager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (
 }
 
 // GetContractEvents provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractEvent, *database.FilterResult, error) {
+func (_m *Manager) GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.ContractEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractEvent); ok {
+	var r0 []*fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.BlockchainEvent); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractEvent)
+			r0 = ret.Get(0).([]*fftypes.BlockchainEvent)
 		}
 	}
 

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,31 +32,24 @@ var (
 		"id",
 		"ttype",
 		"namespace",
-		"ref",
-		"signer",
-		"hash",
 		"created",
-		"protocol_id",
 		"status",
-		"info",
 	}
 	transactionFilterFieldMap = map[string]string{
-		"type":       "ttype",
-		"protocolid": "protocol_id",
-		"reference":  "ref",
+		"type": "ttype",
 	}
 )
 
-func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
+	// Do a select within the transaction to determine if the UUID already exists
 	transactionRows, _, err := s.queryTx(ctx, tx,
-		sq.Select("hash").
+		sq.Select("seq").
 			From("transactions").
 			Where(sq.Eq{"id": transaction.ID}),
 	)
@@ -64,58 +57,37 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 		return err
 	}
 	existing := transactionRows.Next()
-
-	if existing && !allowHashUpdate {
-		var hash *fftypes.Bytes32
-		_ = transactionRows.Scan(&hash)
-		if !fftypes.SafeHashCompare(hash, transaction.Hash) {
-			transactionRows.Close()
-			log.L(ctx).Errorf("Existing=%s New=%s", hash, transaction.Hash)
-			return database.HashMismatch
-		}
-	}
 	transactionRows.Close()
 
 	if existing {
-
 		// Update the transaction
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("transactions").
-				Set("ttype", string(transaction.Subject.Type)).
-				Set("namespace", transaction.Subject.Namespace).
-				Set("ref", transaction.Subject.Reference).
-				Set("signer", transaction.Subject.Signer).
-				Set("hash", transaction.Hash).
-				Set("created", transaction.Created).
-				Set("protocol_id", transaction.ProtocolID).
+				Set("ttype", string(transaction.Type)).
+				Set("namespace", transaction.Namespace).
 				Set("status", transaction.Status).
-				Set("info", transaction.Info).
 				Where(sq.Eq{"id": transaction.ID}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, transaction.Subject.Namespace, transaction.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, transaction.Namespace, transaction.ID)
 			},
 		); err != nil {
 			return err
 		}
 	} else {
-
+		// Insert a transaction
+		transaction.Created = fftypes.Now()
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("transactions").
 				Columns(transactionColumns...).
 				Values(
 					transaction.ID,
-					string(transaction.Subject.Type),
-					transaction.Subject.Namespace,
-					transaction.Subject.Reference,
-					transaction.Subject.Signer,
-					transaction.Hash,
+					string(transaction.Type),
+					transaction.Namespace,
 					transaction.Created,
-					transaction.ProtocolID,
 					transaction.Status,
-					transaction.Info,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, transaction.Subject.Namespace, transaction.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, transaction.Namespace, transaction.ID)
 			},
 		); err != nil {
 			return err
@@ -129,15 +101,10 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 	var transaction fftypes.Transaction
 	err := row.Scan(
 		&transaction.ID,
-		&transaction.Subject.Type,
-		&transaction.Subject.Namespace,
-		&transaction.Subject.Reference,
-		&transaction.Subject.Signer,
-		&transaction.Hash,
+		&transaction.Type,
+		&transaction.Namespace,
 		&transaction.Created,
-		&transaction.ProtocolID,
 		&transaction.Status,
-		&transaction.Info,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "transactions")

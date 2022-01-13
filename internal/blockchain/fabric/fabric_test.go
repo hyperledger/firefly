@@ -613,7 +613,6 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
 	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[0].Arguments[1])
-	assert.Equal(t, "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2", em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -658,7 +657,6 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
 	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[0].Arguments[1])
-	assert.Equal(t, "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2", em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -1220,7 +1218,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 
 	ev := em.Calls[0].Arguments[0].(*blockchain.ContractEvent)
 	assert.Equal(t, "sb-cb37cc07-e873-4f58-44ab-55add6bba320", ev.Subscription)
-	assert.Equal(t, "AssetCreated", ev.Name)
+	assert.Equal(t, "AssetCreated", ev.Event.Name)
 
 	outputs := fftypes.JSONObject{
 		"AppraisedValue": float64(10),
@@ -1229,7 +1227,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		"Owner":          "me",
 		"Size":           float64(3),
 	}
-	assert.Equal(t, outputs, ev.Outputs)
+	assert.Equal(t, outputs, ev.Event.Output)
 
 	info := fftypes.JSONObject{
 		"blockNumber":   float64(10),
@@ -1238,7 +1236,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		"subId":         "sb-cb37cc07-e873-4f58-44ab-55add6bba320",
 		"transactionId": "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d",
 	}
-	assert.Equal(t, info, ev.Info)
+	assert.Equal(t, info, ev.Event.Info)
 
 	em.AssertExpectations(t)
 }

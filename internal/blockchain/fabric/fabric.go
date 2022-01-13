@@ -241,7 +241,7 @@ func (f *Fabric) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 	return err
 }
 
-func (f *Fabric) decodeJSONPayload(ctx context.Context, payloadString string) *fftypes.JSONObject {
+func decodeJSONPayload(ctx context.Context, payloadString string) *fftypes.JSONObject {
 	bytes, err := base64.StdEncoding.DecodeString(payloadString)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad payload content: %s", payloadString)
@@ -258,7 +258,7 @@ func (f *Fabric) decodeJSONPayload(ctx context.Context, payloadString string) *f
 
 func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	payloadString := msgJSON.GetString("payload")
-	payload := f.decodeJSONPayload(ctx, payloadString)
+	payload := decodeJSONPayload(ctx, payloadString)
 	if payload == nil {
 		return nil // move on
 	}
@@ -299,6 +299,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		contexts[i] = &hash
 	}
 
+	delete(msgJSON, "payload")
 	batch := &blockchain.BatchPin{
 		Namespace:       ns,
 		TransactionID:   &txnID,
@@ -306,29 +307,42 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		BatchHash:       &batchHash,
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
+		Event: blockchain.Event{
+			Source:     f.Name(),
+			Name:       "BatchPin",
+			ProtocolID: sTransactionHash,
+			Output:     *payload,
+			Info:       msgJSON,
+		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, signer, sTransactionHash, msgJSON)
+	return f.callbacks.BatchPinComplete(batch, signer)
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	payloadString := msgJSON.GetString("payload")
-	payload := f.decodeJSONPayload(ctx, payloadString)
+	payload := decodeJSONPayload(ctx, payloadString)
 	if payload == nil {
 		return nil // move on
 	}
 	delete(msgJSON, "payload")
 
+	sTransactionHash := msgJSON.GetString("transactionId")
 	sub := msgJSON.GetString("subId")
 	name := msgJSON.GetString("eventName")
 
 	event := &blockchain.ContractEvent{
 		Subscription: sub,
-		Name:         name,
-		Outputs:      *payload,
-		Info:         msgJSON,
+		Event: blockchain.Event{
+			Source:     f.Name(),
+			Name:       name,
+			ProtocolID: sTransactionHash,
+			Output:     *payload,
+			Info:       msgJSON,
+		},
 	}
+
 	return f.callbacks.ContractEvent(event)
 }
 

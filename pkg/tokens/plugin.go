@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -41,19 +42,19 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error
+	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) error
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, tx *fftypes.Transaction) error
+	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
-	MintTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
+	MintTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
 
 	// BurnTokens burns tokens from an account
-	BurnTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error
+	BurnTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error
 
 	// TransferTokens transfers tokens within a pool from one account to another
-	TransferTokens(ctx context.Context, operationID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error
+	TransferTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -75,12 +76,12 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenPoolCreated(plugin Plugin, pool *TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(plugin Plugin, pool *TokenPool) error
 
 	// TokensTransferred notifies on a transfer between token accounts.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokensTransferred(plugin Plugin, poolProtocolID string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokensTransferred(plugin Plugin, transfer *TokenTransfer) error
 }
 
 // Capabilities the supported featureset of the tokens
@@ -108,4 +109,20 @@ type TokenPool struct {
 
 	// Standard is the well-defined token standard that this pool conforms to (optional)
 	Standard string
+
+	// Event contains info on the underlying blockchain event for this pool creation
+	Event blockchain.Event
+}
+
+type TokenTransfer struct {
+	fftypes.TokenTransfer
+
+	// PoolProtocolID is the ID assigned to the token pool by the connector
+	PoolProtocolID string
+
+	// Event contains info on the underlying blockchain event for this transfer
+	Event blockchain.Event
+
+	// TX contains info on the containing Transaction, if this transfer came from FireFly
+	TX fftypes.TransactionRef
 }

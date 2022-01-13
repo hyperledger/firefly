@@ -219,15 +219,15 @@ func TestBuildMessageBoolConvert(t *testing.T) {
 }
 
 func TestBuildMessageJSONConvert(t *testing.T) {
-	fb := TransactionQueryFactory.NewFilter(context.Background())
+	fb := OperationQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
-		fb.Eq("info", nil),
-		fb.Eq("info", `{}`),
-		fb.Eq("info", []byte(`{}`)),
-		fb.Eq("info", fftypes.JSONObject{"some": "value"}),
+		fb.Eq("output", nil),
+		fb.Eq("output", `{}`),
+		fb.Eq("output", []byte(`{}`)),
+		fb.Eq("output", fftypes.JSONObject{"some": "value"}),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, `( info == null ) && ( info == '{}' ) && ( info == '{}' ) && ( info == '{"some":"value"}' )`, f.String())
+	assert.Equal(t, `( output == null ) && ( output == '{}' ) && ( output == '{}' ) && ( output == '{"some":"value"}' )`, f.String())
 }
 
 func TestBuildFFNameArrayConvert(t *testing.T) {
@@ -324,9 +324,9 @@ func TestQueryFactoryGetBuilder(t *testing.T) {
 }
 
 func TestBuildMessageFailJSONConvert(t *testing.T) {
-	fb := TransactionQueryFactory.NewFilter(context.Background())
-	_, err := fb.Lt("info", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*info", err)
+	fb := OperationQueryFactory.NewFilter(context.Background())
+	_, err := fb.Lt("output", map[bool]bool{true: false}).Finalize()
+	assert.Regexp(t, "FF10149.*output", err)
 }
 
 func TestStringsForTypes(t *testing.T) {

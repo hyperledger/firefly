@@ -38,7 +38,7 @@ var getContractEventByID = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONInputMask:   nil,
-	JSONOutputValue: func() interface{} { return &fftypes.ContractEvent{} },
+	JSONOutputValue: func() interface{} { return &fftypes.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		u, err := fftypes.ParseUUID(r.Ctx, r.PP["id"])

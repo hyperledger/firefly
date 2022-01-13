@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,7 +28,6 @@ import (
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
-	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -36,7 +35,7 @@ import (
 
 type Manager interface {
 	CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
-	ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, tx *fftypes.Transaction) error
+	ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error
 	GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, ns, connector, poolName string) (*fftypes.TokenPool, error)
 	GetTokenPoolByNameOrID(ctx context.Context, ns string, poolNameOrID string) (*fftypes.TokenPool, error)
@@ -78,7 +77,6 @@ type assetManager struct {
 	messaging privatemessaging.Manager
 	tokens    map[string]tokens.Plugin
 	retry     retry.Retry
-	txhelper  txcommon.Helper
 }
 
 func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin) (Manager, error) {
@@ -99,7 +97,6 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 			MaximumDelay: config.GetDuration(config.AssetManagerRetryMaxDelay),
 			Factor:       config.GetFloat64(config.AssetManagerRetryFactor),
 		},
-		txhelper: txcommon.NewTransactionHelper(di),
 	}
 	return am, nil
 }
