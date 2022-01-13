@@ -271,7 +271,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	return e.callbacks.BatchPinComplete(batch, authorAddress)
 }
 
-func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
+func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sTransactionHash := msgJSON.GetString("transactionHash")
 	sub := msgJSON.GetString("subId")
 	signature := msgJSON.GetString("signature")
@@ -280,7 +280,8 @@ func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
 	timestampStr := msgJSON.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
-		return err
+		log.L(ctx).Errorf("Contract event is not valid - missing timestamp: %+v", msgJSON)
+		return err // move on
 	}
 	delete(msgJSON, "data")
 
@@ -351,7 +352,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 			default:
 				l.Infof("Ignoring event with unknown signature: %s", signature)
 			}
-		} else if err := e.handleContractEvent(msgJSON); err != nil {
+		} else if err := e.handleContractEvent(ctx1, msgJSON); err != nil {
 			return err
 		}
 	}

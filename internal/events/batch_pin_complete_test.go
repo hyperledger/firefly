@@ -87,15 +87,20 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 			a[1].(func(ctx context.Context) error)(a[0].(context.Context)),
 		}
 	}
+
 	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == batch.Event.Name
-	})).Return(nil)
+	})).Return(fmt.Errorf("pop")).Once()
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == batch.Event.Name
+	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEvent
-	})).Return(nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	})).Return(nil).Times(2)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil).Once()
 	mbi := &blockchainmocks.Plugin{}
 
 	mim := em.identity.(*identitymanagermocks.Manager)
@@ -197,6 +202,31 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 
 	err := em.BatchPinComplete(mbi, batch, "0x12345")
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
+}
+
+func TestBatchPinCompleteNoTX(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &blockchain.BatchPin{}
+	mbi := &blockchainmocks.Plugin{}
+
+	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	assert.NoError(t, err)
+}
+
+func TestBatchPinCompleteBadNamespace(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &blockchain.BatchPin{
+		Namespace:     "!bad",
+		TransactionID: fftypes.NewUUID(),
+	}
+	mbi := &blockchainmocks.Plugin{}
+
+	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	assert.NoError(t, err)
 }
 
 func TestPersistBatchMissingID(t *testing.T) {
