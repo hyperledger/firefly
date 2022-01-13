@@ -29,6 +29,7 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 		ID:           fftypes.NewUUID(),
 		Namespace:    ns,
 		Subscription: subID,
+		Source:       event.Source,
 		ProtocolID:   event.ProtocolID,
 		Name:         event.Name,
 		Output:       event.Output,
