@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,12 +36,18 @@ func TestGetDataBlob(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
+	blobHash := fftypes.NewRandB32()
 	mdm.On("DownloadBLOB", mock.Anything, "mynamespace", "abcd1234").
-		Return(ioutil.NopCloser(bytes.NewReader([]byte("hello"))), nil)
+		Return(&fftypes.Blob{
+			Hash: blobHash,
+			Size: 12345,
+		}, ioutil.NopCloser(bytes.NewReader([]byte("hello"))), nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 	b, err := ioutil.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, "hello", string(b))
+	assert.Equal(t, "12345", res.Result().Header.Get(fftypes.HTTPHeadersBlobSize))
+	assert.Equal(t, blobHash.String(), res.Result().Header.Get(fftypes.HTTPHeadersBlobHashSHA256))
 }

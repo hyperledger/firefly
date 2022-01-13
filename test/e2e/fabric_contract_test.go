@@ -22,9 +22,9 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -50,8 +50,7 @@ var assetCreatedEvent = &fftypes.FFIEvent{
 }
 
 func deployChaincode(t *testing.T, stackName string) string {
-	id, err := gonanoid.New()
-	require.NoError(t, err)
+	id := nanoid.New()
 	chaincodeName := "e2e_" + id
 
 	cmd := exec.Command("bash", "./deploy_chaincode.sh")
@@ -60,7 +59,7 @@ func deployChaincode(t *testing.T, stackName string) string {
 	cmd.Env = append(cmd.Env, "PATH="+os.Getenv("PATH"))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	err := cmd.Run()
 	require.NoError(t, err)
 
 	return chaincodeName
@@ -121,8 +120,7 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	assert.Equal(suite.T(), 1, len(subs))
 	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
 
-	asset, err := gonanoid.New()
-	require.NoError(suite.T(), err)
+	asset := nanoid.New()
 	invokeFabContract(suite.T(), suite.fabClient, "firefly", suite.chaincodeName, "org_0", "CreateAsset", []string{asset})
 
 	<-received1

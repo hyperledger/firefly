@@ -45,7 +45,7 @@ func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -87,7 +87,7 @@ func TestHandleDefinitionBroadcastNodeUpsertFail(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -127,7 +127,7 @@ func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -169,7 +169,7 @@ func TestHandleDefinitionBroadcastNodeDupMismatch(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -207,7 +207,7 @@ func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -248,7 +248,7 @@ func TestHandleDefinitionBroadcastNodeGetFail(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -286,7 +286,7 @@ func TestHandleDefinitionBroadcastNodeBadAuthor(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -323,7 +323,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgNotFound(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -360,7 +360,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgFail(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -397,7 +397,7 @@ func TestHandleDefinitionBroadcastNodeValidateFail(t *testing.T) {
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -418,7 +418,7 @@ func TestHandleDefinitionBroadcastNodeUnmarshalFail(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
 
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(`!json`),
+		Value: fftypes.JSONAnyPtr(`!json`),
 	}
 
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{

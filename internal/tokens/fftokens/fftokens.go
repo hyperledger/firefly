@@ -180,7 +180,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	rawOutput := data.GetObject("rawOutput") // optional
 
 	timestampStr := data.GetString("timestamp")
-	timestamp, err := fftypes.ParseString(timestampStr)
+	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
 		timestamp = fftypes.Now()
 	}
@@ -237,7 +237,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	rawOutput := data.GetObject("rawOutput")   // optional
 
 	timestampStr := data.GetString("timestamp")
-	timestamp, err := fftypes.ParseString(timestampStr)
+	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
 		timestamp = fftypes.Now()
 	}

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -146,6 +146,31 @@ tokens:
 	assert.Equal(t, []string{"arr1", "arr2"}, sally.GetStringSlice("key2"))
 }
 
+func TestMapOfAdminOverridePlugins(t *testing.T) {
+	defer Reset()
+
+	tokPlugins := NewPluginConfig("tokens").Array()
+	tokPlugins.AddKnownKey("firstkey")
+	tokPlugins.AddKnownKey("secondkey")
+	viper.SetConfigType("json")
+	err := viper.ReadConfig(strings.NewReader(`{
+		"tokens": {
+			"0": {
+				"firstkey": "firstitemfirstkeyvalue",
+				"secondkey": "firstitemsecondkeyvalue"
+			},
+			"1": {
+				"firstkey": "seconditemfirstkeyvalue",
+				"secondkey": "seconditemsecondkeyvalue"
+			}
+		}
+	}`))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, tokPlugins.ArraySize())
+	assert.Equal(t, "firstitemfirstkeyvalue", tokPlugins.ArrayEntry(0).Get("firstkey"))
+	assert.Equal(t, "seconditemsecondkeyvalue", tokPlugins.ArrayEntry(1).Get("secondkey"))
+}
+
 func TestGetKnownKeys(t *testing.T) {
 	knownKeys := GetKnownKeys()
 	assert.NotEmpty(t, knownKeys)
@@ -180,22 +205,22 @@ func TestSetupLogging(t *testing.T) {
 
 func TestMergeConfigOk(t *testing.T) {
 
-	conf1 := fftypes.Byteable(`{
+	conf1 := fftypes.JSONAnyPtr(`{
 		"some":  {
 			"nested": {
 				"stuff": "value1"
 			}
 		}
 	}`)
-	confNumber := fftypes.Byteable(`{
+	confNumber := fftypes.JSONAnyPtr(`{
 		"some":  {
 			"more": {
 				"stuff": 15
 			}
 		}
 	}`)
-	conf3 := fftypes.Byteable(`"value3"`)
-	confNestedSlice := fftypes.Byteable(`{
+	conf3 := fftypes.JSONAnyPtr(`"value3"`)
+	confNestedSlice := fftypes.JSONAnyPtr(`{
 		"nestedslice": [
 			{
 				"firstitemfirstkey": "firstitemfirstkeyvalue",
@@ -207,7 +232,7 @@ func TestMergeConfigOk(t *testing.T) {
 			}
 		]
 	}`)
-	confBaseSlice := fftypes.Byteable(`[
+	confBaseSlice := fftypes.JSONAnyPtr(`[
 		{
 			"firstitemfirstkey": "firstitemfirstkeyvalue",
 			"firstitemsecondkey": "firstitemsecondkeyvalue"
@@ -242,7 +267,7 @@ func TestMergeConfigOk(t *testing.T) {
 
 func TestMergeConfigBadJSON(t *testing.T) {
 	err := MergeConfig([]*fftypes.ConfigRecord{
-		{Key: "base", Value: fftypes.Byteable(`!json`)},
+		{Key: "base", Value: fftypes.JSONAnyPtr(`!json`)},
 	})
 	assert.Error(t, err)
 }

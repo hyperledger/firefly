@@ -42,19 +42,19 @@ func testFFI() *fftypes.FFI {
 					{
 						Name:    "x",
 						Type:    "integer",
-						Details: []byte(`{}`),
+						Details: fftypes.JSONAnyPtr("{}"),
 					},
 					{
 						Name:    "y",
 						Type:    "integer",
-						Details: []byte(`{}`),
+						Details: fftypes.JSONAnyPtr("{}"),
 					},
 				},
 				Returns: fftypes.FFIParams{
 					{
 						Name:    "result",
 						Type:    "integer",
-						Details: []byte(`{}`),
+						Details: fftypes.JSONAnyPtr("{}"),
 					},
 				},
 			},
@@ -68,7 +68,7 @@ func testFFI() *fftypes.FFI {
 						{
 							Name:    "result",
 							Type:    "integer",
-							Details: []byte(`{}`),
+							Details: fftypes.JSONAnyPtr("{}"),
 						},
 					},
 				},
@@ -85,8 +85,8 @@ func testContractAPI() *fftypes.ContractAPI {
 		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
-		Ledger:   []byte{},
-		Location: []byte{},
+		Ledger:   fftypes.JSONAnyPtr(""),
+		Location: fftypes.JSONAnyPtr(""),
 	}
 }
 
@@ -96,7 +96,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mbi := dh.database.(*databasemocks.Plugin)
@@ -187,7 +187,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
@@ -206,7 +206,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -228,7 +228,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mbi := dh.database.(*databasemocks.Plugin)
@@ -256,7 +256,7 @@ func TestPersistContractAPIGetFail(t *testing.T) {
 
 func TestPersistContractAPIDifferentLocation(t *testing.T) {
 	existing := testContractAPI()
-	existing.Location = []byte(`{"existing": true}`)
+	existing.Location = fftypes.JSONAnyPtr(`{"existing": true}`)
 	dh := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(existing, nil)
@@ -283,7 +283,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 	b, err := json.Marshal(api)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
@@ -302,7 +302,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)

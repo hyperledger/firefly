@@ -71,7 +71,7 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftyp
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
 		if validationErr := broadcast.Validate(ctx, true); validationErr != nil {
-			l.Warnf("Unable to process contract definition broadcast %s - validate failed: %s", msg.Header.ID, err)
+			l.Warnf("Unable to process contract definition broadcast %s - validate failed: %s", msg.Header.ID, validationErr)
 			valid = false
 		} else {
 			broadcast.Message = msg.Header.ID

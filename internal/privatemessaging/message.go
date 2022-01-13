@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,7 +18,6 @@ package privatemessaging
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -118,6 +117,10 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 			if err := s.resolve(ctx); err != nil {
 				return err
 			}
+			msgSizeEstimate := s.msg.EstimateSize(true)
+			if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
+				return i18n.NewError(ctx, i18n.MsgTooLargePrivate, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
+			}
 			s.resolved = true
 		}
 
@@ -209,15 +212,12 @@ func (s *messageSender) sendUnpinned(ctx context.Context) (err error) {
 		return err
 	}
 
-	payload, err := json.Marshal(&fftypes.TransportWrapper{
+	tw := &fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: &s.msg.Message,
 		Data:    data,
 		Group:   group,
-	})
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
-	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, payload, nil, data)
+	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, tw, nil, data)
 }

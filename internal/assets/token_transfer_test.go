@@ -912,7 +912,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -966,7 +966,7 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -1010,7 +1010,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -1069,7 +1069,7 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},
@@ -1151,7 +1151,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 			},
 			InlineData: fftypes.InlineData{
 				{
-					Value: []byte("test data"),
+					Value: fftypes.JSONAnyPtr("test data"),
 				},
 			},
 		},

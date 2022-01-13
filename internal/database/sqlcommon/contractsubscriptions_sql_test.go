@@ -49,7 +49,7 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 		Namespace:  "ns",
 		Name:       "sub1",
 		ProtocolID: "sb-123",
-		Location:   locationJson,
+		Location:   fftypes.JSONAnyPtrBytes(locationJson),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractSubscriptions, fftypes.ChangeEventTypeCreated, "ns", sub.ID).Return()
@@ -92,7 +92,7 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Update the subscription
-	sub.Location = []byte("{}")
+	sub.Location = fftypes.JSONAnyPtr("{}")
 	subJson, _ = json.Marshal(&sub)
 	err = s.UpsertContractSubscription(ctx, sub)
 	assert.NoError(t, err)

@@ -6,8 +6,8 @@ CREATE TABLE ffimethods (
   name              VARCHAR(1024)   NOT NULL,
   pathname          VARCHAR(1024)   NOT NULL,
   description       TEXT            NOT NULL,
-  params            BYTEA           NOT NULL,
-  returns           BYTEA           NOT NULL
+  params            TEXT            NOT NULL,
+  returns           TEXT            NOT NULL
 );
 
 CREATE UNIQUE INDEX ffimethods_pathname ON ffimethods(interface_id,pathname);

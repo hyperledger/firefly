@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -31,7 +31,7 @@ import (
 
 type GroupManager interface {
 	GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error)
-	GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error)
+	GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error)
 	ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error)
 	EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error)
 }
@@ -82,11 +82,12 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 		Namespace: group.Namespace, // must go in the same ordering context as the message
 		Created:   fftypes.Now(),
 	}
-	data.Value, err = json.Marshal(&group)
+	b, err := json.Marshal(&group)
 	if err == nil {
+		data.Value = fftypes.JSONAnyPtrBytes(b)
 		err = group.Validate(ctx, true)
 		if err == nil {
-			err = data.Seal(ctx)
+			err = data.Seal(ctx, nil)
 		}
 	}
 	if err != nil {
@@ -142,6 +143,10 @@ func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*fftypes
 		return nil, err
 	}
 	return gm.database.GetGroupByHash(ctx, h)
+}
+
+func (gm *groupManager) GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
+	return gm.GetGroups(ctx, filter.Condition(filter.Builder().Eq("namespace", ns)))
 }
 
 func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
@@ -203,7 +208,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 			return nil, err
 		}
 		var newGroup fftypes.Group
-		err = json.Unmarshal(data[0].Value, &newGroup)
+		err = json.Unmarshal(data[0].Value.Bytes(), &newGroup)
 		if err != nil {
 			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
 			return nil, nil

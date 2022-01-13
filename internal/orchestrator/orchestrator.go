@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -117,7 +117,7 @@ type Orchestrator interface {
 	GetConfig(ctx context.Context) fftypes.JSONObject
 	GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error)
 	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, *database.FilterResult, error)
-	PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (outputValue fftypes.Byteable, err error)
+	PutConfigRecord(ctx context.Context, key string, configRecord *fftypes.JSONAny) (outputValue *fftypes.JSONAny, err error)
 	DeleteConfigRecord(ctx context.Context, key string) (err error)
 	ResetConfig(ctx context.Context)
 

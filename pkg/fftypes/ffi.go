@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -69,7 +69,7 @@ type FFIEvent struct {
 type FFIParam struct {
 	Name       string    `json:"name"`
 	Type       string    `json:"type"`
-	Details    Byteable  `json:"details"`
+	Details    *JSONAny  `json:"details"`
 	Components FFIParams `json:"components,omitempty"`
 }
 

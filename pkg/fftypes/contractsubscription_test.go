@@ -46,7 +46,7 @@ func TestFFISerializedEventValue(t *testing.T) {
 			Name:        "event1",
 			Description: "a super event",
 			Params: FFIParams{
-				&FFIParam{Name: "details", Type: "integer", Details: []byte(`{"type": "uint256"}`)},
+				&FFIParam{Name: "details", Type: "integer", Details: JSONAnyPtr(`{"type": "uint256"}`)},
 			},
 		},
 	}

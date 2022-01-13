@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,9 +25,12 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 )
 
-// FFNameArray is an array of strings, each conforming to the requirements
-// of a FireFly name, with a combined length (when joined with commas) of 1024
+// FFNameArray is an array of strings, each conforming to the requirements of a FireFly name
 type FFNameArray []string
+
+// Because each FFName has a max length of 64, 15 names (plus comma delimeters) is a safe max
+// to pack into a string column of length 1024
+const FFNameArrayMax = 15
 
 func (na FFNameArray) Value() (driver.Value, error) {
 	if na == nil {
@@ -56,6 +59,7 @@ func (na *FFNameArray) Scan(src interface{}) error {
 		*na = st
 		return nil
 	case nil:
+		*na = []string{}
 		return nil
 	default:
 		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, na)
@@ -80,8 +84,8 @@ func (na FFNameArray) Validate(ctx context.Context, fieldName string) error {
 			return err
 		}
 	}
-	if len(na) > 15 {
-		return i18n.NewError(ctx, i18n.MsgTooManyItems, fieldName, 15, len(na))
+	if len(na) > FFNameArrayMax {
+		return i18n.NewError(ctx, i18n.MsgTooManyItems, fieldName, FFNameArrayMax, len(na))
 	}
 	return nil
 }

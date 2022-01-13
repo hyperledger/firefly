@@ -25,6 +25,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEstimateMessageSize(t *testing.T) {
+	msg := Message{}
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(false))
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(true))
+	msg.Data = DataRefs{
+		{ID: NewUUID(), Hash: NewRandB32(), ValueSize: 1000},
+	}
+	assert.Equal(t, messageSizeEstimateBase, msg.EstimateSize(false))
+	assert.Equal(t, messageSizeEstimateBase+int64(1000), msg.EstimateSize(true))
+}
+
 func TestSealBareMessage(t *testing.T) {
 	msg := Message{}
 	err := msg.Seal(context.Background())
@@ -32,6 +43,26 @@ func TestSealBareMessage(t *testing.T) {
 	assert.NotNil(t, msg.Header.ID)
 	assert.NotNil(t, msg.Header.DataHash)
 	assert.NotNil(t, msg.Hash)
+}
+
+func TestSealEmptyTopicString(t *testing.T) {
+	msg := Message{
+		Header: MessageHeader{
+			Topics: []string{""},
+		},
+	}
+	err := msg.Seal(context.Background())
+	assert.Regexp(t, `FF10131.*header.topics\[0\]`, err)
+}
+
+func TestSealBadTagString(t *testing.T) {
+	msg := Message{
+		Header: MessageHeader{
+			Tag: "!wrong",
+		},
+	}
+	err := msg.Seal(context.Background())
+	assert.Regexp(t, `FF10131.*header.tag`, err)
 }
 
 func TestVerifyEmptyTopicString(t *testing.T) {
@@ -182,7 +213,7 @@ func TestSealKnownMessage(t *testing.T) {
 func TestSetInlineData(t *testing.T) {
 	msg := &MessageInOut{}
 	msg.SetInlineData([]*Data{
-		{ID: NewUUID(), Value: Byteable(`"some data"`)},
+		{ID: NewUUID(), Value: JSONAnyPtr(`"some data"`)},
 	})
 	b, err := json.Marshal(&msg)
 	assert.NoError(t, err)

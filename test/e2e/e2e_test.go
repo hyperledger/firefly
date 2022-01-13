@@ -80,7 +80,7 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftypes.MessageType, txtype fftypes.TransactionType, count, idx int) fftypes.Byteable {
+func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftypes.MessageType, txtype fftypes.TransactionType, count, idx int) *fftypes.Data {
 	var group *fftypes.Bytes32
 	messages := GetMessages(ts.t, client, ts.startTime, msgType, 200)
 	for i, message := range messages {
@@ -120,7 +120,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 		assert.Equal(ts.t, *msgData.Blob.Hash, hash)
 	}
 
-	return msgData.Value
+	return msgData
 }
 
 func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -405,28 +405,6 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 
 	query = query.LeftJoin("messages AS m ON m.id = md.message_id")
 	return s.getMessagesQuery(ctx, query, fop, fi, false)
-}
-
-func (s *SQLCommon) GetMessageRefs(ctx context.Context, filter database.Filter) ([]*fftypes.MessageRef, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn, "hash").From("messages"), filter, msgFilterFieldMap, []interface{}{"sequence"})
-	if err != nil {
-		return nil, nil, err
-	}
-	rows, tx, err := s.query(ctx, query)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	msgRefs := []*fftypes.MessageRef{}
-	for rows.Next() {
-		var msgRef fftypes.MessageRef
-		if err = rows.Scan(&msgRef.ID, &msgRef.Sequence, &msgRef.Hash); err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
-		}
-		msgRefs = append(msgRefs, &msgRef)
-	}
-	return msgRefs, s.queryRes(ctx, tx, "messages", fop, fi), nil
 }
 
 func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *fftypes.UUID, update database.Update) (err error) {

@@ -42,7 +42,7 @@ func TestBuildMessageFilter(t *testing.T) {
 		Descending().
 		Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence > 12345 ) && ( confirmed == null ) sort=-namespace skip=50 limit=25 count=true", f.String())
+	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence >> 12345 ) && ( confirmed == null ) sort=-namespace skip=50 limit=25 count=true", f.String())
 }
 
 func TestBuildMessageFilter2(t *testing.T) {
@@ -53,7 +53,7 @@ func TestBuildMessageFilter2(t *testing.T) {
 		Finalize()
 
 	assert.NoError(t, err)
-	assert.Equal(t, "sequence > 0 sort=sequence", f.String())
+	assert.Equal(t, "sequence >> 0 sort=sequence", f.String())
 }
 
 func TestBuildMessageFilter3(t *testing.T) {
@@ -76,7 +76,25 @@ func TestBuildMessageFilter3(t *testing.T) {
 		Sort("-sequence").
 		Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( topics %= 'abc' ) && ( topics %! 'def' ) && ( topics ^= 'ghi' ) && ( topics ^! 'jkl' ) sort=-created,topics,-sequence", f.String())
+	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created << 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence >> 12345 ) && ( topics %= 'abc' ) && ( topics !% 'def' ) && ( topics :% 'ghi' ) && ( topics ;% 'jkl' ) sort=-created,topics,-sequence", f.String())
+}
+
+func TestBuildMessageFilter4(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	f, err := fb.And(
+		fb.IEq("topics", "abc"),
+		fb.NIeq("topics", "bcd"),
+		fb.StartsWith("topics", "cde"),
+		fb.IStartsWith("topics", "def"),
+		fb.NotStartsWith("topics", "efg"),
+		fb.NotIStartsWith("topics", "fgh"),
+		fb.EndsWith("topics", "hij"),
+		fb.IEndsWith("topics", "ikl"),
+		fb.NotEndsWith("topics", "lmn"),
+		fb.NotIEndsWith("topics", "mno"),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, "( topics := 'abc' ) && ( topics ;= 'bcd' ) && ( topics ^= 'cde' ) && ( topics :^ 'def' ) && ( topics !^ 'efg' ) && ( topics ;^ 'fgh' ) && ( topics $= 'hij' ) && ( topics :$ 'ikl' ) && ( topics !$ 'lmn' ) && ( topics ;$ 'mno' )", f.String())
 }
 
 func TestBuildMessageBadInFilterField(t *testing.T) {
@@ -112,7 +130,7 @@ func TestBuildMessageUUIDConvert(t *testing.T) {
 		fb.Eq("id", nilB32),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id IN ['4066abdc-8bbd-4472-9d29-1a55b467f9b9'] ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != null ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == null ) && ( id == null )", f.String())
+	assert.Equal(t, "( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id IN ['4066abdc-8bbd-4472-9d29-1a55b467f9b9'] ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != null ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == '' ) && ( id == null )", f.String())
 }
 
 func TestBuildMessageBytes32Convert(t *testing.T) {
@@ -129,7 +147,7 @@ func TestBuildMessageBytes32Convert(t *testing.T) {
 		fb.Eq("hash", nilB32),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash IN ['7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0'] ) && ( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash != null ) && ( hash == null ) && ( hash == null )", f.String())
+	assert.Equal(t, "( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash IN ['7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0'] ) && ( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash != null ) && ( hash == '' ) && ( hash == null )", f.String())
 }
 func TestBuildMessageIntConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
@@ -142,7 +160,7 @@ func TestBuildMessageIntConvert(t *testing.T) {
 		fb.Lt("sequence", uint64(666)),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( sequence < 111 ) && ( sequence < 222 ) && ( sequence < 333 ) && ( sequence < 444 ) && ( sequence < 555 ) && ( sequence < 666 )", f.String())
+	assert.Equal(t, "( sequence << 111 ) && ( sequence << 222 ) && ( sequence << 333 ) && ( sequence << 444 ) && ( sequence << 555 ) && ( sequence << 666 )", f.String())
 }
 
 func TestBuildMessageTimeConvert(t *testing.T) {
@@ -156,7 +174,7 @@ func TestBuildMessageTimeConvert(t *testing.T) {
 		fb.Lt("created", *fftypes.UnixTime(1621112824)),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( created > 1621112824000000000 ) && ( created > 0 ) && ( created == 1621112874123456789 ) && ( created == null ) && ( created < 1621112824000000000 ) && ( created < 1621112824000000000 )", f.String())
+	assert.Equal(t, "( created >> 1621112824000000000 ) && ( created >> 0 ) && ( created == 1621112874123456789 ) && ( created == null ) && ( created << 1621112824000000000 ) && ( created << 1621112824000000000 )", f.String())
 }
 
 func TestBuildMessageStringConvert(t *testing.T) {
@@ -170,14 +188,13 @@ func TestBuildMessageStringConvert(t *testing.T) {
 		fb.Lt("namespace", uint(444)),
 		fb.Lt("namespace", uint32(555)),
 		fb.Lt("namespace", uint64(666)),
-		fb.Lt("namespace", nil),
 		fb.Lt("namespace", *u),
 		fb.Lt("namespace", u),
 		fb.Lt("namespace", *b32),
 		fb.Lt("namespace", b32),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( namespace < '111' ) && ( namespace < '222' ) && ( namespace < '333' ) && ( namespace < '444' ) && ( namespace < '555' ) && ( namespace < '666' ) && ( namespace < '' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())
+	assert.Equal(t, "( namespace << '111' ) && ( namespace << '222' ) && ( namespace << '333' ) && ( namespace << '444' ) && ( namespace << '555' ) && ( namespace << '666' ) && ( namespace << '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace << '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace << '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( namespace << '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())
 }
 
 func TestBuildMessageBoolConvert(t *testing.T) {
@@ -198,7 +215,7 @@ func TestBuildMessageBoolConvert(t *testing.T) {
 		fb.Eq("masked", nil),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( masked == false ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == false )", f.String())
+	assert.Equal(t, "( masked == false ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == null )", f.String())
 }
 
 func TestBuildMessageJSONConvert(t *testing.T) {
@@ -221,7 +238,7 @@ func TestBuildFFNameArrayConvert(t *testing.T) {
 		fb.Eq("topics", []byte(`test2`)),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, `( topics == '' ) && ( topics == 'test1' ) && ( topics == 'test2' )`, f.String())
+	assert.Equal(t, `( topics == null ) && ( topics == 'test1' ) && ( topics == 'test2' )`, f.String())
 }
 
 func TestBuildMessageFailStringConvert(t *testing.T) {
@@ -278,6 +295,22 @@ func TestQueryFactoryBadNestedValue(t *testing.T) {
 		),
 	).Finalize()
 	assert.Regexp(t, "FF10149.*sequence", err)
+}
+
+func TestQueryFactoryStringMatchNonString(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	_, err := fb.And(
+		fb.Contains("sequence", "stuff"),
+	).Finalize()
+	assert.Regexp(t, "FF10325", err)
+}
+
+func TestQueryFactoryNullGreaterThan(t *testing.T) {
+	fb := DataQueryFactory.NewFilter(context.Background())
+	_, err := fb.And(
+		fb.Gt("created", nil),
+	).Finalize()
+	assert.Regexp(t, "FF10326", err)
 }
 
 func TestQueryFactoryGetFields(t *testing.T) {

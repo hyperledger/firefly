@@ -7,12 +7,12 @@ CREATE TABLE blockchainevents (
   protocol_id      VARCHAR(256)    NOT NULL,
   timestamp        BIGINT          NOT NULL,
   subscription_id  UUID,
-  output           BYTEA,
-  info             BYTEA,
+  output           TEXT,
+  info             TEXT,
   tx_type          VARCHAR(64),
   tx_id            UUID
 );
 
-CREATE UNIQUE INDEX contractevents_name ON contractevents(namespace,name);
-CREATE UNIQUE INDEX contractevents_timestamp ON contractevents(timestamp);
-CREATE UNIQUE INDEX contractevents_subscription_id ON contractevents(subscription_id);
+CREATE INDEX blockchainevents_name ON blockchainevents(namespace,name);
+CREATE INDEX blockchainevents_timestamp ON blockchainevents(timestamp);
+CREATE INDEX blockchainevents_subscription_id ON blockchainevents(subscription_id);

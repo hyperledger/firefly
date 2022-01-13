@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
@@ -50,11 +51,15 @@ type wsEvent struct {
 	Path      string  `json:"path"`
 	Message   string  `json:"message"`
 	Hash      string  `json:"hash"`
+	Size      int64   `json:"size"`
 	Error     string  `json:"error"`
+	Manifest  string  `json:"manifest"`
+	Info      string  `json:"info"`
 }
 
 const (
 	dxHTTPHeaderHash = "dx-hash"
+	dxHTTPHeaderSize = "dx-size"
 )
 
 type msgType string
@@ -74,6 +79,7 @@ type responseWithRequestID struct {
 
 type uploadBlob struct {
 	Hash       string      `json:"hash"`
+	Size       int64       `json:"size"`
 	LastUpdate json.Number `json:"lastUpdate"`
 }
 
@@ -85,6 +91,11 @@ type sendMessage struct {
 type transferBlob struct {
 	Path      string `json:"path"`
 	Recipient string `json:"recipient"`
+}
+
+type wsAck struct {
+	Action   string `json:"action"`
+	Manifest string `json:"manifest,omitempty"` // FireFly core determined that DX should propagate opaquely to TransferResult, if this DX supports delivery acknowledgements.
 }
 
 func (h *HTTPS) Name() string {
@@ -100,7 +111,9 @@ func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataex
 	}
 
 	h.client = restclient.New(h.ctx, prefix)
-	h.capabilities = &dataexchange.Capabilities{}
+	h.capabilities = &dataexchange.Capabilities{
+		Manifest: prefix.GetBool(DataExchangeManifestEnabled),
+	}
 
 	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
 
@@ -140,7 +153,7 @@ func (h *HTTPS) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSO
 	return nil
 }
 
-func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, err error) {
+func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
 	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
 	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
@@ -149,12 +162,12 @@ func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, cont
 		Put(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
 	if err != nil || !res.IsSuccess() {
 		err = restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
-		return "", nil, err
+		return "", nil, -1, err
 	}
 	if hash, err = fftypes.ParseBytes32(ctx, upload.Hash); err != nil {
-		return "", nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", upload.Hash)
+		return "", nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", upload.Hash)
 	}
-	return payloadRef, hash, nil
+	return payloadRef, hash, upload.Size, nil
 }
 
 func (h *HTTPS) DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
@@ -200,29 +213,34 @@ func (h *HTTPS) TransferBLOB(ctx context.Context, peerID, payloadRef string) (tr
 	return responseData.RequestID, nil
 }
 
-func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, err error) {
+func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetResult(&responseData).
 		Head(fmt.Sprintf("/api/v1/blobs/%s/%s/%s", peerID, ns, id.String()))
 	if err == nil && res.StatusCode() == http.StatusNotFound {
-		return nil, nil
+		return nil, -1, nil
 	}
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return nil, -1, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
 	hashString := res.Header().Get(dxHTTPHeaderHash)
 	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", hashString)
+		return nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", hashString)
 	}
-	return hash, nil
+	sizeString := res.Header().Get(dxHTTPHeaderSize)
+	if sizeString != "" {
+		if size, err = strconv.ParseInt(sizeString, 10, 64); err != nil {
+			return nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "size", sizeString)
+		}
+	}
+	return hash, size, nil
 }
 
 func (h *HTTPS) eventLoop() {
 	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)
-	ack, _ := json.Marshal(map[string]string{"action": "commit"})
 	for {
 		select {
 		case <-ctx.Done():
@@ -242,17 +260,21 @@ func (h *HTTPS) eventLoop() {
 				continue // Swallow this and move on
 			}
 			l.Debugf("Received %s event from DX sender=%s", msg.Type, msg.Sender)
+			var manifest string
 			switch msg.Type {
 			case messageFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
 			case messageDelivered:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+					Manifest: msg.Manifest,
+					Info:     msg.Info,
+				})
 			case messageReceived:
-				err = h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
+				manifest, err = h.callbacks.MessageReceived(msg.Sender, []byte(msg.Message))
 			case blobFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
 			case blobDelivered:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{})
 			case blobReceived:
 				var hash *fftypes.Bytes32
 				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)
@@ -260,7 +282,7 @@ func (h *HTTPS) eventLoop() {
 					l.Errorf("Invalid hash received in DX event: '%s'", msg.Hash)
 					err = nil // still confirm the message
 				} else {
-					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Path)
+					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Size, msg.Path)
 				}
 			default:
 				l.Errorf("Message unexpected: %s", msg.Type)
@@ -269,7 +291,11 @@ func (h *HTTPS) eventLoop() {
 			// Send the ack - as long as we didn't fail processing (which should only happen in core
 			// if core itself is shutting down)
 			if err == nil {
-				err = h.wsconn.Send(ctx, ack)
+				ackBytes, _ := json.Marshal(&wsAck{
+					Action:   "commit",
+					Manifest: manifest,
+				})
+				err = h.wsconn.Send(ctx, ackBytes)
 			}
 			if err != nil {
 				l.Errorf("Event loop exiting: %s", err)

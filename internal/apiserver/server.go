@@ -46,8 +46,6 @@ import (
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/prometheus/client_golang/prometheus"
-	muxprom "gitlab.com/msvechla/mux-prometheus/pkg/middleware"
 )
 
 type orchestratorContextKey struct{}
@@ -251,14 +249,16 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, apiBaseURL string
 		if err == nil {
 			rCtx := context.WithValue(req.Context(), orchestratorContextKey{}, o)
 			r := &oapispec.APIRequest{
-				Ctx:           rCtx,
-				Req:           req,
-				PP:            pathParams,
-				QP:            queryParams,
-				Filter:        filter,
-				Input:         jsonInput,
-				SuccessStatus: http.StatusOK,
-				APIBaseURL:    apiBaseURL,
+				Ctx:             rCtx,
+				Or:              o,
+				Req:             req,
+				PP:              pathParams,
+				QP:              queryParams,
+				Filter:          filter,
+				Input:           jsonInput,
+				SuccessStatus:   http.StatusOK,
+				APIBaseURL:      apiBaseURL,
+				ResponseHeaders: res.Header(),
 			}
 			if len(route.JSONOutputCodes) > 0 {
 				r.SuccessStatus = route.JSONOutputCodes[0]
@@ -483,23 +483,12 @@ func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBa
 	}
 }
 
-func (as *apiServer) configurePrometheusInstrumentation(namespace, subsystem string, r *mux.Router) {
-	if as.metricsEnabled {
-		instrumentation := muxprom.NewCustomInstrumentation(
-			true,
-			namespace,
-			subsystem,
-			prometheus.DefBuckets,
-			map[string]string{},
-			metrics.Registry(),
-		)
-		r.Use(instrumentation.Middleware)
-	}
-}
-
 func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
-	as.configurePrometheusInstrumentation("apiserver", "rest", r)
+
+	if as.metricsEnabled {
+		r.Use(metrics.GetRestServerInstrumentation().Middleware)
+	}
 
 	publicURL := as.getPublicURL(apiConfigPrefix, "")
 	apiBaseURL := fmt.Sprintf("%s/api/v1", publicURL)
@@ -535,7 +524,9 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 
 func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
-	as.configurePrometheusInstrumentation("apiserver", "admin", r)
+	if as.metricsEnabled {
+		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
+	}
 
 	publicURL := as.getPublicURL(adminConfigPrefix, "admin")
 	apiBaseURL := fmt.Sprintf("%s/admin/api/v1", publicURL)

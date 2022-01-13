@@ -38,6 +38,9 @@ func TestValidateFFNameField(t *testing.T) {
 	assert.Regexp(t, "FF10131.*badField", err)
 
 	err = ValidateFFNameField(context.Background(), "af34658e-a728-4b21-b9cf-8451f07be065", "badField")
+	assert.NoError(t, err)
+
+	err = ValidateFFNameFieldNoUUID(context.Background(), "af34658e-a728-4b21-b9cf-8451f07be065", "badField")
 	assert.Regexp(t, "FF10288.*badField", err)
 
 }

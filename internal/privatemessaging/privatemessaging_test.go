@@ -100,7 +100,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		assert.Equal(t, "org1", identity.Author)
 		identity.Key = "0x12345"
 	}).Return(nil)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: fftypes.GroupIdentity{
@@ -181,10 +181,15 @@ func TestDispatchBatchBadData(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	groupID := fftypes.NewRandB32()
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{}, nil)
+
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
+		Group: groupID,
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{Value: fftypes.Byteable(`{!json}`)},
+				{Value: fftypes.JSONAnyPtr(`{!json}`)},
 			},
 		},
 	}, []*fftypes.Bytes32{})
@@ -210,7 +215,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
 		assert.Equal(t, "badauthor", identity.Author)
 		return true
@@ -223,7 +228,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, []*fftypes.Node{}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -235,13 +240,13 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("", fmt.Errorf("pop"))
+	mim.On("GetLocalOrgKey", pm.ctx).Return("", fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, []*fftypes.Node{}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -250,7 +255,7 @@ func TestSendImmediateFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
@@ -266,7 +271,7 @@ func TestSendImmediateFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -275,7 +280,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil)
@@ -299,7 +304,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -308,7 +313,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -329,7 +334,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 			},
 		},
-	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 

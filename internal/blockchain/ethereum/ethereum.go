@@ -199,7 +199,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	sPayloadRef := dataJSON.GetString("payloadRef")
 	sContexts := dataJSON.GetStringArray("contexts")
 	timestampStr := msgJSON.GetString("timestamp")
-	timestamp, err := fftypes.ParseString(timestampStr)
+	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - missing timestamp: %+v", msgJSON)
 		return nil // move on
@@ -278,7 +278,7 @@ func (e *Ethereum) handleContractEvent(msgJSON fftypes.JSONObject) (err error) {
 	dataJSON := msgJSON.GetObject("data")
 	name := strings.SplitN(signature, "(", 2)[0]
 	timestampStr := msgJSON.GetString("timestamp")
-	timestamp, err := fftypes.ParseString(timestampStr)
+	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
 		return err
 	}
@@ -360,6 +360,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 }
 
 func (e *Ethereum) eventLoop() {
+	defer e.wsconn.Close()
 	defer close(e.closed)
 	l := log.L(e.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(e.ctx, l)
@@ -455,7 +456,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	contractAddress, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -471,7 +472,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	return tx, nil
 }
 
-func (e *Ethereum) QueryContract(ctx context.Context, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	contractAddress, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -487,14 +488,14 @@ func (e *Ethereum) QueryContract(ctx context.Context, location fftypes.Byteable,
 	return output, nil
 }
 
-func (e *Ethereum) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {
+func (e *Ethereum) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
 	_, err = parseContractLocation(ctx, location)
 	return
 }
 
-func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Location, error) {
+func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	ethLocation := Location{}
-	if err := json.Unmarshal(location, &ethLocation); err != nil {
+	if err := json.Unmarshal(location.Bytes(), &ethLocation); err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
 	}
 	if ethLocation.Address == "" {
@@ -503,9 +504,9 @@ func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Loc
 	return &ethLocation, nil
 }
 
-func parseParamDetails(ctx context.Context, details fftypes.Byteable) (*paramDetails, error) {
+func parseParamDetails(ctx context.Context, details *fftypes.JSONAny) (*paramDetails, error) {
 	ethParam := paramDetails{}
-	if err := json.Unmarshal(details, &ethParam); err != nil {
+	if err := json.Unmarshal(details.Bytes(), &ethParam); err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, err)
 	}
 	if ethParam.Type == "" {

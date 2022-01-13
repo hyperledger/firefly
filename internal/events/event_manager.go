@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -61,9 +61,9 @@ type EventManager interface {
 	ContractEvent(event *blockchain.ContractEvent) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
-	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
-	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
+	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
+	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
+	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (manifest string, err error)
 
 	// Bound token callbacks
 	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error

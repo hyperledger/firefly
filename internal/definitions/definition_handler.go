@@ -74,8 +74,8 @@ func (dh *definitionHandlers) GetGroupByID(ctx context.Context, id string) (*fft
 	return dh.messaging.GetGroupByID(ctx, id)
 }
 
-func (dh *definitionHandlers) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
-	return dh.messaging.GetGroups(ctx, filter)
+func (dh *definitionHandlers) GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
+	return dh.messaging.GetGroupsNS(ctx, ns, filter)
 }
 
 func (dh *definitionHandlers) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
@@ -126,7 +126,7 @@ func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))
 		return false
 	}
-	err := json.Unmarshal(data[0].Value, &res)
+	err := json.Unmarshal(data[0].Value.Bytes(), &res)
 	if err != nil {
 		l.Warnf("Unable to process system broadcast %s - unmarshal failed: %s", msg.Header.ID, err)
 		return false

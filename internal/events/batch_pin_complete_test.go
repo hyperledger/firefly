@@ -385,7 +385,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
 
 	valid, err := em.persistBatch(context.Background(), batch)
-	assert.True(t, valid)
+	assert.False(t, valid)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
@@ -407,7 +407,7 @@ func TestPersistBatchGoodDataUpsertOptimizeExistingFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
+				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},
 	}
@@ -440,7 +440,7 @@ func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
+				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},
 	}
@@ -529,7 +529,7 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
 
 	valid, err := em.persistBatch(context.Background(), batch)
-	assert.True(t, valid)
+	assert.False(t, valid)
 	assert.NoError(t, err)
 }
 
@@ -554,7 +554,7 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:    fftypes.NewUUID(),
-		Value: fftypes.Byteable(`"test"`),
+		Value: fftypes.JSONAnyPtr(`"test"`),
 		Hash:  fftypes.NewRandB32(),
 	}
 	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
@@ -568,7 +568,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -586,7 +586,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -603,7 +603,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -625,7 +625,8 @@ func TestPersistBatchMessageNilData(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	valid, err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	assert.False(t, valid)
 	assert.NoError(t, err)
 }
 
@@ -647,7 +648,8 @@ func TestPersistBatchMessageUpsertHashMismatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(database.HashMismatch)
 
-	err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	valid, err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	assert.False(t, valid)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
@@ -670,7 +672,8 @@ func TestPersistBatchMessageUpsertMessageFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	valid, err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -692,7 +695,8 @@ func TestPersistBatchMessageOK(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
 
-	err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	valid, err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	assert.True(t, valid)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }

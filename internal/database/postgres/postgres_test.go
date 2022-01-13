@@ -39,7 +39,7 @@ func TestPostgresProvider(t *testing.T) {
 	assert.Error(t, err)
 
 	assert.Equal(t, "postgres", psql.Name())
-	assert.Equal(t, sq.Dollar, psql.PlaceholderFormat())
+	assert.Equal(t, sq.Dollar, psql.Features().PlaceholderFormat)
 
 	insert := sq.Insert("test").Columns("col1").Values("val1")
 	insert, query := psql.UpdateInsertForSequenceReturn(insert)

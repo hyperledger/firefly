@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -49,19 +49,20 @@ type Manager interface {
 type privateMessaging struct {
 	groupManager
 
-	ctx                  context.Context
-	database             database.Plugin
-	identity             identity.Manager
-	exchange             dataexchange.Plugin
-	blockchain           blockchain.Plugin
-	batch                batch.Manager
-	data                 data.Manager
-	syncasync            syncasync.Bridge
-	batchpin             batchpin.Submitter
-	retry                retry.Retry
-	localNodeName        string
-	localNodeID          *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
-	opCorrelationRetries int
+	ctx                   context.Context
+	database              database.Plugin
+	identity              identity.Manager
+	exchange              dataexchange.Plugin
+	blockchain            blockchain.Plugin
+	batch                 batch.Manager
+	data                  data.Manager
+	syncasync             syncasync.Bridge
+	batchpin              batchpin.Submitter
+	retry                 retry.Retry
+	localNodeName         string
+	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
+	opCorrelationRetries  int
+	maxBatchPayloadLength int64
 }
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
@@ -90,7 +91,8 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 			MaximumDelay: config.GetDuration(config.PrivateMessagingRetryMaxDelay),
 			Factor:       config.GetFloat64(config.PrivateMessagingRetryFactor),
 		},
-		opCorrelationRetries: config.GetInt(config.PrivateMessagingOpCorrelationRetries),
+		opCorrelationRetries:  config.GetInt(config.PrivateMessagingOpCorrelationRetries),
+		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
 	}
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -100,6 +102,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.PrivateMessagingBatchSize),
+		BatchMaxBytes:  pm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(config.PrivateMessagingBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.PrivateMessagingBatchAgentTimeout),
 	}
@@ -120,12 +123,9 @@ func (pm *privateMessaging) Start() error {
 func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
-	payload, err := json.Marshal(&fftypes.TransportWrapper{
+	tw := &fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
 		Batch: batch,
-	})
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
 	// Retrieve the group
@@ -135,7 +135,7 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return pm.sendAndSubmitBatch(ctx, batch, nodes, payload, contexts)
+		return pm.sendAndSubmitBatch(ctx, batch, nodes, tw, contexts)
 	})
 }
 
@@ -174,10 +174,16 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 	return nil
 }
 
-func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload fftypes.Byteable, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
+func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, tw *fftypes.TransportWrapper, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
 	l := log.L(ctx)
 
-	localOrgDID, err := pm.identity.ResolveLocalOrgDID(ctx)
+	payload, err := json.Marshal(tw)
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+	}
+
+	// TODO: move to using DIDs consistently as the way to reference the node/organization (i.e. node.Owner becomes a DID)
+	localOrgSigingKey, err := pm.identity.GetLocalOrgKey(ctx)
 	if err != nil {
 		return err
 	}
@@ -185,7 +191,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 
-		if node.Owner == localOrgDID {
+		if node.Owner == localOrgSigingKey {
 			l.Debugf("Skipping send of %s for local node %s:%s for group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
 			continue
 		}
@@ -211,6 +217,9 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 				trackingID,
 				fftypes.OpTypeDataExchangeBatchSend,
 				fftypes.OpStatusPending)
+			op.Input = fftypes.JSONObject{
+				"manifest": tw.Manifest().String(),
+			}
 			if err = pm.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
@@ -221,8 +230,8 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 	return nil
 }
 
-func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
-	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, payload, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
+func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, tw *fftypes.TransportWrapper, contexts []*fftypes.Bytes32) (err error) {
+	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, tw, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
 		return err
 	}
 	return pm.writeTransaction(ctx, batch, contexts)

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -38,6 +38,7 @@ type SQLCommon struct {
 	capabilities *database.Capabilities
 	callbacks    database.Callbacks
 	provider     Provider
+	features     SQLFeatures
 }
 
 type txContextKey struct{}
@@ -51,7 +52,10 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.P
 	s.capabilities = capabilities
 	s.callbacks = callbacks
 	s.provider = provider
-	if s.provider == nil || s.provider.PlaceholderFormat() == nil || sequenceColumn == "" {
+	if s.provider != nil {
+		s.features = s.provider.Features()
+	}
+	if s.provider == nil || s.features.PlaceholderFormat == nil {
 		log.L(ctx).Errorf("Invalid SQL options from provider '%T'", s.provider)
 		return i18n.NewError(ctx, i18n.MsgDBInitFailed)
 	}
@@ -154,7 +158,7 @@ func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuild
 	}
 
 	l := log.L(ctx)
-	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {
 		return nil, tx, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
@@ -190,7 +194,7 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 		countExpr = "*"
 	}
 	q := sq.Select(fmt.Sprintf("COUNT(%s)", countExpr)).From(tableName).Where(fop)
-	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {
 		return count, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
@@ -233,7 +237,7 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 	l := log.L(ctx)
 	q, useQuery := s.provider.UpdateInsertForSequenceReturn(q)
 
-	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {
 		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
@@ -264,7 +268,7 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 
 func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder, postCommit func()) error {
 	l := log.L(ctx)
-	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
@@ -289,7 +293,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 
 func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder, postCommit func()) (int64, error) {
 	l := log.L(ctx)
-	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {
 		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}

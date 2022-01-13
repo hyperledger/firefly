@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,10 +28,14 @@ import (
 type DataRef struct {
 	ID   *UUID    `json:"id,omitempty"`
 	Hash *Bytes32 `json:"hash,omitempty"`
+
+	ValueSize int64 `json:"-"` // used internally for message size calculation, without full payload retrieval
 }
 
 type BlobRef struct {
 	Hash   *Bytes32 `json:"hash"`
+	Size   int64    `json:"size"`
+	Name   string   `json:"name"`
 	Public string   `json:"public,omitempty"`
 }
 
@@ -42,8 +46,10 @@ type Data struct {
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value"`
+	Value     *JSONAny      `json:"value"`
 	Blob      *BlobRef      `json:"blob,omitempty"`
+
+	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
 }
 
 type DataAndBlob struct {
@@ -58,7 +64,7 @@ type DatatypeRef struct {
 
 func (dr *DatatypeRef) String() string {
 	if dr == nil {
-		return nullString
+		return NullString
 	}
 	return fmt.Sprintf("%s/%s", dr.Name, dr.Version)
 }
@@ -80,11 +86,19 @@ func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
 	}
 }
 
+const dataSizeEstimateBase = int64(256)
+
+func (d *Data) EstimateSize() int64 {
+	// For now we have a static estimate for the size of the serialized outer structure.
+	// As long as this has been persisted, the value size will represent the length
+	return dataSizeEstimateBase + d.ValueSize
+}
+
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	if d.Value == nil {
-		d.Value = Byteable(nullString)
+		d.Value = JSONAnyPtr(NullString)
 	}
-	valueIsNull := d.Value.String() == nullString
+	valueIsNull := d.Value.String() == NullString
 	if valueIsNull && (d.Blob == nil || d.Blob.Hash == nil) {
 		return nil, i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
@@ -104,7 +118,7 @@ func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	}
 }
 
-func (d *Data) Seal(ctx context.Context) (err error) {
+func (d *Data) Seal(ctx context.Context, blob *Blob) (err error) {
 	if d.Validator == "" {
 		d.Validator = ValidatorTypeJSON
 	}
@@ -113,6 +127,29 @@ func (d *Data) Seal(ctx context.Context) (err error) {
 	}
 	if d.Created == nil {
 		d.Created = Now()
+	}
+	if blob != nil {
+		if d.Blob == nil || !d.Blob.Hash.Equals(blob.Hash) {
+			return i18n.NewError(ctx, i18n.MsgBlobMismatchSealingData)
+		}
+		d.Blob.Size = blob.Size
+		if d.Value != nil {
+			valJSON := d.Value.JSONObjectNowarn()
+			jName := valJSON.GetString("name")
+			if jName != "" {
+				d.Blob.Name = jName
+			} else {
+				jPath := valJSON.GetString("path")
+				jFilename := valJSON.GetString("filename")
+				if jPath != "" && jFilename != "" {
+					d.Blob.Name = fmt.Sprintf("%s/%s", jPath, jFilename)
+				} else if jFilename != "" {
+					d.Blob.Name = jFilename
+				}
+			}
+		}
+	} else if d.Blob != nil && d.Blob.Hash != nil {
+		return i18n.NewError(ctx, i18n.MsgBlobMismatchSealingData)
 	}
 	d.Hash, err = d.CalcHash(ctx)
 	if err == nil {

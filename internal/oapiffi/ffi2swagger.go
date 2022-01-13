@@ -110,7 +110,7 @@ func contractCallJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftype
 		Input: *ffiParamsJSONSchema(params),
 	}
 	if !hasLocation {
-		req.Location = []byte(`{}`)
+		req.Location = fftypes.JSONAnyPtr(`{}`)
 	}
 	return &fftypes.JSONObject{
 		"type":       "object",

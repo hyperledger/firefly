@@ -35,19 +35,19 @@ func TestValidateFFI(t *testing.T) {
 					{
 						Name:    "x",
 						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+						Details: JSONAnyPtr(`{"type": "uint256"}`),
 					},
 					{
 						Name:    "y",
 						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+						Details: JSONAnyPtr(`{"type": "uint256"}`),
 					},
 				},
 				Returns: []*FFIParam{
 					{
 						Name:    "z",
 						Type:    "integer",
-						Details: []byte(`{"type": "uint256"}`),
+						Details: JSONAnyPtr(`{"type": "uint256"}`),
 					},
 				},
 			},
@@ -60,7 +60,7 @@ func TestValidateFFI(t *testing.T) {
 						{
 							Name:    "z",
 							Type:    "integer",
-							Details: []byte(`{"type": "uint256"}`),
+							Details: JSONAnyPtr(`{"type": "uint256"}`),
 						},
 					},
 				},
@@ -124,7 +124,7 @@ func TestFFIParamsValue(t *testing.T) {
 		&FFIParam{
 			Name:    "x",
 			Type:    "integer",
-			Details: []byte(`{"type": "uint256"}`),
+			Details: JSONAnyPtr(`{"type": "uint256"}`),
 		},
 	}
 

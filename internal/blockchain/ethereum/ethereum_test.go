@@ -48,19 +48,19 @@ func testFFIMethod() *fftypes.FFIMethod {
 			{
 				Name:    "x",
 				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
 			},
 			{
 				Name:    "y",
 				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
 			},
 		},
 		Returns: []*fftypes.FFIParam{
 			{
 				Name:    "z",
 				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
 			},
 		},
 	}
@@ -511,7 +511,7 @@ func TestVerifyEthAddress(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinOK(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -587,7 +587,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(nil)
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -633,7 +633,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 }
 
 func TestHandleMessageEmptyPayloadRef(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -669,7 +669,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(nil)
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -690,7 +690,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 }
 
 func TestHandleMessageBatchPinExit(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -722,7 +722,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.EqualError(t, err, "pop")
@@ -756,7 +756,7 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	e.initInfo.sub = &subscription{
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
-	data := []byte(`[{
+	data := fftypes.JSONAnyPtr(`[{
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
@@ -775,7 +775,7 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -788,7 +788,7 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	e.initInfo.sub = &subscription{
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
-	data := []byte(`[{
+	data := fftypes.JSONAnyPtr(`[{
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
@@ -807,7 +807,7 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -820,7 +820,7 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	e.initInfo.sub = &subscription{
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
-	data := []byte(`[{
+	data := fftypes.JSONAnyPtr(`[{
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
@@ -839,7 +839,7 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -852,7 +852,7 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	e.initInfo.sub = &subscription{
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
-	data := []byte(`[{
+	data := fftypes.JSONAnyPtr(`[{
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
@@ -871,7 +871,7 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 		}
 	}]`)
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -892,6 +892,7 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	r := make(<-chan []byte)
 	wsm := e.wsconn.(*wsmocks.WSClient)
 	wsm.On("Receive").Return(r)
+	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
 }
@@ -903,6 +904,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm := e.wsconn.(*wsmocks.WSClient)
 	close(r)
 	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
 }
@@ -915,6 +917,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	close(r)
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
 }
@@ -931,7 +934,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	var reply fftypes.JSONObject
 	operationID := fftypes.NewUUID()
-	data := []byte(`{
+	data := fftypes.JSONAnyPtr(`{
     "_id": "4373614c-e0f7-47b0-640e-7eacec417a9e",
     "blockHash": "0xad269b2b43481e44500f583108e8d24bd841fb767c7f526772959d195b9c72d5",
     "blockNumber": "209696",
@@ -960,7 +963,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"",
 		mock.Anything).Return(nil)
 
-	err := json.Unmarshal(data, &reply)
+	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)
 	assert.NoError(t, err)
@@ -975,8 +978,9 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	e.closed = make(chan struct{})
 
 	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Close").Return()
 	operationID := fftypes.NewUUID()
-	data := []byte(`{
+	data := fftypes.JSONAnyPtr(`{
 		"_id": "6fb94fff-81d3-4094-567d-e031b1871694",
 		"errorMessage": "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		"headers": {
@@ -1005,7 +1009,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	go e.eventLoop()
 	r <- []byte(`!badjson`)        // ignored bad json
 	r <- []byte(`"not an object"`) // ignored wrong type
-	r <- data
+	r <- data.Bytes()
 	<-done
 }
 
@@ -1020,8 +1024,8 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	}
 
 	var reply fftypes.JSONObject
-	data := []byte(`{}`)
-	err := json.Unmarshal(data, &reply)
+	data := fftypes.JSONAnyPtr(`{}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)
 	assert.NoError(t, err)
@@ -1038,8 +1042,8 @@ func TestHandleReceiptBadRequestID(t *testing.T) {
 	}
 
 	var reply fftypes.JSONObject
-	data := []byte(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
-	err := json.Unmarshal(data, &reply)
+	data := fftypes.JSONAnyPtr(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)
 	assert.NoError(t, err)
@@ -1049,9 +1053,9 @@ func TestFormatNil(t *testing.T) {
 	assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", ethHexFormatB32(nil))
 }
 
-func encodeDetails(internalType string) []byte {
+func encodeDetails(internalType string) *fftypes.JSONAny {
 	result, _ := json.Marshal(&paramDetails{Type: internalType})
-	return result
+	return fftypes.JSONAnyPtrBytes(result)
 }
 
 func TestValidateFFIParamInteger(t *testing.T) {
@@ -1257,7 +1261,7 @@ func TestAddSubscription(t *testing.T) {
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable(fftypes.JSONObject{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
 			Event: &fftypes.FFISerializedEvent{
@@ -1267,7 +1271,7 @@ func TestAddSubscription(t *testing.T) {
 						{
 							Name: "value",
 							Type: "string",
-							Details: fftypes.Byteable(fftypes.JSONObject{
+							Details: fftypes.JSONAnyPtr(fftypes.JSONObject{
 								"type": "string",
 							}.String()),
 						},
@@ -1299,7 +1303,7 @@ func TestAddSubscriptionBaddParamDetails(t *testing.T) {
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable(fftypes.JSONObject{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
 			Event: &fftypes.FFISerializedEvent{
@@ -1309,7 +1313,7 @@ func TestAddSubscriptionBaddParamDetails(t *testing.T) {
 						{
 							Name:    "value",
 							Type:    "string",
-							Details: fftypes.Byteable{},
+							Details: fftypes.JSONAnyPtr(""),
 						},
 					},
 				},
@@ -1340,7 +1344,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable{},
+			Location: fftypes.JSONAnyPtr(""),
 			Event:    &fftypes.FFISerializedEvent{},
 		},
 	}
@@ -1365,7 +1369,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 
 	sub := &fftypes.ContractSubscriptionInput{
 		ContractSubscription: fftypes.ContractSubscription{
-			Location: fftypes.Byteable(fftypes.JSONObject{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
 			Event: &fftypes.FFISerializedEvent{},
@@ -1432,7 +1436,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 }
 
 func TestHandleMessageContractEvent(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1461,7 +1465,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	em.On("ContractEvent", mock.Anything).Return(nil)
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -1492,7 +1496,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 }
 
 func TestHandleMessageContractEventNoTimestamp(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1520,14 +1524,14 @@ func TestHandleMessageContractEventNoTimestamp(t *testing.T) {
 	em.On("ContractEvent", mock.Anything).Return(nil)
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.Regexp(t, "FF10165", err)
 }
 
 func TestHandleMessageContractEventError(t *testing.T) {
-	data := []byte(`
+	data := fftypes.JSONAnyPtr(`
 [
   {
     "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1556,7 +1560,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	em.On("ContractEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
-	err := json.Unmarshal(data, &events)
+	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.EqualError(t, err, "pop")
@@ -1590,7 +1594,7 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, float64(2), body["y"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.NoError(t, err)
 }
 
@@ -1606,7 +1610,7 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -1630,7 +1634,7 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -1660,7 +1664,7 @@ func TestInvokeContractUnmarshalResponseError(t *testing.T) {
 			assert.Equal(t, float64(2), body["y"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, locationBytes, method, params)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "invalid character", err)
 }
 
@@ -1688,7 +1692,7 @@ func TestQueryContractOK(t *testing.T) {
 			assert.Equal(t, float64(2), body["y"])
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
-	result, err := e.QueryContract(context.Background(), locationBytes, method, params)
+	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.NoError(t, err)
 	j, err := json.Marshal(result)
 	assert.NoError(t, err)
@@ -1706,7 +1710,7 @@ func TestQueryContractAddressNotSet(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), locationBytes, method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -1729,7 +1733,7 @@ func TestQueryContractEthconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
 		})
-	_, err = e.QueryContract(context.Background(), locationBytes, method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -1757,7 +1761,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 			assert.Equal(t, float64(2), body["y"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
-	_, err = e.QueryContract(context.Background(), locationBytes, method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "invalid character", err)
 }
 
@@ -1769,7 +1773,7 @@ func TestValidateContractLocation(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), locationBytes)
+	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
 }
 
@@ -1786,7 +1790,7 @@ func TestParseParamErr(t *testing.T) {
 	param = &fftypes.FFIParam{
 		Name:    "x",
 		Type:    "integer",
-		Details: []byte(`{"type":""}`),
+		Details: fftypes.JSONAnyPtr(`{"type":""}`),
 	}
 	err = e.ValidateFFIParam(context.Background(), param)
 	assert.Regexp(t, "FF10311", err)

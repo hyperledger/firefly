@@ -23,11 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestByteableSerializeNull(t *testing.T) {
+func TestJSONAnySerializeNull(t *testing.T) {
 
 	type testStruct struct {
-		Prop1 *Byteable `json:"prop1"`
-		Prop2 *Byteable `json:"prop2,omitempty"`
+		Prop1 *JSONAny `json:"prop1"`
+		Prop2 *JSONAny `json:"prop2,omitempty"`
 	}
 
 	ts := &testStruct{}
@@ -41,10 +41,10 @@ func TestByteableSerializeNull(t *testing.T) {
 
 }
 
-func TestByteableSerializeObjects(t *testing.T) {
+func TestJSONAnySerializeObjects(t *testing.T) {
 
 	type testStruct struct {
-		Prop *Byteable `json:"prop,omitempty"`
+		Prop *JSONAny `json:"prop,omitempty"`
 	}
 
 	ts := &testStruct{}
@@ -72,19 +72,28 @@ func TestByteableSerializeObjects(t *testing.T) {
 
 }
 
-func TestByteableMarshalNull(t *testing.T) {
+func TestJSONAnyMarshalNull(t *testing.T) {
 
-	var pb Byteable
+	var pb JSONAny
 	b, err := pb.MarshalJSON()
 	assert.NoError(t, err)
-	assert.Equal(t, nullString, string(b))
+	assert.Equal(t, NullString, string(b))
+	assert.Equal(t, NullString, pb.String())
+	assert.True(t, pb.IsNil())
+
+	err = pb.UnmarshalJSON([]byte(""))
+	assert.NoError(t, err)
+	assert.True(t, pb.IsNil())
+
+	var ppb *JSONAny
+	assert.Equal(t, NullString, ppb.String())
 	assert.True(t, pb.IsNil())
 
 }
 
-func TestByteableUnmarshalFail(t *testing.T) {
+func TestJSONAnyUnmarshalFail(t *testing.T) {
 
-	var b Byteable
+	var b JSONAny
 	err := b.UnmarshalJSON([]byte(`!json`))
 	assert.Error(t, err)
 
@@ -94,9 +103,10 @@ func TestByteableUnmarshalFail(t *testing.T) {
 
 func TestScan(t *testing.T) {
 
-	var h Byteable
+	var h JSONAny
+	assert.Equal(t, int64(0), h.Length())
 	assert.NoError(t, h.Scan(nil))
-	assert.Equal(t, []byte(nullString), []byte(h))
+	assert.Equal(t, []byte(NullString), []byte(h))
 
 	assert.NoError(t, h.Scan(`{"some": "stuff"}`))
 	assert.Equal(t, "stuff", h.JSONObject().GetString("some"))
@@ -104,6 +114,17 @@ func TestScan(t *testing.T) {
 	assert.NoError(t, h.Scan([]byte(`{"some": "stuff"}`)))
 	assert.Equal(t, "stuff", h.JSONObject().GetString("some"))
 
+	assert.NoError(t, h.Scan(`"plainstring"`))
+	assert.Equal(t, "", h.JSONObjectNowarn().GetString("some"))
+
 	assert.Regexp(t, "FF10125", h.Scan(12345))
+
+	assert.Equal(t, "test", JSONAnyPtrBytes([]byte(`{"val": "test"}`)).JSONObject().GetString("val"))
+	assert.Nil(t, JSONAnyPtrBytes(nil))
+	assert.Equal(t, int64(0), JSONAnyPtrBytes(nil).Length())
+
+	assert.Nil(t, JSONAnyPtrBytes(nil).Bytes())
+	assert.NotEmpty(t, JSONAnyPtr("{}").Bytes())
+	assert.Equal(t, int64(2), JSONAnyPtr("{}").Length())
 
 }

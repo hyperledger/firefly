@@ -57,16 +57,18 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, "error info", info)
+	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
+	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+		Error: "error info", Info: info.String(),
+	})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BLOBReceived", mdx, "peer1", *hash, "ns1/id1").Return(fmt.Errorf("pop"))
-	err = bc.BLOBReceived("peer1", *hash, "ns1/id1")
+	mei.On("BLOBReceived", mdx, "peer1", *hash, int64(12345), "ns1/id1").Return(fmt.Errorf("pop"))
+	err = bc.BLOBReceived("peer1", *hash, 12345, "ns1/id1")
 	assert.EqualError(t, err, "pop")
 
-	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return(fmt.Errorf("pop"))
-	err = bc.MessageReceived("peer1", []byte{})
+	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return("manifest data", fmt.Errorf("pop"))
+	_, err = bc.MessageReceived("peer1", []byte{})
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TokenPoolCreated", mti, pool).Return(fmt.Errorf("pop"))

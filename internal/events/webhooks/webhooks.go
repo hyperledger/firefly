@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -56,7 +56,7 @@ type whRequest struct {
 type whResponse struct {
 	Status  int                `json:"status"`
 	Headers fftypes.JSONObject `json:"headers"`
-	Body    fftypes.Byteable   `json:"body"`
+	Body    *fftypes.JSONAny   `json:"body"`
 }
 
 func (wh *WebHooks) Name() string { return "webhooks" }
@@ -263,7 +263,7 @@ func (wh *WebHooks) ValidateOptions(options *fftypes.SubscriptionOptions) error 
 
 func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) (req *whRequest, res *whResponse, err error) {
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
-	allData := make([]fftypes.Byteable, 0, len(data))
+	allData := make([]*fftypes.JSONAny, 0, len(data))
 	var firstData fftypes.JSONObject
 	var valid bool
 	if withData {
@@ -334,7 +334,8 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		if err != nil {
 			return nil, nil, i18n.WrapError(wh.ctx, err, i18n.MsgWebhooksReplyBadJSON)
 		}
-		res.Body, _ = json.Marshal(&resData) // we know we can re-marshal it
+		b, _ := json.Marshal(&resData) // we know we can re-marshal It
+		res.Body = fftypes.JSONAnyPtrBytes(b)
 	} else {
 		// Anything other than JSON, gets returned as a JSON string in base64 encoding
 		buf := &bytes.Buffer{}
@@ -343,7 +344,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		_, _ = io.Copy(b64Encoder, resp.RawBody())
 		_ = b64Encoder.Close()
 		buf.WriteByte('"')
-		res.Body = buf.Bytes()
+		res.Body = fftypes.JSONAnyPtrBytes(buf.Bytes())
 	}
 
 	return req, res, nil
@@ -363,7 +364,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 			Headers: fftypes.JSONObject{
 				"Content-Type": "application/json",
 			},
-			Body: b,
+			Body: fftypes.JSONAnyPtrBytes(b),
 		}
 	}
 	b, _ := json.Marshal(&res)
@@ -390,7 +391,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 					},
 				},
 				InlineData: fftypes.InlineData{
-					{Value: b},
+					{Value: fftypes.JSONAnyPtrBytes(b)},
 				},
 			},
 		})

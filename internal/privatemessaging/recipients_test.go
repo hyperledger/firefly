@@ -63,7 +63,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		assert.Equal(t, fftypes.ValidatorTypeSystemDefinition, data.Validator)
 		assert.Equal(t, "ns1", data.Namespace)
 		var group fftypes.Group
-		err := json.Unmarshal(data.Value, &group)
+		err := json.Unmarshal(data.Value.Bytes(), &group)
 		assert.NoError(t, err)
 		assert.Len(t, group.Members, 2)
 		// Group identiy is sorted by group members DIDs so check them in that order

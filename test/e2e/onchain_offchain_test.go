@@ -50,7 +50,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	received2, changes2 := wsReader(suite.T(), suite.testState.ws2)
 
 	var resp *resty.Response
-	value := fftypes.Byteable(`"Hello"`)
+	value := fftypes.JSONAnyPtr(`"Hello"`)
 	data := fftypes.DataRefOrValue{
 		Value: value,
 	}
@@ -62,12 +62,12 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
 	<-changes1 // also expect database change events
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(suite.T(), data.Value, val1)
+	assert.Equal(suite.T(), data.Value, val1.Value)
 
 	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 	<-changes2 // also expect database change events
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(suite.T(), data.Value, val2)
+	assert.Equal(suite.T(), data.Value, val2.Value)
 
 }
 
@@ -78,7 +78,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	received2, changes2 := wsReader(suite.T(), suite.testState.ws2)
 
 	var resp *resty.Response
-	value := fftypes.Byteable(`"Hello"`)
+	value := fftypes.JSONAnyPtr(`"Hello"`)
 	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
 	version := fmt.Sprintf("0.0.%d", randVer.Int64())
 	data := fftypes.DataRefOrValue{
@@ -98,7 +98,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	dt := &fftypes.Datatype{
 		Name:    "widget",
 		Version: version,
-		Value:   widgetSchemaJSON,
+		Value:   fftypes.JSONAnyPtrBytes(widgetSchemaJSON),
 	}
 	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
 
@@ -107,7 +107,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
 
-	data.Value = fftypes.Byteable(`{
+	data.Value = fftypes.JSONAnyPtr(`{
 		"id": "widget12345",
 		"name": "mywidget"
 	}`)
@@ -129,7 +129,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	received2, changes2 := wsReader(suite.T(), suite.testState.ws2)
 
 	var resp *resty.Response
-	value := fftypes.Byteable(`{"foo":"bar"}`)
+	value := fftypes.JSONAnyPtr(`{"foo":"bar"}`)
 	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
 	version := fmt.Sprintf("0.0.%d", randVer.Int64())
 	data := fftypes.DataRefOrValue{
@@ -152,7 +152,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	dt := &fftypes.Datatype{
 		Name:    "widget",
 		Version: version,
-		Value:   widgetSchemaJSON,
+		Value:   fftypes.JSONAnyPtrBytes(widgetSchemaJSON),
 	}
 	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
 
@@ -164,7 +164,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
 
-	data.Value = fftypes.Byteable(`{
+	data.Value = fftypes.JSONAnyPtr(`{
 		"id": "widget12345",
 		"name": "mywidget"
 	}`)
@@ -189,7 +189,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 	received2, _ := wsReader(suite.T(), suite.testState.ws2)
 
 	var resp *resty.Response
-	value := fftypes.Byteable(`"Hello"`)
+	value := fftypes.JSONAnyPtr(`"Hello"`)
 	data := fftypes.DataRefOrValue{
 		Value: value,
 	}
@@ -203,11 +203,11 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 	<-received1
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(suite.T(), data.Value, val1)
+	assert.Equal(suite.T(), data.Value, val1.Value)
 
 	<-received2
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(suite.T(), data.Value, val2)
+	assert.Equal(suite.T(), data.Value, val2.Value)
 }
 
 func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
@@ -218,17 +218,21 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 
 	var resp *resty.Response
 
-	resp, err := BroadcastBlobMessage(suite.T(), suite.testState.client1)
+	data, resp, err := BroadcastBlobMessage(suite.T(), suite.testState.client1)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
 	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(suite.T(), "myfile.txt", string(val1))
+	assert.Regexp(suite.T(), "myfile.txt", val1.Value.String())
+	assert.Equal(suite.T(), "myfile.txt", val1.Blob.Name)
+	assert.Equal(suite.T(), data.Blob.Size, val1.Blob.Size)
 
 	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(suite.T(), "myfile.txt", string(val2))
+	assert.Regexp(suite.T(), "myfile.txt", val2.Value.String())
+	assert.Equal(suite.T(), "myfile.txt", val2.Blob.Name)
+	assert.Equal(suite.T(), data.Blob.Size, val2.Blob.Size)
 
 }
 
@@ -240,18 +244,26 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 
 	var resp *resty.Response
 
-	resp, err := PrivateBlobMessageDatatypeTagged(suite.T(), suite.testState.client1, []string{
+	data, resp, err := PrivateBlobMessageDatatypeTagged(suite.T(), suite.testState.client1, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	})
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
+	assert.Empty(suite.T(), data.Blob.Name)
+	assert.NotNil(suite.T(), data.Blob.Hash)
 
 	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
-	_ = validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+	res1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+	assert.Equal(suite.T(), data.Blob.Hash.String(), res1.Blob.Hash.String())
+	assert.Empty(suite.T(), res1.Blob.Name)
+	assert.Equal(suite.T(), data.Blob.Size, res1.Blob.Size)
 
 	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
-	_ = validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+	res2 := validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+	assert.Equal(suite.T(), data.Blob.Hash.String(), res2.Blob.Hash.String())
+	assert.Empty(suite.T(), res2.Blob.Name)
+	assert.Equal(suite.T(), data.Blob.Size, res2.Blob.Size)
 }
 
 func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
@@ -280,7 +292,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	assert.NotNil(suite.T(), sub.ID)
 
 	data := fftypes.DataRefOrValue{
-		Value: fftypes.Byteable(`{}`),
+		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
 	var resp *resty.Response
@@ -296,15 +308,15 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 
 	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate) // reply 1
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
-	assert.Equal(suite.T(), float64(200), val1.JSONObject()["status"])
-	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
+	assert.Equal(suite.T(), float64(200), val1.Value.JSONObject()["status"])
+	decoded1, err := base64.StdEncoding.DecodeString(val1.Value.JSONObject().GetString("body"))
 	assert.NoError(suite.T(), err)
 	assert.Regexp(suite.T(), "Example YAML", string(decoded1))
 
 	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate) // reply 2
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
-	assert.Equal(suite.T(), float64(200), val2.JSONObject()["status"])
-	decoded2, err := base64.StdEncoding.DecodeString(val2.JSONObject().GetString("body"))
+	assert.Equal(suite.T(), float64(200), val2.Value.JSONObject()["status"])
+	decoded2, err := base64.StdEncoding.DecodeString(val2.Value.JSONObject().GetString("body"))
 	assert.NoError(suite.T(), err)
 	assert.Regexp(suite.T(), "Example YAML", string(decoded2))
 }
@@ -333,7 +345,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 	assert.NotNil(suite.T(), sub.ID)
 
 	data := fftypes.DataRefOrValue{
-		Value: fftypes.Byteable(`{}`),
+		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
 	reply := RequestReply(suite.T(), suite.testState.client1, &data, []string{

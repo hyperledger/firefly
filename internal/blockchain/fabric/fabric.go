@@ -247,7 +247,7 @@ func decodeJSONPayload(ctx context.Context, payloadString string) *fftypes.JSONO
 		log.L(ctx).Errorf("BatchPin event is not valid - bad payload content: %s", payloadString)
 		return nil
 	}
-	dataBytes := fftypes.Byteable(bytes)
+	dataBytes := fftypes.JSONAnyPtrBytes(bytes)
 	payload, ok := dataBytes.JSONObjectOk()
 	if !ok {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad JSON payload: %s", bytes)
@@ -407,6 +407,7 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 }
 
 func (f *Fabric) eventLoop() {
+	defer f.wsconn.Close()
 	defer close(f.closed)
 	l := log.L(f.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(f.ctx, l)
@@ -534,7 +535,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	// All arguments must be JSON serialized
 	args, err := jsonEncodeInput(input)
 	if err != nil {
@@ -586,18 +587,18 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]string, e
 	return
 }
 
-func (f *Fabric) QueryContract(ctx context.Context, location fftypes.Byteable, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	return nil, fmt.Errorf(("not yet supported"))
 }
 
-func (f *Fabric) ValidateContractLocation(ctx context.Context, location fftypes.Byteable) (err error) {
+func (f *Fabric) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
 	_, err = parseContractLocation(ctx, location)
 	return
 }
 
-func parseContractLocation(ctx context.Context, location fftypes.Byteable) (*Location, error) {
+func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	fabricLocation := Location{}
-	if err := json.Unmarshal(location, &fabricLocation); err != nil {
+	if err := json.Unmarshal(location.Bytes(), &fabricLocation); err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
 	}
 	if fabricLocation.Channel == "" {

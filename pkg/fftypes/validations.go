@@ -31,11 +31,15 @@ func ValidateFFNameField(ctx context.Context, str string, fieldName string) erro
 	if !ffNameValidator.MatchString(str) {
 		return i18n.NewError(ctx, i18n.MsgInvalidName, fieldName)
 	}
+	return nil
+}
+
+func ValidateFFNameFieldNoUUID(ctx context.Context, str string, fieldName string) error {
 	if _, err := ParseUUID(ctx, str); err == nil {
 		// Name must not be a UUID
 		return i18n.NewError(ctx, i18n.MsgNoUUID, fieldName)
 	}
-	return nil
+	return ValidateFFNameField(ctx, str, fieldName)
 }
 
 func ValidateLength(ctx context.Context, str string, fieldName string, max int) error {

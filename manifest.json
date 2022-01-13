@@ -6,17 +6,17 @@
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.2",
-    "sha": "c8b3e56f4d104683599beafe923234b6fcb7e0512d6d26d33e6034ee3862428e"
+    "tag": "v0.9.5",
+    "sha": "8fff33239d585117c20e48b3494a5b8f5fc647f944cffd4e1009fcb3505aba2a"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v0.9.3",
-    "sha": "3a2256c1160f79b173bcc04d191e742946461b0e7e17df2e52098fbf97de9992"
+    "tag": "v0.10.1",
+    "sha": "e86f2fc3902d7d827734ef4d0d96043efd03cf52211547a8cfa8c6bae550d65b"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v0.10.1",
-    "sha": "5ac18e1d2e30e0902ca786509aa074049993deaed5af8a92a83bebf9f91a49ea"
+    "tag": "v0.10.2",
+    "sha": "a677f36b5130f1f9f1e70066762066632aaf72ccd773855f896ebbc681e540d5"
   }
 }

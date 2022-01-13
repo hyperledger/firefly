@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -73,7 +73,7 @@ func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
 					if batchDataItem.ID.Equals(messageDataItem.ID) {
 						if batchDataItem.Validator == fftypes.MessageTypeDefinition {
 							var org *fftypes.Organization
-							err := json.Unmarshal(batchDataItem.Value, &org)
+							err := json.Unmarshal(batchDataItem.Value.Bytes(), &org)
 							if err != nil {
 								return false
 							}
@@ -132,8 +132,8 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
-		if err = em.persistBatchMessage(ctx, batch, i, msg, optimization); err != nil {
-			return false, err
+		if valid, err = em.persistBatchMessage(ctx, batch, i, msg, optimization); !valid || err != nil {
+			return valid, err
 		}
 	}
 
@@ -191,14 +191,13 @@ func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context
 	return true, nil
 }
 
-func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message, optimization database.UpsertOptimization) error {
+func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message, optimization database.UpsertOptimization) (bool, error) {
 	if msg != nil && (msg.Header.Author != batch.Author || msg.Header.Key != batch.Key) {
 		log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
-		return nil // skip entry
+		return false, nil // skip entry
 	}
 
-	_, err := em.persistReceivedMessage(ctx, i, msg, "batch", batch.ID, optimization)
-	return err
+	return em.persistReceivedMessage(ctx, i, msg, "batch", batch.ID, optimization)
 }
 
 func (em *eventManager) persistReceivedMessage(ctx context.Context /* db TX context*/, i int, msg *fftypes.Message, mType string, mID *fftypes.UUID, optimization database.UpsertOptimization) (bool, error) {

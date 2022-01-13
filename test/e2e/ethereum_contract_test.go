@@ -58,7 +58,7 @@ func simpleStorageFFIChanged() *fftypes.FFIEvent {
 				{
 					Name: "_from",
 					Type: "string",
-					Details: fftypes.Byteable(fftypes.JSONObject{
+					Details: fftypes.JSONAnyPtr(fftypes.JSONObject{
 						"type":    "address",
 						"indexed": true,
 					}.String()),
@@ -66,7 +66,7 @@ func simpleStorageFFIChanged() *fftypes.FFIEvent {
 				{
 					Name: "_value",
 					Type: "integer",
-					Details: fftypes.Byteable(fftypes.JSONObject{
+					Details: fftypes.JSONAnyPtr(fftypes.JSONObject{
 						"type": "uint256",
 					}.String()),
 				},
@@ -96,7 +96,7 @@ func simpleStorageFFISet() *fftypes.FFIMethod {
 			{
 				Name:    "newValue",
 				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
 			},
 		},
 		Returns: fftypes.FFIParams{},
@@ -111,7 +111,7 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 			{
 				Name:    "output",
 				Type:    "integer",
-				Details: []byte(`{"type": "uint256"}`),
+				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
 			},
 		},
 	}
@@ -256,7 +256,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	}
 	locationBytes, _ := json.Marshal(location)
 	invokeContractRequest := &fftypes.ContractCallRequest{
-		Location: locationBytes,
+		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   simpleStorageFFISet(),
 		Input: map[string]interface{}{
 			"newValue": float64(2),
@@ -282,7 +282,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	assert.NotNil(suite.T(), event)
 
 	queryContractRequest := &fftypes.ContractCallRequest{
-		Location: locationBytes,
+		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   simpleStorageFFIGet(),
 	}
 	res, err = QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
@@ -312,7 +312,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	}
 	locationBytes, _ := json.Marshal(location)
 	invokeContractRequest := &fftypes.ContractCallRequest{
-		Location: locationBytes,
+		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Input: map[string]interface{}{
 			"newValue": float64(42),
 		},
@@ -339,7 +339,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	assert.NotNil(suite.T(), event)
 
 	queryContractRequest := &fftypes.ContractCallRequest{
-		Location: locationBytes,
+		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   simpleStorageFFIGet(),
 	}
 	res, err = QueryFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, "get", queryContractRequest)

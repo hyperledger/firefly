@@ -78,8 +78,11 @@ func (tp *sqliteGoTestProvider) MigrationsDir() string {
 	return "sqlite"
 }
 
-func (tp *sqliteGoTestProvider) PlaceholderFormat() sq.PlaceholderFormat {
-	return sq.Dollar
+func (psql *sqliteGoTestProvider) Features() SQLFeatures {
+	features := DefaultSQLProviderFeatures()
+	features.PlaceholderFormat = sq.Dollar
+	features.UseILIKE = false // Not supported
+	return features
 }
 
 func (tp *sqliteGoTestProvider) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {

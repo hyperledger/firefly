@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -52,7 +52,7 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 		copyDone <- err
 	}()
 
-	payloadRef, uploadHash, dxErr := bs.exchange.UploadBLOB(ctx, ns, *id, dxReader)
+	payloadRef, uploadHash, uploadSize, dxErr := bs.exchange.UploadBLOB(ctx, ns, *id, dxReader)
 	dxReader.Close()
 	copyErr := <-copyDone
 	if dxErr != nil {
@@ -63,7 +63,7 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 	}
 
 	hash = fftypes.HashResult(hashCalc)
-	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v)", written, hash, uploadHash, expectedHash)
+	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v) size=%d (expected=%d)", written, hash, uploadHash, expectedHash, uploadSize, written)
 
 	if !uploadHash.Equals(hash) {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, hash)
@@ -72,12 +72,15 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 	if expectedHash != nil && !uploadHash.Equals(expectedHash) {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, expectedHash)
 	}
+	if uploadSize > 0 && uploadSize != written {
+		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadSize, uploadSize, written)
+	}
 
 	return hash, written, payloadRef, nil
 
 }
 
-func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, mpart *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
 
 	data := &fftypes.Data{
 		ID:        fftypes.NewUUID(),
@@ -92,43 +95,44 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	data.Namespace = ns
 	data.Created = fftypes.Now()
 
-	hash, written, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, nil /* we don't have an expected hash for a new upload */, blob.Data)
+	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, nil /* we don't have an expected hash for a new upload */, mpart.Data)
 	if err != nil {
 		return nil, err
 	}
-	data.Blob = &fftypes.BlobRef{
-		Hash: hash,
-	}
+	data.Blob = &fftypes.BlobRef{Hash: hash}
 
 	// autoMeta will create/update JSON metadata with the upload details
 	if autoMeta {
 		do := data.Value.JSONObject()
-		do["filename"] = blob.Filename
-		do["mimetype"] = blob.Mimetype
-		do["size"] = float64(written)
-		data.Value, _ = json.Marshal(&do)
+		do["filename"] = mpart.Filename
+		do["mimetype"] = mpart.Mimetype
+		b, _ := json.Marshal(&do)
+		data.Value = fftypes.JSONAnyPtrBytes(b)
 	}
 	if data.Validator == "" {
 		data.Validator = fftypes.ValidatorTypeJSON
 	}
 
+	blob := &fftypes.Blob{
+		Hash:       hash,
+		Size:       blobSize,
+		PayloadRef: payloadRef,
+		Created:    fftypes.Now(),
+	}
+
 	err = bs.dm.checkValidation(ctx, ns, data.Validator, data.Datatype, data.Value)
 	if err == nil {
-		err = data.Seal(ctx)
+		err = data.Seal(ctx, blob)
 	}
 	if err != nil {
 		return nil, err
 	}
-	log.L(ctx).Infof("Uploaded BLOB %.2fkb blobhash=%s hash=%s", float64(written)/1024, data.Blob.Hash, data.Hash)
+	log.L(ctx).Infof("Uploaded BLOB blobhash=%s hash=%s (%s)", data.Blob.Hash, data.Hash, units.HumanSizeWithPrecision(float64(blobSize), 2))
 
 	err = bs.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		err := bs.database.UpsertData(ctx, data, database.UpsertOptimizationNew)
 		if err == nil {
-			err = bs.database.InsertBlob(ctx, &fftypes.Blob{
-				Hash:       hash,
-				PayloadRef: payloadRef,
-				Created:    fftypes.Now(),
-			})
+			err = bs.database.InsertBlob(ctx, blob)
 		}
 		return err
 	})
@@ -151,14 +155,15 @@ func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (bl
 	}
 	defer reader.Close()
 
-	hash, written, payloadRef, err := bs.uploadVerifyBLOB(ctx, data.Namespace, data.ID, data.Blob.Hash, reader)
+	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, data.Namespace, data.ID, data.Blob.Hash, reader)
 	if err != nil {
 		return nil, err
 	}
-	log.L(ctx).Infof("Transferred blob '%s' (%s) from public storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(written), 2), data.Blob.Public, payloadRef)
+	log.L(ctx).Infof("Transferred blob '%s' (%s) from public storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.Blob.Public, payloadRef)
 
 	blob = &fftypes.Blob{
 		Hash:       hash,
+		Size:       blobSize,
 		PayloadRef: payloadRef,
 		Created:    fftypes.Now(),
 	}
@@ -169,34 +174,35 @@ func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (bl
 	return blob, nil
 }
 
-func (bs *blobStore) DownloadBLOB(ctx context.Context, ns, dataID string) (io.ReadCloser, error) {
+func (bs *blobStore) DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
 
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	id, err := fftypes.ParseUUID(ctx, dataID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	data, err := bs.database.GetDataByID(ctx, id, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if data == nil || data.Namespace != ns {
-		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
+		return nil, nil, i18n.NewError(ctx, i18n.Msg404NoResult)
 	}
 	if data.Blob == nil || data.Blob.Hash == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgDataDoesNotHaveBlob)
+		return nil, nil, i18n.NewError(ctx, i18n.MsgDataDoesNotHaveBlob)
 	}
 
 	blob, err := bs.database.GetBlobMatchingHash(ctx, data.Blob.Hash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if blob == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgBlobNotFound, data.Blob.Hash)
+		return nil, nil, i18n.NewError(ctx, i18n.MsgBlobNotFound, data.Blob.Hash)
 	}
 
-	return bs.exchange.DownloadBLOB(ctx, blob.PayloadRef)
+	reader, err := bs.exchange.DownloadBLOB(ctx, blob.PayloadRef)
+	return blob, reader, err
 }

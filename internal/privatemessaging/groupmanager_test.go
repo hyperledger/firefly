@@ -110,7 +110,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`!json`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`!json`)},
 	}, true, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
@@ -135,7 +135,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`{}`)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`{}`)},
 	}, true, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
@@ -173,7 +173,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
@@ -211,7 +211,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(fmt.Errorf("pop"))
@@ -251,7 +251,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
+		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
@@ -370,6 +370,25 @@ func TestGetGroupsOk(t *testing.T) {
 
 	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
 	groups, _, err := pm.GetGroups(pm.ctx, fb.And(fb.Eq("description", "mygroup")))
+	assert.NoError(t, err)
+	assert.Empty(t, groups)
+}
+
+func TestGetGroupsNSOk(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroups", pm.ctx, mock.MatchedBy(func(filter database.AndFilter) bool {
+		f, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Contains(t, f.String(), "namespace")
+		assert.Contains(t, f.String(), "ns1")
+		return true
+	})).Return([]*fftypes.Group{}, nil, nil)
+
+	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
+	groups, _, err := pm.GetGroupsNS(pm.ctx, "ns1", fb.And(fb.Eq("description", "mygroup")))
 	assert.NoError(t, err)
 	assert.Empty(t, groups)
 }
