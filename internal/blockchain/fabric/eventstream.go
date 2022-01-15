@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -38,6 +38,7 @@ type eventStream struct {
 	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
 	Type           string               `json:"type"`
 	WebSocket      eventStreamWebsocket `json:"websocket"`
+	Timestamps     bool                 `json:"timestamps"`
 }
 
 type subscription struct {
@@ -74,6 +75,7 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string, bat
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
 		WebSocket:      eventStreamWebsocket{Topic: topic},
+		Timestamps:     true,
 	}
 	res, err := s.client.R().
 		SetContext(ctx).
