@@ -339,6 +339,9 @@ func waitForContractEvent(t *testing.T, client *resty.Client, c chan *fftypes.Ev
 func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
 	match := true
 
+	t.Logf("Expected ContractEvent=%v", expected)
+	t.Logf("Actual   ContractEvent=%v", actual)
+
 	// check if this is a nested object
 	expectedObject, expectedIsObject := expected.(map[string]interface{})
 	actualObject, actualIsObject := actual.(map[string]interface{})
