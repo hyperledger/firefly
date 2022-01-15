@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -270,21 +271,27 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	sBatchHash := payload.GetString("batchHash")
 	sPayloadRef := payload.GetString("payloadRef")
 	sContexts := payload.GetStringArray("contexts")
+	sTimestamp := payload.GetString("timestamp")
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
 	if err != nil || len(hexUUIDs) != 32 {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad uuids (%s): %s", err, sUUIDs)
+		log.L(ctx).Errorf("BatchPin event is not valid - bad uuids (%s): %s", sUUIDs, err)
 		return nil // move on
 	}
 	var txnID fftypes.UUID
 	copy(txnID[:], hexUUIDs[0:16])
 	var batchID fftypes.UUID
 	copy(batchID[:], hexUUIDs[16:32])
+	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
+	if err != nil {
+		log.L(ctx).Errorf("BatchPin event is not valid - bad timestamp (%s): %s", sTimestamp, err)
+		// Continue with zero timestamp
+	}
 
 	var batchHash fftypes.Bytes32
 	err = batchHash.UnmarshalText([]byte(sBatchHash))
 	if err != nil {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad batchHash (%s): %s", err, sBatchHash)
+		log.L(ctx).Errorf("BatchPin event is not valid - bad batchHash (%s): %s", sBatchHash, err)
 		return nil // move on
 	}
 
@@ -293,7 +300,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		var hash fftypes.Bytes32
 		err = hash.UnmarshalText([]byte(sHash))
 		if err != nil {
-			log.L(ctx).Errorf("BatchPin event is not valid - bad pin %d (%s): %s", i, err, sHash)
+			log.L(ctx).Errorf("BatchPin event is not valid - bad pin %d (%s): %s", i, sHash, err)
 			return nil // move on
 		}
 		contexts[i] = &hash
@@ -313,6 +320,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			ProtocolID: sTransactionHash,
 			Output:     *payload,
 			Info:       msgJSON,
+			Timestamp:  fftypes.UnixTime(timestamp),
 		},
 	}
 
@@ -331,6 +339,12 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	sTransactionHash := msgJSON.GetString("transactionId")
 	sub := msgJSON.GetString("subId")
 	name := msgJSON.GetString("eventName")
+	sTimestamp := msgJSON.GetString("timestamp")
+	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
+	if err != nil {
+		log.L(ctx).Errorf("Blockchain event is not valid - bad timestamp (%s): %s", sTimestamp, err)
+		// Continue with zero timestamp
+	}
 
 	event := &blockchain.ContractEvent{
 		Subscription: sub,
@@ -340,6 +354,7 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			ProtocolID: sTransactionHash,
 			Output:     *payload,
 			Info:       msgJSON,
+			Timestamp:  fftypes.UnixTime(timestamp),
 		},
 	}
 

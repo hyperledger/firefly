@@ -6,13 +6,13 @@
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.5",
-    "sha": "8fff33239d585117c20e48b3494a5b8f5fc647f944cffd4e1009fcb3505aba2a"
+    "tag": "v0.9.6",
+    "sha": "a7171e6aba7aae7e91dcf7efc5e9f4e96527c0057a809b6132044e1475c7c6c6"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v0.10.1",
-    "sha": "e86f2fc3902d7d827734ef4d0d96043efd03cf52211547a8cfa8c6bae550d65b"
+    "tag": "v0.10.2",
+    "sha": "3539659b18f2b79fbb39881483086d869db51a2370646b6c95d4961d6b3c739b"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
