@@ -225,7 +225,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 		"info": map[string]interface{}{
 			"address": suite.contractAddress,
 		},
-		"outputs": map[string]interface{}{
+		"output": map[string]interface{}{
 			"_value": "1",
 			"_from":  suite.testState.org1.Identity,
 		},
@@ -271,7 +271,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		"info": map[string]interface{}{
 			"address": suite.contractAddress,
 		},
-		"outputs": map[string]interface{}{
+		"output": map[string]interface{}{
 			"_value": "2",
 			"_from":  suite.testState.org1.Identity,
 		},
@@ -328,7 +328,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		"info": map[string]interface{}{
 			"address": suite.contractAddress,
 		},
-		"outputs": map[string]interface{}{
+		"output": map[string]interface{}{
 			"_value": "3",
 			"_from":  suite.testState.org1.Identity,
 		},
