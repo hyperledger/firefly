@@ -63,9 +63,7 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFI
 		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
 		Path:             fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodPost,
-		JSONInputValue:   func() interface{} { return &fftypes.ContractCallRequest{} },
 		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
-		JSONOutputValue:  func() interface{} { return &fftypes.JSONObject{} },
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
 	})
@@ -73,9 +71,6 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFI
 		Name:             fmt.Sprintf("query_%s", method.Pathname),
 		Path:             fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodGet,
-		JSONInputValue:   func() interface{} { return &fftypes.ContractCallRequest{} },
-		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
-		JSONOutputValue:  func() interface{} { return &fftypes.JSONObject{} },
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
 	})

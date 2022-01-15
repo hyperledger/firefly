@@ -60,7 +60,9 @@ var testRoutes = []*Route{
 			return `{
 			"type": "object",
 			"properties": {
-				"id": "string"
+				"id": {
+					"type": "string"
+				}
 			}
 		}`
 		},
@@ -68,7 +70,9 @@ var testRoutes = []*Route{
 			return `{
 			"type": "object",
 			"properties": {
-				"id": "string"
+				"id": {
+					"type": "string"
+				}
 			}
 		}`
 		},

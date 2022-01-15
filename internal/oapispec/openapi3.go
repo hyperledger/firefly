@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -208,7 +208,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 			input = route.JSONInputValue()
 		}
 		initInput(op)
-		if input != nil {
+		if input != nil || route.JSONInputSchema != nil {
 			addInput(ctx, doc, input, route.JSONInputMask, route.JSONInputSchema, op)
 		}
 		if route.FormUploadHandler != nil {
@@ -219,7 +219,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 	if route.JSONOutputValue != nil {
 		output = route.JSONOutputValue()
 	}
-	if output != nil {
+	if output != nil || route.JSONOutputSchema != nil {
 		addOutput(ctx, doc, route, output, route.JSONOutputSchema, op)
 	}
 	for _, p := range route.PathParams {
