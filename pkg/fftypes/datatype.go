@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,7 +43,7 @@ type Datatype struct {
 	Version   string        `json:"version,omitempty"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
-	Value     Byteable      `json:"value,omitempty"`
+	Value     *JSONAny      `json:"value,omitempty"`
 }
 
 func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
@@ -59,7 +59,7 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, dt.Version, "version"); err != nil {
 		return err
 	}
-	if len(dt.Value) == 0 {
+	if dt.Value == nil || len(*dt.Value) == 0 {
 		return i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
 	}
 	if existing {

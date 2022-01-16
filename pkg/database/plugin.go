@@ -43,7 +43,7 @@ const (
 
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
-	PeristenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
+	PersistenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
 
 	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitPrefix(prefix config.Prefix)
@@ -89,9 +89,6 @@ type iMessageCollection interface {
 	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 
-	// GetMessageRefs - Lighter weight query to just get the reference info of messages
-	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, *FilterResult, error)
-
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 }
@@ -132,8 +129,7 @@ type iBatchCollection interface {
 
 type iTransactionCollection interface {
 	// UpsertTransaction - Upsert a transaction
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) (err error)
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -146,7 +142,7 @@ type iTransactionCollection interface {
 }
 
 type iDatatypeCollection interface {
-	// UpsertDatatype - Upsert a data definitino
+	// UpsertDatatype - Upsert a data definition
 	UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) (err error)
 
 	// UpdateDatatype - Update data definition
@@ -346,7 +342,7 @@ type iConfigRecordCollection interface {
 	// Throws IDMismatch error if updating and ids don't match
 	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
 
-	// GetConfigRecord - Get an config record by key
+	// GetConfigRecord - Get a config record by key
 	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
 
 	// GetConfigRecords - Get config records
@@ -404,6 +400,65 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
+type iFFICollection interface {
+	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
+	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
+	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
+	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
+}
+
+type iFFIMethodCollection interface {
+	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
+	GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
+	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
+}
+
+type iFFIEventCollection interface {
+	UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error
+	GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
+	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error)
+	GetFFIEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
+}
+
+type iContractAPICollection interface {
+	UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error
+	GetContractAPIs(ctx context.Context, ns string, filter AndFilter) ([]*fftypes.ContractAPI, *FilterResult, error)
+	GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractAPI, error)
+	GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error)
+}
+
+type iContractSubscriptionCollection interface {
+	// UpsertContractSubscription - upsert a subscription to an external smart contract
+	UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) (err error)
+
+	// GetContractSubscription - get smart contract subscription by name
+	GetContractSubscription(ctx context.Context, ns, name string) (sub *fftypes.ContractSubscription, err error)
+
+	// GetContractSubscriptionByID - get smart contract subscription by ID
+	GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractSubscription, err error)
+
+	// GetContractSubscriptionByProtocolID - get smart contract subscription by protocol ID
+	GetContractSubscriptionByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractSubscription, err error)
+
+	// GetContractSubscriptions - get smart contract subscriptions
+	GetContractSubscriptions(ctx context.Context, filter Filter) ([]*fftypes.ContractSubscription, *FilterResult, error)
+
+	// DeleteContractSubscription - delete a subscription to an external smart contract
+	DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
+}
+
+type iBlockchainEventCollection interface {
+	// InsertBlockchainEvent - insert an event from an external smart contract
+	InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error)
+
+	// GetBlockchainEventByID - get smart contract event by ID
+	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
+
+	// GetBlockchainEvents - get smart contract events
+	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*fftypes.BlockchainEvent, *FilterResult, error)
+}
+
+// PersistenceInterface are the operations that must be implemented by a database interface plugin.
 type iChartCollection interface {
 	// GetChartHistogram - Get charting data for a histogram
 	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
@@ -415,7 +470,7 @@ type iChartCollection interface {
 // while not trying to become the core database of the application (where full deeply nested
 // rich query is needed).
 //
-// This means that we treat business data as opaque within the stroage, only verifying it against
+// This means that we treat business data as opaque within the storage, only verifying it against
 // a data definition within the Firefly core runtime itself.
 // The data types, indexes and relationships are designed to be simple, and map closely to the
 // REST semantics of the Firefly API itself.
@@ -433,7 +488,7 @@ type iChartCollection interface {
 // For SQL databases the process of adding a new database is simplified via the common SQL layer.
 // For NoSQL databases, the code should be straight forward to map the collections, indexes, and operations.
 //
-type PeristenceInterface interface {
+type PersistenceInterface interface {
 	fftypes.Named
 
 	// RunAsGroup instructs the database plugin that all database operations performed within the context
@@ -465,6 +520,12 @@ type PeristenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
+	iFFICollection
+	iFFIMethodCollection
+	iFFIEventCollection
+	iContractAPICollection
+	iContractSubscriptionCollection
+	iBlockchainEventCollection
 	iChartCollection
 }
 
@@ -478,8 +539,9 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages OrderedUUIDCollectionNS = "messages"
-	CollectionEvents   OrderedUUIDCollectionNS = "events"
+	CollectionMessages         OrderedUUIDCollectionNS = "messages"
+	CollectionEvents           OrderedUUIDCollectionNS = "events"
+	CollectionBlockchainEvents OrderedUUIDCollectionNS = "contractevents"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -495,17 +557,22 @@ const (
 type UUIDCollectionNS CollectionName
 
 const (
-	CollectionBatches       UUIDCollectionNS = "batches"
-	CollectionData          UUIDCollectionNS = "data"
-	CollectionDataTypes     UUIDCollectionNS = "datatypes"
-	CollectionOperations    UUIDCollectionNS = "operations"
-	CollectionSubscriptions UUIDCollectionNS = "subscriptions"
-	CollectionTransactions  UUIDCollectionNS = "transactions"
-	CollectionTokenPools    UUIDCollectionNS = "tokenpools"
+	CollectionBatches               UUIDCollectionNS = "batches"
+	CollectionData                  UUIDCollectionNS = "data"
+	CollectionDataTypes             UUIDCollectionNS = "datatypes"
+	CollectionOperations            UUIDCollectionNS = "operations"
+	CollectionSubscriptions         UUIDCollectionNS = "subscriptions"
+	CollectionTransactions          UUIDCollectionNS = "transactions"
+	CollectionTokenPools            UUIDCollectionNS = "tokenpools"
+	CollectionFFIs                  UUIDCollectionNS = "ffi"
+	CollectionFFIMethods            UUIDCollectionNS = "ffimethods"
+	CollectionFFIEvents             UUIDCollectionNS = "ffievents"
+	CollectionContractAPIs          UUIDCollectionNS = "contractapis"
+	CollectionContractSubscriptions UUIDCollectionNS = "contractsubscriptions"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can
-// by identifed by any member of the network at any time, without it first having
+// by identified by any member of the network at any time, without it first having
 // been broadcast.
 type HashCollectionNS CollectionName
 
@@ -621,16 +688,11 @@ var BatchQueryFactory = &queryFields{
 
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"type":       &StringField{},
-	"signer":     &StringField{},
-	"status":     &StringField{},
-	"reference":  &UUIDField{},
-	"protocolid": &StringField{},
-	"created":    &TimeField{},
-	"sequence":   &Int64Field{},
-	"info":       &JSONField{},
-	"namespace":  &StringField{},
+	"id":        &UUIDField{},
+	"type":      &StringField{},
+	"status":    &StringField{},
+	"created":   &TimeField{},
+	"namespace": &StringField{},
 }
 
 // DataQueryFactory filter fields for data
@@ -646,6 +708,7 @@ var DataQueryFactory = &queryFields{
 	"blob.name":        &StringField{},
 	"blob.size":        &Int64Field{},
 	"created":          &TimeField{},
+	"value":            &JSONField{},
 }
 
 // DatatypeQueryFactory filter fields for data definitions
@@ -811,18 +874,77 @@ var TokenBalanceQueryFactory = &queryFields{
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
-	"localid":     &StringField{},
-	"pool":        &UUIDField{},
-	"tokenindex":  &StringField{},
-	"uri":         &StringField{},
-	"connector":   &StringField{},
+	"localid":         &StringField{},
+	"pool":            &UUIDField{},
+	"tokenindex":      &StringField{},
+	"uri":             &StringField{},
+	"connector":       &StringField{},
+	"namespace":       &StringField{},
+	"key":             &StringField{},
+	"from":            &StringField{},
+	"to":              &StringField{},
+	"amount":          &Int64Field{},
+	"protocolid":      &StringField{},
+	"message":         &UUIDField{},
+	"messagehash":     &Bytes32Field{},
+	"created":         &TimeField{},
+	"blockchainevent": &UUIDField{},
+}
+
+// FFIQueryFactory filter fields for contract definitions
+var FFIQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"version":   &StringField{},
+}
+
+// FFIMethodQueryFactory filter fields for contract methods
+var FFIMethodQueryFactory = &queryFields{
+	"id":          &UUIDField{},
 	"namespace":   &StringField{},
-	"key":         &StringField{},
-	"from":        &StringField{},
-	"to":          &StringField{},
-	"amount":      &Int64Field{},
-	"protocolid":  &StringField{},
-	"message":     &UUIDField{},
-	"messagehash": &Bytes32Field{},
-	"created":     &TimeField{},
+	"name":        &StringField{},
+	"pathname":    &StringField{},
+	"interface":   &UUIDField{},
+	"description": &StringField{},
+}
+
+// FFIEventQueryFactory filter fields for contract events
+var FFIEventQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"namespace":   &StringField{},
+	"name":        &StringField{},
+	"pathname":    &StringField{},
+	"interface":   &UUIDField{},
+	"description": &StringField{},
+}
+
+// ContractSubscriptionQueryFactory filter fields for contract subscriptions
+var ContractSubscriptionQueryFactory = &queryFields{
+	"id":         &UUIDField{},
+	"interface":  &UUIDField{},
+	"namespace":  &StringField{},
+	"protocolid": &StringField{},
+	"created":    &TimeField{},
+}
+
+// BlockchainEventQueryFactory filter fields for contract events
+var BlockchainEventQueryFactory = &queryFields{
+	"id":           &UUIDField{},
+	"source":       &StringField{},
+	"namespace":    &StringField{},
+	"name":         &StringField{},
+	"protocolid":   &StringField{},
+	"subscription": &StringField{},
+	"tx.type":      &StringField{},
+	"tx.id":        &UUIDField{},
+	"timestamp":    &TimeField{},
+}
+
+// ContractAPIQueryFactory filter fields for Contract APIs
+var ContractAPIQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"name":      &StringField{},
+	"namespace": &StringField{},
+	"interface": &UUIDField{},
 }

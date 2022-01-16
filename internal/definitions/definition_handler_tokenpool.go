@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -101,7 +101,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg 
 		return ActionReject, dh.rejectPool(ctx, pool)
 	}
 
-	if err := dh.assets.ActivateTokenPool(ctx, pool, announce.TX); err != nil {
+	if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event); err != nil {
 		log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
 		return ActionRetry, err
 	}

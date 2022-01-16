@@ -17,14 +17,14 @@
 package fftypes
 
 type TokenBalance struct {
-	Pool       *UUID   `json:"pool,omitempty"`
-	TokenIndex string  `json:"tokenIndex,omitempty"`
-	URI        string  `json:"uri,omitempty"`
-	Connector  string  `json:"connector,omitempty"`
-	Namespace  string  `json:"namespace,omitempty"`
-	Key        string  `json:"key,omitempty"`
-	Balance    BigInt  `json:"balance"`
-	Updated    *FFTime `json:"updated,omitempty"`
+	Pool       *UUID    `json:"pool,omitempty"`
+	TokenIndex string   `json:"tokenIndex,omitempty"`
+	URI        string   `json:"uri,omitempty"`
+	Connector  string   `json:"connector,omitempty"`
+	Namespace  string   `json:"namespace,omitempty"`
+	Key        string   `json:"key,omitempty"`
+	Balance    FFBigInt `json:"balance"`
+	Updated    *FFTime  `json:"updated,omitempty"`
 }
 
 func TokenBalanceIdentifier(pool *UUID, tokenIndex, identity string) string {

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -44,7 +44,7 @@ var postNodesSelf = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		node, _, err := r.Or.NetworkMap().RegisterNode(r.Ctx, waitConfirm)
+		node, _, err := getOr(r.Ctx).NetworkMap().RegisterNode(r.Ctx, waitConfirm)
 		return node, err
 	},
 }

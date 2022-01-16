@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,7 +20,9 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -47,9 +49,10 @@ type Ethereum struct {
 	capabilities *blockchain.Capabilities
 	callbacks    blockchain.Callbacks
 	client       *resty.Client
+	streams      *streamManager
 	initInfo     struct {
 		stream *eventStream
-		subs   []*subscription
+		sub    *subscription
 	}
 	wsconn wsclient.WSClient
 	closed chan struct{}
@@ -61,6 +64,10 @@ type eventStreamWebsocket struct {
 
 type asyncTXSubmission struct {
 	ID string `json:"id"`
+}
+
+type queryOutput struct {
+	Output string `json:"output"`
 }
 
 type ethBatchPinInput struct {
@@ -76,10 +83,16 @@ type ethWSCommandPayload struct {
 	Topic string `json:"topic,omitempty"`
 }
 
-var requiredSubscriptions = []string{
-	"BatchPin",
+type Location struct {
+	Address string `json:"address"`
 }
 
+type paramDetails struct {
+	Type    string
+	Indexed bool
+}
+
+var batchPinEvent = "BatchPin"
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
 func (e *Ethereum) Name() string {
@@ -124,18 +137,16 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 
-	streams := streamManager{
-		ctx:          e.ctx,
-		client:       e.client,
-		instancePath: e.instancePath,
+	e.streams = &streamManager{
+		client: e.client,
 	}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-	if e.initInfo.stream, err = streams.ensureEventStream(e.topic, batchSize, batchTimeout); err != nil {
+	if e.initInfo.stream, err = e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-	if e.initInfo.subs, err = streams.ensureSubscriptions(e.initInfo.stream.ID, requiredSubscriptions); err != nil {
+	if e.initInfo.sub, err = e.streams.ensureSubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEvent); err != nil {
 		return err
 	}
 
@@ -187,6 +198,12 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	sBatchHash := dataJSON.GetString("batchHash")
 	sPayloadRef := dataJSON.GetString("payloadRef")
 	sContexts := dataJSON.GetStringArray("contexts")
+	timestampStr := msgJSON.GetString("timestamp")
+	timestamp, err := fftypes.ParseTimeString(timestampStr)
+	if err != nil {
+		log.L(ctx).Errorf("BatchPin event is not valid - missing timestamp: %+v", msgJSON)
+		return nil // move on
+	}
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
@@ -232,18 +249,55 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		contexts[i] = &hash
 	}
 
+	delete(msgJSON, "data")
 	batch := &blockchain.BatchPin{
-		Namespace:      ns,
-		TransactionID:  &txnID,
-		BatchID:        &batchID,
-		BatchHash:      &batchHash,
-		BatchPaylodRef: sPayloadRef,
-		Contexts:       contexts,
+		Namespace:       ns,
+		TransactionID:   &txnID,
+		BatchID:         &batchID,
+		BatchHash:       &batchHash,
+		BatchPayloadRef: sPayloadRef,
+		Contexts:        contexts,
+		Event: blockchain.Event{
+			Source:     e.Name(),
+			Name:       "BatchPin",
+			ProtocolID: sTransactionHash,
+			Output:     dataJSON,
+			Info:       msgJSON,
+			Timestamp:  timestamp,
+		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
+	return e.callbacks.BatchPinComplete(batch, authorAddress)
+}
+
+func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	sTransactionHash := msgJSON.GetString("transactionHash")
+	sub := msgJSON.GetString("subId")
+	signature := msgJSON.GetString("signature")
+	dataJSON := msgJSON.GetObject("data")
+	name := strings.SplitN(signature, "(", 2)[0]
+	timestampStr := msgJSON.GetString("timestamp")
+	timestamp, err := fftypes.ParseTimeString(timestampStr)
+	if err != nil {
+		log.L(ctx).Errorf("Contract event is not valid - missing timestamp: %+v", msgJSON)
+		return err // move on
+	}
 	delete(msgJSON, "data")
-	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash, msgJSON)
+
+	event := &blockchain.ContractEvent{
+		Subscription: sub,
+		Event: blockchain.Event{
+			Source:     e.Name(),
+			Name:       name,
+			ProtocolID: sTransactionHash,
+			Output:     dataJSON,
+			Info:       msgJSON,
+			Timestamp:  timestamp,
+		},
+	}
+
+	return e.callbacks.ContractEvent(event)
 }
 
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -285,16 +339,21 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		l1 := l.WithField("ethmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
 		signature := msgJSON.GetString("signature")
+		sub := msgJSON.GetString("subId")
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		switch signature {
-		case broadcastBatchEventSignature:
-			if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
-				return err
+		if sub == e.initInfo.sub.ID {
+			switch signature {
+			case broadcastBatchEventSignature:
+				if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
+					return err
+				}
+			default:
+				l.Infof("Ignoring event with unknown signature: %s", signature)
 			}
-		default:
-			l.Infof("Ignoring event with unknown signature: %s", signature)
+		} else if err := e.handleContractEvent(ctx1, msgJSON); err != nil {
+			return err
 		}
 	}
 
@@ -358,19 +417,25 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, method, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, method, signingKey, requestID string, input interface{}) (*resty.Response, error) {
 	return e.client.R().
 		SetContext(ctx).
 		SetQueryParam(e.prefixShort+"-from", signingKey).
 		SetQueryParam(e.prefixShort+"-sync", "false").
 		SetQueryParam(e.prefixShort+"-id", requestID).
 		SetBody(input).
-		SetResult(output).
-		Post(e.instancePath + "/" + method)
+		Post(contractPath + "/" + method)
+}
+
+func (e *Ethereum) queryContractMethod(ctx context.Context, contractPath, method string, input interface{}) (*resty.Response, error) {
+	return e.client.R().
+		SetContext(ctx).
+		SetQueryParam(e.prefixShort+"-call", "true").
+		SetBody(input).
+		Post(contractPath + "/" + method)
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
-	tx := &asyncTXSubmission{}
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -382,12 +447,147 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		Namespace:  batch.Namespace,
 		UUIDs:      ethHexFormatB32(&uuids),
 		BatchHash:  ethHexFormatB32(batch.BatchHash),
-		PayloadRef: batch.BatchPaylodRef,
+		PayloadRef: batch.BatchPayloadRef,
 		Contexts:   ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, "pinBatch", signingKey, operationID.String(), input, tx)
+	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", signingKey, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return nil
+}
+
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+	contractAddress, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	res, err := e.invokeContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, signingKey, operationID.String(), input)
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	tx := &asyncTXSubmission{}
+	if err = json.Unmarshal(res.Body(), tx); err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+	contractAddress, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	res, err := e.queryContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, input)
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	output := &queryOutput{}
+	if err = json.Unmarshal(res.Body(), output); err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
+func (e *Ethereum) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
+	_, err = parseContractLocation(ctx, location)
+	return
+}
+
+func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
+	ethLocation := Location{}
+	if err := json.Unmarshal(location.Bytes(), &ethLocation); err != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
+	}
+	if ethLocation.Address == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'address' not set")
+	}
+	return &ethLocation, nil
+}
+
+func parseParamDetails(ctx context.Context, details *fftypes.JSONAny) (*paramDetails, error) {
+	ethParam := paramDetails{}
+	if err := json.Unmarshal(details.Bytes(), &ethParam); err != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, err)
+	}
+	if ethParam.Type == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, "'type' not set")
+	}
+	return &ethParam, nil
+}
+
+var intRegex, _ = regexp.Compile("^u?int([0-9]{1,3})$")
+
+func (e *Ethereum) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
+	paramDetails, err := parseParamDetails(ctx, param.Details)
+	if err != nil {
+		return err
+	}
+	return e.validateParamInternal(ctx, param, paramDetails)
+}
+
+func (e *Ethereum) validateParamInternal(ctx context.Context, param *fftypes.FFIParam, paramDetails *paramDetails) error {
+	switch {
+	case len(param.Components) > 0:
+		// struct
+		if strings.HasPrefix(paramDetails.Type, "struct ") {
+			for _, childParam := range param.Components {
+				if err := e.ValidateFFIParam(ctx, childParam); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	case strings.HasPrefix(param.Type, "byte"):
+		// byte (array)
+		if param.Type == paramDetails.Type {
+			return nil
+		}
+		if paramDetails.Type == "byte[]" || strings.HasPrefix(paramDetails.Type, "bytes") {
+			return nil
+		}
+	case strings.HasSuffix(param.Type, "[]"):
+		// array
+		if strings.Count(param.Type, "[]") == strings.Count(paramDetails.Type, "[]") {
+			param.Type = strings.TrimSuffix(param.Type, "[]")
+			paramDetails.Type = strings.TrimSuffix(paramDetails.Type, "[]")
+			return e.validateParamInternal(ctx, param, paramDetails)
+		}
+	case param.Type == "integer":
+		// integer
+		matches := intRegex.FindStringSubmatch(paramDetails.Type)
+		if len(matches) == 2 {
+			i, err := strconv.ParseInt(matches[1], 10, 0)
+			if err == nil && i >= 8 && i <= 256 && i%8 == 0 {
+				return nil
+			}
+		}
+	case param.Type == "string":
+		// string
+		if paramDetails.Type == "string" || paramDetails.Type == "address" {
+			return nil
+		}
+	case param.Type == "boolean":
+		if paramDetails.Type == "bool" {
+			return nil
+		}
+	}
+	return i18n.NewError(ctx, i18n.MsgContractInternalType, param.Name, param.Type, paramDetails.Type)
+}
+
+func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+	location, err := parseContractLocation(ctx, subscription.Location)
+	if err != nil {
+		return err
+	}
+	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subscription.Event.FFIEventDefinition)
+	if err != nil {
+		return err
+	}
+	subscription.ProtocolID = result.ID
+	return nil
+}
+
+func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+	return e.streams.deleteSubscription(ctx, subscription.ProtocolID)
 }

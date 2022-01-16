@@ -62,7 +62,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
@@ -98,7 +98,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
@@ -132,7 +132,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
@@ -161,7 +161,7 @@ func TestSubmitPinnedBatchTxInsertFail(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.Regexp(t, "pop", err)

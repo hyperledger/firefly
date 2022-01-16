@@ -38,13 +38,13 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
@@ -74,13 +74,13 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
@@ -109,13 +109,13 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -136,13 +136,13 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
@@ -167,7 +167,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 
@@ -189,13 +189,13 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
@@ -224,13 +224,13 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
@@ -259,13 +259,13 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
+		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdm := dh.data.(*datamocks.Manager)

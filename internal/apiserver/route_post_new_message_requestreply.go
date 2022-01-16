@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,7 +41,7 @@ var postNewMessageRequestReply = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.RequestReply(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
+		output, err = getOr(r.Ctx).RequestReply(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
 		return output, err
 	},
 }

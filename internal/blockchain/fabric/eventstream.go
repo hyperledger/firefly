@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,11 +26,8 @@ import (
 )
 
 type streamManager struct {
-	ctx            context.Context
-	client         *resty.Client
-	defaultChannel string
-	chaincode      string
-	signer         string
+	client *resty.Client
+	signer string
 }
 
 type eventStream struct {
@@ -41,11 +38,12 @@ type eventStream struct {
 	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
 	Type           string               `json:"type"`
 	WebSocket      eventStreamWebsocket `json:"websocket"`
+	Timestamps     bool                 `json:"timestamps"`
 }
 
 type subscription struct {
 	ID        string      `json:"id"`
-	Name      string      `json:"name"`
+	Name      string      `json:"name,omitempty"`
 	Channel   string      `json:"channel"`
 	Signer    string      `json:"signer"`
 	Stream    string      `json:"stream"`
@@ -53,18 +51,23 @@ type subscription struct {
 	Filter    eventFilter `json:"filter"`
 }
 
-func (s *streamManager) getEventStreams() (streams []*eventStream, err error) {
+type eventFilter struct {
+	ChaincodeID string `json:"chaincodeId"`
+	EventFilter string `json:"eventFilter"`
+}
+
+func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return streams, nil
 }
 
-func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+func (s *streamManager) createEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
 	stream := eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",
@@ -72,20 +75,21 @@ func (s *streamManager) createEventStream(topic string, batchSize, batchTimeout 
 		BatchTimeoutMS: batchTimeout,
 		Type:           "websocket",
 		WebSocket:      eventStreamWebsocket{Topic: topic},
+		Timestamps:     true,
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&stream).
 		SetResult(&stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return &stream, nil
 }
 
-func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout uint) (*eventStream, error) {
-	existingStreams, err := s.getEventStreams()
+func (s *streamManager) ensureEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint) (*eventStream, error) {
+	existingStreams, err := s.getEventStreams(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -94,66 +98,72 @@ func (s *streamManager) ensureEventStream(topic string, batchSize, batchTimeout 
 			return stream, nil
 		}
 	}
-	return s.createEventStream(topic, batchSize, batchTimeout)
+	return s.createEventStream(ctx, topic, batchSize, batchTimeout)
 }
 
-func (s *streamManager) getSubscriptions() (subs []*subscription, err error) {
+func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscription, err error) {
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(name, stream, event string) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event string) (*subscription, error) {
 	sub := subscription{
 		Name:    name,
-		Channel: s.defaultChannel,
+		Channel: location.Channel,
 		Signer:  s.signer,
 		Stream:  stream,
 		Filter: eventFilter{
-			ChaincodeID: s.chaincode,
+			ChaincodeID: location.Chaincode,
 			EventFilter: event,
 		},
 		FromBlock: "0",
 	}
 	res, err := s.client.R().
-		SetContext(s.ctx).
+		SetContext(ctx).
 		SetBody(&sub).
 		SetResult(&sub).
 		Post("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(s.ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return &sub, nil
 }
 
-func (s *streamManager) ensureSubscriptions(stream string, subscriptions []string) (subs []*subscription, err error) {
-	existingSubs, err := s.getSubscriptions()
+func (s *streamManager) deleteSubscription(ctx context.Context, subID string) error {
+	res, err := s.client.R().
+		SetContext(ctx).
+		Delete("/subscriptions/" + subID)
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
+	}
+	return nil
+}
+
+func (s *streamManager) ensureSubscription(ctx context.Context, location *Location, stream, event string) (sub *subscription, err error) {
+	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, eventType := range subscriptions {
-		var sub *subscription
-		for _, s := range existingSubs {
-			if s.Name == eventType {
-				sub = s
-			}
+	subName := event
+	for _, s := range existingSubs {
+		if s.Name == subName {
+			sub = s
 		}
-
-		if sub == nil {
-			if sub, err = s.createSubscription(eventType, stream, eventType); err != nil {
-				return nil, err
-			}
-		}
-
-		log.L(s.ctx).Infof("%s subscription: %s", eventType, sub.ID)
-		subs = append(subs, sub)
-
 	}
-	return subs, nil
+
+	if sub == nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, event); err != nil {
+			return nil, err
+		}
+	}
+
+	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
+	return sub, nil
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -130,14 +131,18 @@ func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes
 	}
 }
 
-func beforeE2ETest(t *testing.T) *testState {
+func readStackFile(t *testing.T) *Stack {
 	stackFile := os.Getenv("STACK_FILE")
 	if stackFile == "" {
 		t.Fatal("STACK_FILE must be set")
 	}
-
 	stack, err := ReadStack(stackFile)
 	assert.NoError(t, err)
+	return stack
+}
+
+func beforeE2ETest(t *testing.T) *testState {
+	stack := readStackFile(t)
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
@@ -207,7 +212,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		time.Sleep(3 * time.Second)
 	}
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
 
 	wsUrl1 := url.URL{
@@ -226,6 +231,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Websocket 1: " + wsUrl1.String())
 	t.Logf("Websocket 2: " + wsUrl2.String())
 
+	var err error
 	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
 	if err != nil {
 		t.Logf(err.Error())
@@ -241,17 +247,6 @@ func beforeE2ETest(t *testing.T) *testState {
 		t.Log("WebSockets closed")
 	}
 	return ts
-}
-
-func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgType fftypes.MessageType) *fftypes.EventDelivery {
-	for {
-		ed := <-c
-		if ed.Type == fftypes.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
-			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
-			return ed
-		}
-		t.Logf("Ignored event '%s'", ed.ID)
-	}
 }
 
 func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
@@ -287,4 +282,107 @@ func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, 
 		}
 	}()
 	return events, changeEvents
+}
+
+func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, ref *fftypes.UUID) {
+	for {
+		eventDelivery := <-c
+		if eventDelivery.Type == eventType && (ref == nil || *ref == *eventDelivery.Reference) {
+			return
+		}
+	}
+}
+
+func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgType fftypes.MessageType) *fftypes.EventDelivery {
+	for {
+		ed := <-c
+		if ed.Type == fftypes.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
+			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
+			return ed
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
+}
+
+func waitForChangeEvent(t *testing.T, client *resty.Client, c chan *fftypes.ChangeEvent, match map[string]interface{}) map[string]interface{} {
+	for {
+		changeEvent := <-c
+		if changeEvent.Collection == "events" || changeEvent.Collection == "contractevents" {
+			event, err := GetChangeEvent(t, client, changeEvent)
+			if err != nil {
+				t.Logf("WARN: unable to get changeEvent: %v", err.Error())
+				continue
+			}
+			eventJSON, ok := event.(map[string]interface{})
+			if !ok {
+				t.Logf("WARN: unable to parse changeEvent: %v", event)
+				continue
+			}
+			if checkObject(t, match, eventJSON) {
+				return eventJSON
+			}
+		}
+	}
+}
+
+func waitForContractEvent(t *testing.T, client *resty.Client, c chan *fftypes.EventDelivery, match map[string]interface{}) map[string]interface{} {
+	for {
+		eventDelivery := <-c
+		if eventDelivery.Type == fftypes.EventTypeBlockchainEvent {
+			event, err := GetContractEvent(t, client, eventDelivery.Event.Reference.String())
+			if err != nil {
+				t.Logf("WARN: unable to get event: %v", err.Error())
+				continue
+			}
+			eventJSON, ok := event.(map[string]interface{})
+			if !ok {
+				t.Logf("WARN: unable to parse changeEvent: %v", event)
+				continue
+			}
+			if checkObject(t, match, eventJSON) {
+				return eventJSON
+			}
+		}
+	}
+}
+
+func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
+	match := true
+
+	// check if this is a nested object
+	expectedObject, expectedIsObject := expected.(map[string]interface{})
+	actualObject, actualIsObject := actual.(map[string]interface{})
+
+	t.Logf("Matching blockchain event: %s", fftypes.JSONObject(actualObject).String())
+
+	// check if this is an array
+	expectedArray, expectedIsArray := expected.([]interface{})
+	actualArray, actualIsArray := actual.([]interface{})
+	switch {
+	case expectedIsObject && actualIsObject:
+		for expectedKey, expectedValue := range expectedObject {
+			if !checkObject(t, expectedValue, actualObject[expectedKey]) {
+				return false
+			}
+		}
+	case expectedIsArray && actualIsArray:
+		for _, expectedItem := range expectedArray {
+			for j, actualItem := range actualArray {
+				if checkObject(t, expectedItem, actualItem) {
+					break
+				}
+				if j == len(actualArray)-1 {
+					return false
+				}
+			}
+		}
+	default:
+		expectedString, expectedIsString := expected.(string)
+		actualString, actualIsString := expected.(string)
+		if expectedIsString && actualIsString {
+			return strings.ToLower(expectedString) == strings.ToLower(actualString)
+		}
+		return expected == actual
+	}
+	return match
 }

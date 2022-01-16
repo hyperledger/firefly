@@ -65,8 +65,8 @@ func TestGetChartHistogramSuccess(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	startTime, _ := fftypes.ParseString("1234567890")
-	endtime, _ := fftypes.ParseString("1234567891")
+	startTime, _ := fftypes.ParseTimeString("1234567890")
+	endtime, _ := fftypes.ParseTimeString("1234567891")
 
 	o.On("GetChartHistogram", mock.Anything, "mynamespace", startTime.UnixNano(), endtime.UnixNano(), int64(30), database.CollectionName("test")).
 		Return([]*fftypes.ChartHistogram{}, nil)

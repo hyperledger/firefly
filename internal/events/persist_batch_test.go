@@ -48,7 +48,7 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 	assert.NoError(t, err)
 	data := &fftypes.Data{
 		ID:        fftypes.NewUUID(),
-		Value:     orgBytes,
+		Value:     fftypes.JSONAnyPtrBytes(orgBytes),
 		Validator: fftypes.MessageTypeDefinition,
 	}
 
@@ -103,7 +103,7 @@ func TestPersistBatchFromBroadcastRootOrgBadData(t *testing.T) {
 
 	data := &fftypes.Data{
 		ID:        fftypes.NewUUID(),
-		Value:     []byte("!badness"),
+		Value:     fftypes.JSONAnyPtr("!badness"),
 		Validator: fftypes.MessageTypeDefinition,
 	}
 

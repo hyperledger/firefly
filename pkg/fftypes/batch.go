@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -73,4 +73,23 @@ func (ma *BatchPayload) Scan(src interface{}) error {
 		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, ma)
 	}
 
+}
+
+func (b *Batch) Manifest() *Manifest {
+	if b == nil {
+		return nil
+	}
+	tm := &Manifest{
+		Messages: make([]MessageRef, len(b.Payload.Messages)),
+		Data:     make([]DataRef, len(b.Payload.Data)),
+	}
+	for i, m := range b.Payload.Messages {
+		tm.Messages[i].ID = m.Header.ID
+		tm.Messages[i].Hash = m.Hash
+	}
+	for i, d := range b.Payload.Data {
+		tm.Data[i].ID = d.ID
+		tm.Data[i].Hash = d.Hash
+	}
+	return tm
 }

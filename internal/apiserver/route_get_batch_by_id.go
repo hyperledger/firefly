@@ -40,7 +40,7 @@ var getBatchByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetBatchByID(r.Ctx, r.PP["ns"], r.PP["batchid"])
+		output, err = getOr(r.Ctx).GetBatchByID(r.Ctx, r.PP["ns"], r.PP["batchid"])
 		return output, err
 	},
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,12 +33,12 @@ var postResetConfig = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Byteable{} },
+	JSONInputValue:  func() interface{} { return fftypes.JSONAnyPtr("{}") },
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},
 	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		r.Or.ResetConfig(r.Ctx)
+		getOr(r.Ctx).ResetConfig(r.Ctx)
 		return nil, nil
 	},
 }

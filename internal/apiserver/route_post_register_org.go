@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -38,7 +38,7 @@ var postRegisterOrg = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		// This (old) route is always async, and returns the message
-		output, err = r.Or.NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization), false)
+		output, err = getOr(r.Ctx).NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization), false)
 		return output, err
 	},
 	Deprecated: true, // moving to more intutitive route/return structure

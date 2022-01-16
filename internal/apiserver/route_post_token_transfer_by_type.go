@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,7 +47,7 @@ var postTokenTransferByType = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().TransferTokensByType(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
+		return getOr(r.Ctx).Assets().TransferTokensByType(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
 	},
 	Deprecated: true,
 }

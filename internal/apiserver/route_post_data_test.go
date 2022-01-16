@@ -108,7 +108,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
-		assert.Equal(t, `{"filename":"anything"}`, string(d.Value))
+		assert.Equal(t, `{"filename":"anything"}`, string(*d.Value))
 		assert.Equal(t, fftypes.ValidatorTypeJSON, d.Validator)
 		assert.Equal(t, "fileinfo", d.Datatype.Name)
 		assert.Equal(t, "0.0.1", d.Datatype.Version)
@@ -142,7 +142,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
-		assert.Equal(t, `"string metadata"`, string(d.Value))
+		assert.Equal(t, `"string metadata"`, string(*d.Value))
 		assert.Equal(t, "", string(d.Validator))
 		assert.Nil(t, d.Datatype)
 		return true

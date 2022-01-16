@@ -41,7 +41,7 @@ func TestGetConfigRecord(t *testing.T) {
 	o.On("GetConfigRecord", mock.Anything, u.String()).
 		Return(&fftypes.ConfigRecord{
 			Key:   u.String(),
-			Value: fftypes.Byteable(`{"foo": "bar"}`),
+			Value: fftypes.JSONAnyPtr(`{"foo": "bar"}`),
 		}, nil)
 	r.ServeHTTP(res, req)
 

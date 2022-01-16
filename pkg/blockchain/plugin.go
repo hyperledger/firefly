@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -46,6 +46,22 @@ type Plugin interface {
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
+
+	// InvokeContract submits a new transaction to be executed by custom on-chain logic
+	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error)
+
+	// QueryContract executes a method via custom on-chain logic and returns the result
+	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error)
+
+	ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) error
+
+	ValidateFFIParam(ctx context.Context, method *fftypes.FFIParam) error
+
+	// AddSubscription adds a new subscription to a user-specified contract and event
+	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
+
+	// DeleteSubscription deletes a previously-created subscription
+	DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -65,12 +81,12 @@ type Callbacks interface {
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
-	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
-	// For example a padded block number, followed by a padded transaction index within that block.
-	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
 	//
 	// Error should will only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	BatchPinComplete(batch *BatchPin, signingIdentity string) error
+
+	// ContractEvent notifies on the arrival of any event from a user-created subscription
+	ContractEvent(event *ContractEvent) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -100,8 +116,8 @@ type BatchPin struct {
 	// BatchHash is the SHA256 hash of the batch
 	BatchHash *fftypes.Bytes32
 
-	// BatchPaylodRef is a string that can be passed to to the storage interface to retrieve the payload. Nil for private messages
-	BatchPaylodRef string
+	// BatchPayloadRef is a string that can be passed to to the storage interface to retrieve the payload. Nil for private messages
+	BatchPayloadRef string
 
 	// Contexts is an array of hashes that allow the FireFly runtimes to identify whether one of the messgages in
 	// that batch is the next message for a sequence that involves that node. If so that means the FireFly runtime must
@@ -110,7 +126,7 @@ type BatchPin struct {
 	// - The context is a function of:
 	//   - A single topic declared in a message - topics are just a string representing a sequence of events that must be processed in order
 	//   - A ledger - everone with access to this ledger will see these hashes (Fabric channel, Ethereum chain, EEA privacy group, Corda linear ID)
-	//   - A restricted group - if the mesage is private, these are the nodes that are elible to receive a copy of the private message+data
+	//   - A restricted group - if the mesage is private, these are the nodes that are eligible to receive a copy of the private message+data
 	// - Each message might choose to include multiple topics (and hence attach to multiple contexts)
 	//   - This allows multiple contexts to merge - very important in multi-party data matching scenarios
 	// - A batch contains many messages, each with one or more topics
@@ -118,7 +134,37 @@ type BatchPin struct {
 	// - For private group communications, the hash is augmented as follow:
 	//   - The hashes are salted with a UUID that is only passed off chain (the UUID of the Group).
 	//   - The hashes are made unique to the sender
-	//   - The hashes contain a sender specific nonce that is a monotomically increasing number
+	//   - The hashes contain a sender specific nonce that is a monotonically increasing number
 	//     for batches sent by that sender, within the context (maintined by the sender FireFly node)
 	Contexts []*fftypes.Bytes32
+
+	// Event contains info on the underlying blockchain event for this batch pin
+	Event Event
+}
+
+type Event struct {
+	// Source indicates where the event originated (ie plugin name)
+	Source string
+
+	// Name is a short name for the event
+	Name string
+
+	// ProtocolID is a protocol-specific identifier for the event
+	ProtocolID string
+
+	// Output is the raw output data from the event
+	Output fftypes.JSONObject
+
+	// Info is any additional blockchain info for the event (transaction hash, block number, etc)
+	Info fftypes.JSONObject
+
+	// Timestamp is the time the event was emitted from the blockchain
+	Timestamp *fftypes.FFTime
+}
+
+type ContractEvent struct {
+	Event
+
+	// Subscription is the ID assigned to a custom contract subscription by the connector
+	Subscription string
 }

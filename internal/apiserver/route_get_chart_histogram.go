@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -46,11 +46,11 @@ var getChartHistogram = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.ChartHistogram{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		startTime, err := fftypes.ParseString(r.QP["startTime"])
+		startTime, err := fftypes.ParseTimeString(r.QP["startTime"])
 		if err != nil {
 			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "startTime")
 		}
-		endTime, err := fftypes.ParseString(r.QP["endTime"])
+		endTime, err := fftypes.ParseTimeString(r.QP["endTime"])
 		if err != nil {
 			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "endTime")
 		}
@@ -58,6 +58,6 @@ var getChartHistogram = &oapispec.Route{
 		if err != nil {
 			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "buckets")
 		}
-		return r.Or.GetChartHistogram(r.Ctx, r.PP["ns"], startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
+		return getOr(r.Ctx).GetChartHistogram(r.Ctx, r.PP["ns"], startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
 	},
 }

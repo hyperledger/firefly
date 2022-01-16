@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,6 +40,6 @@ var getTxnOps = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &[]*fftypes.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetTransactionOperations(r.Ctx, r.PP["ns"], r.PP["txnid"]))
+		return filterResult(getOr(r.Ctx).GetTransactionOperations(r.Ctx, r.PP["ns"], r.PP["txnid"]))
 	},
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,7 +48,7 @@ func TestBroadcastDatatypeNSGetFail(t *testing.T) {
 		Name:      "name1",
 		Namespace: "ns1",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(`{}`),
+		Value:     fftypes.JSONAnyPtr(`{}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
 }
@@ -65,7 +65,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(`!unparsable`),
+		Value:     fftypes.JSONAnyPtr(`!unparsable`),
 	}, false)
 	assert.Regexp(t, "FF10137.*value", err)
 }
@@ -86,7 +86,7 @@ func TestBroadcastUpsertFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(`{"some": "data"}`),
+		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
 }
@@ -107,7 +107,7 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(`{"some": "data"}`),
+		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
 }
@@ -129,7 +129,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(`{"some": "data"}`),
+		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
 }
@@ -151,7 +151,7 @@ func TestBroadcastOk(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value:     fftypes.Byteable(`{"some": "data"}`),
+		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.NoError(t, err)
 }

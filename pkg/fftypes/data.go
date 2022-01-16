@@ -28,6 +28,8 @@ import (
 type DataRef struct {
 	ID   *UUID    `json:"id,omitempty"`
 	Hash *Bytes32 `json:"hash,omitempty"`
+
+	ValueSize int64 `json:"-"` // used internally for message size calculation, without full payload retrieval
 }
 
 type BlobRef struct {
@@ -44,8 +46,10 @@ type Data struct {
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value"`
+	Value     *JSONAny      `json:"value"`
 	Blob      *BlobRef      `json:"blob,omitempty"`
+
+	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
 }
 
 type DataAndBlob struct {
@@ -60,7 +64,7 @@ type DatatypeRef struct {
 
 func (dr *DatatypeRef) String() string {
 	if dr == nil {
-		return nullString
+		return NullString
 	}
 	return fmt.Sprintf("%s/%s", dr.Name, dr.Version)
 }
@@ -82,11 +86,19 @@ func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
 	}
 }
 
+const dataSizeEstimateBase = int64(256)
+
+func (d *Data) EstimateSize() int64 {
+	// For now we have a static estimate for the size of the serialized outer structure.
+	// As long as this has been persisted, the value size will represent the length
+	return dataSizeEstimateBase + d.ValueSize
+}
+
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	if d.Value == nil {
-		d.Value = Byteable(nullString)
+		d.Value = JSONAnyPtr(NullString)
 	}
-	valueIsNull := d.Value.String() == nullString
+	valueIsNull := d.Value.String() == NullString
 	if valueIsNull && (d.Blob == nil || d.Blob.Hash == nil) {
 		return nil, i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}

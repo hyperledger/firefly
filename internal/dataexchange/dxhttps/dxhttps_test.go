@@ -408,27 +408,33 @@ func TestEvents(t *testing.T) {
 
 	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
+		return "pop" == ts.Error
+	})).Return(nil)
 	fromServer <- `{"type":"message-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
-	fromServer <- `{"type":"message-delivered","requestID":"tx12345"}`
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
+		return ts.Manifest == `{"manifest":true}` && ts.Info == `{"signatures":"and stuff"}`
+	})).Return(nil)
+	fromServer <- `{"type":"message-delivered","requestID":"tx12345","info":"{\"signatures\":\"and stuff\"}","manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("MessageReceived", "peer1", []byte("message1")).Return(nil)
+	mcb.On("MessageReceived", "peer1", []byte("message1")).Return(`{"manifest":true}`, nil)
 	fromServer <- `{"type":"message-received","sender":"peer1","message":"message1"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"commit","manifest":"{\"manifest\":true}"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
+		return "pop" == ts.Error
+	})).Return(nil)
 	fromServer <- `{"type":"blob-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.Anything).Return(nil)
 	fromServer <- `{"type":"blob-delivered","requestID":"tx12345"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))

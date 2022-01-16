@@ -36,7 +36,7 @@ var getConfig = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.JSONObject{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output = r.Or.GetConfig(r.Ctx)
+		output = getOr(r.Ctx).GetConfig(r.Ctx)
 		return output, nil
 	},
 }

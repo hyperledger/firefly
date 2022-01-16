@@ -41,6 +41,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 		processorQuiescing: func() {},
 		Options: Options{
 			BatchMaxSize:   10,
+			BatchMaxBytes:  1024 * 1024,
 			BatchTimeout:   10 * time.Millisecond,
 			DisposeTimeout: 20 * time.Millisecond,
 		},
@@ -76,9 +77,9 @@ func TestUnfilledBatch(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 
-	// Generate the work the work
+	// Generate the work
 	work := make([]*batchWork, 5)
-	for i := 0; i < 5; i++ {
+	for i := 0; i < len(work); i++ {
 		msgid := fftypes.NewUUID()
 		work[i] = &batchWork{
 			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
@@ -88,14 +89,14 @@ func TestUnfilledBatch(t *testing.T) {
 
 	// Kick off a go routine to consume the confirmations
 	go func() {
-		for i := 0; i < 5; i++ {
+		for i := 0; i < len(work); i++ {
 			<-work[i].dispatched
 		}
 		wg.Done()
 	}()
 
 	// Dispatch the work
-	for i := 0; i < 5; i++ {
+	for i := 0; i < len(work); i++ {
 		bp.newWork <- work[i]
 	}
 
@@ -103,7 +104,60 @@ func TestUnfilledBatch(t *testing.T) {
 	wg.Wait()
 
 	// Check we got all the messages in a single batch
-	assert.Equal(t, len(dispatched[0].Payload.Messages), 5)
+	assert.Equal(t, len(dispatched[0].Payload.Messages), len(work))
+
+	bp.close()
+	bp.waitClosed()
+
+}
+
+func TestBatchSizeOverflow(t *testing.T) {
+	log.SetLevel("debug")
+
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+
+	dispatched := []*fftypes.Batch{}
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		dispatched = append(dispatched, b)
+		wg.Done()
+		return nil
+	})
+	bp.conf.BatchMaxBytes = 1
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
+
+	// Generate the work
+	work := make([]*batchWork, 2)
+	for i := 0; i < 2; i++ {
+		msgid := fftypes.NewUUID()
+		work[i] = &batchWork{
+			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
+			dispatched: make(chan *batchDispatch),
+		}
+	}
+
+	// Kick off a go routine to consume the confirmations
+	go func() {
+		for i := 0; i < len(work); i++ {
+			<-work[i].dispatched
+		}
+		wg.Done()
+	}()
+
+	// Dispatch the work
+	for i := 0; i < len(work); i++ {
+		bp.newWork <- work[i]
+	}
+
+	// Wait for the confirmations, and the dispatch
+	wg.Wait()
+
+	// Check we got all messages across two batches
+	assert.Equal(t, len(dispatched[0].Payload.Messages), 1)
+	assert.Equal(t, len(dispatched[1].Payload.Messages), 1)
 
 	bp.close()
 	bp.waitClosed()
@@ -131,7 +185,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	// Generate the work the work
+	// Generate the work
 	work := make([]*batchWork, 10)
 	for i := 0; i < 10; i++ {
 		msgid := fftypes.NewUUID()
@@ -205,7 +259,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 		<-waitForCall
 	}
 
-	// Generate the work the work
+	// Generate the work
 	msgid := fftypes.NewUUID()
 	work := &batchWork{
 		msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},

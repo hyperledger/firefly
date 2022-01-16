@@ -884,7 +884,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 				},
 			},
 			InlineData: fftypes.InlineData{
-				{Value: fftypes.Byteable(`"my reply"`)},
+				{Value: fftypes.JSONAnyPtr(`"my reply"`)},
 			},
 		},
 	})
@@ -900,7 +900,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 				},
 			},
 			InlineData: fftypes.InlineData{
-				{Value: fftypes.Byteable(`"my reply"`)},
+				{Value: fftypes.JSONAnyPtr(`"my reply"`)},
 			},
 		},
 	})

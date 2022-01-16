@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,7 +40,7 @@ var getSubscriptionByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetSubscriptionByID(r.Ctx, r.PP["ns"], r.PP["subid"])
+		output, err = getOr(r.Ctx).GetSubscriptionByID(r.Ctx, r.PP["ns"], r.PP["subid"])
 		return output, err
 	},
 }

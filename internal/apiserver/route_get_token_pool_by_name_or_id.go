@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,11 +27,11 @@ import (
 
 var getTokenPoolByNameOrID = &oapispec.Route{
 	Name:   "getTokenPoolByNameOrID",
-	Path:   "namespaces/{ns}/tokens/pools/{nameOrID}",
+	Path:   "namespaces/{ns}/tokens/pools/{nameOrId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "nameOrID", Description: i18n.MsgTBD},
+		{Name: "nameOrId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -40,7 +40,7 @@ var getTokenPoolByNameOrID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Assets().GetTokenPoolByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrID"])
+		output, err = getOr(r.Ctx).Assets().GetTokenPoolByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrId"])
 		return output, err
 	},
 }

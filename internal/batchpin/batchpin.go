@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -49,18 +49,13 @@ func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain
 
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 	tx := &fftypes.Transaction{
-		ID: batch.Payload.TX.ID,
-		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypeBatchPin,
-			Namespace: batch.Namespace,
-			Signer:    batch.Key, // The transaction records on the on-chain identity
-			Reference: batch.ID,
-		},
-		Created: fftypes.Now(),
-		Status:  fftypes.OpStatusPending,
+		ID:        batch.Payload.TX.ID,
+		Type:      fftypes.TransactionTypeBatchPin,
+		Namespace: batch.Namespace,
+		Created:   fftypes.Now(),
+		Status:    fftypes.OpStatusPending,
 	}
-	tx.Hash = tx.Subject.Hash()
-	err := bp.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+	err := bp.database.UpsertTransaction(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -83,11 +78,11 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	}
 	// Write the batch pin to the blockchain
 	return bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
-		Namespace:      batch.Namespace,
-		TransactionID:  batch.Payload.TX.ID,
-		BatchID:        batch.ID,
-		BatchHash:      batch.Hash,
-		BatchPaylodRef: batch.PayloadRef,
-		Contexts:       contexts,
+		Namespace:       batch.Namespace,
+		TransactionID:   batch.Payload.TX.ID,
+		BatchID:         batch.ID,
+		BatchHash:       batch.Hash,
+		BatchPayloadRef: batch.PayloadRef,
+		Contexts:        contexts,
 	})
 }

@@ -159,15 +159,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
-	// Check just getting hte refs
-	msgRefs, res, err := s.GetMessageRefs(ctx, filter.Count(true))
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(msgs))
-	assert.Equal(t, int64(1), *res.TotalCount)
-	assert.Equal(t, msgUpdated.Header.ID, msgRefs[0].ID)
-	assert.Equal(t, msgUpdated.Hash, msgRefs[0].Hash)
-	assert.Equal(t, msgUpdated.Sequence, msgRefs[0].Sequence)
-
 	// Check we can get it with a filter on only mesasges with a particular data ref
 	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
@@ -455,31 +446,6 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
 	_, _, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetMessageRefsBuildQueryFail(t *testing.T) {
-	s, _ := newMockProvider().init()
-	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, _, err := s.GetMessageRefs(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
-}
-
-func TestGetMessageRefsQueryFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetMessageRefs(context.Background(), f)
-	assert.Regexp(t, "FF10115", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetMessageRefsReadMessageFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetMessageRefs(context.Background(), f)
-	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

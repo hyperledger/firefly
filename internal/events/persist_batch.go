@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -73,7 +73,7 @@ func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
 					if batchDataItem.ID.Equals(messageDataItem.ID) {
 						if batchDataItem.Validator == fftypes.MessageTypeDefinition {
 							var org *fftypes.Organization
-							err := json.Unmarshal(batchDataItem.Value, &org)
+							err := json.Unmarshal(batchDataItem.Value.Bytes(), &org)
 							if err != nil {
 								return false
 							}

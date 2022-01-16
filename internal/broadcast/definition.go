@@ -55,8 +55,9 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 		Namespace: ns,
 		Created:   fftypes.Now(),
 	}
-	data.Value, err = json.Marshal(&def)
+	b, err := json.Marshal(&def)
 	if err == nil {
+		data.Value = fftypes.JSONAnyPtrBytes(b)
 		err = data.Seal(ctx, nil)
 	}
 	if err != nil {

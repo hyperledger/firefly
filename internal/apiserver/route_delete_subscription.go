@@ -40,7 +40,7 @@ var deleteSubscription = &oapispec.Route{
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = r.Or.DeleteSubscription(r.Ctx, r.PP["ns"], r.PP["subid"])
+		err = getOr(r.Ctx).DeleteSubscription(r.Ctx, r.PP["ns"], r.PP["subid"])
 		return nil, err
 	},
 }

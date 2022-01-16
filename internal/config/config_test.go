@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -205,22 +205,22 @@ func TestSetupLogging(t *testing.T) {
 
 func TestMergeConfigOk(t *testing.T) {
 
-	conf1 := fftypes.Byteable(`{
+	conf1 := fftypes.JSONAnyPtr(`{
 		"some":  {
 			"nested": {
 				"stuff": "value1"
 			}
 		}
 	}`)
-	confNumber := fftypes.Byteable(`{
+	confNumber := fftypes.JSONAnyPtr(`{
 		"some":  {
 			"more": {
 				"stuff": 15
 			}
 		}
 	}`)
-	conf3 := fftypes.Byteable(`"value3"`)
-	confNestedSlice := fftypes.Byteable(`{
+	conf3 := fftypes.JSONAnyPtr(`"value3"`)
+	confNestedSlice := fftypes.JSONAnyPtr(`{
 		"nestedslice": [
 			{
 				"firstitemfirstkey": "firstitemfirstkeyvalue",
@@ -232,7 +232,7 @@ func TestMergeConfigOk(t *testing.T) {
 			}
 		]
 	}`)
-	confBaseSlice := fftypes.Byteable(`[
+	confBaseSlice := fftypes.JSONAnyPtr(`[
 		{
 			"firstitemfirstkey": "firstitemfirstkeyvalue",
 			"firstitemsecondkey": "firstitemsecondkeyvalue"
@@ -267,7 +267,7 @@ func TestMergeConfigOk(t *testing.T) {
 
 func TestMergeConfigBadJSON(t *testing.T) {
 	err := MergeConfig([]*fftypes.ConfigRecord{
-		{Key: "base", Value: fftypes.Byteable(`!json`)},
+		{Key: "base", Value: fftypes.JSONAnyPtr(`!json`)},
 	})
 	assert.Error(t, err)
 }

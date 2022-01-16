@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -15,11 +15,6 @@
 // limitations under the License.
 
 package fftypes
-
-import (
-	"crypto/sha256"
-	"encoding/json"
-)
 
 type TransactionType = FFEnum
 
@@ -40,29 +35,13 @@ type TransactionRef struct {
 	ID   *UUID           `json:"id,omitempty"`
 }
 
-// TransactionSubject is the hashable reason for the transaction was performed
-type TransactionSubject struct {
-	Signer    string          `json:"signer"` // on-chain signing identity
-	Namespace string          `json:"namespace,omitempty"`
-	Type      TransactionType `json:"type" ffenum:"txtype"`
-	Reference *UUID           `json:"reference,omitempty"`
-}
-
-func (t *TransactionSubject) Hash() *Bytes32 {
-	b, _ := json.Marshal(&t)
-	var b32 Bytes32 = sha256.Sum256(b)
-	return &b32
-}
-
 // Transaction represents (blockchain) transactions that were submitted by this
 // node, with the correlation information to look them up on the underlying
 // ledger technology
 type Transaction struct {
-	ID         *UUID              `json:"id,omitempty"`
-	Hash       *Bytes32           `json:"hash"`
-	Subject    TransactionSubject `json:"subject"`
-	Created    *FFTime            `json:"created"`
-	Status     OpStatus           `json:"status"`
-	ProtocolID string             `json:"protocolId,omitempty"`
-	Info       JSONObject         `json:"info,omitempty"`
+	ID        *UUID           `json:"id,omitempty"`
+	Namespace string          `json:"namespace,omitempty"`
+	Type      TransactionType `json:"type" ffenum:"txtype"`
+	Created   *FFTime         `json:"created"`
+	Status    OpStatus        `json:"status"`
 }

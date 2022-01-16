@@ -50,11 +50,11 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 		return err
 	}
 
-	var balance *fftypes.BigInt
+	var balance *fftypes.FFBigInt
 	if account != nil {
 		balance = &account.Balance
 	} else {
-		balance = &fftypes.BigInt{}
+		balance = &fftypes.FFBigInt{}
 	}
 	if negate {
 		balance.Int().Sub(balance.Int(), transfer.Amount.Int())

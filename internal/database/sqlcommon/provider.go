@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,6 +27,18 @@ const (
 	sequenceColumn = "seq"
 )
 
+type SQLFeatures struct {
+	UseILIKE          bool
+	PlaceholderFormat sq.PlaceholderFormat
+}
+
+func DefaultSQLProviderFeatures() SQLFeatures {
+	return SQLFeatures{
+		UseILIKE:          false,
+		PlaceholderFormat: sq.Dollar,
+	}
+}
+
 // Provider defines the interface an individual provider muse implement to customize the SQLCommon implementation
 type Provider interface {
 
@@ -42,8 +54,8 @@ type Provider interface {
 	// GetDriver returns the driver implementation
 	GetMigrationDriver(*sql.DB) (migratedb.Driver, error)
 
-	// PlaceholderFormat gets the Squirrel placeholder format
-	PlaceholderFormat() sq.PlaceholderFormat
+	// Features returns database specific configuration switches
+	Features() SQLFeatures
 
 	// UpdateInsertForSequenceReturn updates the INSERT query for returning the Sequence, and returns whether it needs to be run as a query to return the Sequence field
 	UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (updatedInsert sq.InsertBuilder, runAsQuery bool)

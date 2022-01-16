@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -63,6 +64,7 @@ type testOrchestrator struct {
 	mdx *dataexchangemocks.Plugin
 	mam *assetmocks.Manager
 	mti *tokenmocks.Plugin
+	mcm *contractmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -87,6 +89,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mdx: &dataexchangemocks.Plugin{},
 		mam: &assetmocks.Manager{},
 		mti: &tokenmocks.Plugin{},
+		mcm: &contractmocks.Manager{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -101,6 +104,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.identityPlugin = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
+	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
@@ -110,6 +114,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mdx.On("Name").Return("mock-dx").Maybe()
 	tor.mam.On("Name").Return("mock-am").Maybe()
 	tor.mti.On("Name").Return("mock-tk").Maybe()
+	tor.mcm.On("Name").Return("mock-cm").Maybe()
 	return tor
 }
 
@@ -181,7 +186,7 @@ func TestBadBlockchainPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10110.*wrong", err)
 }
 
-func TestBlockchaiInitFail(t *testing.T) {
+func TestBlockchainInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -192,7 +197,7 @@ func TestBlockchaiInitFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBlockchaiInitGetConfigRecordsFail(t *testing.T) {
+func TestBlockchainInitGetConfigRecordsFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -203,12 +208,12 @@ func TestBlockchaiInitGetConfigRecordsFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBlockchaiInitMergeConfigRecordsFail(t *testing.T) {
+func TestBlockchainInitMergeConfigRecordsFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{
 		{
 			Key:   "pizza.toppings",
-			Value: []byte("cheese, pepperoni, mushrooms"),
+			Value: fftypes.JSONAnyPtr("cheese, pepperoni, mushrooms"),
 		},
 	}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -401,7 +406,7 @@ func TestGoodTokensPlugin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestInitMessagingomponentFail(t *testing.T) {
+func TestInitMessagingComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.messaging = nil
@@ -461,6 +466,14 @@ func TestInitAssetsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.assets = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitContractsComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.contracts = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -591,4 +604,5 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mdm, or.Data())
 	assert.Equal(t, or.mam, or.Assets())
+	assert.Equal(t, or.mcm, or.Contracts())
 }

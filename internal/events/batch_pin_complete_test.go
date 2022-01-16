@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -40,11 +40,15 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	defer cancel()
 
 	batch := &blockchain.BatchPin{
-		Namespace:      "ns1",
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Namespace:       "ns1",
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Event: blockchain.Event{
+			Name:       "BatchPin",
+			ProtocolID: "tx1",
+		},
 	}
 	batchData := &fftypes.Batch{
 		ID:        batch.BatchID,
@@ -53,7 +57,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 			Author: "author1",
 			Key:    "0x12345",
 		},
-		PayloadRef: batch.BatchPaylodRef,
+		PayloadRef: batch.BatchPayloadRef,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -71,7 +75,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -83,16 +87,26 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 			a[1].(func(ctx context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	mdi.On("GetTransactionByID", mock.Anything, batchData.Payload.TX.ID).Return(nil, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == batch.Event.Name
+	})).Return(fmt.Errorf("pop")).Once()
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == batch.Event.Name
+	})).Return(nil).Times(2)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeBlockchainEvent
+	})).Return(nil).Times(2)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil).Once()
 	mbi := &blockchainmocks.Plugin{}
 
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
 
-	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err = em.BatchPinComplete(mbi, batch, "0x12345")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -111,7 +125,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	batchData := &fftypes.Batch{
 		ID:         batch.BatchID,
 		Namespace:  "ns1",
-		PayloadRef: batch.BatchPaylodRef,
+		PayloadRef: batch.BatchPayloadRef,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -127,17 +141,16 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetTransactionByID", mock.Anything, batchData.Payload.TX.ID).Return(nil, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err = em.BatchPinComplete(mbi, batch, "0x12345")
 	assert.NoError(t, err)
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
@@ -153,10 +166,11 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 
 	batch := &blockchain.BatchPin{
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Namespace:       "ns",
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
 	cancel() // to avoid retry
@@ -164,7 +178,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err := em.BatchPinComplete(mbi, batch, "0x12345")
 	mpi.AssertExpectations(t)
 	assert.Regexp(t, "FF10158", err)
 }
@@ -174,10 +188,11 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	defer cancel()
 
 	batch := &blockchain.BatchPin{
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Namespace:       "ns",
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
 
@@ -185,8 +200,33 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	err := em.BatchPinComplete(mbi, batch, "0x12345")
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
+}
+
+func TestBatchPinCompleteNoTX(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &blockchain.BatchPin{}
+	mbi := &blockchainmocks.Plugin{}
+
+	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	assert.NoError(t, err)
+}
+
+func TestBatchPinCompleteBadNamespace(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &blockchain.BatchPin{
+		Namespace:     "!bad",
+		TransactionID: fftypes.NewUUID(),
+	}
+	mbi := &blockchainmocks.Plugin{}
+
+	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	assert.NoError(t, err)
 }
 
 func TestPersistBatchMissingID(t *testing.T) {
@@ -397,7 +437,7 @@ func TestPersistBatchGoodDataUpsertOptimizeExistingFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
+				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},
 	}
@@ -430,7 +470,7 @@ func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
+				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},
 	}
@@ -544,7 +584,7 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:    fftypes.NewUUID(),
-		Value: fftypes.Byteable(`"test"`),
+		Value: fftypes.JSONAnyPtr(`"test"`),
 		Hash:  fftypes.NewRandB32(),
 	}
 	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
@@ -558,7 +598,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -576,7 +616,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -593,7 +633,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
