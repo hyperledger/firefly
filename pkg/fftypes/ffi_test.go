@@ -107,6 +107,12 @@ func TestFFIParamsScan(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestFFIParamsScanString(t *testing.T) {
+	params := &FFIParams{}
+	err := params.Scan(`[{"name": "x", "type": "integer", "internalType": "uint256"}]`)
+	assert.NoError(t, err)
+}
+
 func TestFFIParamsScanNil(t *testing.T) {
 	params := &FFIParams{}
 	err := params.Scan(nil)
@@ -115,7 +121,7 @@ func TestFFIParamsScanNil(t *testing.T) {
 
 func TestFFIParamsScanError(t *testing.T) {
 	params := &FFIParams{}
-	err := params.Scan("definitely not FFIParams")
+	err := params.Scan(map[string]interface{}{"type": "not supported for scanning FFIParams"})
 	assert.Regexp(t, "FF10125", err)
 }
 

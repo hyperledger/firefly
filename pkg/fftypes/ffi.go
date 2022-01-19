@@ -102,6 +102,8 @@ func (m *FFIParams) Scan(src interface{}) error {
 	case nil:
 		m = nil
 		return nil
+	case string:
+		return json.Unmarshal([]byte(src), &m)
 	case []byte:
 		return json.Unmarshal(src, &m)
 	default:
