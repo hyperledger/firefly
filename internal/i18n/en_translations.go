@@ -232,7 +232,7 @@ var (
 	MsgContractSubscriptionExists   = ffm("FF10312", "A contract subscription already exists in the namespace: '%s' with name: '%s'", 409)
 	MsgContractMethodNotSet         = ffm("FF10313", "Method not specified on invoke contract request", 400)
 	MsgContractNoMethodSignature    = ffm("FF10314", "Method signature is required if interfaceID is absent", 400)
-	MsgContractMethodResolveError   = ffm("FF10315", "Unable to resolve contract method", 400)
+	MsgContractMethodResolveError   = ffm("FF10315", "Unable to resolve contract method: %s", 400)
 	MsgContractLocationExists       = ffm("FF10316", "The contract location cannot be changed after it is created", 400)
 	MsgSubscriptionNoEvent          = ffm("FF10317", "An eventId or in-line event definition must be supplied when subscribing", 400)
 	MsgSubscriptionEventNotFound    = ffm("FF10318", "No event was found in namespace '%s' with id '%s'", 400)

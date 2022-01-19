@@ -63,11 +63,14 @@ func (ma *BatchPayload) Scan(src interface{}) error {
 	case nil:
 		return nil
 
-	case string, []byte:
+	case []byte:
+		return json.Unmarshal(src, &ma)
+
+	case string:
 		if src == "" {
 			return nil
 		}
-		return json.Unmarshal(src.([]byte), &ma)
+		return json.Unmarshal([]byte(src), &ma)
 
 	default:
 		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, ma)

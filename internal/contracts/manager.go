@@ -201,7 +201,7 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 
 		method, err = cm.database.GetFFIMethod(ctx, ns, req.Interface, method.Pathname)
 		if err != nil || method == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgContractMethodResolveError)
+			return nil, i18n.NewError(ctx, i18n.MsgContractMethodResolveError, err)
 		}
 	}
 	return method, nil
