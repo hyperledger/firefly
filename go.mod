@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.2
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
+	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/getkin/kin-openapi v0.87.0
 	github.com/ghodss/yaml v1.0.0
