@@ -34,9 +34,15 @@ func TestFFISerializedEventScanNil(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestFFISerializedEventScanString(t *testing.T) {
+	params := &FFISerializedEvent{}
+	err := params.Scan(`{"name":"event1","description":"a super event","params":[{"name":"details","type":"integer","details":{"type":"uint256"}}]}`)
+	assert.NoError(t, err)
+}
+
 func TestFFISerializedEventScanError(t *testing.T) {
 	params := &FFISerializedEvent{}
-	err := params.Scan("definitely not FFISerializedEvent")
+	err := params.Scan(map[string]interface{}{"this is": "not a supported serialization of a FFISerializedEvent"})
 	assert.Regexp(t, "FF10125", err)
 }
 

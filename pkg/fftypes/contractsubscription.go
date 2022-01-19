@@ -50,6 +50,8 @@ func (fse *FFISerializedEvent) Scan(src interface{}) error {
 	case nil:
 		fse = nil
 		return nil
+	case string:
+		return json.Unmarshal([]byte(src), &fse)
 	case []byte:
 		return json.Unmarshal(src, &fse)
 	default:
