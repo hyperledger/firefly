@@ -113,6 +113,7 @@ func TestCreateTokenPool(t *testing.T) {
 		Config: fftypes.JSONObject{
 			"foo": "bar",
 		},
+		Symbol: "symbol",
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
@@ -127,7 +128,9 @@ func TestCreateTokenPool(t *testing.T) {
 				"config": map[string]interface{}{
 					"foo": "bar",
 				},
-				"data": `{"tx":"` + pool.TX.ID.String() + `"}`,
+				"data":   `{"tx":"` + pool.TX.ID.String() + `"}`,
+				"name":   "new-pool",
+				"symbol": "symbol",
 			}, body)
 
 			res := &http.Response{
