@@ -51,6 +51,9 @@ func TestSQLSerializedMessageArray(t *testing.T) {
 	err = batchPayloadRead.Scan("")
 	assert.NoError(t, err)
 
+	err = batchPayloadRead.Scan("{}")
+	assert.NoError(t, err)
+
 	err = batchPayloadRead.Scan(nil)
 	assert.NoError(t, err)
 
