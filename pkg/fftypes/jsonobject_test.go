@@ -32,7 +32,7 @@ func TestJSONObject(t *testing.T) {
 
 	b, err := data.Value()
 	assert.NoError(t, err)
-	assert.IsType(t, []byte{}, b)
+	assert.IsType(t, "", b)
 
 	var dataRead JSONObject
 	err = dataRead.Scan(b)
@@ -84,21 +84,27 @@ func TestJSONObject(t *testing.T) {
 	assert.Equal(t, "", v)
 }
 
-func TestJSONObjectBool(t *testing.T) {
+func TestJSONObjectScan(t *testing.T) {
 
-	data := JSONObjectArray{
-		{"some": "data"},
-	}
+	data := JSONObject{"some": "data"}
 
-	b, err := data.Value()
+	sv, err := data.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, "[{\"some\":\"data\"}]", b)
+	assert.Equal(t, "{\"some\":\"data\"}", sv)
 
-	var dataRead JSONObjectArray
-	err = dataRead.Scan(b)
+	var dataRead JSONObject
+	err = dataRead.Scan(sv)
 	assert.NoError(t, err)
 
-	assert.Equal(t, `[{"some":"data"}]`, fmt.Sprintf("%v", dataRead))
+	assert.Equal(t, `{"some":"data"}`, fmt.Sprintf("%v", dataRead))
+
+	sv, err = ((JSONObject)(nil)).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, NullString, sv)
+
+	var badData JSONObject = map[string]interface{}{"bad": map[bool]bool{false: true}}
+	_, err = badData.Value()
+	assert.Error(t, err)
 
 	j1, err := json.Marshal(&data)
 	assert.NoError(t, err)
@@ -110,6 +116,13 @@ func TestJSONObjectBool(t *testing.T) {
 
 	err = dataRead.Scan("")
 	assert.NoError(t, err)
+
+	err = dataRead.Scan([]byte("{}"))
+	assert.NoError(t, err)
+
+	err = dataRead.Scan(`{"test": true}`)
+	assert.NoError(t, err)
+	assert.True(t, dataRead.GetBool("test"))
 
 	err = dataRead.Scan(nil)
 	assert.NoError(t, err)

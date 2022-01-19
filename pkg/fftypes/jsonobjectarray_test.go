@@ -17,6 +17,8 @@
 package fftypes
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,5 +75,59 @@ func TestJSONObjectArrayScan(t *testing.T) {
 	})
 	_, err = joa.Value()
 	assert.Error(t, err)
+
+}
+
+func TestJSONObjectArrayScanExtra(t *testing.T) {
+
+	data := JSONObjectArray{{"some": "data"}}
+
+	sv, err := data.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "[{\"some\":\"data\"}]", sv)
+
+	var dataRead JSONObjectArray
+	err = dataRead.Scan(sv)
+	assert.NoError(t, err)
+
+	assert.Equal(t, `[{"some":"data"}]`, fmt.Sprintf("%v", dataRead))
+
+	var badData = JSONObjectArray{map[string]interface{}{"bad": map[bool]bool{false: true}}}
+	_, err = badData.Value()
+	assert.Error(t, err)
+
+	j1, err := json.Marshal(&data)
+	assert.NoError(t, err)
+	j2, err := json.Marshal(&dataRead)
+	assert.NoError(t, err)
+	assert.Equal(t, string(j1), string(j2))
+	j3 := dataRead.String()
+	assert.Equal(t, string(j1), j3)
+
+	err = dataRead.Scan("")
+	assert.NoError(t, err)
+
+	err = dataRead.Scan([]byte("[{}]"))
+	assert.NoError(t, err)
+
+	err = dataRead.Scan(`[{"test": true}]`)
+	assert.NoError(t, err)
+	assert.True(t, dataRead[0].GetBool("test"))
+
+	err = dataRead.Scan(nil)
+	assert.NoError(t, err)
+
+	var wrongType int
+	err = dataRead.Scan(&wrongType)
+	assert.Error(t, err)
+
+	hash, err := dataRead.Hash("goodStuff")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash)
+
+	var badJson JSONObjectArray = []JSONObject{{"not": map[bool]string{true: "json"}}}
+	hash, err = badJson.Hash("badStuff")
+	assert.Regexp(t, "FF10151.*badStuff", err)
+	assert.Nil(t, hash)
 
 }

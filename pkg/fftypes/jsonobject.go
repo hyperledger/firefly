@@ -37,11 +37,14 @@ func (jd *JSONObject) Scan(src interface{}) error {
 	case nil:
 		return nil
 
-	case string, []byte:
+	case string:
 		if src == "" {
 			return nil
 		}
-		return json.Unmarshal(src.([]byte), &jd)
+		return json.Unmarshal([]byte(src), &jd)
+
+	case []byte:
+		return json.Unmarshal(src, &jd)
 
 	default:
 		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, jd)
@@ -167,7 +170,11 @@ func (jd JSONObject) GetStringArrayOk(key string) ([]string, bool) {
 
 // Value implements sql.Valuer
 func (jd JSONObject) Value() (driver.Value, error) {
-	return json.Marshal(&jd)
+	b, err := json.Marshal(&jd)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), err
 }
 
 func (jd JSONObject) String() string {
