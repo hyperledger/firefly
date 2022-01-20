@@ -221,3 +221,31 @@ func TestInputInvalidNestedBlockchainType(t *testing.T) {
 }`)
 	assert.Regexp(t, "cannot cast integer to string", err)
 }
+
+func TestInputNoAdditionalProperties(t *testing.T) {
+	s, err := NewTestSchema(`
+{
+	"type": "object",
+	"details": {
+		"type": "struct"
+	},
+	"properties": {
+		"foo": {
+			"type": "string",
+			"details": {
+				"type": "string"
+			}
+		}
+	},
+	"additionalProperties": false
+}`)
+
+	input := `{
+	"foo": "foo",
+	"bar": "bar"		
+}`
+
+	assert.NoError(t, err)
+	err = s.Validate(jsonDecode(input))
+	assert.Regexp(t, "additionalProperties 'bar' not allowed", err)
+}

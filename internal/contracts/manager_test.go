@@ -84,7 +84,7 @@ func TestBroadcastFFI(t *testing.T) {
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
 
-	mdb.On("GetFFI", mock.Anything, "ns1", "", "").Return(nil, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 
 	msg := &fftypes.Message{
@@ -94,7 +94,9 @@ func TestBroadcastFFI(t *testing.T) {
 	}
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &fftypes.FFI{
-		ID: fftypes.NewUUID(),
+		Name:    "test",
+		Version: "1.0.0",
+		ID:      fftypes.NewUUID(),
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
@@ -117,7 +119,7 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
 
-	mdb.On("GetFFI", mock.Anything, "ns1", "", "").Return(nil, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -126,7 +128,9 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 	}
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &fftypes.FFI{
-		ID: fftypes.NewUUID(),
+		Name:    "test",
+		Version: "1.0.0",
+		ID:      fftypes.NewUUID(),
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
@@ -148,7 +152,7 @@ func TestBroadcastFFIExists(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
 
-	mdb.On("GetFFI", mock.Anything, "ns1", "", "").Return(&fftypes.FFI{}, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(&fftypes.FFI{}, nil)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -157,7 +161,9 @@ func TestBroadcastFFIExists(t *testing.T) {
 	}
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &fftypes.FFI{
-		ID: fftypes.NewUUID(),
+		Name:    "test",
+		Version: "1.0.0",
+		ID:      fftypes.NewUUID(),
 	}
 	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
 	assert.Regexp(t, "FF10302", err)
@@ -169,12 +175,14 @@ func TestBroadcastFFIFail(t *testing.T) {
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
-	mdb.On("GetFFI", mock.Anything, "ns1", "", "").Return(nil, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
 	ffi := &fftypes.FFI{
-		ID: fftypes.NewUUID(),
+		Name:    "test",
+		Version: "1.0.0",
+		ID:      fftypes.NewUUID(),
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
@@ -317,6 +325,7 @@ func TestValidateFFI(t *testing.T) {
 	cm := newTestContractManager()
 	ffi := &fftypes.FFI{
 		Name:      "math",
+		Version:   "1.0.0",
 		Namespace: "default",
 		Methods: []*fftypes.FFIMethod{
 			{
@@ -380,6 +389,7 @@ func TestValidateFFIBadMethod(t *testing.T) {
 	cm := newTestContractManager()
 	ffi := &fftypes.FFI{
 		Name:      "math",
+		Version:   "1.0.0",
 		Namespace: "default",
 		Methods: []*fftypes.FFIMethod{
 			{
@@ -425,6 +435,7 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 	cm := newTestContractManager()
 	ffi := &fftypes.FFI{
 		Name:      "math",
+		Version:   "1.0.0",
 		Namespace: "default",
 		Methods: []*fftypes.FFIMethod{
 			{
