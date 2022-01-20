@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,12 +45,12 @@ var (
 		"node_id",
 	}
 	batchFilterFieldMap = map[string]string{
-		"type":             "btype",
-		"payloadref":       "payload_ref",
-		"transaction.type": "tx_type",
-		"transaction.id":   "tx_id",
-		"group":            "group_hash",
-		"node":             "node_id",
+		"type":       "btype",
+		"payloadref": "payload_ref",
+		"tx.type":    "tx_type",
+		"tx.id":      "tx_id",
+		"group":      "group_hash",
+		"node":       "node_id",
 	}
 )
 
