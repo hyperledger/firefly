@@ -71,7 +71,7 @@ type wsClient struct {
 	closing              chan struct{}
 	afterConnect         WSPostConnectHandler
 	heartbeatInterval    time.Duration
-	heartbeathMux        sync.Mutex
+	heartbeatMux         sync.Mutex
 	activePingSent       *time.Time
 	lastPingCompleted    time.Time
 }
@@ -168,14 +168,14 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 
 func (w *wsClient) heartbeatTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	if w.heartbeatInterval > 0 {
-		w.heartbeathMux.Lock()
+		w.heartbeatMux.Lock()
 		baseTime := w.lastPingCompleted
 		if w.activePingSent != nil {
 			// We're waiting for a pong
 			baseTime = *w.activePingSent
 		}
 		waitTime := w.heartbeatInterval - time.Since(baseTime) // if negative, will pop immediately
-		w.heartbeathMux.Unlock()
+		w.heartbeatMux.Unlock()
 		return context.WithTimeout(ctx, waitTime)
 	}
 	return context.WithCancel(ctx)
@@ -250,8 +250,8 @@ func (w *wsClient) pongHandler(appData string) error {
 }
 
 func (w *wsClient) pongReceivedOrReset(isPong bool) {
-	w.heartbeathMux.Lock()
-	defer w.heartbeathMux.Unlock()
+	w.heartbeatMux.Lock()
+	defer w.heartbeatMux.Unlock()
 
 	if isPong && w.activePingSent != nil {
 		log.L(w.ctx).Debugf("WS %s heartbeat completed (pong) after %.2fms", w.url, float64(time.Since(*w.activePingSent))/float64(time.Millisecond))
@@ -261,8 +261,8 @@ func (w *wsClient) pongReceivedOrReset(isPong bool) {
 }
 
 func (w *wsClient) heartbeatCheck() error {
-	w.heartbeathMux.Lock()
-	defer w.heartbeathMux.Unlock()
+	w.heartbeatMux.Lock()
+	defer w.heartbeatMux.Unlock()
 
 	if w.activePingSent != nil {
 		return i18n.NewError(w.ctx, i18n.MsgWSHeartbeatTimeout, float64(time.Since(*w.activePingSent))/float64(time.Millisecond))
