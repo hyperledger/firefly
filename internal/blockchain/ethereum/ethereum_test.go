@@ -46,21 +46,18 @@ func testFFIMethod() *fftypes.FFIMethod {
 		Name: "sum",
 		Params: []*fftypes.FFIParam{
 			{
-				Name:    "x",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 			{
-				Name:    "y",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 		},
 		Returns: []*fftypes.FFIParam{
 			{
-				Name:    "z",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 		},
 	}
@@ -1084,195 +1081,6 @@ func encodeDetails(internalType string) *fftypes.JSONAny {
 	return fftypes.JSONAnyPtrBytes(result)
 }
 
-func TestValidateFFIParamInteger(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "integer",
-		Details: encodeDetails("uint32"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "integer",
-		Details: encodeDetails("int16"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "integer",
-		Details: encodeDetails("uint256"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamIntegerInvalid(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "integer",
-		Details: encodeDetails("string"),
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "integer",
-		Details: encodeDetails("uintfoo"),
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "integer",
-		Details: encodeDetails("int7"),
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamByteArray(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "byte[]",
-		Details: encodeDetails("byte[]"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Type:    "byte[]",
-		Details: encodeDetails("bytes"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "byte[]",
-		Details: encodeDetails("bytes32"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamByteArrayInvalid(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "byte[]",
-		Details: encodeDetails("bool"),
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamArray(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "string[]",
-		Details: encodeDetails("string[]"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "integer[]",
-		Details: encodeDetails("uint256[]"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamArrayInvalid(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "string[][]",
-		Details: encodeDetails("string[]"),
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-
-	param = &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "string[]",
-		Details: encodeDetails("uint32[]"),
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamBoolean(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "boolean",
-		Details: encodeDetails("bool"),
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamBooleanInvalid(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "TestParam",
-		Type:    "boolean",
-		Details: encodeDetails("boolean"),
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamStruct(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "myWidget",
-		Type:    "Widget",
-		Details: encodeDetails("struct Widget"),
-		Components: []*fftypes.FFIParam{
-			{
-				Name:    "Size",
-				Type:    "integer",
-				Details: encodeDetails("uint8"),
-			},
-			{
-				Name:    "Teeth",
-				Type:    "integer",
-				Details: encodeDetails("uint16"),
-			},
-			{
-				Name:    "Ddescription",
-				Type:    "string",
-				Details: encodeDetails("string"),
-			},
-		},
-	}
-	assert.NoError(t, e.ValidateFFIParam(context.Background(), param))
-}
-
-func TestValidateFFIParamStructInvalid(t *testing.T) {
-	e := &Ethereum{}
-	param := &fftypes.FFIParam{
-		Name:    "myWidget",
-		Type:    "Widget",
-		Details: encodeDetails("struct Widget"),
-		Components: []*fftypes.FFIParam{
-			{
-				Name:    "Size",
-				Type:    "integer",
-				Details: encodeDetails("uint8"),
-			},
-			{
-				Name:    "Teeth",
-				Type:    "integer",
-				Details: encodeDetails("string"),
-			},
-			{
-				Name:    "Description",
-				Type:    "string",
-				Details: encodeDetails("string"),
-			},
-		},
-	}
-	assert.Error(t, e.ValidateFFIParam(context.Background(), param))
-}
-
 func TestAddSubscription(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
@@ -1295,11 +1103,8 @@ func TestAddSubscription(t *testing.T) {
 					Name: "Changed",
 					Params: fftypes.FFIParams{
 						{
-							Name: "value",
-							Type: "string",
-							Details: fftypes.JSONAnyPtr(fftypes.JSONObject{
-								"type": "string",
-							}.String()),
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
 						},
 					},
 				},
@@ -1315,7 +1120,7 @@ func TestAddSubscription(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestAddSubscriptionBaddParamDetails(t *testing.T) {
+func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -1337,9 +1142,8 @@ func TestAddSubscriptionBaddParamDetails(t *testing.T) {
 					Name: "Changed",
 					Params: fftypes.FFIParams{
 						{
-							Name:    "value",
-							Type:    "string",
-							Details: fftypes.JSONAnyPtr(""),
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
 						},
 					},
 				},
@@ -1801,23 +1605,4 @@ func TestValidateContractLocation(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
-}
-
-func TestParseParamErr(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	param := &fftypes.FFIParam{
-		Name: "x",
-		Type: "integer",
-	}
-	err := e.ValidateFFIParam(context.Background(), param)
-	assert.Regexp(t, "FF10311", err)
-
-	param = &fftypes.FFIParam{
-		Name:    "x",
-		Type:    "integer",
-		Details: fftypes.JSONAnyPtr(`{"type":""}`),
-	}
-	err = e.ValidateFFIParam(context.Background(), param)
-	assert.Regexp(t, "FF10311", err)
 }

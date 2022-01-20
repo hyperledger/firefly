@@ -18,10 +18,10 @@ package contracts
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -39,6 +39,7 @@ func newTestContractManager() *contractManager {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
 
 	rag := mdb.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -53,6 +54,28 @@ func newTestContractManager() *contractManager {
 func TestNewContractManagerFail(t *testing.T) {
 	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
+	mdb := &databasemocks.Plugin{}
+	mps := &publicstoragemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	_, err := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
+	assert.Regexp(t, "pop", err)
+}
+
+func TestNewContractManagerFFISchemaLoader(t *testing.T) {
+	mdb := &databasemocks.Plugin{}
+	mps := &publicstoragemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
+	_, err := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
+	assert.NoError(t, err)
 }
 
 func TestBroadcastFFI(t *testing.T) {
@@ -92,11 +115,9 @@ func TestBroadcastFFI(t *testing.T) {
 func TestBroadcastFFIInvalid(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
 
 	mdb.On("GetFFI", mock.Anything, "ns1", "", "").Return(nil, nil)
-	mbi.On("ValidateFFIParam", mock.Anything, mock.AnythingOfType("*fftypes.FFIParam")).Return(fmt.Errorf("pop"))
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -111,16 +132,15 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
 					},
 				},
 			},
 		},
 	}
 	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "does not validate", err)
 }
 
 func TestBroadcastFFIExists(t *testing.T) {
@@ -167,32 +187,24 @@ func TestBroadcastFFIFail(t *testing.T) {
 
 func TestValidateInvokeContractRequest(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
-
 	req := &fftypes.ContractCallRequest{
 		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:    "x",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "x",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 				{
-					Name:    "y",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "y",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:    "z",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "z",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 		},
@@ -207,32 +219,24 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 
 func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
-
 	req := &fftypes.ContractCallRequest{
 		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:    "x",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "x",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 				{
-					Name:    "y",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "y",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:    "z",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "z",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 		},
@@ -246,32 +250,24 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 
 func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("ValidateInvokeContractRequest", mock.Anything, mock.Anything).Return(nil)
-
 	req := &fftypes.ContractCallRequest{
 		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:    "x",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "x",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 				{
-					Name:    "y",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "y",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:    "z",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "z",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 		},
@@ -281,36 +277,29 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 		},
 	}
 	err := cm.validateInvokeContractRequest(context.Background(), req)
-	assert.Regexp(t, "Input.*not expected.*integer", err)
+	assert.Regexp(t, "expected integer, but got string", err)
 }
 
 func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
-
 	req := &fftypes.ContractCallRequest{
 		Type: fftypes.CallTypeInvoke,
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
 			Params: []*fftypes.FFIParam{
 				{
-					Name:    "x",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "x",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 				{
-					Name:    "y",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "y",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 			Returns: []*fftypes.FFIParam{
 				{
-					Name:    "z",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "z",
+					Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
 				},
 			},
 		},
@@ -321,88 +310,11 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 	}
 
 	err := cm.validateInvokeContractRequest(context.Background(), req)
-	assert.Regexp(t, err, "pop")
-}
-
-func TestValidateInvokeContractRequestInvalidMethod(t *testing.T) {
-	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
-
-	method := &fftypes.FFIMethod{
-		Name: "sum",
-		Params: []*fftypes.FFIParam{
-			{
-				Name:    "x",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-			},
-			{
-				Name:    "y",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-			},
-		},
-		Returns: []*fftypes.FFIParam{
-			{
-				Name:    "z",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-			},
-		},
-	}
-
-	err := cm.validateFFIMethod(context.Background(), method)
-	assert.Regexp(t, err, "pop")
-}
-
-func TestValidateInvokeContractRequestInvalidEventName(t *testing.T) {
-	cm := newTestContractManager()
-	event := &fftypes.FFIEventDefinition{}
-	err := cm.validateFFIEvent(context.Background(), event)
-	assert.Regexp(t, "FF10319", err)
-}
-
-func TestValidateInvokeContractRequestInvalidMethodName(t *testing.T) {
-	cm := newTestContractManager()
-	method := &fftypes.FFIMethod{}
-	err := cm.validateFFIMethod(context.Background(), method)
-	assert.Regexp(t, "FF10320", err)
-}
-
-func TestValidateInvokeContractRequestInvalidEventParams(t *testing.T) {
-	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(errors.New("pop"))
-
-	method := &fftypes.FFIEventDefinition{
-		Name: "sum",
-		Params: []*fftypes.FFIParam{
-			{
-				Name:    "x",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-			},
-			{
-				Name:    "y",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-			},
-		},
-	}
-
-	err := cm.validateFFIEvent(context.Background(), method)
-	assert.Regexp(t, err, "pop")
+	assert.Regexp(t, "does not validate", err)
 }
 
 func TestValidateFFI(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Return(nil)
-
 	ffi := &fftypes.FFI{
 		Name:      "math",
 		Namespace: "default",
@@ -411,21 +323,18 @@ func TestValidateFFI(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 					{
-						Name:    "y",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "y",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
-						Name:    "z",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "z",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
 			},
@@ -442,9 +351,8 @@ func TestValidateFFI(t *testing.T) {
 					Name: "sum",
 					Params: []*fftypes.FFIParam{
 						{
-							Name:    "z",
-							Type:    "integer",
-							Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 						},
 					},
 				},
@@ -468,35 +376,28 @@ func TestValidateFFI(t *testing.T) {
 	assert.Equal(t, "sum_1", ffi.Events[1].Pathname)
 }
 
-func TestValidateFFIBadMethodParam(t *testing.T) {
+func TestValidateFFIBadMethod(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
-
 	ffi := &fftypes.FFI{
 		Name:      "math",
 		Namespace: "default",
 		Methods: []*fftypes.FFIMethod{
 			{
-				Name: "sum",
+				Name: "",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 					{
-						Name:    "y",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "y",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
-						Name:    "z",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "z",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
 			},
@@ -507,9 +408,8 @@ func TestValidateFFIBadMethodParam(t *testing.T) {
 					Name: "sum",
 					Params: []*fftypes.FFIParam{
 						{
-							Name:    "z",
-							Type:    "integer",
-							Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 						},
 					},
 				},
@@ -518,70 +418,11 @@ func TestValidateFFIBadMethodParam(t *testing.T) {
 	}
 
 	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
-	assert.Regexp(t, err, "pop")
-}
-
-func TestValidateFFIBadMethodReturnParam(t *testing.T) {
-	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Twice().Return(nil)
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
-
-	ffi := &fftypes.FFI{
-		Name:      "math",
-		Namespace: "default",
-		Methods: []*fftypes.FFIMethod{
-			{
-				Name: "sum",
-				Params: []*fftypes.FFIParam{
-					{
-						Name:    "x",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-					},
-					{
-						Name:    "y",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-					},
-				},
-				Returns: []*fftypes.FFIParam{
-					{
-						Name:    "z",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-					},
-				},
-			},
-		},
-		Events: []*fftypes.FFIEvent{
-			{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "sum",
-					Params: []*fftypes.FFIParam{
-						{
-							Name:    "z",
-							Type:    "integer",
-							Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
-						},
-					},
-				},
-			},
-		},
-	}
-
-	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
-	assert.Regexp(t, err, "pop")
+	assert.Regexp(t, "FF10320", err)
 }
 
 func TestValidateFFIBadEventParam(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Times(3).Return(nil)
-	mbi.On("ValidateFFIParam", mock.Anything, mock.Anything).Once().Return(errors.New("pop"))
-
 	ffi := &fftypes.FFI{
 		Name:      "math",
 		Namespace: "default",
@@ -590,21 +431,18 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 				Name: "sum",
 				Params: []*fftypes.FFIParam{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 					{
-						Name:    "y",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "y",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
 				Returns: []*fftypes.FFIParam{
 					{
-						Name:    "z",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "z",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
 			},
@@ -612,12 +450,11 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 		Events: []*fftypes.FFIEvent{
 			{
 				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "sum",
+					Name: "",
 					Params: []*fftypes.FFIParam{
 						{
-							Name:    "z",
-							Type:    "integer",
-							Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 						},
 					},
 				},
@@ -626,7 +463,7 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 	}
 
 	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
-	assert.Regexp(t, err, "pop")
+	assert.Regexp(t, "FF10319", err)
 }
 
 func TestAddContractSubscriptionInline(t *testing.T) {
@@ -644,8 +481,8 @@ func TestAddContractSubscriptionInline(t *testing.T) {
 					Name: "changed",
 					Params: fftypes.FFIParams{
 						{
-							Name: "value",
-							Type: "integer",
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 						},
 					},
 				},
@@ -653,7 +490,6 @@ func TestAddContractSubscriptionInline(t *testing.T) {
 		},
 	}
 
-	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
 	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
 	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(nil)
 
@@ -678,8 +514,8 @@ func TestAddContractSubscriptionByRef(t *testing.T) {
 			Name: "changed",
 			Params: fftypes.FFIParams{
 				{
-					Name: "value",
-					Type: "integer",
+					Name:   "value",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 				},
 			},
 		},
@@ -694,7 +530,6 @@ func TestAddContractSubscriptionByRef(t *testing.T) {
 		EventID: event.ID,
 	}
 
-	mbi.On("ValidateFFIParam", context.Background(), mock.Anything).Return(nil)
 	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
 	mdi.On("GetFFIEventByID", context.Background(), event.ID).Return(event, nil)
 	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(nil)
@@ -867,8 +702,8 @@ func TestAddContractSubscriptionValidateFail(t *testing.T) {
 					Name: "changed",
 					Params: fftypes.FFIParams{
 						{
-							Name: "value",
-							Type: "integer",
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
 						},
 					},
 				},
@@ -876,10 +711,8 @@ func TestAddContractSubscriptionValidateFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(fmt.Errorf("pop"))
-
 	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
-	assert.EqualError(t, err, "pop")
+	assert.Regexp(t, "does not validate", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -900,8 +733,8 @@ func TestAddContractSubscriptionBlockchainFail(t *testing.T) {
 					Name: "changed",
 					Params: fftypes.FFIParams{
 						{
-							Name: "value",
-							Type: "integer",
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 						},
 					},
 				},
@@ -909,7 +742,6 @@ func TestAddContractSubscriptionBlockchainFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
 	mbi.On("AddSubscription", context.Background(), sub).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractSubscription(context.Background(), "ns", sub)
@@ -934,8 +766,8 @@ func TestAddContractSubscriptionUpsertSubFail(t *testing.T) {
 					Name: "changed",
 					Params: fftypes.FFIParams{
 						{
-							Name: "value",
-							Type: "integer",
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 						},
 					},
 				},
@@ -943,7 +775,6 @@ func TestAddContractSubscriptionUpsertSubFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("ValidateFFIParam", context.Background(), sub.Event.Params[0]).Return(nil)
 	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
 	mdi.On("UpsertContractSubscription", context.Background(), &sub.ContractSubscription).Return(fmt.Errorf("pop"))
 
@@ -1177,7 +1008,6 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 
 func TestInvokeContractMethodBadInput(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	req := &fftypes.ContractCallRequest{
@@ -1189,28 +1019,24 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 			Name: "sum",
 			Params: fftypes.FFIParams{
 				{
-					Name:    "x",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "x",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 				{
-					Name:    "y",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "y",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 			Returns: fftypes.FFIParams{
 
 				{
-					Name:    "sum",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+					Name:   "sum",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 		},
 	}
 	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
-	mbi.On("ValidateFFIParam", mock.Anything, mock.AnythingOfType("*fftypes.FFIParam")).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 	assert.Regexp(t, "FF10304", err)
@@ -1891,4 +1717,34 @@ func TestSubscribeContractAPIEventLookupFail(t *testing.T) {
 	_, err := cm.SubscribeContractAPI(context.Background(), "ns1", "banana", "peeled", req)
 
 	assert.Regexp(t, "FF10321", err)
+}
+
+func TestValidateFFIParamBadSchemaJSON(t *testing.T) {
+	cm := newTestContractManager()
+	param := &fftypes.FFIParam{
+		Name:   "x",
+		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
+	}
+	err := cm.validateFFIParam(param)
+	assert.Regexp(t, "unexpected EOF", err)
+}
+
+func TestCheckParamSchemaBadSchema(t *testing.T) {
+	cm := newTestContractManager()
+	param := &fftypes.FFIParam{
+		Name:   "x",
+		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
+	}
+	err := cm.checkParamSchema(1, param)
+	assert.Regexp(t, "unexpected EOF", err)
+}
+
+func TestCheckParamSchemaCompileFail(t *testing.T) {
+	cm := newTestContractManager()
+	param := &fftypes.FFIParam{
+		Name:   "x",
+		Schema: fftypes.JSONAnyPtr(``),
+	}
+	err := cm.checkParamSchema(1, param)
+	assert.Regexp(t, "compilation failed", err)
 }

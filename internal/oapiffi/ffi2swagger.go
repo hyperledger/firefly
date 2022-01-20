@@ -18,9 +18,9 @@ package oapiffi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/oapispec"
@@ -126,24 +126,8 @@ func ffiParamsJSONSchema(params *fftypes.FFIParams) *fftypes.JSONObject {
 
 func ffiParamJSONSchema(param *fftypes.FFIParam) *fftypes.JSONObject {
 	out := fftypes.JSONObject{}
-	switch {
-	case strings.HasSuffix(param.Type, "[]"):
-		baseType := strings.TrimSuffix(param.Type, "[]")
-		if baseType == "byte" {
-			out["type"] = "string"
-		} else {
-			out["type"] = "array"
-			out["items"] = ffiParamJSONSchema(&fftypes.FFIParam{
-				Type:       baseType,
-				Components: param.Components,
-			})
-		}
-
-	case len(param.Components) > 0:
-		out = *ffiParamsJSONSchema(&param.Components)
-
-	case param.Type == "string", param.Type == "integer", param.Type == "boolean":
-		out["type"] = param.Type
+	if err := json.Unmarshal(param.Schema.Bytes(), &out); err == nil {
+		return &out
 	}
-	return &out
+	return nil
 }

@@ -625,11 +625,6 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &fabricLocation, nil
 }
 
-func (f *Fabric) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
-	// TODO: Implement validation
-	return nil
-}
-
 func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
 	location, err := parseContractLocation(ctx, subscription.Location)
 	if err != nil {
@@ -645,4 +640,9 @@ func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.Cont
 
 func (f *Fabric) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
 	return f.streams.deleteSubscription(ctx, subscription.ProtocolID)
+}
+
+func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
+	// Fabconenct does not require any additional validation beyond "JSON Schema correctness" at this time
+	return nil, nil
 }

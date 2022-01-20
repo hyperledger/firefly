@@ -36,6 +36,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/qeesung/image2ascii v1.0.1
 	github.com/rs/cors v1.8.2
+	github.com/santhosh-tekuri/jsonschema/v5 v5.0.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.7.1 // indirect
 	github.com/spf13/cobra v1.3.0

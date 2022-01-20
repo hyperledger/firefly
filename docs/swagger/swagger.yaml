@@ -1,18 +1,4 @@
-components:
-  schemas:
-    FFIParam:
-      properties:
-        components:
-          items:
-            $ref: '#/components/schemas/FFIParam'
-          type: array
-        details:
-          type: string
-        name:
-          type: string
-        type:
-          type: string
-      type: object
+components: {}
 info:
   title: FireFly
   version: "1.0"
@@ -415,15 +401,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -447,15 +427,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -464,15 +438,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -834,15 +802,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -1957,15 +1919,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -1989,15 +1945,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2006,15 +1956,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2075,15 +2019,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2105,15 +2043,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2122,15 +2054,9 @@ paths:
                       returns:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2163,15 +2089,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2195,15 +2115,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2212,15 +2126,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2289,15 +2197,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2321,15 +2223,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2338,15 +2234,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2426,15 +2316,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2443,15 +2327,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2523,15 +2401,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2540,15 +2412,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2617,15 +2483,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2651,15 +2511,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2738,15 +2592,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2770,15 +2618,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2787,15 +2629,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2864,15 +2700,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2881,15 +2711,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2950,15 +2774,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2967,15 +2785,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -3083,15 +2895,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -3150,15 +2956,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -3198,15 +2998,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -3300,15 +3094,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array

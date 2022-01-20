@@ -247,4 +247,5 @@ var (
 	MsgTooLargeBroadcast            = ffm("FF10327", "Message size %.2fkb is too large for the max broadcast batch size of %.2fkb", 400)
 	MsgTooLargePrivate              = ffm("FF10328", "Message size %.2fkb is too large for the max private message size of %.2fkb", 400)
 	MsgManifestMismatch             = ffm("FF10329", "Manifest mismatch overriding '%s' status as failure: '%s'", 400)
+	MsgFFIValidationFail            = ffm("FF10330", "Failed to validate input against provided schema. Details: %v", 400)
 )

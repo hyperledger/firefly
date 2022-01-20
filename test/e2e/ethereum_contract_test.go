@@ -56,19 +56,12 @@ func simpleStorageFFIChanged() *fftypes.FFIEvent {
 			Name: "Changed",
 			Params: fftypes.FFIParams{
 				{
-					Name: "_from",
-					Type: "string",
-					Details: fftypes.JSONAnyPtr(fftypes.JSONObject{
-						"type":    "address",
-						"indexed": true,
-					}.String()),
+					Name:   "_from",
+					Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "address", "indexed": true}}`),
 				},
 				{
-					Name: "_value",
-					Type: "integer",
-					Details: fftypes.JSONAnyPtr(fftypes.JSONObject{
-						"type": "uint256",
-					}.String()),
+					Name:   "_value",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": "type": "uint256"}}`),
 				},
 			},
 		},
@@ -94,9 +87,8 @@ func simpleStorageFFISet() *fftypes.FFIMethod {
 		Name: "set",
 		Params: fftypes.FFIParams{
 			{
-				Name:    "newValue",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+				Name:   "newValue",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 		},
 		Returns: fftypes.FFIParams{},
@@ -109,9 +101,8 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 		Params: fftypes.FFIParams{},
 		Returns: fftypes.FFIParams{
 			{
-				Name:    "output",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "uint256"}`),
+				Name:   "output",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 		},
 	}
