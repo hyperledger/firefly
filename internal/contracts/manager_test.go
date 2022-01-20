@@ -1736,7 +1736,7 @@ func TestValidateFFIParamBadSchemaJSON(t *testing.T) {
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
 	}
-	err := cm.validateFFIParam(param)
+	err := cm.validateFFIParam(context.Background(), param)
 	assert.Regexp(t, "unexpected EOF", err)
 }
 
@@ -1746,7 +1746,7 @@ func TestCheckParamSchemaBadSchema(t *testing.T) {
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
 	}
-	err := cm.checkParamSchema(1, param)
+	err := cm.checkParamSchema(context.Background(), 1, param)
 	assert.Regexp(t, "unexpected EOF", err)
 }
 
@@ -1756,6 +1756,6 @@ func TestCheckParamSchemaCompileFail(t *testing.T) {
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(``),
 	}
-	err := cm.checkParamSchema(1, param)
+	err := cm.checkParamSchema(context.Background(), 1, param)
 	assert.Regexp(t, "compilation failed", err)
 }

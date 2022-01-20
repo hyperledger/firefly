@@ -62,16 +62,16 @@ type contractManager struct {
 	broadcast         broadcast.Manager
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
-	ffiSchemaCompiler *jsonschema.Compiler
+	ffiParamValidator fftypes.FFIParamValidator
 }
 
 func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
 	if database == nil || publicStorage == nil || broadcast == nil || identity == nil || blockchain == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	c, err := getFFISchemaCompiler(ctx, blockchain)
+	v, err := blockchain.GetFFIParamValidator(ctx)
 	if err != nil {
-		return nil, err
+		return nil, i18n.WrapError(ctx, err, i18n.MsgPluginInitializationFailed)
 	}
 	return &contractManager{
 		database:          database,
@@ -79,23 +79,19 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 		broadcast:         broadcast,
 		identity:          identity,
 		blockchain:        blockchain,
-		ffiSchemaCompiler: c,
+		ffiParamValidator: v,
 	}, nil
 }
 
-func getFFISchemaCompiler(ctx context.Context, blockchain blockchain.Plugin) (*jsonschema.Compiler, error) {
+func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
 	c := jsonschema.NewCompiler()
 	c.Draft = jsonschema.Draft2020
 	f := FFIParamValidator{}
 	c.RegisterExtension(f.GetExtensionName(), f.GetMetaSchema(), f)
-	v, err := blockchain.GetFFIParamValidator(ctx)
-	if err != nil {
-		return nil, err
+	if cm.ffiParamValidator != nil {
+		c.RegisterExtension(cm.ffiParamValidator.GetExtensionName(), cm.ffiParamValidator.GetMetaSchema(), cm.ffiParamValidator)
 	}
-	if v != nil {
-		c.RegisterExtension(v.GetExtensionName(), v.GetMetaSchema(), v)
-	}
-	return c, nil
+	return c
 }
 
 func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error) {
@@ -356,24 +352,25 @@ func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftype
 		return i18n.NewError(ctx, i18n.MsgMethodNameMustBeSet)
 	}
 	for _, param := range method.Params {
-		if err := cm.validateFFIParam(param); err != nil {
+		if err := cm.validateFFIParam(ctx, param); err != nil {
 			return err
 		}
 	}
 	for _, param := range method.Returns {
-		if err := cm.validateFFIParam(param); err != nil {
+		if err := cm.validateFFIParam(ctx, param); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (cm *contractManager) validateFFIParam(param *fftypes.FFIParam) error {
-	if err := cm.ffiSchemaCompiler.AddResource("schema.json", strings.NewReader(param.Schema.String())); err != nil {
-		return err
+func (cm *contractManager) validateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
+	c := cm.newFFISchemaCompiler()
+	if err := c.AddResource(param.Name, strings.NewReader(param.Schema.String())); err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgFFISchemaParseFail, param.Name)
 	}
-	if _, err := cm.ffiSchemaCompiler.Compile("schema.json"); err != nil {
-		return err
+	if _, err := c.Compile(param.Name); err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgFFISchemaCompileFail, param.Name)
 	}
 	return nil
 }
@@ -383,7 +380,7 @@ func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.
 		return i18n.NewError(ctx, i18n.MsgEventNameMustBeSet)
 	}
 	for _, param := range event.Params {
-		if err := cm.validateFFIParam(param); err != nil {
+		if err := cm.validateFFIParam(ctx, param); err != nil {
 			return err
 		}
 	}
@@ -400,7 +397,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 		if !ok {
 			return i18n.NewError(ctx, i18n.MsgContractMissingInputArgument, param.Name)
 		}
-		if err := cm.checkParamSchema(value, param); err != nil {
+		if err := cm.checkParamSchema(ctx, value, param); err != nil {
 			return err
 		}
 	}
@@ -557,16 +554,19 @@ func (cm *contractManager) GetContractEvents(ctx context.Context, ns string, fil
 	return cm.database.GetBlockchainEvents(ctx, cm.scopeNS(ns, filter))
 }
 
-func (cm *contractManager) checkParamSchema(input interface{}, param *fftypes.FFIParam) error {
+func (cm *contractManager) checkParamSchema(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
 	// TODO: Cache the compiled schema?
 	c := jsonschema.NewCompiler()
 	err := c.AddResource(param.Name, strings.NewReader(param.Schema.String()))
 	if err != nil {
-		return err
+		return i18n.WrapError(ctx, err, i18n.MsgFFISchemaParseFail, param.Name)
 	}
 	schema, err := c.Compile(param.Name)
 	if err != nil {
-		return err
+		return i18n.WrapError(ctx, err, i18n.MsgFFIValidationFail, param.Name, param.Schema)
 	}
-	return schema.Validate(input)
+	if err := schema.Validate(input); err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgFFIValidationFail, param.Name)
+	}
+	return nil
 }

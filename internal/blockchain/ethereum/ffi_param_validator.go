@@ -17,12 +17,10 @@
 package ethereum
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strconv"
 
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -67,7 +65,7 @@ func (v *FFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string
 		if valid {
 			return detailsSchema(n), nil
 		}
-		return nil, i18n.NewError(context.Background(), i18n.MsgFFIValidationFail, fmt.Sprintf("cannot cast %v to %v", jsonType, blockchainType))
+		return nil, fmt.Errorf("cannot cast %v to %v", jsonType, blockchainType)
 	}
 	return nil, nil
 }
