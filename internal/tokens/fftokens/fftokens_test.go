@@ -44,7 +44,7 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 
-	toServer, fromServer, wsURL, cancel := wsclient.NewTestWSServer(nil)
+	toServer, fromServer, _, wsURL, cancel := wsclient.NewTestWSServer(nil)
 
 	u, _ := url.Parse(wsURL)
 	u.Scheme = "http"
