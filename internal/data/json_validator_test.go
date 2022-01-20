@@ -45,14 +45,14 @@ func TestJSONValidator(t *testing.T) {
 	jv, err := newJSONValidator(context.Background(), "ns1", dt)
 	assert.NoError(t, err)
 
-	err = jv.validateBytes(context.Background(), []byte(`{}`))
+	err = jv.validateJSONString(context.Background(), `{}`)
 	assert.Regexp(t, "FF10198.*prop1", err)
 
-	err = jv.validateBytes(context.Background(), []byte(`{"prop1": "a value"}`))
+	err = jv.validateJSONString(context.Background(), `{"prop1": "a value"}`)
 	assert.NoError(t, err)
 
-	err = jv.validateBytes(context.Background(), []byte(`{!bad json`))
-	assert.Regexp(t, "FF10197", err)
+	err = jv.validateJSONString(context.Background(), `{!bad json`)
+	assert.Regexp(t, "FF10151", err)
 
 	assert.Equal(t, int64(len(schemaBinary)), jv.Size())
 
