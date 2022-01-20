@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,6 +48,7 @@ var (
 	urlTokenMint        = "/namespaces/default/tokens/mint"
 	urlTokenBurn        = "/namespaces/default/tokens/burn"
 	urlTokenTransfers   = "/namespaces/default/tokens/transfers"
+	urlTokenAccounts    = "/namespaces/default/tokens/accounts"
 	urlTokenBalances    = "/namespaces/default/tokens/balances"
 	urlGetOrganizations = "/network/organizations"
 )
@@ -428,6 +429,27 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return transfers
+}
+
+func GetTokenAccounts(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (accounts []*fftypes.TokenAccount) {
+	path := urlTokenAccounts
+	resp, err := client.R().
+		SetResult(&accounts).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return accounts
+}
+
+func GetTokenAccountPools(t *testing.T, client *resty.Client, identity string) (pools []*fftypes.TokenAccountPool) {
+	path := urlTokenAccounts + "/" + identity + "/pools"
+	resp, err := client.R().
+		SetQueryParam("sort", "-updated").
+		SetResult(&pools).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return pools
 }
 
 func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex, key string) (account *fftypes.TokenBalance) {
