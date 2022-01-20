@@ -35,7 +35,7 @@ var getTokenAccountPools = &oapispec.Route{
 		{Name: "key", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.TokenBalanceQueryFactory,
+	FilterFactory:   database.TokenAccountPoolQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccountPool{} },
