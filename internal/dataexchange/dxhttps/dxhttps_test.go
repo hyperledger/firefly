@@ -42,7 +42,7 @@ func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, htt
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 
-	toServer, fromServer, wsURL, cancel := wsclient.NewTestWSServer(nil)
+	toServer, fromServer, _, wsURL, cancel := wsclient.NewTestWSServer(nil)
 
 	u, _ := url.Parse(wsURL)
 	u.Scheme = "http"
