@@ -32,7 +32,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var contractVersion, _ = nanoid.Generate(nanoid.DefaultAlphabet, nanoid.DefaultSize)
+var contractVersion, _ = nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
 
 type uploadABIResult struct {
 	ID string `json:"id"`
@@ -61,7 +61,7 @@ func simpleStorageFFIChanged() *fftypes.FFIEvent {
 				},
 				{
 					Name:   "_value",
-					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": "type": "uint256"}}`),
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
 		},

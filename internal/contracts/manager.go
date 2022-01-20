@@ -325,6 +325,10 @@ func (cm *contractManager) uniquePathName(name string, usedNames map[string]bool
 }
 
 func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error {
+	if err := ffi.Validate(ctx, false); err != nil {
+		return err
+	}
+
 	methodPathNames := map[string]bool{}
 	for _, method := range ffi.Methods {
 		method.Contract = ffi.ID
