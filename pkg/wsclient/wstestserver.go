@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,10 +25,11 @@ import (
 )
 
 // NewTestWSServer creates a little test server for packages (including wsclient itself) to use in unit tests
-func NewTestWSServer(testReq func(req *http.Request)) (toServer, fromServer chan string, url string, done func()) {
+func NewTestWSServer(testReq func(req *http.Request)) (toServer, fromServer, pings chan string, url string, done func()) {
 	upgrader := &websocket.Upgrader{WriteBufferSize: 1024, ReadBufferSize: 1024}
 	toServer = make(chan string, 1)
 	fromServer = make(chan string, 1)
+	pings = make(chan string) // we don't block on this one
 	sendDone := make(chan struct{})
 	receiveDone := make(chan struct{})
 	connected := false
@@ -37,6 +38,14 @@ func NewTestWSServer(testReq func(req *http.Request)) (toServer, fromServer chan
 			testReq(req)
 		}
 		ws, _ := upgrader.Upgrade(res, req, http.Header{})
+		ws.SetPingHandler(func(appData string) error {
+			select {
+			case pings <- "ping":
+			default: // do not block
+			}
+			_ = ws.WriteMessage(websocket.PongMessage, []byte(""))
+			return nil
+		})
 		go func() {
 			defer close(receiveDone)
 			for {
@@ -56,7 +65,7 @@ func NewTestWSServer(testReq func(req *http.Request)) (toServer, fromServer chan
 		}()
 		connected = true
 	}))
-	return toServer, fromServer, fmt.Sprintf("ws://%s", svr.Listener.Addr()), func() {
+	return pings, toServer, fromServer, fmt.Sprintf("ws://%s", svr.Listener.Addr()), func() {
 		close(fromServer)
 		svr.Close()
 		if connected {

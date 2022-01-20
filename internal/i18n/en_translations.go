@@ -247,4 +247,5 @@ var (
 	MsgTooLargeBroadcast            = ffm("FF10327", "Message size %.2fkb is too large for the max broadcast batch size of %.2fkb", 400)
 	MsgTooLargePrivate              = ffm("FF10328", "Message size %.2fkb is too large for the max private message size of %.2fkb", 400)
 	MsgManifestMismatch             = ffm("FF10329", "Manifest mismatch overriding '%s' status as failure: '%s'", 400)
+	MsgWSHeartbeatTimeout           = ffm("FF10330", "Websocket heartbeat timed out after %.2fms", 500)
 )

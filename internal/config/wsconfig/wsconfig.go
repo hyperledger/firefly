@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,6 +25,7 @@ import (
 const (
 	defaultIntialConnectAttempts = 5
 	defaultBufferSize            = "16Kb"
+	defaultHeartbeatInterval     = "30s" // up to a minute to detect a dead connection
 )
 
 const (
@@ -38,6 +39,8 @@ const (
 	WSConfigKeyInitialConnectAttempts = "ws.initialConnectAttempts"
 	// WSConfigKeyPath if set will define the path to connect to - allows sharing of the same URL between HTTP and WebSocket connection info
 	WSConfigKeyPath = "ws.path"
+	// WSConfigHeartbeatInterval is the frequency of ping/pong requests, and also used for the timeout to receive a response to the heartbeat
+	WSConfigHeartbeatInterval = "ws.heartbeatInterval"
 )
 
 // InitPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
@@ -48,6 +51,7 @@ func InitPrefix(prefix config.KeySet) {
 	prefix.AddKnownKey(WSConfigKeyReadBufferSize, defaultBufferSize)
 	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)
 	prefix.AddKnownKey(WSConfigKeyPath)
+	prefix.AddKnownKey(WSConfigHeartbeatInterval, defaultHeartbeatInterval)
 }
 
 func GenerateConfigFromPrefix(prefix config.Prefix) *wsclient.WSConfig {
@@ -62,5 +66,6 @@ func GenerateConfigFromPrefix(prefix config.Prefix) *wsclient.WSConfig {
 		HTTPHeaders:            prefix.GetObject(restclient.HTTPConfigHeaders),
 		AuthUsername:           prefix.GetString(restclient.HTTPConfigAuthUsername),
 		AuthPassword:           prefix.GetString(restclient.HTTPConfigAuthPassword),
+		HeartbeatInterval:      prefix.GetDuration(WSConfigHeartbeatInterval),
 	}
 }
