@@ -8,4 +8,3 @@ coverage:
         threshold: 0.1%
   ignore:
   - "mocks/**/*.go"
-  - "pkg/wsclient/wstestserver.go"

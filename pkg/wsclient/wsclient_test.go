@@ -34,7 +34,7 @@ func generateConfig() *WSConfig {
 
 func TestWSClientE2E(t *testing.T) {
 
-	toServer, fromServer, pings, url, close := NewTestWSServer(func(req *http.Request) {
+	toServer, fromServer, url, close := NewTestWSServer(func(req *http.Request) {
 		assert.Equal(t, "/test/updated", req.URL.Path)
 	})
 	defer close()
@@ -77,7 +77,6 @@ func TestWSClientE2E(t *testing.T) {
 
 	// Check heartbeating works
 	beforePing := time.Now()
-	<-pings
 	for wsc.(*wsClient).lastPingCompleted.Before(beforePing) {
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -198,7 +197,7 @@ func TestWSConnectClosed(t *testing.T) {
 
 func TestWSReadLoopSendFailure(t *testing.T) {
 
-	toServer, fromServer, _, url, done := NewTestWSServer(nil)
+	toServer, fromServer, url, done := NewTestWSServer(nil)
 	defer done()
 
 	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
@@ -222,7 +221,7 @@ func TestWSReadLoopSendFailure(t *testing.T) {
 
 func TestWSReconnectFail(t *testing.T) {
 
-	_, _, _, url, done := NewTestWSServer(nil)
+	_, _, url, done := NewTestWSServer(nil)
 	defer done()
 
 	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
@@ -244,7 +243,7 @@ func TestWSReconnectFail(t *testing.T) {
 
 func TestWSSendFail(t *testing.T) {
 
-	_, _, _, url, done := NewTestWSServer(nil)
+	_, _, url, done := NewTestWSServer(nil)
 	defer done()
 
 	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
@@ -265,7 +264,7 @@ func TestWSSendFail(t *testing.T) {
 
 func TestWSSendInstructClose(t *testing.T) {
 
-	_, _, _, url, done := NewTestWSServer(nil)
+	_, _, url, done := NewTestWSServer(nil)
 	defer done()
 
 	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
@@ -301,7 +300,7 @@ func TestHeartbeatTimedout(t *testing.T) {
 
 func TestHeartbeatSendFailed(t *testing.T) {
 
-	_, _, _, url, close := NewTestWSServer(func(req *http.Request) {})
+	_, _, url, close := NewTestWSServer(func(req *http.Request) {})
 	defer close()
 
 	wsc, err := New(context.Background(), &WSConfig{HTTPURL: url}, func(ctx context.Context, w WSClient) error { return nil })
