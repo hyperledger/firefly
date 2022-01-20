@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -43,6 +44,7 @@ type WSConfig struct {
 	AuthUsername           string             `json:"authUsername,omitempty"`
 	AuthPassword           string             `json:"authPassword,omitempty"`
 	HTTPHeaders            fftypes.JSONObject `json:"headers,omitempty"`
+	HeartbeatInterval      time.Duration      `json:"heartbeatInterval,omitempty"`
 }
 
 type WSClient interface {
@@ -68,6 +70,10 @@ type wsClient struct {
 	sendDone             chan []byte
 	closing              chan struct{}
 	afterConnect         WSPostConnectHandler
+	heartbeatInterval    time.Duration
+	heartbeathMux        sync.Mutex
+	activePingSent       *time.Time
+	lastPingCompleted    time.Time
 }
 
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
@@ -97,6 +103,7 @@ func New(ctx context.Context, config *WSConfig, afterConnect WSPostConnectHandle
 		send:                 make(chan []byte),
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
+		heartbeatInterval:    config.HeartbeatInterval,
 	}
 	for k, v := range config.HTTPHeaders {
 		if vs, ok := v.(string); ok {
@@ -159,6 +166,21 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	}
 }
 
+func (w *wsClient) heartbeatTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if w.heartbeatInterval > 0 {
+		w.heartbeathMux.Lock()
+		baseTime := w.lastPingCompleted
+		if w.activePingSent != nil {
+			// We're waiting for a pong
+			baseTime = *w.activePingSent
+		}
+		waitTime := w.heartbeatInterval - time.Since(baseTime) // if negative, will pop immediately
+		w.heartbeathMux.Unlock()
+		return context.WithTimeout(ctx, waitTime)
+	}
+	return context.WithCancel(ctx)
+}
+
 func buildWSUrl(ctx context.Context, config *WSConfig) (string, error) {
 	u, err := url.Parse(config.HTTPURL)
 	if err != nil {
@@ -195,6 +217,8 @@ func (w *wsClient) connect(initial bool) error {
 			l.Warnf("WS %s connect attempt %d failed [%d]: %s", w.url, attempt, status, string(b))
 			return !initial || attempt > w.initialRetryAttempts, i18n.WrapError(w.ctx, err, i18n.MsgWSConnectFailed)
 		}
+		w.pongReceivedOrReset(false)
+		w.wsconn.SetPongHandler(w.pongHandler)
 		l.Infof("WS %s connected", w.url)
 		return false, nil
 	})
@@ -220,22 +244,64 @@ func (w *wsClient) readLoop() {
 	}
 }
 
+func (w *wsClient) pongHandler(appData string) error {
+	w.pongReceivedOrReset(true)
+	return nil
+}
+
+func (w *wsClient) pongReceivedOrReset(isPong bool) {
+	w.heartbeathMux.Lock()
+	defer w.heartbeathMux.Unlock()
+
+	if isPong && w.activePingSent != nil {
+		log.L(w.ctx).Debugf("WS %s heartbeat completed (pong) after %.2fms", w.url, float64(time.Since(*w.activePingSent))/float64(time.Millisecond))
+	}
+	w.lastPingCompleted = time.Now() // in new connection case we still want to consider now the time we completed the ping
+	w.activePingSent = nil
+}
+
+func (w *wsClient) heartbeatCheck() error {
+	w.heartbeathMux.Lock()
+	defer w.heartbeathMux.Unlock()
+
+	if w.activePingSent != nil {
+		return i18n.NewError(w.ctx, i18n.MsgWSHeartbeatTimeout, float64(time.Since(*w.activePingSent))/float64(time.Millisecond))
+	}
+	log.L(w.ctx).Debugf("WS %s heartbeat timer popped (ping) after %.2fms", w.url, float64(time.Since(w.lastPingCompleted))/float64(time.Millisecond))
+	now := time.Now()
+	w.activePingSent = &now
+	return nil
+}
+
 func (w *wsClient) sendLoop(receiverDone chan struct{}) {
 	l := log.L(w.ctx)
 	defer close(w.sendDone)
 
-	for {
+	disconnecting := false
+	for !disconnecting {
+		timeoutContext, timeoutCancel := w.heartbeatTimeout(w.ctx)
+
 		select {
 		case message := <-w.send:
 			l.Tracef("WS sending: %s", message)
 			if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
 				l.Errorf("WS %s send failed: %s", w.url, err)
-				return
+				disconnecting = true
+			}
+		case <-timeoutContext.Done():
+			if err := w.heartbeatCheck(); err != nil {
+				l.Errorf("WS %s closing: %s", w.url, err)
+				disconnecting = true
+			} else if err := w.wsconn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				l.Errorf("WS %s heartbeat send failed: %s", w.url, err)
+				disconnecting = true
 			}
 		case <-receiverDone:
 			l.Debugf("WS %s send loop exiting", w.url)
-			return
+			disconnecting = true
 		}
+
+		timeoutCancel()
 	}
 }
 

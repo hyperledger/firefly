@@ -131,7 +131,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	toServer, fromServer, wsURL, done := wsclient.NewTestWSServer(nil)
+	toServer, fromServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
 	defer done()
 
 	mockedClient := &http.Client{}
