@@ -38,6 +38,7 @@ SERVICES=(
     "fabconnect"
     "dataexchange-https"
     "tokens-erc1155"
+    "tokens-erc20"
 )
 SERVICE_COUNT=${#SERVICES[@]}
 
