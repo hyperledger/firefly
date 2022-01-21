@@ -197,7 +197,7 @@ func TestWSConnectClosed(t *testing.T) {
 
 func TestWSReadLoopSendFailure(t *testing.T) {
 
-	toServer, fromServer, url, done := NewTestWSServer(nil)
+	toServer, _, url, done := NewTestWSServer(nil)
 	defer done()
 
 	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
