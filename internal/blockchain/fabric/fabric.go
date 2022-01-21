@@ -643,6 +643,6 @@ func (f *Fabric) DeleteSubscription(ctx context.Context, subscription *fftypes.C
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
-	// Fabconenct does not require any additional validation beyond "JSON Schema correctness" at this time
+	// Fabconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil
 }

@@ -27,6 +27,7 @@ import (
 type FFIParamValidator struct{}
 
 var intRegex, _ = regexp.Compile("^u?int([0-9]{1,3})$")
+var bytesRegex, _ = regexp.Compile("^bytes([0-9]{1,2})?")
 
 func (v *FFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error) {
 	valid := true
@@ -36,20 +37,16 @@ func (v *FFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string
 		jsonType := m["type"].(string)
 		switch jsonType {
 		case "string":
-			if blockchainType != "string" && blockchainType != "address" {
+			if blockchainType != "string" &&
+				blockchainType != "address" &&
+				!isEthereumNumberType(blockchainType) &&
+				!isEthereumBytesType(blockchainType) {
 				valid = false
 			}
 		case "integer":
-			// make sure the given format is a valid solidity integer type
-			matches := intRegex.FindStringSubmatch(blockchainType)
-			if len(matches) == 2 {
-				i, err := strconv.ParseInt(matches[1], 10, 0)
-				if err == nil && i >= 8 && i <= 256 && i%8 == 0 {
-					// valid
-					break
-				}
+			if !isEthereumNumberType(blockchainType) {
+				valid = false
 			}
-			valid = false
 		case "boolean":
 			if blockchainType != "bool" {
 				valid = false
@@ -99,4 +96,31 @@ type detailsSchema map[string]interface{}
 func (s detailsSchema) Validate(ctx jsonschema.ValidationContext, v interface{}) error {
 	// TODO: Additional validation of actual input possible in the future
 	return nil
+}
+
+func isEthereumNumberType(input string) bool {
+	matches := intRegex.FindStringSubmatch(input)
+	if len(matches) == 2 {
+		i, err := strconv.ParseInt(matches[1], 10, 0)
+		if err == nil && i >= 8 && i <= 256 && i%8 == 0 {
+			// valid
+			return true
+		}
+	}
+	return false
+}
+
+func isEthereumBytesType(input string) bool {
+	matches := bytesRegex.FindStringSubmatch(input)
+	if len(matches) == 2 {
+		if matches[1] == "" {
+			return true
+		}
+		i, err := strconv.ParseInt(matches[1], 10, 0)
+		if err == nil && i >= 1 && i <= 32 {
+			// valid
+			return true
+		}
+	}
+	return false
 }

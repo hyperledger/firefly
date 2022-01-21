@@ -102,3 +102,12 @@ func TestGenerateWithLocation(t *testing.T) {
 	assert.NoError(t, err)
 	fmt.Print(string(b))
 }
+
+func TestFFIParamBadSchema(t *testing.T) {
+	param := &fftypes.FFIParam{
+		Name:   "test",
+		Schema: fftypes.JSONAnyPtr(`{`),
+	}
+	r := ffiParamJSONSchema(param)
+	assert.Nil(t, r)
+}

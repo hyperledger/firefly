@@ -45,8 +45,8 @@ func NewTestSchema(input string) (*jsonschema.Schema, error) {
 	return c.Compile("schema.json")
 }
 
-func jsonDecode(input string) map[string]interface{} {
-	var output map[string]interface{}
+func jsonDecode(input string) interface{} {
+	var output interface{}
 	json.Unmarshal([]byte(input), &output)
 	return output
 }
@@ -57,6 +57,28 @@ func TestSchemaValid(t *testing.T) {
 	"type": "integer",
 	"details": {
 		"type": "uint256"
+	}
+}`)
+	assert.NoError(t, err)
+}
+
+func TestSchemaValidBytes(t *testing.T) {
+	_, err := NewTestSchema(`
+{
+	"type": "string",
+	"details": {
+		"type": "bytes"
+	}
+}`)
+	assert.NoError(t, err)
+}
+
+func TestSchemaValidBytes32(t *testing.T) {
+	_, err := NewTestSchema(`
+{
+	"type": "string",
+	"details": {
+		"type": "bytes32"
 	}
 }`)
 	assert.NoError(t, err)
@@ -110,6 +132,17 @@ func TestSchemaDetailsIndexedWrongType(t *testing.T) {
 	}
 }`)
 	assert.Regexp(t, "expected boolean, but got string", err)
+}
+
+func TestSchemaTypeMismatch(t *testing.T) {
+	_, err := NewTestSchema(`
+{
+	"type": "string",
+	"details": {
+		"type": "boolean"
+	}
+}`)
+	assert.Regexp(t, "cannot cast string to boolean", err)
 }
 
 func TestInputString(t *testing.T) {
@@ -186,6 +219,25 @@ func TestInputStruct(t *testing.T) {
 	"y": 456,
 	"z": 789		
 }`
+
+	assert.NoError(t, err)
+	err = s.Validate(jsonDecode(input))
+	assert.NoError(t, err)
+}
+
+func TestInputArray(t *testing.T) {
+	s, err := NewTestSchema(`
+{
+	"type": "array",
+	"details": {
+		"type": "uint8[]"
+	},
+	"items": {
+		"type": "integer"
+	}
+}`)
+
+	input := `[123,456,789]`
 
 	assert.NoError(t, err)
 	err = s.Validate(jsonDecode(input))

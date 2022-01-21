@@ -1477,3 +1477,10 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10151", err)
 }
+
+func TestGetFFIParamValidator(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	_, err := e.GetFFIParamValidator(context.Background())
+	assert.NoError(t, err)
+}

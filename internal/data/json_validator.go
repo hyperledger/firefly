@@ -101,8 +101,8 @@ func (jv *jsonValidator) Size() int64 {
 	return jv.size
 }
 
-func jsonDecode(input string) (map[string]interface{}, error) {
-	var output map[string]interface{}
+func jsonDecode(input string) (interface{}, error) {
+	var output interface{}
 	if err := json.Unmarshal([]byte(input), &output); err != nil {
 		return nil, err
 	}

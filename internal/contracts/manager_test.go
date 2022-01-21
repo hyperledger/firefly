@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -383,6 +384,63 @@ func TestValidateFFI(t *testing.T) {
 	assert.Equal(t, "sum_1", ffi.Methods[1].Pathname)
 	assert.Equal(t, "sum", ffi.Events[0].Pathname)
 	assert.Equal(t, "sum_1", ffi.Events[1].Pathname)
+}
+
+func TestValidateFFIFail(t *testing.T) {
+	cm := newTestContractManager()
+	ffi := &fftypes.FFI{
+		Namespace: "default",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "sum",
+				Params: []*fftypes.FFIParam{
+					{
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+					},
+					{
+						Name:   "y",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+					},
+				},
+				Returns: []*fftypes.FFIParam{
+					{
+						Name:   "z",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+					},
+				},
+			},
+			{
+				Name:        "sum",
+				Description: "Override of sum method with different args",
+				Params:      []*fftypes.FFIParam{},
+				Returns:     []*fftypes.FFIParam{},
+			},
+		},
+		Events: []*fftypes.FFIEvent{
+			{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "sum",
+					Params: []*fftypes.FFIParam{
+						{
+							Name:   "z",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+						},
+					},
+				},
+			},
+			{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name:        "sum",
+					Description: "Override of event with different params",
+					Params:      []*fftypes.FFIParam{},
+				},
+			},
+		},
+	}
+
+	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
+	assert.Regexp(t, "FF10131", err)
 }
 
 func TestValidateFFIBadMethod(t *testing.T) {
@@ -1758,4 +1816,31 @@ func TestCheckParamSchemaCompileFail(t *testing.T) {
 	}
 	err := cm.checkParamSchema(context.Background(), 1, param)
 	assert.Regexp(t, "compilation failed", err)
+}
+
+func TestAddJSONSchemaExtension(t *testing.T) {
+	cm := &contractManager{
+		database:          &databasemocks.Plugin{},
+		publicStorage:     &publicstoragemocks.Plugin{},
+		broadcast:         &broadcastmocks.Manager{},
+		identity:          &identitymanagermocks.Manager{},
+		blockchain:        &blockchainmocks.Plugin{},
+		ffiParamValidator: &MockFFIParamValidator{},
+	}
+	c := cm.newFFISchemaCompiler()
+	assert.NotNil(t, c)
+}
+
+type MockFFIParamValidator struct{}
+
+func (v MockFFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error) {
+	return nil, nil
+}
+
+func (v *MockFFIParamValidator) GetMetaSchema() *jsonschema.Schema {
+	return nil
+}
+
+func (v *MockFFIParamValidator) GetExtensionName() string {
+	return "ffi"
 }
