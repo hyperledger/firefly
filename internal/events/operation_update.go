@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,6 +39,11 @@ func (em *eventManager) OperationUpdate(plugin fftypes.Named, operationID *fftyp
 
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
+		txUpdate := database.TransactionQueryFactory.NewUpdate(em.ctx).Set("status", txState)
+		if err := em.database.UpdateTransaction(em.ctx, op.Transaction, txUpdate); err != nil {
+			return err
+		}
+
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
 		if err := em.database.InsertEvent(em.ctx, event); err != nil {
 			return err
