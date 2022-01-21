@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -808,6 +808,7 @@ var TokenBalanceQueryFactory = &queryFields{
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
+	"type":        &StringField{},
 	"localid":     &StringField{},
 	"pool":        &UUIDField{},
 	"tokenindex":  &StringField{},
@@ -822,4 +823,6 @@ var TokenTransferQueryFactory = &queryFields{
 	"message":     &UUIDField{},
 	"messagehash": &Bytes32Field{},
 	"created":     &TimeField{},
+	"tx.type":     &StringField{},
+	"tx.id":       &UUIDField{},
 }
