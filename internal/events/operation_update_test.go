@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -86,22 +86,46 @@ func TestOperationUpdateTransferFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
 
-	opID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		ID:        opID,
+		ID:        fftypes.NewUUID(),
 		Type:      fftypes.OpTypeTokenTransfer,
 		Namespace: "ns1",
 	}
 
-	mdi.On("GetOperationByID", em.ctx, opID).Return(op, nil)
-	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(nil)
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
+	mdi.On("UpdateTransaction", em.ctx, op.Transaction, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
 	})).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
+	err := em.OperationUpdate(mbi, op.ID, fftypes.OpStatusFailed, "some error", info)
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransferTransactionFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+
+	op := &fftypes.Operation{
+		ID:        fftypes.NewUUID(),
+		Type:      fftypes.OpTypeTokenTransfer,
+		Namespace: "ns1",
+	}
+
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
+	mdi.On("UpdateTransaction", em.ctx, op.Transaction, mock.Anything).Return(fmt.Errorf("pop"))
+
+	info := fftypes.JSONObject{"some": "info"}
+	err := em.OperationUpdate(mbi, op.ID, fftypes.OpStatusFailed, "some error", info)
+	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 	mbi.AssertExpectations(t)
@@ -113,21 +137,21 @@ func TestOperationUpdateTransferEventFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
 
-	opID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		ID:        opID,
+		ID:        fftypes.NewUUID(),
 		Type:      fftypes.OpTypeTokenTransfer,
 		Namespace: "ns1",
 	}
 
-	mdi.On("GetOperationByID", em.ctx, opID).Return(op, nil)
-	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(nil)
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
+	mdi.On("UpdateTransaction", em.ctx, op.Transaction, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
 	})).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
+	err := em.OperationUpdate(mbi, op.ID, fftypes.OpStatusFailed, "some error", info)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
