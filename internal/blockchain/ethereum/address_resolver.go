@@ -43,25 +43,8 @@ type addressResolver struct {
 	cache          *ccache.Cache
 }
 
-type resolvedKey struct {
-	retainOriginal bool
-	original       string
-	resolved       string
-}
-
 type addressResolverInserts struct {
 	Key string
-}
-
-func (rk *resolvedKey) Address() string {
-	return rk.resolved
-}
-
-func (rk *resolvedKey) FromString() string {
-	if rk.retainOriginal {
-		return rk.original
-	}
-	return rk.resolved
 }
 
 func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressResolver, err error) {
@@ -91,7 +74,7 @@ func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressR
 	return ar, nil
 }
 
-func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor string) (*resolvedKey, error) {
+func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
 
 	inserts := &addressResolverInserts{
 		Key: keyDescriptor,
@@ -100,14 +83,14 @@ func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor 
 	urlStr := &strings.Builder{}
 	err := ar.urlTemplate.Execute(urlStr, inserts)
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgGoTemplateExecuteFailed, AddressResolverURLTemplate, err)
+		return "", i18n.NewError(ctx, i18n.MsgGoTemplateExecuteFailed, AddressResolverURLTemplate, err)
 	}
 
 	bodyStr := &strings.Builder{}
 	if ar.bodyTemplate != nil {
 		err := ar.bodyTemplate.Execute(bodyStr, inserts)
 		if err != nil {
-			return nil, i18n.NewError(ctx, i18n.MsgGoTemplateExecuteFailed, AddressResolverBodyTemplate, err)
+			return "", i18n.NewError(ctx, i18n.MsgGoTemplateExecuteFailed, AddressResolverBodyTemplate, err)
 		}
 	}
 
@@ -118,20 +101,16 @@ func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor 
 		SetResult(&jsonRes).
 		Execute(ar.method, urlStr.String())
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgAddressResolveFailed, keyDescriptor, err)
+		return "", i18n.NewError(ctx, i18n.MsgAddressResolveFailed, keyDescriptor, err)
 	}
 	if res.IsError() {
-		return nil, i18n.NewError(ctx, i18n.MsgAddressResolveBadStatus, keyDescriptor, res.StatusCode(), jsonRes.String())
+		return "", i18n.NewError(ctx, i18n.MsgAddressResolveBadStatus, keyDescriptor, res.StatusCode(), jsonRes.String())
 	}
 
-	address, err := varlidateEthADdress(ctx, jsonRes.GetString(ar.responseField))
+	address, err := varlidateEthAddress(ctx, jsonRes.GetString(ar.responseField))
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
+		return "", i18n.NewError(ctx, i18n.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
 	}
 
-	return &resolvedKey{
-		retainOriginal: ar.retainOriginal,
-		original:       keyDescriptor,
-		resolved:       address,
-	}, nil
+	return address, nil
 }

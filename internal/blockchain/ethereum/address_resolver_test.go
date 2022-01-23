@@ -68,31 +68,6 @@ func TestAddressResolverInEthereumOK(t *testing.T) {
 	assert.Equal(t, strings.ToLower(addr), resolved)
 }
 
-func TestAddressResolverInEthereumFail(t *testing.T) {
-
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		rw.WriteHeader(500)
-	}))
-	defer server.Close()
-
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	ar, err := newAddressResolver(ctx, prefix)
-	assert.NoError(t, err)
-
-	e := &Ethereum{
-		ctx:             ctx,
-		addressResolver: ar,
-	}
-
-	_, err = e.ResolveSigningKey(ctx, "testkeystring")
-	assert.Regexp(t, "FF10334", err)
-}
-
 func TestAddressResolverPOSTOk(t *testing.T) {
 
 	addr := "0x256e288EDF9392B9236F698a64365F216A4Eff97"
@@ -122,10 +97,7 @@ func TestAddressResolverPOSTOk(t *testing.T) {
 	resolved, err := ar.ResolveSigningKey(ctx, "testkeystring")
 	assert.NoError(t, err)
 
-	assert.True(t, resolved.retainOriginal)
-	assert.Equal(t, "testkeystring", resolved.original)
-	assert.Equal(t, strings.ToLower(addr), resolved.Address())
-	assert.Equal(t, "testkeystring", resolved.FromString())
+	assert.Equal(t, strings.ToLower(addr), resolved)
 
 }
 
