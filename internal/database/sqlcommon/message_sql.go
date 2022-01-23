@@ -183,6 +183,34 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
+// In SQL update+bump is a delete+insert within a TX
+func (s *SQLCommon) UpdateAndBumpMessage(ctx context.Context, message *fftypes.Message) (err error) {
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	if err := s.deleteTx(ctx, tx,
+		sq.Delete("messages").
+			Where(sq.And{
+				sq.Eq{"id": message.Header.ID},
+			}),
+		nil, // no change event
+	); err != nil {
+		return err
+	}
+
+	if err = s.attemptMessageInsert(ctx, tx, message); err != nil {
+		return err
+	}
+
+	// Note there is no call to updateMessageDataRefs as the data refs are not allowed to change,
+	// and are correlated by UUID (not sequence)
+
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
 func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message, recreateDatarefs bool) error {
 
 	if recreateDatarefs {
