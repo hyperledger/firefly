@@ -30,6 +30,7 @@ const (
 	defaultAddressResolverMethod        = "GET"
 	defaultAddressResolverResponseField = "address"
 	defaultAddressResolverCacheSize     = 1000
+	defaultAddressResolverCacheTTL      = "24h"
 )
 
 const (
@@ -62,7 +63,9 @@ const (
 	// AddressResolverResponseField the name of a JSON field that is provided in the response, that contains the ethereum address (default "address")
 	AddressResolverResponseField = "responseField"
 	// AddressResolverCacheSize the size of the LRU cache
-	AddressResolverCacheSize = "cacheSize"
+	AddressResolverCacheSize = "cache.size"
+	// AddressResolverCacheTTL the TTL on cache entries
+	AddressResolverCacheTTL = "cache.ttl"
 )
 
 func (e *Ethereum) InitPrefix(prefix config.Prefix) {
@@ -83,4 +86,5 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	addressResolverConf.AddKnownKey(AddressResolverBodyTemplate)
 	addressResolverConf.AddKnownKey(AddressResolverResponseField, defaultAddressResolverResponseField)
 	addressResolverConf.AddKnownKey(AddressResolverCacheSize, defaultAddressResolverCacheSize)
+	addressResolverConf.AddKnownKey(AddressResolverCacheTTL, defaultAddressResolverCacheTTL)
 }

@@ -37,8 +37,9 @@ func utAddresResolverConfigPrefix() config.Prefix {
 	return prefix.SubPrefix(AddressResolverConfigKey)
 }
 
-func TestAddressResolverInEthereumOK(t *testing.T) {
+func TestAddressResolverInEthereumOKCached(t *testing.T) {
 
+	count := 0
 	addr := "0xf1A9dB812D6710040185e9d981A0AB25003878ce"
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "application/json")
@@ -46,6 +47,8 @@ func TestAddressResolverInEthereumOK(t *testing.T) {
 		assert.Equal(t, "/resolve/testkeystring", r.URL.Path)
 		rw.WriteHeader(200)
 		rw.Write([]byte(fmt.Sprintf(`{"address":"%s"}`, addr)))
+		assert.Zero(t, count)
+		count++
 	}))
 	defer server.Close()
 
@@ -64,6 +67,10 @@ func TestAddressResolverInEthereumOK(t *testing.T) {
 	}
 
 	resolved, err := e.ResolveSigningKey(ctx, "testkeystring")
+	assert.NoError(t, err)
+	assert.Equal(t, strings.ToLower(addr), resolved)
+
+	resolved, err = e.ResolveSigningKey(ctx, "testkeystring") // cached
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr), resolved)
 }

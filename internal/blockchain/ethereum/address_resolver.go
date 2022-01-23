@@ -20,6 +20,7 @@ import (
 	"context"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
@@ -44,6 +45,7 @@ type addressResolver struct {
 	responseField  string
 	client         *resty.Client
 	cache          *ccache.Cache
+	cacheTTL       time.Duration
 }
 
 type addressResolverInserts struct {
@@ -58,6 +60,7 @@ func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressR
 		responseField:  prefix.GetString(AddressResolverResponseField),
 		client:         restclient.New(ctx, prefix),
 		cache:          ccache.New(ccache.Configure().MaxSize(prefix.GetInt64(AddressResolverCacheSize))),
+		cacheTTL:       prefix.GetDuration(AddressResolverCacheTTL),
 	}
 
 	urlTemplateString := prefix.GetString(AddressResolverURLTemplate)
@@ -78,6 +81,11 @@ func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressR
 }
 
 func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
+
+	if cached := ar.cache.Get(keyDescriptor); cached != nil {
+		cached.Extend(ar.cacheTTL)
+		return cached.Value().(string), nil
+	}
 
 	inserts := &addressResolverInserts{
 		Key: keyDescriptor,
@@ -115,5 +123,6 @@ func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor 
 		return "", i18n.NewError(ctx, i18n.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
 	}
 
+	ar.cache.Set(keyDescriptor, address, ar.cacheTTL)
 	return address, nil
 }
