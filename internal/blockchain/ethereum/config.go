@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,12 +26,15 @@ const (
 	defaultBatchTimeout = 500
 	defaultPrefixShort  = "fly"
 	defaultPrefixLong   = "firefly"
+
+	defaultAddressResolverMethod        = "GET"
+	defaultAddressResolverResponseField = "address"
+	defaultAddressResolverCacheSize     = 1000
 )
 
 const (
 	// EthconnectConfigKey is a sub-key in the config to contain all the ethconnect specific config,
 	EthconnectConfigKey = "ethconnect"
-
 	// EthconnectConfigInstancePath is the /contracts/0x12345 or /instances/0x12345 path of the REST API exposed by ethconnect for the contract
 	EthconnectConfigInstancePath = "instance"
 	// EthconnectConfigTopic is the websocket listen topic that the node should register on, which is important if there are multiple
@@ -45,6 +48,21 @@ const (
 	EthconnectPrefixShort = "prefixShort"
 	// EthconnectPrefixLong is used in HTTP headers in requests to ethconnect
 	EthconnectPrefixLong = "prefixLong"
+
+	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
+	AddressResolverConfigKey = "addressResolver"
+	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to EthConnect as the from address
+	AddressResolverRetainOriginal = "retainOriginal"
+	// AddressResolverMethod the HTTP method to use to call the address resolver (default GET)
+	AddressResolverMethod = "method"
+	// AddressResolverURLTemplate the URL go template string to use when calling the address resolver
+	AddressResolverURLTemplate = "urlTemplate"
+	// AddressResolverBodyTemplate the body go template string to use when calling the address resolver
+	AddressResolverBodyTemplate = "bodyTemplate"
+	// AddressResolverResponseField the name of a JSON field that is provided in the response, that contains the ethereum address (default "address")
+	AddressResolverResponseField = "responseField"
+	// AddressResolverCacheSize the size of the LRU cache
+	AddressResolverCacheSize = "cacheSize"
 )
 
 func (e *Ethereum) InitPrefix(prefix config.Prefix) {
@@ -56,4 +74,13 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
+
+	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
+	wsconfig.InitPrefix(addressResolverConf)
+	addressResolverConf.AddKnownKey(AddressResolverRetainOriginal)
+	addressResolverConf.AddKnownKey(AddressResolverMethod, defaultAddressResolverMethod)
+	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)
+	addressResolverConf.AddKnownKey(AddressResolverBodyTemplate)
+	addressResolverConf.AddKnownKey(AddressResolverResponseField, defaultAddressResolverResponseField)
+	addressResolverConf.AddKnownKey(AddressResolverCacheSize, defaultAddressResolverCacheSize)
 }
