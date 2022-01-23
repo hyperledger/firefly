@@ -33,6 +33,9 @@ import (
 // keys, to be resolved down to an Ethereum address - which will be kept in a LRU cache.
 // This supports cases where the signing device behind EthConnect is able to support keys
 // addressed using somthing like a HD Wallet heirarchical syntax.
+// Once the resolver has returned the String->Address mapping, the ethconnect downstream
+// signing process must be able to process using the resolved ethereum address (meaning
+// it might have to reliably store the reverse mapping, it the case of a HD wallet).
 type addressResolver struct {
 	retainOriginal bool
 	method         string
