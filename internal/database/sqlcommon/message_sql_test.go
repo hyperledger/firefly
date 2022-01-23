@@ -207,7 +207,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 
 	// Bump and Update - this is for a ready transition
 	msgUpdated.State = fftypes.MessageStateReady
-	err = s.UpdateAndBumpMessage(context.Background(), msgUpdated)
+	err = s.ReplaceMessage(context.Background(), msgUpdated)
 	assert.NoError(t, err)
 	msgRead, err = s.GetMessageByID(ctx, msgUpdated.Header.ID)
 	msgJson, _ = json.Marshal(&msgUpdated)
@@ -285,34 +285,34 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpdateAndBumpMessageFailBegin(t *testing.T) {
+func TestReplaceMessageFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	msgID := fftypes.NewUUID()
-	err := s.UpdateAndBumpMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
+	err := s.ReplaceMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpdateAndBumpMessageFailDelete(t *testing.T) {
+func TestReplaceMessageFailDelete(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	msgID := fftypes.NewUUID()
-	err := s.UpdateAndBumpMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
+	err := s.ReplaceMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
 	assert.Regexp(t, "FF10118", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpdateAndBumpMessageFailInsert(t *testing.T) {
+func TestReplaceMessageFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	msgID := fftypes.NewUUID()
-	err := s.UpdateAndBumpMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
+	err := s.ReplaceMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

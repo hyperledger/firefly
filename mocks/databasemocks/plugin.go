@@ -1758,6 +1758,20 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
+// ReplaceMessage provides a mock function with given fields: ctx, message
+func (_m *Plugin) ReplaceMessage(ctx context.Context, message *fftypes.Message) error {
+	ret := _m.Called(ctx, message)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
+		r0 = rf(ctx, message)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RunAsGroup provides a mock function with given fields: ctx, fn
 func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error) error {
 	ret := _m.Called(ctx, fn)
@@ -1779,20 +1793,6 @@ func (_m *Plugin) SetPinDispatched(ctx context.Context, sequence int64) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
 		r0 = rf(ctx, sequence)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateAndBumpMessage provides a mock function with given fields: ctx, message
-func (_m *Plugin) UpdateAndBumpMessage(ctx context.Context, message *fftypes.Message) error {
-	ret := _m.Called(ctx, message)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
-		r0 = rf(ctx, message)
 	} else {
 		r0 = ret.Error(0)
 	}
