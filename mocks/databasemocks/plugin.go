@@ -2227,6 +2227,20 @@ func (_m *Plugin) SetPinDispatched(ctx context.Context, sequence int64) error {
 	return r0
 }
 
+// UpdateAndBumpMessage provides a mock function with given fields: ctx, message
+func (_m *Plugin) UpdateAndBumpMessage(ctx context.Context, message *fftypes.Message) error {
+	ret := _m.Called(ctx, message)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
+		r0 = rf(ctx, message)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateBatch provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateBatch(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
