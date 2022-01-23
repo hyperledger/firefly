@@ -184,7 +184,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 }
 
 // In SQL update+bump is a delete+insert within a TX
-func (s *SQLCommon) UpdateAndBumpMessage(ctx context.Context, message *fftypes.Message) (err error) {
+func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *fftypes.Message) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
