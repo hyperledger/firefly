@@ -425,7 +425,11 @@ func varlidateEthAddress(ctx context.Context, key string) (string, error) {
 func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string) (string, error) {
 	resolved, err := varlidateEthAddress(ctx, key)
 	if err != nil && e.addressResolver != nil {
-		return e.addressResolver.ResolveSigningKey(ctx, key)
+		resolved, err := e.addressResolver.ResolveSigningKey(ctx, key)
+		if err == nil {
+			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
+		}
+		return resolved, err
 	}
 	return resolved, err
 }
