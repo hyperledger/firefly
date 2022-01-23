@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -44,6 +44,7 @@ type websocketConnection struct {
 	connID             string
 	sendMessages       chan interface{}
 	senderDone         chan struct{}
+	receiverDone       chan struct{}
 	autoAck            bool
 	started            []*websocketStartedSub
 	inflight           []*fftypes.EventDeliveryResponse
@@ -64,6 +65,7 @@ func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn)
 		connID:       connID,
 		sendMessages: make(chan interface{}),
 		senderDone:   make(chan struct{}),
+		receiverDone: make(chan struct{}),
 	}
 	go wc.sendLoop()
 	go wc.receiveLoop()
@@ -104,11 +106,7 @@ func (wc *websocketConnection) sendLoop() {
 	defer wc.close()
 	for {
 		select {
-		case msg, ok := <-wc.sendMessages:
-			if !ok {
-				l.Debugf("Sender closing")
-				return
-			}
+		case msg := <-wc.sendMessages:
 			l.Tracef("Sending: %+v", msg)
 			writer, err := wc.wsConn.NextWriter(websocket.TextMessage)
 			if err == nil {
@@ -119,6 +117,9 @@ func (wc *websocketConnection) sendLoop() {
 				l.Errorf("Write failed on socket: %s", err)
 				return
 			}
+		case <-wc.receiverDone:
+			l.Debugf("Sender closing - receiver completed")
+			return
 		case <-wc.ctx.Done():
 			l.Debugf("Sender closing - context cancelled")
 			return
@@ -128,7 +129,7 @@ func (wc *websocketConnection) sendLoop() {
 
 func (wc *websocketConnection) receiveLoop() {
 	l := log.L(wc.ctx)
-	defer close(wc.sendMessages)
+	defer close(wc.receiverDone)
 	for {
 		var msgData []byte
 		var msgHeader fftypes.WSClientActionBase
@@ -361,5 +362,5 @@ func (wc *websocketConnection) close() {
 
 func (wc *websocketConnection) waitClose() {
 	<-wc.senderDone
-	<-wc.sendMessages
+	<-wc.receiverDone
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -198,12 +198,11 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter
 
 func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select("key").Distinct().From("tokenbalance"),
+		sq.Select("key", "MAX(updated) AS updated", "MAX(seq) AS seq").From("tokenbalance").GroupBy("key"),
 		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
-	fi.CountExpr = "DISTINCT key"
 
 	rows, tx, err := s.query(ctx, query)
 	if err != nil {
@@ -214,7 +213,9 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 	accounts := make([]*fftypes.TokenAccount, 0)
 	for rows.Next() {
 		var account fftypes.TokenAccount
-		if err := rows.Scan(&account.Key); err != nil {
+		var updated fftypes.FFTime
+		var seq int64
+		if err := rows.Scan(&account.Key, &updated, &seq); err != nil {
 			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
 		}
 		accounts = append(accounts, &account)
@@ -225,13 +226,12 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 
 func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select("pool_id").Distinct().From("tokenbalance"),
+		sq.Select("pool_id", "MAX(updated) AS updated", "MAX(seq) AS seq").From("tokenbalance").GroupBy("pool_id"),
 		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"},
 		sq.Eq{"key": key})
 	if err != nil {
 		return nil, nil, err
 	}
-	fi.CountExpr = "DISTINCT pool_id"
 
 	rows, tx, err := s.query(ctx, query)
 	if err != nil {
@@ -242,7 +242,9 @@ func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter
 	pools := make([]*fftypes.TokenAccountPool, 0)
 	for rows.Next() {
 		var pool fftypes.TokenAccountPool
-		if err := rows.Scan(&pool.Pool); err != nil {
+		var updated fftypes.FFTime
+		var seq int64
+		if err := rows.Scan(&pool.Pool, &updated, &seq); err != nil {
 			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
 		}
 		pools = append(pools, &pool)

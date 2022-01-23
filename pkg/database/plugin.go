@@ -860,7 +860,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"connector":  &StringField{},
 }
 
-// TokenBalanceQueryFactory filter fields for token accounts
+// TokenBalanceQueryFactory filter fields for token balances
 var TokenBalanceQueryFactory = &queryFields{
 	"pool":       &UUIDField{},
 	"tokenindex": &StringField{},
@@ -870,6 +870,20 @@ var TokenBalanceQueryFactory = &queryFields{
 	"key":        &StringField{},
 	"balance":    &Int64Field{},
 	"updated":    &TimeField{},
+}
+
+// TokenAccountQueryFactory filter fields for token accounts
+var TokenAccountQueryFactory = &queryFields{
+	"key":       &StringField{},
+	"namespace": &StringField{},
+	"updated":   &TimeField{},
+}
+
+// TokenAccountPoolQueryFactory filter fields for token account pools
+var TokenAccountPoolQueryFactory = &queryFields{
+	"pool":      &UUIDField{},
+	"namespace": &StringField{},
+	"updated":   &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers

@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
@@ -47,13 +48,14 @@ func TestWSClientE2E(t *testing.T) {
 
 	wsConfig.HTTPURL = url
 	wsConfig.WSKeyPath = "/test"
+	wsConfig.HeartbeatInterval = 50 * time.Millisecond
 
-	wsClient, err := New(context.Background(), wsConfig, afterConnect)
+	wsc, err := New(context.Background(), wsConfig, afterConnect)
 	assert.NoError(t, err)
 
 	//  Change the settings and connect
-	wsClient.SetURL(wsClient.URL() + "/updated")
-	err = wsClient.Connect()
+	wsc.SetURL(wsc.URL() + "/updated")
+	err = wsc.Connect()
 	assert.NoError(t, err)
 
 	// Receive the message automatically sent in afterConnect
@@ -62,19 +64,25 @@ func TestWSClientE2E(t *testing.T) {
 
 	// Tell the unit test server to send us a reply, and confirm it
 	fromServer <- `some data from server`
-	reply := <-wsClient.Receive()
+	reply := <-wsc.Receive()
 	assert.Equal(t, `some data from server`, string(reply))
 
 	// Send some data back
-	err = wsClient.Send(context.Background(), []byte(`some data to server`))
+	err = wsc.Send(context.Background(), []byte(`some data to server`))
 	assert.NoError(t, err)
 
 	// Check the sevrer got it
 	message2 := <-toServer
 	assert.Equal(t, `some data to server`, message2)
 
+	// Check heartbeating works
+	beforePing := time.Now()
+	for wsc.(*wsClient).lastPingCompleted.Before(beforePing) {
+		time.Sleep(10 * time.Millisecond)
+	}
+
 	// Close the client
-	wsClient.Close()
+	wsc.Close()
 
 }
 
@@ -274,4 +282,43 @@ func TestWSSendInstructClose(t *testing.T) {
 	close(receiverClosed)
 	w.sendLoop(receiverClosed)
 	<-w.sendDone
+}
+
+func TestHeartbeatTimedout(t *testing.T) {
+
+	now := time.Now()
+	w := &wsClient{
+		ctx:               context.Background(),
+		sendDone:          make(chan []byte),
+		heartbeatInterval: 1 * time.Microsecond,
+		activePingSent:    &now,
+	}
+
+	w.sendLoop(make(chan struct{}))
+
+}
+
+func TestHeartbeatSendFailed(t *testing.T) {
+
+	_, _, url, close := NewTestWSServer(func(req *http.Request) {})
+	defer close()
+
+	wsc, err := New(context.Background(), &WSConfig{HTTPURL: url}, func(ctx context.Context, w WSClient) error { return nil })
+	assert.NoError(t, err)
+	defer wsc.Close()
+
+	err = wsc.Connect()
+	assert.NoError(t, err)
+
+	// Close and use the underlying wsconn to drive a failure to send a heartbeat
+	wsc.(*wsClient).wsconn.Close()
+	w := &wsClient{
+		ctx:               context.Background(),
+		sendDone:          make(chan []byte),
+		heartbeatInterval: 1 * time.Microsecond,
+		wsconn:            wsc.(*wsClient).wsconn,
+	}
+
+	w.sendLoop(make(chan struct{}))
+
 }

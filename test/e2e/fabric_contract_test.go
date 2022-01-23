@@ -50,7 +50,8 @@ var assetCreatedEvent = &fftypes.FFIEvent{
 }
 
 func deployChaincode(t *testing.T, stackName string) string {
-	id := nanoid.New()
+	id, err := nanoid.Generate("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", nanoid.DefaultSize)
+	assert.NoError(t, err)
 	chaincodeName := "e2e_" + id
 
 	cmd := exec.Command("bash", "./deploy_chaincode.sh")
@@ -59,7 +60,7 @@ func deployChaincode(t *testing.T, stackName string) string {
 	cmd.Env = append(cmd.Env, "PATH="+os.Getenv("PATH"))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	require.NoError(t, err)
 
 	return chaincodeName
