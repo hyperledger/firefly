@@ -20,23 +20,32 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetContractEvents(t *testing.T) {
+func TestGetBlockchainEventByID(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/contracts/events", nil)
+	id := fftypes.NewUUID()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/blockchainevents/"+id.String(), nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractEvents", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.BlockchainEvent{}, nil, nil)
+	o.On("GetBlockchainEventByID", mock.Anything, id).
+		Return(&fftypes.BlockchainEvent{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
+}
+
+func TestGetBlockchainEventBadID(t *testing.T) {
+	_, r := newTestAPIServer()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/blockchainevents/bad", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
 }

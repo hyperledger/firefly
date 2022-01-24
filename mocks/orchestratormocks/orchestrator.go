@@ -239,6 +239,61 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	return r0, r1, r2
 }
 
+// GetBlockchainEventByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BlockchainEvent); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBlockchainEvents provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.BlockchainEvent); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.BlockchainEvent)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetChartHistogram provides a mock function with given fields: ctx, ns, startTime, endTime, buckets, tableName
 func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogram, error) {
 	ret := _m.Called(ctx, ns, startTime, endTime, buckets, tableName)
