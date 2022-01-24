@@ -125,6 +125,6 @@ var routes = []*oapispec.Route{
 	getContractSubscriptionByNameOrID,
 	getContractSubscriptions,
 	deleteContractSubscription,
-	getContractEvents,
-	getContractEventByID,
+	getBlockchainEvents,
+	getBlockchainEventByID,
 }

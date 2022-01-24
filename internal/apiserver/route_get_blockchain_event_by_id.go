@@ -25,9 +25,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractEventByID = &oapispec.Route{
-	Name:   "getContractEventByID",
-	Path:   "namespaces/{ns}/contracts/events/{id}",
+var getBlockchainEventByID = &oapispec.Route{
+	Name:   "getBlockchainEventByID",
+	Path:   "namespaces/{ns}/blockchainevents/{id}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -45,6 +45,6 @@ var getContractEventByID = &oapispec.Route{
 		if err != nil {
 			return nil, err
 		}
-		return getOr(r.Ctx).Contracts().GetContractEventByID(r.Ctx, u)
+		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, u)
 	},
 }
