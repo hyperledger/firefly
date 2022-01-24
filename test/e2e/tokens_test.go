@@ -165,6 +165,20 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 0,
 	})
+
+	accounts := GetTokenAccounts(suite.T(), suite.testState.client1, poolID)
+	assert.Equal(suite.T(), 2, len(accounts))
+	assert.Equal(suite.T(), suite.testState.org2.Identity, accounts[0].Key)
+	assert.Equal(suite.T(), suite.testState.org1.Identity, accounts[1].Key)
+	accounts = GetTokenAccounts(suite.T(), suite.testState.client2, poolID)
+	assert.Equal(suite.T(), 2, len(accounts))
+	assert.Equal(suite.T(), suite.testState.org2.Identity, accounts[0].Key)
+	assert.Equal(suite.T(), suite.testState.org1.Identity, accounts[1].Key)
+
+	accountPools := GetTokenAccountPools(suite.T(), suite.testState.client1, suite.testState.org1.Identity)
+	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
+	accountPools = GetTokenAccountPools(suite.T(), suite.testState.client2, suite.testState.org2.Identity)
+	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 }
 
 func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
@@ -287,4 +301,18 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 0,
 	})
+
+	accounts := GetTokenAccounts(suite.T(), suite.testState.client1, poolID)
+	assert.Equal(suite.T(), 2, len(accounts))
+	assert.Equal(suite.T(), suite.testState.org2.Identity, accounts[0].Key)
+	assert.Equal(suite.T(), suite.testState.org1.Identity, accounts[1].Key)
+	accounts = GetTokenAccounts(suite.T(), suite.testState.client2, poolID)
+	assert.Equal(suite.T(), 2, len(accounts))
+	assert.Equal(suite.T(), suite.testState.org2.Identity, accounts[0].Key)
+	assert.Equal(suite.T(), suite.testState.org1.Identity, accounts[1].Key)
+
+	accountPools := GetTokenAccountPools(suite.T(), suite.testState.client1, suite.testState.org1.Identity)
+	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
+	accountPools = GetTokenAccountPools(suite.T(), suite.testState.client2, suite.testState.org2.Identity)
+	assert.Equal(suite.T(), *poolID, *accountPools[0].Pool)
 }

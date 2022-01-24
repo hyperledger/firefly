@@ -277,6 +277,9 @@ type PrefixArray interface {
 type RootKey string
 
 func Reset() {
+	keysMutex.Lock() // must only call viper directly here (as we already hold the lock)
+	defer keysMutex.Unlock()
+
 	viper.Reset()
 
 	// Set defaults
@@ -357,11 +360,14 @@ func Reset() {
 	viper.SetDefault(string(IdentityManagerCacheLimit), 100 /* items */)
 	viper.SetDefault(string(IdentityManagerCacheTTL), "1h")
 
-	i18n.SetLang(GetString(Lang))
+	i18n.SetLang(viper.GetString(string(Lang)))
 }
 
 // ReadConfig initializes the config
 func ReadConfig(cfgFile string) error {
+	keysMutex.Lock() // must only call viper directly here (as we already hold the lock)
+	defer keysMutex.Unlock()
+
 	// Set precedence order for reading config location
 	viper.SetEnvPrefix("firefly")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -383,6 +389,9 @@ func ReadConfig(cfgFile string) error {
 }
 
 func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	for _, c := range configRecords {
 		s := viper.New()
 		s.SetConfigType("json")
@@ -430,9 +439,10 @@ func rootKey(k string) RootKey {
 
 // GetKnownKeys gets the known keys
 func GetKnownKeys() []string {
-	keys := make([]string, 0, len(knownKeys))
 	keysMutex.Lock()
 	defer keysMutex.Unlock()
+
+	keys := make([]string, 0, len(knownKeys))
 	for k := range knownKeys {
 		keys = append(keys, k)
 	}
@@ -462,8 +472,7 @@ func NewPluginConfig(prefix string) Prefix {
 }
 
 func (c *configPrefix) prefixKey(k string) string {
-	keysMutex.Lock()
-	defer keysMutex.Unlock()
+	// Caller responsible for holding lock when calling
 	key := c.prefix + k
 	if !knownKeys[key] {
 		panic(fmt.Sprintf("Undefined configuration key '%s'", key))
@@ -514,9 +523,10 @@ func (c *configPrefixArray) ArrayEntry(i int) Prefix {
 }
 
 func (c *configPrefixArray) AddKnownKey(k string, defValue ...interface{}) {
-	// Put a simulated key in the known keys array, to pop into the help info.
 	keysMutex.Lock()
 	defer keysMutex.Unlock()
+
+	// Put a simulated key in the known keys array, to pop into the help info.
 	knownKeys[fmt.Sprintf("%s[].%s", c.base, k)] = true
 	c.defaults[k] = defValue
 }
@@ -539,6 +549,9 @@ func (c *configPrefix) SetDefault(k string, defValue interface{}) {
 }
 
 func GetConfig() fftypes.JSONObject {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	conf := fftypes.JSONObject{}
 	_ = viper.Unmarshal(&conf)
 	return conf
@@ -549,6 +562,9 @@ func GetString(key RootKey) string {
 	return root.GetString(string(key))
 }
 func (c *configPrefix) GetString(key string) string {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.GetString(c.prefixKey(key))
 }
 
@@ -557,6 +573,9 @@ func GetStringSlice(key RootKey) []string {
 	return root.GetStringSlice(string(key))
 }
 func (c *configPrefix) GetStringSlice(key string) []string {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.GetStringSlice(c.prefixKey(key))
 }
 
@@ -565,6 +584,9 @@ func GetBool(key RootKey) bool {
 	return root.GetBool(string(key))
 }
 func (c *configPrefix) GetBool(key string) bool {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.GetBool(c.prefixKey(key))
 }
 
@@ -573,6 +595,9 @@ func GetDuration(key RootKey) time.Duration {
 	return root.GetDuration(string(key))
 }
 func (c *configPrefix) GetDuration(key string) time.Duration {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return fftypes.ParseToDuration(viper.GetString(c.prefixKey(key)))
 }
 
@@ -581,7 +606,10 @@ func GetByteSize(key RootKey) int64 {
 	return root.GetByteSize(string(key))
 }
 func (c *configPrefix) GetByteSize(key string) int64 {
-	return fftypes.ParseToByteSize(c.GetString(key))
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
+	return fftypes.ParseToByteSize(viper.GetString(c.prefixKey(key)))
 }
 
 // GetUint gets a configuration uint
@@ -589,6 +617,9 @@ func GetUint(key RootKey) uint {
 	return root.GetUint(string(key))
 }
 func (c *configPrefix) GetUint(key string) uint {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.GetUint(c.prefixKey(key))
 }
 
@@ -597,6 +628,9 @@ func GetInt(key RootKey) int {
 	return root.GetInt(string(key))
 }
 func (c *configPrefix) GetInt(key string) int {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.GetInt(c.prefixKey(key))
 }
 
@@ -605,6 +639,9 @@ func GetInt64(key RootKey) int64 {
 	return root.GetInt64(string(key))
 }
 func (c *configPrefix) GetInt64(key string) int64 {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.GetInt64(c.prefixKey(key))
 }
 
@@ -613,6 +650,9 @@ func GetFloat64(key RootKey) float64 {
 	return root.GetFloat64(string(key))
 }
 func (c *configPrefix) GetFloat64(key string) float64 {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.GetFloat64(c.prefixKey(key))
 }
 
@@ -621,6 +661,9 @@ func GetObject(key RootKey) fftypes.JSONObject {
 	return root.GetObject(string(key))
 }
 func (c *configPrefix) GetObject(key string) fftypes.JSONObject {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return fftypes.JSONObject(viper.GetStringMap(c.prefixKey(key)))
 }
 
@@ -629,6 +672,9 @@ func GetObjectArray(key RootKey) fftypes.JSONObjectArray {
 	return root.GetObjectArray(string(key))
 }
 func (c *configPrefix) GetObjectArray(key string) fftypes.JSONObjectArray {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	v, _ := fftypes.ToJSONObjectArray(viper.Get(c.prefixKey(key)))
 	return v
 }
@@ -638,6 +684,9 @@ func Get(key RootKey) interface{} {
 	return root.Get(string(key))
 }
 func (c *configPrefix) Get(key string) interface{} {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return viper.Get(c.prefixKey(key))
 }
 
@@ -646,11 +695,17 @@ func Set(key RootKey, value interface{}) {
 	root.Set(string(key), value)
 }
 func (c *configPrefix) Set(key string, value interface{}) {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	viper.Set(c.prefixKey(key), value)
 }
 
 // Resolve gives the fully qualified path of a key
 func (c *configPrefix) Resolve(key string) string {
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
+
 	return c.prefixKey(key)
 }
 

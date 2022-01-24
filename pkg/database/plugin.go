@@ -80,6 +80,10 @@ type iMessageCollection interface {
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
+	// ReplaceMessage updates the message, and assigns it a new sequence number at the front of the list.
+	// A new event is raised for the message, with the new sequence number - as if it was brand new.
+	ReplaceMessage(ctx context.Context, message *fftypes.Message) (err error)
+
 	// UpdateMessages - Update messages
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
@@ -860,7 +864,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"connector":  &StringField{},
 }
 
-// TokenBalanceQueryFactory filter fields for token accounts
+// TokenBalanceQueryFactory filter fields for token balances
 var TokenBalanceQueryFactory = &queryFields{
 	"pool":       &UUIDField{},
 	"tokenindex": &StringField{},
@@ -870,6 +874,20 @@ var TokenBalanceQueryFactory = &queryFields{
 	"key":        &StringField{},
 	"balance":    &Int64Field{},
 	"updated":    &TimeField{},
+}
+
+// TokenAccountQueryFactory filter fields for token accounts
+var TokenAccountQueryFactory = &queryFields{
+	"key":       &StringField{},
+	"namespace": &StringField{},
+	"updated":   &TimeField{},
+}
+
+// TokenAccountPoolQueryFactory filter fields for token account pools
+var TokenAccountPoolQueryFactory = &queryFields{
+	"pool":      &UUIDField{},
+	"namespace": &StringField{},
+	"updated":   &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers
