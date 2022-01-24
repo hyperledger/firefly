@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -285,4 +285,12 @@ func (or *orchestrator) GetOperations(ctx context.Context, ns string, filter dat
 func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetEvents(ctx, filter)
+}
+
+func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+	return or.database.GetBlockchainEventByID(ctx, id)
+}
+
+func (or *orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+	return or.database.GetBlockchainEvents(ctx, or.scopeNS(ns, filter))
 }

@@ -1274,28 +1274,6 @@ func TestDeleteContractSubscriptionNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10109", err)
 }
 
-func TestGetContractEventByID(t *testing.T) {
-	cm := newTestContractManager()
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	id := fftypes.NewUUID()
-	mdi.On("GetBlockchainEventByID", context.Background(), id).Return(&fftypes.BlockchainEvent{}, nil)
-
-	_, err := cm.GetContractEventByID(context.Background(), id)
-	assert.NoError(t, err)
-}
-
-func TestGetContractEvents(t *testing.T) {
-	cm := newTestContractManager()
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	mdi.On("GetBlockchainEvents", context.Background(), mock.Anything).Return(nil, nil, nil)
-
-	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background())
-	_, _, err := cm.GetContractEvents(context.Background(), "ns", f.And())
-	assert.NoError(t, err)
-}
-
 func TestInvokeContractAPI(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -569,5 +569,25 @@ func TestGetEvents(t *testing.T) {
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetEvents(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetBlockchainEventByID(t *testing.T) {
+	or := newTestOrchestrator()
+
+	id := fftypes.NewUUID()
+	or.mdi.On("GetBlockchainEventByID", context.Background(), id).Return(&fftypes.BlockchainEvent{}, nil)
+
+	_, err := or.GetBlockchainEventByID(context.Background(), id)
+	assert.NoError(t, err)
+}
+
+func TestGetBlockchainEvents(t *testing.T) {
+	or := newTestOrchestrator()
+
+	or.mdi.On("GetBlockchainEvents", context.Background(), mock.Anything).Return(nil, nil, nil)
+
+	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background())
+	_, _, err := or.GetBlockchainEvents(context.Background(), "ns", f.And())
 	assert.NoError(t, err)
 }
