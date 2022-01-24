@@ -48,13 +48,13 @@ type Plugin interface {
 	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
-	MintTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
+	MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
 
 	// BurnTokens burns tokens from an account
-	BurnTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error
+	BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error
 
 	// TransferTokens transfers tokens within a pool from one account to another
-	TransferTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error
+	TransferTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -122,7 +122,4 @@ type TokenTransfer struct {
 
 	// Event contains info on the underlying blockchain event for this transfer
 	Event blockchain.Event
-
-	// TX contains info on the containing Transaction, if this transfer came from FireFly
-	TX fftypes.TransactionRef
 }
