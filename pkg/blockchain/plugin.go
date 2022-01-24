@@ -55,8 +55,6 @@ type Plugin interface {
 
 	ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) error
 
-	// ValidateFFIParam(ctx context.Context, method *fftypes.FFIParam) error
-
 	// AddSubscription adds a new subscription to a user-specified contract and event
 	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
 
