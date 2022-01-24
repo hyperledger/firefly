@@ -248,4 +248,8 @@ var (
 	MsgTooLargePrivate              = ffm("FF10328", "Message size %.2fkb is too large for the max private message size of %.2fkb", 400)
 	MsgManifestMismatch             = ffm("FF10329", "Manifest mismatch overriding '%s' status as failure: '%s'", 400)
 	MsgWSHeartbeatTimeout           = ffm("FF10330", "Websocket heartbeat timed out after %.2fms", 500)
+	MsgFFIValidationFail            = ffm("FF10331", "Field '%s' does not validate against the provided schema", 400)
+	MsgFFISchemaParseFail           = ffm("FF10332", "Failed to parse schema for param '%s'", 400)
+	MsgFFISchemaCompileFail         = ffm("FF10333", "Failed compile schema for param '%s'", 400)
+	MsgPluginInitializationFailed   = ffm("FF10334", "Plugin initialization error", 500)
 )

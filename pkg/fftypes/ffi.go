@@ -22,7 +22,14 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/santhosh-tekuri/jsonschema/v5"
 )
+
+type FFIParamValidator interface {
+	Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error)
+	GetMetaSchema() *jsonschema.Schema
+	GetExtensionName() string
+}
 
 type FFIReference struct {
 	ID      *UUID  `json:"id,omitempty"`
@@ -67,10 +74,8 @@ type FFIEvent struct {
 }
 
 type FFIParam struct {
-	Name       string    `json:"name"`
-	Type       string    `json:"type"`
-	Details    *JSONAny  `json:"details"`
-	Components FFIParams `json:"components,omitempty"`
+	Name   string   `json:"name"`
+	Schema *JSONAny `json:"schema,omitempty"`
 }
 
 type FFIParams []*FFIParam

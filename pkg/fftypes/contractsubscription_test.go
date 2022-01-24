@@ -52,12 +52,12 @@ func TestFFISerializedEventValue(t *testing.T) {
 			Name:        "event1",
 			Description: "a super event",
 			Params: FFIParams{
-				&FFIParam{Name: "details", Type: "integer", Details: JSONAnyPtr(`{"type": "uint256"}`)},
+				&FFIParam{Name: "details", Schema: JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`)},
 			},
 		},
 	}
 
 	val, err := params.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"name":"event1","description":"a super event","params":[{"name":"details","type":"integer","details":{"type":"uint256"}}]}`, string(val.([]byte)))
+	assert.Equal(t, `{"name":"event1","description":"a super event","params":[{"name":"details","schema":{"type":"integer","details":{"type":"uint256"}}}]}`, string(val.([]byte)))
 }

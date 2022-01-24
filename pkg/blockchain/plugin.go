@@ -55,13 +55,14 @@ type Plugin interface {
 
 	ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) error
 
-	ValidateFFIParam(ctx context.Context, method *fftypes.FFIParam) error
-
 	// AddSubscription adds a new subscription to a user-specified contract and event
 	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
 
 	// DeleteSubscription deletes a previously-created subscription
 	DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error
+
+	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
+	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

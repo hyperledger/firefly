@@ -40,21 +40,18 @@ func testFFI() *fftypes.FFI {
 				Name: "sum",
 				Params: fftypes.FFIParams{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr("{}"),
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 					},
 					{
-						Name:    "y",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr("{}"),
+						Name:   "y",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 					},
 				},
 				Returns: fftypes.FFIParams{
 					{
-						Name:    "result",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr("{}"),
+						Name:   "result",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 					},
 				},
 			},
@@ -66,9 +63,8 @@ func testFFI() *fftypes.FFI {
 					Name: "event1",
 					Params: fftypes.FFIParams{
 						{
-							Name:    "result",
-							Type:    "integer",
-							Details: fftypes.JSONAnyPtr("{}"),
+							Name:   "result",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 						},
 					},
 				},

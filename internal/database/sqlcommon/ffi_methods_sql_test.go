@@ -46,16 +46,14 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 		Description: "Sets things",
 		Params: fftypes.FFIParams{
 			{
-				Name:    "value",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr("\"internal-type-info\""),
+				Name:   "value",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
 		},
 		Returns: fftypes.FFIParams{
 			{
-				Name:    "value",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr("\"internal-type-info\""),
+				Name:   "value",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
 		},
 	}

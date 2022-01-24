@@ -47,9 +47,8 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 			Description: "Things changed",
 			Params: fftypes.FFIParams{
 				{
-					Name:    "value",
-					Type:    "integer",
-					Details: fftypes.JSONAnyPtr("\"internal-type-info\""),
+					Name:   "value",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 				},
 			},
 		},

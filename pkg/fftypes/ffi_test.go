@@ -33,21 +33,18 @@ func TestValidateFFI(t *testing.T) {
 				Name: "sum",
 				Params: []*FFIParam{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "x",
+						Schema: JSONAnyPtr(`{"type": "integer"}, "details": {"type": "uint256"}`),
 					},
 					{
-						Name:    "y",
-						Type:    "integer",
-						Details: JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "y",
+						Schema: JSONAnyPtr(`{"type": "integer"}, "details": {"type": "uint256"}`),
 					},
 				},
 				Returns: []*FFIParam{
 					{
-						Name:    "z",
-						Type:    "integer",
-						Details: JSONAnyPtr(`{"type": "uint256"}`),
+						Name:   "z",
+						Schema: JSONAnyPtr(`{"type": "integer"}, "details": {"type": "uint256"}`),
 					},
 				},
 			},
@@ -58,9 +55,8 @@ func TestValidateFFI(t *testing.T) {
 					Name: "sum",
 					Params: []*FFIParam{
 						{
-							Name:    "z",
-							Type:    "integer",
-							Details: JSONAnyPtr(`{"type": "uint256"}`),
+							Name:   "z",
+							Schema: JSONAnyPtr(`{"type": "integer"}, "details": {"type": "uint256"}`),
 						},
 					},
 				},
@@ -128,15 +124,14 @@ func TestFFIParamsScanError(t *testing.T) {
 func TestFFIParamsValue(t *testing.T) {
 	params := &FFIParams{
 		&FFIParam{
-			Name:    "x",
-			Type:    "integer",
-			Details: JSONAnyPtr(`{"type": "uint256"}`),
+			Name:   "x",
+			Schema: JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 		},
 	}
 
 	val, err := params.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, []byte(`[{"name":"x","type":"integer","details":{"type":"uint256"}}]`), val)
+	assert.Equal(t, []byte(`[{"name":"x","schema":{"type":"integer","details":{"type":"uint256"}}}]`), val)
 }
 
 func TestFFITopic(t *testing.T) {
