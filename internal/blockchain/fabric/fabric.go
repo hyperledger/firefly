@@ -265,6 +265,9 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	sTransactionHash := msgJSON.GetString("transactionId")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	transactionIndex := msgJSON.GetInt64("transactionIndex")
+	eventIndex := msgJSON.GetInt64("eventIndex")
 	signer := payload.GetString("signer")
 	ns := payload.GetString("namespace")
 	sUUIDs := payload.GetString("uuids")
@@ -317,7 +320,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		Event: blockchain.Event{
 			Source:     f.Name(),
 			Name:       "BatchPin",
-			ProtocolID: sTransactionHash,
+			ProtocolID: fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
 			Output:     *payload,
 			Info:       msgJSON,
 			Timestamp:  fftypes.UnixTime(timestamp),
