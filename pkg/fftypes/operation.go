@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -36,6 +36,8 @@ var (
 	OpTypeTokenAnnouncePool OpType = ffEnum("optype", "token_announce_pool")
 	// OpTypeTokenTransfer is a token transfer
 	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
+	// OpTypeContractInvoke is a smart contract invoke
+	OpTypeContractInvoke OpType = ffEnum("optype", "contract_invoke")
 )
 
 // OpStatus is the current status of an operation
