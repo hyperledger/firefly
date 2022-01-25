@@ -5040,6 +5040,7 @@ paths:
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -5089,6 +5090,7 @@ paths:
                     - batch_pin
                     - token_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                 type: object
           description: Success
@@ -5798,6 +5800,7 @@ paths:
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -5863,6 +5866,7 @@ paths:
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -9910,6 +9914,7 @@ paths:
                     - batch_pin
                     - token_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                 type: object
           description: Success
@@ -10017,6 +10022,7 @@ paths:
                     - batch_pin
                     - token_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                 type: object
           description: Success
@@ -10066,6 +10072,7 @@ paths:
                       - batch_pin
                       - token_pool
                       - token_transfer
+                      - contract_invoke
                       type: string
                   type: object
                 type: array

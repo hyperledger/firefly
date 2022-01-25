@@ -168,10 +168,37 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 		return nil, err
 	}
 
-	if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
-		return nil, err
-	}
-	if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
+	var op *fftypes.Operation
+	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
+			return err
+		}
+		if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
+			return err
+		}
+
+		tx := &fftypes.Transaction{
+			ID:        fftypes.NewUUID(),
+			Namespace: ns,
+			Type:      fftypes.TransactionTypeContractInvoke,
+			Created:   fftypes.Now(),
+			Status:    fftypes.OpStatusPending,
+		}
+		if err := cm.database.UpsertTransaction(ctx, tx); err != nil {
+			return err
+		}
+
+		op = fftypes.NewTXOperation(
+			cm.blockchain,
+			ns,
+			tx.ID,
+			"",
+			fftypes.OpTypeContractInvoke,
+			fftypes.OpStatusPending)
+		op.Input = req.Input
+		return cm.database.InsertOperation(ctx, op)
+	})
+	if err != nil {
 		return nil, err
 	}
 

@@ -27,6 +27,8 @@ var (
 	TransactionTypeTokenPool TransactionType = ffEnum("txtype", "token_pool")
 	// TransactionTypeTokenTransfer represents a token transfer
 	TransactionTypeTokenTransfer TransactionType = ffEnum("txtype", "token_transfer")
+	// TransactionTypeContractInvoke is a smart contract invoke
+	TransactionTypeContractInvoke OpType = ffEnum("txtype", "contract_invoke")
 )
 
 // TransactionRef refers to a transaction, in other types

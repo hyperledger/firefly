@@ -42,6 +42,8 @@ func newTestContractManager() *contractManager {
 	mbi := &blockchainmocks.Plugin{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
 
+	mbi.On("Name").Return("mockblockchain").Maybe()
+
 	rag := mdb.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{
@@ -970,6 +972,7 @@ func TestInvokeContract(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
 
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
@@ -985,6 +988,12 @@ func TestInvokeContract(t *testing.T) {
 	}
 
 	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Namespace == "ns1" && tx.Type == fftypes.TransactionTypeContractInvoke
+	})).Return(nil)
+	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeContractInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1030,9 +1039,36 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	assert.Regexp(t, "FF10313", err)
 }
 
+func TestInvokeContractTXFail(t *testing.T) {
+	cm := newTestContractManager()
+	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	req := &fftypes.ContractCallRequest{
+		Type:      fftypes.CallTypeInvoke,
+		Interface: fftypes.NewUUID(),
+		Ledger:    fftypes.JSONAnyPtr(""),
+		Location:  fftypes.JSONAnyPtr(""),
+		Method: &fftypes.FFIMethod{
+			Name:    "doStuff",
+			ID:      fftypes.NewUUID(),
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
+		},
+	}
+
+	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Namespace == "ns1" && tx.Type == fftypes.TransactionTypeContractInvoke
+	})).Return(fmt.Errorf("pop"))
+
+	_, err := cm.InvokeContract(context.Background(), "ns1", req)
+
+	assert.EqualError(t, err, "pop")
+}
+
 func TestInvokeContractNoMethodSignature(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	req := &fftypes.ContractCallRequest{
@@ -1045,7 +1081,6 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 	}
 
 	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", mock.Anything, mock.AnythingOfType("*fftypes.FFIMethod"), mock.Anything).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1115,6 +1150,7 @@ func TestQueryContract(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
 
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeQuery,
@@ -1130,6 +1166,12 @@ func TestQueryContract(t *testing.T) {
 	}
 
 	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Namespace == "ns1" && tx.Type == fftypes.TransactionTypeContractInvoke
+	})).Return(nil)
+	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeContractInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil)
 	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1140,6 +1182,7 @@ func TestQueryContract(t *testing.T) {
 func TestCallContractInvalidType(t *testing.T) {
 	cm := newTestContractManager()
 	mim := cm.identity.(*identitymanagermocks.Manager)
+	mdi := cm.database.(*databasemocks.Plugin)
 
 	req := &fftypes.ContractCallRequest{
 		Interface: fftypes.NewUUID(),
@@ -1154,6 +1197,12 @@ func TestCallContractInvalidType(t *testing.T) {
 	}
 
 	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Namespace == "ns1" && tx.Type == fftypes.TransactionTypeContractInvoke
+	})).Return(nil)
+	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeContractInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil)
 
 	assert.PanicsWithValue(t, "unknown call type: ", func() {
 		cm.InvokeContract(context.Background(), "ns1", req)
@@ -1301,6 +1350,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
 
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
@@ -1322,6 +1372,12 @@ func TestInvokeContractAPI(t *testing.T) {
 	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(&fftypes.FFIMethod{Name: "peel"}, nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Namespace == "ns1" && tx.Type == fftypes.TransactionTypeContractInvoke
+	})).Return(nil)
+	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeContractInvoke && op.Plugin == "mockblockchain"
+	})).Return(nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, mock.AnythingOfType("*fftypes.FFIMethod"), req.Input).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
