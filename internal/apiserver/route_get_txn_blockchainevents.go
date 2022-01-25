@@ -25,9 +25,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getTxnOps = &oapispec.Route{
-	Name:   "getTxnOps",
-	Path:   "namespaces/{ns}/transactions/{txnid}/operations",
+var getTxnBlockchainEvents = &oapispec.Route{
+	Name:   "getTxnBlockchainEvents",
+	Path:   "namespaces/{ns}/transactions/{txnid}/blockchainevents",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -37,9 +37,9 @@ var getTxnOps = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &[]*fftypes.Operation{} },
+	JSONOutputValue: func() interface{} { return &[]*fftypes.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetTransactionOperations(r.Ctx, r.PP["ns"], r.PP["txnid"]))
+		return filterResult(getOr(r.Ctx).GetTransactionBlockchainEvents(r.Ctx, r.PP["ns"], r.PP["txnid"]))
 	},
 }

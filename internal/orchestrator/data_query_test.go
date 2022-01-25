@@ -57,7 +57,6 @@ func TestGetTransactionOperationsOk(t *testing.T) {
 
 func TestGetTransactionOperationBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 	_, _, err := or.GetTransactionOperations(context.Background(), "ns1", "")
 	assert.Regexp(t, "FF10142", err)
 }
@@ -590,4 +589,17 @@ func TestGetBlockchainEvents(t *testing.T) {
 	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background())
 	_, _, err := or.GetBlockchainEvents(context.Background(), "ns", f.And())
 	assert.NoError(t, err)
+}
+
+func TestGetTransactionBlockchainEventsOk(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return([]*fftypes.BlockchainEvent{}, nil, nil)
+	_, _, err := or.GetTransactionBlockchainEvents(context.Background(), "ns1", fftypes.NewUUID().String())
+	assert.NoError(t, err)
+}
+
+func TestGetTransactionBlockchainEventsBadID(t *testing.T) {
+	or := newTestOrchestrator()
+	_, _, err := or.GetTransactionBlockchainEvents(context.Background(), "ns1", "")
+	assert.Regexp(t, "FF10142", err)
 }

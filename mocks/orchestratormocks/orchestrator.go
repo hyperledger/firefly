@@ -1016,6 +1016,38 @@ func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter 
 	return r0, r1, r2
 }
 
+// GetTransactionBlockchainEvents provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns string, id string) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 []*fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*fftypes.BlockchainEvent); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.BlockchainEvent)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+		r2 = rf(ctx, ns, id)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetTransactionByID provides a mock function with given fields: ctx, ns, id
 func (_m *Orchestrator) GetTransactionByID(ctx context.Context, ns string, id string) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, ns, id)
