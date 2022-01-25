@@ -7439,6 +7439,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -7475,6 +7481,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -7511,6 +7523,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -7657,6 +7675,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -7693,6 +7717,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -7729,6 +7759,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -7845,6 +7881,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: uri
         schema:
           type: string
@@ -7909,6 +7955,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8054,6 +8106,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -8090,6 +8148,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8126,6 +8190,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8540,6 +8610,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -8576,6 +8652,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8612,6 +8694,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8776,6 +8864,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -8812,6 +8906,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8848,6 +8948,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9324,6 +9430,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: uri
         schema:
           type: string
@@ -9388,6 +9504,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9520,6 +9642,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -9556,6 +9684,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9592,6 +9726,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9656,6 +9796,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint

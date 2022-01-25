@@ -295,10 +295,10 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			Key:         operatorAddress,
 			Message:     transferData.Message,
 			MessageHash: transferData.MessageHash,
-		},
-		TX: fftypes.TransactionRef{
-			ID:   transferData.TX,
-			Type: fftypes.TransactionTypeTokenTransfer,
+			TX: fftypes.TransactionRef{
+				ID:   transferData.TX,
+				Type: fftypes.TransactionTypeTokenTransfer,
+			},
 		},
 		Event: blockchain.Event{
 			Source:     ft.Name() + ":" + ft.configuredName,
@@ -405,9 +405,9 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 	return nil
 }
 
-func (ft *FFTokens) MintTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error {
+func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
-		TX:          txID,
+		TX:          mint.TX.ID,
 		Message:     mint.Message,
 		MessageHash: mint.MessageHash,
 	})
@@ -427,9 +427,9 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID, txID *fftypes.UUID, po
 	return nil
 }
 
-func (ft *FFTokens) BurnTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error {
+func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
-		TX:          txID,
+		TX:          burn.TX.ID,
 		Message:     burn.Message,
 		MessageHash: burn.MessageHash,
 	})
@@ -450,9 +450,9 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID, txID *fftypes.UUID, po
 	return nil
 }
 
-func (ft *FFTokens) TransferTokens(ctx context.Context, opID, txID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error {
+func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
-		TX:          txID,
+		TX:          transfer.TX.ID,
 		Message:     transfer.Message,
 		MessageHash: transfer.MessageHash,
 	})

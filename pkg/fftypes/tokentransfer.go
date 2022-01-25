@@ -40,6 +40,7 @@ type TokenTransfer struct {
 	Message         *UUID             `json:"message,omitempty"`
 	MessageHash     *Bytes32          `json:"messageHash,omitempty"`
 	Created         *FFTime           `json:"created,omitempty"`
+	TX              TransactionRef    `json:"tx"`
 	BlockchainEvent *UUID             `json:"blockchainEvent,omitempty"`
 }
 
