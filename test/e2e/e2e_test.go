@@ -304,32 +304,11 @@ func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgTyp
 	}
 }
 
-func waitForChangeEvent(t *testing.T, client *resty.Client, c chan *fftypes.ChangeEvent, match map[string]interface{}) map[string]interface{} {
-	for {
-		changeEvent := <-c
-		if changeEvent.Collection == "events" || changeEvent.Collection == "contractevents" {
-			event, err := GetChangeEvent(t, client, changeEvent)
-			if err != nil {
-				t.Logf("WARN: unable to get changeEvent: %v", err.Error())
-				continue
-			}
-			eventJSON, ok := event.(map[string]interface{})
-			if !ok {
-				t.Logf("WARN: unable to parse changeEvent: %v", event)
-				continue
-			}
-			if checkObject(t, match, eventJSON) {
-				return eventJSON
-			}
-		}
-	}
-}
-
 func waitForContractEvent(t *testing.T, client *resty.Client, c chan *fftypes.EventDelivery, match map[string]interface{}) map[string]interface{} {
 	for {
 		eventDelivery := <-c
 		if eventDelivery.Type == fftypes.EventTypeBlockchainEvent {
-			event, err := GetContractEvent(t, client, eventDelivery.Event.Reference.String())
+			event, err := GetBlockchainEvent(t, client, eventDelivery.Event.Reference.String())
 			if err != nil {
 				t.Logf("WARN: unable to get event: %v", err.Error())
 				continue
