@@ -56,7 +56,7 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
+	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, status blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string) error
 	ContractEvent(event *blockchain.ContractEvent) error
 
