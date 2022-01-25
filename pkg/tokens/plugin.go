@@ -70,7 +70,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error
+	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.
@@ -101,6 +101,9 @@ type TokenPool struct {
 	// Not guaranteed to be set for pool creation events triggered outside of FireFly
 	TransactionID *fftypes.UUID
 
+	// BlockchainTXID is the blockchain transaction hash that resulted in the event that created the pool
+	BlockchainTXID string
+
 	// Key is the chain-specific identifier for the user that created the pool
 	Key string
 
@@ -119,6 +122,9 @@ type TokenTransfer struct {
 
 	// PoolProtocolID is the ID assigned to the token pool by the connector
 	PoolProtocolID string
+
+	// BlockchainTXID is the blockchain transaction hash that resulted in the event that confirmed the transfer
+	BlockchainTXID string
 
 	// Event contains info on the underlying blockchain event for this transfer
 	Event blockchain.Event

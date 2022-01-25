@@ -78,16 +78,16 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	BlockchainOpUpdate(operationID *fftypes.UUID, txState TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
+	BlockchainOpUpdate(operationID *fftypes.UUID, txState TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, signingIdentity string) error
+	BatchPinComplete(batch *BatchPin, blockchainTXID, signingIdentity string) error
 
-	// ContractEvent notifies on the arrival of any event from a user-created subscription
-	ContractEvent(event *ContractEvent) error
+	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
+	BlockchainEvent(event *EventWithContext) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -163,9 +163,13 @@ type Event struct {
 	Timestamp *fftypes.FFTime
 }
 
-type ContractEvent struct {
+type EventWithContext struct {
 	Event
 
 	// Subscription is the ID assigned to a custom contract subscription by the connector
 	Subscription string
+
+	// We capture the blockchain TXID as in the case
+	// of a FireFly transaction we want to reflect that blockchain TX back onto the FireFly TX object
+	BlockchainTXID string
 }

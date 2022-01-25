@@ -51,13 +51,27 @@ func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: bi, batch, signingIdentity
-func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string) error {
-	ret := _m.Called(bi, batch, signingIdentity)
+// BatchPinComplete provides a mock function with given fields: bi, batch, blockchainTXID, signingIdentity
+func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, blockchainTXID string, signingIdentity string) error {
+	ret := _m.Called(bi, batch, blockchainTXID, signingIdentity)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string) error); ok {
-		r0 = rf(bi, batch, signingIdentity)
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string, string) error); ok {
+		r0 = rf(bi, batch, blockchainTXID, signingIdentity)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// BlockchainEvent provides a mock function with given fields: event
+func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithContext) error {
+	ret := _m.Called(event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*blockchain.EventWithContext) error); ok {
+		r0 = rf(event)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -76,20 +90,6 @@ func (_m *EventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(chan<- *fftypes.ChangeEvent)
 		}
-	}
-
-	return r0
-}
-
-// ContractEvent provides a mock function with given fields: event
-func (_m *EventManager) ContractEvent(event *blockchain.ContractEvent) error {
-	ret := _m.Called(event)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.ContractEvent) error); ok {
-		r0 = rf(event)
-	} else {
-		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -208,13 +208,13 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
-// OperationUpdate provides a mock function with given fields: plugin, operationID, txState, errorMessage, opOutput
-func (_m *EventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(plugin, operationID, txState, errorMessage, opOutput)
+// OperationUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
+func (_m *EventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(fftypes.Named, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, operationID, txState, errorMessage, opOutput)
+	if rf, ok := ret.Get(0).(func(fftypes.Named, *fftypes.UUID, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}

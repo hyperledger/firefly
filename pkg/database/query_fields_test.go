@@ -195,9 +195,9 @@ func TestBoolField(t *testing.T) {
 
 }
 
-func TestFFNameArrayField(t *testing.T) {
+func TestFFStringArrayField(t *testing.T) {
 
-	fd := &FFNameArrayField{}
+	fd := &FFStringArrayField{}
 	assert.NotEmpty(t, fd.description())
 	f := ffNameArrayField{}
 

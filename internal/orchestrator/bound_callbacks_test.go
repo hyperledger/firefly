@@ -45,16 +45,16 @@ func TestBoundCallbacks(t *testing.T) {
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
-	mei.On("BatchPinComplete", mbi, batch, "0x12345").Return(fmt.Errorf("pop"))
-	err := bc.BatchPinComplete(batch, "0x12345")
+	mei.On("BatchPinComplete", mbi, batch, "0xffffeeee", "0x12345").Return(fmt.Errorf("pop"))
+	err := bc.BatchPinComplete(batch, "0xffffeeee", "0x12345")
 	assert.EqualError(t, err, "pop")
 
-	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.BlockchainOpUpdate(opID, fftypes.OpStatusFailed, "error info", info)
+	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainOpUpdate(opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("OperationUpdate", mti, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "error info", info)
+	mei.On("OperationUpdate", mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
@@ -79,7 +79,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TokensTransferred(mti, transfer)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("ContractEvent", mock.AnythingOfType("*blockchain.ContractEvent")).Return(fmt.Errorf("pop"))
-	err = bc.ContractEvent(&blockchain.ContractEvent{})
+	mei.On("BlockchainEvent", mock.AnythingOfType("*blockchain.EventWithContext")).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainEvent(&blockchain.EventWithContext{})
 	assert.EqualError(t, err, "pop")
 }

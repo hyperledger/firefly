@@ -32,6 +32,7 @@ import (
 func newTransfer() *tokens.TokenTransfer {
 	return &tokens.TokenTransfer{
 		PoolProtocolID: "F1",
+		BlockchainTXID: "0xffffeeee",
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:       fftypes.TokenTransferTypeTransfer,
 			TokenIndex: "0",
@@ -49,7 +50,7 @@ func newTransfer() *tokens.TokenTransfer {
 		},
 		Event: blockchain.Event{
 			Name:       "Transfer",
-			ProtocolID: "tx1",
+			ProtocolID: "0000/0000/0000",
 			Info:       fftypes.JSONObject{"some": "info"},
 		},
 	}
@@ -126,7 +127,7 @@ func TestPersistTransferOpFail(t *testing.T) {
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -156,7 +157,7 @@ func TestPersistTransferBadOp(t *testing.T) {
 		return *t.ID == *transfer.TX.ID && t.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -187,7 +188,7 @@ func TestPersistTransferTxFail(t *testing.T) {
 		return *t.ID == *transfer.TX.ID && t.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -219,7 +220,7 @@ func TestPersistTransferGetTransferFail(t *testing.T) {
 	})).Return(nil)
 	mdi.On("GetTokenTransfer", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -254,7 +255,7 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -295,7 +296,7 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil)
 
-	valid, err := em.persistTokenTransfer(em.ctx, transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
 	assert.True(t, valid)
 	assert.NoError(t, err)
 
@@ -335,6 +336,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	info := fftypes.JSONObject{"some": "info"}
 	transfer := &tokens.TokenTransfer{
 		PoolProtocolID: "F1",
+		BlockchainTXID: "0xffffeeee",
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:       fftypes.TokenTransferTypeTransfer,
 			TokenIndex: "0",
@@ -348,7 +350,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 			Amount:     *fftypes.NewFFBigInt(1),
 		},
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
+			ProtocolID: "0000/0000/0000",
 			Info:       info,
 		},
 	}
@@ -393,6 +395,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	info := fftypes.JSONObject{"some": "info"}
 	transfer := &tokens.TokenTransfer{
 		PoolProtocolID: "F1",
+		BlockchainTXID: "0xffffeeee",
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:       fftypes.TokenTransferTypeTransfer,
 			TokenIndex: "0",
@@ -406,7 +409,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 			Amount:     *fftypes.NewFFBigInt(1),
 		},
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
+			ProtocolID: "0000/0000/0000",
 			Info:       info,
 		},
 	}

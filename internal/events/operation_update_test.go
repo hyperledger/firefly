@@ -17,6 +17,7 @@
 package events
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -34,11 +35,17 @@ func TestOperationUpdateSuccess(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 
 	opID := fftypes.NewUUID()
+	txid := fftypes.NewUUID()
+	mdi.On("RunAsGroup", em.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		args[1].(func(ctx context.Context) error)(em.ctx)
+	}).Return(nil)
 	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID}, nil)
 	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(nil)
+	mdi.On("GetTransactionByID", em.ctx, mock.Anything).Return(&fftypes.Transaction{ID: txid}, nil)
+	mdi.On("UpsertTransaction", em.ctx, mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
+	err := em.OperationUpdate(mdi, opID, fftypes.OpStatusFailed, "", "some error", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -55,7 +62,7 @@ func TestOperationUpdateNotFound(t *testing.T) {
 	mdi.On("GetOperationByID", em.ctx, opID).Return(nil, fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
+	err := em.operationUpdateCtx(em.ctx, opID, fftypes.OpStatusFailed, "", "some error", info)
 	assert.NoError(t, err) // swallowed after logging
 
 	mdi.AssertExpectations(t)
@@ -73,7 +80,7 @@ func TestOperationUpdateError(t *testing.T) {
 	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
+	err := em.operationUpdateCtx(em.ctx, opID, fftypes.OpStatusFailed, "", "some error", info)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -94,13 +101,14 @@ func TestOperationUpdateTransferFail(t *testing.T) {
 
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
 	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
-	mdi.On("UpdateTransaction", em.ctx, op.Transaction, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
 	})).Return(nil)
+	mdi.On("GetTransactionByID", em.ctx, mock.Anything).Return(&fftypes.Transaction{ID: fftypes.NewUUID()}, nil)
+	mdi.On("UpsertTransaction", em.ctx, mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, op.ID, fftypes.OpStatusFailed, "some error", info)
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "", "some error", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -121,10 +129,12 @@ func TestOperationUpdateTransferTransactionFail(t *testing.T) {
 
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
 	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
-	mdi.On("UpdateTransaction", em.ctx, op.Transaction, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
+	mdi.On("GetTransactionByID", em.ctx, mock.Anything).Return(&fftypes.Transaction{ID: fftypes.NewUUID()}, nil)
+	mdi.On("UpsertTransaction", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, op.ID, fftypes.OpStatusFailed, "some error", info)
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "", "some error", info)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -145,13 +155,12 @@ func TestOperationUpdateTransferEventFail(t *testing.T) {
 
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
 	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
-	mdi.On("UpdateTransaction", em.ctx, op.Transaction, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
 	})).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.OperationUpdate(mbi, op.ID, fftypes.OpStatusFailed, "some error", info)
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "", "some error", info)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)

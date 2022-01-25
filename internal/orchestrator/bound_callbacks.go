@@ -30,16 +30,16 @@ type boundCallbacks struct {
 	ei events.EventManager
 }
 
-func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.ei.OperationUpdate(bc.bi, operationID, txState, errorMessage, opOutput)
+func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.OperationUpdate(bc.bi, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.ei.OperationUpdate(plugin, operationID, txState, errorMessage, opOutput)
+func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.OperationUpdate(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string) error {
-	return bc.ei.BatchPinComplete(bc.bi, batch, signingIdentity)
+func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, blockchainTXID, signingIdentity string) error {
+	return bc.ei.BatchPinComplete(bc.bi, batch, blockchainTXID, signingIdentity)
 }
 
 func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
@@ -62,6 +62,6 @@ func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *toke
 	return bc.ei.TokensTransferred(plugin, transfer)
 }
 
-func (bc *boundCallbacks) ContractEvent(event *blockchain.ContractEvent) error {
-	return bc.ei.ContractEvent(event)
+func (bc *boundCallbacks) BlockchainEvent(event *blockchain.EventWithContext) error {
+	return bc.ei.BlockchainEvent(event)
 }

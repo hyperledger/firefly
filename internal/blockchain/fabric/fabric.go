@@ -325,7 +325,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, signer)
+	return f.callbacks.BatchPinComplete(batch, sTransactionHash, signer)
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -337,6 +337,9 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	delete(msgJSON, "payload")
 
 	sTransactionHash := msgJSON.GetString("transactionId")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	transactionIndex := msgJSON.GetInt64("transactionIndex")
+	eventIndex := msgJSON.GetInt64("eventIndex")
 	sub := msgJSON.GetString("subId")
 	name := msgJSON.GetString("eventName")
 	sTimestamp := msgJSON.GetString("timestamp")
@@ -346,19 +349,20 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		// Continue with zero timestamp
 	}
 
-	event := &blockchain.ContractEvent{
-		Subscription: sub,
+	event := &blockchain.EventWithContext{
+		Subscription:   sub,
+		BlockchainTXID: sTransactionHash,
 		Event: blockchain.Event{
 			Source:     f.Name(),
 			Name:       name,
-			ProtocolID: sTransactionHash,
+			ProtocolID: fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
 			Output:     *payload,
 			Info:       msgJSON,
 			Timestamp:  fftypes.UnixTime(timestamp),
 		},
 	}
 
-	return f.callbacks.ContractEvent(event)
+	return f.callbacks.BlockchainEvent(event)
 }
 
 func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -367,7 +371,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) er
 	headers := reply.GetObject("headers")
 	requestID := headers.GetString("requestId")
 	replyType := headers.GetString("type")
-	txHash := reply.GetString("transactionHash")
+	txHash := reply.GetString("transactionId")
 	message := reply.GetString("errorMessage")
 	if requestID == "" || replyType == "" {
 		l.Errorf("Reply cannot be processed: %+v", reply)
@@ -383,7 +387,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) er
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	return f.callbacks.BlockchainOpUpdate(operationID, updateType, message, reply)
+	return f.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {

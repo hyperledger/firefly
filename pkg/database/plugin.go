@@ -660,12 +660,12 @@ var MessageQueryFactory = &queryFields{
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"key":       &StringField{},
-	"topics":    &FFNameArrayField{},
+	"topics":    &FFStringArrayField{},
 	"tag":       &StringField{},
 	"group":     &Bytes32Field{},
 	"created":   &TimeField{},
 	"hash":      &Bytes32Field{},
-	"pins":      &FFNameArrayField{},
+	"pins":      &FFStringArrayField{},
 	"state":     &StringField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
@@ -692,11 +692,12 @@ var BatchQueryFactory = &queryFields{
 
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"type":      &StringField{},
-	"status":    &StringField{},
-	"created":   &TimeField{},
-	"namespace": &StringField{},
+	"id":            &UUIDField{},
+	"type":          &StringField{},
+	"status":        &StringField{},
+	"created":       &TimeField{},
+	"namespace":     &StringField{},
+	"blockchainids": &FFStringArrayField{},
 }
 
 // DataQueryFactory filter fields for data

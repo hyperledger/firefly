@@ -427,7 +427,7 @@ func TestFilterEventsMatch(t *testing.T) {
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFNameArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 					Tag:    "tag1",
 					Group:  nil,
 					Identity: fftypes.Identity{
@@ -444,7 +444,7 @@ func TestFilterEventsMatch(t *testing.T) {
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFNameArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 					Tag:    "tag2",
 					Group:  gid1,
 					Identity: fftypes.Identity{
@@ -461,7 +461,7 @@ func TestFilterEventsMatch(t *testing.T) {
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFNameArray{"topic2"},
+					Topics: fftypes.FFStringArray{"topic2"},
 					Tag:    "tag1",
 					Group:  nil,
 					Identity: fftypes.Identity{

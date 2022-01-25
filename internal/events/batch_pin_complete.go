@@ -32,7 +32,7 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string) error {
+func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, blockchainTXID, signingIdentity string) error {
 	if batchPin.TransactionID == nil {
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
@@ -49,19 +49,19 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 	log.L(em.ctx).Tracef("BatchPinComplete batch=%s info: %+v", batchPin.BatchID, batchPin.Event.Info)
 
 	if batchPin.BatchPayloadRef != "" {
-		return em.handleBroadcastPinComplete(batchPin, signingIdentity)
+		return em.handleBroadcastPinComplete(batchPin, blockchainTXID, signingIdentity)
 	}
-	return em.handlePrivatePinComplete(batchPin)
+	return em.handlePrivatePinComplete(batchPin, blockchainTXID)
 }
 
-func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin) error {
+func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, blockchainTXID string) error {
 	// Here we simple record all the pins as parked, and emit an event for the aggregator
 	// to check whether the messages in the batch have been written.
 	return em.retry.Do(em.ctx, "persist private batch pins", func(attempt int) (bool, error) {
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			err := em.persistBatchTransaction(ctx, batchPin)
+			err := em.persistBatchTransaction(ctx, batchPin, blockchainTXID)
 			if err == nil {
 				err = em.persistContexts(ctx, batchPin, true)
 			}
@@ -71,12 +71,13 @@ func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin) 
 	})
 }
 
-func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin) error {
+func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin, blockchainTXID string) error {
 	return em.database.UpsertTransaction(ctx, &fftypes.Transaction{
-		ID:        batchPin.TransactionID,
-		Namespace: batchPin.Namespace,
-		Type:      fftypes.TransactionTypeBatchPin,
-		Status:    fftypes.OpStatusSucceeded,
+		ID:            batchPin.TransactionID,
+		Namespace:     batchPin.Namespace,
+		Type:          fftypes.TransactionTypeBatchPin,
+		Status:        fftypes.OpStatusSucceeded,
+		BlockchainIDs: fftypes.NewFFStringArray(blockchainTXID),
 	})
 }
 
@@ -95,7 +96,7 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 	return nil
 }
 
-func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, signingIdentity string) error {
+func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, blockchainTXID, signingIdentity string) error {
 	var body io.ReadCloser
 	if err := em.retry.Do(em.ctx, "retrieve data", func(attempt int) (retry bool, err error) {
 		body, err = em.publicstorage.RetrieveData(em.ctx, batchPin.BatchPayloadRef)
@@ -125,7 +126,7 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
-			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
+			if err := em.persistBatchTransaction(ctx, batchPin, blockchainTXID); err != nil {
 				return err
 			}
 

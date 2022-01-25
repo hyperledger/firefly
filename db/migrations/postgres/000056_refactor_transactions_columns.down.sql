@@ -7,4 +7,7 @@ ALTER TABLE transactions ADD COLUMN info        BYTEA;
 
 CREATE INDEX transactions_protocol_id ON transactions(protocol_id);
 CREATE INDEX transactions_ref ON transactions(ref);
+
+DROP INDEX transactions_blockchain_ids;
+ALTER TABLE transactions DROP COLUMN blockchain_ids;
 COMMIT;

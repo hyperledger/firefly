@@ -267,11 +267,14 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, authorAddress)
+	return e.callbacks.BatchPinComplete(batch, sTransactionHash, authorAddress)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sTransactionHash := msgJSON.GetString("transactionHash")
+	txIndex := msgJSON.GetInt64("transactionIndex")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	logIndex := msgJSON.GetInt64("logIndex")
 	sub := msgJSON.GetString("subId")
 	signature := msgJSON.GetString("signature")
 	dataJSON := msgJSON.GetObject("data")
@@ -284,19 +287,20 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 	delete(msgJSON, "data")
 
-	event := &blockchain.ContractEvent{
-		Subscription: sub,
+	event := &blockchain.EventWithContext{
+		Subscription:   sub,
+		BlockchainTXID: sTransactionHash,
 		Event: blockchain.Event{
 			Source:     e.Name(),
 			Name:       name,
-			ProtocolID: sTransactionHash,
+			ProtocolID: fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
 			Output:     dataJSON,
 			Info:       msgJSON,
 			Timestamp:  timestamp,
 		},
 	}
 
-	return e.callbacks.ContractEvent(event)
+	return e.callbacks.BlockchainEvent(event)
 }
 
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -321,7 +325,7 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
-	return e.callbacks.BlockchainOpUpdate(operationID, updateType, message, reply)
+	return e.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
 }
 
 func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {

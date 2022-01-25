@@ -41,9 +41,10 @@ type TransactionRef struct {
 // node, with the correlation information to look them up on the underlying
 // ledger technology
 type Transaction struct {
-	ID        *UUID           `json:"id,omitempty"`
-	Namespace string          `json:"namespace,omitempty"`
-	Type      TransactionType `json:"type" ffenum:"txtype"`
-	Created   *FFTime         `json:"created"`
-	Status    OpStatus        `json:"status"`
+	ID            *UUID           `json:"id,omitempty"`
+	Namespace     string          `json:"namespace,omitempty"`
+	Type          TransactionType `json:"type" ffenum:"txtype"`
+	Created       *FFTime         `json:"created"`
+	Status        OpStatus        `json:"status"`
+	BlockchainIDs FFStringArray   `json:"blockchainIds,omitempty"`
 }

@@ -31,8 +31,9 @@ func TestContractEventWithRetries(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	ev := &blockchain.ContractEvent{
-		Subscription: "sb-1",
+	ev := &blockchain.EventWithContext{
+		BlockchainTXID: "0xabcd1234",
+		Subscription:   "sb-1",
 		Event: blockchain.Event{
 			Name: "Changed",
 			Output: fftypes.JSONObject{
@@ -62,7 +63,7 @@ func TestContractEventWithRetries(t *testing.T) {
 		return e.Type == fftypes.EventTypeBlockchainEvent && e.Reference != nil && e.Reference == eventID
 	})).Return(nil).Once()
 
-	err := em.ContractEvent(ev)
+	err := em.BlockchainEvent(ev)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -72,8 +73,9 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	ev := &blockchain.ContractEvent{
-		Subscription: "sb-1",
+	ev := &blockchain.EventWithContext{
+		BlockchainTXID: "0xabcd1234",
+		Subscription:   "sb-1",
 		Event: blockchain.Event{
 			Name: "Changed",
 			Output: fftypes.JSONObject{
@@ -88,7 +90,7 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetContractSubscriptionByProtocolID", mock.Anything, "sb-1").Return(nil, nil)
 
-	err := em.ContractEvent(ev)
+	err := em.BlockchainEvent(ev)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

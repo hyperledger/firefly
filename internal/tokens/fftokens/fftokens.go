@@ -155,6 +155,7 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 	requestID := data.GetString("id")
 	success := data.GetBool("success")
 	message := data.GetString("message")
+	transactionHash := data.GetString("transactionHash")
 	if requestID == "" {
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
 		return nil // Swallow this and move on
@@ -169,10 +170,11 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		replyType = fftypes.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	return ft.callbacks.TokenOpUpdate(ft, opID, replyType, message, data)
+	return ft.callbacks.TokenOpUpdate(ft, opID, replyType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
+	eventProtocolID := data.GetString("id")
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
 	standard := data.GetString("standard") // this is optional
@@ -205,16 +207,17 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	pool := &tokens.TokenPool{
-		Type:          fftypes.FFEnum(tokenType),
-		ProtocolID:    protocolID,
-		TransactionID: poolData.TX,
-		Key:           operatorAddress,
-		Connector:     ft.configuredName,
-		Standard:      standard,
+		Type:           fftypes.FFEnum(tokenType),
+		ProtocolID:     protocolID,
+		TransactionID:  poolData.TX,
+		BlockchainTXID: txHash,
+		Key:            operatorAddress,
+		Connector:      ft.configuredName,
+		Standard:       standard,
 		Event: blockchain.Event{
 			Source:     ft.Name() + ":" + ft.configuredName,
 			Name:       "TokenPool",
-			ProtocolID: txHash,
+			ProtocolID: eventProtocolID,
 			Output:     rawOutput,
 			Info:       tx,
 			Timestamp:  timestamp,
@@ -226,7 +229,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
-	protocolID := data.GetString("id")
+	eventProtocolID := data.GetString("id")
 	poolProtocolID := data.GetString("poolId")
 	operatorAddress := data.GetString("operator")
 	fromAddress := data.GetString("from")
@@ -254,7 +257,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		eventName = "Transfer"
 	}
 
-	if protocolID == "" ||
+	if eventProtocolID == "" ||
 		poolProtocolID == "" ||
 		operatorAddress == "" ||
 		value == "" ||
@@ -282,6 +285,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	}
 
 	transfer := &tokens.TokenTransfer{
+		BlockchainTXID: txHash,
 		PoolProtocolID: poolProtocolID,
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:        t,
@@ -291,7 +295,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			From:        fromAddress,
 			To:          toAddress,
 			Amount:      amount,
-			ProtocolID:  protocolID,
+			ProtocolID:  eventProtocolID,
 			Key:         operatorAddress,
 			Message:     transferData.Message,
 			MessageHash: transferData.MessageHash,
@@ -303,7 +307,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		Event: blockchain.Event{
 			Source:     ft.Name() + ":" + ft.configuredName,
 			Name:       eventName,
-			ProtocolID: txHash,
+			ProtocolID: eventProtocolID,
 			Output:     rawOutput,
 			Info:       tx,
 			Timestamp:  timestamp,

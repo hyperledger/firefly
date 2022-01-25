@@ -581,7 +581,8 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(nil)
+	em.On("BatchPinComplete", mock.Anything, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(nil)
+	em.On("BatchPinComplete", mock.Anything, "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695", "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -595,7 +596,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
+	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -663,7 +664,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(nil)
+	em.On("BatchPinComplete", mock.Anything, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -677,7 +678,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
-	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
+	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[2])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -716,7 +717,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BatchPinComplete", mock.Anything, "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695", "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -983,6 +984,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	em.On("BlockchainOpUpdate",
 		operationID,
 		fftypes.OpStatusSucceeded,
+		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
 		"",
 		mock.Anything).Return(nil)
 
@@ -1022,6 +1024,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	txsu := em.On("BlockchainOpUpdate",
 		operationID,
 		fftypes.OpStatusFailed,
+		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(fmt.Errorf("Shutdown"))
 	done := make(chan struct{})
@@ -1292,7 +1295,11 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("ContractEvent", mock.Anything).Return(nil)
+	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithContext) bool {
+		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
+		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
+		return true
+	})).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1300,7 +1307,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 
-	ev := em.Calls[0].Arguments[0].(*blockchain.ContractEvent)
+	ev := em.Calls[0].Arguments[0].(*blockchain.EventWithContext)
 	assert.Equal(t, "sub2", ev.Subscription)
 	assert.Equal(t, "Changed", ev.Event.Name)
 
@@ -1351,7 +1358,7 @@ func TestHandleMessageContractEventNoTimestamp(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("ContractEvent", mock.Anything).Return(nil)
+	em.On("BlockchainEvent", mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1387,7 +1394,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("ContractEvent", mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)

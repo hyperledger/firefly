@@ -51,7 +51,7 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 	return nil
 }
 
-func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
+func (em *eventManager) persistTokenTransfer(ctx context.Context, blockchainTXID string, transfer *tokens.TokenTransfer) (valid bool, err error) {
 	// Check that transfer has not already been recorded
 	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
 		return false, err
@@ -79,10 +79,11 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		}
 
 		tx := &fftypes.Transaction{
-			ID:        transfer.TX.ID,
-			Status:    fftypes.OpStatusSucceeded,
-			Namespace: transfer.Namespace,
-			Type:      transfer.TX.Type,
+			ID:            transfer.TX.ID,
+			Status:        fftypes.OpStatusSucceeded,
+			Namespace:     transfer.Namespace,
+			Type:          transfer.TX.Type,
+			BlockchainIDs: fftypes.NewFFStringArray(blockchainTXID),
 		}
 		if err := em.database.UpsertTransaction(ctx, tx); err != nil {
 			return false, err
@@ -122,7 +123,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			if valid, err := em.persistTokenTransfer(ctx, transfer); !valid || err != nil {
+			if valid, err := em.persistTokenTransfer(ctx, transfer.BlockchainTXID, transfer); !valid || err != nil {
 				return err
 			}
 

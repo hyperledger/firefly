@@ -5078,6 +5078,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  blockchainIds:
+                    items:
+                      type: string
+                    type: array
                   created: {}
                   id: {}
                   namespace:
@@ -9839,6 +9843,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blockchainids
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -9902,6 +9911,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  blockchainIds:
+                    items:
+                      type: string
+                    type: array
                   created: {}
                   id: {}
                   namespace:
@@ -9947,6 +9960,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blockchainids
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -10010,6 +10028,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  blockchainIds:
+                    items:
+                      type: string
+                    type: array
                   created: {}
                   id: {}
                   namespace:
@@ -10060,6 +10082,10 @@ paths:
               schema:
                 items:
                   properties:
+                    blockchainIds:
+                      items:
+                        type: string
+                      type: array
                     created: {}
                     id: {}
                     namespace:

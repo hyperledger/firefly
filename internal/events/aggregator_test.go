@@ -439,7 +439,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
 					ID:     nil, /* missing */
-					Topics: fftypes.FFNameArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				}},
 			},
 		},
@@ -466,7 +466,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
 					ID:     fftypes.NewUUID(),
-					Topics: fftypes.FFNameArray{"topic1", "topic2"},
+					Topics: fftypes.FFStringArray{"topic1", "topic2"},
 				}},
 			},
 		},
@@ -497,7 +497,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
 					ID:     fftypes.NewUUID(),
-					Topics: fftypes.FFNameArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				}},
 			},
 		},
@@ -528,9 +528,9 @@ func TestProcessMsgFailBadPin(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Topics: fftypes.FFNameArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
-		Pins: fftypes.FFNameArray{"!Wrong"},
+		Pins: fftypes.FFStringArray{"!Wrong"},
 	})
 	assert.NoError(t, err)
 
@@ -547,9 +547,9 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Topics: fftypes.FFNameArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
-		Pins: fftypes.FFNameArray{fftypes.NewRandB32().String()},
+		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
 	})
 	assert.EqualError(t, err, "pop")
 
@@ -567,9 +567,9 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, false, 12345, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: fftypes.FFNameArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
-		Pins: fftypes.FFNameArray{fftypes.NewRandB32().String()},
+		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
 	})
 	assert.EqualError(t, err, "pop")
 
@@ -595,9 +595,9 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Topics: fftypes.FFNameArray{"topic1"},
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
-		Pins: fftypes.FFNameArray{pin.String()},
+		Pins: fftypes.FFStringArray{pin.String()},
 	})
 	assert.EqualError(t, err, "pop")
 
