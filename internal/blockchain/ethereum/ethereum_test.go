@@ -411,15 +411,16 @@ func TestSubmitBatchPinOK(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, addr, req.FormValue(defaultPrefixShort+"-from"))
-			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
-			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
-			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", body["payloadRef"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[3])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
@@ -447,15 +448,16 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, addr, req.FormValue("fly-from"))
-			assert.Equal(t, "false", req.FormValue("fly-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
-			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
-			assert.Equal(t, "", body["payloadRef"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
+			assert.Equal(t, "", params[3])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
@@ -484,7 +486,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		httpmock.NewStringResponder(500, "pop"))
 
 	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
@@ -1414,14 +1416,15 @@ func TestInvokeContractOK(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
-			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, float64(2), params[1])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
@@ -1460,7 +1463,7 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
 		})
@@ -1484,14 +1487,15 @@ func TestInvokeContractUnmarshalResponseError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
-			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, float64(2), params[1])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
@@ -1507,19 +1511,15 @@ func TestQueryContractOK(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
-	params := map[string]interface{}{
-		"x": float64(1),
-		"y": float64(2),
-	}
+	params := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
 	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
@@ -1559,7 +1559,7 @@ func TestQueryContractEthconnectError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
 		})
@@ -1582,13 +1582,12 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
 	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)

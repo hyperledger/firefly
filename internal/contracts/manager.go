@@ -82,10 +82,7 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 }
 
 func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
-	c := jsonschema.NewCompiler()
-	c.Draft = jsonschema.Draft2020
-	f := FFIParamValidator{}
-	c.RegisterExtension(f.GetExtensionName(), f.GetMetaSchema(), f)
+	c := fftypes.NewFFISchemaCompiler()
 	if cm.ffiParamValidator != nil {
 		c.RegisterExtension(cm.ffiParamValidator.GetExtensionName(), cm.ffiParamValidator.GetMetaSchema(), cm.ffiParamValidator)
 	}

@@ -1,18 +1,18 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.1.0",
-    "sha": "aadd6a5cf66bbbe4a5cf8761b5928363a05379363e5afbeecda3a150ec0a057b"
+    "tag": "v3.1.0-20220124-16",
+    "sha": "0a728298341a4001c8f1da6f7bd628c6d97fc2f12ffb0512daa42e8cd2e07991"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.6",
-    "sha": "a7171e6aba7aae7e91dcf7efc5e9f4e96527c0057a809b6132044e1475c7c6c6"
+    "tag": "v0.9.6-20220121-11",
+    "sha": "13ee81872c9d107091c609929f91bf72ab2dc7f6e87a9c3ce904e489a47c5dfc"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v0.10.2",
-    "sha": "3539659b18f2b79fbb39881483086d869db51a2370646b6c95d4961d6b3c739b"
+    "tag": "v0.10.1-20220106-4",
+    "sha": "ff177a23ffb77a625f69b1b8d21e8f697caf5fbc8ecb62b5a2d7765c1e8cfd30"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",

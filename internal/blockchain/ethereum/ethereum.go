@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -33,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/wsclient"
+	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
 const (
@@ -69,14 +69,6 @@ type queryOutput struct {
 	Output string `json:"output"`
 }
 
-type ethBatchPinInput struct {
-	Namespace  string   `json:"namespace"`
-	UUIDs      string   `json:"uuids"`
-	BatchHash  string   `json:"batchHash"`
-	PayloadRef string   `json:"payloadRef"`
-	Contexts   []string `json:"contexts"`
-}
-
 type ethWSCommandPayload struct {
 	Type  string `json:"type"`
 	Topic string `json:"topic,omitempty"`
@@ -87,12 +79,78 @@ type Location struct {
 }
 
 type paramDetails struct {
-	Type    string
-	Indexed bool
+	Type         string
+	InternalType string
+	Indexed      bool
+	Index        int
+}
+
+// ABIArgumentMarshaling is abi.ArgumentMarshaling
+type ABIArgumentMarshaling struct {
+	Name         string                  `json:"name"`
+	Type         string                  `json:"type"`
+	InternalType string                  `json:"internalType,omitempty"`
+	Components   []ABIArgumentMarshaling `json:"components,omitempty"`
+	Indexed      bool                    `json:"indexed,omitempty"`
+}
+
+// ABIElementMarshaling is the serialized representation of a method or event in an ABI
+type ABIElementMarshaling struct {
+	Type            string                  `json:"type,omitempty"`
+	Name            string                  `json:"name,omitempty"`
+	Payable         bool                    `json:"payable,omitempty"`
+	Constant        bool                    `json:"constant,omitempty"`
+	Anonymous       bool                    `json:"anonymous,omitempty"`
+	StateMutability string                  `json:"stateMutability,omitempty"`
+	Inputs          []ABIArgumentMarshaling `json:"inputs"`
+	Outputs         []ABIArgumentMarshaling `json:"outputs"`
+}
+
+type EthconnectMessageRequest struct {
+	Headers EthconnectMessageHeaders `json:"headers,omitempty"`
+	To      string                   `json:"to"`
+	From    string                   `json:"from,omitempty"`
+	Method  ABIElementMarshaling     `json:"method"`
+	Params  []interface{}            `json:"params"`
+}
+
+type EthconnectMessageHeaders struct {
+	Type string `json:"type,omitempty"`
 }
 
 var batchPinEvent = "BatchPin"
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
+
+var batchPinABI = ABIElementMarshaling{
+	Name: "pinBatch",
+	Inputs: []ABIArgumentMarshaling{
+		{
+			InternalType: "string",
+			Name:         "namespace",
+			Type:         "string",
+		},
+		{
+			InternalType: "bytes32",
+			Name:         "uuids",
+			Type:         "bytes32",
+		},
+		{
+			InternalType: "bytes32",
+			Name:         "batchHash",
+			Type:         "bytes32",
+		},
+		{
+			InternalType: "string",
+			Name:         "payloadRef",
+			Type:         "string",
+		},
+		{
+			InternalType: "bytes32[]",
+			Name:         "contexts",
+			Type:         "bytes32[]",
+		},
+	},
+}
 
 func (e *Ethereum) Name() string {
 	return "ethereum"
@@ -416,22 +474,36 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, method, signingKey, requestID string, input interface{}) (*resty.Response, error) {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}) (*resty.Response, error) {
+	body := EthconnectMessageRequest{
+		Headers: EthconnectMessageHeaders{
+			Type: "SendTransaction",
+		},
+		From:   signingKey,
+		To:     address,
+		Method: abi,
+		Params: input,
+	}
 	return e.client.R().
 		SetContext(ctx).
-		SetQueryParam(e.prefixShort+"-from", signingKey).
-		SetQueryParam(e.prefixShort+"-sync", "false").
 		SetQueryParam(e.prefixShort+"-id", requestID).
-		SetBody(input).
-		Post(contractPath + "/" + method)
+		SetBody(body).
+		Post("/")
 }
 
-func (e *Ethereum) queryContractMethod(ctx context.Context, contractPath, method string, input interface{}) (*resty.Response, error) {
+func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}) (*resty.Response, error) {
+	body := EthconnectMessageRequest{
+		Headers: EthconnectMessageHeaders{
+			Type: "Query",
+		},
+		To:     address,
+		Method: abi,
+		Params: input,
+	}
 	return e.client.R().
 		SetContext(ctx).
-		SetQueryParam(e.prefixShort+"-call", "true").
-		SetBody(input).
-		Post(contractPath + "/" + method)
+		SetBody(body).
+		Post("/")
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
@@ -442,14 +514,14 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	input := &ethBatchPinInput{
-		Namespace:  batch.Namespace,
-		UUIDs:      ethHexFormatB32(&uuids),
-		BatchHash:  ethHexFormatB32(batch.BatchHash),
-		PayloadRef: batch.BatchPayloadRef,
-		Contexts:   ethHashes,
+	input := []interface{}{
+		batch.Namespace,
+		ethHexFormatB32(&uuids),
+		ethHexFormatB32(batch.BatchHash),
+		batch.BatchPayloadRef,
+		ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", signingKey, operationID.String(), input)
+	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", batchPinABI, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -457,11 +529,15 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
-	contractAddress, err := parseContractLocation(ctx, location)
+	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.invokeContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, signingKey, operationID.String(), input)
+	abi, orderedInput, err := e.prepareRequest(ctx, method, input)
+	if err != nil {
+		return nil, err
+	}
+	res, err := e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -473,11 +549,15 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 }
 
 func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
-	contractAddress, err := parseContractLocation(ctx, location)
+	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.queryContractMethod(ctx, fmt.Sprintf("contracts/%v", contractAddress.Address), method.Name, input)
+	abi, orderedInput, err := e.prepareRequest(ctx, method, input)
+	if err != nil {
+		return nil, err
+	}
+	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput)
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -535,4 +615,81 @@ func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	return &FFIParamValidator{}, nil
+}
+
+func (e *Ethereum) FFI2ABI(ctx context.Context, method *fftypes.FFIMethod) (ABIElementMarshaling, error) {
+	abiElement := ABIElementMarshaling{
+		Name:    method.Name,
+		Inputs:  make([]ABIArgumentMarshaling, len(method.Params)),
+		Outputs: make([]ABIArgumentMarshaling, len(method.Returns)),
+	}
+
+	for i, param := range method.Params {
+		c := fftypes.NewFFISchemaCompiler()
+		v, _ := e.GetFFIParamValidator(ctx)
+		c.RegisterExtension(v.GetExtensionName(), v.GetMetaSchema(), v)
+		err := c.AddResource(param.Name, strings.NewReader(param.Schema.String()))
+		if err != nil {
+			return abiElement, err
+		}
+		s, err := c.Compile(param.Name)
+		if err != nil {
+			return abiElement, err
+		}
+		abiElement.Inputs[i] = processField(param.Name, s)
+	}
+
+	return abiElement, nil
+}
+
+func processField(name string, schema *jsonschema.Schema) ABIArgumentMarshaling {
+	details := getParamDetails(schema)
+	arg := ABIArgumentMarshaling{
+		Name:    name,
+		Type:    details.Type,
+		Indexed: details.Indexed,
+	}
+	if schema.Types[0] == "object" {
+		arg.Components = buildABIArgumentArray(schema.Properties)
+	}
+	return arg
+}
+
+func buildABIArgumentArray(properties map[string]*jsonschema.Schema) []ABIArgumentMarshaling {
+	args := make([]ABIArgumentMarshaling, len(properties))
+	for propertyName, propertySchema := range properties {
+		details := getParamDetails(propertySchema)
+		arg := processField(propertyName, propertySchema)
+		args[details.Index] = arg
+	}
+	return args
+}
+
+func getParamDetails(schema *jsonschema.Schema) *paramDetails {
+	ext := schema.Extensions["details"]
+	details := ext.(detailsSchema)
+	blockchainType := details["type"].(string)
+	paramDetails := &paramDetails{
+		Type: blockchainType,
+	}
+	if i, ok := details["index"]; ok {
+		index, _ := i.(json.Number).Int64()
+		paramDetails.Index = int(index)
+	}
+	if i, ok := details["indexed"]; ok {
+		paramDetails.Indexed = i.(bool)
+	}
+	return paramDetails
+}
+
+func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}) (ABIElementMarshaling, []interface{}, error) {
+	orderedInput := make([]interface{}, len(method.Params))
+	abi, err := e.FFI2ABI(ctx, method)
+	if err != nil {
+		return abi, orderedInput, err
+	}
+	for i, ffiParam := range method.Params {
+		orderedInput[i] = input[ffiParam.Name]
+	}
+	return abi, orderedInput, nil
 }
