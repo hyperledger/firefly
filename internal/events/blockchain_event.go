@@ -53,7 +53,7 @@ func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *
 	return nil
 }
 
-func (em *eventManager) BlockchainEvent(event *blockchain.EventWithContext) error {
+func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
 	return em.retry.Do(em.ctx, "persist contract event", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// TODO: should cache this lookup for efficiency

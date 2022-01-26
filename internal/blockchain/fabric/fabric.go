@@ -318,17 +318,18 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
 		Event: blockchain.Event{
-			Source:     f.Name(),
-			Name:       "BatchPin",
-			ProtocolID: fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
-			Output:     *payload,
-			Info:       msgJSON,
-			Timestamp:  fftypes.UnixTime(timestamp),
+			BlockchainTXID: sTransactionHash,
+			Source:         f.Name(),
+			Name:           "BatchPin",
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
+			Output:         *payload,
+			Info:           msgJSON,
+			Timestamp:      fftypes.UnixTime(timestamp),
 		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, sTransactionHash, signer)
+	return f.callbacks.BatchPinComplete(batch, signer)
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -352,16 +353,16 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		// Continue with zero timestamp
 	}
 
-	event := &blockchain.EventWithContext{
-		Subscription:   sub,
-		BlockchainTXID: sTransactionHash,
+	event := &blockchain.EventWithSubscription{
+		Subscription: sub,
 		Event: blockchain.Event{
-			Source:     f.Name(),
-			Name:       name,
-			ProtocolID: fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
-			Output:     *payload,
-			Info:       msgJSON,
-			Timestamp:  fftypes.UnixTime(timestamp),
+			BlockchainTXID: sTransactionHash,
+			Source:         f.Name(),
+			Name:           name,
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
+			Output:         *payload,
+			Info:           msgJSON,
+			Timestamp:      fftypes.UnixTime(timestamp),
 		},
 	}
 

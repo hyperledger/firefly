@@ -252,4 +252,5 @@ var (
 	MsgFFISchemaParseFail           = ffm("FF10332", "Failed to parse schema for param '%s'", 400)
 	MsgFFISchemaCompileFail         = ffm("FF10333", "Failed compile schema for param '%s'", 400)
 	MsgPluginInitializationFailed   = ffm("FF10334", "Plugin initialization error", 500)
+	MsgSafeCharsOnly                = ffm("FF10335", "Field '%s' must include only alphanumerics (a-zA-Z0-9), dot (.), dash (-) and underscore (_)", 400)
 )

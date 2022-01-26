@@ -46,6 +46,12 @@ func TestFFStringArrayVerifyBadName(t *testing.T) {
 	assert.Regexp(t, `FF10131.*field1\[0\]`, err)
 }
 
+func TestFFStringArrayVerifyBadNonName(t *testing.T) {
+	na := FFStringArray{"!valid"}
+	err := na.Validate(context.Background(), "field1", false)
+	assert.Regexp(t, `FF10335.*field1\[0\]`, err)
+}
+
 func TestFFStringArrayVerifyTooLongTotal(t *testing.T) {
 	longstr := strings.Builder{}
 	for i := 0; i < (FFStringArrayStandardMax + 1); i++ {

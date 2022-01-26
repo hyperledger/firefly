@@ -51,13 +51,13 @@ func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: bi, batch, blockchainTXID, signingIdentity
-func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, blockchainTXID string, signingIdentity string) error {
-	ret := _m.Called(bi, batch, blockchainTXID, signingIdentity)
+// BatchPinComplete provides a mock function with given fields: bi, batch, signingIdentity
+func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string) error {
+	ret := _m.Called(bi, batch, signingIdentity)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string, string) error); ok {
-		r0 = rf(bi, batch, blockchainTXID, signingIdentity)
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string) error); ok {
+		r0 = rf(bi, batch, signingIdentity)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -66,11 +66,11 @@ func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain
 }
 
 // BlockchainEvent provides a mock function with given fields: event
-func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithContext) error {
+func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
 	ret := _m.Called(event)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.EventWithContext) error); ok {
+	if rf, ok := ret.Get(0).(func(*blockchain.EventWithSubscription) error); ok {
 		r0 = rf(event)
 	} else {
 		r0 = ret.Error(0)

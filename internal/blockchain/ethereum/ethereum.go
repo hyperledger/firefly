@@ -258,17 +258,18 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
 		Event: blockchain.Event{
-			Source:     e.Name(),
-			Name:       "BatchPin",
-			ProtocolID: fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
-			Output:     dataJSON,
-			Info:       msgJSON,
-			Timestamp:  timestamp,
+			BlockchainTXID: sTransactionHash,
+			Source:         e.Name(),
+			Name:           "BatchPin",
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
+			Output:         dataJSON,
+			Info:           msgJSON,
+			Timestamp:      timestamp,
 		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, sTransactionHash, authorAddress)
+	return e.callbacks.BatchPinComplete(batch, authorAddress)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -288,16 +289,16 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 	delete(msgJSON, "data")
 
-	event := &blockchain.EventWithContext{
-		Subscription:   sub,
-		BlockchainTXID: sTransactionHash,
+	event := &blockchain.EventWithSubscription{
+		Subscription: sub,
 		Event: blockchain.Event{
-			Source:     e.Name(),
-			Name:       name,
-			ProtocolID: fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
-			Output:     dataJSON,
-			Info:       msgJSON,
-			Timestamp:  timestamp,
+			BlockchainTXID: sTransactionHash,
+			Source:         e.Name(),
+			Name:           name,
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
+			Output:         dataJSON,
+			Info:           msgJSON,
+			Timestamp:      timestamp,
 		},
 	}
 

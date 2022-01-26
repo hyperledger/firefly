@@ -127,7 +127,7 @@ func TestPersistTransferOpFail(t *testing.T) {
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -157,7 +157,7 @@ func TestPersistTransferBadOp(t *testing.T) {
 		return *t.ID == *transfer.TX.ID && t.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -188,7 +188,7 @@ func TestPersistTransferTxFail(t *testing.T) {
 		return *t.ID == *transfer.TX.ID && t.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -220,7 +220,7 @@ func TestPersistTransferGetTransferFail(t *testing.T) {
 	})).Return(nil)
 	mdi.On("GetTokenTransfer", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -255,7 +255,7 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
@@ -296,7 +296,7 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil)
 
-	valid, err := em.persistTokenTransfer(em.ctx, "0xffffeeee", transfer)
+	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.True(t, valid)
 	assert.NoError(t, err)
 

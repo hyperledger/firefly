@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,8 +24,16 @@ import (
 )
 
 var (
-	ffNameValidator = regexp.MustCompile(`^[0-9a-zA-Z]([0-9a-zA-Z._-]{0,62}[0-9a-zA-Z])?$`)
+	ffNameValidator      = regexp.MustCompile(`^[0-9a-zA-Z]([0-9a-zA-Z._-]{0,62}[0-9a-zA-Z])?$`)
+	ffSafeCharsValidator = regexp.MustCompile(`^[0-9a-zA-Z._-]*$`)
 )
+
+func ValidateSafeCharsOnly(ctx context.Context, str string, fieldName string) error {
+	if !ffSafeCharsValidator.MatchString(str) {
+		return i18n.NewError(ctx, i18n.MsgSafeCharsOnly, fieldName)
+	}
+	return nil
+}
 
 func ValidateFFNameField(ctx context.Context, str string, fieldName string) error {
 	if !ffNameValidator.MatchString(str) {

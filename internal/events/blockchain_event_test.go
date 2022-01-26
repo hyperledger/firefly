@@ -31,11 +31,11 @@ func TestContractEventWithRetries(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	ev := &blockchain.EventWithContext{
-		BlockchainTXID: "0xabcd1234",
-		Subscription:   "sb-1",
+	ev := &blockchain.EventWithSubscription{
+		Subscription: "sb-1",
 		Event: blockchain.Event{
-			Name: "Changed",
+			BlockchainTXID: "0xabcd1234",
+			Name:           "Changed",
 			Output: fftypes.JSONObject{
 				"value": "1",
 			},
@@ -73,11 +73,11 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	ev := &blockchain.EventWithContext{
-		BlockchainTXID: "0xabcd1234",
-		Subscription:   "sb-1",
+	ev := &blockchain.EventWithSubscription{
+		Subscription: "sb-1",
 		Event: blockchain.Event{
-			Name: "Changed",
+			BlockchainTXID: "0xabcd1234",
+			Name:           "Changed",
 			Output: fftypes.JSONObject{
 				"value": "1",
 			},

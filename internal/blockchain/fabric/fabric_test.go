@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//		 http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -570,24 +570,24 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	data := []byte(`
 [
   {
-    "chaincodeId": "firefly",
-    "blockNumber": 91,
-    "transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
 		"transactionIndex": 2,
 		"eventIndex": 50,
-    "eventName": "BatchPin",
-    "payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiUW1mNDEyalFaaXVWVXRkZ25CMzZGWEZYN3hnNVY2S0ViU0o0ZHBRdWhrTHlmRCIsImNvbnRleHRzIjpbIjB4NjhlNGRhNzlmODA1YmNhNWI5MTJiY2RhOWM2M2QwM2U2ZTg2NzEwOGRhYmI5Yjk0NDEwOWFlYTU0MWVmNTIyYSIsIjB4MTliODIwOTNkZTVjZTkyYTAxZTMzMzA0OGU4NzdlMjM3NDM1NGJmODQ2ZGQwMzQ4NjRlZjZmZmJkNjQzODc3MSJdfQ==",
-    "subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+		"eventName": "BatchPin",
+		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiUW1mNDEyalFaaXVWVXRkZ25CMzZGWEZYN3hnNVY2S0ViU0o0ZHBRdWhrTHlmRCIsImNvbnRleHRzIjpbIjB4NjhlNGRhNzlmODA1YmNhNWI5MTJiY2RhOWM2M2QwM2U2ZTg2NzEwOGRhYmI5Yjk0NDEwOWFlYTU0MWVmNTIyYSIsIjB4MTliODIwOTNkZTVjZTkyYTAxZTMzMzA0OGU4NzdlMjM3NDM1NGJmODQ2ZGQwMzQ4NjRlZjZmZmJkNjQzODc3MSJdfQ==",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
   },
   {
-    "chaincodeId": "firefly",
-    "blockNumber": 77,
+		"chaincodeId": "firefly",
+		"blockNumber": 77,
 		"transactionIndex": 0,
 		"eventIndex": 0,
-    "transactionId": "a488800a70c8f765871611168d422fb29cc37da2d0a196a3200c8068ba1706fd",
-    "eventName": "BatchPin",
-    "payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiUW1mNDEyalFaaXVWVXRkZ25CMzZGWEZYN3hnNVY2S0ViU0o0ZHBRdWhrTHlmRCIsImNvbnRleHRzIjpbIjB4NjhlNGRhNzlmODA1YmNhNWI5MTJiY2RhOWM2M2QwM2U2ZTg2NzEwOGRhYmI5Yjk0NDEwOWFlYTU0MWVmNTIyYSIsIjB4MTliODIwOTNkZTVjZTkyYTAxZTMzMzA0OGU4NzdlMjM3NDM1NGJmODQ2ZGQwMzQ4NjRlZjZmZmJkNjQzODc3MSJdfQ==",
-    "subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+		"transactionId": "a488800a70c8f765871611168d422fb29cc37da2d0a196a3200c8068ba1706fd",
+		"eventName": "BatchPin",
+		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiUW1mNDEyalFaaXVWVXRkZ25CMzZGWEZYN3hnNVY2S0ViU0o0ZHBRdWhrTHlmRCIsImNvbnRleHRzIjpbIjB4NjhlNGRhNzlmODA1YmNhNWI5MTJiY2RhOWM2M2QwM2U2ZTg2NzEwOGRhYmI5Yjk0NDEwOWFlYTU0MWVmNTIyYSIsIjB4MTliODIwOTNkZTVjZTkyYTAxZTMzMzA0OGU4NzdlMjM3NDM1NGJmODQ2ZGQwMzQ4NjRlZjZmZmJkNjQzODc3MSJdfQ==",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
   }	
 ]`)
 
@@ -599,8 +599,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2", "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server").Return(nil)
-	em.On("BatchPinComplete", mock.Anything, "a488800a70c8f765871611168d422fb29cc37da2d0a196a3200c8068ba1706fd", "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server").Return(nil)
+	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server").Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -614,7 +613,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[1].Arguments[2])
+	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[1].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -627,12 +626,12 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	data := []byte(`
 [
   {
-    "chaincodeId": "firefly",
-    "blockNumber": 91,
-    "transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
-    "eventName": "BatchPin",
-    "payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMyMDQwLCJuYW5vcyI6MjI5MjM1MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiIiwiY29udGV4dHMiOlsiMHg2OGU0ZGE3OWY4MDViY2E1YjkxMmJjZGE5YzYzZDAzZTZlODY3MTA4ZGFiYjliOTQ0MTA5YWVhNTQxZWY1MjJhIiwiMHgxOWI4MjA5M2RlNWNlOTJhMDFlMzMzMDQ4ZTg3N2UyMzc0MzU0YmY4NDZkZDAzNDg2NGVmNmZmYmQ2NDM4NzcxIl19",
-    "subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"eventName": "BatchPin",
+		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMyMDQwLCJuYW5vcyI6MjI5MjM1MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiIiwiY29udGV4dHMiOlsiMHg2OGU0ZGE3OWY4MDViY2E1YjkxMmJjZGE5YzYzZDAzZTZlODY3MTA4ZGFiYjliOTQ0MTA5YWVhNTQxZWY1MjJhIiwiMHgxOWI4MjA5M2RlNWNlOTJhMDFlMzMzMDQ4ZTg3N2UyMzc0MzU0YmY4NDZkZDAzNDg2NGVmNmZmYmQ2NDM4NzcxIl19",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
   }
 ]`)
 
@@ -644,7 +643,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2", "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(nil)
+	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -658,7 +657,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[0].Arguments[2])
+	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[0].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -671,12 +670,12 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	data := []byte(`
 [
   {
-    "chaincodeId": "firefly",
-    "blockNumber": 91,
-    "transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
-    "eventName": "BatchPin",
-    "payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMyMDQwLCJuYW5vcyI6MjI5MjM1MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiIiwiY29udGV4dHMiOlsiMHg2OGU0ZGE3OWY4MDViY2E1YjkxMmJjZGE5YzYzZDAzZTZlODY3MTA4ZGFiYjliOTQ0MTA5YWVhNTQxZWY1MjJhIiwiMHgxOWI4MjA5M2RlNWNlOTJhMDFlMzMzMDQ4ZTg3N2UyMzc0MzU0YmY4NDZkZDAzNDg2NGVmNmZmYmQ2NDM4NzcxIl19",
-    "subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"eventName": "BatchPin",
+		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMyMDQwLCJuYW5vcyI6MjI5MjM1MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiIiwiY29udGV4dHMiOlsiMHg2OGU0ZGE3OWY4MDViY2E1YjkxMmJjZGE5YzYzZDAzZTZlODY3MTA4ZGFiYjliOTQ0MTA5YWVhNTQxZWY1MjJhIiwiMHgxOWI4MjA5M2RlNWNlOTJhMDFlMzMzMDQ4ZTg3N2UyMzc0MzU0YmY4NDZkZDAzNDg2NGVmNmZmYmQ2NDM4NzcxIl19",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
   }
 ]`)
 
@@ -688,7 +687,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2", "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -702,11 +701,11 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	data := []byte(`
 [
   {
-    "chaincodeId": "firefly",
-    "blockNumber": 91,
-    "transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
-    "eventName": "BatchPin",
-    "subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"eventName": "BatchPin",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
   }
 ]`)
 
@@ -728,11 +727,11 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 	data := []byte(`
 [
   {
-    "chaincodeId": "firefly",
-    "blockNumber": 91,
-    "transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
-    "eventName": "UnknownEvent",
-    "subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"eventName": "UnknownEvent",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
   }
 ]`)
 
@@ -938,16 +937,16 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	operationID := fftypes.NewUUID()
 	data := []byte(`{
 		"_id": "748e7587-9e72-4244-7351-808f69b88291",
-    "headers": {
-        "id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
-        "requestId": "` + operationID.String() + `",
-        "requestOffset": "",
-        "timeElapsed": 0.475721,
-        "timeReceived": "2021-08-27T03:04:34.199742Z",
-        "type": "TransactionSuccess"
-    },
+		"headers": {
+				"id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
+				"requestId": "` + operationID.String() + `",
+				"requestOffset": "",
+				"timeElapsed": 0.475721,
+				"timeReceived": "2021-08-27T03:04:34.199742Z",
+				"type": "TransactionSuccess"
+		},
 		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
-    "receivedAt": 1630033474675
+		"receivedAt": 1630033474675
   }`)
 
 	em.On("BlockchainOpUpdate",
@@ -995,15 +994,15 @@ func TestHandleReceiptBadRequestID(t *testing.T) {
 	var reply fftypes.JSONObject
 	data := []byte(`{
 		"_id": "748e7587-9e72-4244-7351-808f69b88291",
-    "headers": {
-        "id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
-        "requestId": "bad-UUID",
-        "requestOffset": "",
-        "timeElapsed": 0.475721,
-        "timeReceived": "2021-08-27T03:04:34.199742Z",
-        "type": "TransactionSuccess"
-    },
-    "receivedAt": 1630033474675
+		"headers": {
+				"id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
+				"requestId": "bad-UUID",
+				"requestOffset": "",
+				"timeElapsed": 0.475721,
+				"timeReceived": "2021-08-27T03:04:34.199742Z",
+				"type": "TransactionSuccess"
+		},
+		"receivedAt": 1630033474675
   }`)
 
 	err := json.Unmarshal(data, &reply)
@@ -1026,15 +1025,15 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 	operationID := fftypes.NewUUID()
 	data := []byte(`{
 		"_id": "748e7587-9e72-4244-7351-808f69b88291",
-    "headers": {
-        "id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
-        "requestId": "` + operationID.String() + `",
-        "requestOffset": "",
-        "timeElapsed": 0.475721,
-        "timeReceived": "2021-08-27T03:04:34.199742Z",
-        "type": "TransactionFailure"
-    },
-    "receivedAt": 1630033474675,
+		"headers": {
+				"id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
+				"requestId": "` + operationID.String() + `",
+				"requestOffset": "",
+				"timeElapsed": 0.475721,
+				"timeReceived": "2021-08-27T03:04:34.199742Z",
+				"type": "TransactionFailure"
+		},
+		"receivedAt": 1630033474675,
 		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2"
   }`)
 
@@ -1217,7 +1216,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithContext) bool {
+	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", e.BlockchainTXID)
 		assert.Equal(t, "000000000010/000020/000030", e.Event.ProtocolID)
 		return true
@@ -1229,7 +1228,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 
-	ev := em.Calls[0].Arguments[0].(*blockchain.EventWithContext)
+	ev := em.Calls[0].Arguments[0].(*blockchain.EventWithSubscription)
 	assert.Equal(t, "sb-cb37cc07-e873-4f58-44ab-55add6bba320", ev.Subscription)
 	assert.Equal(t, "AssetCreated", ev.Event.Name)
 

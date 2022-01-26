@@ -14,13 +14,13 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// BatchPinComplete provides a mock function with given fields: batch, blockchainTXID, signingIdentity
-func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, blockchainTXID string, signingIdentity string) error {
-	ret := _m.Called(batch, blockchainTXID, signingIdentity)
+// BatchPinComplete provides a mock function with given fields: batch, signingIdentity
+func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string) error {
+	ret := _m.Called(batch, signingIdentity)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, string, string) error); ok {
-		r0 = rf(batch, blockchainTXID, signingIdentity)
+	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, string) error); ok {
+		r0 = rf(batch, signingIdentity)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -29,11 +29,11 @@ func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, blockchainTXID
 }
 
 // BlockchainEvent provides a mock function with given fields: event
-func (_m *Callbacks) BlockchainEvent(event *blockchain.EventWithContext) error {
+func (_m *Callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
 	ret := _m.Called(event)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.EventWithContext) error); ok {
+	if rf, ok := ret.Get(0).(func(*blockchain.EventWithSubscription) error); ok {
 		r0 = rf(event)
 	} else {
 		r0 = ret.Error(0)

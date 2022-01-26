@@ -84,10 +84,10 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, blockchainTXID, signingIdentity string) error
+	BatchPinComplete(batch *BatchPin, signingIdentity string) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
-	BlockchainEvent(event *EventWithContext) error
+	BlockchainEvent(event *EventWithSubscription) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -161,15 +161,15 @@ type Event struct {
 
 	// Timestamp is the time the event was emitted from the blockchain
 	Timestamp *fftypes.FFTime
-}
-
-type EventWithContext struct {
-	Event
-
-	// Subscription is the ID assigned to a custom contract subscription by the connector
-	Subscription string
 
 	// We capture the blockchain TXID as in the case
 	// of a FireFly transaction we want to reflect that blockchain TX back onto the FireFly TX object
 	BlockchainTXID string
+}
+
+type EventWithSubscription struct {
+	Event
+
+	// Subscription is the ID assigned to a custom contract subscription by the connector
+	Subscription string
 }

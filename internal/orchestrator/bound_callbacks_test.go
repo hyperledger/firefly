@@ -45,8 +45,8 @@ func TestBoundCallbacks(t *testing.T) {
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
-	mei.On("BatchPinComplete", mbi, batch, "0xffffeeee", "0x12345").Return(fmt.Errorf("pop"))
-	err := bc.BatchPinComplete(batch, "0xffffeeee", "0x12345")
+	mei.On("BatchPinComplete", mbi, batch, "0x12345").Return(fmt.Errorf("pop"))
+	err := bc.BatchPinComplete(batch, "0x12345")
 	assert.EqualError(t, err, "pop")
 
 	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
@@ -79,7 +79,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TokensTransferred(mti, transfer)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BlockchainEvent", mock.AnythingOfType("*blockchain.EventWithContext")).Return(fmt.Errorf("pop"))
-	err = bc.BlockchainEvent(&blockchain.EventWithContext{})
+	mei.On("BlockchainEvent", mock.AnythingOfType("*blockchain.EventWithSubscription")).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
 	assert.EqualError(t, err, "pop")
 }

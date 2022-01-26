@@ -100,6 +100,10 @@ func (sa FFStringArray) Validate(ctx context.Context, fieldName string, isName b
 			if err := ValidateFFNameField(ctx, n, fmt.Sprintf("%s[%d]", fieldName, i)); err != nil {
 				return err
 			}
+		} else {
+			if err := ValidateSafeCharsOnly(ctx, n, fmt.Sprintf("%s[%d]", fieldName, i)); err != nil {
+				return err
+			}
 		}
 	}
 	if isName && len(sa) > FFStringNameItemsMax {
