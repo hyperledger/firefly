@@ -1,18 +1,4 @@
-components:
-  schemas:
-    FFIParam:
-      properties:
-        components:
-          items:
-            $ref: '#/components/schemas/FFIParam'
-          type: array
-        details:
-          type: string
-        name:
-          type: string
-        type:
-          type: string
-      type: object
+components: {}
 info:
   title: FireFly
   version: "1.0"
@@ -415,15 +401,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -447,15 +427,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -464,15 +438,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -834,15 +802,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -1384,6 +1346,201 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/blockchainevents:
+    get:
+      description: 'TODO: Description'
+      operationId: getBlockchainEvents
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: source
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: subscription
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: timestamp
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
+                  protocolId:
+                    type: string
+                  sequence:
+                    format: int64
+                    type: integer
+                  source:
+                    type: string
+                  subscription: {}
+                  timestamp: {}
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/blockchainevents/{id}:
+    get:
+      description: 'TODO: Description'
+      operationId: getBlockchainEventByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
+                  protocolId:
+                    type: string
+                  sequence:
+                    format: int64
+                    type: integer
+                  source:
+                    type: string
+                  subscription: {}
+                  timestamp: {}
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/broadcast/datatype:
     post:
       deprecated: true
@@ -1667,201 +1824,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/events:
-    get:
-      description: 'TODO: Description'
-      operationId: getContractEvents
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: protocolid
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: source
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: subscription
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: timestamp
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: tx.id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: tx.type
-        schema:
-          type: string
-      - description: Sort field. For multi-field sort use comma separated values (or
-          multiple query values) with '-' prefix for descending
-        in: query
-        name: sort
-        schema:
-          type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
-        in: query
-        name: ascending
-        schema:
-          type: string
-      - description: Descending sort order (overrides all fields in a multi-field
-          sort)
-        in: query
-        name: descending
-        schema:
-          type: string
-      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
-          operations'
-        in: query
-        name: skip
-        schema:
-          type: string
-      - description: 'The maximum number of records to return (max: 1,000)'
-        in: query
-        name: limit
-        schema:
-          example: "25"
-          type: string
-      - description: Return a total count as well as items (adds extra database processing)
-        in: query
-        name: count
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  id: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  output:
-                    additionalProperties: {}
-                    type: object
-                  protocolId:
-                    type: string
-                  sequence:
-                    format: int64
-                    type: integer
-                  source:
-                    type: string
-                  subscription: {}
-                  timestamp: {}
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
-                type: object
-          description: Success
-        default:
-          description: ""
-  /namespaces/{ns}/contracts/events/{id}:
-    get:
-      description: 'TODO: Description'
-      operationId: getContractEventByID
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  id: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  output:
-                    additionalProperties: {}
-                    type: object
-                  protocolId:
-                    type: string
-                  sequence:
-                    format: int64
-                    type: integer
-                  source:
-                    type: string
-                  subscription: {}
-                  timestamp: {}
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
-                type: object
-          description: Success
-        default:
-          description: ""
   /namespaces/{ns}/contracts/interfaces:
     get:
       description: 'TODO: Description'
@@ -1957,15 +1919,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -1989,15 +1945,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2006,15 +1956,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2075,15 +2019,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2105,15 +2043,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2122,15 +2054,9 @@ paths:
                       returns:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2163,15 +2089,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2195,15 +2115,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2212,15 +2126,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2289,15 +2197,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2321,15 +2223,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2338,15 +2234,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2426,15 +2316,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2443,15 +2327,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2523,15 +2401,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2540,15 +2412,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2617,15 +2483,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2651,15 +2511,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -2738,15 +2592,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2770,15 +2618,9 @@ paths:
                         params:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2787,15 +2629,9 @@ paths:
                         returns:
                           items:
                             properties:
-                              components:
-                                items:
-                                  $ref: '#/components/schemas/FFIParam'
-                                type: array
-                              details:
-                                type: string
                               name:
                                 type: string
-                              type:
+                              schema:
                                 type: string
                             type: object
                           type: array
@@ -2864,15 +2700,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2881,15 +2711,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2950,15 +2774,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -2967,15 +2785,9 @@ paths:
                     returns:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -3083,15 +2895,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -3150,15 +2956,9 @@ paths:
                     params:
                       items:
                         properties:
-                          components:
-                            items:
-                              $ref: '#/components/schemas/FFIParam'
-                            type: array
-                          details:
-                            type: string
                           name:
                             type: string
-                          type:
+                          schema:
                             type: string
                         type: object
                       type: array
@@ -3198,15 +2998,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -3300,15 +3094,9 @@ paths:
                       params:
                         items:
                           properties:
-                            components:
-                              items:
-                                $ref: '#/components/schemas/FFIParam'
-                              type: array
-                            details:
-                              type: string
                             name:
                               type: string
-                            type:
+                            schema:
                               type: string
                           type: object
                         type: array
@@ -5252,6 +5040,7 @@ paths:
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -5301,6 +5090,7 @@ paths:
                     - batch_pin
                     - token_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                 type: object
           description: Success
@@ -6010,6 +5800,7 @@ paths:
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -6075,6 +5866,7 @@ paths:
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -7651,6 +7443,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -7687,6 +7485,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -7723,6 +7527,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -7869,6 +7679,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -7905,6 +7721,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -7941,6 +7763,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8057,6 +7885,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: uri
         schema:
           type: string
@@ -8121,6 +7959,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8266,6 +8110,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -8302,6 +8152,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8338,6 +8194,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8752,6 +8614,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -8788,6 +8656,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8824,6 +8698,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -8988,6 +8868,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -9024,6 +8910,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9060,6 +8952,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9536,6 +9434,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: uri
         schema:
           type: string
@@ -9600,6 +9508,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9732,6 +9646,12 @@ paths:
                   type: string
                 tokenIndex:
                   type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
                 type:
                   enum:
                   - mint
@@ -9768,6 +9688,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9804,6 +9730,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9868,6 +9800,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     enum:
                     - mint
@@ -9976,6 +9914,7 @@ paths:
                     - batch_pin
                     - token_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                 type: object
           description: Success
@@ -10083,6 +10022,7 @@ paths:
                     - batch_pin
                     - token_pool
                     - token_transfer
+                    - contract_invoke
                     type: string
                 type: object
           description: Success
@@ -10132,6 +10072,7 @@ paths:
                       - batch_pin
                       - token_pool
                       - token_transfer
+                      - contract_invoke
                       type: string
                   type: object
                 type: array

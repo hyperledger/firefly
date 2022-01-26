@@ -80,6 +80,10 @@ type iMessageCollection interface {
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
+	// ReplaceMessage updates the message, and assigns it a new sequence number at the front of the list.
+	// A new event is raised for the message, with the new sequence number - as if it was brand new.
+	ReplaceMessage(ctx context.Context, message *fftypes.Message) (err error)
+
 	// UpdateMessages - Update messages
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
@@ -902,6 +906,8 @@ var TokenTransferQueryFactory = &queryFields{
 	"message":         &UUIDField{},
 	"messagehash":     &Bytes32Field{},
 	"created":         &TimeField{},
+	"tx.type":         &StringField{},
+	"tx.id":           &UUIDField{},
 	"blockchainevent": &UUIDField{},
 }
 

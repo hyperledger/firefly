@@ -55,7 +55,7 @@ var (
 	urlContractQuery         = "/namespaces/default/contracts/query"
 	urlContractInterface     = "/namespaces/default/contracts/interfaces"
 	urlContractSubscriptions = "/namespaces/default/contracts/subscriptions"
-	urlContractEvents        = "/namespaces/default/contracts/events"
+	urlBlockchainEvents      = "/namespaces/default/blockchainevents"
 	urlGetOrganizations      = "/network/organizations"
 )
 
@@ -508,7 +508,7 @@ func GetContractSubscriptions(t *testing.T, client *resty.Client, startTime time
 }
 
 func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time, subscriptionID *fftypes.UUID) (events []*fftypes.BlockchainEvent) {
-	path := urlContractEvents
+	path := urlBlockchainEvents
 	resp, err := client.R().
 		SetQueryParam("timestamp", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetQueryParam("subscriptionId", subscriptionID.String()).
@@ -586,24 +586,6 @@ func QueryFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName 
 	return res, err
 }
 
-func GetChangeEvent(t *testing.T, client *resty.Client, changeEvent *fftypes.ChangeEvent) (interface{}, error) {
-	var res interface{}
-	var url string
-	switch changeEvent.Collection {
-	case "contractevents":
-		url = urlContractEvents
-	case "events":
-		url = urlGetEvents
-	}
-	path := fmt.Sprintf("%s/%s", url, changeEvent.ID)
-	resp, err := client.R().
-		SetResult(&res).
-		Get(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
 func GetEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
 	var res interface{}
 	path := fmt.Sprintf("%s/%s", urlGetEvents, eventID)
@@ -615,9 +597,9 @@ func GetEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, 
 	return res, err
 }
 
-func GetContractEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
+func GetBlockchainEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
 	var res interface{}
-	path := fmt.Sprintf("%s/%s", urlContractEvents, eventID)
+	path := fmt.Sprintf("%s/%s", urlBlockchainEvents, eventID)
 	resp, err := client.R().
 		SetResult(&res).
 		Get(path)

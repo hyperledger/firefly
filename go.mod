@@ -36,6 +36,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/qeesung/image2ascii v1.0.1
 	github.com/rs/cors v1.8.2
+	github.com/santhosh-tekuri/jsonschema/v5 v5.0.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.7.1 // indirect
 	github.com/spf13/cobra v1.3.0
@@ -43,12 +44,10 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/wayneashleyberry/terminal-dimensions v1.0.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
-	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
-	github.com/xeipuuv/gojsonschema v1.2.0
 	gitlab.com/hfuss/mux-prometheus v0.0.4
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
+	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7

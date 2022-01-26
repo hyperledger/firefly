@@ -126,7 +126,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -156,7 +156,7 @@ func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -277,7 +277,7 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(tokenPools[0], nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -449,7 +449,7 @@ func TestMintTokensFail(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -481,7 +481,7 @@ func TestMintTokensFailAndDbFail(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer && tx.Status != fftypes.OpStatusFailed
@@ -543,7 +543,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -583,7 +583,7 @@ func TestMintTokensByTypeSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -613,7 +613,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("BurnTokens", context.Background(), mock.Anything, mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
+	mti.On("BurnTokens", context.Background(), mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -667,7 +667,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("BurnTokens", context.Background(), mock.Anything, mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
+	mti.On("BurnTokens", context.Background(), mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -707,7 +707,7 @@ func TestBurnTokensByTypeSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("BurnTokens", context.Background(), mock.Anything, mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
+	mti.On("BurnTokens", context.Background(), mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -743,7 +743,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -929,7 +929,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mms := &sysmessagingmocks.MessageSender{}
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -1027,7 +1027,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mms := &sysmessagingmocks.MessageSender{}
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -1108,7 +1108,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
@@ -1169,7 +1169,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
@@ -1226,7 +1226,7 @@ func TestTransferTokensByTypeSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)

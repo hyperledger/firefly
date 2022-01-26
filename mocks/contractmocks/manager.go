@@ -155,61 +155,6 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns
 	return r0, r1, r2
 }
 
-// GetContractEventByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetContractEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *fftypes.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BlockchainEvent); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContractEvents provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetContractEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
-
-	var r0 []*fftypes.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.BlockchainEvent); ok {
-		r0 = rf(ctx, ns, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.BlockchainEvent)
-		}
-	}
-
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
 // GetContractSubscriptionByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
 func (_m *Manager) GetContractSubscriptionByNameOrID(ctx context.Context, ns string, nameOrID string) (*fftypes.ContractSubscription, error) {
 	ret := _m.Called(ctx, ns, nameOrID)

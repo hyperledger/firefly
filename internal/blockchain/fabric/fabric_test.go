@@ -78,21 +78,18 @@ func testFFIMethod() *fftypes.FFIMethod {
 		Name: "sum",
 		Params: []*fftypes.FFIParam{
 			{
-				Name:    "x",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "int"}`),
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
 			{
-				Name:    "y",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "int"}`),
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
 		},
 		Returns: []*fftypes.FFIParam{
 			{
-				Name:    "z",
-				Type:    "integer",
-				Details: fftypes.JSONAnyPtr(`{"type": "int"}`),
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
 		},
 	}
@@ -1456,17 +1453,6 @@ func TestValidateNoContractLocationChaincode(t *testing.T) {
 	assert.Regexp(t, "FF10310", err)
 }
 
-func TestParseParam(t *testing.T) {
-	e, cancel := newTestFabric()
-	defer cancel()
-	param := &fftypes.FFIParam{
-		Name: "x",
-		Type: "integer",
-	}
-	err := e.ValidateFFIParam(context.Background(), param)
-	assert.NoError(t, err)
-}
-
 func TestInvokeJSONEncodeParamsError(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -1490,4 +1476,11 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 		})
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10151", err)
+}
+
+func TestGetFFIParamValidator(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	_, err := e.GetFFIParamValidator(context.Background())
+	assert.NoError(t, err)
 }

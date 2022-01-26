@@ -36,18 +36,22 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 
 	// Create a new token transfer entry
 	transfer := &fftypes.TokenTransfer{
-		LocalID:         fftypes.NewUUID(),
-		Type:            fftypes.TokenTransferTypeTransfer,
-		Pool:            fftypes.NewUUID(),
-		TokenIndex:      "1",
-		URI:             "firefly://token/1",
-		Connector:       "erc1155",
-		Namespace:       "ns1",
-		From:            "0x01",
-		To:              "0x02",
-		ProtocolID:      "12345",
-		Message:         fftypes.NewUUID(),
-		MessageHash:     fftypes.NewRandB32(),
+		LocalID:     fftypes.NewUUID(),
+		Type:        fftypes.TokenTransferTypeTransfer,
+		Pool:        fftypes.NewUUID(),
+		TokenIndex:  "1",
+		URI:         "firefly://token/1",
+		Connector:   "erc1155",
+		Namespace:   "ns1",
+		From:        "0x01",
+		To:          "0x02",
+		ProtocolID:  "12345",
+		Message:     fftypes.NewUUID(),
+		MessageHash: fftypes.NewRandB32(),
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenTransfer,
+			ID:   fftypes.NewUUID(),
+		},
 		BlockchainEvent: fftypes.NewUUID(),
 	}
 	transfer.Amount.Int().SetInt64(10)

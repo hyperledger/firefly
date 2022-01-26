@@ -61,7 +61,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			TxType:    fftypes.TransactionTypeNone,
 		},
 		Hash:      fftypes.NewRandB32(),
-		State:     fftypes.MessageStateReady,
+		State:     fftypes.MessageStateStaged,
 		Confirmed: nil,
 		Data: []*fftypes.DataRef{
 			{ID: dataID1, Hash: rand1},
@@ -69,7 +69,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		},
 	}
 
-	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns12345", msgID, mock.Anything).Return()
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns12345", msgID, mock.Anything).Return().Twice()
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeUpdated, "ns12345", msgID, mock.Anything).Return()
 
 	err := s.UpsertMessage(ctx, msg, database.UpsertOptimizationNew)
@@ -196,6 +196,15 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(msgs))
 	assert.Equal(t, *bid2, *msgs[0].BatchID)
 
+	// Bump and Update - this is for a ready transition
+	msgUpdated.State = fftypes.MessageStateReady
+	err = s.ReplaceMessage(context.Background(), msgUpdated)
+	assert.NoError(t, err)
+	msgRead, err = s.GetMessageByID(ctx, msgUpdated.Header.ID)
+	msgJson, _ = json.Marshal(&msgUpdated)
+	msgReadJson, _ = json.Marshal(msgRead)
+	assert.Equal(t, string(msgJson), string(msgReadJson))
+
 	s.callbacks.AssertExpectations(t)
 }
 
@@ -264,6 +273,38 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestReplaceMessageFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	msgID := fftypes.NewUUID()
+	err := s.ReplaceMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestReplaceMessageFailDelete(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	msgID := fftypes.NewUUID()
+	err := s.ReplaceMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
+	assert.Regexp(t, "FF10118", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestReplaceMessageFailInsert(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	msgID := fftypes.NewUUID()
+	err := s.ReplaceMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}})
+	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

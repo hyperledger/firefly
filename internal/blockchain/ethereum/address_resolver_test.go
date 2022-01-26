@@ -129,7 +129,7 @@ func TestAddressResolverPOSTBadKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
-	assert.Regexp(t, "FF10335", err)
+	assert.Regexp(t, "FF10339", err)
 
 }
 
@@ -152,7 +152,7 @@ func TestAddressResolverPOSTResponse(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
-	assert.Regexp(t, "FF10335", err)
+	assert.Regexp(t, "FF10339", err)
 
 }
 
@@ -173,7 +173,7 @@ func TestAddressResolverFailureResponse(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
-	assert.Regexp(t, "FF10334", err)
+	assert.Regexp(t, "FF10338", err)
 
 }
 
@@ -194,7 +194,7 @@ func TestAddressResolverErrorResponse(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
-	assert.Regexp(t, "FF10333", err)
+	assert.Regexp(t, "FF10337", err)
 
 }
 
@@ -208,7 +208,7 @@ func TestAddressResolverBadBodyTemplate(t *testing.T) {
 	defer cancel()
 
 	_, err := newAddressResolver(ctx, prefix)
-	assert.Regexp(t, "FF10331.*bodyTemplate", err)
+	assert.Regexp(t, "FF10335.*bodyTemplate", err)
 
 }
 
@@ -224,7 +224,7 @@ func TestAddressResolverErrorURLTemplate(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
-	assert.Regexp(t, "FF10332.*urlTemplate", err)
+	assert.Regexp(t, "FF10336.*urlTemplate", err)
 
 }
 
@@ -241,6 +241,6 @@ func TestAddressResolverErrorBodyTemplate(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
-	assert.Regexp(t, "FF10332.*bodyTemplate", err)
+	assert.Regexp(t, "FF10336.*bodyTemplate", err)
 
 }

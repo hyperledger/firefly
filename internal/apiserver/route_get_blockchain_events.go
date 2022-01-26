@@ -26,9 +26,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractEvents = &oapispec.Route{
-	Name:   "getContractEvents",
-	Path:   "namespaces/{ns}/contracts/events",
+var getBlockchainEvents = &oapispec.Route{
+	Name:   "getBlockchainEvents",
+	Path:   "namespaces/{ns}/blockchainevents",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -41,6 +41,6 @@ var getContractEvents = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Contracts().GetContractEvents(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetBlockchainEvents(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

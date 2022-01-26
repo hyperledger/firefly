@@ -50,21 +50,18 @@ func TestFFIE2EWithDB(t *testing.T) {
 				Name: "sum",
 				Params: fftypes.FFIParams{
 					{
-						Name:    "x",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(""),
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
 					},
 					{
-						Name:    "y",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(""),
+						Name:   "y",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
 					},
 				},
 				Returns: fftypes.FFIParams{
 					{
-						Name:    "result",
-						Type:    "integer",
-						Details: fftypes.JSONAnyPtr(""),
+						Name:   "result",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
 					},
 				},
 			},

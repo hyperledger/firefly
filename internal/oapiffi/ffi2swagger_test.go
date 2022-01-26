@@ -38,32 +38,29 @@ func testFFI() *fftypes.FFI {
 				Pathname: "method1",
 				Params: fftypes.FFIParams{
 					{
-						Name: "x",
-						Type: "integer",
+						Name:   "x",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 					},
 					{
-						Name: "y",
-						Type: "byte[]",
+						Name:   "y",
+						Schema: fftypes.JSONAnyPtr(`{"type": "string", "contentEncoding": "base64"}`),
 					},
 					{
 						Name: "z",
-						Type: "widget[]",
-						Components: fftypes.FFIParams{
-							{
-								Name: "name",
-								Type: "string",
-							},
-							{
-								Name: "price",
-								Type: "integer",
-							},
-						},
+						Schema: fftypes.JSONAnyPtr(`
+{
+	"type": "object",
+	"properties": {
+		"name": {"type": "string"},
+		"price": {"type": "integer"}
+	}
+}`),
 					},
 				},
 				Returns: fftypes.FFIParams{
 					{
-						Name: "success",
-						Type: "boolean",
+						Name:   "success",
+						Schema: fftypes.JSONAnyPtr(`{"type": "boolean"}`),
 					},
 				},
 			},
@@ -76,8 +73,8 @@ func testFFI() *fftypes.FFI {
 					Name: "event1",
 					Params: fftypes.FFIParams{
 						{
-							Name: "result",
-							Type: "integer",
+							Name:   "result",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 						},
 					},
 				},
@@ -104,4 +101,13 @@ func TestGenerateWithLocation(t *testing.T) {
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
 	fmt.Print(string(b))
+}
+
+func TestFFIParamBadSchema(t *testing.T) {
+	param := &fftypes.FFIParam{
+		Name:   "test",
+		Schema: fftypes.JSONAnyPtr(`{`),
+	}
+	r := ffiParamJSONSchema(param)
+	assert.Nil(t, r)
 }

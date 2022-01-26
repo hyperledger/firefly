@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -522,74 +521,16 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &ethLocation, nil
 }
 
-func parseParamDetails(ctx context.Context, details *fftypes.JSONAny) (*paramDetails, error) {
-	ethParam := paramDetails{}
-	if err := json.Unmarshal(details.Bytes(), &ethParam); err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, err)
+func parseParamDetails(ctx context.Context, schema *fftypes.JSONAny) (*paramDetails, error) {
+	details := schema.JSONObject().GetObject("details")
+	ethParam := paramDetails{
+		Type:    details.GetString("type"),
+		Indexed: details.GetBool("indexed"),
 	}
 	if ethParam.Type == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, "'type' not set")
 	}
 	return &ethParam, nil
-}
-
-var intRegex, _ = regexp.Compile("^u?int([0-9]{1,3})$")
-
-func (e *Ethereum) ValidateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
-	paramDetails, err := parseParamDetails(ctx, param.Details)
-	if err != nil {
-		return err
-	}
-	return e.validateParamInternal(ctx, param, paramDetails)
-}
-
-func (e *Ethereum) validateParamInternal(ctx context.Context, param *fftypes.FFIParam, paramDetails *paramDetails) error {
-	switch {
-	case len(param.Components) > 0:
-		// struct
-		if strings.HasPrefix(paramDetails.Type, "struct ") {
-			for _, childParam := range param.Components {
-				if err := e.ValidateFFIParam(ctx, childParam); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	case strings.HasPrefix(param.Type, "byte"):
-		// byte (array)
-		if param.Type == paramDetails.Type {
-			return nil
-		}
-		if paramDetails.Type == "byte[]" || strings.HasPrefix(paramDetails.Type, "bytes") {
-			return nil
-		}
-	case strings.HasSuffix(param.Type, "[]"):
-		// array
-		if strings.Count(param.Type, "[]") == strings.Count(paramDetails.Type, "[]") {
-			param.Type = strings.TrimSuffix(param.Type, "[]")
-			paramDetails.Type = strings.TrimSuffix(paramDetails.Type, "[]")
-			return e.validateParamInternal(ctx, param, paramDetails)
-		}
-	case param.Type == "integer":
-		// integer
-		matches := intRegex.FindStringSubmatch(paramDetails.Type)
-		if len(matches) == 2 {
-			i, err := strconv.ParseInt(matches[1], 10, 0)
-			if err == nil && i >= 8 && i <= 256 && i%8 == 0 {
-				return nil
-			}
-		}
-	case param.Type == "string":
-		// string
-		if paramDetails.Type == "string" || paramDetails.Type == "address" {
-			return nil
-		}
-	case param.Type == "boolean":
-		if paramDetails.Type == "bool" {
-			return nil
-		}
-	}
-	return i18n.NewError(ctx, i18n.MsgContractInternalType, param.Name, param.Type, paramDetails.Type)
 }
 
 func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
@@ -607,4 +548,8 @@ func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.Co
 
 func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
 	return e.streams.deleteSubscription(ctx, subscription.ProtocolID)
+}
+
+func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
+	return &FFIParamValidator{}, nil
 }
