@@ -294,3 +294,16 @@ func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id *fftypes.
 func (or *orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
 	return or.database.GetBlockchainEvents(ctx, or.scopeNS(ns, filter))
 }
+
+func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, id string) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	fb := database.BlockchainEventQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx.id", u),
+		fb.Eq("namespace", ns),
+	)
+	return or.database.GetBlockchainEvents(ctx, filter)
+}

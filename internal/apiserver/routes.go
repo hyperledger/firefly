@@ -77,6 +77,7 @@ var routes = []*oapispec.Route{
 	getSubscriptions,
 	getTxnByID,
 	getTxnOps,
+	getTxnBlockchainEvents,
 	getTxns,
 
 	getChartHistogram,

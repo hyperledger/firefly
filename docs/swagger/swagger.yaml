@@ -10050,6 +10050,69 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/transactions/{txnid}/blockchainevents:
+    get:
+      description: 'TODO: Description'
+      operationId: getTxnBlockchainEvents
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: txnid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    id: {}
+                    info:
+                      additionalProperties: {}
+                      type: object
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
+                    protocolId:
+                      type: string
+                    sequence:
+                      format: int64
+                      type: integer
+                    source:
+                      type: string
+                    subscription: {}
+                    timestamp: {}
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/transactions/{txnid}/operations:
     get:
       description: 'TODO: Description'
@@ -10082,24 +10145,37 @@ paths:
               schema:
                 items:
                   properties:
-                    blockchainIds:
-                      items:
-                        type: string
-                      type: array
+                    backendId:
+                      type: string
                     created: {}
+                    error:
+                      type: string
                     id: {}
+                    input:
+                      additionalProperties: {}
+                      type: object
                     namespace:
+                      type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
+                    plugin:
                       type: string
                     status:
                       type: string
+                    tx: {}
                     type:
                       enum:
-                      - none
-                      - batch_pin
-                      - token_pool
+                      - blockchain_batch_pin
+                      - publicstorage_batch_broadcast
+                      - dataexchange_batch_send
+                      - dataexchange_blob_send
+                      - token_create_pool
+                      - token_announce_pool
                       - token_transfer
                       - contract_invoke
                       type: string
+                    updated: {}
                   type: object
                 type: array
           description: Success

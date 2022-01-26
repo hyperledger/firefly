@@ -88,6 +88,7 @@ type Orchestrator interface {
 	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, *database.FilterResult, error)
 	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error)
+	GetTransactionBlockchainEvents(ctx context.Context, ns, id string) ([]*fftypes.BlockchainEvent, *database.FilterResult, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, *database.FilterResult, error)
 	GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error)
 	GetMessageByIDWithData(ctx context.Context, ns, id string) (*fftypes.MessageInOut, error)
