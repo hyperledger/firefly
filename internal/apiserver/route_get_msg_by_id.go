@@ -35,8 +35,6 @@ var getMsgByID = &oapispec.Route{
 		{Name: "msgid", Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		// Confusing using 'data' for this one, as we cannot use it on the collection one
-		{Name: "data", IsBool: true, Description: i18n.MsgTBD, Deprecated: true},
 		{Name: "fetchdata", IsBool: true, Description: i18n.MsgFetchDataDesc},
 	},
 	FilterFactory:   nil,

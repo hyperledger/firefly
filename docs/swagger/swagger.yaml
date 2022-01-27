@@ -4324,12 +4324,6 @@ paths:
         required: true
         schema:
           type: string
-      - deprecated: true
-        description: 'TODO: Description'
-        in: query
-        name: data
-        schema:
-          type: string
       - description: Fetch the data and include it in the messages returned
         in: query
         name: fetchdata

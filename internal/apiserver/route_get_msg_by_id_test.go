@@ -40,7 +40,7 @@ func TestGetMessageByID(t *testing.T) {
 
 func TestGetMessageByIDWithData(t *testing.T) {
 	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345?data", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345?fetchdata", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
