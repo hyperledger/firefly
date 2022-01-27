@@ -41,14 +41,6 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string)
 	return am.database.GetTokenTransfer(ctx, transferID)
 }
 
-func (am *assetManager) GetTokenTransfersByPool(ctx context.Context, ns, connector, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
-	pool, err := am.GetTokenPool(ctx, ns, connector, name)
-	if err != nil {
-		return nil, nil, err
-	}
-	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
-}
-
 func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
 	sender := &transferSender{
 		mgr:       am,
@@ -141,12 +133,6 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Connector = connector
-	transfer.Pool = poolName
-	return am.MintTokens(ctx, ns, transfer, waitConfirm)
-}
-
 func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
 	transfer.Type = fftypes.TokenTransferTypeBurn
 	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
@@ -160,12 +146,6 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 		err = sender.Send(ctx)
 	}
 	return &transfer.TokenTransfer, err
-}
-
-func (am *assetManager) BurnTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Connector = connector
-	transfer.Pool = poolName
-	return am.BurnTokens(ctx, ns, transfer, waitConfirm)
 }
 
 func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
@@ -184,12 +164,6 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 		err = sender.Send(ctx)
 	}
 	return &transfer.TokenTransfer, err
-}
-
-func (am *assetManager) TransferTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Connector = connector
-	transfer.Pool = poolName
-	return am.TransferTokens(ctx, ns, transfer, waitConfirm)
 }
 
 func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {

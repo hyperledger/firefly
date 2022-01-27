@@ -53,24 +53,6 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
 }
 
-func (am *assetManager) CreateTokenPoolByType(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
-		return nil, err
-	}
-	pool.ID = fftypes.NewUUID()
-	pool.Namespace = ns
-	pool.Connector = connector
-
-	if pool.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		pool.Key = org.Identity
-	}
-	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
-}
-
 func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
@@ -126,16 +108,6 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return nil, nil, err
-	}
-	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
-}
-
-func (am *assetManager) GetTokenPoolsByType(ctx context.Context, ns string, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
-	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
-		return nil, nil, err
-	}
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
 	}

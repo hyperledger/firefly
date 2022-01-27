@@ -66,46 +66,6 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 	assert.Regexp(t, "FF10142", err)
 }
 
-func TestGetTokenTransfersByPool(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	pool := &fftypes.TokenPool{
-		ID: fftypes.NewUUID(),
-	}
-	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
-	f := fb.And()
-	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(pool, nil)
-	mdi.On("GetTokenTransfers", context.Background(), f).Return([]*fftypes.TokenTransfer{}, nil, nil)
-	_, _, err := am.GetTokenTransfersByPool(context.Background(), "ns1", "magic-tokens", "test", f)
-	assert.NoError(t, err)
-}
-
-func TestGetTokenTransfersByPoolBadPool(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
-	f := fb.And()
-	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
-	_, _, err := am.GetTokenTransfersByPool(context.Background(), "ns1", "magic-tokens", "test", f)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestGetTokenTransfersByPoolNoPool(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
-	f := fb.And()
-	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, nil)
-	_, _, err := am.GetTokenTransfersByPool(context.Background(), "ns1", "magic-tokens", "test", f)
-	assert.Regexp(t, "FF10109", err)
-}
-
 func TestMintTokensSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -564,35 +524,6 @@ func TestMintTokensConfirm(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestMintTokensByTypeSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mint := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewFFBigInt(5),
-		},
-	}
-	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
-	}
-
-	mdi := am.database.(*databasemocks.Plugin)
-	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenTransfer
-	})).Return(nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-
-	_, err := am.MintTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
-	assert.NoError(t, err)
-}
-
 func TestBurnTokensSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -685,39 +616,6 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	msa.AssertExpectations(t)
-	mti.AssertExpectations(t)
-}
-
-func TestBurnTokensByTypeSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	burn := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewFFBigInt(5),
-		},
-	}
-	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
-	}
-
-	mdi := am.database.(*databasemocks.Plugin)
-	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("BurnTokens", context.Background(), mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenTransfer
-	})).Return(nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-
-	_, err := am.BurnTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
-	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
 }
 
@@ -1203,41 +1101,6 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mti.AssertExpectations(t)
 	mms.AssertExpectations(t)
 	msa.AssertExpectations(t)
-}
-
-func TestTransferTokensByTypeSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	transfer := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{
-			From:   "A",
-			To:     "B",
-			Amount: *fftypes.NewFFBigInt(5),
-		},
-	}
-	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
-	}
-
-	mdi := am.database.(*databasemocks.Plugin)
-	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenTransfer
-	})).Return(nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-
-	_, err := am.TransferTokensByType(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
-	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mti.AssertExpectations(t)
 }
 
 func TestTransferTokensPoolNotFound(t *testing.T) {
