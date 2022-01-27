@@ -104,12 +104,16 @@ func (h *JSONAny) IsNil() bool {
 	return h == nil || *h == "" || *h == NullString
 }
 
-func (h JSONAny) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {
+func (h *JSONAny) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {
 	var jo JSONObject
-	err := json.Unmarshal([]byte(h), &jo)
+	b := []byte{}
+	if h != nil {
+		b = []byte(*h)
+	}
+	err := json.Unmarshal(b, &jo)
 	if err != nil {
 		if len(noWarn) == 0 || !noWarn[0] {
-			log.L(context.Background()).Warnf("Unable to deserialize as JSON object: %s", string(h))
+			log.L(context.Background()).Warnf("Unable to deserialize as JSON object: %s", string(b))
 		}
 		jo = JSONObject{}
 	}
@@ -119,14 +123,14 @@ func (h JSONAny) JSONObjectOk(noWarn ...bool) (JSONObject, bool) {
 // JSONObject attempts to de-serailize the contained structure as a JSON Object (map)
 // Safe and will never return nil
 // Will return an empty object if the type is array, string, bool, number etc.
-func (h JSONAny) JSONObject() JSONObject {
+func (h *JSONAny) JSONObject() JSONObject {
 	jo, _ := h.JSONObjectOk()
 	return jo
 }
 
 // JSONObjectNowarn acts the same as JSONObject, but does not warn if the value cannot
 // be parsed as an object
-func (h JSONAny) JSONObjectNowarn() JSONObject {
+func (h *JSONAny) JSONObjectNowarn() JSONObject {
 	jo, _ := h.JSONObjectOk(true)
 	return jo
 }
