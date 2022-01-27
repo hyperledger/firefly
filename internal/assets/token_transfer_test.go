@@ -484,7 +484,7 @@ func TestMintTokensFailAndDbFail(t *testing.T) {
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenTransfer && tx.Status != fftypes.OpStatusFailed
+		return tx.Type == fftypes.TransactionTypeTokenTransfer
 	})).Return(nil)
 	mdi.On("UpdateTransaction", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("Update fail"))
 	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("Update fail"))

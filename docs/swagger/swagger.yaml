@@ -5086,8 +5086,6 @@ paths:
                   id: {}
                   namespace:
                     type: string
-                  status:
-                    type: string
                   type:
                     enum:
                     - none
@@ -9863,11 +9861,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: status
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -9918,8 +9911,6 @@ paths:
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:
@@ -9980,11 +9971,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: status
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -10035,8 +10021,6 @@ paths:
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:

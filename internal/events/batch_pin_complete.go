@@ -76,7 +76,6 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 		ID:            batchPin.TransactionID,
 		Namespace:     batchPin.Namespace,
 		Type:          fftypes.TransactionTypeBatchPin,
-		Status:        fftypes.OpStatusSucceeded,
 		BlockchainIDs: fftypes.NewFFStringArray(batchPin.Event.BlockchainTXID),
 	})
 }

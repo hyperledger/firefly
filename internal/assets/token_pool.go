@@ -89,7 +89,6 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		Namespace: pool.Namespace,
 		Type:      fftypes.TransactionTypeTokenPool,
 		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
 	}
 	pool.TX.ID = tx.ID
 	pool.TX.Type = tx.Type

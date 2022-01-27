@@ -180,7 +180,6 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 			Namespace: ns,
 			Type:      fftypes.TransactionTypeContractInvoke,
 			Created:   fftypes.Now(),
-			Status:    fftypes.OpStatusPending,
 		}
 		if err := cm.database.UpsertTransaction(ctx, tx); err != nil {
 			return err

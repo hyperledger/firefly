@@ -41,7 +41,6 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		ID:            transactionID,
 		Type:          fftypes.TransactionTypeBatchPin,
 		Namespace:     "ns1",
-		Status:        fftypes.OpStatusPending,
 		BlockchainIDs: fftypes.FFStringArray{"tx1"},
 	}
 
@@ -65,7 +64,6 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		Type:          fftypes.TransactionTypeBatchPin,
 		Namespace:     "ns1",
 		Created:       transaction.Created,
-		Status:        fftypes.OpStatusFailed,
 		BlockchainIDs: fftypes.FFStringArray{"tx2", "tx3"}, // additive
 	}
 	err = s.UpsertTransaction(context.Background(), transactionUpdated)
@@ -105,14 +103,14 @@ func TestTransactionE2EWithDB(t *testing.T) {
 
 	// Update
 	up := database.TransactionQueryFactory.NewUpdate(ctx).
-		Set("status", fftypes.OpStatusSucceeded)
+		Set("blockchainids", fftypes.FFStringArray{"0x12345"})
 	err = s.UpdateTransaction(ctx, transactionUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
-		fb.Eq("status", fftypes.OpStatusSucceeded),
+		fb.Eq("blockchainids", "0x12345"),
 	)
 	transactions, _, err = s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)

@@ -53,7 +53,6 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 		Type:      fftypes.TransactionTypeBatchPin,
 		Namespace: batch.Namespace,
 		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
 	}
 	err := bp.database.UpsertTransaction(ctx, tx)
 	if err != nil {

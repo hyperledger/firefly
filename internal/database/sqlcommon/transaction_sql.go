@@ -33,7 +33,6 @@ var (
 		"ttype",
 		"namespace",
 		"created",
-		"status",
 		"blockchain_ids",
 	}
 	transactionFilterFieldMap = map[string]string{
@@ -70,7 +69,6 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			sq.Update("transactions").
 				Set("ttype", string(transaction.Type)).
 				Set("namespace", transaction.Namespace).
-				Set("status", transaction.Status).
 				Set("blockchain_ids", transaction.BlockchainIDs).
 				Where(sq.Eq{"id": transaction.ID}),
 			func() {
@@ -91,7 +89,6 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 					string(transaction.Type),
 					transaction.Namespace,
 					transaction.Created,
-					transaction.Status,
 					transaction.BlockchainIDs,
 				),
 			func() {
@@ -112,7 +109,6 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.Type,
 		&transaction.Namespace,
 		&transaction.Created,
-		&transaction.Status,
 		&transaction.BlockchainIDs,
 	)
 	if err != nil {

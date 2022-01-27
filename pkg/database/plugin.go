@@ -694,7 +694,6 @@ var BatchQueryFactory = &queryFields{
 var TransactionQueryFactory = &queryFields{
 	"id":            &UUIDField{},
 	"type":          &StringField{},
-	"status":        &StringField{},
 	"created":       &TimeField{},
 	"namespace":     &StringField{},
 	"blockchainids": &FFStringArrayField{},

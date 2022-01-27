@@ -251,7 +251,6 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		Namespace: s.namespace,
 		Type:      fftypes.TransactionTypeTokenTransfer,
 		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
 	}
 	s.transfer.TX.ID = tx.ID
 	s.transfer.TX.Type = tx.Type
@@ -307,8 +306,6 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 	if err != nil {
 		_ = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 			l := log.L(ctx)
-			tx.Status = fftypes.OpStatusFailed
-
 			update := database.OperationQueryFactory.NewUpdate(ctx).
 				Set("status", fftypes.OpStatusFailed)
 			if err = s.mgr.database.UpdateTransaction(ctx, tx.ID, update); err != nil {
