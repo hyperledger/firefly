@@ -46,7 +46,7 @@ characteristics that differ between different implementations.
   - There are many technologies including Mutual TLS, and Java Web Tokens (JWT),
     that can be used to ensure a private data exchange is happening with the
     correct party in the system.
-  - Most modern approaches us public/private key encryption to establish the identity
+  - Most modern approaches use public/private key encryption to establish the identity
     during the setup phase of a connection. This means a distribution mechanism is required
     for public keys, which might be enhanced with a trust hierarchy (like PKI).
 - Request/Response (Sync) vs. Message Queuing (Async)

@@ -24,4 +24,4 @@ those transactions in your application, are currently under development.
 You can access the APIs of the blockchain interface plugins directly, which perform the heavy lifting
 to add an API/Event gateway in front of the low level blockchain RPC interfaces.
 
-See [Key Concepts: Blockchain protocols](/keyconcepts/blockchain_protocols.html) for more information.
+See [Key Concepts: Blockchain protocols](/firefly/keyconcepts/blockchain_protocols.html) for more information.
