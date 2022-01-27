@@ -337,10 +337,11 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 	}
 	for _, op := range ops {
 		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-			Type:   fftypes.TransactionStatusTypeOperation,
-			Status: op.Status,
-			ID:     op.ID,
-			Error:  op.Error,
+			Status:  op.Status,
+			Type:    fftypes.TransactionStatusTypeOperation,
+			SubType: op.Type.String(),
+			ID:      op.ID,
+			Error:   op.Error,
 		})
 		updateStatus(result, op.Status)
 	}
@@ -351,9 +352,10 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 	}
 	for _, event := range events {
 		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-			Type:   fftypes.TransactionStatusTypeBlockchainEvent,
-			Status: fftypes.OpStatusSucceeded,
-			ID:     event.ID,
+			Status:  fftypes.OpStatusSucceeded,
+			Type:    fftypes.TransactionStatusTypeBlockchainEvent,
+			SubType: event.Name,
+			ID:      event.ID,
 		})
 	}
 
@@ -372,9 +374,10 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			updateStatus(result, fftypes.OpStatusPending)
 		default:
 			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Type:   fftypes.TransactionStatusTypeBatch,
-				Status: fftypes.OpStatusSucceeded,
-				ID:     batches[0].ID,
+				Status:  fftypes.OpStatusSucceeded,
+				Type:    fftypes.TransactionStatusTypeBatch,
+				SubType: batches[0].Type.String(),
+				ID:      batches[0].ID,
 			})
 		}
 
@@ -392,9 +395,10 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			updateStatus(result, fftypes.OpStatusPending)
 		default:
 			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Type:   fftypes.TransactionStatusTypeTokenPool,
-				Status: fftypes.OpStatusSucceeded,
-				ID:     pools[0].ID,
+				Status:  fftypes.OpStatusSucceeded,
+				Type:    fftypes.TransactionStatusTypeTokenPool,
+				SubType: pools[0].Type.String(),
+				ID:      pools[0].ID,
 			})
 		}
 
@@ -412,9 +416,10 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			updateStatus(result, fftypes.OpStatusPending)
 		default:
 			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Type:   fftypes.TransactionStatusTypeTokenTransfer,
-				Status: fftypes.OpStatusSucceeded,
-				ID:     transfers[0].LocalID,
+				Status:  fftypes.OpStatusSucceeded,
+				Type:    fftypes.TransactionStatusTypeTokenTransfer,
+				SubType: transfers[0].Type.String(),
+				ID:      transfers[0].LocalID,
 			})
 		}
 
