@@ -155,7 +155,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				} else if msg != nil {
 					batchID = msg.BatchID // trigger rewind after completion of database transaction
 				}
-				return em.confirmPool(ctx, existingPool, &pool.Event, pool.BlockchainTXID)
+				return em.confirmPool(ctx, existingPool, &pool.Event, pool.Event.BlockchainTXID)
 			}
 
 			// See if this pool was submitted locally and needs to be announced

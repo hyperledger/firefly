@@ -207,20 +207,20 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	pool := &tokens.TokenPool{
-		Type:           fftypes.FFEnum(tokenType),
-		ProtocolID:     protocolID,
-		TransactionID:  poolData.TX,
-		BlockchainTXID: txHash,
-		Key:            operatorAddress,
-		Connector:      ft.configuredName,
-		Standard:       standard,
+		Type:          fftypes.FFEnum(tokenType),
+		ProtocolID:    protocolID,
+		TransactionID: poolData.TX,
+		Key:           operatorAddress,
+		Connector:     ft.configuredName,
+		Standard:      standard,
 		Event: blockchain.Event{
-			Source:     ft.Name() + ":" + ft.configuredName,
-			Name:       "TokenPool",
-			ProtocolID: eventProtocolID,
-			Output:     rawOutput,
-			Info:       tx,
-			Timestamp:  timestamp,
+			BlockchainTXID: txHash,
+			Source:         ft.Name() + ":" + ft.configuredName,
+			Name:           "TokenPool",
+			ProtocolID:     eventProtocolID,
+			Output:         rawOutput,
+			Info:           tx,
+			Timestamp:      timestamp,
 		},
 	}
 
@@ -285,7 +285,6 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	}
 
 	transfer := &tokens.TokenTransfer{
-		BlockchainTXID: txHash,
 		PoolProtocolID: poolProtocolID,
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:        t,
@@ -305,12 +304,13 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			},
 		},
 		Event: blockchain.Event{
-			Source:     ft.Name() + ":" + ft.configuredName,
-			Name:       eventName,
-			ProtocolID: eventProtocolID,
-			Output:     rawOutput,
-			Info:       tx,
-			Timestamp:  timestamp,
+			BlockchainTXID: txHash,
+			Source:         ft.Name() + ":" + ft.configuredName,
+			Name:           eventName,
+			ProtocolID:     eventProtocolID,
+			Output:         rawOutput,
+			Info:           tx,
+			Timestamp:      timestamp,
 		},
 	}
 
