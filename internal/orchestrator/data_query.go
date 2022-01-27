@@ -307,3 +307,7 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, 
 	)
 	return or.database.GetBlockchainEvents(ctx, filter)
 }
+
+func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*fftypes.TransactionStatus, error) {
+	return &fftypes.TransactionStatus{Status: fftypes.OpStatusPending}, nil
+}

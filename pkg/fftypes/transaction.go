@@ -44,3 +44,8 @@ type Transaction struct {
 	Created       *FFTime         `json:"created"`
 	BlockchainIDs FFStringArray   `json:"blockchainIds,omitempty"`
 }
+
+type TransactionStatus struct {
+	Status OpStatus `json:"status"`
+	// TODO: add details
+}

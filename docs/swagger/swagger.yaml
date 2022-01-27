@@ -10165,6 +10165,43 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/transactions/{txnid}/status:
+    get:
+      description: 'TODO: Description'
+      operationId: getTxnStatus
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: txnid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/nodes:
     get:
       description: 'TODO: Description'
