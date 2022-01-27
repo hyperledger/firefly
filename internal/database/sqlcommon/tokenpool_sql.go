@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -45,10 +45,10 @@ var (
 		"key",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
-		"protocolid":       "protocol_id",
-		"message":          "message_id",
-		"transaction.type": "tx_type",
-		"transaction.id":   "tx_id",
+		"protocolid": "protocol_id",
+		"message":    "message_id",
+		"tx.type":    "tx_type",
+		"tx.id":      "tx_id",
 	}
 )
 

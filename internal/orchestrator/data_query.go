@@ -308,6 +308,119 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, 
 	return or.database.GetBlockchainEvents(ctx, filter)
 }
 
+func updateStatus(result *fftypes.TransactionStatus, newStatus fftypes.OpStatus) {
+	if result.Status != fftypes.OpStatusFailed && newStatus != fftypes.OpStatusSucceeded {
+		result.Status = newStatus
+	}
+}
+
+func pendingPlaceholder(t fftypes.TransactionStatusType) *fftypes.TransactionStatusDetails {
+	return &fftypes.TransactionStatusDetails{
+		Type:   t,
+		Status: fftypes.OpStatusPending,
+	}
+}
+
 func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*fftypes.TransactionStatus, error) {
-	return &fftypes.TransactionStatus{Status: fftypes.OpStatusPending}, nil
+	result := &fftypes.TransactionStatus{
+		Status: fftypes.OpStatusSucceeded,
+	}
+
+	tx, err := or.GetTransactionByID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+
+	ops, _, err := or.GetTransactionOperations(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	for _, op := range ops {
+		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
+			Type:   fftypes.TransactionStatusTypeOperation,
+			Status: op.Status,
+			ID:     op.ID,
+			Error:  op.Error,
+		})
+		updateStatus(result, op.Status)
+	}
+
+	events, _, err := or.GetTransactionBlockchainEvents(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	for _, event := range events {
+		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
+			Type:   fftypes.TransactionStatusTypeBlockchainEvent,
+			Status: fftypes.OpStatusSucceeded,
+			ID:     event.ID,
+		})
+	}
+
+	switch tx.Type {
+	case fftypes.TransactionTypeBatchPin:
+		if len(events) == 0 {
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, fftypes.OpStatusPending)
+		}
+		f := database.BatchQueryFactory.NewFilter(ctx)
+		switch batches, _, err := or.database.GetBatches(ctx, f.Eq("tx.id", id)); {
+		case err != nil:
+			return nil, err
+		case len(batches) == 0:
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBatch))
+			updateStatus(result, fftypes.OpStatusPending)
+		default:
+			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
+				Type:   fftypes.TransactionStatusTypeBatch,
+				Status: fftypes.OpStatusSucceeded,
+				ID:     batches[0].ID,
+			})
+		}
+
+	case fftypes.TransactionTypeTokenPool:
+		if len(events) == 0 {
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, fftypes.OpStatusPending)
+		}
+		f := database.TokenPoolQueryFactory.NewFilter(ctx)
+		switch pools, _, err := or.database.GetTokenPools(ctx, f.Eq("tx.id", id)); {
+		case err != nil:
+			return nil, err
+		case len(pools) == 0:
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeTokenPool))
+			updateStatus(result, fftypes.OpStatusPending)
+		default:
+			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
+				Type:   fftypes.TransactionStatusTypeTokenPool,
+				Status: fftypes.OpStatusSucceeded,
+				ID:     pools[0].ID,
+			})
+		}
+
+	case fftypes.TransactionTypeTokenTransfer:
+		if len(events) == 0 {
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, fftypes.OpStatusPending)
+		}
+		f := database.TokenTransferQueryFactory.NewFilter(ctx)
+		switch transfers, _, err := or.database.GetTokenTransfers(ctx, f.Eq("tx.id", id)); {
+		case err != nil:
+			return nil, err
+		case len(transfers) == 0:
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeTokenTransfer))
+			updateStatus(result, fftypes.OpStatusPending)
+		default:
+			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
+				Type:   fftypes.TransactionStatusTypeTokenTransfer,
+				Status: fftypes.OpStatusSucceeded,
+				ID:     transfers[0].LocalID,
+			})
+		}
+
+	case fftypes.TransactionTypeContractInvoke:
+		// no blockchain events or other objects
+	}
+
+	return result, nil
 }

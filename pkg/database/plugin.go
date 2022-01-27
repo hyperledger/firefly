@@ -862,6 +862,8 @@ var TokenPoolQueryFactory = &queryFields{
 	"state":      &StringField{},
 	"created":    &TimeField{},
 	"connector":  &StringField{},
+	"tx.type":    &StringField{},
+	"tx.id":      &UUIDField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances
