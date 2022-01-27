@@ -294,7 +294,7 @@ func TestCalcPinsFail(t *testing.T) {
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
 					Group:  gid,
-					Topics: fftypes.FFNameArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				}},
 			},
 		},

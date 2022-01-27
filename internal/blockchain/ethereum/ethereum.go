@@ -188,8 +188,10 @@ func ethHexFormatB32(b *fftypes.Bytes32) string {
 
 func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sBlockNumber := msgJSON.GetString("blockNumber")
-	sTransactionIndex := msgJSON.GetString("transactionIndex")
 	sTransactionHash := msgJSON.GetString("transactionHash")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	txIndex := msgJSON.GetInt64("transactionIndex")
+	logIndex := msgJSON.GetInt64("logIndex")
 	dataJSON := msgJSON.GetObject("data")
 	authorAddress := dataJSON.GetString("author")
 	ns := dataJSON.GetString("namespace")
@@ -205,7 +207,6 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	if sBlockNumber == "" ||
-		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
 		authorAddress == "" ||
 		sUUIDs == "" ||
@@ -257,12 +258,13 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
 		Event: blockchain.Event{
-			Source:     e.Name(),
-			Name:       "BatchPin",
-			ProtocolID: sTransactionHash,
-			Output:     dataJSON,
-			Info:       msgJSON,
-			Timestamp:  timestamp,
+			BlockchainTXID: sTransactionHash,
+			Source:         e.Name(),
+			Name:           "BatchPin",
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
+			Output:         dataJSON,
+			Info:           msgJSON,
+			Timestamp:      timestamp,
 		},
 	}
 
@@ -272,6 +274,9 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sTransactionHash := msgJSON.GetString("transactionHash")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	txIndex := msgJSON.GetInt64("transactionIndex")
+	logIndex := msgJSON.GetInt64("logIndex")
 	sub := msgJSON.GetString("subId")
 	signature := msgJSON.GetString("signature")
 	dataJSON := msgJSON.GetObject("data")
@@ -284,19 +289,20 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 	delete(msgJSON, "data")
 
-	event := &blockchain.ContractEvent{
+	event := &blockchain.EventWithSubscription{
 		Subscription: sub,
 		Event: blockchain.Event{
-			Source:     e.Name(),
-			Name:       name,
-			ProtocolID: sTransactionHash,
-			Output:     dataJSON,
-			Info:       msgJSON,
-			Timestamp:  timestamp,
+			BlockchainTXID: sTransactionHash,
+			Source:         e.Name(),
+			Name:           name,
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
+			Output:         dataJSON,
+			Info:           msgJSON,
+			Timestamp:      timestamp,
 		},
 	}
 
-	return e.callbacks.ContractEvent(event)
+	return e.callbacks.BlockchainEvent(event)
 }
 
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -321,7 +327,7 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
-	return e.callbacks.BlockchainOpUpdate(operationID, updateType, message, reply)
+	return e.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
 }
 
 func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {

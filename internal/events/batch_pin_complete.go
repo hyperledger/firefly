@@ -73,10 +73,11 @@ func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin) 
 
 func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin) error {
 	return em.database.UpsertTransaction(ctx, &fftypes.Transaction{
-		ID:        batchPin.TransactionID,
-		Namespace: batchPin.Namespace,
-		Type:      fftypes.TransactionTypeBatchPin,
-		Status:    fftypes.OpStatusSucceeded,
+		ID:            batchPin.TransactionID,
+		Namespace:     batchPin.Namespace,
+		Type:          fftypes.TransactionTypeBatchPin,
+		Status:        fftypes.OpStatusSucceeded,
+		BlockchainIDs: fftypes.NewFFStringArray(batchPin.Event.BlockchainTXID),
 	})
 }
 

@@ -108,7 +108,7 @@ func TestSchemaTypeInvalidFFIType(t *testing.T) {
 
 func TestSchemaTypeMissing(t *testing.T) {
 	_, err := NewTestSchema(`{}`)
-	assert.Regexp(t, "missing properties: 'type'", err)
+	assert.Regexp(t, "missing properties", err)
 }
 
 func TestSchemaDetailsTypeMissing(t *testing.T) {

@@ -38,10 +38,11 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	// Create a new transaction entry
 	transactionID := fftypes.NewUUID()
 	transaction := &fftypes.Transaction{
-		ID:        transactionID,
-		Type:      fftypes.TransactionTypeBatchPin,
-		Namespace: "ns1",
-		Status:    fftypes.OpStatusPending,
+		ID:            transactionID,
+		Type:          fftypes.TransactionTypeBatchPin,
+		Namespace:     "ns1",
+		Status:        fftypes.OpStatusPending,
+		BlockchainIDs: fftypes.FFStringArray{"tx1"},
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, fftypes.ChangeEventTypeCreated, "ns1", transactionID, mock.Anything).Return()
@@ -60,14 +61,18 @@ func TestTransactionE2EWithDB(t *testing.T) {
 
 	// Update the transaction
 	transactionUpdated := &fftypes.Transaction{
-		ID:        transactionID,
-		Type:      fftypes.TransactionTypeBatchPin,
-		Namespace: "ns1",
-		Created:   transaction.Created,
-		Status:    fftypes.OpStatusFailed,
+		ID:            transactionID,
+		Type:          fftypes.TransactionTypeBatchPin,
+		Namespace:     "ns1",
+		Created:       transaction.Created,
+		Status:        fftypes.OpStatusFailed,
+		BlockchainIDs: fftypes.FFStringArray{"tx2", "tx3"}, // additive
 	}
 	err = s.UpsertTransaction(context.Background(), transactionUpdated)
 	assert.NoError(t, err)
+
+	// Expect merged
+	transactionUpdated.BlockchainIDs = fftypes.FFStringArray{"tx1", "tx2", "tx3"}
 
 	// Check we get the exact same message back - note the removal of one of the transaction elements
 	transactionRead, err = s.GetTransactionByID(ctx, transactionID)

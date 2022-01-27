@@ -28,13 +28,13 @@ func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentit
 	return r0
 }
 
-// BlockchainOpUpdate provides a mock function with given fields: operationID, txState, errorMessage, opOutput
-func (_m *Callbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(operationID, txState, errorMessage, opOutput)
+// BlockchainEvent provides a mock function with given fields: event
+func (_m *Callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+	ret := _m.Called(event)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(operationID, txState, errorMessage, opOutput)
+	if rf, ok := ret.Get(0).(func(*blockchain.EventWithSubscription) error); ok {
+		r0 = rf(event)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -42,13 +42,13 @@ func (_m *Callbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState fftyp
 	return r0
 }
 
-// ContractEvent provides a mock function with given fields: event
-func (_m *Callbacks) ContractEvent(event *blockchain.ContractEvent) error {
-	ret := _m.Called(event)
+// BlockchainOpUpdate provides a mock function with given fields: operationID, txState, blockchainTXID, errorMessage, opOutput
+func (_m *Callbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(operationID, txState, blockchainTXID, errorMessage, opOutput)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.ContractEvent) error); ok {
-		r0 = rf(event)
+	if rf, ok := ret.Get(0).(func(*fftypes.UUID, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(operationID, txState, blockchainTXID, errorMessage, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}

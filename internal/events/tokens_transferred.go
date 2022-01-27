@@ -79,10 +79,11 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		}
 
 		tx := &fftypes.Transaction{
-			ID:        transfer.TX.ID,
-			Status:    fftypes.OpStatusSucceeded,
-			Namespace: transfer.Namespace,
-			Type:      transfer.TX.Type,
+			ID:            transfer.TX.ID,
+			Status:        fftypes.OpStatusSucceeded,
+			Namespace:     transfer.Namespace,
+			Type:          transfer.TX.Type,
+			BlockchainIDs: fftypes.NewFFStringArray(transfer.Event.BlockchainTXID),
 		}
 		if err := em.database.UpsertTransaction(ctx, tx); err != nil {
 			return false, err

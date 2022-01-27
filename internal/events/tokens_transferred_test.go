@@ -48,9 +48,10 @@ func newTransfer() *tokens.TokenTransfer {
 			},
 		},
 		Event: blockchain.Event{
-			Name:       "Transfer",
-			ProtocolID: "tx1",
-			Info:       fftypes.JSONObject{"some": "info"},
+			BlockchainTXID: "0xffffeeee",
+			Name:           "Transfer",
+			ProtocolID:     "0000/0000/0000",
+			Info:           fftypes.JSONObject{"some": "info"},
 		},
 	}
 }
@@ -348,8 +349,9 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 			Amount:     *fftypes.NewFFBigInt(1),
 		},
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "0000/0000/0000",
+			Info:           info,
 		},
 	}
 	pool := &fftypes.TokenPool{
@@ -406,8 +408,9 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 			Amount:     *fftypes.NewFFBigInt(1),
 		},
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "0000/0000/0000",
+			Info:           info,
 		},
 	}
 	pool := &fftypes.TokenPool{

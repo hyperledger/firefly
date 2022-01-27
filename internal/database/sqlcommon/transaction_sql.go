@@ -34,9 +34,11 @@ var (
 		"namespace",
 		"created",
 		"status",
+		"blockchain_ids",
 	}
 	transactionFilterFieldMap = map[string]string{
-		"type": "ttype",
+		"type":          "ttype",
+		"blockchainids": "blockchain_ids",
 	}
 )
 
@@ -49,7 +51,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 
 	// Do a select within the transaction to determine if the UUID already exists
 	transactionRows, _, err := s.queryTx(ctx, tx,
-		sq.Select("seq").
+		sq.Select("blockchain_ids").
 			From("transactions").
 			Where(sq.Eq{"id": transaction.ID}),
 	)
@@ -57,15 +59,19 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 		return err
 	}
 	existing := transactionRows.Next()
-	transactionRows.Close()
 
 	if existing {
+		var existingBlockchainIDs fftypes.FFStringArray
+		_ = transactionRows.Scan(&existingBlockchainIDs)
+		transaction.BlockchainIDs = transaction.BlockchainIDs.MergeLower(existingBlockchainIDs)
+		transactionRows.Close()
 		// Update the transaction
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("transactions").
 				Set("ttype", string(transaction.Type)).
 				Set("namespace", transaction.Namespace).
 				Set("status", transaction.Status).
+				Set("blockchain_ids", transaction.BlockchainIDs).
 				Where(sq.Eq{"id": transaction.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, transaction.Namespace, transaction.ID)
@@ -74,6 +80,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			return err
 		}
 	} else {
+		transactionRows.Close()
 		// Insert a transaction
 		transaction.Created = fftypes.Now()
 		if _, err = s.insertTx(ctx, tx,
@@ -85,6 +92,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 					transaction.Namespace,
 					transaction.Created,
 					transaction.Status,
+					transaction.BlockchainIDs,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, transaction.Namespace, transaction.ID)
@@ -105,6 +113,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.Namespace,
 		&transaction.Created,
 		&transaction.Status,
+		&transaction.BlockchainIDs,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "transactions")

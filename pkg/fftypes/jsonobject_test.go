@@ -155,7 +155,9 @@ func TestJSONNestedSafeGet(t *testing.T) {
 				}
 			],
 			"string_array": ["str1","str2"],
-			"wrong": null
+			"wrong": null,
+			"int1": "0xfeedbeef",
+			"int2": "12345"
 		}
 	`), &jd)
 	assert.NoError(t, err)
@@ -180,6 +182,10 @@ func TestJSONNestedSafeGet(t *testing.T) {
 			GetObject("with").
 			GetString("some"),
 	)
+
+	assert.Equal(t, int64(0xfeedbeef), jd.GetInt64("int1"))
+	assert.Equal(t, int64(12345), jd.GetInt64("int2"))
+	assert.Equal(t, int64(0), jd.GetInt64("wrong"))
 
 	sa, ok := jd.GetStringArrayOk("wrong")
 	assert.False(t, ok)

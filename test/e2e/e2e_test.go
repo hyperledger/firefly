@@ -93,7 +93,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 	assert.Equal(ts.t, count, len(messages))
 	assert.Equal(ts.t, txtype, (messages)[idx].Header.TxType)
 	assert.Equal(ts.t, "default", (messages)[idx].Header.Namespace)
-	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[idx].Header.Topics)
+	assert.Equal(ts.t, fftypes.FFStringArray{"default"}, (messages)[idx].Header.Topics)
 
 	data := GetData(ts.t, client, ts.startTime, 200)
 	var msgData *fftypes.Data

@@ -19,40 +19,57 @@ package fftypes
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFFNameArrayVerifyTooLong(t *testing.T) {
-	na := make(FFNameArray, 16)
+func TestFFStringArrayVerifyTooLong(t *testing.T) {
+	na := make(FFStringArray, 16)
 	for i := 0; i < 16; i++ {
 		na[i] = fmt.Sprintf("item_%d", i)
 	}
-	err := na.Validate(context.Background(), "field1")
+	err := na.Validate(context.Background(), "field1", true)
 	assert.Regexp(t, `FF10227.*field1`, err)
 }
 
-func TestFFNameArrayVerifyDuplicate(t *testing.T) {
-	na := FFNameArray{"value1", "value2", "value1"}
-	err := na.Validate(context.Background(), "field1")
+func TestFFStringArrayVerifyDuplicate(t *testing.T) {
+	na := FFStringArray{"value1", "value2", "value1"}
+	err := na.Validate(context.Background(), "field1", true)
 	assert.Regexp(t, `FF10228.*field1`, err)
 }
 
-func TestFFNameArrayVerifyBadName(t *testing.T) {
-	na := FFNameArray{"!valid"}
-	err := na.Validate(context.Background(), "field1")
+func TestFFStringArrayVerifyBadName(t *testing.T) {
+	na := FFStringArray{"!valid"}
+	err := na.Validate(context.Background(), "field1", true)
 	assert.Regexp(t, `FF10131.*field1\[0\]`, err)
 }
 
-func TestFFNameArrayScanValue(t *testing.T) {
+func TestFFStringArrayVerifyBadNonName(t *testing.T) {
+	na := FFStringArray{"!valid"}
+	err := na.Validate(context.Background(), "field1", false)
+	assert.Regexp(t, `FF10335.*field1\[0\]`, err)
+}
 
-	na1 := FFNameArray{"name1", "name2"}
+func TestFFStringArrayVerifyTooLongTotal(t *testing.T) {
+	longstr := strings.Builder{}
+	for i := 0; i < (FFStringArrayStandardMax + 1); i++ {
+		longstr.WriteRune('a')
+	}
+	na := FFStringArray{longstr.String()}
+	err := na.Validate(context.Background(), "field1", false)
+	assert.Regexp(t, `FF10188.*field1`, err)
+}
+
+func TestFFStringArrayScanValue(t *testing.T) {
+
+	na1 := FFStringArray{"name1", "name2"}
 	v, err := na1.Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "name1,name2", v)
 
-	var na2 FFNameArray
+	var na2 FFStringArray
 	assert.Equal(t, "", na2.String())
 	v, err = na2.Value()
 	assert.Equal(t, "", v)
@@ -60,12 +77,12 @@ func TestFFNameArrayScanValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "name1,name2", na2.String())
 
-	var na3 FFNameArray
+	var na3 FFStringArray
 	err = na3.Scan([]byte("name1,name2"))
 	assert.NoError(t, err)
 	assert.Equal(t, "name1,name2", na3.String())
 
-	var na4 FFNameArray
+	var na4 FFStringArray
 	err = na4.Scan([]byte(nil))
 	assert.NoError(t, err)
 	assert.Equal(t, "", na4.String())
@@ -76,18 +93,26 @@ func TestFFNameArrayScanValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "", v)
 
-	var na5 FFNameArray
+	var na5 FFStringArray
 	err = na5.Scan("")
 	assert.NoError(t, err)
-	assert.Equal(t, FFNameArray{}, na5)
+	assert.Equal(t, FFStringArray{}, na5)
 	assert.Equal(t, "", na5.String())
 
-	var na6 FFNameArray
+	var na6 FFStringArray
 	err = na6.Scan(42)
 	assert.Regexp(t, "FF10125", err)
 
-	var na7 FFNameArray
-	err = na7.Scan(FFNameArray{"test1", "test2"})
-	assert.Equal(t, FFNameArray{"test1", "test2"}, na7)
+	var na7 FFStringArray
+	err = na7.Scan(FFStringArray{"test1", "test2"})
+	assert.Equal(t, FFStringArray{"test1", "test2"}, na7)
+
+}
+
+func TestFFStringArrayMergeFold(t *testing.T) {
+
+	sa := NewFFStringArray("name2", "NAME1")
+	assert.Equal(t, FFStringArray{"name1", "name2", "name3"}, sa.MergeLower(FFStringArray{"name3"}))
+	assert.Equal(t, FFStringArray{"name1", "name2", "name3", "name4"}, sa.MergeLower(FFStringArray{"NAME4", "NAME3", "name1", "name2"}))
 
 }

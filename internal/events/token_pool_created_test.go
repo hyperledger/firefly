@@ -47,8 +47,9 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 
@@ -74,8 +75,9 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 		TransactionID: nil,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 
@@ -98,9 +100,10 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 		Connector:     "erc1155",
 		TransactionID: txID,
 		Event: blockchain.Event{
-			Name:       "TokenPool",
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			Name:           "TokenPool",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 	storedPool := &fftypes.TokenPool{
@@ -157,8 +160,9 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 		Connector:     "erc1155",
 		TransactionID: txID,
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 	storedPool := &fftypes.TokenPool{
@@ -196,8 +200,9 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 		Connector:     "magic-tokens",
 		TransactionID: txID,
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 	storedPool := &fftypes.TokenPool{
@@ -267,7 +272,7 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 		return e.Name == event.Name
 	})).Return(fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event)
+	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -303,7 +308,7 @@ func TestConfirmPoolTxFail(t *testing.T) {
 		return tx.Type == fftypes.TransactionTypeTokenPool
 	})).Return(fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event)
+	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -340,7 +345,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 	})).Return(nil)
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event)
+	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -373,8 +378,9 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 
@@ -419,8 +425,9 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 
@@ -457,8 +464,9 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
-			ProtocolID: "tx1",
-			Info:       info,
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
 		},
 	}
 
