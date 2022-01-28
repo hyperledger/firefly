@@ -234,11 +234,11 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
-	tx := data.GetObject("transaction")
-	txHash := tx.GetString("transactionHash")
 	tokenIndex := data.GetString("tokenIndex") // optional
 	uri := data.GetString("uri")               // optional
 	rawOutput := data.GetObject("rawOutput")   // optional
+	tx := data.GetObject("transaction")
+	txHash := tx.GetString("transactionHash") // optional
 
 	timestampStr := data.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
@@ -260,7 +260,6 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		poolProtocolID == "" ||
 		operatorAddress == "" ||
 		value == "" ||
-		txHash == "" ||
 		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
 		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
 		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
@@ -395,11 +394,9 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 		// Handle synchronous response (202 will be handled by later websocket listener)
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return err
+			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		if err := ft.handleTokenPoolCreate(ctx, obj); err != nil {
-			return err
-		}
+		return ft.handleTokenPoolCreate(ctx, obj)
 	}
 	return nil
 }
@@ -419,11 +416,9 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 		// Handle synchronous response (202 will be handled by later websocket listener)
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return err
+			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		if err := ft.handleTokenPoolCreate(ctx, obj); err != nil {
-			return err
-		}
+		return ft.handleTokenPoolCreate(ctx, obj)
 	}
 	return nil
 }
