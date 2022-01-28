@@ -56,7 +56,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 		{
 			Name:      "BatchPin",
 			ID:        fftypes.NewUUID(),
-			Timestamp: fftypes.UnixTime(0),
+			Timestamp: fftypes.UnixTime(1),
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
@@ -64,7 +64,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 		{
 			ID:        fftypes.NewUUID(),
 			Type:      fftypes.MessageTypeBroadcast,
-			Confirmed: fftypes.UnixTime(0),
+			Confirmed: fftypes.UnixTime(2),
 		},
 	}
 
@@ -80,27 +80,27 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 		"status": "Succeeded",
 		"details": [
 			{
+				"type": "Batch",
+				"subtype": "broadcast",
+				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:02Z",
+				"id": "` + batches[0].ID.String() + `"
+			},
+			{
+				"type": "BlockchainEvent",
+				"subtype": "BatchPin",
+				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:01Z",
+				"id": "` + events[0].ID.String() + `",
+				"info": {"transactionHash": "0x100"}
+			},
+			{
 				"type": "Operation",
 				"subtype": "blockchain_batch_pin",
 				"status": "Succeeded",
 				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
-			},
-			{
-				"type": "BlockchainEvent",
-				"subtype": "BatchPin",
-				"status": "Succeeded",
-				"timestamp": "1970-01-01T00:00:00Z",
-				"id": "` + events[0].ID.String() + `",
-				"info": {"transactionHash": "0x100"}
-			},
-			{
-				"type": "Batch",
-				"subtype": "broadcast",
-				"status": "Succeeded",
-				"timestamp": "1970-01-01T00:00:00Z",
-				"id": "` + batches[0].ID.String() + `"
 			}
 		]
 	}`)
@@ -192,19 +192,19 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 		"status": "Pending",
 		"details": [
 			{
-				"type": "Operation",
-				"subtype": "blockchain_batch_pin",
-				"status": "Succeeded",
-				"timestamp": "1970-01-01T00:00:00Z",
-				"id": "` + ops[0].ID.String() + `"
-			},
-			{
 				"type": "BlockchainEvent",
 				"status": "Pending"
 			},
 			{
 				"type": "Batch",
 				"status": "Pending"
+			},
+			{
+				"type": "Operation",
+				"subtype": "blockchain_batch_pin",
+				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
+				"id": "` + ops[0].ID.String() + `"
 			}
 		]
 	}`)

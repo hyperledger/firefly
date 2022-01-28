@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"sort"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -162,6 +163,20 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 	default:
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownTransactionType, tx.Type)
 	}
+
+	// Sort with nil timestamps first (ie Pending), then descending by timestamp
+	sort.SliceStable(result.Details, func(i, j int) bool {
+		x := result.Details[i].Timestamp
+		y := result.Details[j].Timestamp
+		switch {
+		case y == nil:
+			return false
+		case x == nil:
+			return true
+		default:
+			return x.Time().After(*y.Time())
+		}
+	})
 
 	return result, nil
 }
