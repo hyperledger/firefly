@@ -36,6 +36,11 @@ func NewTestWSServer(testReq func(req *http.Request)) (toServer, fromServer chan
 		if testReq != nil {
 			testReq(req)
 		}
+		if connected {
+			// test server only handles one open connection, as it only has one set of channels
+			res.WriteHeader(409)
+			return
+		}
 		ws, _ := upgrader.Upgrade(res, req, http.Header{})
 		go func() {
 			defer close(receiveDone)
