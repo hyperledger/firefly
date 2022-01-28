@@ -10229,6 +10229,7 @@ paths:
                           type: string
                         subtype:
                           type: string
+                        timestamp: {}
                         type:
                           type: string
                       type: object

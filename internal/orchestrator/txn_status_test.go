@@ -45,23 +45,26 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 	}
 	ops := []*fftypes.Operation{
 		{
-			Status: fftypes.OpStatusSucceeded,
-			ID:     fftypes.NewUUID(),
-			Type:   fftypes.OpTypeBlockchainBatchPin,
-			Output: fftypes.JSONObject{"transactionHash": "0x100"},
+			Status:  fftypes.OpStatusSucceeded,
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.OpTypeBlockchainBatchPin,
+			Updated: fftypes.UnixTime(0),
+			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
 	events := []*fftypes.BlockchainEvent{
 		{
-			Name: "BatchPin",
-			ID:   fftypes.NewUUID(),
-			Info: fftypes.JSONObject{"transactionHash": "0x100"},
+			Name:      "BatchPin",
+			ID:        fftypes.NewUUID(),
+			Timestamp: fftypes.UnixTime(0),
+			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
 	batches := []*fftypes.Batch{
 		{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.MessageTypeBroadcast,
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.MessageTypeBroadcast,
+			Confirmed: fftypes.UnixTime(0),
 		},
 	}
 
@@ -80,6 +83,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 				"type": "Operation",
 				"subtype": "blockchain_batch_pin",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
 			},
@@ -87,6 +91,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 				"type": "BlockchainEvent",
 				"subtype": "BatchPin",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + events[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
 			},
@@ -94,6 +99,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 				"type": "Batch",
 				"subtype": "broadcast",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + batches[0].ID.String() + `"
 			}
 		]
@@ -165,9 +171,10 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 	}
 	ops := []*fftypes.Operation{
 		{
-			Status: fftypes.OpStatusSucceeded,
-			ID:     fftypes.NewUUID(),
-			Type:   fftypes.OpTypeBlockchainBatchPin,
+			Status:  fftypes.OpStatusSucceeded,
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.OpTypeBlockchainBatchPin,
+			Updated: fftypes.UnixTime(0),
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
@@ -188,6 +195,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 				"type": "Operation",
 				"subtype": "blockchain_batch_pin",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `"
 			},
 			{
@@ -215,23 +223,27 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 	}
 	ops := []*fftypes.Operation{
 		{
-			Status: fftypes.OpStatusSucceeded,
-			ID:     fftypes.NewUUID(),
-			Type:   fftypes.OpTypeTokenCreatePool,
-			Output: fftypes.JSONObject{"transactionHash": "0x100"},
+			Status:  fftypes.OpStatusSucceeded,
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.OpTypeTokenCreatePool,
+			Updated: fftypes.UnixTime(0),
+			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
 	events := []*fftypes.BlockchainEvent{
 		{
-			Name: "TokenPool",
-			ID:   fftypes.NewUUID(),
-			Info: fftypes.JSONObject{"transactionHash": "0x100"},
+			Name:      "TokenPool",
+			ID:        fftypes.NewUUID(),
+			Timestamp: fftypes.UnixTime(0),
+			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
 	pools := []*fftypes.TokenPool{
 		{
-			ID:   fftypes.NewUUID(),
-			Type: fftypes.TokenTypeFungible,
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.TokenTypeFungible,
+			Created: fftypes.UnixTime(0),
+			State:   fftypes.TokenPoolStateConfirmed,
 		},
 	}
 
@@ -250,6 +262,7 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 				"type": "Operation",
 				"subtype": "token_create_pool",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
 			},
@@ -257,6 +270,7 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 				"type": "BlockchainEvent",
 				"subtype": "TokenPool",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + events[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
 			},
@@ -264,6 +278,7 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 				"type": "TokenPool",
 				"subtype": "fungible",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + pools[0].ID.String() + `"
 			}
 		]
@@ -326,6 +341,67 @@ func TestGetTransactionStatusTokenPoolPending(t *testing.T) {
 	or.mdi.AssertExpectations(t)
 }
 
+func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: fftypes.TransactionTypeTokenPool,
+	}
+	ops := []*fftypes.Operation{
+		{
+			Status: fftypes.OpStatusSucceeded,
+			ID:     fftypes.NewUUID(),
+			Type:   fftypes.OpTypeTokenCreatePool,
+			Output: fftypes.JSONObject{"transactionHash": "0x100"},
+		},
+	}
+	events := []*fftypes.BlockchainEvent{}
+	pools := []*fftypes.TokenPool{
+		{
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.TokenTypeFungible,
+			Created: fftypes.UnixTime(0),
+			State:   fftypes.TokenPoolStatePending,
+		},
+	}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetTokenPools", mock.Anything, mock.Anything).Return(pools, nil, nil)
+
+	status, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.NoError(t, err)
+
+	expectedStatus := compactJSON(`{
+		"status": "Pending",
+		"details": [
+			{
+				"type": "Operation",
+				"subtype": "token_create_pool",
+				"status": "Succeeded",
+				"id": "` + ops[0].ID.String() + `",
+				"info": {"transactionHash": "0x100"}
+			},
+			{
+				"type": "BlockchainEvent",
+				"status": "Pending"
+			},
+			{
+				"type": "TokenPool",
+				"subtype": "fungible",
+				"status": "Pending",
+				"id": "` + pools[0].ID.String() + `"
+			}
+		]
+	}`)
+	statusJSON, _ := json.Marshal(status)
+	assert.Equal(t, expectedStatus, string(statusJSON))
+
+	or.mdi.AssertExpectations(t)
+}
+
 func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 	or := newTestOrchestrator()
 
@@ -335,23 +411,26 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 	}
 	ops := []*fftypes.Operation{
 		{
-			Status: fftypes.OpStatusSucceeded,
-			ID:     fftypes.NewUUID(),
-			Type:   fftypes.OpTypeTokenTransfer,
-			Output: fftypes.JSONObject{"transactionHash": "0x100"},
+			Status:  fftypes.OpStatusSucceeded,
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.OpTypeTokenTransfer,
+			Updated: fftypes.UnixTime(0),
+			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
 	events := []*fftypes.BlockchainEvent{
 		{
-			Name: "Mint",
-			ID:   fftypes.NewUUID(),
-			Info: fftypes.JSONObject{"transactionHash": "0x100"},
+			Name:      "Mint",
+			ID:        fftypes.NewUUID(),
+			Timestamp: fftypes.UnixTime(0),
+			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
 	transfers := []*fftypes.TokenTransfer{
 		{
 			LocalID: fftypes.NewUUID(),
 			Type:    fftypes.TokenTransferTypeMint,
+			Created: fftypes.UnixTime(0),
 		},
 	}
 
@@ -370,6 +449,7 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 				"type": "Operation",
 				"subtype": "token_transfer",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
 			},
@@ -377,6 +457,7 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 				"type": "BlockchainEvent",
 				"subtype": "Mint",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + events[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
 			},
@@ -384,6 +465,7 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 				"type": "TokenTransfer",
 				"subtype": "mint",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + transfers[0].LocalID.String() + `"
 			}
 		]
@@ -455,10 +537,11 @@ func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 	}
 	ops := []*fftypes.Operation{
 		{
-			Status: fftypes.OpStatusSucceeded,
-			ID:     fftypes.NewUUID(),
-			Type:   fftypes.OpTypeContractInvoke,
-			Output: fftypes.JSONObject{"transactionHash": "0x100"},
+			Status:  fftypes.OpStatusSucceeded,
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.OpTypeContractInvoke,
+			Updated: fftypes.UnixTime(0),
+			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
@@ -477,6 +560,7 @@ func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 				"type": "Operation",
 				"subtype": "contract_invoke",
 				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
 			}
