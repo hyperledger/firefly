@@ -58,9 +58,9 @@ var (
 )
 
 type TransactionStatusDetails struct {
-	Status  OpStatus              `json:"status"`
 	Type    TransactionStatusType `json:"type"`
 	SubType string                `json:"subtype,omitempty"`
+	Status  OpStatus              `json:"status"`
 	ID      *UUID                 `json:"id,omitempty"`
 	Error   string                `json:"error,omitempty"`
 	Info    JSONObject            `json:"info,omitempty"`
