@@ -302,15 +302,12 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}
 
-	// if transaction fails,  mark tx and op as failed in DB
+	// if transaction fails,  mark op as failed in DB
 	if err != nil {
 		_ = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 			l := log.L(ctx)
 			update := database.OperationQueryFactory.NewUpdate(ctx).
 				Set("status", fftypes.OpStatusFailed)
-			if err = s.mgr.database.UpdateTransaction(ctx, tx.ID, update); err != nil {
-				l.Errorf("TX update failed: %s update=[ %s ]", err, update)
-			}
 			if err = s.mgr.database.UpdateOperation(ctx, op.ID, update); err != nil {
 				l.Errorf("Operation update failed: %s update=[ %s ]", err, update)
 			}
