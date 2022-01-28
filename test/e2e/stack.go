@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,6 +33,7 @@ type Member struct {
 	Password             string `json:"password,omitempty"`
 	UseHTTPS             bool   `json:"useHttps,omitempty"`
 	ExposedConnectorPort int    `json:"exposedConnectorPort,omitempty"`
+	OrgName              string `json:"orgName,omitempty"`
 }
 
 func GetMemberPort(filename string, n int) (int, error) {

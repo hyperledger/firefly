@@ -204,9 +204,19 @@ func beforeE2ETest(t *testing.T) *testState {
 		orgsC1 := GetOrgs(t, ts.client1, 200)
 		orgsC2 := GetOrgs(t, ts.client2, 200)
 		if len(orgsC1) >= 2 && len(orgsC2) >= 2 {
-			ts.org1 = orgsC1[0]
-			ts.org2 = orgsC1[1]
-			break
+			// in case there are more than two orgs in the network we need to ensure
+			// we select the same two that were provided in the first two elements
+			// of the stack file
+			for _, org := range orgsC1 {
+				if org.Name == stack.Members[0].OrgName {
+					ts.org1 = org
+				} else if org.Name == stack.Members[1].OrgName {
+					ts.org2 = org
+				}
+			}
+			if ts.org1 != nil && ts.org2 != nil {
+				break
+			}
 		}
 		t.Logf("Waiting for 2 orgs to appear. Currently have: node1=%d node2=%d", len(orgsC1), len(orgsC2))
 		time.Sleep(3 * time.Second)
