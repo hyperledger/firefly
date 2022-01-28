@@ -30,7 +30,6 @@ import (
 func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.TokenPool) {
 	ffPool.Type = pluginPool.Type
 	ffPool.ProtocolID = pluginPool.ProtocolID
-	ffPool.Key = pluginPool.Key
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
 	if pluginPool.TransactionID != nil {
@@ -64,7 +63,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 	if err := em.database.UpsertTokenPool(ctx, pool); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Token pool confirmed id=%s author=%s", pool.ID, pool.Key)
+	log.L(ctx).Infof("Token pool confirmed, id=%s", pool.ID)
 	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID)
 	return em.database.InsertEvent(ctx, event)
 }
@@ -186,7 +185,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				Pool:  announcePool,
 				Event: buildBlockchainEvent(announcePool.Namespace, nil, &pool.Event, &announcePool.TX),
 			}
-			log.L(em.ctx).Infof("Announcing token pool id=%s author=%s", announcePool.ID, pool.Key)
+			log.L(em.ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
 			_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)
 		}
 	}

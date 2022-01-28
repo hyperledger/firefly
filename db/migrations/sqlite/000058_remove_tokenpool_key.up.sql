@@ -1,0 +1,1 @@
+ALTER TABLE tokenpool DROP COLUMN key;

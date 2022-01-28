@@ -177,7 +177,6 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	eventProtocolID := data.GetString("id")
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
-	operatorAddress := data.GetString("operator")
 	standard := data.GetString("standard")   // optional
 	rawOutput := data.GetObject("rawOutput") // optional
 	tx := data.GetObject("transaction")
@@ -190,8 +189,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	if tokenType == "" ||
-		protocolID == "" ||
-		operatorAddress == "" {
+		protocolID == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
@@ -209,7 +207,6 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Type:          fftypes.FFEnum(tokenType),
 		ProtocolID:    protocolID,
 		TransactionID: poolData.TX,
-		Key:           operatorAddress,
 		Connector:     ft.configuredName,
 		Standard:      standard,
 		Event: blockchain.Event{

@@ -43,7 +43,6 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
@@ -71,7 +70,6 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		TransactionID: nil,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
@@ -96,7 +94,6 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	chainPool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		Connector:     "erc1155",
 		TransactionID: txID,
 		Event: blockchain.Event{
@@ -109,7 +106,6 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	storedPool := &fftypes.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		Key:       chainPool.Key,
 		State:     fftypes.TokenPoolStatePending,
 		Message:   fftypes.NewUUID(),
 		TX: fftypes.TransactionRef{
@@ -156,7 +152,6 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	chainPool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		Connector:     "erc1155",
 		TransactionID: txID,
 		Event: blockchain.Event{
@@ -168,7 +163,6 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	storedPool := &fftypes.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		Key:       chainPool.Key,
 		State:     fftypes.TokenPoolStateConfirmed,
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
@@ -196,7 +190,6 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	chainPool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		Connector:     "magic-tokens",
 		TransactionID: txID,
 		Event: blockchain.Event{
@@ -208,7 +201,6 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	storedPool := &fftypes.TokenPool{
 		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
-		Key:       chainPool.Key,
 		State:     fftypes.TokenPoolStateUnknown,
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
@@ -374,7 +366,6 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
@@ -421,7 +412,6 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
@@ -460,7 +450,6 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	pool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
-		Key:           "0x0",
 		TransactionID: txID,
 		Connector:     "erc1155",
 		Event: blockchain.Event{
