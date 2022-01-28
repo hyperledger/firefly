@@ -679,3 +679,21 @@ func TestGetTransactionStatusTransferError(t *testing.T) {
 
 	or.mdi.AssertExpectations(t)
 }
+
+func TestGetTransactionStatusUnknownType(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: "bad",
+	}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
+
+	_, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.Regexp(t, "FF10336", err)
+
+	or.mdi.AssertExpectations(t)
+}

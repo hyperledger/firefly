@@ -160,7 +160,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		// no blockchain events or other objects
 
 	default:
-		// TODO: return error?
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownTransactionType, tx.Type)
 	}
 
 	return result, nil
