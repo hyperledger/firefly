@@ -342,6 +342,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			SubType: op.Type.String(),
 			ID:      op.ID,
 			Error:   op.Error,
+			Info:    op.Output,
 		})
 		updateStatus(result, op.Status)
 	}
@@ -356,6 +357,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			Type:    fftypes.TransactionStatusTypeBlockchainEvent,
 			SubType: event.Name,
 			ID:      event.ID,
+			Info:    event.Info,
 		})
 	}
 

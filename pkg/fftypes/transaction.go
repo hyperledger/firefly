@@ -63,6 +63,7 @@ type TransactionStatusDetails struct {
 	SubType string                `json:"subtype,omitempty"`
 	ID      *UUID                 `json:"id,omitempty"`
 	Error   string                `json:"error,omitempty"`
+	Info    JSONObject            `json:"info,omitempty"`
 }
 
 type TransactionStatus struct {

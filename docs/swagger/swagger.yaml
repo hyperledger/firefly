@@ -10222,7 +10222,12 @@ paths:
                         error:
                           type: string
                         id: {}
+                        info:
+                          additionalProperties: {}
+                          type: object
                         status:
+                          type: string
+                        subtype:
                           type: string
                         type:
                           type: string
