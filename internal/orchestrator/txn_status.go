@@ -146,6 +146,9 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 
 	case fftypes.TransactionTypeContractInvoke:
 		// no blockchain events or other objects
+
+	default:
+		// TODO: return error?
 	}
 
 	return result, nil
