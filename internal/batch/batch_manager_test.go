@@ -354,6 +354,10 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, nil)
 
 	bm.(*batchManager).messageSequencer()
+
+	bm.Close()
+	bm.WaitStop()
+
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
@@ -382,6 +386,10 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
 
 	bm.(*batchManager).messageSequencer()
+
+	bm.Close()
+	bm.WaitStop()
+
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
@@ -424,6 +432,10 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	}
 
 	bm.(*batchManager).messageSequencer()
+
+	bm.Close()
+	bm.WaitStop()
+
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
@@ -465,8 +477,14 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 		}
 		rag.ReturnArguments = mock.Arguments{err}
 	}
+	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil).Maybe()
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil).Maybe()
 
 	bm.(*batchManager).messageSequencer()
+
+	bm.Close()
+	bm.WaitStop()
+
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
