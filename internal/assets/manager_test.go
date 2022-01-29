@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -51,7 +52,9 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
 	}
 	assert.NoError(t, err)
-	return a.(*assetManager), cancel
+	am := a.(*assetManager)
+	am.txHelper = &txcommonmocks.Helper{}
+	return am, cancel
 }
 
 func TestInitFail(t *testing.T) {

@@ -111,8 +111,18 @@ func TestFFStringArrayScanValue(t *testing.T) {
 
 func TestFFStringArrayMergeFold(t *testing.T) {
 
-	sa := NewFFStringArray("name2", "NAME1")
-	assert.Equal(t, FFStringArray{"name1", "name2", "name3"}, sa.MergeLower(FFStringArray{"name3"}))
-	assert.Equal(t, FFStringArray{"name1", "name2", "name3", "name4"}, sa.MergeLower(FFStringArray{"NAME4", "NAME3", "name1", "name2"}))
+	sa := NewFFStringArray("name2", "name1")
+
+	nsa, changed := sa.AddToSortedSet("Name3")
+	assert.True(t, changed)
+	assert.Equal(t, FFStringArray{"name1", "name2", "name3"}, nsa)
+
+	nsa, changed = sa.AddToSortedSet("name1", "")
+	assert.False(t, changed)
+	assert.Equal(t, sa, nsa)
+
+	nsa, changed = sa.AddToSortedSet("NAME4", "NAME3", "name1", "name2")
+	assert.True(t, changed)
+	assert.Equal(t, FFStringArray{"name1", "name2", "name3", "name4"}, nsa)
 
 }

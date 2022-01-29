@@ -39,30 +39,15 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 		return err
 	}
 
-	setTXFailed := false
-
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
-		setTXFailed = true
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
 	}
 
-	tx, err := em.database.GetTransactionByID(ctx, op.Transaction)
-	if tx != nil {
-		if setTXFailed {
-			tx.Status = fftypes.OpStatusFailed
-		}
-		tx.BlockchainIDs = tx.BlockchainIDs.AppendLowerUnique(blockchainTXID)
-		err = em.database.UpsertTransaction(ctx, tx)
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return em.txHelper.AddBlockchainTX(ctx, op.Transaction, blockchainTXID)
 }
 
 func (em *eventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {

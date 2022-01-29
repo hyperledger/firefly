@@ -38,7 +38,8 @@ func newTestBatchPinSubmitter(t *testing.T) *batchPinSubmitter {
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mbi.On("Name").Return("ut").Maybe()
-	return NewBatchPinSubmitter(mdi, mim, mbi).(*batchPinSubmitter)
+	bps := NewBatchPinSubmitter(mdi, mim, mbi).(*batchPinSubmitter)
+	return bps
 }
 
 func TestSubmitPinnedBatchOk(t *testing.T) {
@@ -62,7 +63,6 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
@@ -98,7 +98,6 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
@@ -132,36 +131,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
-
-	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
-	assert.Regexp(t, "pop", err)
-
-}
-
-func TestSubmitPinnedBatchTxInsertFail(t *testing.T) {
-
-	bp := newTestBatchPinSubmitter(t)
-	ctx := context.Background()
-
-	mdi := bp.database.(*databasemocks.Plugin)
-
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
-			Author: "id1",
-			Key:    "0x12345",
-		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID: fftypes.NewUUID(),
-			},
-		},
-	}
-	contexts := []*fftypes.Bytes32{}
-
-	mdi.On("UpsertTransaction", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.Regexp(t, "pop", err)

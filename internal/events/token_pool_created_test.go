@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -90,6 +91,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	txID := fftypes.NewUUID()
 	info := fftypes.JSONObject{"some": "info"}
@@ -129,9 +131,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEvent
 	})).Return(nil).Once()
-	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenPool
-	})).Return(nil).Once()
+	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
@@ -190,6 +190,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mam := em.assets.(*assetmocks.Manager)
 	mti := &tokenmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	txID := fftypes.NewUUID()
 	info := fftypes.JSONObject{"some": "info"}
@@ -226,9 +227,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEvent
 	})).Return(nil).Once()
-	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenPool
-	})).Return(nil).Once()
+	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
@@ -282,6 +281,7 @@ func TestConfirmPoolTxFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	txID := fftypes.NewUUID()
 	storedPool := &fftypes.TokenPool{
@@ -304,9 +304,7 @@ func TestConfirmPoolTxFail(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEvent
 	})).Return(nil)
-	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenPool
-	})).Return(fmt.Errorf("pop"))
+	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
 	assert.EqualError(t, err, "pop")
@@ -318,6 +316,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	txID := fftypes.NewUUID()
 	storedPool := &fftypes.TokenPool{
@@ -340,9 +339,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEvent
 	})).Return(nil)
-	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Type == fftypes.TransactionTypeTokenPool
-	})).Return(nil)
+	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")

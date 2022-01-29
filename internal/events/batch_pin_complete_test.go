@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -46,8 +47,9 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 		Event: blockchain.Event{
-			Name:       "BatchPin",
-			ProtocolID: "tx1",
+			Name:           "BatchPin",
+			BlockchainTXID: "0x12345",
+			ProtocolID:     "10/20/30",
 		},
 	}
 	batchData := &fftypes.Batch{
@@ -78,6 +80,12 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
 
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("PersistTransaction", mock.Anything, "ns1", batch.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
+		Return(false, fmt.Errorf("pop")).Once()
+	mth.On("PersistTransaction", mock.Anything, "ns1", batch.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
+		Return(true, nil)
+
 	mdi := em.database.(*databasemocks.Plugin)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	rag.RunFn = func(a mock.Arguments) {
@@ -97,8 +105,6 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEvent
 	})).Return(nil).Times(2)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil).Once()
 	mbi := &blockchainmocks.Plugin{}
@@ -121,6 +127,9 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 		TransactionID: fftypes.NewUUID(),
 		BatchID:       fftypes.NewUUID(),
 		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Event: blockchain.Event{
+			BlockchainTXID: "0x12345",
+		},
 	}
 	batchData := &fftypes.Batch{
 		ID:         batch.BatchID,
@@ -144,9 +153,11 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
 
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("PersistTransaction", mock.Anything, "ns1", batch.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 

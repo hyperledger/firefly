@@ -2185,6 +2185,20 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operat
 	return r0
 }
 
+// InsertTransaction provides a mock function with given fields: ctx, data
+func (_m *Plugin) InsertTransaction(ctx context.Context, data *fftypes.Transaction) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction) error); ok {
+		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Name provides a mock function with given fields:
 func (_m *Plugin) Name() string {
 	ret := _m.Called()
@@ -2724,20 +2738,6 @@ func (_m *Plugin) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.Tok
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenTransfer) error); ok {
 		r0 = rf(ctx, transfer)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertTransaction provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction) error {
-	ret := _m.Called(ctx, data)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction) error); ok {
-		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

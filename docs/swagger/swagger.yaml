@@ -4231,6 +4231,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -4291,6 +4292,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -4962,6 +4964,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -5085,8 +5088,6 @@ paths:
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:
@@ -6876,6 +6877,16 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: symbol
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -9050,6 +9061,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: type
         schema:
           type: string
@@ -9863,11 +9884,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: status
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -9918,8 +9934,6 @@ paths:
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:
@@ -9980,11 +9994,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: status
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -10035,8 +10044,6 @@ paths:
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:
@@ -10178,6 +10185,61 @@ paths:
                     updated: {}
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/transactions/{txnid}/status:
+    get:
+      description: 'TODO: Description'
+      operationId: getTxnStatus
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: txnid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  details:
+                    items:
+                      properties:
+                        error:
+                          type: string
+                        id: {}
+                        info:
+                          additionalProperties: {}
+                          type: object
+                        status:
+                          type: string
+                        subtype:
+                          type: string
+                        timestamp: {}
+                        type:
+                          type: string
+                      type: object
+                    type: array
+                  status:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""

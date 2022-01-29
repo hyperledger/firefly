@@ -246,26 +246,8 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return nil
 	}
 
-	tx := &fftypes.Transaction{
-		ID:        fftypes.NewUUID(),
-		Namespace: s.namespace,
-		Type:      fftypes.TransactionTypeTokenTransfer,
-		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
-	}
-	s.transfer.TX.ID = tx.ID
-	s.transfer.TX.Type = tx.Type
-
-	op := fftypes.NewTXOperation(
-		plugin,
-		s.namespace,
-		tx.ID,
-		"",
-		fftypes.OpTypeTokenTransfer,
-		fftypes.OpStatusPending)
-	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
-
 	var pool *fftypes.TokenPool
+	var op *fftypes.Operation
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
@@ -275,10 +257,23 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
 		}
 
-		err = s.mgr.database.UpsertTransaction(ctx, tx)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, fftypes.TransactionTypeTokenTransfer)
 		if err != nil {
 			return err
 		}
+
+		s.transfer.TX.ID = txid
+		s.transfer.TX.Type = fftypes.TransactionTypeTokenTransfer
+
+		op = fftypes.NewTXOperation(
+			plugin,
+			s.namespace,
+			txid,
+			"",
+			fftypes.OpTypeTokenTransfer,
+			fftypes.OpStatusPending)
+		txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
+
 		if err = s.mgr.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
@@ -303,17 +298,12 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}
 
-	// if transaction fails,  mark tx and op as failed in DB
+	// if transaction fails,  mark op as failed in DB
 	if err != nil {
 		_ = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 			l := log.L(ctx)
-			tx.Status = fftypes.OpStatusFailed
-
 			update := database.OperationQueryFactory.NewUpdate(ctx).
 				Set("status", fftypes.OpStatusFailed)
-			if err = s.mgr.database.UpdateTransaction(ctx, tx.ID, update); err != nil {
-				l.Errorf("TX update failed: %s update=[ %s ]", err, update)
-			}
 			if err = s.mgr.database.UpdateOperation(ctx, op.ID, update); err != nil {
 				l.Errorf("Operation update failed: %s update=[ %s ]", err, update)
 			}

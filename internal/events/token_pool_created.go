@@ -41,23 +41,12 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	}
 }
 
-func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus, blockchainTXID string) *fftypes.Transaction {
-	return &fftypes.Transaction{
-		ID:            pool.TX.ID,
-		Status:        status,
-		Namespace:     pool.Namespace,
-		Type:          pool.TX.Type,
-		BlockchainIDs: fftypes.NewFFStringArray(blockchainTXID),
-	}
-}
-
 func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event, blockchainTXID string) error {
 	chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
 	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
-	tx := poolTransaction(pool, fftypes.OpStatusSucceeded, blockchainTXID)
-	if err := em.database.UpsertTransaction(ctx, tx); err != nil {
+	if _, err := em.txHelper.PersistTransaction(ctx, pool.Namespace, pool.TX.ID, pool.TX.Type, blockchainTXID); err != nil {
 		return err
 	}
 	pool.State = fftypes.TokenPoolStateConfirmed

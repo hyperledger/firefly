@@ -37,14 +37,37 @@ type TransactionRef struct {
 	ID   *UUID           `json:"id,omitempty"`
 }
 
-// Transaction represents (blockchain) transactions that were submitted by this
-// node, with the correlation information to look them up on the underlying
-// ledger technology
+// Transaction is a unit of work sent or received by this node
+// It serves as a container for one or more Operations, BlockchainEvents, and other related objects
 type Transaction struct {
 	ID            *UUID           `json:"id,omitempty"`
 	Namespace     string          `json:"namespace,omitempty"`
 	Type          TransactionType `json:"type" ffenum:"txtype"`
 	Created       *FFTime         `json:"created"`
-	Status        OpStatus        `json:"status"`
 	BlockchainIDs FFStringArray   `json:"blockchainIds,omitempty"`
+}
+
+type TransactionStatusType string
+
+var (
+	TransactionStatusTypeOperation       TransactionStatusType = "Operation"
+	TransactionStatusTypeBlockchainEvent TransactionStatusType = "BlockchainEvent"
+	TransactionStatusTypeBatch           TransactionStatusType = "Batch"
+	TransactionStatusTypeTokenPool       TransactionStatusType = "TokenPool"
+	TransactionStatusTypeTokenTransfer   TransactionStatusType = "TokenTransfer"
+)
+
+type TransactionStatusDetails struct {
+	Type      TransactionStatusType `json:"type"`
+	SubType   string                `json:"subtype,omitempty"`
+	Status    OpStatus              `json:"status"`
+	Timestamp *FFTime               `json:"timestamp,omitempty"`
+	ID        *UUID                 `json:"id,omitempty"`
+	Error     string                `json:"error,omitempty"`
+	Info      JSONObject            `json:"info,omitempty"`
+}
+
+type TransactionStatus struct {
+	Status  OpStatus                    `json:"status"`
+	Details []*TransactionStatusDetails `json:"details"`
 }
