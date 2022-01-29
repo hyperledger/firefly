@@ -64,6 +64,7 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	info := fftypes.JSONObject{"some": "info"}
@@ -78,6 +79,8 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 			Info:           info,
 		},
 	}
+
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil, nil)
 
 	err := em.TokenPoolCreated(mti, pool)
 	assert.NoError(t, err)
