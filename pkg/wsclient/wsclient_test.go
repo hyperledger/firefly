@@ -201,6 +201,7 @@ func TestWSReadLoopSendFailure(t *testing.T) {
 	defer done()
 
 	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
+	assert.NoError(t, err)
 	wsconn.WriteJSON(map[string]string{"type": "listen", "topic": "topic1"})
 	assert.NoError(t, err)
 	<-toServer
@@ -216,6 +217,10 @@ func TestWSReadLoopSendFailure(t *testing.T) {
 
 	// Ensure the readLoop exits immediately
 	w.readLoop()
+
+	// Try reconnect, should fail here
+	_, _, err = websocket.DefaultDialer.Dial(url, nil)
+	assert.Error(t, err)
 
 }
 
