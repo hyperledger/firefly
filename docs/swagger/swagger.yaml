@@ -4231,6 +4231,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -4291,6 +4292,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -4962,6 +4964,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -5078,11 +5081,13 @@ paths:
             application/json:
               schema:
                 properties:
+                  blockchainIds:
+                    items:
+                      type: string
+                    type: array
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:
@@ -6872,6 +6877,16 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: symbol
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -9046,6 +9061,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: type
         schema:
           type: string
@@ -9839,6 +9864,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blockchainids
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -9850,11 +9880,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: status
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -9902,11 +9927,13 @@ paths:
             application/json:
               schema:
                 properties:
+                  blockchainIds:
+                    items:
+                      type: string
+                    type: array
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:
@@ -9947,6 +9974,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: blockchainids
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -9958,11 +9990,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: status
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -10010,11 +10037,13 @@ paths:
             application/json:
               schema:
                 properties:
+                  blockchainIds:
+                    items:
+                      type: string
+                    type: array
                   created: {}
                   id: {}
                   namespace:
-                    type: string
-                  status:
                     type: string
                   type:
                     enum:
@@ -10025,6 +10054,69 @@ paths:
                     - contract_invoke
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/transactions/{txnid}/blockchainevents:
+    get:
+      description: 'TODO: Description'
+      operationId: getTxnBlockchainEvents
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: txnid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    id: {}
+                    info:
+                      additionalProperties: {}
+                      type: object
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
+                    protocolId:
+                      type: string
+                    sequence:
+                      format: int64
+                      type: integer
+                    source:
+                      type: string
+                    subscription: {}
+                    timestamp: {}
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -10060,22 +10152,94 @@ paths:
               schema:
                 items:
                   properties:
+                    backendId:
+                      type: string
                     created: {}
+                    error:
+                      type: string
                     id: {}
+                    input:
+                      additionalProperties: {}
+                      type: object
                     namespace:
+                      type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
+                    plugin:
                       type: string
                     status:
                       type: string
+                    tx: {}
                     type:
                       enum:
-                      - none
-                      - batch_pin
-                      - token_pool
+                      - blockchain_batch_pin
+                      - publicstorage_batch_broadcast
+                      - dataexchange_batch_send
+                      - dataexchange_blob_send
+                      - token_create_pool
+                      - token_announce_pool
                       - token_transfer
                       - contract_invoke
                       type: string
+                    updated: {}
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/transactions/{txnid}/status:
+    get:
+      description: 'TODO: Description'
+      operationId: getTxnStatus
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: txnid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  details:
+                    items:
+                      properties:
+                        error:
+                          type: string
+                        id: {}
+                        info:
+                          additionalProperties: {}
+                          type: object
+                        status:
+                          type: string
+                        subtype:
+                          type: string
+                        timestamp: {}
+                        type:
+                          type: string
+                      type: object
+                    type: array
+                  status:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""

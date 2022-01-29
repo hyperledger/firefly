@@ -132,8 +132,8 @@ type iBatchCollection interface {
 }
 
 type iTransactionCollection interface {
-	// UpsertTransaction - Upsert a transaction
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
+	// InsertTransaction - Insert a new transaction
+	InsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -660,12 +660,12 @@ var MessageQueryFactory = &queryFields{
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"key":       &StringField{},
-	"topics":    &FFNameArrayField{},
+	"topics":    &FFStringArrayField{},
 	"tag":       &StringField{},
 	"group":     &Bytes32Field{},
 	"created":   &TimeField{},
 	"hash":      &Bytes32Field{},
-	"pins":      &FFNameArrayField{},
+	"pins":      &FFStringArrayField{},
 	"state":     &StringField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
@@ -692,11 +692,11 @@ var BatchQueryFactory = &queryFields{
 
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"type":      &StringField{},
-	"status":    &StringField{},
-	"created":   &TimeField{},
-	"namespace": &StringField{},
+	"id":            &UUIDField{},
+	"type":          &StringField{},
+	"created":       &TimeField{},
+	"namespace":     &StringField{},
+	"blockchainids": &FFStringArrayField{},
 }
 
 // DataQueryFactory filter fields for data
@@ -862,6 +862,8 @@ var TokenPoolQueryFactory = &queryFields{
 	"state":      &StringField{},
 	"created":    &TimeField{},
 	"connector":  &StringField{},
+	"tx.type":    &StringField{},
+	"tx.id":      &UUIDField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances

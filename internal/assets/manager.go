@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -70,6 +71,7 @@ type Manager interface {
 type assetManager struct {
 	ctx       context.Context
 	database  database.Plugin
+	txHelper  txcommon.Helper
 	identity  identity.Manager
 	data      data.Manager
 	syncasync syncasync.Bridge
@@ -86,6 +88,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 	am := &assetManager{
 		ctx:       ctx,
 		database:  di,
+		txHelper:  txcommon.NewTransactionHelper(di),
 		identity:  im,
 		data:      dm,
 		syncasync: sa,

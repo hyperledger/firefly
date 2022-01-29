@@ -41,22 +41,12 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	}
 }
 
-func poolTransaction(pool *fftypes.TokenPool, status fftypes.OpStatus) *fftypes.Transaction {
-	return &fftypes.Transaction{
-		ID:        pool.TX.ID,
-		Status:    status,
-		Namespace: pool.Namespace,
-		Type:      pool.TX.Type,
-	}
-}
-
-func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event) error {
+func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event, blockchainTXID string) error {
 	chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
 	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
-	tx := poolTransaction(pool, fftypes.OpStatusSucceeded)
-	if err := em.database.UpsertTransaction(ctx, tx); err != nil {
+	if _, err := em.txHelper.PersistTransaction(ctx, pool.Namespace, pool.TX.ID, pool.TX.Type, blockchainTXID); err != nil {
 		return err
 	}
 	pool.State = fftypes.TokenPoolStateConfirmed
@@ -154,7 +144,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				} else if msg != nil {
 					batchID = msg.BatchID // trigger rewind after completion of database transaction
 				}
-				return em.confirmPool(ctx, existingPool, &pool.Event)
+				return em.confirmPool(ctx, existingPool, &pool.Event, pool.Event.BlockchainTXID)
 			}
 
 			// See if this pool was submitted locally and needs to be announced
