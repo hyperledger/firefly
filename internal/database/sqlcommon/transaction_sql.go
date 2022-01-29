@@ -41,62 +41,29 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction) (err error) {
+func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *fftypes.Transaction) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to determine if the UUID already exists
-	transactionRows, _, err := s.queryTx(ctx, tx,
-		sq.Select("blockchain_ids").
-			From("transactions").
-			Where(sq.Eq{"id": transaction.ID}),
-	)
-	if err != nil {
+	transaction.Created = fftypes.Now()
+	if _, err = s.insertTx(ctx, tx,
+		sq.Insert("transactions").
+			Columns(transactionColumns...).
+			Values(
+				transaction.ID,
+				string(transaction.Type),
+				transaction.Namespace,
+				transaction.Created,
+				transaction.BlockchainIDs,
+			),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, transaction.Namespace, transaction.ID)
+		},
+	); err != nil {
 		return err
-	}
-	existing := transactionRows.Next()
-
-	if existing {
-		var existingBlockchainIDs fftypes.FFStringArray
-		_ = transactionRows.Scan(&existingBlockchainIDs)
-		transaction.BlockchainIDs = transaction.BlockchainIDs.MergeLower(existingBlockchainIDs)
-		transactionRows.Close()
-		// Update the transaction
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("transactions").
-				Set("ttype", string(transaction.Type)).
-				Set("namespace", transaction.Namespace).
-				Set("blockchain_ids", transaction.BlockchainIDs).
-				Where(sq.Eq{"id": transaction.ID}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, transaction.Namespace, transaction.ID)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
-		transactionRows.Close()
-		// Insert a transaction
-		transaction.Created = fftypes.Now()
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("transactions").
-				Columns(transactionColumns...).
-				Values(
-					transaction.ID,
-					string(transaction.Type),
-					transaction.Namespace,
-					transaction.Created,
-					transaction.BlockchainIDs,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, transaction.Namespace, transaction.ID)
-			},
-		); err != nil {
-			return err
-		}
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)

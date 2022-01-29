@@ -35,6 +35,7 @@ import (
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -78,6 +79,7 @@ type eventManager struct {
 	ni                   sysmessaging.LocalNodeInfo
 	publicstorage        publicstorage.Plugin
 	database             database.Plugin
+	txHelper             txcommon.Helper
 	identity             identity.Manager
 	definitions          definitions.DefinitionHandlers
 	data                 data.Manager
@@ -105,6 +107,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publ
 		ni:            ni,
 		publicstorage: pi,
 		database:      di,
+		txHelper:      txcommon.NewTransactionHelper(di),
 		identity:      im,
 		definitions:   dh,
 		data:          dm,

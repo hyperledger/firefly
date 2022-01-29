@@ -20,6 +20,8 @@ package fftypes
 type EventType = FFEnum
 
 var (
+	// EventTypeTransactionSubmitted occurs only on the node that initiates a tranaction, when the transaction is submitted
+	EventTypeTransactionSubmitted EventType = ffEnum("eventtype", "transaction_submitted")
 	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
 	// is available for processing by an application. Most applications only need to listen to this event type
 	EventTypeMessageConfirmed EventType = ffEnum("eventtype", "message_confirmed")

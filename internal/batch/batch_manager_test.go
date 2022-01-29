@@ -118,6 +118,8 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("id IN ['%s']", msg.Header.ID.String()), fi.String())
 		return true
 	}), mock.Anything).Return(nil)
+	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 
 	err := bm.Start()
 	assert.NoError(t, err)
@@ -231,6 +233,8 @@ func TestE2EDispatchPrivate(t *testing.T) {
 		a[1].(*fftypes.Nonce).Nonce = nextNonce
 		nextNonce++
 	}
+	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 
 	err := bm.Start()
 	assert.NoError(t, err)

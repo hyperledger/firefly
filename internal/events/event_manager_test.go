@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -57,6 +58,7 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	met.On("Name").Return("ut").Maybe()
 	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam)
 	em := emi.(*eventManager)
+	em.txHelper = &txcommonmocks.Helper{}
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}

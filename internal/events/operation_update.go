@@ -47,16 +47,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 		}
 	}
 
-	tx, err := em.database.GetTransactionByID(ctx, op.Transaction)
-	if tx != nil {
-		tx.BlockchainIDs = tx.BlockchainIDs.AppendLowerUnique(blockchainTXID)
-		err = em.database.UpsertTransaction(ctx, tx)
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return em.txHelper.AddBlockchainTX(ctx, op.Transaction, blockchainTXID)
 }
 
 func (em *eventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {

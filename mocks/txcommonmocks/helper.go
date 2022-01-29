@@ -14,20 +14,57 @@ type Helper struct {
 	mock.Mock
 }
 
-// PersistTransaction provides a mock function with given fields: ctx, tx
-func (_m *Helper) PersistTransaction(ctx context.Context, tx *fftypes.Transaction) (bool, error) {
-	ret := _m.Called(ctx, tx)
+// AddBlockchainTX provides a mock function with given fields: ctx, id, blockchainTXID
+func (_m *Helper) AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error {
+	ret := _m.Called(ctx, id, blockchainTXID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string) error); ok {
+		r0 = rf(ctx, id, blockchainTXID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// PersistTransaction provides a mock function with given fields: ctx, ns, id, txType, blockchainTXID
+func (_m *Helper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.FFEnum, blockchainTXID string) (bool, error) {
+	ret := _m.Called(ctx, ns, id, txType, blockchainTXID)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction) bool); ok {
-		r0 = rf(ctx, tx)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, fftypes.FFEnum, string) bool); ok {
+		r0 = rf(ctx, ns, id, txType, blockchainTXID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Transaction) error); ok {
-		r1 = rf(ctx, tx)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, fftypes.FFEnum, string) error); ok {
+		r1 = rf(ctx, ns, id, txType, blockchainTXID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SubmitNewTransaction provides a mock function with given fields: ctx, ns, txType
+func (_m *Helper) SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.FFEnum) (*fftypes.UUID, error) {
+	ret := _m.Called(ctx, ns, txType)
+
+	var r0 *fftypes.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.FFEnum) *fftypes.UUID); ok {
+		r0 = rf(ctx, ns, txType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.FFEnum) error); ok {
+		r1 = rf(ctx, ns, txType)
 	} else {
 		r1 = ret.Error(1)
 	}

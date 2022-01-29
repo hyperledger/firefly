@@ -115,24 +115,30 @@ func (sa FFStringArray) Validate(ctx context.Context, fieldName string, isName b
 	return nil
 }
 
-func (sa FFStringArray) AppendLowerUnique(s string) FFStringArray {
+func (sa FFStringArray) appendLowerIfUnique(s string) FFStringArray {
+	if s == "" {
+		return sa
+	}
 	for _, existing := range sa {
-		if s == "" || strings.EqualFold(s, existing) {
+		if strings.EqualFold(s, existing) {
 			return sa
 		}
 	}
 	return append(sa, strings.ToLower(s))
 }
 
-// MergeLower returns a new array with a unique set of sorted lower case strings
-func (sa FFStringArray) MergeLower(osa FFStringArray) FFStringArray {
-	res := make(FFStringArray, 0, len(sa)+len(osa))
-	for _, s := range sa {
-		res = res.AppendLowerUnique(s)
+// AddToSortedSet determines if the new string is already in the set of strings (case insensitive),
+// and if not it adds it to the list (lower case) and returns a new slice of alphabetically sorted
+// strings reference and true.
+// If no change is made, the original reference is returned and false.
+func (sa FFStringArray) AddToSortedSet(newValues ...string) (res FFStringArray, changed bool) {
+	res = sa
+	for _, s := range newValues {
+		res = res.appendLowerIfUnique(s)
 	}
-	for _, s := range osa {
-		res = res.AppendLowerUnique(s)
+	if len(res) != len(sa) {
+		sort.Strings(res)
+		return res, true
 	}
-	sort.Strings(res)
-	return res
+	return sa, false
 }

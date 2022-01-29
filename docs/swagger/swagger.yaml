@@ -4231,6 +4231,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -4291,6 +4292,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed
@@ -4962,6 +4964,7 @@ paths:
                     type: integer
                   type:
                     enum:
+                    - transaction_submitted
                     - message_confirmed
                     - message_rejected
                     - namespace_confirmed

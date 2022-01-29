@@ -132,8 +132,8 @@ type iBatchCollection interface {
 }
 
 type iTransactionCollection interface {
-	// UpsertTransaction - Upsert a transaction
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
+	// InsertTransaction - Insert a new transaction
+	InsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)

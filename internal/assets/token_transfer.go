@@ -246,25 +246,8 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return nil
 	}
 
-	tx := &fftypes.Transaction{
-		ID:        fftypes.NewUUID(),
-		Namespace: s.namespace,
-		Type:      fftypes.TransactionTypeTokenTransfer,
-		Created:   fftypes.Now(),
-	}
-	s.transfer.TX.ID = tx.ID
-	s.transfer.TX.Type = tx.Type
-
-	op := fftypes.NewTXOperation(
-		plugin,
-		s.namespace,
-		tx.ID,
-		"",
-		fftypes.OpTypeTokenTransfer,
-		fftypes.OpStatusPending)
-	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
-
 	var pool *fftypes.TokenPool
+	var op *fftypes.Operation
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
@@ -274,10 +257,23 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
 		}
 
-		err = s.mgr.database.UpsertTransaction(ctx, tx)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, fftypes.TransactionTypeTokenTransfer)
 		if err != nil {
 			return err
 		}
+
+		s.transfer.TX.ID = txid
+		s.transfer.TX.Type = fftypes.TransactionTypeTokenTransfer
+
+		op = fftypes.NewTXOperation(
+			plugin,
+			s.namespace,
+			txid,
+			"",
+			fftypes.OpTypeTokenTransfer,
+			fftypes.OpStatusPending)
+		txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
+
 		if err = s.mgr.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
