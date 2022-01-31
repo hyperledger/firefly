@@ -101,9 +101,6 @@ type TokenPool struct {
 	// Not guaranteed to be set for pool creation events triggered outside of FireFly
 	TransactionID *fftypes.UUID
 
-	// Key is the chain-specific identifier for the user that created the pool
-	Key string
-
 	// Connector is the configured name of this connector
 	Connector string
 

@@ -177,11 +177,10 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	eventProtocolID := data.GetString("id")
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
-	standard := data.GetString("standard") // this is optional
-	operatorAddress := data.GetString("operator")
-	tx := data.GetObject("transaction")
-	txHash := tx.GetString("transactionHash")
+	standard := data.GetString("standard")   // optional
 	rawOutput := data.GetObject("rawOutput") // optional
+	tx := data.GetObject("transaction")
+	txHash := tx.GetString("transactionHash") // optional
 
 	timestampStr := data.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
@@ -190,9 +189,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	if tokenType == "" ||
-		protocolID == "" ||
-		operatorAddress == "" ||
-		txHash == "" {
+		protocolID == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
@@ -210,7 +207,6 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Type:          fftypes.FFEnum(tokenType),
 		ProtocolID:    protocolID,
 		TransactionID: poolData.TX,
-		Key:           operatorAddress,
 		Connector:     ft.configuredName,
 		Standard:      standard,
 		Event: blockchain.Event{
@@ -235,11 +231,11 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
-	tx := data.GetObject("transaction")
-	txHash := tx.GetString("transactionHash")
 	tokenIndex := data.GetString("tokenIndex") // optional
 	uri := data.GetString("uri")               // optional
 	rawOutput := data.GetObject("rawOutput")   // optional
+	tx := data.GetObject("transaction")
+	txHash := tx.GetString("transactionHash") // optional
 
 	timestampStr := data.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
@@ -261,7 +257,6 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		poolProtocolID == "" ||
 		operatorAddress == "" ||
 		value == "" ||
-		txHash == "" ||
 		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
 		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
 		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
@@ -392,6 +387,14 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}
+	if res.StatusCode() == 200 {
+		// Handle synchronous response (202 will be handled by later websocket listener)
+		var obj fftypes.JSONObject
+		if err := json.Unmarshal(res.Body(), &obj); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+		}
+		return ft.handleTokenPoolCreate(ctx, obj)
+	}
 	return nil
 }
 
@@ -405,6 +408,14 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	if res.StatusCode() == 200 {
+		// Handle synchronous response (202 will be handled by later websocket listener)
+		var obj fftypes.JSONObject
+		if err := json.Unmarshal(res.Body(), &obj); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+		}
+		return ft.handleTokenPoolCreate(ctx, obj)
 	}
 	return nil
 }
