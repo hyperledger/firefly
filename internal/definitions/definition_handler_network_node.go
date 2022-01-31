@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,32 +23,32 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	l := log.L(ctx)
 
 	var node fftypes.Node
-	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &node)
+	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &node)
 	if !valid {
-		return false, nil
+		return ActionReject, nil
 	}
 
-	if err = node.Validate(ctx, true); err != nil {
+	if err := node.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process node broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return false, nil
+		return ActionReject, nil
 	}
 
 	owner, err := dh.database.GetOrganizationByIdentity(ctx, node.Owner)
 	if err != nil {
-		return false, err // We only return database errors
+		return ActionRetry, err // We only return database errors
 	}
 	if owner == nil {
 		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, node.Owner)
-		return false, nil
+		return ActionReject, nil
 	}
 
 	if msg.Header.Key != node.Owner {
 		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, node.Owner, msg.Header.Author)
-		return false, nil
+		return ActionReject, nil
 	}
 
 	existing, err := dh.database.GetNode(ctx, node.Owner, node.Name)
@@ -56,24 +56,24 @@ func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *ffty
 		existing, err = dh.database.GetNodeByID(ctx, node.ID)
 	}
 	if err != nil {
-		return false, err // We only return database errors
+		return ActionRetry, err // We only return database errors
 	}
 	if existing != nil {
 		if existing.Owner != node.Owner {
 			l.Warnf("Unable to process node broadcast %s - mismatch with existing %v", msg.Header.ID, existing.ID)
-			return false, nil
+			return ActionReject, nil
 		}
 		node.ID = nil // we keep the existing ID
 	}
 
 	if err = dh.database.UpsertNode(ctx, &node, true); err != nil {
-		return false, err
+		return ActionRetry, err
 	}
 
 	// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
 	if err = dh.exchange.AddPeer(ctx, node.DX.Peer, node.DX.Endpoint); err != nil {
-		return false, err
+		return ActionRetry, err
 	}
 
-	return true, nil
+	return ActionConfirm, nil
 }
