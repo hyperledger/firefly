@@ -55,15 +55,6 @@ type Manager interface {
 
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
-	// Deprecated
-	CreateTokenPoolByType(ctx context.Context, ns, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
-	GetTokenPoolsByType(ctx context.Context, ns, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
-	GetTokenBalancesByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error)
-	GetTokenTransfersByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
-	MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	BurnTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	TransferTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-
 	Start() error
 	WaitStop()
 }
@@ -119,14 +110,6 @@ func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.A
 
 func (am *assetManager) GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
 	return am.database.GetTokenBalances(ctx, am.scopeNS(ns, filter))
-}
-
-func (am *assetManager) GetTokenBalancesByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
-	pool, err := am.GetTokenPool(ctx, ns, connector, poolName)
-	if err != nil {
-		return nil, nil, err
-	}
-	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
 }
 
 func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
