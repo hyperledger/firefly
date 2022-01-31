@@ -19,6 +19,7 @@ package ethereum
 import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/config/wsconfig"
+	"github.com/hyperledger/firefly/internal/restclient"
 )
 
 const (
@@ -79,7 +80,7 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
 
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
-	wsconfig.InitPrefix(addressResolverConf)
+	restclient.InitPrefix(addressResolverConf)
 	addressResolverConf.AddKnownKey(AddressResolverRetainOriginal)
 	addressResolverConf.AddKnownKey(AddressResolverMethod, defaultAddressResolverMethod)
 	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)

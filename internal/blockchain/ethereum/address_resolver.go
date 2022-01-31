@@ -118,7 +118,7 @@ func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor 
 		return "", i18n.NewError(ctx, i18n.MsgAddressResolveBadStatus, keyDescriptor, res.StatusCode(), jsonRes.String())
 	}
 
-	address, err := varlidateEthAddress(ctx, jsonRes.GetString(ar.responseField))
+	address, err := validateEthAddress(ctx, jsonRes.GetString(ar.responseField))
 	if err != nil {
 		return "", i18n.NewError(ctx, i18n.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
 	}
