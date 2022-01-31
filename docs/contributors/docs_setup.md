@@ -66,6 +66,6 @@ And start the Jekyll test server:
 bundle exec jekyll serve --livereload
 ```
 
-You should now be able to open [http://localhost:4000](http://localhost:4000) in your browser and see a locally hosted version of the doc site.
+You should now be able to open http://127.0.0.1:4000/firefly/index.html in your browser and see a locally hosted version of the doc site.
 
 As you make changes to files in the `./docs` directory, Jekyll will automatically rebuild the pages, and notify you of any errors or warnings in your terminal. If you have a browser open, it will automatically reload when changes are made to pages.
