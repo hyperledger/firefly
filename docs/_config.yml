@@ -1,6 +1,7 @@
 remote_theme: pmarsceill/just-the-docs
 logo: "firefly_logo.png"
 title: Hyperledger FireFly Docs
+baseurl: /firefly
 aux_links:
   "GitHub":
     - "//github.com/hyperledger/firefly"
