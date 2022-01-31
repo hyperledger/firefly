@@ -116,7 +116,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 			Type:      fftypes.MessageTypeGroupInit,
 			Identity:  *signer,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Topics:    fftypes.FFNameArray{group.Topic()},
+			Topics:    fftypes.FFStringArray{group.Topic()},
 			TxType:    fftypes.TransactionTypeBatchPin,
 		},
 		Data: fftypes.DataRefs{

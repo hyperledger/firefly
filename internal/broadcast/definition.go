@@ -76,7 +76,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 				Namespace: ns,
 				Type:      fftypes.MessageTypeDefinition,
 				Identity:  *signingIdentity,
-				Topics:    fftypes.FFNameArray{def.Topic()},
+				Topics:    fftypes.FFStringArray{def.Topic()},
 				Tag:       string(tag),
 				TxType:    fftypes.TransactionTypeBatchPin,
 			},

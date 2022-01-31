@@ -230,7 +230,7 @@ func TestBuildMessageJSONConvert(t *testing.T) {
 	assert.Equal(t, `( output == null ) && ( output == '{}' ) && ( output == '{}' ) && ( output == '{"some":"value"}' )`, f.String())
 }
 
-func TestBuildFFNameArrayConvert(t *testing.T) {
+func TestBuildFFStringArrayConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
 		fb.Eq("topics", nil),
@@ -339,6 +339,6 @@ func TestStringsForTypes(t *testing.T) {
 	now := fftypes.Now()
 	assert.Equal(t, now.String(), (&timeField{t: now}).String())
 	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
-	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: fftypes.FFNameArray{"t1", "t2"}}).String())
+	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: fftypes.FFStringArray{"t1", "t2"}}).String())
 	assert.Equal(t, "true", (&boolField{b: true}).String())
 }

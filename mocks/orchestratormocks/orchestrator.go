@@ -1103,6 +1103,29 @@ func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, ns string,
 	return r0, r1, r2
 }
 
+// GetTransactionStatus provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetTransactionStatus(ctx context.Context, ns string, id string) (*fftypes.TransactionStatus, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.TransactionStatus
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TransactionStatus); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TransactionStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTransactions provides a mock function with given fields: ctx, ns, filter
 func (_m *Orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)

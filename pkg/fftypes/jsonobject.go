@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/json"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -55,6 +56,20 @@ func (jd *JSONObject) Scan(src interface{}) error {
 func (jd JSONObject) GetString(key string) string {
 	s, _ := jd.GetStringOk(key)
 	return s
+}
+
+func (jd JSONObject) GetInteger(key string) *big.Int {
+	s := jd.GetString(key)
+	i, ok := big.NewInt(0).SetString(s, 0)
+	if !ok {
+		log.L(context.Background()).Errorf("Invalid int value '%+v' for key '%s'", s, key)
+		return big.NewInt(0)
+	}
+	return i
+}
+
+func (jd JSONObject) GetInt64(key string) int64 {
+	return jd.GetInteger(key).Int64()
 }
 
 func (jd JSONObject) GetBool(key string) bool {

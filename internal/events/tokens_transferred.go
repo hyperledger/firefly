@@ -78,14 +78,8 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 			return false, err
 		}
 
-		tx := &fftypes.Transaction{
-			ID:        transfer.TX.ID,
-			Status:    fftypes.OpStatusSucceeded,
-			Namespace: transfer.Namespace,
-			Type:      transfer.TX.Type,
-		}
-		if err := em.database.UpsertTransaction(ctx, tx); err != nil {
-			return false, err
+		if valid, err := em.txHelper.PersistTransaction(ctx, transfer.Namespace, transfer.TX.ID, transfer.TX.Type, transfer.Event.BlockchainTXID); err != nil || !valid {
+			return valid, err
 		}
 
 		// Some operations result in multiple transfer events - if the protocol ID was unique but the

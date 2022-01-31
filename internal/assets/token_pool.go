@@ -66,31 +66,26 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		})
 	}
 
-	tx := &fftypes.Transaction{
-		ID:        fftypes.NewUUID(),
-		Namespace: pool.Namespace,
-		Type:      fftypes.TransactionTypeTokenPool,
-		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
-	}
-	pool.TX.ID = tx.ID
-	pool.TX.Type = tx.Type
-
-	op := fftypes.NewTXOperation(
-		plugin,
-		pool.Namespace,
-		tx.ID,
-		"",
-		fftypes.OpTypeTokenCreatePool,
-		fftypes.OpStatusPending)
-	txcommon.AddTokenPoolCreateInputs(op, pool)
-
+	var op *fftypes.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		err = am.database.UpsertTransaction(ctx, tx)
-		if err == nil {
-			err = am.database.InsertOperation(ctx, op)
+		txid, err := am.txHelper.SubmitNewTransaction(ctx, pool.Namespace, fftypes.TransactionTypeTokenPool)
+		if err != nil {
+			return err
 		}
-		return err
+
+		pool.TX.ID = txid
+		pool.TX.Type = fftypes.TransactionTypeTokenPool
+
+		op = fftypes.NewTXOperation(
+			plugin,
+			pool.Namespace,
+			txid,
+			"",
+			fftypes.OpTypeTokenCreatePool,
+			fftypes.OpStatusPending)
+		txcommon.AddTokenPoolCreateInputs(op, pool)
+
+		return am.database.InsertOperation(ctx, op)
 	})
 	if err != nil {
 		return nil, err

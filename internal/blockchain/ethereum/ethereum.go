@@ -53,8 +53,9 @@ type Ethereum struct {
 		stream *eventStream
 		sub    *subscription
 	}
-	wsconn wsclient.WSClient
-	closed chan struct{}
+	wsconn          wsclient.WSClient
+	closed          chan struct{}
+	addressResolver *addressResolver
 }
 
 type eventStreamWebsocket struct {
@@ -101,9 +102,16 @@ func (e *Ethereum) Name() string {
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
+	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
+
+	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
+		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
+			return err
+		}
+	}
 
 	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
@@ -188,8 +196,10 @@ func ethHexFormatB32(b *fftypes.Bytes32) string {
 
 func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sBlockNumber := msgJSON.GetString("blockNumber")
-	sTransactionIndex := msgJSON.GetString("transactionIndex")
 	sTransactionHash := msgJSON.GetString("transactionHash")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	txIndex := msgJSON.GetInt64("transactionIndex")
+	logIndex := msgJSON.GetInt64("logIndex")
 	dataJSON := msgJSON.GetObject("data")
 	authorAddress := dataJSON.GetString("author")
 	ns := dataJSON.GetString("namespace")
@@ -205,7 +215,6 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	if sBlockNumber == "" ||
-		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
 		authorAddress == "" ||
 		sUUIDs == "" ||
@@ -214,7 +223,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		return nil // move on
 	}
 
-	authorAddress, err = e.validateEthAddress(ctx, authorAddress)
+	authorAddress, err = e.ResolveSigningKey(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -257,12 +266,13 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
 		Event: blockchain.Event{
-			Source:     e.Name(),
-			Name:       "BatchPin",
-			ProtocolID: sTransactionHash,
-			Output:     dataJSON,
-			Info:       msgJSON,
-			Timestamp:  timestamp,
+			BlockchainTXID: sTransactionHash,
+			Source:         e.Name(),
+			Name:           "BatchPin",
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
+			Output:         dataJSON,
+			Info:           msgJSON,
+			Timestamp:      timestamp,
 		},
 	}
 
@@ -272,6 +282,9 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sTransactionHash := msgJSON.GetString("transactionHash")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	txIndex := msgJSON.GetInt64("transactionIndex")
+	logIndex := msgJSON.GetInt64("logIndex")
 	sub := msgJSON.GetString("subId")
 	signature := msgJSON.GetString("signature")
 	dataJSON := msgJSON.GetObject("data")
@@ -284,19 +297,20 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 	delete(msgJSON, "data")
 
-	event := &blockchain.ContractEvent{
+	event := &blockchain.EventWithSubscription{
 		Subscription: sub,
 		Event: blockchain.Event{
-			Source:     e.Name(),
-			Name:       name,
-			ProtocolID: sTransactionHash,
-			Output:     dataJSON,
-			Info:       msgJSON,
-			Timestamp:  timestamp,
+			BlockchainTXID: sTransactionHash,
+			Source:         e.Name(),
+			Name:           name,
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
+			Output:         dataJSON,
+			Info:           msgJSON,
+			Timestamp:      timestamp,
 		},
 	}
 
-	return e.callbacks.ContractEvent(event)
+	return e.callbacks.BlockchainEvent(event)
 }
 
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -321,7 +335,7 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
-	return e.callbacks.BlockchainOpUpdate(operationID, updateType, message, reply)
+	return e.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
 }
 
 func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -404,16 +418,25 @@ func (e *Ethereum) eventLoop() {
 	}
 }
 
-func (e *Ethereum) ResolveSigningKey(ctx context.Context, signingKeyInput string) (signingKey string, err error) {
-	return e.validateEthAddress(ctx, signingKeyInput)
+func validateEthAddress(ctx context.Context, key string) (string, error) {
+	keyLower := strings.ToLower(key)
+	keyNoHexPrefix := strings.TrimPrefix(keyLower, "0x")
+	if addressVerify.MatchString(keyNoHexPrefix) {
+		return "0x" + keyNoHexPrefix, nil
+	}
+	return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (string, error) {
-	identity = strings.TrimPrefix(strings.ToLower(identity), "0x")
-	if !addressVerify.MatchString(identity) {
-		return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
+func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string) (string, error) {
+	resolved, err := validateEthAddress(ctx, key)
+	if err != nil && e.addressResolver != nil {
+		resolved, err := e.addressResolver.ResolveSigningKey(ctx, key)
+		if err == nil {
+			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
+		}
+		return resolved, err
 	}
-	return "0x" + identity, nil
+	return resolved, err
 }
 
 func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, method, signingKey, requestID string, input interface{}) (*resty.Response, error) {

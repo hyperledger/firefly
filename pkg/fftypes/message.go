@@ -71,12 +71,12 @@ type MessageHeader struct {
 	Type   MessageType     `json:"type" ffenum:"messagetype"`
 	TxType TransactionType `json:"txtype,omitempty"`
 	Identity
-	Created   *FFTime     `json:"created,omitempty"`
-	Namespace string      `json:"namespace,omitempty"`
-	Group     *Bytes32    `json:"group,omitempty"`
-	Topics    FFNameArray `json:"topics,omitempty"`
-	Tag       string      `json:"tag,omitempty"`
-	DataHash  *Bytes32    `json:"datahash,omitempty"`
+	Created   *FFTime       `json:"created,omitempty"`
+	Namespace string        `json:"namespace,omitempty"`
+	Group     *Bytes32      `json:"group,omitempty"`
+	Topics    FFStringArray `json:"topics,omitempty"`
+	Tag       string        `json:"tag,omitempty"`
+	DataHash  *Bytes32      `json:"datahash,omitempty"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
@@ -89,7 +89,7 @@ type Message struct {
 	State     MessageState  `json:"state,omitempty" ffenum:"messagestate"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
-	Pins      FFNameArray   `json:"pins,omitempty"`
+	Pins      FFStringArray `json:"pins,omitempty"`
 	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
 }
 
@@ -168,7 +168,7 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	if len(m.Header.Topics) == 0 {
 		m.Header.Topics = []string{DefaultTopic}
 	}
-	if err := m.Header.Topics.Validate(ctx, "header.topics"); err != nil {
+	if err := m.Header.Topics.Validate(ctx, "header.topics", true); err != nil {
 		return err
 	}
 	if m.Header.Tag != "" {
@@ -210,7 +210,7 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 }
 
 func (m *Message) Verify(ctx context.Context) error {
-	if err := m.Header.Topics.Validate(ctx, "header.topics"); err != nil {
+	if err := m.Header.Topics.Validate(ctx, "header.topics", true); err != nil {
 		return err
 	}
 	if m.Header.Tag != "" {

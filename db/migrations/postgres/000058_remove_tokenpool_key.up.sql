@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE tokenpool DROP COLUMN key;
+COMMIT;

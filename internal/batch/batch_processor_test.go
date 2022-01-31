@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,6 +50,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 		InitialDelay: 1 * time.Microsecond,
 		MaximumDelay: 1 * time.Microsecond,
 	})
+	bp.txHelper = &txcommonmocks.Helper{}
 	return mdi, bp
 }
 
@@ -76,6 +78,9 @@ func TestUnfilledBatch(t *testing.T) {
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
+
+	mth := bp.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
 
 	// Generate the work
 	work := make([]*batchWork, 5)
@@ -128,6 +133,9 @@ func TestBatchSizeOverflow(t *testing.T) {
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
+
+	mth := bp.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
 
 	// Generate the work
 	work := make([]*batchWork, 2)
@@ -184,6 +192,9 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	mth := bp.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
 
 	// Generate the work
 	work := make([]*batchWork, 10)
@@ -294,7 +305,7 @@ func TestCalcPinsFail(t *testing.T) {
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
 					Group:  gid,
-					Topics: fftypes.FFNameArray{"topic1"},
+					Topics: fftypes.FFStringArray{"topic1"},
 				}},
 			},
 		},
