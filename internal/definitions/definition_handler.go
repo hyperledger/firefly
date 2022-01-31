@@ -89,17 +89,15 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
-	var valid bool
-	var err error
 	switch fftypes.SystemTag(msg.Header.Tag) {
 	case fftypes.SystemTagDefineDatatype:
-		valid, err = dh.handleDatatypeBroadcast(ctx, msg, data)
+		return dh.handleDatatypeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNamespace:
-		valid, err = dh.handleNamespaceBroadcast(ctx, msg, data)
+		return dh.handleNamespaceBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineOrganization:
-		valid, err = dh.handleOrganizationBroadcast(ctx, msg, data)
+		return dh.handleOrganizationBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNode:
-		valid, err = dh.handleNodeBroadcast(ctx, msg, data)
+		return dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineFFI:
@@ -109,14 +107,6 @@ func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *ff
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 		return ActionReject, nil
-	}
-	switch {
-	case err != nil:
-		return ActionRetry, err
-	case !valid:
-		return ActionReject, nil
-	default:
-		return ActionConfirm, nil
 	}
 }
 
