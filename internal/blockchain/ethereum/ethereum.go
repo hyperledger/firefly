@@ -53,8 +53,9 @@ type Ethereum struct {
 		stream *eventStream
 		sub    *subscription
 	}
-	wsconn wsclient.WSClient
-	closed chan struct{}
+	wsconn          wsclient.WSClient
+	closed          chan struct{}
+	addressResolver *addressResolver
 }
 
 type eventStreamWebsocket struct {
@@ -101,9 +102,16 @@ func (e *Ethereum) Name() string {
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
+	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
+
+	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
+		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
+			return err
+		}
+	}
 
 	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
@@ -215,7 +223,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		return nil // move on
 	}
 
-	authorAddress, err = e.validateEthAddress(ctx, authorAddress)
+	authorAddress, err = e.ResolveSigningKey(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -410,16 +418,25 @@ func (e *Ethereum) eventLoop() {
 	}
 }
 
-func (e *Ethereum) ResolveSigningKey(ctx context.Context, signingKeyInput string) (signingKey string, err error) {
-	return e.validateEthAddress(ctx, signingKeyInput)
+func validateEthAddress(ctx context.Context, key string) (string, error) {
+	keyLower := strings.ToLower(key)
+	keyNoHexPrefix := strings.TrimPrefix(keyLower, "0x")
+	if addressVerify.MatchString(keyNoHexPrefix) {
+		return "0x" + keyNoHexPrefix, nil
+	}
+	return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (string, error) {
-	identity = strings.TrimPrefix(strings.ToLower(identity), "0x")
-	if !addressVerify.MatchString(identity) {
-		return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
+func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string) (string, error) {
+	resolved, err := validateEthAddress(ctx, key)
+	if err != nil && e.addressResolver != nil {
+		resolved, err := e.addressResolver.ResolveSigningKey(ctx, key)
+		if err == nil {
+			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
+		}
+		return resolved, err
 	}
-	return "0x" + identity, nil
+	return resolved, err
 }
 
 func (e *Ethereum) invokeContractMethod(ctx context.Context, contractPath, method, signingKey, requestID string, input interface{}) (*resty.Response, error) {

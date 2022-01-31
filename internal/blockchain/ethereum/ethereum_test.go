@@ -40,6 +40,7 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("eth_unit_tests")
 var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
+var utAddressResolverConf = utConfPrefix.SubPrefix(AddressResolverConfigKey)
 
 func testFFIMethod() *fftypes.FFIMethod {
 	return &fftypes.FFIMethod{
@@ -98,6 +99,15 @@ func TestInitMissingURL(t *testing.T) {
 	resetConf()
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestInitBadAddressResolver(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf()
+	utAddressResolverConf.Set(AddressResolverURLTemplate, "{{unclosed}")
+	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
+	assert.Regexp(t, "FF10337.*urlTemplate", err)
 }
 
 func TestInitMissingInstance(t *testing.T) {
