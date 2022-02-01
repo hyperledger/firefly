@@ -181,19 +181,14 @@ func (ba *batchActions) RunFinalize(ctx context.Context) error {
 	return nil
 }
 
-func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repoll bool, err error) {
-	pins := make([]*fftypes.Pin, len(items))
-	for i, item := range items {
-		pins[i] = item.(*fftypes.Pin)
-	}
-
+func (ag *aggregator) processWithBatchActions(callback func(ctx context.Context, actions *batchActions) error) error {
 	actions := &batchActions{
 		PreFinalize: make([]func(ctx context.Context) error, 0),
 		Finalize:    make([]func(ctx context.Context) error, 0),
 	}
 
-	err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) (err error) {
-		if err := ag.processPins(ctx, pins, actions); err != nil {
+	err := ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) (err error) {
+		if err := callback(ctx, actions); err != nil {
 			return err
 		}
 		if len(actions.PreFinalize) == 0 {
@@ -202,18 +197,30 @@ func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repo
 		return nil
 	})
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	if len(actions.PreFinalize) > 0 {
-		if err := actions.RunPreFinalize(ag.ctx); err != nil {
-			return false, err
-		}
-		err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) (err error) {
-			return actions.RunFinalize(ctx)
-		})
+	if len(actions.PreFinalize) == 0 {
+		return err
 	}
-	return false, err
+
+	if err := actions.RunPreFinalize(ag.ctx); err != nil {
+		return err
+	}
+	return ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
+		return actions.RunFinalize(ctx)
+	})
+}
+
+func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repoll bool, err error) {
+	pins := make([]*fftypes.Pin, len(items))
+	for i, item := range items {
+		pins[i] = item.(*fftypes.Pin)
+	}
+
+	return false, ag.processWithBatchActions(func(ctx context.Context, actions *batchActions) error {
+		return ag.processPins(ctx, pins, actions)
+	})
 }
 
 func (ag *aggregator) getPins(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {

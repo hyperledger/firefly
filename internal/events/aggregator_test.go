@@ -181,7 +181,6 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
 
 	// Generate some pin data
 	member1org := "org1"
@@ -201,6 +200,11 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
+
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
 
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
@@ -257,8 +261,8 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
-		{
+	_, err := ag.processPinsDBGroup([]fftypes.LocallySequenced{
+		&fftypes.Pin{
 			Sequence:   10001,
 			Masked:     true,
 			Hash:       member2Nonce500,
@@ -266,10 +270,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 			Index:      0,
 			Dispatched: false,
 		},
-	}, ba)
-	assert.NoError(t, err)
-
-	err = ba.RunFinalize(ag.ctx)
+	})
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -985,7 +986,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
+func TestDefinitionBroadcastActionReject(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 	ba := &batchActions{}
@@ -1030,7 +1031,7 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 
 }
 
-func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
+func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
@@ -1051,6 +1052,30 @@ func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
 		},
 	}, nil)
 	assert.EqualError(t, err, "pop")
+
+}
+
+func TestDefinitionBroadcastActionWait(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionWait, &definitions.DefinitionBatchActions{}, nil)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypeDefinition,
+			ID:        fftypes.NewUUID(),
+			Namespace: "any",
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+		},
+	}, nil)
+	assert.NoError(t, err)
 
 }
 
@@ -1312,4 +1337,86 @@ func TestResolveBlobsCopyOk(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, resolved)
+}
+
+func TestBatchActions(t *testing.T) {
+	prefinalizeCalled := false
+	finalizeCalled := false
+
+	ba := &batchActions{
+		PreFinalize: make([]func(ctx context.Context) error, 0),
+		Finalize:    make([]func(ctx context.Context) error, 0),
+	}
+
+	ba.AddPreFinalize(func(ctx context.Context) error {
+		prefinalizeCalled = true
+		return nil
+	})
+	ba.AddFinalize(func(ctx context.Context) error {
+		finalizeCalled = true
+		return nil
+	})
+
+	err := ba.RunPreFinalize(context.Background())
+	assert.NoError(t, err)
+	assert.True(t, prefinalizeCalled)
+
+	err = ba.RunFinalize(context.Background())
+	assert.NoError(t, err)
+	assert.True(t, finalizeCalled)
+}
+
+func TestBatchActionsError(t *testing.T) {
+	ba := &batchActions{
+		PreFinalize: make([]func(ctx context.Context) error, 0),
+		Finalize:    make([]func(ctx context.Context) error, 0),
+	}
+
+	ba.AddPreFinalize(func(ctx context.Context) error {
+		return fmt.Errorf("pop")
+	})
+	ba.AddFinalize(func(ctx context.Context) error {
+		return fmt.Errorf("pop")
+	})
+
+	err := ba.RunPreFinalize(context.Background())
+	assert.EqualError(t, err, "pop")
+
+	err = ba.RunFinalize(context.Background())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestProcessWithBatchActionsPreFinalizeError(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+
+	err := ag.processWithBatchActions(func(ctx context.Context, actions *batchActions) error {
+		actions.AddPreFinalize(func(ctx context.Context) error { return fmt.Errorf("pop") })
+		return nil
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestProcessWithBatchActionsSuccess(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+
+	err := ag.processWithBatchActions(func(ctx context.Context, actions *batchActions) error {
+		actions.AddPreFinalize(func(ctx context.Context) error { return nil })
+		actions.AddFinalize(func(ctx context.Context) error { return nil })
+		return nil
+	})
+	assert.NoError(t, err)
 }
