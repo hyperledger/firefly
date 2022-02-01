@@ -86,8 +86,11 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, ba, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionWait, action)
+	assert.NoError(t, err)
+
+	err = ba.PreFinalize(context.Background())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
