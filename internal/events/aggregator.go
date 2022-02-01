@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -136,15 +136,83 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 	return rewind, offset
 }
 
+// batchActions are synchronous actions to be performed while processing system messages, but which must happen after reading the whole batch
+type batchActions struct {
+	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
+	// - Will execute after all batch messages have been processed
+	// - Will execute outside database RunAsGroup
+	// - If any PreFinalize callback errors out, batch will be aborted and retried
+	PreFinalize []func(ctx context.Context) error
+
+	// Finalize callbacks may perform final, non-idempotent database operations (such as inserting Events)
+	// - Will execute after all batch messages have been processed
+	// - Will execute inside database RunAsGroup
+	// - If any Finalize callback errors out, batch will be aborted and retried (small chance of duplicate execution here)
+	Finalize []func(ctx context.Context) error
+}
+
+func (ba *batchActions) AddPreFinalize(action func(ctx context.Context) error) {
+	if action != nil {
+		ba.PreFinalize = append(ba.PreFinalize, action)
+	}
+}
+
+func (ba *batchActions) AddFinalize(action func(ctx context.Context) error) {
+	if action != nil {
+		ba.Finalize = append(ba.Finalize, action)
+	}
+}
+
+func (ba *batchActions) RunPreFinalize(ctx context.Context) error {
+	for _, action := range ba.PreFinalize {
+		if err := action(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ba *batchActions) RunFinalize(ctx context.Context) error {
+	for _, action := range ba.Finalize {
+		if err := action(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repoll bool, err error) {
 	pins := make([]*fftypes.Pin, len(items))
 	for i, item := range items {
 		pins[i] = item.(*fftypes.Pin)
 	}
+
+	actions := &batchActions{
+		PreFinalize: make([]func(ctx context.Context) error, 0),
+		Finalize:    make([]func(ctx context.Context) error, 0),
+	}
+
 	err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) (err error) {
-		err = ag.processPins(ctx, pins)
-		return err
+		if err := ag.processPins(ctx, pins, actions); err != nil {
+			return err
+		}
+		if len(actions.PreFinalize) == 0 {
+			return actions.RunFinalize(ctx)
+		}
+		return nil
 	})
+	if err != nil {
+		return false, err
+	}
+
+	if len(actions.PreFinalize) > 0 {
+		if err := actions.RunPreFinalize(ag.ctx); err != nil {
+			return false, err
+		}
+		err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) (err error) {
+			return actions.RunFinalize(ctx)
+		})
+	}
 	return false, err
 }
 
@@ -157,7 +225,7 @@ func (ag *aggregator) getPins(ctx context.Context, filter database.Filter) ([]ff
 	return ls, err
 }
 
-func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin) (err error) {
+func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, actions *batchActions) (err error) {
 	l := log.L(ctx)
 
 	// Keep a batch cache for this list of pins
@@ -204,7 +272,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin) (err
 		dupMsgCheck[*msg.Header.ID] = true
 
 		// Attempt to process the message (only returns errors for database persistence issues)
-		if err = ag.processMessage(ctx, batch, pin.Masked, pin.Sequence, msg); err != nil {
+		if err = ag.processMessage(ctx, batch, pin.Masked, pin.Sequence, msg, actions); err != nil {
 			return err
 		}
 	}
@@ -224,7 +292,7 @@ func (ag *aggregator) calcHash(topic string, groupID *fftypes.Bytes32, identity 
 	return fftypes.HashResult(h)
 }
 
-func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, masked bool, pinnedSequence int64, msg *fftypes.Message) (err error) {
+func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, masked bool, pinnedSequence int64, msg *fftypes.Message, actions *batchActions) (err error) {
 	l := log.L(ctx)
 
 	// Check if it's ready to be processed
@@ -273,28 +341,32 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 		}
 	}
 
-	dispatched, err := ag.attemptMessageDispatch(ctx, msg)
+	dispatched, err := ag.attemptMessageDispatch(ctx, msg, actions)
 	if err != nil || !dispatched {
 		return err
 	}
 
-	// Move the nextPin forwards to the next sequence for this sender, on all
-	// topics associated with the message
-	if masked {
-		for i, nextPin := range nextPins {
-			nextPin.Nonce++
-			nextPin.Hash = ag.calcHash(msg.Header.Topics[i], msg.Header.Group, nextPin.Identity, nextPin.Nonce)
-			if err = ag.database.UpdateNextPin(ctx, nextPin.Sequence, database.NextPinQueryFactory.NewUpdate(ctx).
-				Set("nonce", nextPin.Nonce).
-				Set("hash", nextPin.Hash),
-			); err != nil {
-				return err
+	actions.AddFinalize(func(ctx context.Context) error {
+		// Move the nextPin forwards to the next sequence for this sender, on all
+		// topics associated with the message
+		if masked {
+			for i, nextPin := range nextPins {
+				nextPin.Nonce++
+				nextPin.Hash = ag.calcHash(msg.Header.Topics[i], msg.Header.Group, nextPin.Identity, nextPin.Nonce)
+				if err = ag.database.UpdateNextPin(ctx, nextPin.Sequence, database.NextPinQueryFactory.NewUpdate(ctx).
+					Set("nonce", nextPin.Nonce).
+					Set("hash", nextPin.Hash),
+				); err != nil {
+					return err
+				}
 			}
 		}
-	}
 
-	// Mark the pin dispatched
-	return ag.database.SetPinDispatched(ctx, pinnedSequence)
+		// Mark the pin dispatched
+		return ag.database.SetPinDispatched(ctx, pinnedSequence)
+	})
+
+	return nil
 }
 
 func (ag *aggregator) checkMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, pinnedSequence int64, pin *fftypes.Bytes32) (*fftypes.NextPin, error) {
@@ -399,7 +471,7 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, msg *fftypes.Messa
 	return nextPin, err
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message) (bool, error) {
+func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, actions *batchActions) (bool, error) {
 
 	// If we don't find all the data, then we don't dispatch
 	data, foundAll, err := ag.data.GetMessageData(ctx, msg, true)
@@ -427,19 +499,24 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		}
 	}
 
-	// We're going to dispatch it at this point, but we need to validate the data first
+	// Validate the message data
 	valid := true
-	eventType := fftypes.EventTypeMessageConfirmed
 	switch {
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
-		var action definitions.SystemBroadcastAction
-		action, err = ag.definitions.HandleSystemBroadcast(ctx, msg, data)
-		if action == definitions.ActionRetry || action == definitions.ActionWait {
+		msgAction, batchAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, msg, data)
+		if msgAction == definitions.ActionRetry {
 			return false, err
 		}
-		valid = action == definitions.ActionConfirm
+		if batchAction != nil {
+			actions.AddPreFinalize(batchAction.PreFinalize)
+			actions.AddFinalize(batchAction.Finalize)
+		}
+		if msgAction == definitions.ActionWait {
+			return false, nil
+		}
+		valid = msgAction == definitions.ActionConfirm
 
 	case msg.Header.Type == fftypes.MessageTypeGroupInit:
 		// Already handled as part of resolving the context - do nothing.
@@ -451,30 +528,30 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		}
 	}
 
-	// This message is now confirmed
 	state := fftypes.MessageStateConfirmed
+	eventType := fftypes.EventTypeMessageConfirmed
 	if !valid {
 		state = fftypes.MessageStateRejected
-	}
-	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
-		Set("confirmed", fftypes.Now()). // the timestamp of the aggregator provides ordering
-		Set("state", state)              // mark if the message was confirmed or rejected
-	err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
-	if err != nil {
-		return false, err
-	}
-	if !valid {
-		// An message with invalid (but complete) data is still considered dispatched.
-		// However, we drive a different event to the applications.
 		eventType = fftypes.EventTypeMessageRejected
 	}
 
-	// Generate the appropriate event
-	event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
-	if err = ag.database.InsertEvent(ctx, event); err != nil {
-		return false, err
-	}
-	log.L(ctx).Infof("Emitting %s for message %s:%s", eventType, msg.Header.Namespace, msg.Header.ID)
+	actions.AddFinalize(func(ctx context.Context) error {
+		// This message is now confirmed
+		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
+			Set("confirmed", fftypes.Now()). // the timestamp of the aggregator provides ordering
+			Set("state", state)              // mark if the message was confirmed or rejected
+		if err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed); err != nil {
+			return err
+		}
+
+		// Generate the appropriate event
+		event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
+		if err = ag.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+		log.L(ctx).Infof("Emitting %s for message %s:%s", eventType, msg.Header.Namespace, msg.Header.ID)
+		return nil
+	})
 
 	return true, nil
 }

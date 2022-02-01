@@ -46,6 +46,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	// Generate some pin data
 	member1org := "org1"
@@ -166,7 +167,10 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 			Index:      0,
 			Dispatched: false,
 		},
-	})
+	}, ba)
+	assert.NoError(t, err)
+
+	err = ba.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -177,6 +181,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	// Generate some pin data
 	member1org := "org1"
@@ -261,7 +266,10 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 			Index:      0,
 			Dispatched: false,
 		},
-	})
+	}, ba)
+	assert.NoError(t, err)
+
+	err = ba.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -272,6 +280,7 @@ func TestAggregationBroadcast(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	// Generate some pin data
 	topic := "some-topic"
@@ -331,7 +340,10 @@ func TestAggregationBroadcast(t *testing.T) {
 			Index:      0,
 			Dispatched: false,
 		},
-	})
+	}, ba)
+	assert.NoError(t, err)
+
+	err = ba.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -393,6 +405,7 @@ func TestGetPins(t *testing.T) {
 func TestProcessPinsMissingBatch(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, nil)
@@ -400,7 +413,7 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
-	})
+	}, ba)
 	assert.NoError(t, err)
 
 }
@@ -408,6 +421,7 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 func TestProcessPinsMissingNoMsg(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(&fftypes.Batch{
@@ -422,7 +436,7 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 25},
-	})
+	}, ba)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 
@@ -431,6 +445,7 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 func TestProcessPinsBadMsgHeader(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(&fftypes.Batch{
@@ -448,7 +463,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 0},
-	})
+	}, ba)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 
@@ -457,6 +472,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 func TestProcessSkipDupMsg(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	batchID := fftypes.NewUUID()
 	mdi := ag.database.(*databasemocks.Plugin)
@@ -479,7 +495,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
 		{Sequence: 12345, Batch: batchID, Index: 1, Hash: fftypes.NewRandB32()},
-	})
+	}, ba)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 
@@ -488,6 +504,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 func TestProcessMsgFailGetPins(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	batchID := fftypes.NewUUID()
 	mdi := ag.database.(*databasemocks.Plugin)
@@ -506,7 +523,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
-	})
+	}, ba)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
 }
@@ -515,7 +532,7 @@ func TestProcessMsgFailMissingGroup(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{})
+	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{}, nil)
 	assert.NoError(t, err)
 
 }
@@ -531,7 +548,7 @@ func TestProcessMsgFailBadPin(t *testing.T) {
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{"!Wrong"},
-	})
+	}, nil)
 	assert.NoError(t, err)
 
 }
@@ -550,7 +567,7 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
-	})
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -570,7 +587,7 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
-	})
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -578,6 +595,7 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 func TestProcessMsgFailPinUpdate(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 	pin := fftypes.NewRandB32()
 
 	mdi := ag.database.(*databasemocks.Plugin)
@@ -598,7 +616,10 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{pin.String()},
-	})
+	}, ba)
+	assert.NoError(t, err)
+
+	err = ba.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -833,7 +854,7 @@ func TestAttemptMessageDispatchFailGetData(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	})
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -851,7 +872,7 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	})
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -877,7 +898,7 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 
 	dispatched, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	})
+	}, nil)
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -900,7 +921,7 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil)
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -925,7 +946,7 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil)
 	assert.EqualError(t, err, "pop")
 	assert.False(t, dispatched)
 
@@ -956,7 +977,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
 
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil)
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -967,9 +988,10 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionReject, nil)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionReject, &definitions.DefinitionBatchActions{}, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -1003,7 +1025,7 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	})
+	}, ba)
 	assert.NoError(t, err)
 
 }
@@ -1013,7 +1035,7 @@ func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
 	defer cancel()
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionRetry, fmt.Errorf("pop"))
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionRetry, &definitions.DefinitionBatchActions{}, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -1027,7 +1049,7 @@ func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	})
+	}, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1035,6 +1057,7 @@ func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
 func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -1045,7 +1068,10 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	})
+	}, ba)
+	assert.NoError(t, err)
+
+	err = ba.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1053,6 +1079,7 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -1066,7 +1093,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.MessageTypeGroupInit,
 		},
-	})
+	}, ba)
 	assert.NoError(t, err)
 
 }
@@ -1074,6 +1101,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ba := &batchActions{}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -1083,7 +1111,10 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	})
+	}, ba)
+	assert.NoError(t, err)
+
+	err = ba.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
 }

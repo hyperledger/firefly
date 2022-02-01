@@ -74,10 +74,10 @@ func (dh *definitionHandlers) rejectPool(ctx context.Context, pool *fftypes.Toke
 	return err
 }
 
-func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
+func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	var announce fftypes.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
-		return ActionReject, nil
+		return ActionReject, nil, nil
 	}
 
 	pool := announce.Pool
@@ -85,27 +85,31 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg 
 
 	if err := pool.Validate(ctx); err != nil {
 		log.L(ctx).Warnf("Token pool '%s' rejected - validate failed: %s", pool.ID, err)
-		return ActionReject, dh.rejectPool(ctx, pool)
+		return ActionReject, nil, dh.rejectPool(ctx, pool)
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
 	if existingPool, err := dh.database.GetTokenPoolByID(ctx, pool.ID); err != nil {
-		return ActionRetry, err
+		return ActionRetry, nil, err
 	} else if existingPool != nil && existingPool.State == fftypes.TokenPoolStateConfirmed {
-		return ActionConfirm, nil
+		return ActionConfirm, nil, nil
 	}
 
 	if valid, err := dh.persistTokenPool(ctx, &announce); err != nil {
-		return ActionRetry, err
+		return ActionRetry, nil, err
 	} else if !valid {
-		return ActionReject, dh.rejectPool(ctx, pool)
+		return ActionReject, nil, dh.rejectPool(ctx, pool)
 	}
 
-	if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event); err != nil {
-		log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
-		return ActionRetry, err
-	}
-
-	// Message will remain unconfirmed until pool confirmation triggers a rewind
-	return ActionWait, nil
+	// Message will remain unconfirmed, but plugin will be notified to activate the pool
+	// This will ultimately trigger a pool creation event and a rewind
+	return ActionWait, &DefinitionBatchActions{
+		PreFinalize: func(ctx context.Context) error {
+			if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event); err != nil {
+				log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
+				return err
+			}
+			return nil
+		},
+	}, nil
 }

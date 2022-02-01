@@ -43,9 +43,9 @@ func newTestDefinitionHandlers(t *testing.T) *definitionHandlers {
 	return NewDefinitionHandlers(mdi, mdx, mdm, mbm, mpm, mam, mcm).(*definitionHandlers)
 }
 
-func TestHandleSystemBroadcastUnknown(t *testing.T) {
+func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 	dh := newTestDefinitionHandlers(t)
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},

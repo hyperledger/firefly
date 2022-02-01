@@ -90,17 +90,13 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, i
 			return false, err
 		}
 
-	} else {
-
-		if err = t.database.InsertTransaction(ctx, &fftypes.Transaction{
-			ID:            id,
-			Namespace:     ns,
-			Type:          txType,
-			BlockchainIDs: fftypes.NewFFStringArray(strings.ToLower(blockchainTXID)),
-		}); err != nil {
-			return false, err
-		}
-
+	} else if err = t.database.InsertTransaction(ctx, &fftypes.Transaction{
+		ID:            id,
+		Namespace:     ns,
+		Type:          txType,
+		BlockchainIDs: fftypes.NewFFStringArray(strings.ToLower(blockchainTXID)),
+	}); err != nil {
+		return false, err
 	}
 
 	return true, nil

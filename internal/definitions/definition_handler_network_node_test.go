@@ -55,7 +55,7 @@ func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", mock.Anything, "peer1", node.DX.Endpoint).Return(nil)
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -95,7 +95,7 @@ func TestHandleDefinitionBroadcastNodeUpsertFail(t *testing.T) {
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -137,7 +137,7 @@ func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -175,7 +175,7 @@ func TestHandleDefinitionBroadcastNodeDupMismatch(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x99999"}, nil)
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -216,7 +216,7 @@ func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(nil)
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -254,7 +254,7 @@ func TestHandleDefinitionBroadcastNodeGetFail(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, fmt.Errorf("pop"))
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -291,7 +291,7 @@ func TestHandleDefinitionBroadcastNodeBadAuthor(t *testing.T) {
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -328,7 +328,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgNotFound(t *testing.T) {
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, nil)
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -365,7 +365,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgFail(t *testing.T) {
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -400,7 +400,7 @@ func TestHandleDefinitionBroadcastNodeValidateFail(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -421,7 +421,7 @@ func TestHandleDefinitionBroadcastNodeUnmarshalFail(t *testing.T) {
 		Value: fftypes.JSONAnyPtr(`!json`),
 	}
 
-	action, err := dh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
