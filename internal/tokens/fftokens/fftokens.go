@@ -80,12 +80,13 @@ type activatePool struct {
 }
 
 type mintTokens struct {
-	PoolID    string `json:"poolId"`
-	To        string `json:"to"`
-	Amount    string `json:"amount"`
-	RequestID string `json:"requestId,omitempty"`
-	Operator  string `json:"operator"`
-	Data      string `json:"data,omitempty"`
+	PoolID     string `json:"poolId"`
+	TokenIndex string `json:"tokenIndex,omitempty"`
+	To         string `json:"to"`
+	Amount     string `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	Operator   string `json:"operator"`
+	Data       string `json:"data,omitempty"`
 }
 
 type burnTokens struct {
@@ -428,12 +429,13 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 	})
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
-			PoolID:    poolProtocolID,
-			To:        mint.To,
-			Amount:    mint.Amount.Int().String(),
-			RequestID: opID.String(),
-			Operator:  mint.Key,
-			Data:      string(data),
+			PoolID:     poolProtocolID,
+			TokenIndex: mint.TokenIndex,
+			To:         mint.To,
+			Amount:     mint.Amount.Int().String(),
+			RequestID:  opID.String(),
+			Operator:   mint.Key,
+			Data:       string(data),
 		}).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
