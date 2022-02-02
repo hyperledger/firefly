@@ -56,7 +56,8 @@ const (
 	ActionWait
 )
 
-// DefinitionBatchActions are actions to be taken at the end of a definition batch - should only run if batch is successfully processed
+// DefinitionBatchActions are actions to be taken at the end of a definition batch
+// See further notes on "batchActions" in the event aggregator
 type DefinitionBatchActions struct {
 	// PreFinalize may perform a blocking action (possibly to an external connector) that should execute outside database RunAsGroup
 	PreFinalize func(ctx context.Context) error

@@ -145,7 +145,7 @@ type batchActions struct {
 	PreFinalize []func(ctx context.Context) error
 
 	// Finalize callbacks may perform final, non-idempotent database operations (such as inserting Events)
-	// - Will execute after all batch messages have been processed
+	// - Will execute after all batch messages have been processed and any PreFinalize callbacks have succeeded
 	// - Will execute inside database RunAsGroup
 	// - If any Finalize callback errors out, batch will be aborted and retried (small chance of duplicate execution here)
 	Finalize []func(ctx context.Context) error
