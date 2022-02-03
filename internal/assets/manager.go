@@ -18,6 +18,7 @@ package assets
 
 import (
 	"context"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
@@ -55,21 +56,25 @@ type Manager interface {
 
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
+	GetStartTime() time.Time
+
 	Start() error
 	WaitStop()
 }
 
 type assetManager struct {
-	ctx       context.Context
-	database  database.Plugin
-	txHelper  txcommon.Helper
-	identity  identity.Manager
-	data      data.Manager
-	syncasync syncasync.Bridge
-	broadcast broadcast.Manager
-	messaging privatemessaging.Manager
-	tokens    map[string]tokens.Plugin
-	retry     retry.Retry
+	ctx            context.Context
+	database       database.Plugin
+	txHelper       txcommon.Helper
+	identity       identity.Manager
+	data           data.Manager
+	syncasync      syncasync.Bridge
+	broadcast      broadcast.Manager
+	messaging      privatemessaging.Manager
+	tokens         map[string]tokens.Plugin
+	retry          retry.Retry
+	metricsEnabled bool
+	startTime      time.Time
 }
 
 func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin) (Manager, error) {
@@ -91,6 +96,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 			MaximumDelay: config.GetDuration(config.AssetManagerRetryMaxDelay),
 			Factor:       config.GetFloat64(config.AssetManagerRetryFactor),
 		},
+		metricsEnabled: config.GetBool(config.MetricsEnabled),
 	}
 	return am, nil
 }
@@ -136,6 +142,10 @@ func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*f
 	}
 
 	return connectors, nil
+}
+
+func (am *assetManager) GetStartTime() time.Time {
+	return am.startTime
 }
 
 func (am *assetManager) Start() error {

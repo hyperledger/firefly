@@ -24,9 +24,11 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -37,8 +39,10 @@ func newTestAggregator() (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"))
+	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"), mbm, mpm)
 	return ag, cancel
 }
 

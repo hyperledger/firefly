@@ -17,6 +17,7 @@ package assets
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
@@ -54,6 +55,15 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	am := a.(*assetManager)
 	am.txHelper = &txcommonmocks.Helper{}
 	return am, cancel
+}
+
+func TestGetStartTime(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	now := time.Now()
+	am.startTime = now
+	defer cancel()
+
+	assert.Equal(t, am.GetStartTime(), now)
 }
 
 func TestInitFail(t *testing.T) {

@@ -19,6 +19,7 @@ package privatemessaging
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -44,6 +45,7 @@ type Manager interface {
 	NewMessage(ns string, msg *fftypes.MessageInOut) sysmessaging.MessageSender
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
+	GetStartTime() time.Time
 }
 
 type privateMessaging struct {
@@ -63,6 +65,8 @@ type privateMessaging struct {
 	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
 	opCorrelationRetries  int
 	maxBatchPayloadLength int64
+	metricsEnabled        bool
+	startTime             time.Time
 }
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
@@ -93,6 +97,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		},
 		opCorrelationRetries:  config.GetInt(config.PrivateMessagingOpCorrelationRetries),
 		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
+		metricsEnabled:        config.GetBool(config.MetricsEnabled),
 	}
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -114,6 +119,10 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 	}, pm.dispatchBatch, bo)
 
 	return pm, nil
+}
+
+func (pm *privateMessaging) GetStartTime() time.Time {
+	return pm.startTime
 }
 
 func (pm *privateMessaging) Start() error {

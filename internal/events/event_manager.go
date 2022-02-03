@@ -94,6 +94,7 @@ type eventManager struct {
 	opCorrelationRetries int
 	defaultTransport     string
 	internalEvents       *system.Events
+	metricsEnabled       bool
 }
 
 func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) (EventManager, error) {
@@ -123,7 +124,8 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publ
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,
 		newPinNotifier:       newPinNotifier,
-		aggregator:           newAggregator(ctx, di, dh, dm, newPinNotifier),
+		aggregator:           newAggregator(ctx, di, dh, dm, newPinNotifier, bm, pm),
+		metricsEnabled:       config.GetBool(config.MetricsEnabled),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)

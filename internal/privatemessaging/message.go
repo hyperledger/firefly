@@ -18,8 +18,10 @@ package privatemessaging
 
 import (
 	"context"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -36,6 +38,10 @@ func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysm
 }
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
+	if pm.metricsEnabled {
+		metrics.PrivateMsgSubmittedCounter.Inc()
+		pm.startTime = time.Now()
+	}
 	message := pm.NewMessage(ns, in)
 	if waitConfirm {
 		err = message.SendAndWait(ctx)

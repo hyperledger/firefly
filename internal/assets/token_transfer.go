@@ -19,9 +19,12 @@ package assets
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -43,19 +46,21 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string)
 
 func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
 	sender := &transferSender{
-		mgr:       am,
-		namespace: ns,
-		transfer:  transfer,
+		metricsEnabled: config.GetBool(config.MetricsEnabled),
+		mgr:            am,
+		namespace:      ns,
+		transfer:       transfer,
 	}
 	sender.setDefaults()
 	return sender
 }
 
 type transferSender struct {
-	mgr       *assetManager
-	namespace string
-	transfer  *fftypes.TokenTransferInput
-	resolved  bool
+	mgr            *assetManager
+	namespace      string
+	transfer       *fftypes.TokenTransferInput
+	resolved       bool
+	metricsEnabled bool
 }
 
 // sendMethod is the specific operation requested of the transferSender.
@@ -124,6 +129,10 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 		return nil, err
 	}
 
+	if am.metricsEnabled {
+		metrics.MintSubmittedCounter.Inc()
+		am.startTime = time.Now()
+	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
@@ -139,6 +148,10 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 		return nil, err
 	}
 
+	if am.metricsEnabled {
+		metrics.BurnSubmittedCounter.Inc()
+		am.startTime = time.Now()
+	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
@@ -157,6 +170,10 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
 
+	if am.metricsEnabled {
+		metrics.TransferSubmittedCounter.Inc()
+		am.startTime = time.Now()
+	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)

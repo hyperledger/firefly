@@ -23,6 +23,7 @@ import (
 	"io"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
@@ -70,6 +71,15 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
+}
+
+func TestGetStartTime(t *testing.T) {
+	am, cancel := newTestBroadcast(t)
+	now := time.Now()
+	am.startTime = now
+	defer cancel()
+
+	assert.Equal(t, am.GetStartTime(), now)
 }
 
 func TestInitFail(t *testing.T) {

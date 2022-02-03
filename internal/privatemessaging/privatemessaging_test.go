@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
@@ -170,6 +171,15 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+}
+
+func TestGetStartTime(t *testing.T) {
+	am, cancel := newTestPrivateMessaging(t)
+	now := time.Now()
+	am.startTime = now
+	defer cancel()
+
+	assert.Equal(t, am.GetStartTime(), now)
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {

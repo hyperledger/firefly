@@ -18,8 +18,10 @@ package events
 
 import (
 	"context"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -52,6 +54,7 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 }
 
 func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
+	countMetric := true
 	// Check that transfer has not already been recorded
 	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
 		return false, err
@@ -87,6 +90,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		if existing, err := em.database.GetTokenTransfer(ctx, transfer.LocalID); err != nil {
 			return false, err
 		} else if existing != nil {
+			countMetric = false
 			transfer.LocalID = fftypes.NewUUID()
 		}
 	} else {
@@ -108,6 +112,23 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		return false, err
 	}
 	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
+
+	if em.metricsEnabled && countMetric {
+		switch transfer.Type {
+		case fftypes.TokenTransferTypeMint:
+			metrics.MintHistogram.Observe(time.Since(em.assets.GetStartTime()).Seconds())
+			metrics.MintConfirmedCounter.Inc()
+		case fftypes.TokenTransferTypeTransfer:
+			metrics.TransferHistogram.Observe(time.Since(em.assets.GetStartTime()).Seconds())
+			metrics.TransferConfirmedCounter.Inc()
+		case fftypes.TokenTransferTypeBurn:
+			metrics.BurnHistogram.Observe(time.Since(em.assets.GetStartTime()).Seconds())
+			metrics.BurnConfirmedCounter.Inc()
+		default:
+			break
+		}
+	}
+
 	return true, nil
 }
 

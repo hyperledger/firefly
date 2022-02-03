@@ -71,6 +71,9 @@ func newInstrumentation(subsystem string) *muxprom.Instrumentation {
 }
 
 func initMetricsCollectors() {
+	InitBroadcastMetrics()
+	InitPrivateMsgMetrics()
+	InitTokenMintMetrics()
 	BatchPinCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: MetricsBatchPin,
 		Help: "Number of batch pins submitted",
@@ -81,6 +84,10 @@ func registerMetricsCollectors() {
 	registry.MustRegister(collectors.NewGoCollector())
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	registry.MustRegister(BatchPinCounter)
+
+	RegisterBroadcastMetrics()
+	RegisterPrivateMsgMetrics()
+	RegisterTokenMintMetrics()
 }
 
 // Clear will reset the Prometheus metrics registry and instrumentations, useful for testing
