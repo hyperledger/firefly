@@ -183,13 +183,12 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 			return err
 		}
 
-		op = fftypes.NewTXOperation(
+		op = fftypes.NewOperation(
 			cm.blockchain,
 			ns,
 			txid,
 			"",
-			fftypes.OpTypeContractInvoke,
-			fftypes.OpStatusPending)
+			fftypes.OpTypeContractInvoke)
 		op.Input = req.Input
 		return cm.database.InsertOperation(ctx, op)
 	})

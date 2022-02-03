@@ -158,13 +158,12 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 			}
 
 			if txid != nil {
-				op := fftypes.NewTXOperation(
+				op := fftypes.NewOperation(
 					pm.exchange,
 					d.Namespace,
 					txid,
 					trackingID,
-					fftypes.OpTypeDataExchangeBlobSend,
-					fftypes.OpStatusPending)
+					fftypes.OpTypeDataExchangeBlobSend)
 				if err = pm.database.InsertOperation(ctx, op); err != nil {
 					return err
 				}
@@ -210,13 +209,12 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 		}
 
 		if txid != nil {
-			op := fftypes.NewTXOperation(
+			op := fftypes.NewOperation(
 				pm.exchange,
 				ns,
 				txid,
 				trackingID,
-				fftypes.OpTypeDataExchangeBatchSend,
-				fftypes.OpStatusPending)
+				fftypes.OpTypeDataExchangeBatchSend)
 			op.Input = fftypes.JSONObject{
 				"manifest": tw.Manifest().String(),
 			}

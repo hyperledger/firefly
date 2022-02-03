@@ -76,13 +76,12 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		pool.TX.ID = txid
 		pool.TX.Type = fftypes.TransactionTypeTokenPool
 
-		op = fftypes.NewTXOperation(
+		op = fftypes.NewOperation(
 			plugin,
 			pool.Namespace,
 			txid,
 			"",
-			fftypes.OpTypeTokenCreatePool,
-			fftypes.OpStatusPending)
+			fftypes.OpTypeTokenCreatePool)
 		txcommon.AddTokenPoolCreateInputs(op, pool)
 
 		return am.database.InsertOperation(ctx, op)
