@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,23 +27,15 @@ import (
 	"github.com/hyperledger/firefly/pkg/events"
 )
 
-var plugins = []events.Plugin{
-	&websockets.WebSockets{},
-	&webhooks.WebHooks{},
-	&system.Events{},
-}
-
-var pluginsByName = make(map[string]events.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
+var pluginsByName = map[string]func() events.Plugin{
+	(*websockets.WebSockets)(nil).Name(): func() events.Plugin { return &websockets.WebSockets{} },
+	(*webhooks.WebHooks)(nil).Name():     func() events.Plugin { return &webhooks.WebHooks{} },
+	(*system.Events)(nil).Name():         func() events.Plugin { return &system.Events{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
+	for name, plugin := range pluginsByName {
+		plugin().InitPrefix(prefix.SubPrefix(name))
 	}
 }
 
@@ -52,5 +44,5 @@ func GetPlugin(ctx context.Context, pluginType string) (events.Plugin, error) {
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownEventTransportPlugin, pluginType)
 	}
-	return plugin, nil
+	return plugin(), nil
 }

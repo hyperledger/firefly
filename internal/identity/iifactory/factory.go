@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,21 +25,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/identity"
 )
 
-var plugins = []identity.Plugin{
-	&tbd.TBD{}, // Plugin interface is TBD at this point. Plugin with "onchain" naming, and TBD implementation provided to avoid config migration impact
-}
-
-var pluginsByName = make(map[string]identity.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
+var pluginsByName = map[string]func() identity.Plugin{
+	// Plugin interface is TBD at this point. Plugin with "onchain" naming, and TBD implementation provided to avoid config migration impact
+	(*tbd.TBD)(nil).Name(): func() identity.Plugin { return &tbd.TBD{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
+	for name, plugin := range pluginsByName {
+		plugin().InitPrefix(prefix.SubPrefix(name))
 	}
 }
 
@@ -48,5 +41,5 @@ func GetPlugin(ctx context.Context, pluginType string) (identity.Plugin, error) 
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownIdentityPlugin, pluginType)
 	}
-	return plugin, nil
+	return plugin(), nil
 }

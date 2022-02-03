@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,21 +25,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
-var plugins = []dataexchange.Plugin{
-	&dxhttps.HTTPS{},
-}
-
-var pluginsByName = make(map[string]dataexchange.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
+var pluginsByName = map[string]func() dataexchange.Plugin{
+	(*dxhttps.HTTPS)(nil).Name(): func() dataexchange.Plugin { return &dxhttps.HTTPS{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
+	for name, plugin := range pluginsByName {
+		plugin().InitPrefix(prefix.SubPrefix(name))
 	}
 }
 
@@ -48,5 +40,5 @@ func GetPlugin(ctx context.Context, pluginType string) (dataexchange.Plugin, err
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownDataExchangePlugin, pluginType)
 	}
-	return plugin, nil
+	return plugin(), nil
 }
