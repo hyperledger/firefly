@@ -23,42 +23,42 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 
 	var ns fftypes.Namespace
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
-		return ActionReject, nil
+		return ActionReject, nil, nil
 	}
 	if err := ns.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return ActionReject, nil
+		return ActionReject, nil, nil
 	}
 
 	existing, err := dh.database.GetNamespace(ctx, ns.Name)
 	if err != nil {
-		return ActionRetry, err // We only return database errors
+		return ActionRetry, nil, err // We only return database errors
 	}
 	if existing != nil {
 		if existing.Type != fftypes.NamespaceTypeLocal {
 			l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
-			return ActionReject, nil
+			return ActionReject, nil, nil
 		}
 		// Remove the local definition
 		if err = dh.database.DeleteNamespace(ctx, existing.ID); err != nil {
-			return ActionRetry, err
+			return ActionRetry, nil, err
 		}
 	}
 
 	if err = dh.database.UpsertNamespace(ctx, &ns, false); err != nil {
-		return ActionRetry, err
+		return ActionRetry, nil, err
 	}
 
-	event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID)
-	if err = dh.database.InsertEvent(ctx, event); err != nil {
-		return ActionRetry, err
-	}
-
-	return ActionConfirm, nil
+	return ActionConfirm, &DefinitionBatchActions{
+		Finalize: func(ctx context.Context) error {
+			event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID)
+			return dh.database.InsertEvent(ctx, event)
+		},
+	}, nil
 }

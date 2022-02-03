@@ -23,42 +23,42 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 
 	var dt fftypes.Datatype
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &dt)
 	if !valid {
-		return ActionReject, nil
+		return ActionReject, nil, nil
 	}
 
 	if err := dt.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return ActionReject, nil
+		return ActionReject, nil, nil
 	}
 
 	if err := dh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
-		return ActionReject, nil
+		return ActionReject, nil, nil
 	}
 
 	existing, err := dh.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
 	if err != nil {
-		return ActionRetry, err // We only return database errors
+		return ActionRetry, nil, err // We only return database errors
 	}
 	if existing != nil {
 		l.Warnf("Unable to process datatype broadcast %s (%s:%s) - duplicate of %v", msg.Header.ID, dt.Namespace, dt, existing.ID)
-		return ActionReject, nil
+		return ActionReject, nil, nil
 	}
 
 	if err = dh.database.UpsertDatatype(ctx, &dt, false); err != nil {
-		return ActionRetry, err
+		return ActionRetry, nil, err
 	}
 
-	event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID)
-	if err = dh.database.InsertEvent(ctx, event); err != nil {
-		return ActionRetry, err
-	}
-
-	return ActionConfirm, nil
+	return ActionConfirm, &DefinitionBatchActions{
+		Finalize: func(ctx context.Context) error {
+			event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID)
+			return dh.database.InsertEvent(ctx, event)
+		},
+	}, nil
 }
