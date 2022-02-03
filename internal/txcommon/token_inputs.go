@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,8 +18,10 @@ package txcommon
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -49,15 +51,25 @@ func RetrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 	return nil
 }
 
-func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
-	op.Input = fftypes.JSONObject{
-		"id": transfer.LocalID.String(),
+func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
+	var j []byte
+	if j, err = json.Marshal(transfer); err == nil {
+		err = json.Unmarshal(j, &op.Input)
 	}
+	return err
 }
 
 func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	if transfer.LocalID, err = fftypes.ParseUUID(ctx, op.Input.GetString("id")); err != nil {
-		return err
+	var t fftypes.TokenTransfer
+	s := op.Input.String()
+	if err = json.Unmarshal([]byte(s), &t); err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
 	}
+	if t.LocalID == nil {
+		return i18n.NewError(ctx, i18n.MsgInvalidUUID)
+	}
+	// The LocalID is the only thing that needs to be read back out when processing an event
+	// (everything else should be unpacked from the event)
+	transfer.LocalID = t.LocalID
 	return nil
 }
