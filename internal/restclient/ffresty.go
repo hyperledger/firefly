@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -70,7 +71,22 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 		}
 	}
 	if client == nil {
-		client = resty.New()
+		httpTransport := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   staticConfig.GetDuration(HTTPConnectionTimeout),
+				KeepAlive: staticConfig.GetDuration(HTTPConnectionTimeout),
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          staticConfig.GetInt(HTTPMaxIdleConns),
+			IdleConnTimeout:       staticConfig.GetDuration(HTTPIdleTimeout),
+			TLSHandshakeTimeout:   staticConfig.GetDuration(HTTTPTLSHandshakeTimeout),
+			ExpectContinueTimeout: staticConfig.GetDuration(HTTPExpectContinueTimeout),
+		}
+		httpClient := &http.Client{
+			Transport: httpTransport,
+		}
+		client = resty.NewWithClient(httpClient)
 	}
 
 	url := strings.TrimSuffix(staticConfig.GetString(HTTPConfigURL), "/")

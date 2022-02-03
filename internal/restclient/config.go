@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,11 +19,16 @@ package restclient
 import "github.com/hyperledger/firefly/internal/config"
 
 const (
-	defaultRetryEnabled     = false
-	defaultRetryCount       = 5
-	defaultRetryWaitTime    = "250ms"
-	defaultRetryMaxWaitTime = "30s"
-	defaultRequestTimeout   = "30s"
+	defaultRetryEnabled              = false
+	defaultRetryCount                = 5
+	defaultRetryWaitTime             = "250ms"
+	defaultRetryMaxWaitTime          = "30s"
+	defaultRequestTimeout            = "30s"
+	defaultHTTPIdleTimeout           = "475ms" // Node.js default keepAliveTimeout is 5 seconds, so we have to set a base below this
+	defaultHTTPMaxIdleConns          = 100     // match Go's default
+	defaultHTTPConnectionTimeout     = "30s"
+	defaultHTTPTLSHandshakeTimeout   = "10s" // match Go's default
+	defaultHTTPExpectContinueTimeout = "1s"  // match Go's default
 )
 
 const (
@@ -47,6 +52,16 @@ const (
 	HTTPConfigRetryMaxDelay = "retry.maxWaitTime"
 	// HTTPConfigRequestTimeout the request timeout
 	HTTPConfigRequestTimeout = "requestTimeout"
+	// HTTPIdleTimeout the max duration to hold a HTTP keepalive connection between calls
+	HTTPIdleTimeout = "idleTimeout"
+	// HTTPMaxIdleConns the max number of idle connections to hold pooled
+	HTTPMaxIdleConns = "maxIdleConns"
+	// HTTPConnectionTimeout the connection timeout for new connections
+	HTTPConnectionTimeout = "connectionTimeout"
+	// HTTPTLSHandshakeTimeout the TLS handshake connection timeout
+	HTTTPTLSHandshakeTimeout = "tlsHandshakeTimeout"
+	// HTTPExpectContinueTimeout see ExpectContinueTimeout in Go docs
+	HTTPExpectContinueTimeout = "expectContinueTimeout"
 
 	// HTTPCustomClient - unit test only - allows injection of a custom HTTP client to resty
 	HTTPCustomClient = "customClient"
@@ -63,6 +78,11 @@ func InitPrefix(prefix config.KeySet) {
 	prefix.AddKnownKey(HTTPConfigRetryInitDelay, defaultRetryWaitTime)
 	prefix.AddKnownKey(HTTPConfigRetryMaxDelay, defaultRetryMaxWaitTime)
 	prefix.AddKnownKey(HTTPConfigRequestTimeout, defaultRequestTimeout)
+	prefix.AddKnownKey(HTTPIdleTimeout, defaultHTTPIdleTimeout)
+	prefix.AddKnownKey(HTTPMaxIdleConns, defaultHTTPMaxIdleConns)
+	prefix.AddKnownKey(HTTPConnectionTimeout, defaultHTTPConnectionTimeout)
+	prefix.AddKnownKey(HTTTPTLSHandshakeTimeout, defaultHTTPTLSHandshakeTimeout)
+	prefix.AddKnownKey(HTTPExpectContinueTimeout, defaultHTTPExpectContinueTimeout)
 
 	prefix.AddKnownKey(HTTPCustomClient)
 }
