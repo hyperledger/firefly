@@ -42,10 +42,10 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) error
+	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error
+	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
 	MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error

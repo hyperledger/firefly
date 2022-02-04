@@ -90,7 +90,13 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		return nil, err
 	}
 
-	return pool, plugin.CreateTokenPool(ctx, op.ID, pool)
+	if complete, err := plugin.CreateTokenPool(ctx, op.ID, pool); err != nil {
+		return nil, err
+	} else if complete {
+		update := database.OperationQueryFactory.NewUpdate(ctx).Set("status", fftypes.OpStatusSucceeded)
+		return pool, am.database.UpdateOperation(ctx, op.ID, update)
+	}
+	return pool, nil
 }
 
 func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
@@ -98,7 +104,24 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 	if err != nil {
 		return err
 	}
-	return plugin.ActivateTokenPool(ctx, nil, pool, event)
+
+	op := fftypes.NewOperation(
+		plugin,
+		pool.Namespace,
+		pool.TX.ID,
+		"",
+		fftypes.OpTypeTokenActivatePool)
+	if err := am.database.InsertOperation(ctx, op); err != nil {
+		return err
+	}
+
+	if complete, err := plugin.ActivateTokenPool(ctx, op.ID, pool, event); err != nil {
+		return err
+	} else if complete {
+		update := database.OperationQueryFactory.NewUpdate(ctx).Set("status", fftypes.OpStatusSucceeded)
+		return am.database.UpdateOperation(ctx, op.ID, update)
+	}
+	return nil
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {

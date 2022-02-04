@@ -143,7 +143,8 @@ func TestCreateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.CreateTokenPool(context.Background(), opID, pool)
+	complete, err := h.CreateTokenPool(context.Background(), opID, pool)
+	assert.False(t, complete)
 	assert.NoError(t, err)
 }
 
@@ -162,7 +163,8 @@ func TestCreateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
+	complete, err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
+	assert.False(t, complete)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -214,7 +216,8 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && *p.TransactionID == *pool.TX.ID && p.Event.ProtocolID == "000000000010/000020/000030/000040"
 	})).Return(nil)
 
-	err := h.CreateTokenPool(context.Background(), opID, pool)
+	complete, err := h.CreateTokenPool(context.Background(), opID, pool)
+	assert.True(t, complete)
 	assert.NoError(t, err)
 }
 
@@ -255,7 +258,8 @@ func TestCreateTokenPoolSynchronousBadResponse(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.CreateTokenPool(context.Background(), opID, pool)
+	complete, err := h.CreateTokenPool(context.Background(), opID, pool)
+	assert.False(t, complete)
 	assert.Regexp(t, "FF10151", err)
 }
 
@@ -295,7 +299,8 @@ func TestActivateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	assert.False(t, complete)
 	assert.NoError(t, err)
 }
 
@@ -315,7 +320,8 @@ func TestActivateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, ev)
+	assert.False(t, complete)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -364,7 +370,8 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.TransactionID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
 
-	err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	assert.True(t, complete)
 	assert.NoError(t, err)
 }
 
@@ -409,7 +416,8 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.TransactionID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
 
-	err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	assert.False(t, complete)
 	assert.Regexp(t, "FF10151", err)
 }
 

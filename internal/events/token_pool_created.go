@@ -91,7 +91,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 	return existingPool, nil
 }
 
-func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, pool *tokens.TokenPool) (announcePool *fftypes.TokenPool, err error) {
+func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPool) (announcePool *fftypes.TokenPool, err error) {
 	op, err := em.findTokenPoolCreateOp(ctx, pool.TransactionID)
 	if err != nil {
 		return nil, err
@@ -105,14 +105,7 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, po
 		return nil, nil
 	}
 	addPoolDetailsFromPlugin(announcePool, pool)
-
-	nextOp := fftypes.NewOperation(
-		ti,
-		op.Namespace,
-		op.Transaction,
-		"",
-		fftypes.OpTypeTokenAnnouncePool)
-	return announcePool, em.database.InsertOperation(ctx, nextOp)
+	return announcePool, nil
 }
 
 // It is expected that this method might be invoked twice for each pool, depending on the behavior of the connector.
@@ -148,7 +141,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 
 			// See if this pool was submitted locally and needs to be announced
-			if announcePool, err = em.shouldAnnounce(ctx, ti, pool); err != nil {
+			if announcePool, err = em.shouldAnnounce(ctx, pool); err != nil {
 				return err
 			} else if announcePool != nil {
 				return nil // trigger announce after completion of database transaction
