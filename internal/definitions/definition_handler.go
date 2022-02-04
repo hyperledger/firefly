@@ -109,24 +109,23 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch fftypes.SystemTag(msg.Header.Tag) {
 	case fftypes.SystemTagDefineDatatype:
-		msgAction, err = dh.handleDatatypeBroadcast(ctx, msg, data)
+		return dh.handleDatatypeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNamespace:
-		msgAction, err = dh.handleNamespaceBroadcast(ctx, msg, data)
+		return dh.handleNamespaceBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineOrganization:
-		msgAction, err = dh.handleOrganizationBroadcast(ctx, msg, data)
+		return dh.handleOrganizationBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNode:
-		msgAction, err = dh.handleNodeBroadcast(ctx, msg, data)
+		return dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineFFI:
-		msgAction, err = dh.handleFFIBroadcast(ctx, msg, data)
+		return dh.handleFFIBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineContractAPI:
-		msgAction, err = dh.handleContractAPIBroadcast(ctx, msg, data)
+		return dh.handleContractAPIBroadcast(ctx, msg, data)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 		return ActionReject, nil, nil
 	}
-	return
 }
 
 func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
