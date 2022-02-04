@@ -24,6 +24,8 @@ type OpType = FFEnum
 var (
 	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
 	OpTypeBlockchainBatchPin OpType = ffEnum("optype", "blockchain_batch_pin")
+	// OpTypeBlockchainInvoke is a smart contract invoke
+	OpTypeBlockchainInvoke OpType = ffEnum("optype", "blockchain_invoke")
 	// OpTypePublicStorageBatchBroadcast is a public storage operation to store broadcast data
 	OpTypePublicStorageBatchBroadcast OpType = ffEnum("optype", "publicstorage_batch_broadcast")
 	// OpTypeDataExchangeBatchSend is a private send
@@ -36,8 +38,6 @@ var (
 	OpTypeTokenAnnouncePool OpType = ffEnum("optype", "token_announce_pool")
 	// OpTypeTokenTransfer is a token transfer
 	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
-	// OpTypeContractInvoke is a smart contract invoke
-	OpTypeContractInvoke OpType = ffEnum("optype", "contract_invoke")
 )
 
 // OpStatus is the current status of an operation

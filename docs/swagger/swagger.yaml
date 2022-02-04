@@ -4661,13 +4661,13 @@ paths:
                   type:
                     enum:
                     - blockchain_batch_pin
+                    - blockchain_invoke
                     - publicstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
-                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -5423,13 +5423,13 @@ paths:
                   type:
                     enum:
                     - blockchain_batch_pin
+                    - blockchain_invoke
                     - publicstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
-                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -5489,13 +5489,13 @@ paths:
                   type:
                     enum:
                     - blockchain_batch_pin
+                    - blockchain_invoke
                     - publicstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
                     - token_announce_pool
                     - token_transfer
-                    - contract_invoke
                     type: string
                   updated: {}
                 type: object
@@ -8063,13 +8063,13 @@ paths:
                     type:
                       enum:
                       - blockchain_batch_pin
+                      - blockchain_invoke
                       - publicstorage_batch_broadcast
                       - dataexchange_batch_send
                       - dataexchange_blob_send
                       - token_create_pool
                       - token_announce_pool
                       - token_transfer
-                      - contract_invoke
                       type: string
                     updated: {}
                   type: object
