@@ -106,13 +106,12 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, ti tokens.Plugin, po
 	}
 	addPoolDetailsFromPlugin(announcePool, pool)
 
-	nextOp := fftypes.NewTXOperation(
+	nextOp := fftypes.NewOperation(
 		ti,
 		op.Namespace,
 		op.Transaction,
 		"",
-		fftypes.OpTypeTokenAnnouncePool,
-		fftypes.OpStatusPending)
+		fftypes.OpTypeTokenAnnouncePool)
 	return announcePool, em.database.InsertOperation(ctx, nextOp)
 }
 

@@ -645,7 +645,7 @@ func TestAwaitFailedTokenTransfer(t *testing.T) {
 	op := &fftypes.Operation{
 		ID: fftypes.NewUUID(),
 		Input: fftypes.JSONObject{
-			"id": requestID.String(),
+			"localId": requestID.String(),
 		},
 	}
 
@@ -686,7 +686,7 @@ func TestFailedTokenTransferOpError(t *testing.T) {
 	op := &fftypes.Operation{
 		ID: fftypes.NewUUID(),
 		Input: fftypes.JSONObject{
-			"id": requestID.String(),
+			"localId": requestID.String(),
 		},
 	}
 
@@ -721,7 +721,7 @@ func TestFailedTokenTransferOpNotFound(t *testing.T) {
 	op := &fftypes.Operation{
 		ID: fftypes.NewUUID(),
 		Input: fftypes.JSONObject{
-			"id": requestID.String(),
+			"localId": requestID.String(),
 		},
 	}
 

@@ -239,18 +239,19 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		s.transfer.TX.ID = txid
 		s.transfer.TX.Type = fftypes.TransactionTypeTokenTransfer
 
-		op = fftypes.NewTXOperation(
+		op = fftypes.NewOperation(
 			plugin,
 			s.namespace,
 			txid,
 			"",
-			fftypes.OpTypeTokenTransfer,
-			fftypes.OpStatusPending)
-		txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
-
-		if err = s.mgr.database.InsertOperation(ctx, op); err != nil {
+			fftypes.OpTypeTokenTransfer)
+		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
+			err = s.mgr.database.InsertOperation(ctx, op)
+		}
+		if err != nil {
 			return err
 		}
+
 		if s.transfer.Message != nil {
 			s.transfer.Message.State = fftypes.MessageStateStaged
 			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, database.UpsertOptimizationNew)
