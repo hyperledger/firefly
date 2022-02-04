@@ -24,34 +24,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) confirmPoolAnnounceOp(ctx context.Context, pool *fftypes.TokenPool) error {
-	// Find a matching operation within this transaction
-	fb := database.OperationQueryFactory.NewFilter(ctx)
-	filter := fb.And(
-		fb.Eq("tx", pool.TX.ID),
-		fb.Eq("type", fftypes.OpTypeTokenAnnouncePool),
-	)
-	if operations, _, err := dh.database.GetOperations(ctx, filter); err != nil {
-		return err
-	} else if len(operations) > 0 {
-		op := operations[0]
-		update := database.OperationQueryFactory.NewUpdate(ctx).
-			Set("status", fftypes.OpStatusSucceeded).
-			Set("output", fftypes.JSONObject{"message": pool.Message})
-		if err := dh.database.UpdateOperation(ctx, op.ID, update); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
 	pool := announce.Pool
-
-	// Mark announce operation (if any) completed
-	if err := dh.confirmPoolAnnounceOp(ctx, pool); err != nil {
-		return false, err // retryable
-	}
 
 	// Create the pool in pending state
 	pool.State = fftypes.TokenPoolStatePending

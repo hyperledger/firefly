@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -279,6 +280,97 @@ func TestPersistTransactionExistingMismatchType(t *testing.T) {
 	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, fftypes.TransactionTypeBatchPin, "")
 	assert.NoError(t, err)
 	assert.False(t, valid)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestAddBlockchainTX(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	txHelper := NewTransactionHelper(mdi)
+	ctx := context.Background()
+
+	txid := fftypes.NewUUID()
+	mdi.On("GetTransactionByID", ctx, txid).Return(&fftypes.Transaction{
+		ID:            txid,
+		Namespace:     "ns1",
+		Type:          fftypes.TransactionTypeContractInvoke,
+		Created:       fftypes.Now(),
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
+	}, nil)
+	mdi.On("UpdateTransaction", ctx, txid, mock.MatchedBy(func(u database.Update) bool {
+		info, _ := u.Finalize()
+		assert.Equal(t, 1, len(info.SetOperations))
+		assert.Equal(t, "blockchainids", info.SetOperations[0].Field)
+		val, _ := info.SetOperations[0].Value.Value()
+		assert.Equal(t, "0x111111,abc", val)
+		return true
+	})).Return(nil)
+
+	err := txHelper.AddBlockchainTX(ctx, txid, "abc")
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestAddBlockchainTXGetFail(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	txHelper := NewTransactionHelper(mdi)
+	ctx := context.Background()
+
+	txid := fftypes.NewUUID()
+	mdi.On("GetTransactionByID", ctx, txid).Return(nil, fmt.Errorf("pop"))
+
+	err := txHelper.AddBlockchainTX(ctx, txid, "abc")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestAddBlockchainTXUpdateFail(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	txHelper := NewTransactionHelper(mdi)
+	ctx := context.Background()
+
+	txid := fftypes.NewUUID()
+	mdi.On("GetTransactionByID", ctx, txid).Return(&fftypes.Transaction{
+		ID:            txid,
+		Namespace:     "ns1",
+		Type:          fftypes.TransactionTypeContractInvoke,
+		Created:       fftypes.Now(),
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
+	}, nil)
+	mdi.On("UpdateTransaction", ctx, txid, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := txHelper.AddBlockchainTX(ctx, txid, "abc")
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestAddBlockchainTXUnchanged(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	txHelper := NewTransactionHelper(mdi)
+	ctx := context.Background()
+
+	txid := fftypes.NewUUID()
+	mdi.On("GetTransactionByID", ctx, txid).Return(&fftypes.Transaction{
+		ID:            txid,
+		Namespace:     "ns1",
+		Type:          fftypes.TransactionTypeContractInvoke,
+		Created:       fftypes.Now(),
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
+	}, nil)
+
+	err := txHelper.AddBlockchainTX(ctx, txid, "0x111111")
+	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 

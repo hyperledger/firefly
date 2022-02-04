@@ -53,12 +53,14 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
@@ -89,12 +91,14 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)

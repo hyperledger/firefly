@@ -259,32 +259,38 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
+func wsReader(conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
 	events := make(chan *fftypes.EventDelivery, 100)
 	changeEvents := make(chan *fftypes.ChangeEvent, 100)
 	go func() {
 		for {
 			_, b, err := conn.ReadMessage()
 			if err != nil {
-				t.Logf("Websocket %s closing, error: %s", conn.RemoteAddr(), err)
+				fmt.Printf("Websocket %s closing, error: %s", conn.RemoteAddr(), err)
 				return
 			}
-			t.Logf("Websocket %s receive: %s", conn.RemoteAddr(), b)
+			fmt.Printf("Websocket %s receive: %s", conn.RemoteAddr(), b)
 			var wsa fftypes.WSClientActionBase
 			err = json.Unmarshal(b, &wsa)
-			assert.NoError(t, err)
+			if err != nil {
+				panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
+			}
 			switch wsa.Type {
 			case fftypes.WSClientActionChangeNotifcation:
 				var wscn fftypes.WSChangeNotification
 				err = json.Unmarshal(b, &wscn)
-				assert.NoError(t, err)
+				if err != nil {
+					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
+				}
 				if err == nil {
 					changeEvents <- wscn.ChangeEvent
 				}
 			default:
 				var ed fftypes.EventDelivery
 				err = json.Unmarshal(b, &ed)
-				assert.NoError(t, err)
+				if err != nil {
+					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
+				}
 				if err == nil {
 					events <- &ed
 				}

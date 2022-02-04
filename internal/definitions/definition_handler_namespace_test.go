@@ -45,12 +45,14 @@ func TestHandleDefinitionBroadcastNSOk(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -73,12 +75,14 @@ func TestHandleDefinitionBroadcastNSEventFail(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -203,12 +207,14 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocal(t *testing.T) {
 	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

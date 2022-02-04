@@ -192,7 +192,7 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
+	received1, changes1 := wsReader(suite.testState.ws1)
 
 	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
@@ -230,7 +230,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
+	received1, changes1 := wsReader(suite.testState.ws1)
 
 	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
@@ -286,7 +286,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.T(), suite.testState.ws1)
+	received1, changes1 := wsReader(suite.testState.ws1)
 
 	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
