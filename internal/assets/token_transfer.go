@@ -45,6 +45,8 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string)
 }
 
 func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
+	metrics.Registry()
+	config.Set(config.MetricsEnabled, true)
 	sender := &transferSender{
 		metricsEnabled: config.GetBool(config.MetricsEnabled),
 		mgr:            am,
@@ -128,10 +130,9 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
 		return nil, err
 	}
-
 	if am.metricsEnabled {
 		metrics.MintSubmittedCounter.Inc()
-		am.startTime = time.Now()
+		metrics.TimeMap[transfer.TX.ID.String()] = time.Now()
 	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
@@ -147,10 +148,9 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
 		return nil, err
 	}
-
 	if am.metricsEnabled {
 		metrics.BurnSubmittedCounter.Inc()
-		am.startTime = time.Now()
+		metrics.TimeMap[transfer.TX.ID.String()] = time.Now()
 	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
@@ -169,10 +169,9 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 	if transfer.From == transfer.To {
 		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
-
 	if am.metricsEnabled {
 		metrics.TransferSubmittedCounter.Inc()
-		am.startTime = time.Now()
+		metrics.TimeMap[transfer.TX.ID.String()] = time.Now()
 	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {

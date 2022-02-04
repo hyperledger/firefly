@@ -18,7 +18,6 @@ package assets
 
 import (
 	"context"
-	"time"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
@@ -56,8 +55,6 @@ type Manager interface {
 
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
-	GetStartTime() time.Time
-
 	Start() error
 	WaitStop()
 }
@@ -74,7 +71,6 @@ type assetManager struct {
 	tokens         map[string]tokens.Plugin
 	retry          retry.Retry
 	metricsEnabled bool
-	startTime      time.Time
 }
 
 func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin) (Manager, error) {
@@ -142,10 +138,6 @@ func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*f
 	}
 
 	return connectors, nil
-}
-
-func (am *assetManager) GetStartTime() time.Time {
-	return am.startTime
 }
 
 func (am *assetManager) Start() error {

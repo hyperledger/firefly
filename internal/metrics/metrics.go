@@ -17,6 +17,8 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	muxprom "gitlab.com/hfuss/mux-prometheus/pkg/middleware"
@@ -26,6 +28,7 @@ var registry *prometheus.Registry
 var adminInstrumentation *muxprom.Instrumentation
 var restInstrumentation *muxprom.Instrumentation
 var BatchPinCounter prometheus.Counter
+var TimeMap = make(map[string]time.Time)
 
 // MetricsBatchPin is the prometheus metric for total number of batch pins submitted
 var MetricsBatchPin = "ff_batchpin_total"

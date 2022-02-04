@@ -41,7 +41,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	if bm.metricsEnabled {
 		metrics.BroadcastSubmittedCounter.Inc()
-		bm.startTime = time.Now()
+		metrics.TimeMap[in.Header.ID.String()] = time.Now()
 	}
 	broadcast := bm.NewBroadcast(ns, in)
 	if waitConfirm {

@@ -114,15 +114,17 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 
 	if em.metricsEnabled && countMetric {
+		timeElapsed := time.Since(metrics.TimeMap[transfer.TX.ID.String()]).Seconds()
+		delete(metrics.TimeMap, transfer.TX.ID.String())
 		switch transfer.Type {
 		case fftypes.TokenTransferTypeMint:
-			metrics.MintHistogram.Observe(time.Since(em.assets.GetStartTime()).Seconds())
+			metrics.MintHistogram.Observe(timeElapsed)
 			metrics.MintConfirmedCounter.Inc()
 		case fftypes.TokenTransferTypeTransfer:
-			metrics.TransferHistogram.Observe(time.Since(em.assets.GetStartTime()).Seconds())
+			metrics.TransferHistogram.Observe(timeElapsed)
 			metrics.TransferConfirmedCounter.Inc()
 		case fftypes.TokenTransferTypeBurn:
-			metrics.BurnHistogram.Observe(time.Since(em.assets.GetStartTime()).Seconds())
+			metrics.BurnHistogram.Observe(timeElapsed)
 			metrics.BurnConfirmedCounter.Inc()
 		default:
 			break

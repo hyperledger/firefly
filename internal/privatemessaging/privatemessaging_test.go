@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -37,10 +37,12 @@ import (
 )
 
 func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
+	metrics.Registry()
 	config.Reset()
 	config.Set(config.NodeName, "node1")
 	config.Set(config.GroupCacheTTL, "1m")
 	config.Set(config.GroupCacheSize, "1m")
+	config.Set(config.MetricsEnabled, true)
 
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
@@ -171,15 +173,6 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
-}
-
-func TestGetStartTime(t *testing.T) {
-	am, cancel := newTestPrivateMessaging(t)
-	now := time.Now()
-	am.startTime = now
-	defer cancel()
-
-	assert.Equal(t, am.GetStartTime(), now)
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {

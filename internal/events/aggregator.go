@@ -23,13 +23,11 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
-	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -40,7 +38,6 @@ const (
 )
 
 type aggregator struct {
-	bm              broadcast.Manager
 	ctx             context.Context
 	database        database.Plugin
 	definitions     definitions.DefinitionHandlers
@@ -48,23 +45,20 @@ type aggregator struct {
 	eventPoller     *eventPoller
 	newPins         chan int64
 	offchainBatches chan *fftypes.UUID
-	pm              privatemessaging.Manager
 	queuedRewinds   chan *fftypes.UUID
 	retry           *retry.Retry
 	metricsEnabled  bool
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, sh definitions.DefinitionHandlers, dm data.Manager, en *eventNotifier, bm broadcast.Manager, pm privatemessaging.Manager) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, sh definitions.DefinitionHandlers, dm data.Manager, en *eventNotifier) *aggregator {
 	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
-		bm:              bm,
 		ctx:             log.WithLogField(ctx, "role", "aggregator"),
 		database:        di,
 		definitions:     sh,
 		data:            dm,
 		newPins:         make(chan int64),
 		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
-		pm:              pm,
 		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
 		metricsEnabled:  config.GetBool(config.MetricsEnabled),
 	}
@@ -572,16 +566,18 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 	// Metrics for broadcast/private message
 	if ag.metricsEnabled {
+		timeElapsed := time.Since(metrics.TimeMap[msg.Header.ID.String()]).Seconds()
+		delete(metrics.TimeMap, msg.Header.ID.String())
 		switch msg.Header.Type {
 		case fftypes.MessageTypeBroadcast:
-			metrics.BroadcastHistogram.Observe(time.Since(ag.bm.GetStartTime()).Seconds())
+			metrics.BroadcastHistogram.Observe(timeElapsed)
 			if eventType == fftypes.EventTypeMessageConfirmed {
 				metrics.BroadcastConfirmedCounter.Inc()
 			} else if eventType == fftypes.EventTypeMessageRejected {
 				metrics.BroadcastRejectedCounter.Inc()
 			}
 		case fftypes.MessageTypePrivate:
-			metrics.PrivateMsgHistogram.Observe(time.Since(ag.pm.GetStartTime()).Seconds())
+			metrics.PrivateMsgHistogram.Observe(timeElapsed)
 			if eventType == fftypes.EventTypeMessageConfirmed {
 				metrics.PrivateMsgConfirmedCounter.Inc()
 			} else if eventType == fftypes.EventTypeMessageRejected {

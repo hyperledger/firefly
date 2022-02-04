@@ -124,7 +124,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publ
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,
 		newPinNotifier:       newPinNotifier,
-		aggregator:           newAggregator(ctx, di, dh, dm, newPinNotifier, bm, pm),
+		aggregator:           newAggregator(ctx, di, dh, dm, newPinNotifier),
 		metricsEnabled:       config.GetBool(config.MetricsEnabled),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)

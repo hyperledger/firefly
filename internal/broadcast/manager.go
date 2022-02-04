@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -49,7 +48,6 @@ type Manager interface {
 	BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error)
 	Start() error
 	WaitStop()
-	GetStartTime() time.Time
 }
 
 type broadcastManager struct {
@@ -65,11 +63,6 @@ type broadcastManager struct {
 	batchpin              batchpin.Submitter
 	maxBatchPayloadLength int64
 	metricsEnabled        bool
-	startTime             time.Time
-}
-
-func (bm *broadcastManager) GetStartTime() time.Time {
-	return bm.startTime
 }
 
 func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {

@@ -23,9 +23,9 @@ import (
 	"io"
 	"io/ioutil"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -43,6 +43,8 @@ import (
 
 func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	config.Reset()
+	metrics.Registry()
+	config.Set(config.MetricsEnabled, true)
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
@@ -71,15 +73,6 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
-}
-
-func TestGetStartTime(t *testing.T) {
-	am, cancel := newTestBroadcast(t)
-	now := time.Now()
-	am.startTime = now
-	defer cancel()
-
-	assert.Equal(t, am.GetStartTime(), now)
 }
 
 func TestInitFail(t *testing.T) {
