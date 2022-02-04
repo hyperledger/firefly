@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,21 +25,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
-var plugins = []publicstorage.Plugin{
-	&ipfs.IPFS{},
-}
-
-var pluginsByName = make(map[string]publicstorage.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
+var pluginsByName = map[string]func() publicstorage.Plugin{
+	(*ipfs.IPFS)(nil).Name(): func() publicstorage.Plugin { return &ipfs.IPFS{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
+	for name, plugin := range pluginsByName {
+		plugin().InitPrefix(prefix.SubPrefix(name))
 	}
 }
 
@@ -48,5 +40,5 @@ func GetPlugin(ctx context.Context, pluginType string) (publicstorage.Plugin, er
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownPublicStoragePlugin, pluginType)
 	}
-	return plugin, nil
+	return plugin(), nil
 }

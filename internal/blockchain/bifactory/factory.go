@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,22 +26,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 )
 
-var plugins = []blockchain.Plugin{
-	&ethereum.Ethereum{},
-	&fabric.Fabric{},
-}
-
-var pluginsByName = make(map[string]blockchain.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
+var pluginsByName = map[string]func() blockchain.Plugin{
+	(*ethereum.Ethereum)(nil).Name(): func() blockchain.Plugin { return &ethereum.Ethereum{} },
+	(*fabric.Fabric)(nil).Name():     func() blockchain.Plugin { return &fabric.Fabric{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
+	for name, plugin := range pluginsByName {
+		plugin().InitPrefix(prefix.SubPrefix(name))
 	}
 }
 
@@ -50,5 +42,5 @@ func GetPlugin(ctx context.Context, pluginType string) (blockchain.Plugin, error
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownBlockchainPlugin, pluginType)
 	}
-	return plugin, nil
+	return plugin(), nil
 }

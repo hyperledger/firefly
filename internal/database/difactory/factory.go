@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,17 +24,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var pluginsByName = make(map[string]database.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
-}
-
 func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
+	for name, plugin := range pluginsByName {
+		plugin().InitPrefix(prefix.SubPrefix(name))
 	}
 }
 
@@ -43,5 +35,5 @@ func GetPlugin(ctx context.Context, pluginType string) (database.Plugin, error) 
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
 	}
-	return plugin, nil
+	return plugin(), nil
 }
