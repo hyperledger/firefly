@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,25 +25,17 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-var plugins = []tokens.Plugin{
-	&fftokens.FFTokens{},
-}
-
-var pluginsByName = make(map[string]tokens.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
+var pluginsByName = map[string]func() tokens.Plugin{
+	(*fftokens.FFTokens)(nil).Name(): func() tokens.Plugin { return &fftokens.FFTokens{} },
 }
 
 func InitPrefix(prefix config.PrefixArray) {
 	prefix.AddKnownKey(tokens.TokensConfigConnector)
 	prefix.AddKnownKey(tokens.TokensConfigPlugin)
 	prefix.AddKnownKey(tokens.TokensConfigName)
-	for _, plugin := range plugins {
+	for _, plugin := range pluginsByName {
 		// Accept a superset of configs allowed by all plugins
-		plugin.InitPrefix(prefix)
+		plugin().InitPrefix(prefix)
 	}
 }
 
@@ -52,5 +44,5 @@ func GetPlugin(ctx context.Context, connectorName string) (tokens.Plugin, error)
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, connectorName)
 	}
-	return plugin, nil
+	return plugin(), nil
 }

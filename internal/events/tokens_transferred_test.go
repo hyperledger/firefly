@@ -148,7 +148,7 @@ func TestPersistTransferBadOp(t *testing.T) {
 	}
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"id": "bad",
+			"localId": "bad",
 		},
 		Transaction: fftypes.NewUUID(),
 	}}
@@ -179,7 +179,7 @@ func TestPersistTransferTxFail(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"id": localID.String(),
+			"localId": localID.String(),
 		},
 	}}
 
@@ -209,7 +209,7 @@ func TestPersistTransferGetTransferFail(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"id": localID.String(),
+			"localId": localID.String(),
 		},
 	}}
 
@@ -240,7 +240,7 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"id": localID.String(),
+			"localId": localID.String(),
 		},
 	}}
 
@@ -275,7 +275,7 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 	localID := fftypes.NewUUID()
 	operations := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"id": localID.String(),
+			"localId": localID.String(),
 		},
 	}}
 

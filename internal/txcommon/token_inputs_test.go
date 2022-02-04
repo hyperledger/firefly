@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -99,31 +99,57 @@ func TestAddTokenTransferInputs(t *testing.T) {
 	op := &fftypes.Operation{}
 	transfer := &fftypes.TokenTransfer{
 		LocalID: fftypes.NewUUID(),
+		Type:    fftypes.TokenTransferTypeTransfer,
+		Amount:  *fftypes.NewFFBigInt(1),
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenTransfer,
+			ID:   fftypes.NewUUID(),
+		},
 	}
 
 	AddTokenTransferInputs(op, transfer)
-	assert.Equal(t, transfer.LocalID.String(), op.Input.GetString("id"))
+	assert.Equal(t, fftypes.JSONObject{
+		"amount":  "1",
+		"localId": transfer.LocalID.String(),
+		"tx": map[string]interface{}{
+			"id":   transfer.TX.ID.String(),
+			"type": "token_transfer",
+		},
+		"type": "transfer",
+	}, op.Input)
 }
 
 func TestRetrieveTokenTransferInputs(t *testing.T) {
 	id := fftypes.NewUUID()
 	op := &fftypes.Operation{
 		Input: fftypes.JSONObject{
-			"id": id.String(),
+			"amount":  "1",
+			"localId": id.String(),
 		},
 	}
-	transfer := &fftypes.TokenTransfer{}
+	transfer := &fftypes.TokenTransfer{Amount: *fftypes.NewFFBigInt(2)}
 
 	err := RetrieveTokenTransferInputs(context.Background(), op, transfer)
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *transfer.LocalID)
+	assert.Equal(t, int64(2), transfer.Amount.Int().Int64())
 }
 
 func TestRetrieveTokenTransferInputsBadID(t *testing.T) {
 	op := &fftypes.Operation{
 		Input: fftypes.JSONObject{
-			"id": "bad",
+			"localId": "bad",
 		},
+	}
+	transfer := &fftypes.TokenTransfer{}
+
+	err := RetrieveTokenTransferInputs(context.Background(), op, transfer)
+	assert.Regexp(t, "FF10151", err)
+}
+
+func TestRetrieveTokenTransferInputsMissingID(t *testing.T) {
+	op := &fftypes.Operation{
+		Input: fftypes.JSONObject{},
 	}
 	transfer := &fftypes.TokenTransfer{}
 
