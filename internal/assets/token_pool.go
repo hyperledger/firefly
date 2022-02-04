@@ -98,7 +98,18 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 	if err != nil {
 		return err
 	}
-	return plugin.ActivateTokenPool(ctx, nil, pool, event)
+
+	op := fftypes.NewOperation(
+		plugin,
+		pool.Namespace,
+		pool.TX.ID,
+		"",
+		fftypes.OpTypeTokenActivatePool)
+	if err := am.database.InsertOperation(ctx, op); err != nil {
+		return err
+	}
+
+	return plugin.ActivateTokenPool(ctx, op.ID, pool, event)
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {

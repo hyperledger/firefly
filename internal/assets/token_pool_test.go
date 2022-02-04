@@ -323,8 +323,12 @@ func TestActivateTokenPool(t *testing.T) {
 	ev := &fftypes.BlockchainEvent{}
 
 	mdm := am.data.(*datamocks.Manager)
+	mdi := am.database.(*databasemocks.Plugin)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Type == fftypes.OpTypeTokenActivatePool
+	})).Return(nil)
 	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, ev)
@@ -346,6 +350,27 @@ func TestActivateTokenPoolBadConnector(t *testing.T) {
 
 	err := am.ActivateTokenPool(context.Background(), pool, ev)
 	assert.Regexp(t, "FF10272", err)
+}
+
+func TestActivateTokenPoolOpFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Namespace: "ns1",
+		Connector: "magic-tokens",
+	}
+	ev := &fftypes.BlockchainEvent{}
+
+	mdm := am.data.(*datamocks.Manager)
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Type == fftypes.OpTypeTokenActivatePool
+	})).Return(fmt.Errorf("pop"))
+
+	err := am.ActivateTokenPool(context.Background(), pool, ev)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestGetTokenPool(t *testing.T) {

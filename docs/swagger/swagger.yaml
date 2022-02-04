@@ -4666,7 +4666,7 @@ paths:
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
-                    - token_announce_pool
+                    - token_activate_pool
                     - token_transfer
                     type: string
                   updated: {}
@@ -5428,7 +5428,7 @@ paths:
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
-                    - token_announce_pool
+                    - token_activate_pool
                     - token_transfer
                     type: string
                   updated: {}
@@ -5494,7 +5494,7 @@ paths:
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
-                    - token_announce_pool
+                    - token_activate_pool
                     - token_transfer
                     type: string
                   updated: {}
@@ -8068,7 +8068,7 @@ paths:
                       - dataexchange_batch_send
                       - dataexchange_blob_send
                       - token_create_pool
-                      - token_announce_pool
+                      - token_activate_pool
                       - token_transfer
                       type: string
                     updated: {}

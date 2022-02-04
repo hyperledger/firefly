@@ -34,8 +34,8 @@ var (
 	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
 	// OpTypeTokenCreatePool is a token pool creation
 	OpTypeTokenCreatePool OpType = ffEnum("optype", "token_create_pool")
-	// OpTypeTokenAnnouncePool is a broadcast of token pool info
-	OpTypeTokenAnnouncePool OpType = ffEnum("optype", "token_announce_pool")
+	// OpTypeTokenActivatePool is a token pool activation
+	OpTypeTokenActivatePool OpType = ffEnum("optype", "token_activate_pool")
 	// OpTypeTokenTransfer is a token transfer
 	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
 )
