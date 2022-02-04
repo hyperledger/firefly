@@ -20,17 +20,24 @@ type Plugin struct {
 }
 
 // ActivateTokenPool provides a mock function with given fields: ctx, opID, pool, event
-func (_m *Plugin) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
+func (_m *Plugin) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) (bool, error) {
 	ret := _m.Called(ctx, opID, pool, event)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.BlockchainEvent) error); ok {
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.BlockchainEvent) bool); ok {
 		r0 = rf(ctx, opID, pool, event)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.BlockchainEvent) error); ok {
+		r1 = rf(ctx, opID, pool, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // BurnTokens provides a mock function with given fields: ctx, opID, poolProtocolID, burn
@@ -64,17 +71,24 @@ func (_m *Plugin) Capabilities() *tokens.Capabilities {
 }
 
 // CreateTokenPool provides a mock function with given fields: ctx, opID, pool
-func (_m *Plugin) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) error {
+func (_m *Plugin) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (bool, error) {
 	ret := _m.Called(ctx, opID, pool)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) error); ok {
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) bool); ok {
 		r0 = rf(ctx, opID, pool)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) error); ok {
+		r1 = rf(ctx, opID, pool)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Init provides a mock function with given fields: ctx, name, prefix, callbacks

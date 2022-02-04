@@ -61,7 +61,7 @@ func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 
@@ -121,7 +121,7 @@ func TestCreateTokenPoolMissingNamespace(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil).Times(2)
-	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return(nil).Times(1)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return(false, nil).Times(1)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil).Times(1)
 	msa.On("WaitForTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
@@ -209,7 +209,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -235,7 +235,7 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestCreateTokenPoolOperationFail(t *testing.T) {
+func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -257,6 +257,31 @@ func TestCreateTokenPoolOperationFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
+func TestCreateTokenPoolOpUpdateFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Connector: "magic-tokens",
+		Name:      "testpool",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
+	assert.Regexp(t, "pop", err)
+}
+
 func TestCreateTokenPoolSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -273,7 +298,7 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 
@@ -298,7 +323,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil).Times(2)
-	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return(nil).Times(1)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return(false, nil).Times(1)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil).Times(1)
 	msa.On("WaitForTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
@@ -329,7 +354,7 @@ func TestActivateTokenPool(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(nil)
-	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(nil)
+	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(false, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, ev)
 	assert.NoError(t, err)
@@ -352,7 +377,7 @@ func TestActivateTokenPoolBadConnector(t *testing.T) {
 	assert.Regexp(t, "FF10272", err)
 }
 
-func TestActivateTokenPoolOpFail(t *testing.T) {
+func TestActivateTokenPoolOpInsertFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -368,6 +393,53 @@ func TestActivateTokenPoolOpFail(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(fmt.Errorf("pop"))
+
+	err := am.ActivateTokenPool(context.Background(), pool, ev)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestActivateTokenPoolFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Namespace: "ns1",
+		Connector: "magic-tokens",
+	}
+	ev := &fftypes.BlockchainEvent{}
+
+	mdm := am.data.(*datamocks.Manager)
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Type == fftypes.OpTypeTokenActivatePool
+	})).Return(nil)
+	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(false, fmt.Errorf("pop"))
+
+	err := am.ActivateTokenPool(context.Background(), pool, ev)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestActivateTokenPoolOpUpdateFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Namespace: "ns1",
+		Connector: "magic-tokens",
+	}
+	ev := &fftypes.BlockchainEvent{}
+
+	mdm := am.data.(*datamocks.Manager)
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.Type == fftypes.OpTypeTokenActivatePool
+	})).Return(nil)
+	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(true, nil)
+	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool, ev)
 	assert.EqualError(t, err, "pop")
