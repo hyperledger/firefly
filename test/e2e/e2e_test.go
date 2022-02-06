@@ -80,9 +80,9 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftypes.MessageType, txtype fftypes.TransactionType, count, idx int) *fftypes.Data {
+func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType fftypes.MessageType, txtype fftypes.TransactionType, count int) (data []*fftypes.Data) {
 	var group *fftypes.Bytes32
-	messages := GetMessages(ts.t, client, ts.startTime, msgType, 200)
+	messages := GetMessages(ts.t, client, ts.startTime, msgType, topic, 200)
 	for i, message := range messages {
 		ts.t.Logf("Message %d: %+v", i, *message)
 		if group != nil {
@@ -91,36 +91,44 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 		group = message.Header.Group
 	}
 	assert.Equal(ts.t, count, len(messages))
-	assert.Equal(ts.t, txtype, (messages)[idx].Header.TxType)
-	assert.Equal(ts.t, "default", (messages)[idx].Header.Namespace)
-	assert.Equal(ts.t, fftypes.FFStringArray{"default"}, (messages)[idx].Header.Topics)
 
-	data := GetData(ts.t, client, ts.startTime, 200)
-	var msgData *fftypes.Data
-	for i, d := range data {
-		ts.t.Logf("Data %d: %+v", i, *d)
-		if *d.ID == *messages[idx].Data[0].ID {
-			msgData = d
+	var returnData []*fftypes.Data
+	for idx := 0; idx < len(messages); idx++ {
+		assert.Equal(ts.t, txtype, (messages)[idx].Header.TxType)
+		assert.Equal(ts.t, fftypes.FFStringArray{topic}, (messages)[idx].Header.Topics)
+		assert.Equal(ts.t, topic, (messages)[idx].Header.Topics[0])
+
+		data := GetDataForMessage(ts.t, client, ts.startTime, (messages)[idx])
+		var msgData *fftypes.Data
+		for i, d := range data {
+			ts.t.Logf("Data %d: %+v", i, *d)
+			if *d.ID == *messages[idx].Data[0].ID {
+				msgData = d
+			}
 		}
-	}
-	assert.NotNil(ts.t, msgData, "Found data with ID '%s'", messages[idx].Data[0].ID)
-	if group == nil {
-		assert.Equal(ts.t, 1, len(data))
+		assert.NotNil(ts.t, msgData, "Found data with ID '%s'", messages[idx].Data[0].ID)
+		if group == nil {
+			assert.Equal(ts.t, 1, len(data))
+		}
+
+		returnData = append(returnData, msgData)
+
+		assert.Equal(ts.t, "default", msgData.Namespace)
+		expectedHash, err := msgData.CalcHash(context.Background())
+		assert.NoError(ts.t, err)
+		assert.Equal(ts.t, *expectedHash, *msgData.Hash)
+
+		if msgData.Blob != nil {
+			blob := GetBlob(ts.t, client, msgData, 200)
+			assert.NotNil(ts.t, blob)
+			var hash fftypes.Bytes32 = sha256.Sum256(blob)
+			assert.Equal(ts.t, *msgData.Blob.Hash, hash)
+		}
+
 	}
 
-	assert.Equal(ts.t, "default", msgData.Namespace)
-	expectedHash, err := msgData.CalcHash(context.Background())
-	assert.NoError(ts.t, err)
-	assert.Equal(ts.t, *expectedHash, *msgData.Hash)
-
-	if msgData.Blob != nil {
-		blob := GetBlob(ts.t, client, msgData, 200)
-		assert.NotNil(ts.t, blob)
-		var hash fftypes.Bytes32 = sha256.Sum256(blob)
-		assert.Equal(ts.t, *msgData.Blob.Hash, hash)
-	}
-
-	return msgData
+	// Flip data (returned in most recent order) into delivery order
+	return returnData
 }
 
 func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
@@ -129,6 +137,10 @@ func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes
 		assert.Equal(t, "erc1155", account.Connector)
 		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}
+}
+
+func pickTopic(i int, options []string) string {
+	return options[i%len(options)]
 }
 
 func readStackFile(t *testing.T) *Stack {

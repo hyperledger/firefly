@@ -186,8 +186,8 @@ type iPinCollection interface {
 	// GetPins - Get pins
 	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, res *FilterResult, err error)
 
-	// SetPinDispatched - Set the dispatched flag to true on the specified pins
-	SetPinDispatched(ctx context.Context, sequence int64) (err error)
+	// UpdatePins - Updates pins
+	UpdatePins(ctx context.Context, filter Filter, update Update) (err error)
 
 	// DeletePin - Delete a pin
 	DeletePin(ctx context.Context, sequence int64) (err error)

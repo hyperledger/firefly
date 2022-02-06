@@ -117,7 +117,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].MessageHash)
+	data := GetDataByMessageHash(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].MessageHash)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"payment for data"`, data[0].Value.String())
 	validateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
@@ -254,7 +254,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
-	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transferOut.MessageHash)
+	data := GetDataByMessageHash(suite.T(), suite.testState.client1, suite.testState.startTime, transferOut.MessageHash)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"ownership change"`, data[0].Value.String())
 	validateAccountBalances(suite.T(), suite.testState.client1, poolID, "1", map[string]int64{
