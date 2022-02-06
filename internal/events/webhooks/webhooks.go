@@ -386,6 +386,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 						CID:    event.Message.Header.ID,
 						Group:  event.Message.Header.Group,
 						Type:   event.Message.Header.Type,
+						Topics: event.Message.Header.Topics,
 						Tag:    sub.Options.TransportOptions().GetString("replytag"),
 						TxType: txType,
 					},
