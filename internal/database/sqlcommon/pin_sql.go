@@ -149,12 +149,12 @@ func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, upda
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("pins"), update, msgFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update("pins"), update, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, "", query, filter, opFilterFieldMap)
+	query, err = s.filterUpdate(ctx, "", query, filter, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}

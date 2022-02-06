@@ -117,8 +117,8 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 		if len(batchIDs) > 0 {
 			fb := database.PinQueryFactory.NewFilter(ag.ctx)
 			filter := fb.And(
-				fb.Eq("dispatched", false),
 				fb.In("batch", batchIDs),
+				fb.Eq("dispatched", false),
 			).Sort("sequence").Limit(1) // only need the one oldest sequence
 			sequences, _, err := ag.database.GetPins(ag.ctx, filter)
 			if err != nil {
