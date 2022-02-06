@@ -19,7 +19,6 @@ package assets
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -132,7 +131,7 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 	}
 	if am.metricsEnabled {
 		metrics.MintSubmittedCounter.Inc()
-		metrics.TimeMap[transfer.TX.ID.String()] = time.Now()
+		metrics.AddTime(transfer.TX.ID.String())
 	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
@@ -150,7 +149,7 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 	}
 	if am.metricsEnabled {
 		metrics.BurnSubmittedCounter.Inc()
-		metrics.TimeMap[transfer.TX.ID.String()] = time.Now()
+		metrics.AddTime(transfer.TX.ID.String())
 	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
@@ -171,7 +170,7 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 	}
 	if am.metricsEnabled {
 		metrics.TransferSubmittedCounter.Inc()
-		metrics.TimeMap[transfer.TX.ID.String()] = time.Now()
+		metrics.AddTime(transfer.TX.ID.String())
 	}
 	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {

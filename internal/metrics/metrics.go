@@ -17,6 +17,7 @@
 package metrics
 
 import (
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,7 +29,8 @@ var registry *prometheus.Registry
 var adminInstrumentation *muxprom.Instrumentation
 var restInstrumentation *muxprom.Instrumentation
 var BatchPinCounter prometheus.Counter
-var TimeMap = make(map[string]time.Time)
+var timeMap = make(map[string]time.Time)
+var mutex = &sync.Mutex{}
 
 // MetricsBatchPin is the prometheus metric for total number of batch pins submitted
 var MetricsBatchPin = "ff_batchpin_total"
@@ -98,4 +100,20 @@ func Clear() {
 	registry = nil
 	adminInstrumentation = nil
 	restInstrumentation = nil
+}
+
+func AddTime(id string) {
+	mutex.Lock()
+	timeMap[id] = time.Now()
+	mutex.Unlock()
+}
+
+func GetTime(id string) time.Time {
+	return timeMap[id]
+}
+
+func DeleteTime(id string) {
+	mutex.Lock()
+	delete(timeMap, id)
+	mutex.Unlock()
 }

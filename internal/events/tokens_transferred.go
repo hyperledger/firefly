@@ -114,8 +114,8 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 
 	if em.metricsEnabled && countMetric {
-		timeElapsed := time.Since(metrics.TimeMap[transfer.TX.ID.String()]).Seconds()
-		delete(metrics.TimeMap, transfer.TX.ID.String())
+		timeElapsed := time.Since(metrics.GetTime(transfer.TX.ID.String())).Seconds()
+		metrics.DeleteTime(transfer.TX.ID.String())
 		switch transfer.Type {
 		case fftypes.TokenTransferTypeMint:
 			metrics.MintHistogram.Observe(timeElapsed)

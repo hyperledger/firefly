@@ -19,7 +19,6 @@ package broadcast
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -41,7 +40,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	if bm.metricsEnabled {
 		metrics.BroadcastSubmittedCounter.Inc()
-		metrics.TimeMap[in.Header.ID.String()] = time.Now()
+		metrics.AddTime(in.Header.ID.String())
 	}
 	broadcast := bm.NewBroadcast(ns, in)
 	if waitConfirm {

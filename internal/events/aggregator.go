@@ -388,10 +388,10 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		return nil
 	})
 
-	// Metrics for broadcast/private message
+	// Increment confirmer/rejected metrics for broadcast or private message
 	if ag.metricsEnabled {
-		timeElapsed := time.Since(metrics.TimeMap[msg.Header.ID.String()]).Seconds()
-		delete(metrics.TimeMap, msg.Header.ID.String())
+		timeElapsed := time.Since(metrics.GetTime(msg.Header.ID.String())).Seconds()
+		metrics.DeleteTime(msg.Header.ID.String())
 		switch msg.Header.Type {
 		case fftypes.MessageTypeBroadcast:
 			metrics.BroadcastHistogram.Observe(timeElapsed)
