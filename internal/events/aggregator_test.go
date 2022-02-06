@@ -46,7 +46,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	// Generate some pin data
 	member1org := "org1"
@@ -60,9 +60,10 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	h.Write([]byte(topic))
 	h.Write((*groupID)[:])
 	contextUnmasked := fftypes.HashResult(h)
-	member1NonceZero := ag.calcHash(topic, groupID, member1org, 0)
-	member2NonceZero := ag.calcHash(topic, groupID, member2org, 0)
-	member2NonceOne := ag.calcHash(topic, groupID, member2org, 1)
+	initNPG := &nextPinGroupState{topic: topic, groupID: groupID}
+	member1NonceZero := initNPG.calcPinHash(member1org, 0)
+	member2NonceZero := initNPG.calcPinHash(member2org, 0)
+	member2NonceOne := initNPG.calcPinHash(member2org, 1)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -113,7 +114,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	mdi.On("InsertNextPin", ag.ctx, mock.MatchedBy(func(np *fftypes.NextPin) bool {
 		assert.Equal(t, *np.Context, *contextUnmasked)
 		np.Sequence = 10012
-		return *np.Hash == *member2NonceZero && np.Nonce == 0
+		return *np.Hash == *member2NonceOne && np.Nonce == 1
 	})).Return(nil).Once()
 	// Validate the message is ok
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -122,21 +123,8 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
 	})).Return(nil)
-	// Update member2 to nonce 1
-	mdi.On("UpdateNextPin", ag.ctx, mock.MatchedBy(func(seq int64) bool {
-		return seq == 10012
-	}), mock.MatchedBy(func(update database.Update) bool {
-		ui, _ := update.Finalize()
-		assert.Equal(t, "nonce", ui.SetOperations[0].Field)
-		v, _ := ui.SetOperations[0].Value.Value()
-		assert.Equal(t, int64(1), v.(int64))
-		assert.Equal(t, "hash", ui.SetOperations[1].Field)
-		v, _ = ui.SetOperations[1].Value.Value()
-		assert.Equal(t, member2NonceOne.String(), v)
-		return true
-	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
 		update, err := u.Finalize()
@@ -167,10 +155,10 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 			Index:      0,
 			Dispatched: false,
 		},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
-	err = ba.RunFinalize(ag.ctx)
+	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -194,9 +182,10 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	h.Write([]byte(topic))
 	h.Write((*groupID)[:])
 	contextUnmasked := fftypes.HashResult(h)
-	member1Nonce100 := ag.calcHash(topic, groupID, member1org, 100)
-	member2Nonce500 := ag.calcHash(topic, groupID, member2org, 500)
-	member2Nonce501 := ag.calcHash(topic, groupID, member2org, 501)
+	initNPG := &nextPinGroupState{topic: topic, groupID: groupID}
+	member1Nonce100 := initNPG.calcPinHash(member1org, 100)
+	member2Nonce500 := initNPG.calcPinHash(member2org, 500)
+	member2Nonce501 := initNPG.calcPinHash(member2org, 501)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -255,13 +244,13 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 		return true
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	_, err := ag.processPinsDBGroup([]fftypes.LocallySequenced{
+	_, err := ag.processPinsEventsHandler([]fftypes.LocallySequenced{
 		&fftypes.Pin{
 			Sequence:   10001,
 			Masked:     true,
@@ -281,7 +270,7 @@ func TestAggregationBroadcast(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	// Generate some pin data
 	topic := "some-topic"
@@ -327,7 +316,7 @@ func TestAggregationBroadcast(t *testing.T) {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
-	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
+	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
@@ -341,10 +330,10 @@ func TestAggregationBroadcast(t *testing.T) {
 			Index:      0,
 			Dispatched: false,
 		},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
-	err = ba.RunFinalize(ag.ctx)
+	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -381,7 +370,7 @@ func TestProcessPinsDBGroupFail(t *testing.T) {
 	}
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := ag.processPinsDBGroup([]fftypes.LocallySequenced{
+	_, err := ag.processPinsEventsHandler([]fftypes.LocallySequenced{
 		&fftypes.Pin{
 			Batch: fftypes.NewUUID(),
 		},
@@ -406,7 +395,7 @@ func TestGetPins(t *testing.T) {
 func TestProcessPinsMissingBatch(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, nil)
@@ -414,7 +403,7 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
 }
@@ -422,7 +411,7 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 func TestProcessPinsMissingNoMsg(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(&fftypes.Batch{
@@ -437,7 +426,7 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 25},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 
@@ -446,7 +435,7 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 func TestProcessPinsBadMsgHeader(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(&fftypes.Batch{
@@ -464,7 +453,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 0},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 
@@ -473,7 +462,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 func TestProcessSkipDupMsg(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	batchID := fftypes.NewUUID()
 	mdi := ag.database.(*databasemocks.Plugin)
@@ -496,7 +485,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
 		{Sequence: 12345, Batch: batchID, Index: 1, Hash: fftypes.NewRandB32()},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 
@@ -505,7 +494,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 func TestProcessMsgFailGetPins(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	batchID := fftypes.NewUUID()
 	mdi := ag.database.(*databasemocks.Plugin)
@@ -524,7 +513,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
-	}, ba)
+	}, bs)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
 }
@@ -533,7 +522,7 @@ func TestProcessMsgFailMissingGroup(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{}, nil)
+	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.Message{}, nil)
 	assert.NoError(t, err)
 
 }
@@ -542,14 +531,14 @@ func TestProcessMsgFailBadPin(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
+	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{"!Wrong"},
-	}, nil)
+	}, newBatchState(ag))
 	assert.NoError(t, err)
 
 }
@@ -561,14 +550,14 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
+	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
-	}, nil)
+	}, newBatchState(ag))
 	assert.EqualError(t, err, "pop")
 
 }
@@ -582,13 +571,13 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
 
-	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, false, 12345, &fftypes.Message{
+	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, &fftypes.Pin{Sequence: 12345}, 10, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
-	}, nil)
+	}, newBatchState(ag))
 	assert.EqualError(t, err, "pop")
 
 }
@@ -596,7 +585,7 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 func TestProcessMsgFailPinUpdate(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 	pin := fftypes.NewRandB32()
 
 	mdi := ag.database.(*databasemocks.Plugin)
@@ -610,17 +599,17 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
+	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{pin.String()},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
-	err = ba.RunFinalize(ag.ctx)
+	err = bs.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -635,7 +624,8 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 		{Context: fftypes.NewRandB32(), Hash: pin},
 	}, nil, nil)
 
-	_, err := ag.checkMaskedContextReady(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	_, err := bs.CheckMaskedContextReady(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
@@ -656,7 +646,8 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
@@ -677,7 +668,8 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
 
-	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
@@ -696,7 +688,8 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	zeroHash := ag.calcHash("topic1", groupID, "author2", 0)
+	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
+	zeroHash := initNPG.calcPinHash("author2", 0)
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
@@ -706,7 +699,8 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 		},
 	}, nil)
 
-	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
@@ -734,7 +728,8 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 		},
 	}, nil)
 
-	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
@@ -753,7 +748,8 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
+	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
+	zeroHash := initNPG.calcPinHash("author1", 0)
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	mdi := ag.database.(*databasemocks.Plugin)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
@@ -765,7 +761,8 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
@@ -784,7 +781,8 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
+	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
+	zeroHash := initNPG.calcPinHash("author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
@@ -798,7 +796,8 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 		{Sequence: 12345},
 	}, nil, nil)
 
-	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	np, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
@@ -818,7 +817,8 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
+	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
+	zeroHash := initNPG.calcPinHash("author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
@@ -831,7 +831,8 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 	mdi.On("InsertNextPin", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+	bs := newBatchState(ag)
+	np, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
@@ -841,7 +842,9 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
-	assert.Nil(t, np)
+	assert.NoError(t, err)
+	assert.NotNil(t, np)
+	err = bs.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -989,7 +992,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 func TestDefinitionBroadcastActionReject(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionReject, &definitions.DefinitionBatchActions{}, nil)
@@ -1026,7 +1029,7 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
 }
@@ -1082,7 +1085,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -1093,10 +1096,10 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
-	err = ba.RunFinalize(ag.ctx)
+	err = bs.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1104,7 +1107,7 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -1118,7 +1121,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.MessageTypeGroupInit,
 		},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
 }
@@ -1126,7 +1129,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ba := &batchActions{}
+	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -1136,10 +1139,10 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, ba)
+	}, bs)
 	assert.NoError(t, err)
 
-	err = ba.RunFinalize(ag.ctx)
+	err = bs.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1343,46 +1346,44 @@ func TestBatchActions(t *testing.T) {
 	prefinalizeCalled := false
 	finalizeCalled := false
 
-	ba := &batchActions{
-		PreFinalize: make([]func(ctx context.Context) error, 0),
-		Finalize:    make([]func(ctx context.Context) error, 0),
-	}
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
 
-	ba.AddPreFinalize(func(ctx context.Context) error {
+	bs.AddPreFinalize(func(ctx context.Context) error {
 		prefinalizeCalled = true
 		return nil
 	})
-	ba.AddFinalize(func(ctx context.Context) error {
+	bs.AddFinalize(func(ctx context.Context) error {
 		finalizeCalled = true
 		return nil
 	})
 
-	err := ba.RunPreFinalize(context.Background())
+	err := bs.RunPreFinalize(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, prefinalizeCalled)
 
-	err = ba.RunFinalize(context.Background())
+	err = bs.RunFinalize(context.Background())
 	assert.NoError(t, err)
 	assert.True(t, finalizeCalled)
 }
 
 func TestBatchActionsError(t *testing.T) {
-	ba := &batchActions{
-		PreFinalize: make([]func(ctx context.Context) error, 0),
-		Finalize:    make([]func(ctx context.Context) error, 0),
-	}
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
 
-	ba.AddPreFinalize(func(ctx context.Context) error {
+	bs.AddPreFinalize(func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
-	ba.AddFinalize(func(ctx context.Context) error {
+	bs.AddFinalize(func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
 
-	err := ba.RunPreFinalize(context.Background())
+	err := bs.RunPreFinalize(context.Background())
 	assert.EqualError(t, err, "pop")
 
-	err = ba.RunFinalize(context.Background())
+	err = bs.RunFinalize(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1396,7 +1397,7 @@ func TestProcessWithBatchActionsPreFinalizeError(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
 	}
 
-	err := ag.processWithBatchActions(func(ctx context.Context, actions *batchActions) error {
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
 		actions.AddPreFinalize(func(ctx context.Context) error { return fmt.Errorf("pop") })
 		return nil
 	})
@@ -1413,7 +1414,7 @@ func TestProcessWithBatchActionsSuccess(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
 	}
 
-	err := ag.processWithBatchActions(func(ctx context.Context, actions *batchActions) error {
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
 		actions.AddPreFinalize(func(ctx context.Context) error { return nil })
 		actions.AddFinalize(func(ctx context.Context) error { return nil })
 		return nil
