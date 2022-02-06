@@ -1034,6 +1034,186 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 
 }
 
+func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil).Once()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+
+	msg1 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypeDefinition,
+			ID:        fftypes.NewUUID(),
+			Namespace: "any",
+			Topics:    fftypes.FFStringArray{"topic1"},
+		},
+	}
+	msg2 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypeDefinition,
+			ID:        fftypes.NewUUID(),
+			Namespace: "any",
+			Topics:    fftypes.FFStringArray{"topic1"},
+		},
+	}
+
+	batch := &fftypes.Batch{
+		ID: fftypes.NewUUID(),
+		Payload: fftypes.BatchPayload{
+			Messages: []*fftypes.Message{msg1, msg2},
+		},
+	}
+
+	// First message should dispatch
+	err := ag.processMessage(ag.ctx, batch, &fftypes.Pin{Sequence: 12345}, 0, msg1, bs)
+	assert.NoError(t, err)
+
+	// Second message should not (mocks have Once limit on GetMessageData to confirm)
+	err = ag.processMessage(ag.ctx, batch, &fftypes.Pin{Sequence: 12346}, 0, msg1, bs)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil).Once()
+
+	groupID := fftypes.NewRandB32()
+	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
+	member1NonceOne := initNPG.calcPinHash("org1", 1)
+	member1NonceTwo := initNPG.calcPinHash("org1", 2)
+	h := sha256.New()
+	h.Write([]byte("topic1"))
+	context := fftypes.HashResult(h)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
+		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: "org1", Hash: member1NonceOne},
+	}, nil, nil)
+
+	msg1 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypePrivate,
+			ID:        fftypes.NewUUID(),
+			Namespace: "any",
+			Topics:    fftypes.FFStringArray{"topic1"},
+			Group:     groupID,
+			Identity: fftypes.Identity{
+				Author: "org1",
+			},
+		},
+		Pins: fftypes.FFStringArray{member1NonceOne.String()},
+	}
+	msg2 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypePrivate,
+			ID:        fftypes.NewUUID(),
+			Namespace: "any",
+			Topics:    fftypes.FFStringArray{"topic1"},
+			Group:     groupID,
+			Identity: fftypes.Identity{
+				Author: "org1",
+			},
+		},
+		Pins: fftypes.FFStringArray{member1NonceTwo.String()},
+	}
+
+	batch := &fftypes.Batch{
+		ID: fftypes.NewUUID(),
+		Payload: fftypes.BatchPayload{
+			Messages: []*fftypes.Message{msg1, msg2},
+		},
+	}
+
+	// First message should dispatch
+	err := ag.processMessage(ag.ctx, batch, &fftypes.Pin{Masked: true, Sequence: 12345}, 0, msg1, bs)
+	assert.NoError(t, err)
+
+	// Second message should not (mocks have Once limit on GetMessageData to confirm)
+	err = ag.processMessage(ag.ctx, batch, &fftypes.Pin{Masked: true, Sequence: 12346}, 0, msg2, bs)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestDispatchPrivateNextPinIncremented(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil).Twice()
+
+	groupID := fftypes.NewRandB32()
+	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
+	member1NonceOne := initNPG.calcPinHash("org1", 1)
+	member1NonceTwo := initNPG.calcPinHash("org1", 2)
+	h := sha256.New()
+	h.Write([]byte("topic1"))
+	context := fftypes.HashResult(h)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
+		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: "org1", Hash: member1NonceOne},
+	}, nil, nil)
+
+	msg1 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypePrivate,
+			ID:        fftypes.NewUUID(),
+			Namespace: "any",
+			Topics:    fftypes.FFStringArray{"topic1"},
+			Group:     groupID,
+			Identity: fftypes.Identity{
+				Author: "org1",
+			},
+		},
+		Pins: fftypes.FFStringArray{member1NonceOne.String()},
+	}
+	msg2 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypePrivate,
+			ID:        fftypes.NewUUID(),
+			Namespace: "any",
+			Topics:    fftypes.FFStringArray{"topic1"},
+			Group:     groupID,
+			Identity: fftypes.Identity{
+				Author: "org1",
+			},
+		},
+		Pins: fftypes.FFStringArray{member1NonceTwo.String()},
+	}
+
+	batch := &fftypes.Batch{
+		ID: fftypes.NewUUID(),
+		Payload: fftypes.BatchPayload{
+			Messages: []*fftypes.Message{msg1, msg2},
+		},
+	}
+
+	// First message should dispatch
+	err := ag.processMessage(ag.ctx, batch, &fftypes.Pin{Masked: true, Sequence: 12345}, 0, msg1, bs)
+	assert.NoError(t, err)
+
+	// Second message should dispatch too (Twice on GetMessageData)
+	err = ag.processMessage(ag.ctx, batch, &fftypes.Pin{Masked: true, Sequence: 12346}, 0, msg2, bs)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
 func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
