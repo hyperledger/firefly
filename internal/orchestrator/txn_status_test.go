@@ -539,7 +539,7 @@ func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 		{
 			Status:  fftypes.OpStatusSucceeded,
 			ID:      fftypes.NewUUID(),
-			Type:    fftypes.OpTypeContractInvoke,
+			Type:    fftypes.OpTypeBlockchainInvoke,
 			Updated: fftypes.UnixTime(0),
 			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
 		},
@@ -558,7 +558,7 @@ func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 		"details": [
 			{
 				"type": "Operation",
-				"subtype": "contract_invoke",
+				"subtype": "blockchain_invoke",
 				"status": "Succeeded",
 				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",

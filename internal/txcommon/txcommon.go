@@ -102,8 +102,8 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, i
 	return true, nil
 }
 
-// AddBlockchainTX is called when we know the tranasction should exist, and we don't need any validation
-// just want to bolt an extra blockchain TXID on - if it's not there already.
+// AddBlockchainTX is called when we know the transaction should exist, and we don't need any validation
+// but just want to bolt on an extra blockchain TXID (if it's not there already).
 func (t *transactionHelper) AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error {
 
 	tx, err := t.database.GetTransactionByID(ctx, id)

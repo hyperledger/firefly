@@ -102,12 +102,14 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineFFI),
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.NoError(t, err)
 	mbi.AssertExpectations(t)
 }
@@ -128,12 +130,14 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.handleFFIBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.handleFFIBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineFFI),
 		},
 	}, []*fftypes.Data{})
 	assert.Equal(t, ActionReject, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.NoError(t, err)
 }
 
@@ -231,12 +235,14 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineContractAPI),
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+	err = ba.Finalize(context.Background())
 	assert.NoError(t, err)
 	mbi.AssertExpectations(t)
 }

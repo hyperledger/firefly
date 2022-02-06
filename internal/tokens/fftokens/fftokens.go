@@ -370,7 +370,7 @@ func (ft *FFTokens) eventLoop() {
 	}
 }
 
-func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) error {
+func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
 	data, _ := json.Marshal(tokenData{
 		TX: pool.TX.ID,
 	})
@@ -386,20 +386,20 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 		}).
 		Post("/api/v1/createpool")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return false, restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}
 	if res.StatusCode() == 200 {
 		// Handle synchronous response (202 will be handled by later websocket listener)
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		return ft.handleTokenPoolCreate(ctx, obj)
+		return true, ft.handleTokenPoolCreate(ctx, obj)
 	}
-	return nil
+	return false, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) (complete bool, err error) {
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			RequestID:   opID.String(),
@@ -408,17 +408,17 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 		}).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return false, restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}
 	if res.StatusCode() == 200 {
 		// Handle synchronous response (202 will be handled by later websocket listener)
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
+			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
-		return ft.handleTokenPoolCreate(ctx, obj)
+		return true, ft.handleTokenPoolCreate(ctx, obj)
 	}
-	return nil
+	return false, nil
 }
 
 func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error {
