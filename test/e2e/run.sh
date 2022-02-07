@@ -66,8 +66,10 @@ if [ "$CREATE_STACK" == "true" ]; then
 fi
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
-  docker build -t hyperledger/firefly ../..
+  cd ../..
+  make docker
   checkOk $?
+  cd $CWD
 fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]; then
