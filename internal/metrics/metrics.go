@@ -29,7 +29,7 @@ var registry *prometheus.Registry
 var adminInstrumentation *muxprom.Instrumentation
 var restInstrumentation *muxprom.Instrumentation
 var BatchPinCounter prometheus.Counter
-var timeMap = make(map[string]time.Time)
+var timeMap map[string]time.Time
 var mutex = &sync.Mutex{}
 
 // MetricsBatchPin is the prometheus metric for total number of batch pins submitted
@@ -83,6 +83,7 @@ func initMetricsCollectors() {
 		Name: MetricsBatchPin,
 		Help: "Number of batch pins submitted",
 	})
+	timeMap = make(map[string]time.Time)
 }
 
 func registerMetricsCollectors() {
@@ -100,11 +101,14 @@ func Clear() {
 	registry = nil
 	adminInstrumentation = nil
 	restInstrumentation = nil
+	timeMap = make(map[string]time.Time)
 }
 
 func AddTime(id string) {
 	mutex.Lock()
-	timeMap[id] = time.Now()
+	if len(id) > 0 {
+		timeMap[id] = time.Now()
+	}
 	mutex.Unlock()
 }
 

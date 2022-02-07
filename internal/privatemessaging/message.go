@@ -42,6 +42,11 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 		metrics.AddTime(in.Header.ID.String())
 	}
 	message := pm.NewMessage(ns, in)
+
+	if pm.metricsEnabled {
+		metrics.PrivateMsgSubmittedCounter.Inc()
+		metrics.AddTime(in.Header.ID.String())
+	}
 	if waitConfirm {
 		err = message.SendAndWait(ctx)
 	} else {

@@ -129,11 +129,11 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
 		return nil, err
 	}
+	sender := am.NewTransfer(ns, transfer)
 	if am.metricsEnabled {
 		metrics.MintSubmittedCounter.Inc()
-		metrics.AddTime(transfer.TX.ID.String())
+		metrics.AddTime(transfer.LocalID.String())
 	}
-	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -147,11 +147,11 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
 		return nil, err
 	}
+	sender := am.NewTransfer(ns, transfer)
 	if am.metricsEnabled {
 		metrics.BurnSubmittedCounter.Inc()
-		metrics.AddTime(transfer.TX.ID.String())
+		metrics.AddTime(transfer.LocalID.String())
 	}
-	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -168,11 +168,11 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 	if transfer.From == transfer.To {
 		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
+	sender := am.NewTransfer(ns, transfer)
 	if am.metricsEnabled {
 		metrics.TransferSubmittedCounter.Inc()
-		metrics.AddTime(transfer.TX.ID.String())
+		metrics.AddTime(transfer.LocalID.String())
 	}
-	sender := am.NewTransfer(ns, transfer)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
