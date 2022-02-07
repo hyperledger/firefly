@@ -98,7 +98,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 		assert.Equal(ts.t, fftypes.FFStringArray{topic}, (messages)[idx].Header.Topics)
 		assert.Equal(ts.t, topic, (messages)[idx].Header.Topics[0])
 
-		data := GetDataForMessage(ts.t, client, ts.startTime, (messages)[idx])
+		data := GetDataForMessage(ts.t, client, ts.startTime, (messages)[idx].Header.ID)
 		var msgData *fftypes.Data
 		for i, d := range data {
 			ts.t.Logf("Data %d: %+v", i, *d)
