@@ -47,7 +47,6 @@ func TestPinsE2EWithDB(t *testing.T) {
 	}
 
 	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeCreated, mock.Anything).Return()
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeUpdated, mock.Anything).Return()
 	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeDeleted, mock.Anything).Return()
 
 	err := s.UpsertPin(ctx, pin)
@@ -67,7 +66,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 	assert.Equal(t, int64(1), *res.TotalCount)
 
 	// Set it dispatched
-	err = s.SetPinDispatched(ctx, pin.Sequence)
+	err = s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", pin.Sequence), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.NoError(t, err)
 
 	// Double insert, checking no error and we keep the dispatched flag
@@ -166,20 +165,40 @@ func TestGetPinReadMessageFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestSetPinsDispatchedBeginFail(t *testing.T) {
+func TestUpdatePinsBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.SetPinDispatched(context.Background(), 12345)
+	ctx := context.Background()
+	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.Regexp(t, "FF10114", err)
 }
 
-func TestSetPinsDispatchedUpdateFail(t *testing.T) {
+func TestUpdatePinsUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.SetPinDispatched(context.Background(), 12345)
+	ctx := context.Background()
+	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.Regexp(t, "FF10117", err)
+}
+
+func TestUpdatePinsBadFilter(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectRollback()
+	ctx := context.Background()
+	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("bad", true))
+	assert.Regexp(t, "FF10148", err)
+}
+
+func TestUpdatePinsBadUpdate(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectRollback()
+	ctx := context.Background()
+	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("bad", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
+	assert.Regexp(t, "FF10148", err)
 }
 
 func TestPinDeleteBeginFail(t *testing.T) {

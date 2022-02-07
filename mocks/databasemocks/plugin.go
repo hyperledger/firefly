@@ -2241,20 +2241,6 @@ func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error
 	return r0
 }
 
-// SetPinDispatched provides a mock function with given fields: ctx, sequence
-func (_m *Plugin) SetPinDispatched(ctx context.Context, sequence int64) error {
-	ret := _m.Called(ctx, sequence)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
-		r0 = rf(ctx, sequence)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdateBatch provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateBatch(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -2416,6 +2402,20 @@ func (_m *Plugin) UpdateOrganization(ctx context.Context, id *fftypes.UUID, upda
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
 		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdatePins provides a mock function with given fields: ctx, filter, update
+func (_m *Plugin) UpdatePins(ctx context.Context, filter database.Filter, update database.Update) error {
+	ret := _m.Called(ctx, filter, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
+		r0 = rf(ctx, filter, update)
 	} else {
 		r0 = ret.Error(0)
 	}

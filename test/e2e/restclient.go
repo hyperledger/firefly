@@ -86,11 +86,13 @@ func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 		Get(urlGetNamespaces)
 }
 
-func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType fftypes.MessageType, expectedStatus int) (msgs []*fftypes.Message) {
+func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType fftypes.MessageType, topic string, expectedStatus int) (msgs []*fftypes.Message) {
 	path := urlGetMessages
 	resp, err := client.R().
 		SetQueryParam("type", string(msgType)).
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetQueryParam("topics", topic).
+		SetQueryParam("sort", "confirmed").
 		SetResult(&msgs).
 		Get(path)
 	require.NoError(t, err)
@@ -109,20 +111,10 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	return data
 }
 
-func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, messageHash *fftypes.Bytes32) (data []*fftypes.Data) {
-	var msgs []*fftypes.Message
+func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data []*fftypes.Data) {
 	path := urlGetMessages
+	path += "/" + msgID.String() + "/data"
 	resp, err := client.R().
-		SetQueryParam("hash", messageHash.String()).
-		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
-		SetResult(&msgs).
-		Get(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	require.Equal(t, 1, len(msgs))
-
-	path += "/" + msgs[0].Header.ID.String() + "/data"
-	resp, err = client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&data).
 		Get(path)
@@ -189,9 +181,14 @@ func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
+func BroadcastMessage(client *resty.Client, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
 	return client.R().
 		SetBody(fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Topics: fftypes.FFStringArray{topic},
+				},
+			},
 			InlineData: fftypes.InlineData{data},
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
@@ -240,10 +237,15 @@ func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *ff
 	return &data
 }
 
-func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*fftypes.Data, *resty.Response, error) {
+func BroadcastBlobMessage(t *testing.T, client *resty.Client, topic string) (*fftypes.Data, *resty.Response, error) {
 	data := CreateBlob(t, client, nil)
 	res, err := client.R().
 		SetBody(fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Topics: fftypes.FFStringArray{topic},
+				},
+			},
 			InlineData: fftypes.InlineData{
 				{DataRef: fftypes.DataRef{ID: data.ID}},
 			},
@@ -252,7 +254,7 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*fftypes.Data, *r
 	return data, res, err
 }
 
-func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNames []string) (*fftypes.Data, *resty.Response, error) {
+func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, topic string, orgNames []string) (*fftypes.Data, *resty.Response, error) {
 	data := CreateBlob(t, client, &fftypes.DatatypeRef{Name: "myblob"})
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
@@ -263,6 +265,11 @@ func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNam
 	}
 	res, err := client.R().
 		SetBody(fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Topics: fftypes.FFStringArray{topic},
+				},
+			},
 			InlineData: fftypes.InlineData{
 				{DataRef: fftypes.DataRef{ID: data.ID}},
 			},
@@ -275,7 +282,7 @@ func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNam
 	return data, res, err
 }
 
-func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
+func PrivateMessage(t *testing.T, client *resty.Client, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -288,6 +295,7 @@ func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrV
 			Header: fftypes.MessageHeader{
 				Tag:    tag,
 				TxType: txType,
+				Topics: fftypes.FFStringArray{topic},
 			},
 		},
 		InlineData: fftypes.InlineData{data},
