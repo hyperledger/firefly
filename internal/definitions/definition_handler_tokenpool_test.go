@@ -167,9 +167,6 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(database.IDMismatch)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolRejected
-	})).Return(nil)
 
 	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionReject, action)
@@ -235,16 +232,9 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypePoolRejected
-	})).Return(nil)
-
 	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {

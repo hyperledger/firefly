@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package syncasync
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -444,7 +445,7 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestEventCallbackTokenPoolRejectedNotFound(t *testing.T) {
+func TestEventCallbackTokenPoolRejectedNoData(t *testing.T) {
 
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
@@ -456,18 +457,68 @@ func TestEventCallbackTokenPoolRejectedNotFound(t *testing.T) {
 		},
 	}
 
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  string(fftypes.SystemTagDefinePool),
+		},
+		Data: fftypes.DataRefs{},
+	}
+
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(msg, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypePoolRejected,
+			Type:      fftypes.EventTypeMessageRejected,
 		},
 	})
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	responseID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*responseID: &inflightRequest{},
+		},
+	}
+
+	dataID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  string(fftypes.SystemTagDefinePool),
+		},
+		Data: fftypes.DataRefs{
+			{ID: dataID},
+		},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(msg, nil)
+	mdi.On("GetDataByID", sa.ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			Namespace: "ns1",
+			ID:        fftypes.NewUUID(),
+			Reference: fftypes.NewUUID(),
+			Type:      fftypes.EventTypeMessageRejected,
+		},
+	})
+	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
@@ -549,30 +600,41 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	requestID := fftypes.NewUUID()
+	pool := &fftypes.TokenPoolAnnouncement{
+		Pool: &fftypes.TokenPool{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	poolJSON, _ := json.Marshal(pool)
+	data := &fftypes.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtrBytes(poolJSON),
+	}
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  string(fftypes.SystemTagDefinePool),
+		},
+		Data: fftypes.DataRefs{
+			{ID: data.ID},
+		},
+	}
 
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything)
-	gmid.RunFn = func(a mock.Arguments) {
-		pool := &fftypes.TokenPool{
-			ID:   requestID,
-			Name: "my-pool",
-		}
-		gmid.ReturnArguments = mock.Arguments{
-			pool, nil,
-		}
-	}
+	mdi.On("GetMessageByID", sa.ctx, msg.Header.ID).Return(msg, nil)
+	mdi.On("GetDataByID", sa.ctx, data.ID, true).Return(data, nil)
 
-	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", pool.Pool.ID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
 					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypePoolRejected,
-					Reference: requestID,
+					Type:      fftypes.EventTypeMessageRejected,
+					Reference: msg.Header.ID,
 					Namespace: "ns1",
 				},
 			})

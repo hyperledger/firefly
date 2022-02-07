@@ -42,12 +42,6 @@ func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *ff
 	return true, nil
 }
 
-func (dh *definitionHandlers) rejectPool(ctx context.Context, pool *fftypes.TokenPool) error {
-	event := fftypes.NewEvent(fftypes.EventTypePoolRejected, pool.Namespace, pool.ID)
-	err := dh.database.InsertEvent(ctx, event)
-	return err
-}
-
 func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	var announce fftypes.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
@@ -59,7 +53,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg 
 
 	if err := pool.Validate(ctx); err != nil {
 		log.L(ctx).Warnf("Token pool '%s' rejected - validate failed: %s", pool.ID, err)
-		return ActionReject, nil, dh.rejectPool(ctx, pool)
+		return ActionReject, nil, nil
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
@@ -72,7 +66,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg 
 	if valid, err := dh.persistTokenPool(ctx, &announce); err != nil {
 		return ActionRetry, nil, err
 	} else if !valid {
-		return ActionReject, nil, dh.rejectPool(ctx, pool)
+		return ActionReject, nil, nil
 	}
 
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool

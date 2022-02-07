@@ -83,20 +83,15 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftyp
 		}
 	}
 
-	var eventType fftypes.EventType
-	var actionResult DefinitionMessageAction
-	if valid {
-		l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
-		eventType = fftypes.EventTypeContractInterfaceConfirmed
-		actionResult = ActionConfirm
-	} else {
+	if !valid {
 		l.Warnf("Contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		eventType = fftypes.EventTypeContractInterfaceRejected
-		actionResult = ActionReject
+		return ActionReject, nil, nil
 	}
-	return actionResult, &DefinitionBatchActions{
+
+	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
+	return ActionConfirm, &DefinitionBatchActions{
 		Finalize: func(ctx context.Context) error {
-			event := fftypes.NewEvent(eventType, broadcast.Namespace, broadcast.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID)
 			return dh.database.InsertEvent(ctx, event)
 		},
 	}, nil
@@ -120,20 +115,15 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, ms
 		}
 	}
 
-	var eventType fftypes.EventType
-	var actionResult DefinitionMessageAction
-	if valid {
-		l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
-		eventType = fftypes.EventTypeContractAPIConfirmed
-		actionResult = ActionConfirm
-	} else {
+	if !valid {
 		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		eventType = fftypes.EventTypeContractAPIRejected
-		actionResult = ActionReject
+		return ActionReject, nil, nil
 	}
-	return actionResult, &DefinitionBatchActions{
+
+	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
+	return ActionConfirm, &DefinitionBatchActions{
 		Finalize: func(ctx context.Context) error {
-			event := fftypes.NewEvent(eventType, broadcast.Namespace, broadcast.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID)
 			return dh.database.InsertEvent(ctx, event)
 		},
 	}, nil
