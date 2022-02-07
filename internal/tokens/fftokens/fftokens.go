@@ -66,7 +66,7 @@ type tokenData struct {
 type createPool struct {
 	Type      fftypes.TokenType  `json:"type"`
 	RequestID string             `json:"requestId"`
-	Operator  string             `json:"operator"`
+	Signer    string             `json:"signer"`
 	Data      string             `json:"data,omitempty"`
 	Config    fftypes.JSONObject `json:"config"`
 	Name      string             `json:"name"`
@@ -85,7 +85,7 @@ type mintTokens struct {
 	To         string `json:"to"`
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
-	Operator   string `json:"operator"`
+	Signer     string `json:"signer"`
 	Data       string `json:"data,omitempty"`
 }
 
@@ -95,7 +95,7 @@ type burnTokens struct {
 	From       string `json:"from"`
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
-	Operator   string `json:"operator"`
+	Signer     string `json:"signer"`
 	Data       string `json:"data,omitempty"`
 }
 
@@ -106,7 +106,7 @@ type transferTokens struct {
 	To         string `json:"to"`
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
-	Operator   string `json:"operator"`
+	Signer     string `json:"signer"`
 	Data       string `json:"data,omitempty"`
 }
 
@@ -228,7 +228,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
 	eventProtocolID := data.GetString("id")
 	poolProtocolID := data.GetString("poolId")
-	operatorAddress := data.GetString("operator")
+	signerAddress := data.GetString("signer")
 	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
@@ -256,7 +256,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 
 	if eventProtocolID == "" ||
 		poolProtocolID == "" ||
-		operatorAddress == "" ||
+		signerAddress == "" ||
 		value == "" ||
 		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
 		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
@@ -291,7 +291,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			To:          toAddress,
 			Amount:      amount,
 			ProtocolID:  eventProtocolID,
-			Key:         operatorAddress,
+			Key:         signerAddress,
 			Message:     transferData.Message,
 			MessageHash: transferData.MessageHash,
 			TX: fftypes.TransactionRef{
@@ -378,7 +378,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 		SetBody(&createPool{
 			Type:      pool.Type,
 			RequestID: opID.String(),
-			Operator:  pool.Key,
+			Signer:    pool.Key,
 			Data:      string(data),
 			Config:    pool.Config,
 			Name:      pool.Name,
@@ -434,7 +434,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 			To:         mint.To,
 			Amount:     mint.Amount.Int().String(),
 			RequestID:  opID.String(),
-			Operator:   mint.Key,
+			Signer:     mint.Key,
 			Data:       string(data),
 		}).
 		Post("/api/v1/mint")
@@ -457,7 +457,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 			From:       burn.From,
 			Amount:     burn.Amount.Int().String(),
 			RequestID:  opID.String(),
-			Operator:   burn.Key,
+			Signer:     burn.Key,
 			Data:       string(data),
 		}).
 		Post("/api/v1/burn")
@@ -481,7 +481,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 			To:         transfer.To,
 			Amount:     transfer.Amount.Int().String(),
 			RequestID:  opID.String(),
-			Operator:   transfer.Key,
+			Signer:     transfer.Key,
 			Data:       string(data),
 		}).
 		Post("/api/v1/transfer")
