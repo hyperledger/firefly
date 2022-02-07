@@ -35,20 +35,14 @@ var (
 	EventTypeGroupConfirmed EventType = ffEnum("eventtype", "group_confirmed")
 	// EventTypePoolConfirmed occurs when a new token pool is ready for use
 	EventTypePoolConfirmed EventType = ffEnum("eventtype", "token_pool_confirmed")
-	// EventTypePoolRejected occurs when a new token pool is rejected (due to validation errors, duplicates, etc)
-	EventTypePoolRejected EventType = ffEnum("eventtype", "token_pool_rejected")
 	// EventTypeTransferConfirmed occurs when a token transfer has been confirmed
 	EventTypeTransferConfirmed EventType = ffEnum("eventtype", "token_transfer_confirmed")
 	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)
 	EventTypeTransferOpFailed EventType = ffEnum("eventtype", "token_transfer_op_failed")
 	// EventTypeContractInterfaceConfirmed occurs when a new contract interface has been confirmed
 	EventTypeContractInterfaceConfirmed EventType = ffEnum("eventtype", "contract_interface_confirmed")
-	// EventTypeContractInterfaceRejected occurs when a new contract interface has been rejected
-	EventTypeContractInterfaceRejected EventType = ffEnum("eventtype", "contract_interface_rejected")
 	// EventTypeContractAPIConfirmed occurs when a new contract API has been confirmed
 	EventTypeContractAPIConfirmed EventType = ffEnum("eventtype", "contract_api_confirmed")
-	// EventTypeContractInterfaceRejected occurs when a new contract API has been rejected
-	EventTypeContractAPIRejected EventType = ffEnum("eventtype", "contract_api_rejected")
 	// EventTypeBlockchainEvent occurs when a new event has been recorded from the blockchain
 	EventTypeBlockchainEvent EventType = ffEnum("eventtype", "blockchain_event")
 )

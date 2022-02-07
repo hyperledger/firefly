@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package syncasync
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 	"time"
 
@@ -172,6 +173,20 @@ func (sa *syncAsyncBridge) getPoolFromEvent(event *fftypes.EventDelivery) (pool 
 	return pool, nil
 }
 
+func (sa *syncAsyncBridge) getPoolFromMessage(msg *fftypes.Message) (*fftypes.TokenPool, error) {
+	if len(msg.Data) > 0 {
+		data, err := sa.database.GetDataByID(sa.ctx, msg.Data[0].ID, true)
+		if err != nil || data == nil {
+			return nil, err
+		}
+		var pool fftypes.TokenPoolAnnouncement
+		if err := json.Unmarshal(data.Value.Bytes(), &pool); err == nil {
+			return pool.Pool, nil
+		}
+	}
+	return nil, nil
+}
+
 func (sa *syncAsyncBridge) getTransferFromEvent(event *fftypes.EventDelivery) (transfer *fftypes.TokenTransfer, err error) {
 	if transfer, err = sa.database.GetTokenTransfer(sa.ctx, event.Reference); err != nil {
 		return nil, err
@@ -232,6 +247,17 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 		if inflight != nil {
 			go sa.resolveRejected(inflight, msg.Header.ID)
 		}
+		// See if this is a rejection of an inflight token pool
+		if msg.Header.Type == fftypes.MessageTypeDefinition && msg.Header.Tag == string(fftypes.SystemTagDefinePool) {
+			if pool, err := sa.getPoolFromMessage(msg); err != nil {
+				return err
+			} else if pool != nil {
+				inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, pool.ID)
+				if inflight != nil {
+					go sa.resolveRejectedTokenPool(inflight, pool.ID)
+				}
+			}
+		}
 
 	case fftypes.EventTypePoolConfirmed:
 		pool, err := sa.getPoolFromEvent(event)
@@ -242,17 +268,6 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 		inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, pool.ID)
 		if inflight != nil {
 			go sa.resolveConfirmedTokenPool(inflight, pool)
-		}
-
-	case fftypes.EventTypePoolRejected:
-		pool, err := sa.getPoolFromEvent(event)
-		if err != nil || pool == nil {
-			return err
-		}
-		// See if this is a rejection of an inflight token pool
-		inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, pool.ID)
-		if inflight != nil {
-			go sa.resolveRejectedTokenPool(inflight, pool.ID)
 		}
 
 	case fftypes.EventTypeTransferConfirmed:

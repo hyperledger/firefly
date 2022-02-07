@@ -3868,13 +3868,10 @@ paths:
                     - datatype_confirmed
                     - group_confirmed
                     - token_pool_confirmed
-                    - token_pool_rejected
                     - token_transfer_confirmed
                     - token_transfer_op_failed
                     - contract_interface_confirmed
-                    - contract_interface_rejected
                     - contract_api_confirmed
-                    - contract_api_rejected
                     - blockchain_event
                     type: string
                 type: object
@@ -3929,13 +3926,10 @@ paths:
                     - datatype_confirmed
                     - group_confirmed
                     - token_pool_confirmed
-                    - token_pool_rejected
                     - token_transfer_confirmed
                     - token_transfer_op_failed
                     - contract_interface_confirmed
-                    - contract_interface_rejected
                     - contract_api_confirmed
-                    - contract_api_rejected
                     - blockchain_event
                     type: string
                 type: object
@@ -4595,13 +4589,10 @@ paths:
                     - datatype_confirmed
                     - group_confirmed
                     - token_pool_confirmed
-                    - token_pool_rejected
                     - token_transfer_confirmed
                     - token_transfer_op_failed
                     - contract_interface_confirmed
-                    - contract_interface_rejected
                     - contract_api_confirmed
-                    - contract_api_rejected
                     - blockchain_event
                     type: string
                 type: object
