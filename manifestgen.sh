@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright © 2021 Kaleido, Inc.
+# Copyright © 2022 Kaleido, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -30,6 +30,12 @@ if [[ $# -eq 1 ]] ; then
         USE_HEAD=true
     fi
 fi
+
+# These sections are currently not pulled from GitHub automatically
+# so these sections are copied over from the existing file
+BUILD_SECTION=$(cat manifest.json | jq .build)
+UI_SECTION=$(cat manifest.json | jq .ui)
+CLI_SECTION=$(cat manifest.json | jq .cli)
 
 rm -f manifest.json
 
@@ -72,12 +78,12 @@ do
 
     echo "    \"tag\": \"$TAG_LABEL\"," >> manifest.json
     echo "    \"sha\": \"$SHA\"" >> manifest.json
-    if [[ $(($i + 1)) -eq ${SERVICE_COUNT} ]]
-    then
-        echo "  }" >> manifest.json
-    else
-        echo "  }," >> manifest.json
-    fi
+    echo "  }," >> manifest.json
 done
+
+# Add the build and UI sections, piping to sed to get proper indentation
+echo "\"build\": $BUILD_SECTION," | sed 's/^/  /' >> manifest.json
+echo "\"ui\": $UI_SECTION," | sed 's/^/  /' >> manifest.json
+echo "\"cli\": $CLI_SECTION" | sed 's/^/  /' >> manifest.json
 
 echo "}" >> manifest.json

@@ -21,7 +21,29 @@
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v0.1.4",
-    "sha": "6de65db8dfe322e6244bbd787c10406007a88049d749b5045065163c66d612eb"
+    "tag": "v0.1.5",
+    "sha": "dbd7b2c81ec80b6158eaa66e84e3dc635d1f5c31e8296270eab66fd5bbc0afc6"
+  },
+  "build": {
+    "firefly-builder": {
+      "image": "golang:1.16-alpine3.15"
+    },
+    "fabric-builder": {
+      "image": "golang:1.16-alpine3.15",
+      "platform": "linux/x86_64"
+    },
+    "solidity-builder": {
+      "image": "node:14-alpine3.15"
+    },
+    "base": {
+      "image": "alpine:3.15"
+    }
+  },
+  "ui": {
+    "tag": "v0.5.0",
+    "release": "v0.5.0_8cb358c"
+  },
+  "cli": {
+    "tag": "v0.0.41"
   }
 }

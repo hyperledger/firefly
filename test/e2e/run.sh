@@ -4,6 +4,7 @@ set -o pipefail
 
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
+CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
 STACK_DIR=~/.firefly/stacks
 
 checkOk() {
@@ -70,7 +71,7 @@ if [ "$BUILD_FIREFLY" == "true" ]; then
 fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]; then
-  go install github.com/hyperledger/firefly-cli/ff@v0.0.41
+  go install github.com/hyperledger/firefly-cli/ff@$CLI_VERSION
   checkOk $?
 fi
 

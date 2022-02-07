@@ -89,3 +89,5 @@ swagger:
 		$(VGO) test ./internal/apiserver -timeout=10s -tags swagger
 manifest:
 		./manifestgen.sh
+docker:
+		./docker_build.sh
