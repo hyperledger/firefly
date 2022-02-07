@@ -145,6 +145,7 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 	pem.Encode(publicKeyFile, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 
 	// Start up a listener configured for TLS Mutual auth
+	config.Reset() // ensure APIShutdownTimeout cleared from earlier tests
 	cp := config.NewPluginConfig("ut")
 	initHTTPConfPrefx(cp, 0)
 	cp.Set(HTTPConfAddress, "127.0.0.1")

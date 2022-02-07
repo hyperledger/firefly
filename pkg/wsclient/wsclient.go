@@ -324,13 +324,13 @@ func (w *wsClient) receiveReconnectLoop() {
 			// Synchronously invoke the reader, as it's important we react immediately to any error there.
 			w.readLoop()
 			close(receiverDone)
+			<-w.sendDone
 
-			// Ensure the connection is closed after the receiver exits
+			// Ensure the connection is closed after the sender and receivers exit
 			err = w.wsconn.Close()
 			if err != nil {
 				l.Debugf("WS %s close failed: %s", w.url, err)
 			}
-			<-w.sendDone
 			w.sendDone = nil
 			w.wsconn = nil
 		}
