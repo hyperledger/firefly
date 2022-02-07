@@ -130,14 +130,12 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, ba, err := dh.handleFFIBroadcast(context.Background(), &fftypes.Message{
+	action, _, err := dh.handleFFIBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineFFI),
 		},
 	}, []*fftypes.Data{})
 	assert.Equal(t, ActionReject, action)
-	assert.NoError(t, err)
-	err = ba.Finalize(context.Background())
 	assert.NoError(t, err)
 }
 

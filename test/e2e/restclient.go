@@ -111,32 +111,10 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	return data
 }
 
-func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msg *fftypes.Message) (data []*fftypes.Data) {
+func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data []*fftypes.Data) {
 	path := urlGetMessages
-	path += "/" + msg.Header.ID.String() + "/data"
+	path += "/" + msgID.String() + "/data"
 	resp, err := client.R().
-		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
-		SetResult(&data).
-		Get(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return data
-}
-
-func GetDataByMessageHash(t *testing.T, client *resty.Client, startTime time.Time, messageHash *fftypes.Bytes32) (data []*fftypes.Data) {
-	var msgs []*fftypes.Message
-	path := urlGetMessages
-	resp, err := client.R().
-		SetQueryParam("hash", messageHash.String()).
-		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
-		SetResult(&msgs).
-		Get(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	require.Equal(t, 1, len(msgs))
-
-	path += "/" + msgs[0].Header.ID.String() + "/data"
-	resp, err = client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&data).
 		Get(path)

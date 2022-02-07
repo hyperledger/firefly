@@ -69,8 +69,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 
 	for i := 0; i < totalMessages; i++ {
 		// Wait for all thel message-confirmed events, from both participants
-		<-received1
-		<-received2
+		waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
+		waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 		<-changes1 // also expect database change events
 		<-changes2 // also expect database change events
 	}
@@ -228,8 +228,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 	for i := 0; i < totalMessages; i++ {
 		// Wait for all thel message-confirmed events, from both participants
-		<-received1
-		<-received2
+		waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
+		waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
 	}
 
 	for topic, dataArray := range expectedData {

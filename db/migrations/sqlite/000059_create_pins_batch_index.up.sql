@@ -1,1 +1,1 @@
-CREATE INDEX pins_batch ON pins(batch_id, idx);
+CREATE INDEX pins_batch ON pins(batch_id);
