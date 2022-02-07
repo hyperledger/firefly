@@ -53,7 +53,7 @@ type nextPinGroupState struct {
 	identitiesChanged map[string]bool
 }
 
-type NextPinState struct {
+type nextPinState struct {
 	nextPinGroup *nextPinGroupState
 	nextPin      *fftypes.NextPin
 }
@@ -73,7 +73,20 @@ type dispatchedMessage struct {
 	lastPinIndex  int64
 }
 
-// batchState are synchronous actions to be performed while processing system messages, but which must happen after reading the whole batch
+// batchState is the object that tracks the in-memory state that builds up while processing a batch of pins,
+// that needs to be reconciled at the point the batch closes.
+// There are three phases:
+// 1. Dispatch: Determines if messages are blocked, or can be dispatched. Calls the appropriate dispatch
+//              actions for that message type. Reads initial `pin` state for contexts from the DB, and then
+//              updates this in-memory throughout the batch, ready for flushing in the Finalize phase.
+//              Runs in a database operation group/tranaction.
+// 2. Pre-finalize: Runs any PreFinalize callbacks registered by the handlers in (1).
+//                  Intended to be used for cross-microservice REST/GRPC etc. calls that have side-effects.
+//                  Runs outside any database operation group/tranaction.
+// 3. Finalize: Flushes the `pin` state calculated in phase (1), and any Finalize actions registered by handlers
+//              during phase (1) or (2).
+//              Runs in a database operation group/tranaction, which will be the same as phase (1) if there
+//              are no pre-finalize handlers registered.
 type batchState struct {
 	database           database.Plugin
 	definitions        definitions.DefinitionHandlers
@@ -156,7 +169,7 @@ func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnma
 
 }
 
-func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32) (*NextPinState, error) {
+func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// For masked pins, we can only process if:
@@ -190,7 +203,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", msg.Header.Group, topic, contextUnmasked, pin, nextPin)
 		return nil, nil
 	}
-	return &NextPinState{
+	return &nextPinState{
 		nextPinGroup: npg,
 		nextPin:      nextPin,
 	}, err
@@ -257,7 +270,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	return nil
 }
 
-func (nps *NextPinState) IncrementNextPin(ctx context.Context) {
+func (nps *nextPinState) IncrementNextPin(ctx context.Context) {
 	npg := nps.nextPinGroup
 	np := nps.nextPin
 	for i, existingPin := range npg.nextPins {
@@ -317,7 +330,7 @@ func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftype
 
 }
 
-func (bs *batchState) attemptContextInit(ctx context.Context, msg *fftypes.Message, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*NextPinState, error) {
+func (bs *batchState) attemptContextInit(ctx context.Context, msg *fftypes.Message, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// It might be the system topic/context initializing the group
@@ -380,7 +393,7 @@ func (bs *batchState) attemptContextInit(ctx context.Context, msg *fftypes.Messa
 
 	// Initialize the nextpins on this context
 	bs.maskedContexts[*contextUnmasked] = npg
-	return &NextPinState{
+	return &nextPinState{
 		nextPin:      nextPin,
 		nextPinGroup: npg,
 	}, err

@@ -245,7 +245,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, pin *fftypes.Pin, msgBaseIndex int64, msg *fftypes.Message, state *batchState) (err error) {
 	// Check if it's ready to be processed
 	unmaskedContexts := make([]*fftypes.Bytes32, 0, len(msg.Header.Topics))
-	nextPins := make([]*NextPinState, 0, len(msg.Header.Topics))
+	nextPins := make([]*nextPinState, 0, len(msg.Header.Topics))
 	if pin.Masked {
 		// Private messages have one or more masked "pin" hashes that allow us to work
 		// out if it's the next message in the sequence, given the previous messages
