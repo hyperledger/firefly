@@ -106,9 +106,7 @@ func Clear() {
 
 func AddTime(id string) {
 	mutex.Lock()
-	if len(id) > 0 {
-		timeMap[id] = time.Now()
-	}
+	timeMap[id] = time.Now()
 	mutex.Unlock()
 }
 

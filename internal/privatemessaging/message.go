@@ -37,13 +37,9 @@ func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysm
 }
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	if pm.metricsEnabled {
-		metrics.PrivateMsgSubmittedCounter.Inc()
-		metrics.AddTime(in.Header.ID.String())
-	}
 	message := pm.NewMessage(ns, in)
 
-	if pm.metricsEnabled {
+	if pm.metricsEnabled && len(in.Header.ID.String()) > 0 {
 		metrics.PrivateMsgSubmittedCounter.Inc()
 		metrics.AddTime(in.Header.ID.String())
 	}

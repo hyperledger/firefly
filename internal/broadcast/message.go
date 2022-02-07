@@ -40,7 +40,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	broadcast := bm.NewBroadcast(ns, in)
 
-	if bm.metricsEnabled {
+	if bm.metricsEnabled && len(in.Header.ID.String()) > 0 {
 		metrics.BroadcastSubmittedCounter.Inc()
 		metrics.AddTime(in.Header.ID.String())
 	}

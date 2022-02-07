@@ -130,7 +130,7 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 		return nil, err
 	}
 	sender := am.NewTransfer(ns, transfer)
-	if am.metricsEnabled {
+	if am.metricsEnabled && len(transfer.LocalID.String()) > 0 {
 		metrics.MintSubmittedCounter.Inc()
 		metrics.AddTime(transfer.LocalID.String())
 	}
@@ -148,7 +148,7 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 		return nil, err
 	}
 	sender := am.NewTransfer(ns, transfer)
-	if am.metricsEnabled {
+	if am.metricsEnabled && len(transfer.LocalID.String()) > 0 {
 		metrics.BurnSubmittedCounter.Inc()
 		metrics.AddTime(transfer.LocalID.String())
 	}
@@ -169,7 +169,7 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
 	sender := am.NewTransfer(ns, transfer)
-	if am.metricsEnabled {
+	if am.metricsEnabled && len(transfer.LocalID.String()) > 0 {
 		metrics.TransferSubmittedCounter.Inc()
 		metrics.AddTime(transfer.LocalID.String())
 	}
