@@ -269,17 +269,10 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			}
 		}
 
-		// Save any interesting outputs
-		// Note that we don't need the manifest to be kept here, as it's already in the input
-		output := fftypes.JSONObject{}
-		if update.Info != "" {
-			output["info"] = update.Info
-		}
-
 		update := database.OperationQueryFactory.NewUpdate(em.ctx).
 			Set("status", status).
 			Set("error", update.Error).
-			Set("output", output)
+			Set("output", update.Info) // Note that we don't need the manifest to be kept here, as it's already in the input
 		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
 			return true, err // this is always retryable
 		}
