@@ -2,6 +2,8 @@
 
 set -o pipefail
 
+ if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
+
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
