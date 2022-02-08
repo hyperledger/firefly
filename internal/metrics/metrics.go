@@ -79,6 +79,8 @@ func initMetricsCollectors() {
 	InitBroadcastMetrics()
 	InitPrivateMsgMetrics()
 	InitTokenMintMetrics()
+	InitTokenTransferMetrics()
+	InitTokenBurnMetrics()
 	BatchPinCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: MetricsBatchPin,
 		Help: "Number of batch pins submitted",
@@ -94,6 +96,8 @@ func registerMetricsCollectors() {
 	RegisterBroadcastMetrics()
 	RegisterPrivateMsgMetrics()
 	RegisterTokenMintMetrics()
+	RegisterTokenTransferMetrics()
+	RegisterTokenBurnMetrics()
 }
 
 // Clear will reset the Prometheus metrics registry and instrumentations, useful for testing

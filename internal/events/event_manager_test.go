@@ -23,6 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -43,6 +44,8 @@ var testNodeID = fftypes.NewUUID()
 
 func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	config.Reset()
+	metrics.Registry()
+	config.Set(config.MetricsEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}

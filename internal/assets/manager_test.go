@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -36,6 +37,8 @@ import (
 
 func newTestAssets(t *testing.T) (*assetManager, func()) {
 	config.Reset()
+	metrics.Registry()
+	config.Set(config.MetricsEnabled, true)
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}

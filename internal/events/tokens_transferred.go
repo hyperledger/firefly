@@ -126,8 +126,6 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		case fftypes.TokenTransferTypeBurn:
 			metrics.BurnHistogram.Observe(timeElapsed)
 			metrics.BurnConfirmedCounter.Inc()
-		default:
-			break
 		}
 	}
 

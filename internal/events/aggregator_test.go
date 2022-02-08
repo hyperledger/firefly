@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
@@ -34,6 +35,8 @@ import (
 )
 
 func newTestAggregator() (*aggregator, func()) {
+	metrics.Registry()
+	config.Set(config.MetricsEnabled, true)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
@@ -1306,6 +1309,75 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 
 }
 
+func TestAttemptMessageDispatchSuccessBroadcast(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeBroadcast,
+		},
+	}, bs)
+	assert.NoError(t, err)
+}
+
+func TestAttemptMessageDispatchRejectedBroadcast(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeBroadcast,
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+		},
+	}, bs)
+	assert.NoError(t, err)
+}
+
+func TestAttemptMessageDispatchRejectedPrivate(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypePrivate,
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+		},
+	}, bs)
+	assert.NoError(t, err)
+}
+
 func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
@@ -1318,7 +1390,7 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Type: fftypes.MessageTypeBroadcast},
 	}, bs)
 	assert.NoError(t, err)
 

@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -43,16 +42,15 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
-
-		if em.metricsEnabled {
-			// Mint
-			metrics.MintRejectedCounter.Inc()
-			// TODO: Figure out way to determine transfer type
-			// Transfer
-			// metrics.TransferRejectedCounter.Inc()
-			// Burn
-			// metrics.BurnRejectedCounter.Inc()
-		}
+		// TODO: Figure out way to determine transfer type
+		// if em.metricsEnabled {
+		// Mint
+		// metrics.MintRejectedCounter.Inc()
+		// Transfer
+		// metrics.TransferRejectedCounter.Inc()
+		// Burn
+		// metrics.BurnRejectedCounter.Inc()
+		// }
 
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err

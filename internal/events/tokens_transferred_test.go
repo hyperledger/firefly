@@ -381,6 +381,68 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
+func TestTokensMintWithMessageSend(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mti := &tokenmocks.Plugin{}
+
+	uri := "firefly://token/1"
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeMint,
+			TokenIndex: "0",
+			URI:        uri,
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Message:    fftypes.NewUUID(),
+			Amount:     *fftypes.NewFFBigInt(1),
+		},
+		Event: blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "0000/0000/0000",
+			Info:           info,
+		},
+	}
+	pool := &fftypes.TokenPool{
+		Namespace: "ns1",
+	}
+	message := &fftypes.Message{
+		BatchID: fftypes.NewUUID(),
+		State:   fftypes.MessageStateStaged,
+	}
+
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	})).Return(nil).Times(2)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+	})).Return(nil).Times(2)
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	mdi.On("GetMessageByID", em.ctx, mock.Anything).Return(message, nil).Times(2)
+	mdi.On("ReplaceMessage", em.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
+		return msg.State == fftypes.MessageStateReady
+	})).Return(fmt.Errorf("pop"))
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
+	})).Return(nil).Once()
+
+	err := em.TokensTransferred(mti, transfer)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
 func TestTokensTransferredWithMessageSend(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -394,6 +456,68 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:       fftypes.TokenTransferTypeTransfer,
+			TokenIndex: "0",
+			URI:        uri,
+			Connector:  "erc1155",
+			Key:        "0x12345",
+			From:       "0x1",
+			To:         "0x2",
+			ProtocolID: "123",
+			Message:    fftypes.NewUUID(),
+			Amount:     *fftypes.NewFFBigInt(1),
+		},
+		Event: blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "0000/0000/0000",
+			Info:           info,
+		},
+	}
+	pool := &fftypes.TokenPool{
+		Namespace: "ns1",
+	}
+	message := &fftypes.Message{
+		BatchID: fftypes.NewUUID(),
+		State:   fftypes.MessageStateStaged,
+	}
+
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
+	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
+	})).Return(nil).Times(2)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+	})).Return(nil).Times(2)
+	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
+	mdi.On("GetMessageByID", em.ctx, mock.Anything).Return(message, nil).Times(2)
+	mdi.On("ReplaceMessage", em.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
+		return msg.State == fftypes.MessageStateReady
+	})).Return(fmt.Errorf("pop"))
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
+	})).Return(nil).Once()
+
+	err := em.TokensTransferred(mti, transfer)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestTokensBurndWithMessageSend(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mti := &tokenmocks.Plugin{}
+
+	uri := "firefly://token/1"
+	info := fftypes.JSONObject{"some": "info"}
+	transfer := &tokens.TokenTransfer{
+		PoolProtocolID: "F1",
+		TokenTransfer: fftypes.TokenTransfer{
+			Type:       fftypes.TokenTransferTypeBurn,
 			TokenIndex: "0",
 			URI:        uri,
 			Connector:  "erc1155",
