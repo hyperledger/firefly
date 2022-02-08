@@ -29,13 +29,14 @@ RUN touch core.yaml
 RUN ./bin/peer lifecycle chaincode package /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz --path /firefly/smart_contracts/fabric/firefly-go --lang golang --label firefly_1.0
 
 FROM $SOLIDITY_BUILDER_TAG AS solidity-builder
-RUN apk add python3 make gcc g++ musl-dev
 WORKDIR /firefly/solidity_firefly
-ADD smart_contracts/ethereum/solidity_firefly/package*.json .
-RUN npm install
-RUN npm config set user 0
-ADD smart_contracts/ethereum/solidity_firefly .
-RUN npx truffle compile
+ADD smart_contracts/ethereum/solidity_firefly/ .
+RUN apk add jq \
+ && mkdir -p build/contracts \
+ && cd contracts \
+ && solc --combined-json abi,bin,devdoc -o ../build/contracts Firefly.sol \
+ && cd ../build/contracts \
+ && jq '{"contractName":"FireFly", "abi":.contracts."Firefly.sol:Firefly".abi, "bytecode":("0x" + .contracts."Firefly.sol:Firefly".bin) }' combined.json > Firefly.json
 
 FROM $BASE_TAG
 WORKDIR /firefly

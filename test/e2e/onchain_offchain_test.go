@@ -157,7 +157,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	}
 
 	// Should be rejected as datatype not known
-	resp, err := PrivateMessage(suite.T(), suite.testState.client1, "topic1", &data, []string{
+	resp, err := PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "", fftypes.TransactionTypeBatchPin, true)
@@ -172,7 +172,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	}
 	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
 
-	resp, err = PrivateMessage(suite.T(), suite.testState.client1, "topic1", &data, []string{
+	resp, err = PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "", fftypes.TransactionTypeBatchPin, false)
@@ -185,7 +185,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 		"name": "mywidget"
 	}`)
 
-	resp, err = PrivateMessage(suite.T(), suite.testState.client1, "topic1", &data, []string{
+	resp, err = PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "", fftypes.TransactionTypeBatchPin, true)
@@ -218,7 +218,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 		expectedData[topic] = append(expectedData[topic], data)
 
-		resp, err := PrivateMessage(suite.T(), suite.testState.client1, topic, data, []string{
+		resp, err := PrivateMessage(suite.testState, suite.testState.client1, topic, data, []string{
 			suite.testState.org1.Name,
 			suite.testState.org2.Name,
 		}, "", fftypes.TransactionTypeBatchPin, false)
@@ -278,7 +278,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 
 	var resp *resty.Response
 
-	data, resp, err := PrivateBlobMessageDatatypeTagged(suite.T(), suite.testState.client1, "topic1", []string{
+	data, resp, err := PrivateBlobMessageDatatypeTagged(suite.testState, suite.testState.client1, "topic1", []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	})
@@ -330,7 +330,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	}
 
 	var resp *resty.Response
-	resp, err := PrivateMessage(suite.T(), suite.testState.client1, "topic1", &data, []string{
+	resp, err := PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "myrequest", fftypes.TransactionTypeBatchPin, false)
@@ -385,7 +385,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
-	reply := RequestReply(suite.T(), suite.testState.client1, &data, []string{
+	reply := RequestReply(suite.testState, suite.testState.client1, &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "myrequest", fftypes.TransactionTypeNone)

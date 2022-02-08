@@ -254,8 +254,8 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client, topic string) (*ff
 	return data, res, err
 }
 
-func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, topic string, orgNames []string) (*fftypes.Data, *resty.Response, error) {
-	data := CreateBlob(t, client, &fftypes.DatatypeRef{Name: "myblob"})
+func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic string, orgNames []string) (*fftypes.Data, *resty.Response, error) {
+	data := CreateBlob(ts.t, client, &fftypes.DatatypeRef{Name: "myblob"})
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -275,14 +275,14 @@ func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, topic 
 			},
 			Group: &fftypes.InputGroup{
 				Members: members,
-				Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
+				Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 			},
 		}).
 		Post(urlPrivateMessage)
 	return data, res, err
 }
 
-func PrivateMessage(t *testing.T, client *resty.Client, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
+func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -301,7 +301,7 @@ func PrivateMessage(t *testing.T, client *resty.Client, topic string, data *ffty
 		InlineData: fftypes.InlineData{data},
 		Group: &fftypes.InputGroup{
 			Members: members,
-			Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
+			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 		},
 	}
 	return client.R().
@@ -310,7 +310,7 @@ func PrivateMessage(t *testing.T, client *resty.Client, topic string, data *ffty
 		Post(urlPrivateMessage)
 }
 
-func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType) *fftypes.MessageInOut {
+func RequestReply(ts *testState, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType) *fftypes.MessageInOut {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -328,7 +328,7 @@ func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrVal
 		InlineData: fftypes.InlineData{data},
 		Group: &fftypes.InputGroup{
 			Members: members,
-			Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
+			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 		},
 	}
 	var replyMsg fftypes.MessageInOut
@@ -336,8 +336,8 @@ func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrVal
 		SetBody(msg).
 		SetResult(&replyMsg).
 		Post(urlRequestMessage)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
+	require.NoError(ts.t, err)
+	require.Equal(ts.t, 200, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
 	return &replyMsg
 }
 

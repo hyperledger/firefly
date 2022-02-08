@@ -33,7 +33,7 @@
       "platform": "linux/x86_64"
     },
     "solidity-builder": {
-      "image": "node:14-alpine3.15"
+      "image": "ethereum/solc:0.8.11-alpine"
     },
     "base": {
       "image": "alpine:3.15"
