@@ -274,16 +274,9 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 	// if transaction fails,  mark op as failed in DB
 	if err != nil {
-		_ = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-			l := log.L(ctx)
-			update := database.OperationQueryFactory.NewUpdate(ctx).
-				Set("status", fftypes.OpStatusFailed)
-			if err = s.mgr.database.UpdateOperation(ctx, op.ID, update); err != nil {
-				l.Errorf("Operation update failed: %s update=[ %s ]", err, update)
-			}
-
-			return nil
-		})
+		if err := s.mgr.database.ResolveOperation(ctx, op.ID, fftypes.OpStatusFailed, err.Error(), nil); err != nil {
+			log.L(ctx).Errorf("Operation update failed: %s", err)
+		}
 	}
 
 	return err

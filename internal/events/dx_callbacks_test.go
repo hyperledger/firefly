@@ -19,6 +19,7 @@ package events
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -492,7 +493,9 @@ func TestTransferResultOk(t *testing.T) {
 			ID: id,
 		},
 	}, nil, nil)
-	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, id, fftypes.OpStatusFailed, "error info", fftypes.JSONObject{
+		"extra": "info",
+	}).Return(nil)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -501,7 +504,6 @@ func TestTransferResultOk(t *testing.T) {
 		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.NoError(t, err)
-
 }
 
 func TestTransferResultManifestMismatch(t *testing.T) {
@@ -518,7 +520,11 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 			},
 		},
 	}, nil, nil)
-	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, id, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+		return strings.Contains(errorMsg, "FF10329")
+	}), fftypes.JSONObject{
+		"extra": "info",
+	}).Return(nil)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -538,9 +544,7 @@ func TestTransferResultNotCorrelated(t *testing.T) {
 	defer cancel()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
-	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -597,7 +601,9 @@ func TestTransferUpdateFail(t *testing.T) {
 			ID: id,
 		},
 	}, nil, nil)
-	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", mock.Anything, id, fftypes.OpStatusFailed, "error info", fftypes.JSONObject{
+		"extra": "info",
+	}).Return(fmt.Errorf("pop"))
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")

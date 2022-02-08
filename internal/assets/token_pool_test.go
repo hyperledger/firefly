@@ -276,7 +276,7 @@ func TestCreateTokenPoolOpUpdateFail(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", context.Background(), mock.Anything, fftypes.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -439,7 +439,7 @@ func TestActivateTokenPoolOpUpdateFail(t *testing.T) {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(nil)
 	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(true, nil)
-	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", context.Background(), mock.Anything, fftypes.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool, ev)
 	assert.EqualError(t, err, "pop")

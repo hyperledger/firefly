@@ -197,8 +197,8 @@ type iOperationCollection interface {
 	// InsertOperation - Insert an operation
 	InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
 
-	// UpdateOperation - Update operation by ID
-	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	// ResolveOperation - Resolve operation upon completion
+	ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)

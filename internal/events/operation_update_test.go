@@ -38,14 +38,14 @@ func TestOperationUpdateSuccess(t *testing.T) {
 
 	opID := fftypes.NewUUID()
 	txid := fftypes.NewUUID()
+	info := fftypes.JSONObject{"some": "info"}
 	mdi.On("RunAsGroup", em.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		args[1].(func(ctx context.Context) error)(em.ctx)
 	}).Return(nil)
 	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID, Transaction: txid}, nil)
-	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, opID, fftypes.OpStatusFailed, "some error", info).Return(nil)
 	mth.On("AddBlockchainTX", mock.Anything, txid, "0x12345").Return(nil)
 
-	info := fftypes.JSONObject{"some": "info"}
 	err := em.OperationUpdate(mdi, opID, fftypes.OpStatusFailed, "0x12345", "some error", info)
 	assert.NoError(t, err)
 
@@ -78,10 +78,10 @@ func TestOperationUpdateError(t *testing.T) {
 
 	opID := fftypes.NewUUID()
 	txid := fftypes.NewUUID()
-	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID, Transaction: txid}, nil)
-	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(fmt.Errorf("pop"))
-
 	info := fftypes.JSONObject{"some": "info"}
+	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID, Transaction: txid}, nil)
+	mdi.On("ResolveOperation", mock.Anything, opID, fftypes.OpStatusFailed, "some error", info).Return(fmt.Errorf("pop"))
+
 	err := em.operationUpdateCtx(em.ctx, opID, fftypes.OpStatusFailed, "0x12345", "some error", info)
 	assert.EqualError(t, err, "pop")
 
@@ -98,11 +98,11 @@ func TestOperationTXUpdateError(t *testing.T) {
 
 	opID := fftypes.NewUUID()
 	txid := fftypes.NewUUID()
+	info := fftypes.JSONObject{"some": "info"}
 	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID, Transaction: txid}, nil)
-	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, opID, fftypes.OpStatusFailed, "some error", info).Return(nil)
 	mth.On("AddBlockchainTX", mock.Anything, txid, "0x12345").Return(fmt.Errorf("pop"))
 
-	info := fftypes.JSONObject{"some": "info"}
 	err := em.operationUpdateCtx(em.ctx, opID, fftypes.OpStatusFailed, "0x12345", "some error", info)
 	assert.EqualError(t, err, "pop")
 
@@ -123,15 +123,15 @@ func TestOperationUpdateTransferFail(t *testing.T) {
 		Namespace:   "ns1",
 		Transaction: fftypes.NewUUID(),
 	}
+	info := fftypes.JSONObject{"some": "info"}
 
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
-	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
 	})).Return(nil)
 	mth.On("AddBlockchainTX", mock.Anything, op.Transaction, "0x12345").Return(nil)
 
-	info := fftypes.JSONObject{"some": "info"}
 	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
 	assert.NoError(t, err)
 
@@ -152,13 +152,13 @@ func TestOperationUpdateTransferTransactionFail(t *testing.T) {
 		Namespace:   "ns1",
 		Transaction: fftypes.NewUUID(),
 	}
+	info := fftypes.JSONObject{"some": "info"}
 
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
-	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mth.On("AddBlockchainTX", mock.Anything, op.Transaction, "0x12345").Return(fmt.Errorf("pop"))
 
-	info := fftypes.JSONObject{"some": "info"}
 	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
 	assert.EqualError(t, err, "pop")
 
@@ -177,14 +177,14 @@ func TestOperationUpdateTransferEventFail(t *testing.T) {
 		Type:      fftypes.OpTypeTokenTransfer,
 		Namespace: "ns1",
 	}
+	info := fftypes.JSONObject{"some": "info"}
 
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
-	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
 	})).Return(fmt.Errorf("pop"))
 
-	info := fftypes.JSONObject{"some": "info"}
 	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
 	assert.EqualError(t, err, "pop")
 
