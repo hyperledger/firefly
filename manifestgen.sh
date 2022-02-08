@@ -19,6 +19,8 @@
 # This script will automatically update the manifest.json file with the
 # latest releases of all FireFly microservice dependencies
 
+ if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
+ 
 USE_HEAD=false
 
 # If you pass the string "head" as an argument to this script, it will 

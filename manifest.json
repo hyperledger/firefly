@@ -6,8 +6,8 @@
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.7",
-    "sha": "4b1bf26343ae90d6bdba12e1f3ae0eb95e31109b487233263ff0e5233dda5843"
+    "tag": "v0.9.8",
+    "sha": "e5d5775cfa6872ee55e9743072d5c8429ce6330312e863965855db7797860b56"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
@@ -44,6 +44,6 @@
     "release": "v0.5.0_8cb358c"
   },
   "cli": {
-    "tag": "v0.0.41"
+    "tag": "v0.0.43"
   }
 }
