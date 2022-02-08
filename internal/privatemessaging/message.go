@@ -185,7 +185,7 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Sent private message %s:%s", s.msg.Header.Namespace, s.msg.Header.ID)
+	log.L(ctx).Infof("Sent private message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
 
 	if method == methodSendImmediate {
 		if err := s.sendUnpinned(ctx); err != nil {

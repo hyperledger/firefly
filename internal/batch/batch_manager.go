@@ -51,7 +51,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
 		shoulderTap:                make(chan bool, 1),
-		newMessages:                make(chan int64, readPageSize),
+		newMessages:                make(chan int64),
 		sequencerClosed:            make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
@@ -219,7 +219,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 	if !foundAll {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, msg.Header.ID)
 	}
-	log.L(bm.ctx).Infof("Detected new batch-pinned message %s", msg.Header.ID)
+	log.L(bm.ctx).Infof("Detected new batch-pinned message %s sequence=%d", msg.Header.ID, msg.Sequence)
 	return data, nil
 }
 
@@ -227,10 +227,12 @@ func (bm *batchManager) markRewind(rewindTo int64) {
 	bm.rewindMux.Lock()
 	// Make sure we only rewind backwards - as we might get multiple shoulder taps
 	// for different message sequences during a single poll cycle.
-	if bm.rewindTo < 0 || rewindTo < bm.rewindTo {
+	previousRewind := bm.rewindTo
+	if previousRewind < 0 || rewindTo < previousRewind {
 		bm.rewindTo = rewindTo
 	}
 	bm.rewindMux.Unlock()
+	log.L(bm.ctx).Debugf("Marking rewind to sequence=%d (previous=%d)", rewindTo, previousRewind)
 }
 
 func (bm *batchManager) popRewind() int64 {
@@ -245,6 +247,7 @@ func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 
 	rewindTo := bm.popRewind()
 	if rewindTo >= 0 && rewindTo < bm.offset {
+		log.L(bm.ctx).Debugf("Rewinding to sequence=%d", rewindTo)
 		if err := bm.updateOffset(true, rewindTo); err != nil {
 			return nil, err
 		}
