@@ -86,6 +86,8 @@ type batchManager struct {
 	readPageSize               uint64
 	messagePollTimeout         time.Duration
 	startupOffsetRetryAttempts int
+	rewindMux                  sync.Mutex
+	rewindTo                   int64
 }
 
 type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error
@@ -116,6 +118,8 @@ func (bm *batchManager) RegisterDispatcher(msgTypes []fftypes.MessageType, handl
 }
 
 func (bm *batchManager) Start() error {
+	bm.markRewind(-1)
+
 	if err := bm.restoreOffset(); err != nil {
 		return err
 	}
@@ -219,7 +223,33 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 	return data, nil
 }
 
+func (bm *batchManager) markRewind(rewindTo int64) {
+	bm.rewindMux.Lock()
+	// Make sure we only rewind backwards - as we might get multiple shoulder taps
+	// for different message sequences during a single poll cycle.
+	if bm.rewindTo < 0 || rewindTo < bm.rewindTo {
+		bm.rewindTo = rewindTo
+	}
+	bm.rewindMux.Unlock()
+}
+
+func (bm *batchManager) popRewind() int64 {
+	bm.rewindMux.Lock()
+	rewindTo := bm.rewindTo
+	bm.rewindTo = -1
+	bm.rewindMux.Unlock()
+	return rewindTo
+}
+
 func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
+
+	rewindTo := bm.popRewind()
+	if rewindTo >= 0 && rewindTo < bm.offset {
+		if err := bm.updateOffset(true, rewindTo); err != nil {
+			return nil, err
+		}
+	}
+
 	var msgs []*fftypes.Message
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
@@ -305,6 +335,7 @@ func (bm *batchManager) newEventNotifications() {
 				return
 			}
 			l.Debugf("New message sequence notification: %d", m)
+			bm.markRewind(m)
 		case <-bm.ctx.Done():
 			l.Debugf("Exiting due to cancelled context")
 			return
