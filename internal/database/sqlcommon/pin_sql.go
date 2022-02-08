@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -141,7 +141,7 @@ func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (messag
 
 }
 
-func (s *SQLCommon) SetPinDispatched(ctx context.Context, sequence int64) (err error) {
+func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -149,16 +149,17 @@ func (s *SQLCommon) SetPinDispatched(ctx context.Context, sequence int64) (err e
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	_, err = s.updateTx(ctx, tx, sq.
-		Update("pins").
-		Set("dispatched", true).
-		Where(sq.Eq{
-			sequenceColumn: sequence,
-		}),
-		func() {
-			s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeUpdated, sequence)
-		},
-	)
+	query, err := s.buildUpdate(sq.Update("pins"), update, pinFilterFieldMap)
+	if err != nil {
+		return err
+	}
+
+	query, err = s.filterUpdate(ctx, "", query, filter, pinFilterFieldMap)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.updateTx(ctx, tx, query, nil /* no change events filter based update */)
 	if err != nil {
 		return err
 	}

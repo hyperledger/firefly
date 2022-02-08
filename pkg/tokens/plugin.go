@@ -42,10 +42,10 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) error
+	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error
+	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
 	MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
@@ -70,7 +70,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error
+	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.
@@ -100,9 +100,6 @@ type TokenPool struct {
 	// TransactionID is the FireFly-assigned ID to correlate this to a transaction (optional)
 	// Not guaranteed to be set for pool creation events triggered outside of FireFly
 	TransactionID *fftypes.UUID
-
-	// Key is the chain-specific identifier for the user that created the pool
-	Key string
 
 	// Connector is the configured name of this connector
 	Connector string

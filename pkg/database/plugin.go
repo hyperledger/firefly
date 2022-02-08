@@ -132,8 +132,8 @@ type iBatchCollection interface {
 }
 
 type iTransactionCollection interface {
-	// UpsertTransaction - Upsert a transaction
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
+	// InsertTransaction - Insert a new transaction
+	InsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -186,8 +186,8 @@ type iPinCollection interface {
 	// GetPins - Get pins
 	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, res *FilterResult, err error)
 
-	// SetPinDispatched - Set the dispatched flag to true on the specified pins
-	SetPinDispatched(ctx context.Context, sequence int64) (err error)
+	// UpdatePins - Updates pins
+	UpdatePins(ctx context.Context, filter Filter, update Update) (err error)
 
 	// DeletePin - Delete a pin
 	DeletePin(ctx context.Context, sequence int64) (err error)
@@ -660,12 +660,12 @@ var MessageQueryFactory = &queryFields{
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"key":       &StringField{},
-	"topics":    &FFNameArrayField{},
+	"topics":    &FFStringArrayField{},
 	"tag":       &StringField{},
 	"group":     &Bytes32Field{},
 	"created":   &TimeField{},
 	"hash":      &Bytes32Field{},
-	"pins":      &FFNameArrayField{},
+	"pins":      &FFStringArrayField{},
 	"state":     &StringField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
@@ -692,11 +692,11 @@ var BatchQueryFactory = &queryFields{
 
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"type":      &StringField{},
-	"status":    &StringField{},
-	"created":   &TimeField{},
-	"namespace": &StringField{},
+	"id":            &UUIDField{},
+	"type":          &StringField{},
+	"created":       &TimeField{},
+	"namespace":     &StringField{},
+	"blockchainids": &FFStringArrayField{},
 }
 
 // DataQueryFactory filter fields for data
@@ -856,12 +856,13 @@ var TokenPoolQueryFactory = &queryFields{
 	"name":       &StringField{},
 	"standard":   &StringField{},
 	"protocolid": &StringField{},
-	"key":        &StringField{},
 	"symbol":     &StringField{},
 	"message":    &UUIDField{},
 	"state":      &StringField{},
 	"created":    &TimeField{},
 	"connector":  &StringField{},
+	"tx.type":    &StringField{},
+	"tx.id":      &UUIDField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances

@@ -65,7 +65,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	return err == nil, err
 }
 
-func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (actionResult SystemBroadcastAction, err error) {
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -74,57 +74,57 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftyp
 			l.Warnf("Unable to process contract definition broadcast %s - validate failed: %s", msg.Header.ID, validationErr)
 			valid = false
 		} else {
+			var err error
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistFFI(ctx, &broadcast)
+			if err != nil {
+				return ActionRetry, nil, err
+			}
 		}
 	}
 
-	var event *fftypes.Event
-	switch {
-	case err != nil:
-		actionResult = ActionRetry
-	case valid:
-		l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID)
-		actionResult = ActionConfirm
-		err = dh.database.InsertEvent(ctx, event)
-	default:
+	if !valid {
 		l.Warnf("Contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypeContractInterfaceRejected, broadcast.Namespace, broadcast.ID)
-		actionResult = ActionReject
-		err = dh.database.InsertEvent(ctx, event)
+		return ActionReject, nil, nil
 	}
-	return
+
+	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
+	return ActionConfirm, &DefinitionBatchActions{
+		Finalize: func(ctx context.Context) error {
+			event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID)
+			return dh.database.InsertEvent(ctx, event)
+		},
+	}, nil
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (actionResult SystemBroadcastAction, err error) {
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.ContractAPI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
 		if validateErr := broadcast.Validate(ctx, true); validateErr != nil {
-			l.Warnf("Unable to process contract API broadcast %s - validate failed: %s", msg.Header.ID, err)
+			l.Warnf("Unable to process contract API broadcast %s - validate failed: %s", msg.Header.ID, validateErr)
 			valid = false
 		} else {
+			var err error
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistContractAPI(ctx, &broadcast)
+			if err != nil {
+				return ActionRetry, nil, err
+			}
 		}
 	}
 
-	var event *fftypes.Event
-	switch {
-	case err != nil:
-		actionResult = ActionRetry
-	case valid:
-		l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID)
-		actionResult = ActionConfirm
-		err = dh.database.InsertEvent(ctx, event)
-	default:
+	if !valid {
 		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		event = fftypes.NewEvent(fftypes.EventTypeContractAPIRejected, broadcast.Namespace, broadcast.ID)
-		actionResult = ActionReject
-		err = dh.database.InsertEvent(ctx, event)
+		return ActionReject, nil, nil
 	}
-	return
+
+	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
+	return ActionConfirm, &DefinitionBatchActions{
+		Finalize: func(ctx context.Context) error {
+			event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID)
+			return dh.database.InsertEvent(ctx, event)
+		},
+	}, nil
 }

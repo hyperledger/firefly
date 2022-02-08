@@ -66,56 +66,33 @@ func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftyp
 	return msg, data, nil
 }
 
-func TestHandleSystemBroadcastTokenPoolActivateOK(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	action, ba, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionWait, action)
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
-}
-
-func TestHandleSystemBroadcastTokenPoolUpdateOpFail(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
+	err = ba.PreFinalize(context.Background())
 	assert.NoError(t, err)
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
-
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(fmt.Errorf("pop"))
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
-
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
-	assert.Equal(t, ActionRetry, action)
-	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolGetPoolFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := newPoolAnnouncement()
@@ -126,39 +103,37 @@ func TestHandleSystemBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, fmt.Errorf("pop"))
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolExisting(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	operations := []*fftypes.Operation{}
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(&fftypes.TokenPool{}, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionWait, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolExistingConfirmed(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := newPoolAnnouncement()
@@ -172,113 +147,82 @@ func TestHandleSystemBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(existing, nil)
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolIDMismatch(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(database.IDMismatch)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return *event.Reference == *pool.ID && event.Namespace == pool.Namespace && event.Type == fftypes.EventTypePoolRejected
-	})).Return(nil)
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolFailUpsert(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(fmt.Errorf("pop"))
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolOpsFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
-
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
-	assert.Equal(t, ActionRetry, action)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-}
-
-func TestHandleSystemBroadcastTokenPoolActivateFail(t *testing.T) {
-	sh := newTestDefinitionHandlers(t)
-
-	announce := newPoolAnnouncement()
-	pool := announce.Pool
-	msg, data, err := buildPoolDefinitionMessage(announce)
-	assert.NoError(t, err)
-	opID := fftypes.NewUUID()
-	operations := []*fftypes.Operation{{ID: opID}}
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return(operations, nil, nil)
-	mdi.On("UpdateOperation", context.Background(), opID, mock.Anything).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(fmt.Errorf("pop"))
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
-	assert.Equal(t, ActionRetry, action)
+	action, batchAction, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	assert.Equal(t, ActionWait, action)
+	assert.NoError(t, err)
+
+	err = batchAction.PreFinalize(context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolValidateFail(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	announce := &fftypes.TokenPoolAnnouncement{
@@ -288,19 +232,12 @@ func TestHandleSystemBroadcastTokenPoolValidateFail(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
 
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypePoolRejected
-	})).Return(nil)
-
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
 }
 
-func TestHandleSystemBroadcastTokenPoolBadMessage(t *testing.T) {
+func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 	sh := newTestDefinitionHandlers(t)
 
 	msg := &fftypes.Message{
@@ -310,7 +247,7 @@ func TestHandleSystemBroadcastTokenPoolBadMessage(t *testing.T) {
 		},
 	}
 
-	action, err := sh.HandleSystemBroadcast(context.Background(), msg, nil)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, nil)
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }

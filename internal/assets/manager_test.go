@@ -16,7 +16,6 @@ package assets
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -27,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -51,7 +51,9 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
 	}
 	assert.NoError(t, err)
-	return a.(*assetManager), cancel
+	am := a.(*assetManager)
+	am.txHelper = &txcommonmocks.Helper{}
+	return am, cancel
 }
 
 func TestInitFail(t *testing.T) {
@@ -77,34 +79,6 @@ func TestGetTokenBalances(t *testing.T) {
 	mdi.On("GetTokenBalances", context.Background(), f).Return([]*fftypes.TokenBalance{}, nil, nil)
 	_, _, err := am.GetTokenBalances(context.Background(), "ns1", f)
 	assert.NoError(t, err)
-}
-
-func TestGetTokenBalancesByPool(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	pool := &fftypes.TokenPool{
-		ID: fftypes.NewUUID(),
-	}
-	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
-	f := fb.And()
-	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(pool, nil)
-	mdi.On("GetTokenBalances", context.Background(), f).Return([]*fftypes.TokenBalance{}, nil, nil)
-	_, _, err := am.GetTokenBalancesByPool(context.Background(), "ns1", "magic-tokens", "test", f)
-	assert.NoError(t, err)
-}
-
-func TestGetTokenBalancesByPoolBadPool(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
-	f := fb.And()
-	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
-	_, _, err := am.GetTokenBalancesByPool(context.Background(), "ns1", "magic-tokens", "test", f)
-	assert.EqualError(t, err, "pop")
 }
 
 func TestGetTokenAccounts(t *testing.T) {

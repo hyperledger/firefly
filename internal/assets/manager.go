@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -54,15 +55,6 @@ type Manager interface {
 
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
-	// Deprecated
-	CreateTokenPoolByType(ctx context.Context, ns, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
-	GetTokenPoolsByType(ctx context.Context, ns, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
-	GetTokenBalancesByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error)
-	GetTokenTransfersByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
-	MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	BurnTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	TransferTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-
 	Start() error
 	WaitStop()
 }
@@ -70,6 +62,7 @@ type Manager interface {
 type assetManager struct {
 	ctx       context.Context
 	database  database.Plugin
+	txHelper  txcommon.Helper
 	identity  identity.Manager
 	data      data.Manager
 	syncasync syncasync.Bridge
@@ -86,6 +79,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 	am := &assetManager{
 		ctx:       ctx,
 		database:  di,
+		txHelper:  txcommon.NewTransactionHelper(di),
 		identity:  im,
 		data:      dm,
 		syncasync: sa,
@@ -116,14 +110,6 @@ func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.A
 
 func (am *assetManager) GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
 	return am.database.GetTokenBalances(ctx, am.scopeNS(ns, filter))
-}
-
-func (am *assetManager) GetTokenBalancesByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
-	pool, err := am.GetTokenPool(ctx, ns, connector, poolName)
-	if err != nil {
-		return nil, nil, err
-	}
-	return am.database.GetTokenBalances(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
 }
 
 func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {

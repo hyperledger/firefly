@@ -70,6 +70,8 @@ func TestJSONAnySerializeObjects(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "duplicate", jo.GetString("b"))
 
+	assert.Empty(t, "", ((*JSONAny)(nil)).JSONObject().GetString("notThere"))
+
 }
 
 func TestJSONAnyMarshalNull(t *testing.T) {

@@ -35,6 +35,7 @@ import (
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -56,9 +57,9 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
+	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string) error
-	ContractEvent(event *blockchain.ContractEvent) error
+	BlockchainEvent(event *blockchain.EventWithSubscription) error
 
 	// Bound dataexchange callbacks
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
@@ -78,6 +79,7 @@ type eventManager struct {
 	ni                   sysmessaging.LocalNodeInfo
 	publicstorage        publicstorage.Plugin
 	database             database.Plugin
+	txHelper             txcommon.Helper
 	identity             identity.Manager
 	definitions          definitions.DefinitionHandlers
 	data                 data.Manager
@@ -105,6 +107,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publ
 		ni:            ni,
 		publicstorage: pi,
 		database:      di,
+		txHelper:      txcommon.NewTransactionHelper(di),
 		identity:      im,
 		definitions:   dh,
 		data:          dm,

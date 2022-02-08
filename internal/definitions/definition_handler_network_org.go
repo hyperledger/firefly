@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,33 +23,33 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleOrganizationBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (dh *definitionHandlers) handleOrganizationBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 
 	var org fftypes.Organization
-	valid = dh.getSystemBroadcastPayload(ctx, msg, data, &org)
+	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &org)
 	if !valid {
-		return false, nil
+		return ActionReject, nil, nil
 	}
 
-	if err = org.Validate(ctx, true); err != nil {
+	if err := org.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process organization broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return false, nil
+		return ActionReject, nil, nil
 	}
 
 	if org.Parent != "" {
 		parent, err := dh.database.GetOrganizationByIdentity(ctx, org.Parent)
 		if err != nil {
-			return false, err // We only return database errors
+			return ActionRetry, nil, err // We only return database errors
 		}
 		if parent == nil {
 			l.Warnf("Unable to process organization broadcast %s - parent identity not found: %s", msg.Header.ID, org.Parent)
-			return false, nil
+			return ActionReject, nil, nil
 		}
 
 		if msg.Header.Key != parent.Identity {
 			l.Warnf("Unable to process organization broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, parent.Identity, msg.Header.Author)
-			return false, nil
+			return ActionReject, nil, nil
 		}
 	}
 
@@ -61,19 +61,19 @@ func (dh *definitionHandlers) handleOrganizationBroadcast(ctx context.Context, m
 		}
 	}
 	if err != nil {
-		return false, err // We only return database errors
+		return ActionRetry, nil, err // We only return database errors
 	}
 	if existing != nil {
 		if existing.Parent != org.Parent {
 			l.Warnf("Unable to process organization broadcast %s - mismatch with existing %v", msg.Header.ID, existing.ID)
-			return false, nil
+			return ActionReject, nil, nil
 		}
 		org.ID = nil // we keep the existing ID
 	}
 
 	if err = dh.database.UpsertOrganization(ctx, &org, true); err != nil {
-		return false, err
+		return ActionRetry, nil, err
 	}
 
-	return true, nil
+	return ActionConfirm, nil, nil
 }

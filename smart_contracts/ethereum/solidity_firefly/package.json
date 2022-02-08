@@ -2,6 +2,6 @@
   "name": "@hyperledger/assettrail-contracts",
   "version": "0.0.1",
   "dependencies": {
-    "truffle": "^5.4.26"
+    "truffle": "^5.4.32"
   }
 }

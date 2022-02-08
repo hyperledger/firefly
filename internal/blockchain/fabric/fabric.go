@@ -265,13 +265,16 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	sTransactionHash := msgJSON.GetString("transactionId")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	transactionIndex := msgJSON.GetInt64("transactionIndex")
+	eventIndex := msgJSON.GetInt64("eventIndex")
+	timestamp := msgJSON.GetInt64("timestamp")
 	signer := payload.GetString("signer")
 	ns := payload.GetString("namespace")
 	sUUIDs := payload.GetString("uuids")
 	sBatchHash := payload.GetString("batchHash")
 	sPayloadRef := payload.GetString("payloadRef")
 	sContexts := payload.GetStringArray("contexts")
-	sTimestamp := payload.GetString("timestamp")
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
 	if err != nil || len(hexUUIDs) != 32 {
@@ -282,11 +285,6 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	copy(txnID[:], hexUUIDs[0:16])
 	var batchID fftypes.UUID
 	copy(batchID[:], hexUUIDs[16:32])
-	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
-	if err != nil {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad timestamp (%s): %s", sTimestamp, err)
-		// Continue with zero timestamp
-	}
 
 	var batchHash fftypes.Bytes32
 	err = batchHash.UnmarshalText([]byte(sBatchHash))
@@ -315,12 +313,13 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
 		Event: blockchain.Event{
-			Source:     f.Name(),
-			Name:       "BatchPin",
-			ProtocolID: sTransactionHash,
-			Output:     *payload,
-			Info:       msgJSON,
-			Timestamp:  fftypes.UnixTime(timestamp),
+			BlockchainTXID: sTransactionHash,
+			Source:         f.Name(),
+			Name:           "BatchPin",
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
+			Output:         *payload,
+			Info:           msgJSON,
+			Timestamp:      fftypes.UnixTime(timestamp),
 		},
 	}
 
@@ -337,6 +336,9 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	delete(msgJSON, "payload")
 
 	sTransactionHash := msgJSON.GetString("transactionId")
+	blockNumber := msgJSON.GetInt64("blockNumber")
+	transactionIndex := msgJSON.GetInt64("transactionIndex")
+	eventIndex := msgJSON.GetInt64("eventIndex")
 	sub := msgJSON.GetString("subId")
 	name := msgJSON.GetString("eventName")
 	sTimestamp := msgJSON.GetString("timestamp")
@@ -346,19 +348,20 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		// Continue with zero timestamp
 	}
 
-	event := &blockchain.ContractEvent{
+	event := &blockchain.EventWithSubscription{
 		Subscription: sub,
 		Event: blockchain.Event{
-			Source:     f.Name(),
-			Name:       name,
-			ProtocolID: sTransactionHash,
-			Output:     *payload,
-			Info:       msgJSON,
-			Timestamp:  fftypes.UnixTime(timestamp),
+			BlockchainTXID: sTransactionHash,
+			Source:         f.Name(),
+			Name:           name,
+			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
+			Output:         *payload,
+			Info:           msgJSON,
+			Timestamp:      fftypes.UnixTime(timestamp),
 		},
 	}
 
-	return f.callbacks.ContractEvent(event)
+	return f.callbacks.BlockchainEvent(event)
 }
 
 func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -367,7 +370,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) er
 	headers := reply.GetObject("headers")
 	requestID := headers.GetString("requestId")
 	replyType := headers.GetString("type")
-	txHash := reply.GetString("transactionHash")
+	txHash := reply.GetString("transactionId")
 	message := reply.GetString("errorMessage")
 	if requestID == "" || replyType == "" {
 		l.Errorf("Reply cannot be processed: %+v", reply)
@@ -383,7 +386,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) er
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	return f.callbacks.BlockchainOpUpdate(operationID, updateType, message, reply)
+	return f.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {

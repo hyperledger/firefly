@@ -29,7 +29,7 @@ func (f *fakePlugin) Name() string { return "fake" }
 func TestNewPendingMessageOp(t *testing.T) {
 
 	txID := NewUUID()
-	op := NewTXOperation(&fakePlugin{}, "ns1", txID, "testBackend", OpTypePublicStorageBatchBroadcast, OpStatusPending)
+	op := NewOperation(&fakePlugin{}, "ns1", txID, "testBackend", OpTypePublicStorageBatchBroadcast)
 	assert.Equal(t, Operation{
 		ID:          op.ID,
 		Namespace:   "ns1",

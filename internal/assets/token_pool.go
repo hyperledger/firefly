@@ -53,24 +53,6 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
 }
 
-func (am *assetManager) CreateTokenPoolByType(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
-		return nil, err
-	}
-	pool.ID = fftypes.NewUUID()
-	pool.Namespace = ns
-	pool.Connector = connector
-
-	if pool.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		pool.Key = org.Identity
-	}
-	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
-}
-
 func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
@@ -84,37 +66,37 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		})
 	}
 
-	tx := &fftypes.Transaction{
-		ID:        fftypes.NewUUID(),
-		Namespace: pool.Namespace,
-		Type:      fftypes.TransactionTypeTokenPool,
-		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
-	}
-	pool.TX.ID = tx.ID
-	pool.TX.Type = tx.Type
-
-	op := fftypes.NewTXOperation(
-		plugin,
-		pool.Namespace,
-		tx.ID,
-		"",
-		fftypes.OpTypeTokenCreatePool,
-		fftypes.OpStatusPending)
-	txcommon.AddTokenPoolCreateInputs(op, pool)
-
+	var op *fftypes.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		err = am.database.UpsertTransaction(ctx, tx)
-		if err == nil {
-			err = am.database.InsertOperation(ctx, op)
+		txid, err := am.txHelper.SubmitNewTransaction(ctx, pool.Namespace, fftypes.TransactionTypeTokenPool)
+		if err != nil {
+			return err
 		}
-		return err
+
+		pool.TX.ID = txid
+		pool.TX.Type = fftypes.TransactionTypeTokenPool
+
+		op = fftypes.NewOperation(
+			plugin,
+			pool.Namespace,
+			txid,
+			"",
+			fftypes.OpTypeTokenCreatePool)
+		txcommon.AddTokenPoolCreateInputs(op, pool)
+
+		return am.database.InsertOperation(ctx, op)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return pool, plugin.CreateTokenPool(ctx, op.ID, pool)
+	if complete, err := plugin.CreateTokenPool(ctx, op.ID, pool); err != nil {
+		return nil, err
+	} else if complete {
+		update := database.OperationQueryFactory.NewUpdate(ctx).Set("status", fftypes.OpStatusSucceeded)
+		return pool, am.database.UpdateOperation(ctx, op.ID, update)
+	}
+	return pool, nil
 }
 
 func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
@@ -122,20 +104,27 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 	if err != nil {
 		return err
 	}
-	return plugin.ActivateTokenPool(ctx, nil, pool, event)
+
+	op := fftypes.NewOperation(
+		plugin,
+		pool.Namespace,
+		pool.TX.ID,
+		"",
+		fftypes.OpTypeTokenActivatePool)
+	if err := am.database.InsertOperation(ctx, op); err != nil {
+		return err
+	}
+
+	if complete, err := plugin.ActivateTokenPool(ctx, op.ID, pool, event); err != nil {
+		return err
+	} else if complete {
+		update := database.OperationQueryFactory.NewUpdate(ctx).Set("status", fftypes.OpStatusSucceeded)
+		return am.database.UpdateOperation(ctx, op.ID, update)
+	}
+	return nil
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return nil, nil, err
-	}
-	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
-}
-
-func (am *assetManager) GetTokenPoolsByType(ctx context.Context, ns string, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
-	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
-		return nil, nil, err
-	}
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
 	}

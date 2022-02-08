@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -56,6 +57,7 @@ type Manager interface {
 
 type contractManager struct {
 	database          database.Plugin
+	txHelper          txcommon.Helper
 	publicStorage     publicstorage.Plugin
 	broadcast         broadcast.Manager
 	identity          identity.Manager
@@ -73,6 +75,7 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 	}
 	return &contractManager{
 		database:          database,
+		txHelper:          txcommon.NewTransactionHelper(database),
 		publicStorage:     publicStorage,
 		broadcast:         broadcast,
 		identity:          identity,
@@ -172,24 +175,17 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 			return err
 		}
 
-		tx := &fftypes.Transaction{
-			ID:        fftypes.NewUUID(),
-			Namespace: ns,
-			Type:      fftypes.TransactionTypeContractInvoke,
-			Created:   fftypes.Now(),
-			Status:    fftypes.OpStatusPending,
-		}
-		if err := cm.database.UpsertTransaction(ctx, tx); err != nil {
+		txid, err := cm.txHelper.SubmitNewTransaction(ctx, ns, fftypes.TransactionTypeContractInvoke)
+		if err != nil {
 			return err
 		}
 
-		op = fftypes.NewTXOperation(
+		op = fftypes.NewOperation(
 			cm.blockchain,
 			ns,
-			tx.ID,
+			txid,
 			"",
-			fftypes.OpTypeContractInvoke,
-			fftypes.OpStatusPending)
+			fftypes.OpTypeBlockchainInvoke)
 		op.Input = req.Input
 		return cm.database.InsertOperation(ctx, op)
 	})

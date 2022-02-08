@@ -124,14 +124,13 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	}
 
 	// The completed PublicStorage upload
-	op := fftypes.NewTXOperation(
+	op := fftypes.NewOperation(
 		bm.publicstorage,
 		batch.Namespace,
 		batch.Payload.TX.ID,
 		batch.PayloadRef,
-		fftypes.OpTypePublicStorageBatchBroadcast,
-		fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
-	)
+		fftypes.OpTypePublicStorageBatchBroadcast)
+	op.Status = fftypes.OpStatusSucceeded // Note we performed the action synchronously above
 	err = bm.database.InsertOperation(ctx, op)
 	if err != nil {
 		return err

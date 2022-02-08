@@ -41,14 +41,6 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string)
 	return am.database.GetTokenTransfer(ctx, transferID)
 }
 
-func (am *assetManager) GetTokenTransfersByPool(ctx context.Context, ns, connector, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
-	pool, err := am.GetTokenPool(ctx, ns, connector, name)
-	if err != nil {
-		return nil, nil, err
-	}
-	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("pool", pool.ID)))
-}
-
 func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
 	sender := &transferSender{
 		mgr:       am,
@@ -141,12 +133,6 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) MintTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Connector = connector
-	transfer.Pool = poolName
-	return am.MintTokens(ctx, ns, transfer, waitConfirm)
-}
-
 func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
 	transfer.Type = fftypes.TokenTransferTypeBurn
 	if err := am.validateTransfer(ctx, ns, transfer); err != nil {
@@ -160,12 +146,6 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 		err = sender.Send(ctx)
 	}
 	return &transfer.TokenTransfer, err
-}
-
-func (am *assetManager) BurnTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Connector = connector
-	transfer.Pool = poolName
-	return am.BurnTokens(ctx, ns, transfer, waitConfirm)
 }
 
 func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
@@ -184,12 +164,6 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 		err = sender.Send(ctx)
 	}
 	return &transfer.TokenTransfer, err
-}
-
-func (am *assetManager) TransferTokensByType(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Connector = connector
-	transfer.Pool = poolName
-	return am.TransferTokens(ctx, ns, transfer, waitConfirm)
 }
 
 func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) (err error) {
@@ -246,26 +220,8 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return nil
 	}
 
-	tx := &fftypes.Transaction{
-		ID:        fftypes.NewUUID(),
-		Namespace: s.namespace,
-		Type:      fftypes.TransactionTypeTokenTransfer,
-		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
-	}
-	s.transfer.TX.ID = tx.ID
-	s.transfer.TX.Type = tx.Type
-
-	op := fftypes.NewTXOperation(
-		plugin,
-		s.namespace,
-		tx.ID,
-		"",
-		fftypes.OpTypeTokenTransfer,
-		fftypes.OpStatusPending)
-	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
-
 	var pool *fftypes.TokenPool
+	var op *fftypes.Operation
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
@@ -275,13 +231,27 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
 		}
 
-		err = s.mgr.database.UpsertTransaction(ctx, tx)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, fftypes.TransactionTypeTokenTransfer)
 		if err != nil {
 			return err
 		}
-		if err = s.mgr.database.InsertOperation(ctx, op); err != nil {
+
+		s.transfer.TX.ID = txid
+		s.transfer.TX.Type = fftypes.TransactionTypeTokenTransfer
+
+		op = fftypes.NewOperation(
+			plugin,
+			s.namespace,
+			txid,
+			"",
+			fftypes.OpTypeTokenTransfer)
+		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
+			err = s.mgr.database.InsertOperation(ctx, op)
+		}
+		if err != nil {
 			return err
 		}
+
 		if s.transfer.Message != nil {
 			s.transfer.Message.State = fftypes.MessageStateStaged
 			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, database.UpsertOptimizationNew)
@@ -303,17 +273,12 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}
 
-	// if transaction fails,  mark tx and op as failed in DB
+	// if transaction fails,  mark op as failed in DB
 	if err != nil {
 		_ = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 			l := log.L(ctx)
-			tx.Status = fftypes.OpStatusFailed
-
 			update := database.OperationQueryFactory.NewUpdate(ctx).
 				Set("status", fftypes.OpStatusFailed)
-			if err = s.mgr.database.UpdateTransaction(ctx, tx.ID, update); err != nil {
-				l.Errorf("TX update failed: %s update=[ %s ]", err, update)
-			}
 			if err = s.mgr.database.UpdateOperation(ctx, op.ID, update); err != nil {
 				l.Errorf("Operation update failed: %s update=[ %s ]", err, update)
 			}

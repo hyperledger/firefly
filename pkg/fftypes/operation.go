@@ -24,6 +24,8 @@ type OpType = FFEnum
 var (
 	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
 	OpTypeBlockchainBatchPin OpType = ffEnum("optype", "blockchain_batch_pin")
+	// OpTypeBlockchainInvoke is a smart contract invoke
+	OpTypeBlockchainInvoke OpType = ffEnum("optype", "blockchain_invoke")
 	// OpTypePublicStorageBatchBroadcast is a public storage operation to store broadcast data
 	OpTypePublicStorageBatchBroadcast OpType = ffEnum("optype", "publicstorage_batch_broadcast")
 	// OpTypeDataExchangeBatchSend is a private send
@@ -32,12 +34,10 @@ var (
 	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
 	// OpTypeTokenCreatePool is a token pool creation
 	OpTypeTokenCreatePool OpType = ffEnum("optype", "token_create_pool")
-	// OpTypeTokenAnnouncePool is a broadcast of token pool info
-	OpTypeTokenAnnouncePool OpType = ffEnum("optype", "token_announce_pool")
+	// OpTypeTokenActivatePool is a token pool activation
+	OpTypeTokenActivatePool OpType = ffEnum("optype", "token_activate_pool")
 	// OpTypeTokenTransfer is a token transfer
 	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
-	// OpTypeContractInvoke is a smart contract invoke
-	OpTypeContractInvoke OpType = ffEnum("optype", "contract_invoke")
 )
 
 // OpStatus is the current status of an operation
@@ -56,8 +56,8 @@ type Named interface {
 	Name() string
 }
 
-// NewTXOperation creates a new operation for a transaction
-func NewTXOperation(plugin Named, namespace string, tx *UUID, backendID string, opType OpType, opStatus OpStatus) *Operation {
+// NewOperation creates a new operation in a transaction
+func NewOperation(plugin Named, namespace string, tx *UUID, backendID string, opType OpType) *Operation {
 	return &Operation{
 		ID:          NewUUID(),
 		Namespace:   namespace,
@@ -65,7 +65,7 @@ func NewTXOperation(plugin Named, namespace string, tx *UUID, backendID string, 
 		BackendID:   backendID,
 		Transaction: tx,
 		Type:        opType,
-		Status:      opStatus,
+		Status:      OpStatusPending,
 		Created:     Now(),
 	}
 }

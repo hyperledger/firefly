@@ -37,8 +37,8 @@ func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.T(), suite.testState.ws1)
-	received2, _ := wsReader(suite.T(), suite.testState.ws2)
+	received1, _ := wsReader(suite.testState.ws1)
+	received2, _ := wsReader(suite.testState.ws2)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
 	poolName := fmt.Sprintf("pool%d", len(pools))
@@ -117,7 +117,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), "erc1155", transfers[0].Connector)
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
-	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].MessageHash)
+	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].Message)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"payment for data"`, data[0].Value.String())
 	validateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
@@ -184,8 +184,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.T(), suite.testState.ws1)
-	received2, _ := wsReader(suite.T(), suite.testState.ws2)
+	received1, _ := wsReader(suite.testState.ws1)
+	received2, _ := wsReader(suite.testState.ws2)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
 	poolName := fmt.Sprintf("pool%d", len(pools))
@@ -254,7 +254,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeTransfer, transferOut.Type)
 	assert.Equal(suite.T(), "1", transferOut.TokenIndex)
 	assert.Equal(suite.T(), int64(1), transferOut.Amount.Int().Int64())
-	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transferOut.MessageHash)
+	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transferOut.Message)
 	assert.Equal(suite.T(), 1, len(data))
 	assert.Equal(suite.T(), `"ownership change"`, data[0].Value.String())
 	validateAccountBalances(suite.T(), suite.testState.client1, poolID, "1", map[string]int64{

@@ -48,28 +48,15 @@ func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain
 }
 
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
-	tx := &fftypes.Transaction{
-		ID:        batch.Payload.TX.ID,
-		Type:      fftypes.TransactionTypeBatchPin,
-		Namespace: batch.Namespace,
-		Created:   fftypes.Now(),
-		Status:    fftypes.OpStatusPending,
-	}
-	err := bp.database.UpsertTransaction(ctx, tx)
-	if err != nil {
-		return err
-	}
 
 	// The pending blockchain transaction
-	op := fftypes.NewTXOperation(
+	op := fftypes.NewOperation(
 		bp.blockchain,
 		batch.Namespace,
 		batch.Payload.TX.ID,
 		"",
-		fftypes.OpTypeBlockchainBatchPin,
-		fftypes.OpStatusPending)
-	err = bp.database.InsertOperation(ctx, op)
-	if err != nil {
+		fftypes.OpTypeBlockchainBatchPin)
+	if err := bp.database.InsertOperation(ctx, op); err != nil {
 		return err
 	}
 

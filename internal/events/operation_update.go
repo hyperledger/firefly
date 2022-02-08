@@ -17,37 +17,41 @@
 package events
 
 import (
+	"context"
+
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	op, err := em.database.GetOperationByID(em.ctx, operationID)
+func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
+	op, err := em.database.GetOperationByID(ctx, operationID)
 	if err != nil || op == nil {
 		log.L(em.ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", operationID)
 		return nil
 	}
 
-	update := database.OperationQueryFactory.NewUpdate(em.ctx).
+	update := database.OperationQueryFactory.NewUpdate(ctx).
 		Set("status", txState).
 		Set("error", errorMessage).
 		Set("output", opOutput)
-	if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
+	if err := em.database.UpdateOperation(ctx, op.ID, update); err != nil {
 		return err
 	}
 
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
-		txUpdate := database.TransactionQueryFactory.NewUpdate(em.ctx).Set("status", txState)
-		if err := em.database.UpdateTransaction(em.ctx, op.Transaction, txUpdate); err != nil {
-			return err
-		}
-
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
-		if err := em.database.InsertEvent(em.ctx, event); err != nil {
+		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
 	}
-	return nil
+
+	return em.txHelper.AddBlockchainTX(ctx, op.Transaction, blockchainTXID)
+}
+
+func (em *eventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
+	return em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+		return em.operationUpdateCtx(ctx, operationID, txState, blockchainTXID, errorMessage, opOutput)
+	})
 }

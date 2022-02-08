@@ -47,6 +47,7 @@ $(eval $(call makemock, pkg/dataexchange,          Callbacks,          dataexcha
 $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmocks))
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))
 $(eval $(call makemock, pkg/wsclient,              WSClient,           wsmocks))
+$(eval $(call makemock, internal/txcommon,         Helper,             txcommonmocks))
 $(eval $(call makemock, internal/identity,         Manager,            identitymanagermocks))
 $(eval $(call makemock, internal/batchpin,         Submitter,          batchpinmocks))
 $(eval $(call makemock, internal/sysmessaging,     SystemEvents,       sysmessagingmocks))
@@ -88,3 +89,5 @@ swagger:
 		$(VGO) test ./internal/apiserver -timeout=10s -tags swagger
 manifest:
 		./manifestgen.sh
+docker:
+		./docker_build.sh

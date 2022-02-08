@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,6 +23,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var plugins = []database.Plugin{
-	&postgres.Postgres{},
+var pluginsByName = map[string]func() database.Plugin{
+	(*postgres.Postgres)(nil).Name(): func() database.Plugin { return &postgres.Postgres{} },
 }

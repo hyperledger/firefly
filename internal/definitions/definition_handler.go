@@ -35,18 +35,36 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error)
+	HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
-type SystemBroadcastAction int
+// DefinitionMessageAction is the action to be taken on an individual definition message
+type DefinitionMessageAction int
 
 const (
-	ActionReject SystemBroadcastAction = iota
+	// ActionReject the message was successfully processed, but was malformed/invalid and should be marked as rejected
+	ActionReject DefinitionMessageAction = iota
+
+	// ActionConfirm the message was valid and should be confirmed
 	ActionConfirm
+
+	// ActionRetry a recoverable error was encountered - batch should be halted and then re-processed from the start
 	ActionRetry
+
+	// ActionWait the message is still awaiting further pieces for aggregation and should be held in pending state
 	ActionWait
 )
+
+// DefinitionBatchActions are actions to be taken at the end of a definition batch
+// See further notes on "batchActions" in the event aggregator
+type DefinitionBatchActions struct {
+	// PreFinalize may perform a blocking action (possibly to an external connector) that should execute outside database RunAsGroup
+	PreFinalize func(ctx context.Context) error
+
+	// Finalize may perform final, non-idempotent database operations (such as inserting Events)
+	Finalize func(ctx context.Context) error
+}
 
 type definitionHandlers struct {
 	database  database.Plugin
@@ -86,20 +104,18 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (SystemBroadcastAction, error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (msgAction DefinitionMessageAction, batchActions *DefinitionBatchActions, err error) {
 	l := log.L(ctx)
-	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
-	var valid bool
-	var err error
+	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch fftypes.SystemTag(msg.Header.Tag) {
 	case fftypes.SystemTagDefineDatatype:
-		valid, err = dh.handleDatatypeBroadcast(ctx, msg, data)
+		return dh.handleDatatypeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNamespace:
-		valid, err = dh.handleNamespaceBroadcast(ctx, msg, data)
+		return dh.handleNamespaceBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineOrganization:
-		valid, err = dh.handleOrganizationBroadcast(ctx, msg, data)
+		return dh.handleOrganizationBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNode:
-		valid, err = dh.handleNodeBroadcast(ctx, msg, data)
+		return dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineFFI:
@@ -108,15 +124,7 @@ func (dh *definitionHandlers) HandleSystemBroadcast(ctx context.Context, msg *ff
 		return dh.handleContractAPIBroadcast(ctx, msg, data)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
-		return ActionReject, nil
-	}
-	switch {
-	case err != nil:
-		return ActionRetry, err
-	case !valid:
-		return ActionReject, nil
-	default:
-		return ActionConfirm, nil
+		return ActionReject, nil, nil
 	}
 }
 

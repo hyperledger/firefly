@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -56,6 +57,7 @@ type batchProcessor struct {
 	ctx         context.Context
 	ni          sysmessaging.LocalNodeInfo
 	database    database.Plugin
+	txHelper    txcommon.Helper
 	name        string
 	cancelCtx   func()
 	closed      bool
@@ -77,6 +79,7 @@ func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di da
 		cancelCtx:   cancelCtx,
 		ni:          ni,
 		database:    di,
+		txHelper:    txcommon.NewTransactionHelper(di),
 		name:        fmt.Sprintf("%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key),
 		newWork:     make(chan *batchWork),
 		persistWork: make(chan *batchWork, conf.BatchMaxSize),
@@ -295,15 +298,16 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 					Set("group", batch.Group)
 				err = bp.database.UpdateMessages(ctx, filter, update)
 			}
+
 			if err == nil && seal {
-				// Generate a new Transaction reference, which will be used to record status of the associated transaction as it happens
-				batch.Payload.TX = fftypes.TransactionRef{
-					Type: fftypes.TransactionTypeBatchPin,
-					ID:   fftypes.NewUUID(),
-				}
+				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
 				contexts, err = bp.maskContexts(ctx, batch)
-				batch.Hash = batch.Payload.Hash()
-				log.L(ctx).Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
+				if err == nil {
+					batch.Payload.TX.Type = fftypes.TransactionTypeBatchPin
+					batch.Payload.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, batch.Namespace, fftypes.TransactionTypeBatchPin)
+					batch.Hash = batch.Payload.Hash()
+					log.L(ctx).Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
+				}
 			}
 			if err == nil {
 				// Persist the batch itself

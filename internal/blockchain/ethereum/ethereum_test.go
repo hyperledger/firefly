@@ -40,6 +40,7 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("eth_unit_tests")
 var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
+var utAddressResolverConf = utConfPrefix.SubPrefix(AddressResolverConfigKey)
 
 func testFFIMethod() *fftypes.FFIMethod {
 	return &fftypes.FFIMethod{
@@ -98,6 +99,15 @@ func TestInitMissingURL(t *testing.T) {
 	resetConf()
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestInitBadAddressResolver(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf()
+	utAddressResolverConf.Set(AddressResolverURLTemplate, "{{unclosed}")
+	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
+	assert.Regexp(t, "FF10337.*urlTemplate", err)
 }
 
 func TestInitMissingInstance(t *testing.T) {
@@ -985,6 +995,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	em.On("BlockchainOpUpdate",
 		operationID,
 		fftypes.OpStatusSucceeded,
+		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
 		"",
 		mock.Anything).Return(nil)
 
@@ -1024,6 +1035,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	txsu := em.On("BlockchainOpUpdate",
 		operationID,
 		fftypes.OpStatusFailed,
+		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(fmt.Errorf("Shutdown"))
 	done := make(chan struct{})
@@ -1294,7 +1306,11 @@ func TestHandleMessageContractEvent(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("ContractEvent", mock.Anything).Return(nil)
+	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
+		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
+		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
+		return true
+	})).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1302,7 +1318,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 
-	ev := em.Calls[0].Arguments[0].(*blockchain.ContractEvent)
+	ev := em.Calls[0].Arguments[0].(*blockchain.EventWithSubscription)
 	assert.Equal(t, "sub2", ev.Subscription)
 	assert.Equal(t, "Changed", ev.Event.Name)
 
@@ -1353,7 +1369,7 @@ func TestHandleMessageContractEventNoTimestamp(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("ContractEvent", mock.Anything).Return(nil)
+	em.On("BlockchainEvent", mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1389,7 +1405,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	em.On("ContractEvent", mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)

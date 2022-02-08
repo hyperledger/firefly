@@ -297,17 +297,17 @@ func (f *JSONField) getSerialization() FieldSerialization { return &jsonField{} 
 func (f *JSONField) filterAsString() bool                 { return true }
 func (f *JSONField) description() string                  { return "JSON-blob" }
 
-type FFNameArrayField struct{}
-type ffNameArrayField struct{ na fftypes.FFNameArray }
+type FFStringArrayField struct{}
+type ffNameArrayField struct{ na fftypes.FFStringArray }
 
 func (f *ffNameArrayField) Scan(src interface{}) (err error) {
 	return f.na.Scan(src)
 }
-func (f *ffNameArrayField) Value() (driver.Value, error)         { return f.na.String(), nil }
-func (f *ffNameArrayField) String() string                       { return f.na.String() }
-func (f *FFNameArrayField) getSerialization() FieldSerialization { return &ffNameArrayField{} }
-func (f *FFNameArrayField) filterAsString() bool                 { return true }
-func (f *FFNameArrayField) description() string                  { return "String-array" }
+func (f *ffNameArrayField) Value() (driver.Value, error)           { return f.na.String(), nil }
+func (f *ffNameArrayField) String() string                         { return f.na.String() }
+func (f *FFStringArrayField) getSerialization() FieldSerialization { return &ffNameArrayField{} }
+func (f *FFStringArrayField) filterAsString() bool                 { return true }
+func (f *FFStringArrayField) description() string                  { return "String-array" }
 
 type BoolField struct{}
 type boolField struct{ b bool }

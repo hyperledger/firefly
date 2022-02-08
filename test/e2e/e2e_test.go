@@ -80,9 +80,9 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftypes.MessageType, txtype fftypes.TransactionType, count, idx int) *fftypes.Data {
+func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType fftypes.MessageType, txtype fftypes.TransactionType, count int) (data []*fftypes.Data) {
 	var group *fftypes.Bytes32
-	messages := GetMessages(ts.t, client, ts.startTime, msgType, 200)
+	messages := GetMessages(ts.t, client, ts.startTime, msgType, topic, 200)
 	for i, message := range messages {
 		ts.t.Logf("Message %d: %+v", i, *message)
 		if group != nil {
@@ -91,36 +91,44 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 		group = message.Header.Group
 	}
 	assert.Equal(ts.t, count, len(messages))
-	assert.Equal(ts.t, txtype, (messages)[idx].Header.TxType)
-	assert.Equal(ts.t, "default", (messages)[idx].Header.Namespace)
-	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[idx].Header.Topics)
 
-	data := GetData(ts.t, client, ts.startTime, 200)
-	var msgData *fftypes.Data
-	for i, d := range data {
-		ts.t.Logf("Data %d: %+v", i, *d)
-		if *d.ID == *messages[idx].Data[0].ID {
-			msgData = d
+	var returnData []*fftypes.Data
+	for idx := 0; idx < len(messages); idx++ {
+		assert.Equal(ts.t, txtype, (messages)[idx].Header.TxType)
+		assert.Equal(ts.t, fftypes.FFStringArray{topic}, (messages)[idx].Header.Topics)
+		assert.Equal(ts.t, topic, (messages)[idx].Header.Topics[0])
+
+		data := GetDataForMessage(ts.t, client, ts.startTime, (messages)[idx].Header.ID)
+		var msgData *fftypes.Data
+		for i, d := range data {
+			ts.t.Logf("Data %d: %+v", i, *d)
+			if *d.ID == *messages[idx].Data[0].ID {
+				msgData = d
+			}
 		}
-	}
-	assert.NotNil(ts.t, msgData, "Found data with ID '%s'", messages[idx].Data[0].ID)
-	if group == nil {
-		assert.Equal(ts.t, 1, len(data))
+		assert.NotNil(ts.t, msgData, "Found data with ID '%s'", messages[idx].Data[0].ID)
+		if group == nil {
+			assert.Equal(ts.t, 1, len(data))
+		}
+
+		returnData = append(returnData, msgData)
+
+		assert.Equal(ts.t, "default", msgData.Namespace)
+		expectedHash, err := msgData.CalcHash(context.Background())
+		assert.NoError(ts.t, err)
+		assert.Equal(ts.t, *expectedHash, *msgData.Hash)
+
+		if msgData.Blob != nil {
+			blob := GetBlob(ts.t, client, msgData, 200)
+			assert.NotNil(ts.t, blob)
+			var hash fftypes.Bytes32 = sha256.Sum256(blob)
+			assert.Equal(ts.t, *msgData.Blob.Hash, hash)
+		}
+
 	}
 
-	assert.Equal(ts.t, "default", msgData.Namespace)
-	expectedHash, err := msgData.CalcHash(context.Background())
-	assert.NoError(ts.t, err)
-	assert.Equal(ts.t, *expectedHash, *msgData.Hash)
-
-	if msgData.Blob != nil {
-		blob := GetBlob(ts.t, client, msgData, 200)
-		assert.NotNil(ts.t, blob)
-		var hash fftypes.Bytes32 = sha256.Sum256(blob)
-		assert.Equal(ts.t, *msgData.Blob.Hash, hash)
-	}
-
-	return msgData
+	// Flip data (returned in most recent order) into delivery order
+	return returnData
 }
 
 func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
@@ -129,6 +137,10 @@ func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes
 		assert.Equal(t, "erc1155", account.Connector)
 		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}
+}
+
+func pickTopic(i int, options []string) string {
+	return options[i%len(options)]
 }
 
 func readStackFile(t *testing.T) *Stack {
@@ -204,9 +216,19 @@ func beforeE2ETest(t *testing.T) *testState {
 		orgsC1 := GetOrgs(t, ts.client1, 200)
 		orgsC2 := GetOrgs(t, ts.client2, 200)
 		if len(orgsC1) >= 2 && len(orgsC2) >= 2 {
-			ts.org1 = orgsC1[0]
-			ts.org2 = orgsC1[1]
-			break
+			// in case there are more than two orgs in the network we need to ensure
+			// we select the same two that were provided in the first two elements
+			// of the stack file
+			for _, org := range orgsC1 {
+				if org.Name == stack.Members[0].OrgName {
+					ts.org1 = org
+				} else if org.Name == stack.Members[1].OrgName {
+					ts.org2 = org
+				}
+			}
+			if ts.org1 != nil && ts.org2 != nil {
+				break
+			}
 		}
 		t.Logf("Waiting for 2 orgs to appear. Currently have: node1=%d node2=%d", len(orgsC1), len(orgsC2))
 		time.Sleep(3 * time.Second)
@@ -249,32 +271,38 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
+func wsReader(conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
 	events := make(chan *fftypes.EventDelivery, 100)
 	changeEvents := make(chan *fftypes.ChangeEvent, 100)
 	go func() {
 		for {
 			_, b, err := conn.ReadMessage()
 			if err != nil {
-				t.Logf("Websocket %s closing, error: %s", conn.RemoteAddr(), err)
+				fmt.Printf("Websocket %s closing, error: %s", conn.RemoteAddr(), err)
 				return
 			}
-			t.Logf("Websocket %s receive: %s", conn.RemoteAddr(), b)
+			fmt.Printf("Websocket %s receive: %s", conn.RemoteAddr(), b)
 			var wsa fftypes.WSClientActionBase
 			err = json.Unmarshal(b, &wsa)
-			assert.NoError(t, err)
+			if err != nil {
+				panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
+			}
 			switch wsa.Type {
 			case fftypes.WSClientActionChangeNotifcation:
 				var wscn fftypes.WSChangeNotification
 				err = json.Unmarshal(b, &wscn)
-				assert.NoError(t, err)
+				if err != nil {
+					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
+				}
 				if err == nil {
 					changeEvents <- wscn.ChangeEvent
 				}
 			default:
 				var ed fftypes.EventDelivery
 				err = json.Unmarshal(b, &ed)
-				assert.NoError(t, err)
+				if err != nil {
+					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
+				}
 				if err == nil {
 					events <- &ed
 				}
