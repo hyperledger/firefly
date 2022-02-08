@@ -278,7 +278,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 			h.Write([]byte(topic))
 			msgContext := fftypes.HashResult(h)
 			unmaskedContexts = append(unmaskedContexts, msgContext)
-			ready, err := state.CheckUnmaskedContextReady(ctx, *msgContext, msg, msg.Header.Topics[i], pin.Sequence)
+			ready, err := state.CheckUnmaskedContextReady(ctx, msgContext, msg, msg.Header.Topics[i], pin.Sequence)
 			if err != nil || !ready {
 				return err
 			}
@@ -286,7 +286,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 
 	}
 
-	l.Infof("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
+	l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
 	dispatched, err := ag.attemptMessageDispatch(ctx, msg, state)
 	if err != nil {
 		return err
