@@ -247,6 +247,8 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 }
 
 func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, pin *fftypes.Pin, msgBaseIndex int64, msg *fftypes.Message, state *batchState) (err error) {
+	l := log.L(ctx)
+
 	// Check if it's ready to be processed
 	unmaskedContexts := make([]*fftypes.Bytes32, 0, len(msg.Header.Topics))
 	nextPins := make([]*nextPinState, 0, len(msg.Header.Topics))
@@ -254,14 +256,14 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 		// Private messages have one or more masked "pin" hashes that allow us to work
 		// out if it's the next message in the sequence, given the previous messages
 		if msg.Header.Group == nil || len(msg.Pins) == 0 || len(msg.Header.Topics) != len(msg.Pins) {
-			log.L(ctx).Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, batch.ID, msg.Pins, msg.Header.Topics)
+			l.Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, batch.ID, msg.Pins, msg.Header.Topics)
 			return nil
 		}
 		for i, pinStr := range msg.Pins {
 			var msgContext fftypes.Bytes32
 			err := msgContext.UnmarshalText([]byte(pinStr))
 			if err != nil {
-				log.L(ctx).Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, batch.ID, i, pinStr)
+				l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, batch.ID, i, pinStr)
 				return nil
 			}
 			nextPin, err := state.CheckMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext)
@@ -284,6 +286,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 
 	}
 
+	l.Infof("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
 	dispatched, err := ag.attemptMessageDispatch(ctx, msg, state)
 	if err != nil {
 		return err

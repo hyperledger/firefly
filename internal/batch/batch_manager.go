@@ -51,7 +51,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
 		shoulderTap:                make(chan bool, 1),
-		newMessages:                make(chan int64, readPageSize),
+		newMessages:                make(chan int64),
 		sequencerClosed:            make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
