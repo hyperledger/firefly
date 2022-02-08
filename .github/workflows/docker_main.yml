@@ -22,7 +22,7 @@ jobs:
 
       - name: Build
         run: |
-          make ARGS='\
+          make DOCKER_ARGS='\
             --label commit=$GITHUB_SHA \
             --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --label tag=${{ steps.build_tag_generator.outputs.BUILD_TAG }} \
