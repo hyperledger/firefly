@@ -268,13 +268,13 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	blockNumber := msgJSON.GetInt64("blockNumber")
 	transactionIndex := msgJSON.GetInt64("transactionIndex")
 	eventIndex := msgJSON.GetInt64("eventIndex")
+	timestamp := msgJSON.GetInt64("timestamp")
 	signer := payload.GetString("signer")
 	ns := payload.GetString("namespace")
 	sUUIDs := payload.GetString("uuids")
 	sBatchHash := payload.GetString("batchHash")
 	sPayloadRef := payload.GetString("payloadRef")
 	sContexts := payload.GetStringArray("contexts")
-	sTimestamp := payload.GetString("timestamp")
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
 	if err != nil || len(hexUUIDs) != 32 {
@@ -285,11 +285,6 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	copy(txnID[:], hexUUIDs[0:16])
 	var batchID fftypes.UUID
 	copy(batchID[:], hexUUIDs[16:32])
-	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
-	if err != nil {
-		log.L(ctx).Errorf("BatchPin event is not valid - bad timestamp (%s): %s", sTimestamp, err)
-		// Continue with zero timestamp
-	}
 
 	var batchHash fftypes.Bytes32
 	err = batchHash.UnmarshalText([]byte(sBatchHash))
