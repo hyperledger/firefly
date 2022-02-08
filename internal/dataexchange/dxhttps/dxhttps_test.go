@@ -410,9 +410,9 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
 	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
-		return ts.Manifest == `{"manifest":true}` && ts.Info == `{"signatures":"and stuff"}`
+		return ts.Manifest == `{"manifest":true}` && ts.Info.String() == `{"signatures":"and stuff"}`
 	})).Return(nil)
-	fromServer <- `{"type":"message-delivered","requestID":"tx12345","info":"{\"signatures\":\"and stuff\"}","manifest":"{\"manifest\":true}"}`
+	fromServer <- `{"type":"message-delivered","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 

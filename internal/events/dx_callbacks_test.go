@@ -498,7 +498,7 @@ func TestTransferResultOk(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.NoError(t, err)
 
@@ -526,7 +526,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-		Info:     `{"extra": "info"}`,
+		Info:     fftypes.JSONObject{"extra": "info"},
 		Manifest: "Sally",
 	})
 	assert.NoError(t, err)
@@ -546,7 +546,7 @@ func TestTransferResultNotCorrelated(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.NoError(t, err)
 
@@ -563,7 +563,7 @@ func TestTransferResultNotFound(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.NoError(t, err)
 
@@ -580,7 +580,7 @@ func TestTransferGetOpFail(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.Regexp(t, "FF10158", err)
 
@@ -603,7 +603,7 @@ func TestTransferUpdateFail(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.Regexp(t, "FF10158", err)
 

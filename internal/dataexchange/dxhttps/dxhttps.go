@@ -44,17 +44,17 @@ type HTTPS struct {
 }
 
 type wsEvent struct {
-	Type      msgType `json:"type"`
-	Sender    string  `json:"sender"`
-	Recipient string  `json:"recipient"`
-	RequestID string  `json:"requestId"`
-	Path      string  `json:"path"`
-	Message   string  `json:"message"`
-	Hash      string  `json:"hash"`
-	Size      int64   `json:"size"`
-	Error     string  `json:"error"`
-	Manifest  string  `json:"manifest"`
-	Info      string  `json:"info"`
+	Type      msgType            `json:"type"`
+	Sender    string             `json:"sender"`
+	Recipient string             `json:"recipient"`
+	RequestID string             `json:"requestId"`
+	Path      string             `json:"path"`
+	Message   string             `json:"message"`
+	Hash      string             `json:"hash"`
+	Size      int64              `json:"size"`
+	Error     string             `json:"error"`
+	Manifest  string             `json:"manifest"`
+	Info      fftypes.JSONObject `json:"info"`
 }
 
 const (
