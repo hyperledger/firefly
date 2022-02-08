@@ -503,14 +503,67 @@ func TestWaitConsumesMessagesAndDoesNotBlock(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	go bm.(*batchManager).newEventNotifications()
-	for i := 0; i < int(bm.(*batchManager).readPageSize); i++ {
+	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
+	bm := bmi.(*batchManager)
+	_ = bm.popRewind()
+	go bm.newEventNotifications()
+	for i := 0; i < int(bm.readPageSize); i++ {
 		bm.NewMessages() <- 12345
 	}
 	// And should generate a shoulder tap
-	<-bm.(*batchManager).shoulderTap
+	<-bm.shoulderTap
+	// And a rewind
+	assert.Equal(t, int64(12345), bm.popRewind())
 	bm.Close()
+}
+
+func TestReadPageWithRewindSuccess(t *testing.T) {
+	config.Reset()
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+
+	msg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
+	mdi.On("UpdateOffset", mock.Anything, int64(0), mock.Anything).Return(nil)
+	mdi.On("GetMessages", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		f, _ := filter.Finalize()
+		assert.Contains(t, f.String(), "12345")
+		return true
+	})).Return([]*fftypes.Message{msg}, nil, nil)
+
+	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
+	bm := bmi.(*batchManager)
+	_ = bm.popRewind()
+	bm.offset = 44444
+	bm.markRewind(22222)
+	bm.markRewind(12345)
+	bm.markRewind(33333)
+	msgs, err := bm.readPage()
+	assert.NoError(t, err)
+	assert.Len(t, msgs, 1)
+	bm.Close()
+
+	mdi.AssertExpectations(t)
+}
+
+func TestReadPageWithRewindFail(t *testing.T) {
+	config.Reset()
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+
+	mdi.On("UpdateOffset", mock.Anything, int64(0), mock.Anything).Return(fmt.Errorf("pop"))
+
+	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
+	bm := bmi.(*batchManager)
+	bm.Close()
+
+	bm.offset = 22222
+	bm.markRewind(12345)
+	_, err := bm.readPage()
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }
 
 func TestAssembleMessageDataNilData(t *testing.T) {
