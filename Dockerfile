@@ -1,16 +1,24 @@
-FROM golang:1.16-alpine3.13 AS firefly-builder
+ARG FIREFLY_BUILDER_TAG
+ARG FABRIC_BUILDER_TAG
+ARG FABRIC_BUILDER_PLATFORM
+ARG SOLIDITY_BUILDER_TAG
+ARG BASE_TAG
+
+FROM $FIREFLY_BUILDER_TAG AS firefly-builder
+ARG UI_TAG
+ARG UI_RELEASE
 RUN apk add make gcc build-base curl git
 WORKDIR /firefly
 ADD go.mod go.sum ./
 RUN go mod download
-ENV UI_RELEASE "https://github.com/hyperledger/firefly-ui/releases/download/v0.5.0/v0.5.0_8cb358c.tgz"
+ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
 RUN mkdir /firefly/frontend \
  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 ADD . .
 RUN make build
 
-FROM golang:1.16-alpine3.13 AS fabric-builder
-RUN apk add  libc6-compat
+FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
+RUN apk add libc6-compat
 WORKDIR /firefly/smart_contracts/fabric/firefly-go
 ADD smart_contracts/fabric/firefly-go .
 RUN GO111MODULE=on go mod vendor
@@ -20,7 +28,8 @@ RUN tar -zxf hyperledger-fabric-linux-amd64-2.3.2.tar.gz
 RUN touch core.yaml
 RUN ./bin/peer lifecycle chaincode package /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz --path /firefly/smart_contracts/fabric/firefly-go --lang golang --label firefly_1.0
 
-FROM node:14-alpine3.11 AS solidity-builder
+FROM $SOLIDITY_BUILDER_TAG AS solidity-builder
+RUN apk add python3 make gcc g++ musl-dev
 WORKDIR /firefly/solidity_firefly
 ADD smart_contracts/ethereum/solidity_firefly/package*.json .
 RUN npm install
@@ -28,7 +37,7 @@ RUN npm config set user 0
 ADD smart_contracts/ethereum/solidity_firefly .
 RUN npx truffle compile
 
-FROM alpine:latest
+FROM $BASE_TAG
 WORKDIR /firefly
 COPY --from=firefly-builder /firefly/firefly ./firefly
 COPY --from=firefly-builder /firefly/frontend/ /firefly/frontend/
