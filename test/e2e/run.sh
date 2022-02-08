@@ -2,8 +2,11 @@
 
 set -o pipefail
 
+ if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
+
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
+CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
 STACK_DIR=~/.firefly/stacks
 
 checkOk() {
@@ -65,17 +68,17 @@ if [ "$CREATE_STACK" == "true" ]; then
 fi
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
-  docker build -t hyperledger/firefly ../..
+  make -C ../.. docker
   checkOk $?
 fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]; then
-  go install github.com/hyperledger/firefly-cli/ff@v0.0.41
+  go install github.com/hyperledger/firefly-cli/ff@$CLI_VERSION
   checkOk $?
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --tokens-provider $TOKENS_PROVIDER --manifest ../../manifest.json
+  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3
