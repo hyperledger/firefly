@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -35,7 +35,6 @@ var (
 		"optype",
 		"opstatus",
 		"plugin",
-		"backend_id",
 		"created",
 		"updated",
 		"error",
@@ -43,10 +42,9 @@ var (
 		"output",
 	}
 	opFilterFieldMap = map[string]string{
-		"tx":        "tx_id",
-		"type":      "optype",
-		"status":    "opstatus",
-		"backendid": "backend_id",
+		"tx":     "tx_id",
+		"type":   "optype",
+		"status": "opstatus",
 	}
 )
 
@@ -67,7 +65,6 @@ func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Oper
 				string(operation.Type),
 				string(operation.Status),
 				operation.Plugin,
-				operation.BackendID,
 				operation.Created,
 				operation.Updated,
 				operation.Error,
@@ -93,7 +90,6 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Type,
 		&op.Status,
 		&op.Plugin,
-		&op.BackendID,
 		&op.Created,
 		&op.Updated,
 		&op.Error,

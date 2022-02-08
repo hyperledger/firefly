@@ -57,12 +57,11 @@ type Named interface {
 }
 
 // NewOperation creates a new operation in a transaction
-func NewOperation(plugin Named, namespace string, tx *UUID, backendID string, opType OpType) *Operation {
+func NewOperation(plugin Named, namespace string, tx *UUID, opType OpType) *Operation {
 	return &Operation{
 		ID:          NewUUID(),
 		Namespace:   namespace,
 		Plugin:      plugin.Name(),
-		BackendID:   backendID,
 		Transaction: tx,
 		Type:        opType,
 		Status:      OpStatusPending,
@@ -79,7 +78,6 @@ type Operation struct {
 	Status      OpStatus   `json:"status"`
 	Error       string     `json:"error,omitempty"`
 	Plugin      string     `json:"plugin"`
-	BackendID   string     `json:"backendId"`
 	Input       JSONObject `json:"input,omitempty"`
 	Output      JSONObject `json:"output,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`

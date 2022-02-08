@@ -80,7 +80,6 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 			plugin,
 			pool.Namespace,
 			txid,
-			"",
 			fftypes.OpTypeTokenCreatePool)
 		txcommon.AddTokenPoolCreateInputs(op, pool)
 
@@ -109,7 +108,6 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 		plugin,
 		pool.Namespace,
 		pool.TX.ID,
-		"",
 		fftypes.OpTypeTokenActivatePool)
 	if err := am.database.InsertOperation(ctx, op); err != nil {
 		return err

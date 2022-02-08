@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,7 +43,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Transaction: fftypes.NewUUID(),
 		Status:      fftypes.OpStatusFailed,
 		Plugin:      "ethereum",
-		BackendID:   fftypes.NewRandB32().String(),
 		Error:       "pop",
 		Input:       fftypes.JSONObject{"some": "input-info"},
 		Output:      fftypes.JSONObject{"some": "output-info"},
@@ -70,7 +69,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		fb.Eq("status", operation.Status),
 		fb.Eq("error", operation.Error),
 		fb.Eq("plugin", operation.Plugin),
-		fb.Eq("backendid", operation.BackendID),
 		fb.Gt("created", 0),
 		fb.Gt("updated", 0),
 	)

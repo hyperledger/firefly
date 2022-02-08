@@ -489,15 +489,14 @@ func TestTransferResultOk(t *testing.T) {
 	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:        id,
-			BackendID: "tracking12345",
+			ID: id,
 		},
 	}, nil, nil)
 	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
 		Info:  `{"extra": "info"}`,
 	})
@@ -513,8 +512,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:        id,
-			BackendID: "tracking12345",
+			ID: id,
 			Input: fftypes.JSONObject{
 				"manifest": "Bob",
 			},
@@ -527,7 +525,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
 		Manifest: true,
 	})
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
 		Info:     `{"extra": "info"}`,
 		Manifest: "Sally",
 	})
@@ -596,15 +594,14 @@ func TestTransferUpdateFail(t *testing.T) {
 	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:        id,
-			BackendID: "tracking12345",
+			ID: id,
 		},
 	}, nil, nil)
 	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(fmt.Errorf("pop"))
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
 		Info:  `{"extra": "info"}`,
 	})
