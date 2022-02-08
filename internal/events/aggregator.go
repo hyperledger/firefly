@@ -212,16 +212,19 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 		var msg *fftypes.Message
 		var batchPinIndex int64
 		var msgBaseIndex int64
-		for iM := 0; batchPinIndex <= pin.Index && iM < len(batch.Payload.Messages); iM++ {
+		for iM := 0; iM < len(batch.Payload.Messages); iM++ {
 			msg = batch.Payload.Messages[iM]
 			msgBaseIndex = batchPinIndex
 			for iT := 0; batchPinIndex < pin.Index && iT < len(msg.Header.Topics); iT++ {
 				batchPinIndex++
 			}
+			if batchPinIndex == pin.Index {
+				break
+			}
 		}
 
 		l.Debugf("Aggregating pin %.10d batch=%s msg=%s pinIndex=%d msgBaseIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, msg.Header.ID, pin.Index, msgBaseIndex, pin.Hash, pin.Masked)
-		if batchPinIndex < pin.Index {
+		if batchPinIndex != pin.Index {
 			l.Errorf("Batch %s does not have message-topic index %d - pin %s is invalid", pin.Batch, pin.Index, pin.Hash)
 			continue
 		}
