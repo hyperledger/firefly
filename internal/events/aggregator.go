@@ -196,7 +196,6 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 	// We must check all the contexts in the message, and mark them dispatched together.
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
-		l.Debugf("Aggregating pin %.10d batch=%s hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Hash, pin.Masked)
 
 		if batch == nil || *batch.ID != *pin.Batch {
 			batch, err = ag.database.GetBatchByID(ctx, pin.Batch)
@@ -211,21 +210,24 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 
 		// Extract the message from the batch - where the index is of a topic within a message
 		var msg *fftypes.Message
-		var i int64 = -1
+		var batchPinIndex int64
 		var msgBaseIndex int64
-		for iM := 0; i < pin.Index && iM < len(batch.Payload.Messages); iM++ {
+		for iM := 0; iM < len(batch.Payload.Messages); iM++ {
 			msg = batch.Payload.Messages[iM]
-			msgBaseIndex = i
-			for iT := 0; i < pin.Index && iT < len(msg.Header.Topics); iT++ {
-				i++
+			msgBaseIndex = batchPinIndex
+			for iT := 0; batchPinIndex < pin.Index && iT < len(msg.Header.Topics); iT++ {
+				batchPinIndex++
+			}
+			if batchPinIndex == pin.Index {
+				break
 			}
 		}
 
-		if i < pin.Index {
+		l.Debugf("Aggregating pin %.10d batch=%s msg=%s pinIndex=%d msgBaseIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, msg.Header.ID, pin.Index, msgBaseIndex, pin.Hash, pin.Masked)
+		if batchPinIndex != pin.Index {
 			l.Errorf("Batch %s does not have message-topic index %d - pin %s is invalid", pin.Batch, pin.Index, pin.Hash)
 			continue
 		}
-		l.Tracef("Batch %s message %d: %+v", batch.ID, pin.Index, msg)
 		if msg == nil || msg.Header.ID == nil {
 			l.Errorf("null message entry %d in batch '%s'", pin.Index, batch.ID)
 			continue
@@ -247,6 +249,8 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 }
 
 func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, pin *fftypes.Pin, msgBaseIndex int64, msg *fftypes.Message, state *batchState) (err error) {
+	l := log.L(ctx)
+
 	// Check if it's ready to be processed
 	unmaskedContexts := make([]*fftypes.Bytes32, 0, len(msg.Header.Topics))
 	nextPins := make([]*nextPinState, 0, len(msg.Header.Topics))
@@ -254,14 +258,14 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 		// Private messages have one or more masked "pin" hashes that allow us to work
 		// out if it's the next message in the sequence, given the previous messages
 		if msg.Header.Group == nil || len(msg.Pins) == 0 || len(msg.Header.Topics) != len(msg.Pins) {
-			log.L(ctx).Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, batch.ID, msg.Pins, msg.Header.Topics)
+			l.Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, batch.ID, msg.Pins, msg.Header.Topics)
 			return nil
 		}
 		for i, pinStr := range msg.Pins {
 			var msgContext fftypes.Bytes32
 			err := msgContext.UnmarshalText([]byte(pinStr))
 			if err != nil {
-				log.L(ctx).Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, batch.ID, i, pinStr)
+				l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, batch.ID, i, pinStr)
 				return nil
 			}
 			nextPin, err := state.CheckMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext)
@@ -276,7 +280,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 			h.Write([]byte(topic))
 			msgContext := fftypes.HashResult(h)
 			unmaskedContexts = append(unmaskedContexts, msgContext)
-			ready, err := state.CheckUnmaskedContextReady(ctx, *msgContext, msg, msg.Header.Topics[i], pin.Sequence)
+			ready, err := state.CheckUnmaskedContextReady(ctx, msgContext, msg, msg.Header.Topics[i], pin.Sequence)
 			if err != nil || !ready {
 				return err
 			}
@@ -284,6 +288,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 
 	}
 
+	l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
 	dispatched, err := ag.attemptMessageDispatch(ctx, msg, state)
 	if err != nil {
 		return err
