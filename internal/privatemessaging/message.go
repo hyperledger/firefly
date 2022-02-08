@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -184,6 +185,7 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
+	log.L(ctx).Infof("Sent private message %s:%s", s.msg.Header.Namespace, s.msg.Header.ID)
 
 	if method == methodSendImmediate {
 		if err := s.sendUnpinned(ctx); err != nil {
