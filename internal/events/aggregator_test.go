@@ -24,7 +24,6 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/definitions"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -170,7 +169,6 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 }
 
 func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
-	log.SetLevel("debug")
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
@@ -1392,7 +1390,7 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Type: fftypes.MessageTypeBroadcast},
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 	}, bs)
 	assert.NoError(t, err)
 
