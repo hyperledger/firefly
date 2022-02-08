@@ -4630,8 +4630,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  backendId:
-                    type: string
                   created: {}
                   error:
                     type: string
@@ -5294,11 +5292,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: backendid
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: created
         schema:
           type: string
@@ -5392,8 +5385,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  backendId:
-                    type: string
                   created: {}
                   error:
                     type: string
@@ -5458,8 +5449,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  backendId:
-                    type: string
                   created: {}
                   error:
                     type: string
@@ -8032,8 +8021,6 @@ paths:
               schema:
                 items:
                   properties:
-                    backendId:
-                      type: string
                     created: {}
                     error:
                       type: string

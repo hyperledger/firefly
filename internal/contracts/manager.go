@@ -187,7 +187,6 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 			cm.blockchain,
 			ns,
 			txid,
-			"",
 			fftypes.OpTypeBlockchainInvoke)
 		op.Input = req.Input
 		return cm.database.InsertOperation(ctx, op)

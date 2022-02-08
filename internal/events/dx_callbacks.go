@@ -238,7 +238,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		var operations []*fftypes.Operation
 		fb := database.OperationQueryFactory.NewFilter(em.ctx)
 		filter := fb.And(
-			fb.Eq("backendid", trackingID),
+			fb.Eq("id", trackingID),
 			fb.Eq("plugin", dx.Name()),
 		)
 		operations, _, err = em.database.GetOperations(em.ctx, filter)
@@ -256,7 +256,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			return true, i18n.NewError(em.ctx, i18n.Msg404NotFound)
 		}
 
-		// The maniest should exactly match that stored into the operation input, if supported
+		// The manifest should exactly match that stored into the operation input, if supported
 		op := operations[0]
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
 			expectedManifest := op.Input.GetString("manifest")
@@ -269,10 +269,17 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			}
 		}
 
+		// Save any interesting outputs
+		// Note that we don't need the manifest to be kept here, as it's already in the input
+		output := fftypes.JSONObject{}
+		if update.Info != "" {
+			output["info"] = update.Info
+		}
+
 		update := database.OperationQueryFactory.NewUpdate(em.ctx).
 			Set("status", status).
 			Set("error", update.Error).
-			Set("output", update.Info) // We don't need the manifest to be kept here, as it's already in the input
+			Set("output", output)
 		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
 			return true, err // this is always retryable
 		}
