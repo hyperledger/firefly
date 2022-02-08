@@ -90,4 +90,4 @@ swagger:
 manifest:
 		./manifestgen.sh
 docker:
-		./docker_build.sh
+		./docker_build.sh $(ARGS)

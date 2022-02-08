@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+echo $@
 
  if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1; fi
 
@@ -44,4 +45,5 @@ docker build \
     --build-arg BASE_TAG=$BASE_TAG \
     --build-arg UI_TAG=$UI_TAG \
     --build-arg UI_RELEASE=$UI_RELEASE \
+    $@ \
     .

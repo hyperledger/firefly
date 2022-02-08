@@ -22,11 +22,12 @@ jobs:
 
       - name: Build
         run: |
-          docker build \
+          make ARGS='\
             --label commit=$GITHUB_SHA \
             --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --label tag=${{ steps.build_tag_generator.outputs.BUILD_TAG }} \
-            --tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }} .
+            --tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }}' \
+            docker
 
       - name: Tag release
         run: docker tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }} ghcr.io/hyperledger/firefly:head
