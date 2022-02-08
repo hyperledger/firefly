@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
@@ -166,6 +167,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 }
 
 func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
+	log.SetLevel("debug")
 
 	ag, cancel := newTestAggregator()
 	defer cancel()

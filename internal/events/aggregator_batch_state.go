@@ -261,6 +261,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 			fb.Gte("index", dm.firstPinIndex),
 			fb.Lte("index", dm.lastPinIndex),
 		)
+		log.L(ctx).Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d lastIndex=%d", dm.batchID, dm.msgID, dm.firstPinIndex, dm.lastPinIndex)
 		update := database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true)
 		if err := bs.database.UpdatePins(ctx, filter, update); err != nil {
 			return err
