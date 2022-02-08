@@ -111,7 +111,10 @@ func AddTime(id string) {
 }
 
 func GetTime(id string) time.Time {
-	return timeMap[id]
+	mutex.Lock()
+	time := timeMap[id]
+	mutex.Unlock()
+	return time
 }
 
 func DeleteTime(id string) {
