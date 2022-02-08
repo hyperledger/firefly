@@ -225,7 +225,11 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 
 func (bm *batchManager) markRewind(rewindTo int64) {
 	bm.rewindMux.Lock()
-	bm.rewindTo = rewindTo
+	// Make sure we only rewind backwards - as we might get multiple shoulder taps
+	// for different message sequences during a single poll cycle.
+	if bm.rewindTo < 0 || rewindTo < bm.rewindTo {
+		bm.rewindTo = rewindTo
+	}
 	bm.rewindMux.Unlock()
 }
 
