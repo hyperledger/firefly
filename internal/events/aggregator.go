@@ -196,7 +196,6 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 	// We must check all the contexts in the message, and mark them dispatched together.
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
-		l.Debugf("Aggregating pin %.10d batch=%s index=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
 
 		if batch == nil || *batch.ID != *pin.Batch {
 			batch, err = ag.database.GetBatchByID(ctx, pin.Batch)
@@ -221,11 +220,11 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 			}
 		}
 
+		l.Debugf("Aggregating pin %.10d batch=%s msg=%s pinIndex=%d msgBaseIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, msg.Header.ID, pin.Index, msgBaseIndex, pin.Hash, pin.Masked)
 		if batchPinIndex < pin.Index {
 			l.Errorf("Batch %s does not have message-topic index %d - pin %s is invalid", pin.Batch, pin.Index, pin.Hash)
 			continue
 		}
-		l.Tracef("Batch %s message %d: %+v", batch.ID, pin.Index, msg)
 		if msg == nil || msg.Header.ID == nil {
 			l.Errorf("null message entry %d in batch '%s'", pin.Index, batch.ID)
 			continue
