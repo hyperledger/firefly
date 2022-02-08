@@ -1,5 +1,7 @@
+BEGIN;
+
 CREATE TABLE verifiers (
-  seq            INTEGER         PRIMARY KEY AUTOINCREMENT,
+  seq            SERIAL          PRIMARY KEY,
   id             UUID            NOT NULL,
   identity       UUID            NOT NULL,
   vtype          VARCHAR(256)    NOT NULL,
@@ -21,9 +23,23 @@ INSERT INTO verifiers (
     o.id,
     o.id,
     'EcdsaSecp256k1VerificationKey2019',
-    n.dx_peer_id
-    n.created    
+    o.identity,
+    o.created    
   FROM orgs as o WHERE o.identity LIKE '0x%';
+
+INSERT INTO verifiers (
+    id,
+    identity,
+    vtype,
+    value,
+    created
+  ) SELECT 
+    o.id,
+    o.id,
+    'HyperledgerFabricMSPIdentity',
+    o.identity,
+    o.created
+  FROM orgs as o WHERE o.identity NOT LIKE '0x%';
 
 INSERT INTO verifiers (
     id,
@@ -35,6 +51,8 @@ INSERT INTO verifiers (
     n.id,
     n.id,
     'FireFlyDataExchangePeerId',
-    n.dx_peer_id
-    n.created    
+    n.dx_peer_id,
+    n.created
   FROM nodes as n;
+
+COMMIT;

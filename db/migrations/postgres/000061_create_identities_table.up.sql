@@ -1,5 +1,7 @@
+BEGIN;
+
 CREATE TABLE identities (
-  seq            INTEGER         PRIMARY KEY AUTOINCREMENT,
+  seq            SERIAL          PRIMARY KEY,
   id             UUID            NOT NULL,
   did            VARCHAR(256)    NOT NULL,
   parent         UUID,
@@ -51,12 +53,14 @@ INSERT INTO identities (
   ) SELECT 
     n.id,
     'did:firefly:node/' || n.name,
-    n.id,
+    o.id,
     n.message_id,
     'ff_system',
     n.name,
     n.description,
-    n.profile,
+    n.dx_endpoint,
     n.created    
   FROM nodes as n
   LEFT JOIN orgs o ON o.identity = n.owner;
+
+COMMIT;
