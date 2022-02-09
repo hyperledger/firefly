@@ -65,12 +65,14 @@ const (
 type msgType string
 
 const (
-	messageReceived  msgType = "message-received"
-	messageDelivered msgType = "message-delivered"
-	messageFailed    msgType = "message-failed"
-	blobReceived     msgType = "blob-received"
-	blobDelivered    msgType = "blob-delivered"
-	blobFailed       msgType = "blob-failed"
+	messageReceived     msgType = "message-received"
+	messageDelivered    msgType = "message-delivered"
+	messageAcknowledged msgType = "message-acknowledged"
+	messageFailed       msgType = "message-failed"
+	blobReceived        msgType = "blob-received"
+	blobDelivered       msgType = "blob-delivered"
+	blobAcknowledged    msgType = "blob-acknowledged"
+	blobFailed          msgType = "blob-failed"
 )
 
 type responseWithRequestID struct {
@@ -265,7 +267,9 @@ func (h *HTTPS) eventLoop() {
 			case messageFailed:
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
 			case messageDelivered:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{Error: msg.Error})
+			case messageAcknowledged:
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusAcknowledged, fftypes.TransportStatusUpdate{
 					Manifest: msg.Manifest,
 					Info:     msg.Info,
 				})
@@ -275,6 +279,11 @@ func (h *HTTPS) eventLoop() {
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
 			case blobDelivered:
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{})
+			case blobAcknowledged:
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusAcknowledged, fftypes.TransportStatusUpdate{
+					Manifest: msg.Manifest,
+					Info:     msg.Info,
+				})
 			case blobReceived:
 				var hash *fftypes.Bytes32
 				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)

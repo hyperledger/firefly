@@ -48,6 +48,8 @@ const (
 	OpStatusPending OpStatus = "Pending"
 	// OpStatusSucceeded the infrastructure runtime has returned success for the operation.
 	OpStatusSucceeded OpStatus = "Succeeded"
+	// OpStatusSucceeded the infrastructure runtime has returned success for the operation.
+	OpStatusAcknowledged OpStatus = "Acknowledged"
 	// OpStatusFailed happens when an error is reported by the infrastructure runtime
 	OpStatusFailed OpStatus = "Failed"
 )
