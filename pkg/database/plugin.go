@@ -117,9 +117,8 @@ type iDataCollection interface {
 }
 
 type iBatchCollection interface {
-	// UpsertBatch - Upsert a batch
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) (err error)
+	// UpsertBatch - Upsert a batch - the hash cannot change
+	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
 
 	// UpdateBatch - Update data
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)

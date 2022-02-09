@@ -36,10 +36,9 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
 	bp := newBatchProcessor(context.Background(), mni, mdi, &batchProcessorConf{
-		namespace:          "ns1",
-		identity:           fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
-		dispatch:           dispatch,
-		processorQuiescing: func() {},
+		namespace: "ns1",
+		identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
+		dispatch:  dispatch,
 		Options: Options{
 			BatchMaxSize:   10,
 			BatchMaxBytes:  1024 * 1024,
@@ -112,7 +111,7 @@ func TestUnfilledBatch(t *testing.T) {
 	assert.Equal(t, len(dispatched[0].Payload.Messages), len(work))
 
 	bp.close()
-	bp.waitClosed()
+	bp.close()
 
 }
 
@@ -168,7 +167,7 @@ func TestBatchSizeOverflow(t *testing.T) {
 	assert.Equal(t, len(dispatched[1].Payload.Messages), 1)
 
 	bp.close()
-	bp.waitClosed()
+	bp.close()
 
 }
 
@@ -239,7 +238,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	assert.Equal(t, len(dispatched[0].Payload.Data), 5)
 
 	bp.close()
-	bp.waitClosed()
+	bp.close()
 
 }
 
@@ -286,7 +285,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
 	// Close to unblock
 	bp.close()
-	bp.waitClosed()
+	bp.close()
 
 }
 

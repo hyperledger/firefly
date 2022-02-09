@@ -22,7 +22,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -271,7 +270,7 @@ func TestInitRestoreExistingOffset(t *testing.T) {
 	defer bm.Close()
 	err = bm.Start()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(12345), bm.(*batchManager).offset)
+	assert.Equal(t, int64(12345), bm.(*batchManager).readOffset)
 }
 
 func TestInitFailCannotRestoreOffset(t *testing.T) {
@@ -498,74 +497,6 @@ func TestWaitForPollTimeout(t *testing.T) {
 	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
 }
 
-func TestWaitConsumesMessagesAndDoesNotBlock(t *testing.T) {
-	config.Reset()
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	bm := bmi.(*batchManager)
-	_ = bm.popRewind()
-	go bm.newEventNotifications()
-	for i := 0; i < int(bm.readPageSize); i++ {
-		bm.NewMessages() <- 12345
-	}
-	// And should generate a shoulder tap
-	<-bm.shoulderTap
-	// And a rewind to one before that sequence (as readPage is greater-than)
-	assert.Equal(t, int64(12344), bm.popRewind())
-	bm.Close()
-}
-
-func TestReadPageWithRewindSuccess(t *testing.T) {
-	config.Reset()
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-
-	msg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
-	mdi.On("UpdateOffset", mock.Anything, int64(0), mock.Anything).Return(nil)
-	mdi.On("GetMessages", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		f, _ := filter.Finalize()
-		assert.Contains(t, f.String(), "12345")
-		return true
-	})).Return([]*fftypes.Message{msg}, nil, nil)
-
-	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	bm := bmi.(*batchManager)
-	_ = bm.popRewind()
-	bm.offset = 44444
-	bm.markRewind(22222)
-	bm.markRewind(12345)
-	bm.markRewind(33333)
-	msgs, err := bm.readPage()
-	assert.NoError(t, err)
-	assert.Len(t, msgs, 1)
-	bm.Close()
-
-	mdi.AssertExpectations(t)
-}
-
-func TestReadPageWithRewindFail(t *testing.T) {
-	config.Reset()
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-
-	mdi.On("UpdateOffset", mock.Anything, int64(0), mock.Anything).Return(fmt.Errorf("pop"))
-
-	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	bm := bmi.(*batchManager)
-	bm.Close()
-
-	bm.offset = 22222
-	bm.markRewind(12345)
-	_, err := bm.readPage()
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-}
-
 func TestAssembleMessageDataNilData(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -580,17 +511,6 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 		Data: fftypes.DataRefs{{ID: nil}},
 	})
 	assert.Regexp(t, "FF10133", err)
-}
-
-func TestAssembleMessageDataClosed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	err := bm.(*batchManager).updateOffset(false, 10)
-	assert.EqualError(t, err, "pop")
 }
 
 func TestGetMessageDataFail(t *testing.T) {
@@ -627,13 +547,4 @@ func TestGetMessageNotFound(t *testing.T) {
 		},
 	})
 	assert.Regexp(t, "FF10133", err)
-}
-
-func TestWaitForShoulderTap(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	bm.(*batchManager).shoulderTap <- true
-	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
 }

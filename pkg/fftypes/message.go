@@ -55,6 +55,8 @@ var (
 	MessageStateStaged MessageState = ffEnum("messagestate", "staged")
 	// MessageStateReady is a message created locally which is ready to send
 	MessageStateReady MessageState = ffEnum("messagestate", "ready")
+	// MessageStateSent is a message created locally which has been sent in a batch
+	MessageStateSent MessageState = ffEnum("messagestate", "sent")
 	// MessageStatePending is a message that has been received but is awaiting aggregation/confirmation
 	MessageStatePending MessageState = ffEnum("messagestate", "pending")
 	// MessageStateConfirmed is a message that has completed all required confirmations (blockchain if pinned, token transfer if transfer coupled, etc)

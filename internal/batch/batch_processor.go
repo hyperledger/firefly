@@ -22,6 +22,8 @@ import (
 	"database/sql/driver"
 	"encoding/binary"
 	"fmt"
+	"math"
+	"sync"
 	"time"
 
 	"github.com/hyperledger/firefly/internal/log"
@@ -36,7 +38,6 @@ type batchWork struct {
 	msg        *fftypes.Message
 	data       []*fftypes.Data
 	dispatched chan *batchDispatch
-	abandoned  bool
 }
 
 type batchDispatch struct {
@@ -46,50 +47,75 @@ type batchDispatch struct {
 
 type batchProcessorConf struct {
 	Options
-	namespace          string
-	identity           fftypes.Identity
-	group              *fftypes.Bytes32
-	dispatch           DispatchHandler
-	processorQuiescing func()
+	namespace      string
+	identity       fftypes.Identity
+	group          *fftypes.Bytes32
+	dispatch       DispatchHandler
+	requestQuiesce func() bool
+}
+
+// FlushStatus is an object that can be returned on REST queries to understand the status
+// of the batch processor
+type FlushStatus struct {
+	LastFlushTime        *fftypes.FFTime `json:"lastFlushStartTime"`
+	Flushing             *fftypes.UUID   `json:"flushing,omitempty"`
+	LastFlushError       string          `json:"lastFlushError,omitempty"`
+	LastFlushErrorTime   *fftypes.FFTime `json:"lastFlushErrorTime,omitempty"`
+	AverageBatchBytes    int64           `json:"averageBatchBytes"`
+	AverageBatchMessages float64         `json:"averageBatchMessages"`
+	AverageBatchData     float64         `json:"averageBatchData"`
+	AverageFlushTimeMS   int64           `json:"averageFlushTimeMS"`
+
+	totalBatches         int64
+	totalBytesFlushed    int64
+	totalMessagesFlushed int64
+	totalDataFlushed     int64
+	totalFlushDuration   time.Duration
 }
 
 type batchProcessor struct {
-	ctx         context.Context
-	ni          sysmessaging.LocalNodeInfo
-	database    database.Plugin
-	txHelper    txcommon.Helper
-	name        string
-	cancelCtx   func()
-	closed      bool
-	newWork     chan *batchWork
-	persistWork chan *batchWork
-	sealBatch   chan bool
-	batchSealed chan bool
-	retry       *retry.Retry
-	conf        *batchProcessorConf
+	ctx                context.Context
+	ni                 sysmessaging.LocalNodeInfo
+	database           database.Plugin
+	txHelper           txcommon.Helper
+	name               string
+	cancelCtx          func()
+	done               chan struct{}
+	newWork            chan *batchWork
+	assemblyID         *fftypes.UUID
+	assemblyQueue      []*batchWork
+	assemblyQueueBytes int64
+	flushedSequences   []int64
+	statusMux          sync.Mutex
+	flushStatus        FlushStatus
+	retry              *retry.Retry
+	conf               *batchProcessorConf
 }
 
 const batchSizeEstimateBase = int64(512)
 
 func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
-	pCtx := log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key))
+	name := fmt.Sprintf("%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key)
+	pCtx := log.WithLogField(ctx, "role", name)
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
-		ctx:         pCtx,
-		cancelCtx:   cancelCtx,
-		ni:          ni,
-		database:    di,
-		txHelper:    txcommon.NewTransactionHelper(di),
-		name:        fmt.Sprintf("%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key),
-		newWork:     make(chan *batchWork),
-		persistWork: make(chan *batchWork, conf.BatchMaxSize),
-		sealBatch:   make(chan bool),
-		batchSealed: make(chan bool),
-		retry:       retry,
-		conf:        conf,
+		ctx:              pCtx,
+		cancelCtx:        cancelCtx,
+		ni:               ni,
+		database:         di,
+		txHelper:         txcommon.NewTransactionHelper(di),
+		name:             name,
+		newWork:          make(chan *batchWork, conf.BatchMaxSize),
+		retry:            retry,
+		conf:             conf,
+		flushedSequences: []int64{},
+		flushStatus: FlushStatus{
+			LastFlushTime: fftypes.Now(),
+		},
 	}
+	bp.newAssembly()
 	go bp.assemblyLoop()
-	go bp.persistenceLoop()
+	log.L(pCtx).Infof("Batch processor created")
 	return bp
 }
 
@@ -101,103 +127,225 @@ func (bw *batchWork) estimateSize() int64 {
 	return sizeEstimate
 }
 
-// The assemblyLoop accepts work into the pipe as quickly as possible.
-// It dispatches work asynchronously to the persistenceLoop, which is responsible for
-// calling back each piece of work once persisted into a batch
-// (doesn't wait until that batch is sealed/dispatched).
-// The assemblyLoop seals batches when they are full, or timeout.
-func (bp *batchProcessor) assemblyLoop() {
-	defer bp.close()
-	defer close(bp.sealBatch) // close persitenceLoop when we exit
-	l := log.L(bp.ctx)
-	var batchSize uint
-	var batchPayloadEstimate = batchSizeEstimateBase
-	var lastBatchSealed = time.Now()
-	var quiescing bool
-	var overflowedWork *batchWork
-	for {
-		var timedOut, closed bool
-		if overflowedWork != nil {
-			// We overflowed the size cap when we took this message out the newWork
-			// queue last time round the lop
-			bp.persistWork <- overflowedWork
-			batchSize++
-			batchPayloadEstimate += overflowedWork.estimateSize()
-			overflowedWork = nil
-		} else {
-			// We timeout waiting at the point we think we're ready for disposal,
-			// unless we've started a batch in which case we wait for what's left
-			// of the batch timeout
-			timeToWait := bp.conf.DisposeTimeout
-			if quiescing {
-				timeToWait = 100 * time.Millisecond
-			} else if batchSize > 0 {
-				timeToWait = bp.conf.BatchTimeout - time.Since(lastBatchSealed)
-			}
-			timeout := time.NewTimer(timeToWait)
+func (bp *batchProcessor) Status() *FlushStatus {
+	bp.statusMux.Lock()
+	defer bp.statusMux.Unlock()
+	statusCopy := bp.flushStatus
+	return &statusCopy
+}
 
-			// Wait for work, the timeout, or close
-			select {
-			case <-timeout.C:
-				timedOut = true
-			case work, ok := <-bp.newWork:
-				if ok && !work.abandoned {
-					workSize := work.estimateSize()
-					if batchSize > 0 && batchPayloadEstimate+workSize > bp.conf.BatchMaxBytes {
-						overflowedWork = work
-					} else {
-						batchSize++
-						batchPayloadEstimate += workSize
-						bp.persistWork <- work
-					}
-				} else {
-					closed = true
+func (bp *batchProcessor) newAssembly(initalWork ...*batchWork) {
+	bp.assemblyID = fftypes.NewUUID()
+	bp.assemblyQueue = append([]*batchWork{}, initalWork...)
+	bp.assemblyQueueBytes = batchSizeEstimateBase
+}
+
+// addWork adds the work to the assemblyQueue, and calculates if we have overflowed with this work.
+// We check for duplicates, and add the work in sequence order.
+// This helps in the case for parallel REST APIs all committing to the DB at a similar time.
+// With a sufficient batch size and batch timeout, the batch will still dispatch the messages
+// in DB sequence order (although this is not guaranteed).
+func (bp *batchProcessor) addWork(newWork *batchWork) (overflow bool) {
+	newQueue := make([]*batchWork, 0, len(bp.assemblyQueue)+1)
+	added := false
+	skip := false
+	// Check it's not in the recently flushed lish
+	for _, flushedSequence := range bp.flushedSequences {
+		if newWork.msg.Sequence == flushedSequence {
+			log.L(bp.ctx).Debugf("Ignoring add of recently flushed message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
+			skip = true
+			break
+		}
+	}
+	// Build the new sorted work list, checking there for duplicates too
+	for _, work := range bp.assemblyQueue {
+		if newWork.msg.Sequence == work.msg.Sequence {
+			log.L(bp.ctx).Debugf("Ignoring duplicate add of message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
+			skip = true
+		}
+		if !added && !skip && newWork.msg.Sequence < work.msg.Sequence {
+			newQueue = append(newQueue, newWork)
+			added = true
+		}
+		newQueue = append(newQueue, work)
+	}
+	if !added && !skip {
+		newQueue = append(newQueue, newWork)
+		added = true
+	}
+	if added {
+		log.L(bp.ctx).Debugf("Added message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
+		bp.assemblyQueueBytes += newWork.estimateSize()
+	}
+	bp.assemblyQueue = newQueue
+	overflow = len(bp.assemblyQueue) > 1 && (bp.assemblyQueueBytes > bp.conf.BatchMaxBytes || len(bp.assemblyQueue) > int(bp.conf.BatchMaxSize))
+	return overflow
+}
+
+func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAssembly []*batchWork, byteSize int64) {
+	bp.statusMux.Lock()
+	defer bp.statusMux.Lock()
+	// Star the clock
+	bp.flushStatus.LastFlushTime = fftypes.Now()
+	// Split the current work if required for overflow
+	overflowWork := make([]*batchWork, 0)
+	if overflow {
+		lastElem := len(bp.assemblyQueue) - 1
+		flushAssembly = append(flushAssembly, bp.assemblyQueue[:lastElem]...)
+		overflowWork = append(overflowWork, bp.assemblyQueue[lastElem])
+	} else {
+		flushAssembly = bp.assemblyQueue
+	}
+	// We need to keep track of the sequences we're flushing, because until we finish our flush
+	// the batch processor might be re-queuing the same messages to use due to rewinds.
+	// We keep all of the last batch, and up to twice the batch size over time (noting our channel
+	// size is our batch size - so the batch manager cannot get further than that ahead).
+	newFlushedSeqLen := len(flushAssembly) + len(bp.flushedSequences)
+	maxFlushedSeqLen := int(2 * bp.conf.BatchMaxSize)
+	if newFlushedSeqLen > maxFlushedSeqLen && maxFlushedSeqLen > len(bp.flushedSequences) {
+		newFlushedSeqLen = maxFlushedSeqLen
+	}
+	newFlushedSequnces := make([]int64, 0, newFlushedSeqLen)
+	for i, fs := range flushAssembly {
+		newFlushedSequnces[i] = fs.msg.Sequence
+	}
+	for i := 0; i < newFlushedSeqLen-len(flushAssembly); i++ {
+		newFlushedSequnces[i+len(flushAssembly)] = bp.flushedSequences[i]
+	}
+	// Cycle to the next assembly
+	id = bp.assemblyID
+	byteSize = bp.assemblyQueueBytes
+	bp.flushStatus.Flushing = id
+	bp.newAssembly(overflowWork...)
+	return id, flushAssembly, byteSize
+}
+
+func (bp *batchProcessor) endFlush(batch *fftypes.Batch, byteSize int64) {
+	bp.statusMux.Lock()
+	defer bp.statusMux.Lock()
+	fs := &bp.flushStatus
+
+	duration := time.Since(*fs.LastFlushTime.Time())
+	fs.Flushing = nil
+
+	fs.totalBatches++
+
+	fs.totalFlushDuration += duration
+	fs.AverageFlushTimeMS = (fs.totalFlushDuration / time.Duration(fs.totalBatches)).Milliseconds()
+
+	fs.totalBytesFlushed += byteSize
+	fs.AverageBatchBytes = (fs.totalBytesFlushed / fs.totalBatches)
+
+	fs.totalMessagesFlushed += int64(len(batch.Payload.Messages))
+	fs.AverageBatchMessages = math.Round((float64(fs.totalMessagesFlushed)/float64(fs.totalBatches))*100) / 100
+
+	fs.totalDataFlushed += int64(len(batch.Payload.Data))
+	fs.AverageBatchData = math.Round((float64(fs.totalDataFlushed)/float64(fs.totalBatches))*100) / 100
+}
+
+// The assemblyLoop receives new work, sorts it, and waits for the size/timer to pop before
+// flushing the batch. The newWork channel has up to one batch of slots queue length,
+// so that we can have one batch of work queuing for assembly, while we have one batch flushing.
+func (bp *batchProcessor) assemblyLoop() {
+	defer close(bp.done)
+	l := log.L(bp.ctx)
+
+	overflow := false
+	var batchTimeout = time.NewTimer(bp.conf.DisposeTimeout)
+	idle := true
+	quescing := false
+	for !quescing {
+
+		var timedout bool
+		select {
+		case <-bp.ctx.Done():
+			l.Tracef("Batch processor shutting down")
+			_ = batchTimeout.Stop()
+			return
+		case <-batchTimeout.C:
+			l.Errorf("Batch timer popped")
+			if len(bp.assemblyQueue) == 0 {
+				// It probably makes sense to exit, but we don't know if more work is coming our way,
+				// so we just inform the manager we've hit our dispose timeout and see if they close
+				// the input work channel (which they can safely do on the dispatcher routine)
+				bp.conf.requestQuiesce()
+			} else {
+				// We need to flush
+				timedout = true
+			}
+		case work, ok := <-bp.newWork:
+			if !ok {
+				quescing = true
+			} else {
+				overflow = bp.addWork(work)
+				if idle {
+					// We've hit a message while we were idle - we now need to wait for the batch to time out.
+					_ = batchTimeout.Stop()
+					batchTimeout = time.NewTimer(bp.conf.BatchTimeout)
+					idle = false
 				}
 			}
-
 		}
+		if overflow || timedout || quescing {
+			// Let Go GC the old timer
+			_ = batchTimeout.Stop()
 
-		// Don't include the sealing time in the duration
-		batchFull := overflowedWork != nil || batchSize >= bp.conf.BatchMaxSize
-		l.Debugf("Assembly batch loop: Size=%d Full=%t Bytes=%.2fkb (est) Overflow=%t", batchSize, batchFull, float64(batchPayloadEstimate)/1024, overflowedWork != nil)
+			// If we are in overflow, start the clock for the next batch to start before we do the flush
+			// (even though we won't check it until after).
+			if overflow {
+				batchTimeout = time.NewTimer(bp.conf.BatchTimeout)
+			}
 
-		batchDuration := time.Since(lastBatchSealed)
-		if quiescing && batchSize == 0 {
-			l.Debugf("Batch assembler disposed after %.2fs of inactivity", float64(batchDuration)/float64(time.Second))
-			return
+			err := bp.flush(overflow)
+			if err != nil {
+				l.Tracef("Batch processor shutting down: %s", err)
+				_ = batchTimeout.Stop()
+				return
+			}
+
+			// If we didn't overflow, then just go back to idle - we don't know if we have more work to come, so
+			// either we'll pop straight away (and move to the batch timeout) or wait for the dispose timeout
+			if !overflow && !quescing {
+				batchTimeout = time.NewTimer(bp.conf.DisposeTimeout)
+				idle = true
+			}
 		}
-
-		if closed || batchDuration > bp.conf.DisposeTimeout {
-			bp.conf.processorQuiescing()
-			quiescing = true
-		}
-
-		if (quiescing || timedOut || batchFull) && batchSize > 0 {
-			bp.sealBatch <- true
-			<-bp.batchSealed
-			l.Debugf("Assembly batch sealed")
-			lastBatchSealed = time.Now()
-			batchSize = 0
-			batchPayloadEstimate = batchSizeEstimateBase
-		}
-
 	}
 }
 
-func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork) *fftypes.Batch {
-	l := log.L(bp.ctx)
-	if batch == nil {
-		batchID := fftypes.NewUUID()
-		l.Debugf("New batch %s", batchID)
-		batch = &fftypes.Batch{
-			ID:        batchID,
-			Namespace: bp.conf.namespace,
-			Identity:  bp.conf.identity,
-			Group:     bp.conf.group,
-			Payload:   fftypes.BatchPayload{},
-			Created:   fftypes.Now(),
-			Node:      bp.ni.GetNodeUUID(bp.ctx),
-		}
+func (bp *batchProcessor) flush(overflow bool) error {
+	id, flushWork, byteSize := bp.startFlush(overflow)
+	batch := bp.buildFlushBatch(id, flushWork)
+
+	pins, err := bp.persistBatch(batch)
+	if err != nil {
+		return err
+	}
+
+	err = bp.dispatchBatch(batch, pins)
+	if err != nil {
+		return err
+	}
+
+	err = bp.markMessagesDispatched(batch)
+	if err != nil {
+		return err
+	}
+
+	bp.endFlush(batch, byteSize)
+	return nil
+}
+
+func (bp *batchProcessor) buildFlushBatch(id *fftypes.UUID, newWork []*batchWork) *fftypes.Batch {
+	log.L(bp.ctx).Debugf("Flushing batch %s", id)
+	batch := &fftypes.Batch{
+		ID:        id,
+		Namespace: bp.conf.namespace,
+		Identity:  bp.conf.identity,
+		Group:     bp.conf.group,
+		Payload:   fftypes.BatchPayload{},
+		Created:   fftypes.Now(),
+		Node:      bp.ni.GetNodeUUID(bp.ctx),
 	}
 	for _, w := range newWork {
 		if w.msg != nil {
@@ -270,146 +418,56 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch
 	return contextsOrPins, nil
 }
 
-func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, pins []*fftypes.Bytes32) {
-	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
-	_ = bp.retry.Do(bp.ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
-		err = bp.conf.dispatch(bp.ctx, batch, pins)
-		if err != nil {
-			return !bp.closed, err
-		}
-		return false, nil
-	})
-}
-
-func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) (contexts []*fftypes.Bytes32, err error) {
+func (bp *batchProcessor) persistBatch(batch *fftypes.Batch) (contexts []*fftypes.Bytes32, err error) {
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
-		err = bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
-			// Update all the messages in the batch with the batch ID
-			if len(newWork) > 0 {
-				msgIDs := make([]driver.Value, 0, len(newWork))
-				for _, w := range newWork {
-					if w.msg != nil {
-						msgIDs = append(msgIDs, w.msg.Header.ID)
-					}
-				}
-				filter := database.MessageQueryFactory.NewFilter(ctx).In("id", msgIDs)
-				update := database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", batch.ID).
-					Set("group", batch.Group)
-				err = bp.database.UpdateMessages(ctx, filter, update)
+		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
+			// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
+			if contexts, err = bp.maskContexts(ctx, batch); err != nil {
+				return err
 			}
 
-			if err == nil && seal {
-				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
-				contexts, err = bp.maskContexts(ctx, batch)
-				if err == nil {
-					batch.Payload.TX.Type = fftypes.TransactionTypeBatchPin
-					batch.Payload.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, batch.Namespace, fftypes.TransactionTypeBatchPin)
-					batch.Hash = batch.Payload.Hash()
-					log.L(ctx).Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
-				}
+			batch.Payload.TX.Type = fftypes.TransactionTypeBatchPin
+			if batch.Payload.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, batch.Namespace, fftypes.TransactionTypeBatchPin); err != nil {
+				return err
 			}
-			if err == nil {
-				// Persist the batch itself
-				err = bp.database.UpsertBatch(ctx, batch, seal /* we set the hash as it seals */)
-			}
-			return err
+
+			batch.Hash = batch.Payload.Hash()
+			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
+			return bp.database.UpsertBatch(ctx, batch)
 		})
-		if err != nil {
-			return !bp.closed, err
-		}
-		return false, nil
 	})
 	return contexts, err
 }
 
-func (bp *batchProcessor) persistenceLoop() {
-	defer close(bp.batchSealed)
-	l := log.L(bp.ctx)
-	var currentBatch *fftypes.Batch
-	var batchSize = 0
-	for !bp.closed {
-		var seal bool
-		newWork := make([]*batchWork, 0, bp.conf.BatchMaxSize)
+func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
+	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
+	return bp.retry.Do(bp.ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
+		return true, bp.conf.dispatch(bp.ctx, batch, pins)
+	})
+}
 
-		// Block waiting for work, or a batch sealing request
-		select {
-		case w := <-bp.persistWork:
-			newWork = append(newWork, w)
-		case <-bp.sealBatch:
-			seal = true
-		}
-
-		// Drain everything currently in the pipe waiting for dispatch
-		// This means we batch the writing to the database, which has to happen before
-		// we can callback the work with a persisted batch ID.
-		// We drain both the message queue, and the seal, because there's no point
-		// going round the loop (persisting twice) if the batch has just filled
-		var drained bool
-		for !drained {
-			select {
-			case _, ok := <-bp.sealBatch:
-				seal = true
-				if !ok {
-					return // Closed by termination of assemblyLoop
-				}
-			case w := <-bp.persistWork:
-				newWork = append(newWork, w)
-			default:
-				drained = true
+func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
+	return bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
+		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
+			// Update all the messages in the batch with the batch ID
+			msgIDs := make([]driver.Value, 0, len(batch.Payload.Messages))
+			for i, msg := range batch.Payload.Messages {
+				msgIDs[i] = msg.Header.ID
 			}
-		}
-
-		batchSize += len(newWork)
-		currentBatch = bp.createOrAddToBatch(currentBatch, newWork)
-		l.Debugf("Adding %d entries to batch %s. Size=%d Seal=%t", len(newWork), currentBatch.ID, batchSize, seal)
-
-		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
-		contexts, err := bp.persistBatch(currentBatch, newWork, seal)
-		if err != nil {
-			return
-		}
-
-		// Inform all the work in this batch of the batch they have been persisted
-		// into. At this point they can carry on processing, because we won't lose
-		// the work - it's tracked in a batch ready to go
-		for _, w := range newWork {
-			w.dispatched <- &batchDispatch{
-				w.msg,
-				currentBatch.ID,
-			}
-		}
-
-		if seal {
-			// At this point the batch is sealed, and the assember can start
-			// queing up the next batch. We only let them get one batch ahead
-			// (due to the size of the channel being the maxBatchSize) before
-			// they start blocking waiting for us to complete database of
-			// the current batch.
-			bp.batchSealed <- true
-
-			// Synchronously dispatch the batch. Must be last thing we do in the loop, as we
-			// will break out of the retry in the case that we close
-			bp.dispatchBatch(currentBatch, contexts)
-
-			// Move onto the next batch
-			currentBatch = nil
-			batchSize = 0
-		}
-
-	}
+			fb := database.MessageQueryFactory.NewFilter(ctx)
+			filter := fb.And(
+				fb.In("id", msgIDs),
+				fb.Eq("state", fftypes.MessageStateReady), // In the outside chance the next state transition happens first (which supersedes this)
+			)
+			update := database.MessageQueryFactory.NewUpdate(ctx).
+				Set("batch", batch.ID).                // Mark the batch they are in
+				Set("state", fftypes.MessageStateSent) // Set them sent, so they won't be picked up and re-sent after restart/rewind
+			return bp.database.UpdateMessages(ctx, filter, update)
+		})
+	})
 }
 
 func (bp *batchProcessor) close() {
-	if !bp.closed {
-		// We don't cancel the context here, as we use close during quiesce and don't want the
-		// persistence loop to have its context cancelled, and fail to perform DB operations
-		close(bp.newWork)
-		bp.closed = true
-	}
-}
-
-func (bp *batchProcessor) waitClosed() {
-	<-bp.sealBatch
-	<-bp.batchSealed
+	bp.cancelCtx()
+	<-bp.done
 }

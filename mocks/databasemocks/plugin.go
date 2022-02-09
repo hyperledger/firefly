@@ -2465,13 +2465,13 @@ func (_m *Plugin) UpdateTransaction(ctx context.Context, id *fftypes.UUID, updat
 	return r0
 }
 
-// UpsertBatch provides a mock function with given fields: ctx, data, allowHashUpdate
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowHashUpdate)
+// UpsertBatch provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch) error {
+	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool) error); ok {
-		r0 = rf(ctx, data, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

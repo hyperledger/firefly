@@ -46,11 +46,11 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		ni:                         ni,
 		database:                   di,
 		data:                       dm,
+		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
-		shoulderTap:                make(chan bool, 1),
 		newMessages:                make(chan int64),
 		sequencerClosed:            make(chan struct{}),
 		retry: &retry.Retry{
@@ -76,18 +76,16 @@ type batchManager struct {
 	database                   database.Plugin
 	data                       data.Manager
 	dispatchers                map[fftypes.MessageType]*dispatcher
-	shoulderTap                chan bool
 	newMessages                chan int64
 	sequencerClosed            chan struct{}
 	retry                      *retry.Retry
 	offsetID                   int64
-	offset                     int64
+	recoveryOffset             int64
+	readOffset                 int64
 	closed                     bool
 	readPageSize               uint64
 	messagePollTimeout         time.Duration
 	startupOffsetRetryAttempts int
-	rewindMux                  sync.Mutex
-	rewindTo                   int64
 }
 
 type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error
@@ -118,12 +116,9 @@ func (bm *batchManager) RegisterDispatcher(msgTypes []fftypes.MessageType, handl
 }
 
 func (bm *batchManager) Start() error {
-	bm.markRewind(-1)
-
 	if err := bm.restoreOffset(); err != nil {
 		return err
 	}
-	go bm.newEventNotifications()
 	go bm.messageSequencer()
 	return nil
 }
@@ -148,15 +143,10 @@ func (bm *batchManager) restoreOffset() (err error) {
 		}
 	}
 	bm.offsetID = offset.RowID
-	bm.offset = offset.Current
-	log.L(bm.ctx).Infof("Batch manager restored offset %d", bm.offset)
+	bm.readOffset = offset.Current
+	bm.recoveryOffset = offset.Current
+	log.L(bm.ctx).Infof("Batch manager restored offset %d", offset.Current)
 	return nil
-}
-
-func (bm *batchManager) removeProcessor(dispatcher *dispatcher, key string) {
-	dispatcher.mux.Lock()
-	delete(dispatcher.processors, key)
-	dispatcher.mux.Unlock()
 }
 
 func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.Identity) (*batchProcessor, error) {
@@ -178,9 +168,6 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftyp
 				identity:  *identity,
 				group:     group,
 				dispatch:  dispatcher.handler,
-				processorQuiescing: func() {
-					bm.removeProcessor(dispatcher, key)
-				},
 			},
 			bm.retry,
 		)
@@ -192,10 +179,12 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftyp
 }
 
 func (bm *batchManager) Close() {
+	var processors []*batchProcessor
 	if bm != nil && !bm.closed {
 		for _, d := range bm.dispatchers {
 			d.mux.Lock()
 			for _, p := range d.processors {
+				processors = append(processors, p)
 				p.close()
 			}
 			d.mux.Unlock()
@@ -204,6 +193,9 @@ func (bm *batchManager) Close() {
 		close(bm.newMessages)
 	}
 	bm = nil
+	for _, p := range processors {
+		<-p.done
+	}
 }
 
 func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftypes.Data, err error) {
@@ -223,43 +215,14 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 	return data, nil
 }
 
-func (bm *batchManager) markRewind(rewindTo int64) {
-	bm.rewindMux.Lock()
-	// Make sure we only rewind backwards - as we might get multiple shoulder taps
-	// for different message sequences during a single poll cycle.
-	previousRewind := bm.rewindTo
-	if previousRewind < 0 || rewindTo < previousRewind {
-		bm.rewindTo = rewindTo
-	}
-	bm.rewindMux.Unlock()
-	log.L(bm.ctx).Debugf("Marking rewind to sequence=%d (previous=%d)", rewindTo, previousRewind)
-}
-
-func (bm *batchManager) popRewind() int64 {
-	bm.rewindMux.Lock()
-	rewindTo := bm.rewindTo
-	bm.rewindTo = -1
-	bm.rewindMux.Unlock()
-	return rewindTo
-}
-
 func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
-
-	rewindTo := bm.popRewind()
-	if rewindTo >= 0 && rewindTo < bm.offset {
-		log.L(bm.ctx).Debugf("Rewinding to sequence=%d", rewindTo)
-		if err := bm.updateOffset(true, rewindTo); err != nil {
-			return nil, err
-		}
-	}
 
 	var msgs []*fftypes.Message
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
 		msgs, _, err = bm.database.GetMessages(bm.ctx, fb.And(
-			fb.Gt("sequence", bm.offset),
+			fb.Gt("sequence", bm.readOffset),
 			fb.Eq("state", fftypes.MessageStateReady),
-			fb.Eq("txtype", fftypes.TransactionTypeBatchPin),
 		).Sort("sequence").Limit(bm.readPageSize))
 		if err != nil {
 			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
@@ -314,9 +277,8 @@ func (bm *batchManager) messageSequencer() {
 				}
 			}
 
-			if !bm.closed {
-				_ = bm.updateOffset(true, msgs[len(msgs)-1].Sequence)
-			}
+			// Next time round only read after the messages we just processed (unless we get a tap to rewind)
+			bm.readOffset = msgs[len(msgs)-1].Sequence
 		}
 
 		// Wait to be woken again
@@ -326,60 +288,39 @@ func (bm *batchManager) messageSequencer() {
 	}
 }
 
-// newEventNotifications just consumes new messags, logs them, then ensures there's a shoulderTap
-// in the channel - without blocking. This is important as we must not block the notifier
-func (bm *batchManager) newEventNotifications() {
-	l := log.L(bm.ctx).WithField("role", "batch-newmessages")
-	for {
-		select {
-		case m, ok := <-bm.newMessages:
-			if !ok {
-				l.Debugf("Exiting due to close")
-				return
-			}
-			l.Debugf("New message sequence notification: %d", m)
-			bm.markRewind(m - 1)
-		case <-bm.ctx.Done():
-			l.Debugf("Exiting due to cancelled context")
-			return
-		}
-		// Do not block sending to the shoulderTap - as it can only contain one
-		select {
-		case bm.shoulderTap <- true:
-		default:
-		}
-	}
-}
-
 func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 	l := log.L(bm.ctx)
+
+	// Drain any new message notifications, moving back our
+	// readOffset as required
+	newMessages := false
+	checkingMessages := true
+	for checkingMessages {
+		select {
+		case seq := <-bm.newMessages:
+			l.Debugf("Notification of message %d", seq)
+			if (seq - 1) < bm.readOffset {
+				bm.readOffset = seq - 1
+			}
+			newMessages = true
+		default:
+			checkingMessages = false
+		}
+	}
+	if newMessages {
+		return
+	}
+
+	// Otherwise set a timeout
 	timeout := time.NewTimer(bm.messagePollTimeout)
 	select {
 	case <-timeout.C:
 		l.Debugf("Woken after poll timeout")
-	case <-bm.shoulderTap:
-		l.Debugf("Woken for trigger for messages")
 	case <-bm.ctx.Done():
 		l.Debugf("Exiting due to cancelled context")
 		bm.Close()
 		return
 	}
-}
-
-func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err error) {
-	l := log.L(bm.ctx)
-	return bm.retry.Do(bm.ctx, "update offset", func(attempt int) (retry bool, err error) {
-		bm.offset = newOffset
-		u := database.OffsetQueryFactory.NewUpdate(bm.ctx).Set("current", bm.offset)
-		err = bm.database.UpdateOffset(bm.ctx, bm.offsetID, u)
-		if err != nil {
-			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
-			stillRetrying := infiniteRetry || (attempt <= bm.startupOffsetRetryAttempts)
-			return !bm.closed && stillRetrying, err
-		}
-		l.Infof("Batch manager committed offset %d", newOffset)
-		return false, nil
-	})
 }
 
 func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
@@ -409,6 +350,6 @@ func (bm *batchManager) WaitStop() {
 		d.mux.Unlock()
 	}
 	for _, p := range processors {
-		p.waitClosed()
+		p.close()
 	}
 }
