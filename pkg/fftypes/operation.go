@@ -58,6 +58,7 @@ type Named interface {
 
 // NewOperation creates a new operation in a transaction
 func NewOperation(plugin Named, namespace string, tx *UUID, opType OpType) *Operation {
+	now := Now()
 	return &Operation{
 		ID:          NewUUID(),
 		Namespace:   namespace,
@@ -65,7 +66,8 @@ func NewOperation(plugin Named, namespace string, tx *UUID, opType OpType) *Oper
 		Transaction: tx,
 		Type:        opType,
 		Status:      OpStatusPending,
-		Created:     Now(),
+		Created:     now,
+		Updated:     now,
 	}
 }
 

@@ -38,5 +38,6 @@ func TestNewPendingMessageOp(t *testing.T) {
 		Type:        OpTypePublicStorageBatchBroadcast,
 		Status:      OpStatusPending,
 		Created:     op.Created,
+		Updated:     op.Created,
 	}, *op)
 }
