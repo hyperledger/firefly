@@ -163,6 +163,21 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
+func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string, input fftypes.JSONObject) (*fftypes.Operation, error) {
+	txid, err := cm.txHelper.SubmitNewTransaction(ctx, ns, fftypes.TransactionTypeContractInvoke)
+	if err != nil {
+		return nil, err
+	}
+
+	op := fftypes.NewOperation(
+		cm.blockchain,
+		ns,
+		txid,
+		fftypes.OpTypeBlockchainInvoke)
+	op.Input = input
+	return op, cm.database.InsertOperation(ctx, op)
+}
+
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {
 	req.Key, err = cm.identity.ResolveSigningKey(ctx, req.Key)
 	if err != nil {
@@ -177,19 +192,13 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 		if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
 			return err
 		}
-
-		txid, err := cm.txHelper.SubmitNewTransaction(ctx, ns, fftypes.TransactionTypeContractInvoke)
-		if err != nil {
-			return err
+		if req.Type == fftypes.CallTypeInvoke {
+			op, err = cm.writeInvokeTransaction(ctx, ns, req.Input)
+			if err != nil {
+				return err
+			}
 		}
-
-		op = fftypes.NewOperation(
-			cm.blockchain,
-			ns,
-			txid,
-			fftypes.OpTypeBlockchainInvoke)
-		op.Input = req.Input
-		return cm.database.InsertOperation(ctx, op)
+		return nil
 	})
 	if err != nil {
 		return nil, err
@@ -204,7 +213,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
 
-	if err != nil {
+	if op != nil && err != nil {
 		cm.txHelper.WriteOperationFailure(ctx, op.ID, err)
 	}
 	return res, err
