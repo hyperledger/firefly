@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,8 +38,9 @@ func newTestBatchPinSubmitter(t *testing.T) *batchPinSubmitter {
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+	mmi := &metricsmocks.Manager{}
 	mbi.On("Name").Return("ut").Maybe()
-	bps := NewBatchPinSubmitter(mdi, mim, mbi).(*batchPinSubmitter)
+	bps := NewBatchPinSubmitter(mdi, mim, mbi, mmi).(*batchPinSubmitter)
 	return bps
 }
 

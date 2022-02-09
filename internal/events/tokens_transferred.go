@@ -52,6 +52,7 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 }
 
 func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
+	countMetric := true
 	// Check that transfer has not already been recorded
 	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
 		return false, err
@@ -87,6 +88,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		if existing, err := em.database.GetTokenTransfer(ctx, transfer.LocalID); err != nil {
 			return false, err
 		} else if existing != nil {
+			countMetric = false
 			transfer.LocalID = fftypes.NewUUID()
 		}
 	} else {
@@ -108,6 +110,10 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		return false, err
 	}
 	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
+	if em.metricsEnabled && countMetric {
+		em.metrics.TransferConfirmed(transfer)
+	}
+
 	return true, nil
 }
 

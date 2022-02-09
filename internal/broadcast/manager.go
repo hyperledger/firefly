@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -62,9 +63,11 @@ type broadcastManager struct {
 	syncasync             syncasync.Bridge
 	batchpin              batchpin.Submitter
 	maxBatchPayloadLength int64
+	metricsEnabled        bool
+	metrics               metrics.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -80,6 +83,8 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		syncasync:             sa,
 		batchpin:              bp,
 		maxBatchPayloadLength: config.GetByteSize(config.BroadcastBatchPayloadLimit),
+		metricsEnabled:        config.GetBool(config.MetricsEnabled),
+		metrics:               mm,
 	}
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),

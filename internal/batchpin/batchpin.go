@@ -36,14 +36,16 @@ type batchPinSubmitter struct {
 	identity       identity.Manager
 	blockchain     blockchain.Plugin
 	metricsEnabled bool
+	metrics        metrics.Manager
 }
 
-func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin) Submitter {
+func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager) Submitter {
 	return &batchPinSubmitter{
 		database:       di,
 		identity:       im,
 		blockchain:     bi,
 		metricsEnabled: config.GetBool(config.MetricsEnabled),
+		metrics:        mm,
 	}
 }
 

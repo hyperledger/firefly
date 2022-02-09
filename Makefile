@@ -67,6 +67,7 @@ $(eval $(call makemock, internal/oapiffi,          FFISwaggerGen,      oapiffimo
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
 $(eval $(call makemock, internal/apiserver,        IServer,            apiservermocks))
+$(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
 
 firefly-nocgo: ${GOFILES}
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v

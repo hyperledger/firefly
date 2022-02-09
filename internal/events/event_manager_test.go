@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
@@ -54,9 +55,10 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
+	mm := &metricsmocks.Manager{}
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam)
+	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mm)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
@@ -87,7 +89,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -104,7 +106,8 @@ func TestStartStopBadTransports(t *testing.T) {
 	mpm := &privatemessagingmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mam := &assetmocks.Manager{}
-	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam)
+	mm := &metricsmocks.Manager{}
+	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mm)
 	assert.Regexp(t, "FF10172", err)
 }
 

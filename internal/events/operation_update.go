@@ -42,6 +42,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
+		// TODO: Need to determine transfer type and track metric
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
