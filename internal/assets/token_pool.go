@@ -90,9 +90,10 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	}
 
 	if complete, err := plugin.CreateTokenPool(ctx, op.ID, pool); err != nil {
+		am.txHelper.WriteOperationFailure(ctx, op.ID, err)
 		return nil, err
 	} else if complete {
-		return pool, am.database.ResolveOperation(ctx, op.ID, fftypes.OpStatusSucceeded, "", nil)
+		am.txHelper.WriteOperationSuccess(ctx, op.ID, nil)
 	}
 	return pool, nil
 }
@@ -113,9 +114,10 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 	}
 
 	if complete, err := plugin.ActivateTokenPool(ctx, op.ID, pool, event); err != nil {
+		am.txHelper.WriteOperationFailure(ctx, op.ID, err)
 		return err
 	} else if complete {
-		return am.database.ResolveOperation(ctx, op.ID, fftypes.OpStatusSucceeded, "", nil)
+		am.txHelper.WriteOperationSuccess(ctx, op.ID, nil)
 	}
 	return nil
 }

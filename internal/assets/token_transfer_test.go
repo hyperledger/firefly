@@ -411,7 +411,7 @@ func TestMintTokensFail(t *testing.T) {
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mdi.On("ResolveOperation", context.Background(), mock.Anything, fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
+	mth.On("WriteOperationFailure", context.Background(), mock.Anything, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")
@@ -441,7 +441,7 @@ func TestMintTokensFailAndDbFail(t *testing.T) {
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("ResolveOperation", context.Background(), mock.Anything, fftypes.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("update fail"))
+	mth.On("WriteOperationFailure", context.Background(), mock.Anything, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")

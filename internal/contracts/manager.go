@@ -197,13 +197,17 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 
 	switch req.Type {
 	case fftypes.CallTypeInvoke:
-		operationID := fftypes.NewUUID()
-		return cm.blockchain.InvokeContract(ctx, operationID, req.Key, req.Location, req.Method, req.Input)
+		res, err = cm.blockchain.InvokeContract(ctx, op.ID, req.Key, req.Location, req.Method, req.Input)
 	case fftypes.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
+		res, err = cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
+
+	if err != nil {
+		cm.txHelper.WriteOperationFailure(ctx, op.ID, err)
+	}
+	return res, err
 }
 
 func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error) {

@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -272,13 +271,9 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
 	}
 
-	// if transaction fails,  mark op as failed in DB
 	if err != nil {
-		if err := s.mgr.database.ResolveOperation(ctx, op.ID, fftypes.OpStatusFailed, err.Error(), nil); err != nil {
-			log.L(ctx).Errorf("Operation update failed: %s", err)
-		}
+		s.mgr.txHelper.WriteOperationFailure(ctx, op.ID, err)
 	}
-
 	return err
 }
 

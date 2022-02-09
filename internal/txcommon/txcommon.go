@@ -29,6 +29,8 @@ type Helper interface {
 	SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.TransactionType) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error
+	WriteOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject)
+	WriteOperationFailure(ctx context.Context, opID *fftypes.UUID, err error)
 }
 
 type transactionHelper struct {
@@ -125,4 +127,16 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, id *fftypes.UUI
 	}
 
 	return nil
+}
+
+func (t *transactionHelper) WriteOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject) {
+	if err2 := t.database.ResolveOperation(ctx, opID, fftypes.OpStatusSucceeded, "", output); err2 != nil {
+		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err2)
+	}
+}
+
+func (t *transactionHelper) WriteOperationFailure(ctx context.Context, opID *fftypes.UUID, err error) {
+	if err2 := t.database.ResolveOperation(ctx, opID, fftypes.OpStatusFailed, err.Error(), nil); err2 != nil {
+		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err2)
+	}
 }
