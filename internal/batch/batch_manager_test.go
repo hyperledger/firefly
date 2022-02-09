@@ -512,8 +512,8 @@ func TestWaitConsumesMessagesAndDoesNotBlock(t *testing.T) {
 	}
 	// And should generate a shoulder tap
 	<-bm.shoulderTap
-	// And a rewind
-	assert.Equal(t, int64(12345), bm.popRewind())
+	// And a rewind to one before that sequence (as readPage is greater-than)
+	assert.Equal(t, int64(12344), bm.popRewind())
 	bm.Close()
 }
 

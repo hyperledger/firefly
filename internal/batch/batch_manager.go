@@ -338,7 +338,7 @@ func (bm *batchManager) newEventNotifications() {
 				return
 			}
 			l.Debugf("New message sequence notification: %d", m)
-			bm.markRewind(m)
+			bm.markRewind(m - 1)
 		case <-bm.ctx.Done():
 			l.Debugf("Exiting due to cancelled context")
 			return
