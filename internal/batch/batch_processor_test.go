@@ -17,10 +17,10 @@ package batch
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -42,8 +42,8 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 		DispatcherOptions: DispatcherOptions{
 			BatchMaxSize:   10,
 			BatchMaxBytes:  1024 * 1024,
-			BatchTimeout:   10 * time.Millisecond,
-			DisposeTimeout: 20 * time.Millisecond,
+			BatchTimeout:   100 * time.Millisecond,
+			DisposeTimeout: 200 * time.Millisecond,
 		},
 	}, &retry.Retry{
 		InitialDelay: 1 * time.Microsecond,
@@ -63,14 +63,11 @@ func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
 
 func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
+	config.Reset()
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	dispatched := []*fftypes.Batch{}
+	dispatched := make(chan *fftypes.Batch)
 	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched = append(dispatched, b)
-		wg.Done()
+		dispatched <- b
 		return nil
 	})
 
@@ -82,34 +79,21 @@ func TestUnfilledBatch(t *testing.T) {
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
 
-	// Generate the work
-	work := make([]*batchWork, 5)
-	for i := 0; i < len(work); i++ {
-		msgid := fftypes.NewUUID()
-		work[i] = &batchWork{
-			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
-			dispatched: make(chan *batchDispatch),
-		}
-	}
-
-	// Kick off a go routine to consume the confirmations
+	// Dispatch the work
 	go func() {
-		for i := 0; i < len(work); i++ {
-			<-work[i].dispatched
+		for i := 0; i < 5; i++ {
+			msgid := fftypes.NewUUID()
+			bp.newWork <- &batchWork{
+				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
+			}
 		}
-		wg.Done()
 	}()
 
-	// Dispatch the work
-	for i := 0; i < len(work); i++ {
-		bp.newWork <- work[i]
-	}
-
 	// Wait for the confirmations, and the dispatch
-	wg.Wait()
+	batch := <-dispatched
 
 	// Check we got all the messages in a single batch
-	assert.Equal(t, len(dispatched[0].Payload.Messages), len(work))
+	assert.Equal(t, 5, len(batch.Payload.Messages))
 
 	bp.cancelCtx()
 	<-bp.done
@@ -117,17 +101,14 @@ func TestUnfilledBatch(t *testing.T) {
 
 func TestBatchSizeOverflow(t *testing.T) {
 	log.SetLevel("debug")
+	config.Reset()
 
-	wg := sync.WaitGroup{}
-	wg.Add(3)
-
-	dispatched := []*fftypes.Batch{}
+	dispatched := make(chan *fftypes.Batch)
 	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched = append(dispatched, b)
-		wg.Done()
+		dispatched <- b
 		return nil
 	})
-	bp.conf.BatchMaxBytes = 1
+	bp.conf.BatchMaxBytes = batchSizeEstimateBase + (&fftypes.Message{}).EstimateSize(false) + 100
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -136,105 +117,25 @@ func TestBatchSizeOverflow(t *testing.T) {
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
 
-	// Generate the work
-	work := make([]*batchWork, 2)
-	for i := 0; i < 2; i++ {
-		msgid := fftypes.NewUUID()
-		work[i] = &batchWork{
-			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
-			dispatched: make(chan *batchDispatch),
-		}
-	}
-
-	// Kick off a go routine to consume the confirmations
-	go func() {
-		for i := 0; i < len(work); i++ {
-			<-work[i].dispatched
-		}
-		wg.Done()
-	}()
-
 	// Dispatch the work
-	for i := 0; i < len(work); i++ {
-		bp.newWork <- work[i]
-	}
+	go func() {
+		for i := 0; i < 2; i++ {
+			msgid := fftypes.NewUUID()
+			bp.newWork <- &batchWork{
+				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
+			}
+		}
+	}()
 
 	// Wait for the confirmations, and the dispatch
-	wg.Wait()
+	batch1 := <-dispatched
+	batch2 := <-dispatched
 
 	// Check we got all messages across two batches
-	assert.Equal(t, len(dispatched[0].Payload.Messages), 1)
-	assert.Equal(t, len(dispatched[1].Payload.Messages), 1)
-
-	bp.cancelCtx()
-	<-bp.done
-}
-
-func TestFilledBatchSlowPersistence(t *testing.T) {
-	log.SetLevel("debug")
-
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
-	dispatched := []*fftypes.Batch{}
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched = append(dispatched, b)
-		wg.Done()
-		return nil
-	})
-	bp.conf.BatchTimeout = 1 * time.Hour // Must fill the batch
-	mockUpsert := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything)
-	mockUpsert.ReturnArguments = mock.Arguments{nil}
-	unblockPersistence := make(chan time.Time)
-	mockUpsert.WaitFor = unblockPersistence
-	mockRunAsGroupPassthrough(mdi)
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	mth := bp.txHelper.(*txcommonmocks.Helper)
-	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
-
-	// Generate the work
-	work := make([]*batchWork, 10)
-	for i := 0; i < 10; i++ {
-		msgid := fftypes.NewUUID()
-		if i%2 == 0 {
-			work[i] = &batchWork{
-				msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
-				dispatched: make(chan *batchDispatch),
-			}
-		} else {
-			work[i] = &batchWork{
-				data:       []*fftypes.Data{{ID: msgid}},
-				dispatched: make(chan *batchDispatch),
-			}
-		}
-	}
-
-	// Kick off a go routine to consume the confirmations
-	go func() {
-		for i := 0; i < 10; i++ {
-			<-work[i].dispatched
-		}
-		wg.Done()
-	}()
-
-	// Dispatch the work
-	for i := 0; i < 10; i++ {
-		bp.newWork <- work[i]
-	}
-
-	// Unblock the dispatch
-	time.Sleep(10 * time.Millisecond)
-	mockUpsert.WaitFor = nil
-	unblockPersistence <- time.Now() // First call to write the first entry in the batch
-
-	// Wait for comdiletion
-	wg.Wait()
-
-	// Check we got all the messages in a single batch
-	assert.Equal(t, len(dispatched[0].Payload.Messages), 5)
-	assert.Equal(t, len(dispatched[0].Payload.Data), 5)
+	assert.Equal(t, 1, len(batch1.Payload.Messages))
+	assert.Equal(t, int64(1000), batch1.Payload.Messages[0].Sequence)
+	assert.Equal(t, 1, len(batch2.Payload.Messages))
+	assert.Equal(t, int64(1001), batch2.Payload.Messages[0].Sequence)
 
 	bp.cancelCtx()
 	<-bp.done
@@ -251,32 +152,29 @@ func TestCloseToUnblockDispatch(t *testing.T) {
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
 	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
+	bp.conf.BatchMaxSize = 1
 	bp.conf.BatchTimeout = 100 * time.Second
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mup := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	waitForCall := make(chan bool)
-	mup.RunFn = func(a mock.Arguments) {
-		waitForCall <- true
-		<-waitForCall
-	}
+	mth := bp.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).
+		Run(func(a mock.Arguments) {
+			waitForCall <- true
+			<-waitForCall
+		}).
+		Return(nil, fmt.Errorf("pop"))
 
 	// Generate the work
 	msgid := fftypes.NewUUID()
-	work := &batchWork{
-		msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
-		dispatched: make(chan *batchDispatch),
-	}
-
-	// Dispatch the work
-	bp.newWork <- work
+	go func() {
+		bp.newWork <- &batchWork{
+			msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000)},
+		}
+	}()
 
 	// Ensure the mock has been run
 	<-waitForCall

@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -34,6 +35,7 @@ import (
 
 func TestE2EDispatchBroadcast(t *testing.T) {
 	log.SetLevel("debug")
+	config.Reset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -131,6 +133,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 
 func TestE2EDispatchPrivate(t *testing.T) {
 	log.SetLevel("debug")
+	config.Reset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -250,7 +253,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
 	defer bm.Close()
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
-	err := bm.(*batchManager).dispatchMessage(nil, msg)
+	err := bm.(*batchManager).dispatchMessage(msg)
 	assert.Regexp(t, "FF10126", err)
 }
 

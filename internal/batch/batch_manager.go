@@ -196,8 +196,6 @@ func (bm *batchManager) messageSequencer() {
 	l.Debugf("Started batch assembly message sequencer")
 	defer close(bm.done)
 
-	dispatched := make(chan *batchDispatch, bm.readPageSize)
-
 	for {
 		// Each time round the loop we check for quiescing processors
 		bm.reapQuiescing()
@@ -208,11 +206,9 @@ func (bm *batchManager) messageSequencer() {
 			l.Debugf("Exiting: %s", err)
 			return
 		}
-		batchWasFull := false
+		batchWasFull := (uint64(len(msgs)) == bm.readPageSize)
 
 		if len(msgs) > 0 {
-			batchWasFull = (uint64(len(msgs)) == bm.readPageSize)
-			var dispatchCount int
 			for _, msg := range msgs {
 				data, err := bm.assembleMessageData(msg)
 				if err != nil {
@@ -220,22 +216,10 @@ func (bm *batchManager) messageSequencer() {
 					continue
 				}
 
-				err = bm.dispatchMessage(dispatched, msg, data...)
+				err = bm.dispatchMessage(msg, data...)
 				if err != nil {
 					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
 					continue
-				}
-				dispatchCount++
-			}
-
-			for i := 0; i < dispatchCount; i++ {
-				select {
-				case dispatched := <-dispatched:
-					l.Debugf("Dispatched message %s to batch %s", dispatched.msg.Header.ID, dispatched.batchID)
-				case <-bm.ctx.Done():
-					l.Debugf("Message sequencer exiting (context closed)")
-					bm.Close()
-					return
 				}
 			}
 
@@ -288,7 +272,7 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() (done bool) {
 	}
 }
 
-func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
+func (bm *batchManager) dispatchMessage(msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(bm.ctx)
 	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.Identity)
 	if err != nil {
@@ -296,9 +280,8 @@ func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fft
 	}
 	l.Debugf("Dispatching message %s to %s batch processor %s", msg.Header.ID, msg.Header.Type, processor.conf.name)
 	work := &batchWork{
-		msg:        msg,
-		data:       data,
-		dispatched: dispatched,
+		msg:  msg,
+		data: data,
 	}
 	processor.newWork <- work
 	return nil

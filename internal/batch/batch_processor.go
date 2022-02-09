@@ -34,14 +34,8 @@ import (
 )
 
 type batchWork struct {
-	msg        *fftypes.Message
-	data       []*fftypes.Data
-	dispatched chan *batchDispatch
-}
-
-type batchDispatch struct {
-	msg     *fftypes.Message
-	batchID *fftypes.UUID
+	msg  *fftypes.Message
+	data []*fftypes.Data
 }
 
 type batchProcessorConf struct {
@@ -156,7 +150,7 @@ func (bp *batchProcessor) newAssembly(initalWork ...*batchWork) {
 // This helps in the case for parallel REST APIs all committing to the DB at a similar time.
 // With a sufficient batch size and batch timeout, the batch will still dispatch the messages
 // in DB sequence order (although this is not guaranteed).
-func (bp *batchProcessor) addWork(newWork *batchWork) (overflow bool) {
+func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	newQueue := make([]*batchWork, 0, len(bp.assemblyQueue)+1)
 	added := false
 	skip := false
@@ -189,8 +183,9 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (overflow bool) {
 		bp.assemblyQueueBytes += newWork.estimateSize()
 	}
 	bp.assemblyQueue = newQueue
-	overflow = len(bp.assemblyQueue) > 1 && (bp.assemblyQueueBytes > bp.conf.BatchMaxBytes || len(bp.assemblyQueue) > int(bp.conf.BatchMaxSize))
-	return overflow
+	full = len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || (bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes)
+	overflow = len(bp.assemblyQueue) > 1 && (bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
+	return full, overflow
 }
 
 func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAssembly []*batchWork, byteSize int64) {
@@ -273,13 +268,12 @@ func (bp *batchProcessor) assemblyLoop() {
 	defer close(bp.done)
 	l := log.L(bp.ctx)
 
-	overflow := false
 	var batchTimeout = time.NewTimer(bp.conf.DisposeTimeout)
 	idle := true
 	quescing := false
 	for !quescing {
 
-		var timedout bool
+		var timedout, full, overflow bool
 		select {
 		case <-bp.ctx.Done():
 			l.Tracef("Batch processor shutting down")
@@ -303,7 +297,7 @@ func (bp *batchProcessor) assemblyLoop() {
 			if !ok {
 				quescing = true
 			} else {
-				overflow = bp.addWork(work)
+				full, overflow = bp.addWork(work)
 				if idle {
 					// We've hit a message while we were idle - we now need to wait for the batch to time out.
 					_ = batchTimeout.Stop()
@@ -312,7 +306,7 @@ func (bp *batchProcessor) assemblyLoop() {
 				}
 			}
 		}
-		if overflow || timedout || quescing {
+		if full || timedout || quescing {
 			// Let Go GC the old timer
 			_ = batchTimeout.Stop()
 
