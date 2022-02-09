@@ -26,13 +26,18 @@ import (
 )
 
 func TestRetryEventuallyOk(t *testing.T) {
+	var capturedErr error
 	r := Retry{
 		MaximumDelay: 3 * time.Microsecond,
 		InitialDelay: 1 * time.Microsecond,
+		ErrCallback: func(err error) {
+			capturedErr = err
+		},
 	}
 	r.Do(context.Background(), "unit test", func(i int) (retry bool, err error) {
 		return i < 10, fmt.Errorf("pop")
 	})
+	assert.EqualError(t, capturedErr, "pop")
 }
 
 func TestRetryDeadlineTimeout(t *testing.T) {

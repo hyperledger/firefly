@@ -32,17 +32,15 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-const (
-	msgBatchOffsetName = "ff_msgbatch"
-)
-
 func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager) (Manager, error) {
 	if di == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
+	pCtx, cancelCtx := context.WithCancel(log.WithLogField(ctx, "role", "batchmgr"))
 	readPageSize := config.GetUint(config.BatchManagerReadPageSize)
 	bm := &batchManager{
-		ctx:                        log.WithLogField(ctx, "role", "batchmgr"),
+		ctx:                        pCtx,
+		cancelCtx:                  cancelCtx,
 		ni:                         ni,
 		database:                   di,
 		data:                       dm,
@@ -51,8 +49,8 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
-		newMessages:                make(chan int64),
-		sequencerClosed:            make(chan struct{}),
+		newMessages:                make(chan int64, 1),
+		done:                       make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.BatchRetryMaxDelay),
@@ -63,26 +61,32 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 }
 
 type Manager interface {
-	RegisterDispatcher(msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions Options)
+	RegisterDispatcher(name string, msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
 	NewMessages() chan<- int64
 	Start() error
 	Close()
 	WaitStop()
+	Status() []*ProcessorStatus
+}
+
+type ProcessorStatus struct {
+	Dispatcher string      `json:"dispatcher"`
+	Name       string      `json:"name"`
+	Status     FlushStatus `json:"status"`
 }
 
 type batchManager struct {
 	ctx                        context.Context
+	cancelCtx                  func()
 	ni                         sysmessaging.LocalNodeInfo
 	database                   database.Plugin
 	data                       data.Manager
+	dispatcherMux              sync.Mutex
 	dispatchers                map[fftypes.MessageType]*dispatcher
 	newMessages                chan int64
-	sequencerClosed            chan struct{}
+	done                       chan struct{}
 	retry                      *retry.Retry
-	offsetID                   int64
-	recoveryOffset             int64
 	readOffset                 int64
-	closed                     bool
 	readPageSize               uint64
 	messagePollTimeout         time.Duration
 	startupOffsetRetryAttempts int
@@ -90,7 +94,7 @@ type batchManager struct {
 
 type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error
 
-type Options struct {
+type DispatcherOptions struct {
 	BatchMaxSize   uint
 	BatchMaxBytes  int64
 	BatchTimeout   time.Duration
@@ -98,17 +102,18 @@ type Options struct {
 }
 
 type dispatcher struct {
-	handler      DispatchHandler
-	mux          sync.Mutex
-	processors   map[string]*batchProcessor
-	batchOptions Options
+	name       string
+	handler    DispatchHandler
+	processors map[string]*batchProcessor
+	options    DispatcherOptions
 }
 
-func (bm *batchManager) RegisterDispatcher(msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions Options) {
+func (bm *batchManager) RegisterDispatcher(name string, msgTypes []fftypes.MessageType, handler DispatchHandler, options DispatcherOptions) {
 	dispatcher := &dispatcher{
-		handler:      handler,
-		batchOptions: batchOptions,
-		processors:   make(map[string]*batchProcessor),
+		name:       name,
+		handler:    handler,
+		options:    options,
+		processors: make(map[string]*batchProcessor),
 	}
 	for _, msgType := range msgTypes {
 		bm.dispatchers[msgType] = dispatcher
@@ -116,9 +121,6 @@ func (bm *batchManager) RegisterDispatcher(msgTypes []fftypes.MessageType, handl
 }
 
 func (bm *batchManager) Start() error {
-	if err := bm.restoreOffset(); err != nil {
-		return err
-	}
 	go bm.messageSequencer()
 	return nil
 }
@@ -127,75 +129,36 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) restoreOffset() (err error) {
-	var offset *fftypes.Offset
-	for offset == nil {
-		offset, err = bm.database.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, msgBatchOffsetName)
-		if err != nil {
-			return err
-		}
-		if offset == nil {
-			_ = bm.database.UpsertOffset(bm.ctx, &fftypes.Offset{
-				Type:    fftypes.OffsetTypeBatch,
-				Name:    msgBatchOffsetName,
-				Current: 0,
-			}, false)
-		}
-	}
-	bm.offsetID = offset.RowID
-	bm.readOffset = offset.Current
-	bm.recoveryOffset = offset.Current
-	log.L(bm.ctx).Infof("Batch manager restored offset %d", offset.Current)
-	return nil
-}
-
 func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.Identity) (*batchProcessor, error) {
+	bm.dispatcherMux.Lock()
+	defer bm.dispatcherMux.Unlock()
+
 	dispatcher, ok := bm.dispatchers[batchType]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)
 	}
-	dispatcher.mux.Lock()
-	key := fmt.Sprintf("%s:%s:%s[group=%v]", namespace, identity.Author, identity.Key, group)
-	processor, ok := dispatcher.processors[key]
+	name := fmt.Sprintf("%s|%s|%v", namespace, identity.Author, group)
+	processor, ok := dispatcher.processors[name]
 	if !ok {
 		processor = newBatchProcessor(
 			bm.ctx, // Background context, not the call context
 			bm.ni,
 			bm.database,
 			&batchProcessorConf{
-				Options:   dispatcher.batchOptions,
-				namespace: namespace,
-				identity:  *identity,
-				group:     group,
-				dispatch:  dispatcher.handler,
+				DispatcherOptions: dispatcher.options,
+				name:              name,
+				dispatcherName:    dispatcher.name,
+				namespace:         namespace,
+				identity:          *identity,
+				group:             group,
+				dispatch:          dispatcher.handler,
 			},
 			bm.retry,
 		)
-		dispatcher.processors[key] = processor
+		dispatcher.processors[name] = processor
 	}
-	log.L(bm.ctx).Debugf("Created new processor: %s", key)
-	dispatcher.mux.Unlock()
+	log.L(bm.ctx).Debugf("Created new processor: %s", name)
 	return processor, nil
-}
-
-func (bm *batchManager) Close() {
-	var processors []*batchProcessor
-	if bm != nil && !bm.closed {
-		for _, d := range bm.dispatchers {
-			d.mux.Lock()
-			for _, p := range d.processors {
-				processors = append(processors, p)
-				p.close()
-			}
-			d.mux.Unlock()
-		}
-		bm.closed = true
-		close(bm.newMessages)
-	}
-	bm = nil
-	for _, p := range processors {
-		<-p.done
-	}
 }
 
 func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftypes.Data, err error) {
@@ -203,7 +166,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 	err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble message %s data", msg.Header.ID), func(attempt int) (retry bool, err error) {
 		data, foundAll, err = bm.data.GetMessageData(bm.ctx, msg, true)
 		// continual retry for persistence error (distinct from not-found)
-		return err != nil && !bm.closed, err
+		return true, err
 	})
 	if err != nil {
 		return nil, err
@@ -211,7 +174,6 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 	if !foundAll {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, msg.Header.ID)
 	}
-	log.L(bm.ctx).Infof("Detected new batch-pinned message %s sequence=%d", msg.Header.ID, msg.Sequence)
 	return data, nil
 }
 
@@ -224,10 +186,7 @@ func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 			fb.Gt("sequence", bm.readOffset),
 			fb.Eq("state", fftypes.MessageStateReady),
 		).Sort("sequence").Limit(bm.readPageSize))
-		if err != nil {
-			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
-		}
-		return false, nil
+		return true, err
 	})
 	return msgs, err
 }
@@ -235,15 +194,18 @@ func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 func (bm *batchManager) messageSequencer() {
 	l := log.L(bm.ctx)
 	l.Debugf("Started batch assembly message sequencer")
-	defer close(bm.sequencerClosed)
+	defer close(bm.done)
 
 	dispatched := make(chan *batchDispatch, bm.readPageSize)
 
-	for !bm.closed {
+	for {
+		// Each time round the loop we check for quiescing processors
+		bm.reapQuiescing()
+
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
 		msgs, err := bm.readPage()
 		if err != nil {
-			l.Debugf("Exiting: %s", err) // errors logged in readPage
+			l.Debugf("Exiting: %s", err)
 			return
 		}
 		batchWasFull := false
@@ -282,13 +244,16 @@ func (bm *batchManager) messageSequencer() {
 		}
 
 		// Wait to be woken again
-		if !bm.closed && !batchWasFull {
-			bm.waitForShoulderTapOrPollTimeout()
+		if !batchWasFull {
+			if done := bm.waitForShoulderTapOrPollTimeout(); done {
+				l.Debugf("Exiting: %s", err)
+				return
+			}
 		}
 	}
 }
 
-func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
+func (bm *batchManager) waitForShoulderTapOrPollTimeout() (done bool) {
 	l := log.L(bm.ctx)
 
 	// Drain any new message notifications, moving back our
@@ -308,7 +273,7 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 		}
 	}
 	if newMessages {
-		return
+		return false
 	}
 
 	// Otherwise set a timeout
@@ -316,10 +281,10 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 	select {
 	case <-timeout.C:
 		l.Debugf("Woken after poll timeout")
+		return false
 	case <-bm.ctx.Done():
 		l.Debugf("Exiting due to cancelled context")
-		bm.Close()
-		return
+		return true
 	}
 }
 
@@ -329,7 +294,7 @@ func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fft
 	if err != nil {
 		return err
 	}
-	l.Debugf("Dispatching message %s to %s batch", msg.Header.ID, msg.Header.Type)
+	l.Debugf("Dispatching message %s to %s batch processor %s", msg.Header.ID, msg.Header.Type, processor.conf.name)
 	work := &batchWork{
 		msg:        msg,
 		data:       data,
@@ -339,17 +304,53 @@ func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fft
 	return nil
 }
 
-func (bm *batchManager) WaitStop() {
-	<-bm.sequencerClosed
+func (bm *batchManager) reapQuiescing() {
+	bm.dispatcherMux.Lock()
+	defer bm.dispatcherMux.Unlock()
+
+	for _, d := range bm.dispatchers {
+		for k, p := range d.processors {
+			select {
+			case <-p.quescing:
+				// This is called on the goroutine where we dispatch the work, so it's safe to cleanup
+				delete(d.processors, k)
+				close(p.newWork)
+			default:
+			}
+		}
+	}
+}
+
+func (bm *batchManager) getProcessors() []*batchProcessor {
+	bm.dispatcherMux.Lock()
+	defer bm.dispatcherMux.Unlock()
+
 	var processors []*batchProcessor
 	for _, d := range bm.dispatchers {
-		d.mux.Lock()
 		for _, p := range d.processors {
 			processors = append(processors, p)
 		}
-		d.mux.Unlock()
 	}
+	return processors
+}
+
+func (bm *batchManager) Status() []*ProcessorStatus {
+	processors := bm.getProcessors()
+	status := make([]*ProcessorStatus, len(processors))
+	for i, p := range processors {
+		status[i] = p.status()
+	}
+	return status
+}
+
+func (bm *batchManager) Close() {
+	bm.cancelCtx() // all processor contexts are child contexts
+}
+
+func (bm *batchManager) WaitStop() {
+	<-bm.done
+	processors := bm.getProcessors()
 	for _, p := range processors {
-		p.close()
+		<-p.done
 	}
 }

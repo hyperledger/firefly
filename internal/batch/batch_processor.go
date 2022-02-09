@@ -21,7 +21,6 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
-	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -46,12 +45,13 @@ type batchDispatch struct {
 }
 
 type batchProcessorConf struct {
-	Options
+	DispatcherOptions
+	name           string
+	dispatcherName string
 	namespace      string
 	identity       fftypes.Identity
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
-	requestQuiesce func() bool
 }
 
 // FlushStatus is an object that can be returned on REST queries to understand the status
@@ -59,14 +59,16 @@ type batchProcessorConf struct {
 type FlushStatus struct {
 	LastFlushTime        *fftypes.FFTime `json:"lastFlushStartTime"`
 	Flushing             *fftypes.UUID   `json:"flushing,omitempty"`
+	Blocked              bool            `json:"blocked"`
 	LastFlushError       string          `json:"lastFlushError,omitempty"`
 	LastFlushErrorTime   *fftypes.FFTime `json:"lastFlushErrorTime,omitempty"`
 	AverageBatchBytes    int64           `json:"averageBatchBytes"`
 	AverageBatchMessages float64         `json:"averageBatchMessages"`
 	AverageBatchData     float64         `json:"averageBatchData"`
 	AverageFlushTimeMS   int64           `json:"averageFlushTimeMS"`
+	TotalBatches         int64           `json:"totalBatches"`
+	TotalErrors          int64           `json:"totalErrors"`
 
-	totalBatches         int64
 	totalBytesFlushed    int64
 	totalMessagesFlushed int64
 	totalDataFlushed     int64
@@ -78,9 +80,9 @@ type batchProcessor struct {
 	ni                 sysmessaging.LocalNodeInfo
 	database           database.Plugin
 	txHelper           txcommon.Helper
-	name               string
 	cancelCtx          func()
 	done               chan struct{}
+	quescing           chan bool
 	newWork            chan *batchWork
 	assemblyID         *fftypes.UUID
 	assemblyQueue      []*batchWork
@@ -94,25 +96,31 @@ type batchProcessor struct {
 
 const batchSizeEstimateBase = int64(512)
 
-func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
-	name := fmt.Sprintf("%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key)
-	pCtx := log.WithLogField(ctx, "role", name)
+func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, conf *batchProcessorConf, baseRetryConf *retry.Retry) *batchProcessor {
+	pCtx := log.WithLogField(log.WithLogField(ctx, "d", conf.dispatcherName), "p", conf.name)
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
-		ctx:              pCtx,
-		cancelCtx:        cancelCtx,
-		ni:               ni,
-		database:         di,
-		txHelper:         txcommon.NewTransactionHelper(di),
-		name:             name,
-		newWork:          make(chan *batchWork, conf.BatchMaxSize),
-		retry:            retry,
+		ctx:       pCtx,
+		cancelCtx: cancelCtx,
+		ni:        ni,
+		database:  di,
+		txHelper:  txcommon.NewTransactionHelper(di),
+		newWork:   make(chan *batchWork, conf.BatchMaxSize),
+		quescing:  make(chan bool, 1),
+		done:      make(chan struct{}),
+		retry: &retry.Retry{
+			InitialDelay: baseRetryConf.InitialDelay,
+			MaximumDelay: baseRetryConf.MaximumDelay,
+			Factor:       baseRetryConf.Factor,
+		},
 		conf:             conf,
 		flushedSequences: []int64{},
 		flushStatus: FlushStatus{
 			LastFlushTime: fftypes.Now(),
 		},
 	}
+	// Capture flush errors for our status
+	bp.retry.ErrCallback = bp.captureFlushError
 	bp.newAssembly()
 	go bp.assemblyLoop()
 	log.L(pCtx).Infof("Batch processor created")
@@ -127,11 +135,14 @@ func (bw *batchWork) estimateSize() int64 {
 	return sizeEstimate
 }
 
-func (bp *batchProcessor) Status() *FlushStatus {
+func (bp *batchProcessor) status() *ProcessorStatus {
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
-	statusCopy := bp.flushStatus
-	return &statusCopy
+	return &ProcessorStatus{
+		Dispatcher: bp.conf.dispatcherName,
+		Name:       bp.conf.name,
+		Status:     bp.flushStatus, // copy
+	}
 }
 
 func (bp *batchProcessor) newAssembly(initalWork ...*batchWork) {
@@ -184,8 +195,9 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (overflow bool) {
 
 func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAssembly []*batchWork, byteSize int64) {
 	bp.statusMux.Lock()
-	defer bp.statusMux.Lock()
+	defer bp.statusMux.Unlock()
 	// Star the clock
+	bp.flushStatus.Blocked = false
 	bp.flushStatus.LastFlushTime = fftypes.Now()
 	// Split the current work if required for overflow
 	overflowWork := make([]*batchWork, 0)
@@ -205,7 +217,7 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	if newFlushedSeqLen > maxFlushedSeqLen && maxFlushedSeqLen > len(bp.flushedSequences) {
 		newFlushedSeqLen = maxFlushedSeqLen
 	}
-	newFlushedSequnces := make([]int64, 0, newFlushedSeqLen)
+	newFlushedSequnces := make([]int64, newFlushedSeqLen)
 	for i, fs := range flushAssembly {
 		newFlushedSequnces[i] = fs.msg.Sequence
 	}
@@ -222,25 +234,36 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 
 func (bp *batchProcessor) endFlush(batch *fftypes.Batch, byteSize int64) {
 	bp.statusMux.Lock()
-	defer bp.statusMux.Lock()
+	defer bp.statusMux.Unlock()
 	fs := &bp.flushStatus
 
 	duration := time.Since(*fs.LastFlushTime.Time())
 	fs.Flushing = nil
 
-	fs.totalBatches++
+	fs.TotalBatches++
 
 	fs.totalFlushDuration += duration
-	fs.AverageFlushTimeMS = (fs.totalFlushDuration / time.Duration(fs.totalBatches)).Milliseconds()
+	fs.AverageFlushTimeMS = (fs.totalFlushDuration / time.Duration(fs.TotalBatches)).Milliseconds()
 
 	fs.totalBytesFlushed += byteSize
-	fs.AverageBatchBytes = (fs.totalBytesFlushed / fs.totalBatches)
+	fs.AverageBatchBytes = (fs.totalBytesFlushed / fs.TotalBatches)
 
 	fs.totalMessagesFlushed += int64(len(batch.Payload.Messages))
-	fs.AverageBatchMessages = math.Round((float64(fs.totalMessagesFlushed)/float64(fs.totalBatches))*100) / 100
+	fs.AverageBatchMessages = math.Round((float64(fs.totalMessagesFlushed)/float64(fs.TotalBatches))*100) / 100
 
 	fs.totalDataFlushed += int64(len(batch.Payload.Data))
-	fs.AverageBatchData = math.Round((float64(fs.totalDataFlushed)/float64(fs.totalBatches))*100) / 100
+	fs.AverageBatchData = math.Round((float64(fs.totalDataFlushed)/float64(fs.TotalBatches))*100) / 100
+}
+
+func (bp *batchProcessor) captureFlushError(err error) {
+	bp.statusMux.Lock()
+	defer bp.statusMux.Unlock()
+	fs := &bp.flushStatus
+
+	fs.TotalErrors++
+	fs.Blocked = true
+	fs.LastFlushErrorTime = fftypes.Now()
+	fs.LastFlushError = err.Error()
 }
 
 // The assemblyLoop receives new work, sorts it, and waits for the size/timer to pop before
@@ -268,7 +291,10 @@ func (bp *batchProcessor) assemblyLoop() {
 				// It probably makes sense to exit, but we don't know if more work is coming our way,
 				// so we just inform the manager we've hit our dispose timeout and see if they close
 				// the input work channel (which they can safely do on the dispatcher routine)
-				bp.conf.requestQuiesce()
+				select {
+				case bp.quescing <- true:
+				default:
+				}
 			} else {
 				// We need to flush
 				timedout = true
@@ -450,7 +476,7 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 	return bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 			// Update all the messages in the batch with the batch ID
-			msgIDs := make([]driver.Value, 0, len(batch.Payload.Messages))
+			msgIDs := make([]driver.Value, len(batch.Payload.Messages))
 			for i, msg := range batch.Payload.Messages {
 				msgIDs[i] = msg.Header.ID
 			}
@@ -465,9 +491,4 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 			return bp.database.UpdateMessages(ctx, filter, update)
 		})
 	})
-}
-
-func (bp *batchProcessor) close() {
-	bp.cancelCtx()
-	<-bp.done
 }

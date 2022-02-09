@@ -37,6 +37,8 @@ import (
 	"github.com/karlseguin/ccache"
 )
 
+const pinnedPrivateDispatcherName = "pinned_private"
+
 type Manager interface {
 	GroupManager
 
@@ -100,14 +102,14 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 			MaxSize(config.GetByteSize(config.GroupCacheSize)),
 	)
 
-	bo := batch.Options{
+	bo := batch.DispatcherOptions{
 		BatchMaxSize:   config.GetUint(config.PrivateMessagingBatchSize),
 		BatchMaxBytes:  pm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(config.PrivateMessagingBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.PrivateMessagingBatchAgentTimeout),
 	}
 
-	ba.RegisterDispatcher([]fftypes.MessageType{
+	ba.RegisterDispatcher(pinnedPrivateDispatcherName, []fftypes.MessageType{
 		fftypes.MessageTypeGroupInit,
 		fftypes.MessageTypePrivate,
 		fftypes.MessageTypeTransferPrivate,

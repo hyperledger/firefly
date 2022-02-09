@@ -39,7 +39,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 		namespace: "ns1",
 		identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		dispatch:  dispatch,
-		Options: Options{
+		DispatcherOptions: DispatcherOptions{
 			BatchMaxSize:   10,
 			BatchMaxBytes:  1024 * 1024,
 			BatchTimeout:   10 * time.Millisecond,
@@ -73,6 +73,7 @@ func TestUnfilledBatch(t *testing.T) {
 		wg.Done()
 		return nil
 	})
+
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -86,7 +87,7 @@ func TestUnfilledBatch(t *testing.T) {
 	for i := 0; i < len(work); i++ {
 		msgid := fftypes.NewUUID()
 		work[i] = &batchWork{
-			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
+			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
 			dispatched: make(chan *batchDispatch),
 		}
 	}
@@ -110,9 +111,8 @@ func TestUnfilledBatch(t *testing.T) {
 	// Check we got all the messages in a single batch
 	assert.Equal(t, len(dispatched[0].Payload.Messages), len(work))
 
-	bp.close()
-	bp.close()
-
+	bp.cancelCtx()
+	<-bp.done
 }
 
 func TestBatchSizeOverflow(t *testing.T) {
@@ -166,9 +166,8 @@ func TestBatchSizeOverflow(t *testing.T) {
 	assert.Equal(t, len(dispatched[0].Payload.Messages), 1)
 	assert.Equal(t, len(dispatched[1].Payload.Messages), 1)
 
-	bp.close()
-	bp.close()
-
+	bp.cancelCtx()
+	<-bp.done
 }
 
 func TestFilledBatchSlowPersistence(t *testing.T) {
@@ -237,17 +236,17 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	assert.Equal(t, len(dispatched[0].Payload.Messages), 5)
 	assert.Equal(t, len(dispatched[0].Payload.Data), 5)
 
-	bp.close()
-	bp.close()
-
+	bp.cancelCtx()
+	<-bp.done
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
 	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return fmt.Errorf("pop")
 	})
-	bp.close()
+	bp.cancelCtx()
 	bp.dispatchBatch(&fftypes.Batch{}, []*fftypes.Bytes32{})
+	<-bp.done
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
@@ -284,16 +283,14 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	close(waitForCall)
 
 	// Close to unblock
-	bp.close()
-	bp.close()
-
+	bp.cancelCtx()
+	<-bp.done
 }
 
 func TestCalcPinsFail(t *testing.T) {
 	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	})
-	defer bp.close()
 	mdi := bp.database.(*databasemocks.Plugin)
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -310,4 +307,7 @@ func TestCalcPinsFail(t *testing.T) {
 		},
 	})
 	assert.Regexp(t, "pop", err)
+
+	bp.cancelCtx()
+	<-bp.done
 }
