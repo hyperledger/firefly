@@ -145,6 +145,28 @@ func TestSchemaTypeMismatch(t *testing.T) {
 	assert.Regexp(t, "cannot cast string to boolean", err)
 }
 
+func TestSchemaTypeMismatchArray(t *testing.T) {
+	_, err := NewTestSchema(`
+{
+	"type": "array",
+	"details": {
+		"type": "string"
+	}
+}`)
+	assert.Regexp(t, "cannot cast array to string", err)
+}
+
+func TestSchemaTypeMismatchObject(t *testing.T) {
+	_, err := NewTestSchema(`
+{
+	"type": "object",
+	"details": {
+		"type": "string"
+	}
+}`)
+	assert.Regexp(t, "cannot cast object to string", err)
+}
+
 func TestInputString(t *testing.T) {
 	s, err := NewTestSchema(`
 {

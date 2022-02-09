@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -117,13 +118,15 @@ type EthconnectMessageRequest struct {
 
 type EthconnectMessageHeaders struct {
 	Type string `json:"type,omitempty"`
+	ID   string `json:"id,omitempty"`
 }
 
-var batchPinEvent = "BatchPin"
+// var batchPinEvent = "BatchPin"
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
-var batchPinABI = ABIElementMarshaling{
+var batchPinMethodABI = ABIElementMarshaling{
 	Name: "pinBatch",
+	Type: "function",
 	Inputs: []ABIArgumentMarshaling{
 		{
 			InternalType: "string",
@@ -153,6 +156,55 @@ var batchPinABI = ABIElementMarshaling{
 	},
 }
 
+var batchPinEventABI = ABIElementMarshaling{
+	Name: "BatchPin",
+	Type: "event",
+	Inputs: []ABIArgumentMarshaling{
+		{
+			Indexed:      false,
+			InternalType: "address",
+			Name:         "author",
+			Type:         "address",
+		},
+		{
+			Indexed:      false,
+			InternalType: "uint256",
+			Name:         "timestamp",
+			Type:         "uint256",
+		},
+		{
+			Indexed:      false,
+			InternalType: "string",
+			Name:         "namespace",
+			Type:         "string",
+		},
+		{
+			Indexed:      false,
+			InternalType: "bytes32",
+			Name:         "uuids",
+			Type:         "bytes32",
+		},
+		{
+			Indexed:      false,
+			InternalType: "bytes32",
+			Name:         "batchHash",
+			Type:         "bytes32",
+		},
+		{
+			Indexed:      false,
+			InternalType: "string",
+			Name:         "payloadRef",
+			Type:         "string",
+		},
+		{
+			Indexed:      false,
+			InternalType: "bytes32[]",
+			Name:         "contexts",
+			Type:         "bytes32[]",
+		},
+	},
+}
+
 func (e *Ethereum) Name() string {
 	return "ethereum"
 }
@@ -174,10 +226,30 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
 	}
+
+	e.client = restclient.New(e.ctx, ethconnectConf)
+	e.capabilities = &blockchain.Capabilities{
+		GlobalSequencer: true,
+	}
+
 	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
 	if e.instancePath == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
 	}
+	// Backwards compatibility from when instance path was not a contract address
+	if strings.HasPrefix(strings.ToLower(e.instancePath), "/contracts/") {
+		address, err := e.getContractAddress(ctx, e.instancePath)
+		if err != nil {
+			return err
+		}
+		e.instancePath = address
+	}
+
+	// Ethconnect needs the "0x" prefix in some cases
+	if !strings.HasPrefix(e.instancePath, "0x") {
+		e.instancePath = fmt.Sprintf("0x%s", e.instancePath)
+	}
+
 	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
 	if e.topic == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
@@ -185,11 +257,6 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
-
-	e.client = restclient.New(e.ctx, ethconnectConf)
-	e.capabilities = &blockchain.Capabilities{
-		GlobalSequencer: true,
-	}
 
 	wsConfig := wsconfig.GenerateConfigFromPrefix(ethconnectConf)
 
@@ -211,7 +278,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
-	if e.initInfo.sub, err = e.streams.ensureSubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEvent); err != nil {
+	if e.initInfo.sub, err = e.streams.ensureSubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
 		return err
 	}
 
@@ -501,6 +568,7 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	body := EthconnectMessageRequest{
 		Headers: EthconnectMessageHeaders{
 			Type: "SendTransaction",
+			ID:   requestID,
 		},
 		From:   signingKey,
 		To:     address,
@@ -509,7 +577,6 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	}
 	return e.client.R().
 		SetContext(ctx).
-		SetQueryParam(e.prefixShort+"-id", requestID).
 		SetBody(body).
 		Post("/")
 }
@@ -544,7 +611,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", batchPinABI, operationID.String(), input)
+	res, err := e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -607,24 +674,17 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &ethLocation, nil
 }
 
-func parseParamDetails(ctx context.Context, schema *fftypes.JSONAny) (*paramDetails, error) {
-	details := schema.JSONObject().GetObject("details")
-	ethParam := paramDetails{
-		Type:    details.GetString("type"),
-		Indexed: details.GetBool("indexed"),
-	}
-	if ethParam.Type == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgContractParamInvalid, "'type' not set")
-	}
-	return &ethParam, nil
-}
-
 func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
 	location, err := parseContractLocation(ctx, subscription.Location)
 	if err != nil {
 		return err
 	}
-	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subscription.Event.FFIEventDefinition)
+	abi, err := e.FFIEventDefinitionToABI(ctx, &subscription.Event.FFIEventDefinition)
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgContractParamInvalid)
+	}
+
+	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, abi)
 	if err != nil {
 		return err
 	}
@@ -640,29 +700,53 @@ func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVa
 	return &FFIParamValidator{}, nil
 }
 
-func (e *Ethereum) FFI2ABI(ctx context.Context, method *fftypes.FFIMethod) (ABIElementMarshaling, error) {
+func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *fftypes.FFIEventDefinition) (ABIElementMarshaling, error) {
+	abiElement := ABIElementMarshaling{
+		Name:   event.Name,
+		Type:   "event",
+		Inputs: make([]ABIArgumentMarshaling, len(event.Params)),
+	}
+
+	if err := e.addParamsToList(ctx, abiElement.Inputs, event.Params); err != nil {
+		return abiElement, err
+	}
+	return abiElement, nil
+}
+
+func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *fftypes.FFIMethod) (ABIElementMarshaling, error) {
 	abiElement := ABIElementMarshaling{
 		Name:    method.Name,
+		Type:    "function",
 		Inputs:  make([]ABIArgumentMarshaling, len(method.Params)),
 		Outputs: make([]ABIArgumentMarshaling, len(method.Returns)),
 	}
 
-	for i, param := range method.Params {
+	if err := e.addParamsToList(ctx, abiElement.Inputs, method.Params); err != nil {
+		return abiElement, err
+	}
+	if err := e.addParamsToList(ctx, abiElement.Outputs, method.Returns); err != nil {
+		return abiElement, err
+	}
+
+	return abiElement, nil
+}
+
+func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgumentMarshaling, params fftypes.FFIParams) error {
+	for i, param := range params {
 		c := fftypes.NewFFISchemaCompiler()
 		v, _ := e.GetFFIParamValidator(ctx)
 		c.RegisterExtension(v.GetExtensionName(), v.GetMetaSchema(), v)
 		err := c.AddResource(param.Name, strings.NewReader(param.Schema.String()))
 		if err != nil {
-			return abiElement, err
+			return err
 		}
 		s, err := c.Compile(param.Name)
 		if err != nil {
-			return abiElement, err
+			return err
 		}
-		abiElement.Inputs[i] = processField(param.Name, s)
+		abiParamList[i] = processField(param.Name, s)
 	}
-
-	return abiElement, nil
+	return nil
 }
 
 func processField(name string, schema *jsonschema.Schema) ABIArgumentMarshaling {
@@ -707,7 +791,7 @@ func getParamDetails(schema *jsonschema.Schema) *paramDetails {
 
 func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}) (ABIElementMarshaling, []interface{}, error) {
 	orderedInput := make([]interface{}, len(method.Params))
-	abi, err := e.FFI2ABI(ctx, method)
+	abi, err := e.FFIMethodToABI(ctx, method)
 	if err != nil {
 		return abi, orderedInput, err
 	}
@@ -715,4 +799,18 @@ func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod
 		orderedInput[i] = input[ffiParam.Name]
 	}
 	return abi, orderedInput, nil
+}
+
+func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) (string, error) {
+	res, err := e.client.R().
+		SetContext(ctx).
+		Get(instancePath)
+	if err != nil || !res.IsSuccess() {
+		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	var output map[string]string
+	if err = json.Unmarshal(res.Body(), &output); err != nil {
+		return "", err
+	}
+	return output["address"], nil
 }
