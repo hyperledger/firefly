@@ -459,6 +459,12 @@ func TestInitDataComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitMetricsComponentFailGracefully(t *testing.T) {
+	or := newTestOrchestrator()
+	or.metrics = nil
+	or.initComponents(context.Background())
+}
+
 func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil

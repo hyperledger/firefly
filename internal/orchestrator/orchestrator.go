@@ -394,9 +394,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.metrics == nil {
-		if or.metrics, err = metrics.NewMetricsManager(ctx); err != nil {
-			return err
-		}
+		or.metrics = metrics.NewMetricsManager(ctx)
 	}
 
 	if or.identity == nil {

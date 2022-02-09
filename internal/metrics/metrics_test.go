@@ -68,10 +68,9 @@ func newTestMetricsManager(t *testing.T) (*metricsManager, func()) {
 	Clear()
 	Registry()
 	ctx, cancel := context.WithCancel(context.Background())
-	mmi, err := NewMetricsManager(ctx)
+	mmi := NewMetricsManager(ctx)
 	mm := mmi.(*metricsManager)
 	assert.Equal(t, len(mm.timeMap), 0)
-	assert.NoError(t, err)
 	return mm, cancel
 }
 

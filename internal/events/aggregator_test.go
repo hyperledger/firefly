@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
@@ -45,11 +46,9 @@ func newTestAggregator() (*aggregator, func()) {
 }
 
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
-
 	ag, cancel := newTestAggregator()
 	defer cancel()
 	bs := newBatchState(ag)
-
 	// Generate some pin data
 	member1org := "org1"
 	member2org := "org2"
@@ -168,10 +167,10 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 }
 
 func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
-
+	metrics.Registry()
 	ag, cancel := newTestAggregator()
 	defer cancel()
-
+	ag.metricsEnabled = true
 	// Generate some pin data
 	member1org := "org1"
 	member2org := "org2"
@@ -191,6 +190,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
+	mmi := ag.metrics.(*metricsmocks.Manager)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -251,6 +251,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mmi.On("MessageConfirmed", mock.Anything, fftypes.EventTypeMessageConfirmed).Return()
 
 	_, err := ag.processPinsEventsHandler([]fftypes.LocallySequenced{
 		&fftypes.Pin{

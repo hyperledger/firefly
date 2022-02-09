@@ -20,11 +20,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -33,10 +35,11 @@ import (
 )
 
 func TestSendConfirmMessageE2EOk(t *testing.T) {
-
+	metrics.Registry()
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	pm.metricsEnabled = true
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
@@ -49,6 +52,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mmi := pm.metrics.(*metricsmocks.Manager)
 	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
 		ID: fftypes.NewUUID(),
 	}, nil)
@@ -79,7 +83,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		Return(retMsg, nil).Once()
 	mdi.On("UpsertMessage", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil).Once()
 
-	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+	msgInOut := &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
@@ -88,7 +92,9 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	}, true)
+	}
+	mmi.On("MessageSubmitted", msgInOut).Return()
+	msg, err := pm.SendMessage(pm.ctx, "ns1", msgInOut, true)
 	assert.NoError(t, err)
 	assert.Equal(t, retMsg, msg)
 

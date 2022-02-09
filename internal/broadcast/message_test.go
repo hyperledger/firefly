@@ -26,11 +26,13 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -40,11 +42,14 @@ import (
 )
 
 func TestBroadcastMessageOk(t *testing.T) {
+	metrics.Registry()
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
+	bm.metricsEnabled = true
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
+	mmi := bm.metrics.(*metricsmocks.Manager)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -58,7 +63,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
+	msgInOut := &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -70,7 +75,9 @@ func TestBroadcastMessageOk(t *testing.T) {
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
-	}, false)
+	}
+	mmi.On("MessageSubmitted", msgInOut).Return()
+	msg, err := bm.BroadcastMessage(ctx, "ns1", msgInOut, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, msg.Data[0].ID)
 	assert.NotNil(t, msg.Data[0].Hash)

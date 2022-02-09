@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
@@ -68,8 +70,10 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 }
 
 func TestMintTokensSuccess(t *testing.T) {
+	metrics.Registry()
 	am, cancel := newTestAssets(t)
 	defer cancel()
+	am.metricsEnabled = true
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -86,12 +90,13 @@ func TestMintTokensSuccess(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
+	mmi := am.metrics.(*metricsmocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-
+	mmi.On("TransferSubmitted", mint)
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.NoError(t, err)
 }
@@ -517,8 +522,10 @@ func TestMintTokensConfirm(t *testing.T) {
 }
 
 func TestBurnTokensSuccess(t *testing.T) {
+	metrics.Registry()
 	am, cancel := newTestAssets(t)
 	defer cancel()
+	am.metricsEnabled = true
 
 	burn := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -535,12 +542,13 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
+	mmi := am.metrics.(*metricsmocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("BurnTokens", context.Background(), mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-
+	mmi.On("TransferSubmitted", burn)
 	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
 	assert.NoError(t, err)
 
@@ -610,8 +618,10 @@ func TestBurnTokensConfirm(t *testing.T) {
 }
 
 func TestTransferTokensSuccess(t *testing.T) {
+	metrics.Registry()
 	am, cancel := newTestAssets(t)
 	defer cancel()
+	am.metricsEnabled = true
 
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -630,12 +640,13 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
+	mmi := am.metrics.(*metricsmocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-
+	mmi.On("TransferSubmitted", transfer).Return()
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
 

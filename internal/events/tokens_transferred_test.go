@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -58,11 +60,14 @@ func newTransfer() *tokens.TokenTransfer {
 }
 
 func TestTokensTransferredSucceedWithRetries(t *testing.T) {
+	metrics.Registry()
 	em, cancel := newTestEventManager(t)
 	defer cancel()
+	em.metricsEnabled = true
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
+	mmi := em.metrics.(*metricsmocks.Manager)
 
 	transfer := newTransfer()
 	transfer.TX = fftypes.TransactionRef{}
@@ -87,7 +92,7 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
-
+	mmi.On("TransferConfirmed", transfer).Return()
 	err := em.TokensTransferred(mti, transfer)
 	assert.NoError(t, err)
 

@@ -47,13 +47,13 @@ func (mm *metricsManager) Start() error {
 	return nil
 }
 
-func NewMetricsManager(ctx context.Context) (Manager, error) {
+func NewMetricsManager(ctx context.Context) Manager {
 	mm := &metricsManager{
 		ctx:     ctx,
 		timeMap: make(map[string]time.Time),
 	}
 
-	return mm, nil
+	return mm
 }
 
 func (mm *metricsManager) MessageSubmitted(in *fftypes.MessageInOut) {
