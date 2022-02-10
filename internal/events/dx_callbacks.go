@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -44,7 +45,7 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 	}
 	l.Infof("Private batch received from '%s' (len=%d)", peerID, len(data))
 
-	if wrapper.Group != nil {
+	if wrapper.Batch.Payload.TX.Type == fftypes.TransactionTypeNone {
 		valid, err := em.definitions.EnsureLocalGroup(em.ctx, wrapper.Group)
 		if err != nil {
 			return "", err
@@ -139,8 +140,11 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 			if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
 				// Poke the aggregator to do its stuff
 				em.aggregator.offchainBatches <- batch.ID
-			} else {
-
+			} else if batch.Payload.TX.Type == fftypes.TransactionTypeNone {
+				// We need to confirm all these messages immediately.
+				if err := em.markUnpinnedMessagesConfirmed(ctx, batch); err != nil {
+					return err
+				}
 			}
 			manifest = batch.Manifest()
 			return nil
@@ -148,6 +152,39 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 	})
 	return manifest, err
 
+}
+
+func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch *fftypes.Batch) error {
+
+	// Update all the messages in the batch with the batch ID
+	msgIDs := make([]driver.Value, len(batch.Payload.Messages))
+	for i, msg := range batch.Payload.Messages {
+		msgIDs[i] = msg.Header.ID
+	}
+	fb := database.MessageQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.In("id", msgIDs),
+		fb.Eq("state", fftypes.MessageStatePending), // In the outside chance another state transition happens first (which supersedes this)
+	)
+
+	// Immediate confirmation if no transaction
+	update := database.MessageQueryFactory.NewUpdate(ctx).
+		Set("batch", batch.ID).
+		Set("state", fftypes.MessageStateConfirmed).
+		Set("confirmed", fftypes.Now())
+
+	if err := em.database.UpdateMessages(ctx, filter, update); err != nil {
+		return err
+	}
+
+	for _, msg := range batch.Payload.Messages {
+		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID)
+		if err := em.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
@@ -234,7 +271,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		var operations []*fftypes.Operation
 		fb := database.OperationQueryFactory.NewFilter(em.ctx)
 		filter := fb.And(
-			fb.Eq("id", trackingID),
+			fb.Eq("backendid", trackingID),
 			fb.Eq("plugin", dx.Name()),
 		)
 		operations, _, err = em.database.GetOperations(em.ctx, filter)
@@ -252,7 +289,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			return true, i18n.NewError(em.ctx, i18n.Msg404NotFound)
 		}
 
-		// The manifest should exactly match that stored into the operation input, if supported
+		// The maniest should exactly match that stored into the operation input, if supported
 		op := operations[0]
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
 			expectedManifest := op.Input.GetString("manifest")
@@ -268,7 +305,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		update := database.OperationQueryFactory.NewUpdate(em.ctx).
 			Set("status", status).
 			Set("error", update.Error).
-			Set("output", update.Info) // Note that we don't need the manifest to be kept here, as it's already in the input
+			Set("output", update.Info) // We don't need the manifest to be kept here, as it's already in the input
 		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
 			return true, err // this is always retryable
 		}

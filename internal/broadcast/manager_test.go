@@ -54,6 +54,7 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	mbi.On("Name").Return("ut_blockchain").Maybe()
 	mpi.On("Name").Return("ut_publicstorage").Maybe()
 	mba.On("RegisterDispatcher",
+		broadcastDispatcherName,
 		fftypes.TransactionTypeBatchPin,
 		[]fftypes.MessageType{
 			fftypes.MessageTypeBroadcast,
