@@ -20,18 +20,24 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/dataexchange/dxhttps"
+	"github.com/hyperledger/firefly/internal/dataexchange/ffdx"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
 var pluginsByName = map[string]func() dataexchange.Plugin{
-	(*dxhttps.HTTPS)(nil).Name(): func() dataexchange.Plugin { return &dxhttps.HTTPS{} },
+	(*ffdx.FFDX)(nil).Name(): func() dataexchange.Plugin { return &ffdx.FFDX{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
 	for name, plugin := range pluginsByName {
 		plugin().InitPrefix(prefix.SubPrefix(name))
+
+		// Migration path for old plugin name
+		// TODO: remove this
+		if name == "ffdx" {
+			plugin().InitPrefix(prefix.SubPrefix("https"))
+		}
 	}
 }
 

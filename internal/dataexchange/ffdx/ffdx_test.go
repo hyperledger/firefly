@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxhttps
+package ffdx
 
 import (
 	"bytes"
@@ -36,9 +36,9 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var utConfPrefix = config.NewPluginConfig("dxhttps_unit_tests")
+var utConfPrefix = config.NewPluginConfig("ffdx_unit_tests")
 
-func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, httpURL string, done func()) {
+func newTestFFDX(t *testing.T) (h *FFDX, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 
@@ -53,11 +53,11 @@ func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, htt
 	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
 	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
 
-	h = &HTTPS{}
+	h = &FFDX{}
 	h.InitPrefix(utConfPrefix)
 	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
-	assert.Equal(t, "https", h.Name())
+	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
 	return h, toServer, fromServer, httpURL, func() {
 		cancel()
@@ -67,7 +67,7 @@ func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, htt
 
 func TestInitBadURL(t *testing.T) {
 	config.Reset()
-	h := &HTTPS{}
+	h := &FFDX{}
 	h.InitPrefix(utConfPrefix)
 	utConfPrefix.Set(restclient.HTTPConfigURL, "::::////")
 	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
@@ -76,7 +76,7 @@ func TestInitBadURL(t *testing.T) {
 
 func TestInitMissingURL(t *testing.T) {
 	config.Reset()
-	h := &HTTPS{}
+	h := &FFDX{}
 	h.InitPrefix(utConfPrefix)
 	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
@@ -84,7 +84,7 @@ func TestInitMissingURL(t *testing.T) {
 
 func TestGetEndpointInfo(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
@@ -105,7 +105,7 @@ func TestGetEndpointInfo(t *testing.T) {
 }
 
 func TestGetEndpointInfoError(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
@@ -117,7 +117,7 @@ func TestGetEndpointInfoError(t *testing.T) {
 
 func TestAddPeer(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
@@ -134,7 +134,7 @@ func TestAddPeer(t *testing.T) {
 }
 
 func TestAddPeerError(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
@@ -146,7 +146,7 @@ func TestAddPeerError(t *testing.T) {
 
 func TestUploadBLOB(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -176,7 +176,7 @@ func TestUploadBLOB(t *testing.T) {
 
 func TestUploadBLOBBadHash(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -197,7 +197,7 @@ func TestUploadBLOBBadHash(t *testing.T) {
 }
 
 func TestUploadBLOBError(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -210,7 +210,7 @@ func TestUploadBLOBError(t *testing.T) {
 
 func TestCheckBLOBReceivedOk(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -235,7 +235,7 @@ func TestCheckBLOBReceivedOk(t *testing.T) {
 
 func TestCheckBLOBReceivedBadHash(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -256,7 +256,7 @@ func TestCheckBLOBReceivedBadHash(t *testing.T) {
 
 func TestCheckBLOBReceivedBadSize(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -279,7 +279,7 @@ func TestCheckBLOBReceivedBadSize(t *testing.T) {
 
 func TestCheckBLOBReceivedNotFound(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -298,7 +298,7 @@ func TestCheckBLOBReceivedNotFound(t *testing.T) {
 
 func TestCheckBLOBReceivedError(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -316,7 +316,7 @@ func TestCheckBLOBReceivedError(t *testing.T) {
 
 func TestDownloadBLOB(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	u := fftypes.NewUUID()
@@ -331,7 +331,7 @@ func TestDownloadBLOB(t *testing.T) {
 }
 
 func TestDownloadBLOBError(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/blobs/bad", httpURL),
@@ -343,7 +343,7 @@ func TestDownloadBLOBError(t *testing.T) {
 
 func TestSendMessage(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/messages", httpURL),
@@ -354,7 +354,7 @@ func TestSendMessage(t *testing.T) {
 }
 
 func TestSendMessageError(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/message", httpURL),
@@ -366,7 +366,7 @@ func TestSendMessageError(t *testing.T) {
 
 func TestTransferBLOB(t *testing.T) {
 
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
@@ -377,7 +377,7 @@ func TestTransferBLOB(t *testing.T) {
 }
 
 func TestTransferBLOBError(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
@@ -389,7 +389,7 @@ func TestTransferBLOBError(t *testing.T) {
 
 func TestEvents(t *testing.T) {
 
-	h, toServer, fromServer, _, done := newTestHTTPS(t)
+	h, toServer, fromServer, _, done := newTestFFDX(t)
 	defer done()
 
 	err := h.Start()
@@ -456,7 +456,7 @@ func TestEvents(t *testing.T) {
 func TestEventLoopReceiveClosed(t *testing.T) {
 	dxc := &dataexchangemocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
-	h := &HTTPS{
+	h := &FFDX{
 		ctx:       context.Background(),
 		callbacks: dxc,
 		wsconn:    wsm,
@@ -471,7 +471,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 func TestEventLoopSendClosed(t *testing.T) {
 	dxc := &dataexchangemocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
-	h := &HTTPS{
+	h := &FFDX{
 		ctx:       context.Background(),
 		callbacks: dxc,
 		wsconn:    wsm,
@@ -489,7 +489,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	h := &HTTPS{
+	h := &FFDX{
 		ctx:       ctx,
 		callbacks: dxc,
 		wsconn:    wsm,
