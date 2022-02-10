@@ -220,6 +220,7 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	for i := 0; i < newFlushedSeqLen-len(flushAssembly); i++ {
 		newFlushedSequnces[i+len(flushAssembly)] = bp.flushedSequences[i]
 	}
+	bp.flushedSequences = newFlushedSequnces
 	// Cycle to the next assembly
 	id = bp.assemblyID
 	byteSize = bp.assemblyQueueBytes
@@ -262,6 +263,17 @@ func (bp *batchProcessor) captureFlushError(err error) {
 	fs.LastFlushError = err.Error()
 }
 
+func (bp *batchProcessor) startQuiesce() {
+	// We are ready to quiesce, but we can't safely close our input channel.
+	// We just do a non-blocking pass (queue length is 1) to the manager to
+	// ask them to close our channel before their next read.
+	// One more item of work might get through the pipe in an edge case here.
+	select {
+	case bp.quescing <- true:
+	default:
+	}
+}
+
 // The assemblyLoop receives new work, sorts it, and waits for the size/timer to pop before
 // flushing the batch. The newWork channel has up to one batch of slots queue length,
 // so that we can have one batch of work queuing for assembly, while we have one batch flushing.
@@ -283,13 +295,7 @@ func (bp *batchProcessor) assemblyLoop() {
 		case <-batchTimeout.C:
 			l.Errorf("Batch timer popped")
 			if len(bp.assemblyQueue) == 0 {
-				// It probably makes sense to exit, but we don't know if more work is coming our way,
-				// so we just inform the manager we've hit our dispose timeout and see if they close
-				// the input work channel (which they can safely do on the dispatcher routine)
-				select {
-				case bp.quescing <- true:
-				default:
-				}
+				bp.startQuiesce()
 			} else {
 				// We need to flush
 				timedout = true
@@ -307,7 +313,7 @@ func (bp *batchProcessor) assemblyLoop() {
 				}
 			}
 		}
-		if full || timedout || quescing {
+		if (full || timedout || quescing) && len(bp.assemblyQueue) > 0 {
 			// Let Go GC the old timer
 			_ = batchTimeout.Stop()
 

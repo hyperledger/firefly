@@ -301,8 +301,7 @@ func (bm *batchManager) dispatchMessage(msg *fftypes.Message, data ...*fftypes.D
 
 func (bm *batchManager) reapQuiescing() {
 	bm.dispatcherMux.Lock()
-	defer bm.dispatcherMux.Unlock()
-
+	var reaped []*batchProcessor
 	for _, d := range bm.dispatchers {
 		for k, p := range d.processors {
 			select {
@@ -310,9 +309,19 @@ func (bm *batchManager) reapQuiescing() {
 				// This is called on the goroutine where we dispatch the work, so it's safe to cleanup
 				delete(d.processors, k)
 				close(p.newWork)
+				reaped = append(reaped, p)
 			default:
 			}
 		}
+	}
+	bm.dispatcherMux.Unlock()
+
+	for _, p := range reaped {
+		// We wait for the current process to close, which should be immediate, but there is a tiny
+		// chance that we dispatched one last message to it just as it was quiescing.
+		// If that's the case, we don't want to spin up a new one, until we've finished the dispatch
+		// of that piece of work that snuck in.
+		<-p.done
 	}
 }
 

@@ -190,11 +190,13 @@ func TestCalcPinsFail(t *testing.T) {
 	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	})
+	bp.cancelCtx()
 	mdi := bp.database.(*databasemocks.Plugin)
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
 
 	gid := fftypes.NewRandB32()
-	_, err := bp.maskContexts(bp.ctx, &fftypes.Batch{
+	_, err := bp.persistBatch(&fftypes.Batch{
 		Group: gid,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
@@ -205,8 +207,127 @@ func TestCalcPinsFail(t *testing.T) {
 			},
 		},
 	})
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10158", err)
+
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+}
+
+func TestAddWorkInRecentlyFlushed(t *testing.T) {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		return nil
+	})
+	bp.flushedSequences = []int64{100, 500, 400, 900, 200, 700}
+	_, _ = bp.addWork(&batchWork{
+		msg: &fftypes.Message{
+			Sequence: 200,
+		},
+	})
+	assert.Empty(t, bp.assemblyQueue)
+
+}
+
+func TestAddWorkInSortDeDup(t *testing.T) {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		return nil
+	})
+	bp.assemblyQueue = []*batchWork{
+		{msg: &fftypes.Message{Sequence: 200}},
+		{msg: &fftypes.Message{Sequence: 201}},
+		{msg: &fftypes.Message{Sequence: 202}},
+		{msg: &fftypes.Message{Sequence: 204}},
+	}
+	_, _ = bp.addWork(&batchWork{
+		msg: &fftypes.Message{Sequence: 200},
+	})
+	_, _ = bp.addWork(&batchWork{
+		msg: &fftypes.Message{Sequence: 203},
+	})
+	assert.Equal(t, []*batchWork{
+		{msg: &fftypes.Message{Sequence: 200}},
+		{msg: &fftypes.Message{Sequence: 201}},
+		{msg: &fftypes.Message{Sequence: 202}},
+		{msg: &fftypes.Message{Sequence: 203}},
+		{msg: &fftypes.Message{Sequence: 204}},
+	}, bp.assemblyQueue)
+}
+
+func TestStartFlushOverflow(t *testing.T) {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		return nil
+	})
+	batchID := fftypes.NewUUID()
+	bp.assemblyID = batchID
+	bp.flushedSequences = []int64{100, 101, 102, 103, 104}
+	bp.assemblyQueue = []*batchWork{
+		{msg: &fftypes.Message{Sequence: 200}},
+		{msg: &fftypes.Message{Sequence: 201}},
+		{msg: &fftypes.Message{Sequence: 202}},
+		{msg: &fftypes.Message{Sequence: 203}},
+	}
+	bp.conf.BatchMaxSize = 3
+
+	flushBatchID, flushAssembly, _ := bp.startFlush(true)
+	assert.Equal(t, batchID, flushBatchID)
+	assert.Equal(t, []int64{200, 201, 202, 100, 101, 102}, bp.flushedSequences)
+	assert.Equal(t, []*batchWork{
+		{msg: &fftypes.Message{Sequence: 200}},
+		{msg: &fftypes.Message{Sequence: 201}},
+		{msg: &fftypes.Message{Sequence: 202}},
+	}, flushAssembly)
+	assert.Equal(t, []*batchWork{
+		{msg: &fftypes.Message{Sequence: 203}},
+	}, bp.assemblyQueue)
+	assert.NotEqual(t, batchID, bp.assemblyID)
+}
+
+func TestStartQuiesceNonBlocking(t *testing.T) {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		return nil
+	})
+	bp.startQuiesce()
+	bp.startQuiesce() // we're just checking this doesn't hang
+}
+
+func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
+	log.SetLevel("debug")
+	config.Reset()
+
+	dispatched := make(chan *fftypes.Batch)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		dispatched <- b
+		return nil
+	})
+	bp.conf.txType = fftypes.TransactionTypeUnpinned
+
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+
+	mth := bp.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeUnpinned).Return(fftypes.NewUUID(), nil)
+
+	// Dispatch the work
+	go func() {
+		for i := 0; i < 5; i++ {
+			msgid := fftypes.NewUUID()
+			bp.newWork <- &batchWork{
+				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
+			}
+		}
+	}()
+
+	// Wait for the confirmations, and the dispatch
+	batch := <-dispatched
+
+	// Check we got all the messages in a single batch
+	assert.Equal(t, 5, len(batch.Payload.Messages))
 
 	bp.cancelCtx()
 	<-bp.done
+
+	mdi.AssertExpectations(t)
 }
