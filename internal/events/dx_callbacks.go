@@ -38,31 +38,24 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 		l.Errorf("Invalid transmission from '%s': %s", peerID, err)
 		return "", nil
 	}
-
-	l.Infof("%s received from '%s' (len=%d)", wrapper.Type, peerID, len(data))
-
-	var mf *fftypes.Manifest
-	switch wrapper.Type {
-	case fftypes.TransportPayloadTypeBatch:
-		if wrapper.Batch == nil {
-			l.Errorf("Invalid transmission: nil batch")
-			return "", nil
-		}
-		mf, err = em.pinedBatchReceived(peerID, wrapper.Batch)
-	case fftypes.TransportPayloadTypeMessage:
-		if wrapper.Message == nil {
-			l.Errorf("Invalid transmission: nil message")
-			return "", nil
-		}
-		if wrapper.Group == nil {
-			l.Errorf("Invalid transmission: nil group")
-			return "", nil
-		}
-		mf, err = em.unpinnedMessageReceived(peerID, wrapper)
-	default:
-		l.Errorf("Invalid transmission: unknonwn type '%s'", wrapper.Type)
+	if wrapper.Batch == nil {
+		l.Errorf("Invalid transmission: nil batch")
 		return "", nil
 	}
+	l.Infof("Private batch received from '%s' (len=%d)", peerID, len(data))
+
+	if wrapper.Group != nil {
+		valid, err := em.definitions.EnsureLocalGroup(em.ctx, wrapper.Group)
+		if err != nil {
+			return "", err
+		}
+		if !valid {
+			l.Errorf("Invalid transmission: invalid group")
+			return "", nil
+		}
+	}
+
+	mf, err := em.privateBatchReceived(peerID, wrapper.Batch)
 	manifestBytes := []byte{}
 	if err == nil && mf != nil {
 		manifestBytes, err = json.Marshal(&mf)
@@ -121,7 +114,7 @@ func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID, autho
 	return node, nil
 }
 
-func (em *eventManager) pinedBatchReceived(peerID string, batch *fftypes.Batch) (manifest *fftypes.Manifest, err error) {
+func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest *fftypes.Manifest, err error) {
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
@@ -138,15 +131,18 @@ func (em *eventManager) pinedBatchReceived(peerID string, batch *fftypes.Batch) 
 			}
 
 			valid, err := em.persistBatch(ctx, batch)
-			if err != nil {
+			if err != nil || !valid {
 				l.Errorf("Batch received from %s/%s processing failed valid=%t: %s", node.Owner, node.Name, valid, err)
 				return err // retry - persistBatch only returns retryable errors
 			}
 
-			if valid {
+			if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
+				// Poke the aggregator to do its stuff
 				em.aggregator.offchainBatches <- batch.ID
-				manifest = batch.Manifest()
+			} else {
+
 			}
+			manifest = batch.Manifest()
 			return nil
 		})
 	})
@@ -278,59 +274,5 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		}
 		return false, nil
 	})
-
-}
-
-func (em *eventManager) unpinnedMessageReceived(peerID string, tw *fftypes.TransportWrapper) (manifest *fftypes.Manifest, err error) {
-	message := tw.Message
-
-	if message == nil || message.Header.TxType != fftypes.TransactionTypeNone {
-		log.L(em.ctx).Errorf("Unpinned message '%s' transaction type must be 'none'. TxType=%s", message.Header.ID, message.Header.TxType)
-		return nil, nil
-	}
-
-	// Because we received this off chain, it's entirely possible the group init has not made it
-	// to us yet. So we need to go through the same processing as if we had initiated the group.
-	// This might result in both sides broadcasting a group-init message, but that's fine.
-
-	err = em.retry.Do(em.ctx, "unpinned message received", func(attempt int) (bool, error) {
-		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-
-			if valid, err := em.definitions.EnsureLocalGroup(ctx, tw.Group); err != nil || !valid {
-				return err
-			}
-
-			node, err := em.checkReceivedIdentity(ctx, peerID, message.Header.Author, message.Header.Key)
-			if err != nil {
-				return err
-			}
-			if node == nil {
-				log.L(ctx).Errorf("Message received from invalid author '%s' for peer ID '%s'", message.Header.Author, peerID)
-				return nil
-			}
-
-			// Persist the data
-			for i, d := range tw.Data {
-				if ok, err := em.persistReceivedData(ctx, i, d, "message", message.Header.ID, database.UpsertOptimizationSkip); err != nil || !ok {
-					return err
-				}
-			}
-
-			// Persist the message - immediately considered confirmed as this is an unpinned receive
-			message.Confirmed = fftypes.Now()
-			if ok, err := em.persistReceivedMessage(ctx, 0, message, "message", message.Header.ID, database.UpsertOptimizationSkip); err != nil || !ok {
-				return err
-			}
-
-			// Generate a manifest, as we received it ok
-			manifest = tw.Manifest()
-
-			// Assuming all was good, we
-			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, message.Header.Namespace, message.Header.ID)
-			return em.database.InsertEvent(ctx, event)
-		})
-		return err != nil, err
-	})
-	return manifest, err
 
 }
