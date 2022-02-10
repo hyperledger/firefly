@@ -1087,6 +1087,7 @@ paths:
                               enum:
                               - staged
                               - ready
+                              - sent
                               - pending
                               - confirmed
                               - rejected
@@ -1239,6 +1240,7 @@ paths:
                               enum:
                               - staged
                               - ready
+                              - sent
                               - pending
                               - confirmed
                               - rejected
@@ -3479,6 +3481,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -4294,6 +4297,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -4402,6 +4406,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -4841,6 +4846,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -4901,6 +4907,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -5048,6 +5055,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -5108,6 +5116,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -5265,6 +5274,7 @@ paths:
                     enum:
                     - staged
                     - ready
+                    - sent
                     - pending
                     - confirmed
                     - rejected
@@ -6498,6 +6508,7 @@ paths:
                       enum:
                       - staged
                       - ready
+                      - sent
                       - pending
                       - confirmed
                       - rejected
@@ -6752,6 +6763,7 @@ paths:
                       enum:
                       - staged
                       - ready
+                      - sent
                       - pending
                       - confirmed
                       - rejected
@@ -7535,6 +7547,7 @@ paths:
                       enum:
                       - staged
                       - ready
+                      - sent
                       - pending
                       - confirmed
                       - rejected

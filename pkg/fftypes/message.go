@@ -212,6 +212,12 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 }
 
 func (m *Message) Verify(ctx context.Context) error {
+	switch m.Header.TxType {
+	case TransactionTypeBatchPin:
+	case TransactionTypeNone:
+	default:
+		return i18n.NewError(ctx, i18n.MsgInvalidTXTypeForMessage, m.Header.TxType)
+	}
 	if err := m.Header.Topics.Validate(ctx, "header.topics", true); err != nil {
 		return err
 	}

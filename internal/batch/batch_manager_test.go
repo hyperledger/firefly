@@ -72,7 +72,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm)
 	bm := bmi.(*batchManager)
 
-	bm.RegisterDispatcher("utdispatcher", []fftypes.MessageType{fftypes.MessageTypeBroadcast}, handler, DispatcherOptions{
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, handler, DispatcherOptions{
 		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -82,6 +82,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	dataHash := fftypes.NewRandB32()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
+			TxType:    fftypes.TransactionTypeBatchPin,
 			Type:      fftypes.MessageTypeBroadcast,
 			ID:        fftypes.NewUUID(),
 			Topics:    []string{"topic1", "topic2"},
@@ -173,7 +174,7 @@ func TestE2EDispatchPrivate(t *testing.T) {
 	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm)
 	bm := bmi.(*batchManager)
 
-	bm.RegisterDispatcher("utdispatcher", []fftypes.MessageType{fftypes.MessageTypePrivate}, handler, DispatcherOptions{
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypePrivate}, handler, DispatcherOptions{
 		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -183,6 +184,7 @@ func TestE2EDispatchPrivate(t *testing.T) {
 	dataHash := fftypes.NewRandB32()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
+			TxType:    fftypes.TransactionTypeBatchPin,
 			Type:      fftypes.MessageTypePrivate,
 			ID:        fftypes.NewUUID(),
 			Topics:    []string{"topic1", "topic2"},
@@ -344,7 +346,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
 
@@ -353,6 +355,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 		{
 			Header: fftypes.MessageHeader{
 				ID:        fftypes.NewUUID(),
+				TxType:    fftypes.TransactionTypeBatchPin,
 				Type:      fftypes.MessageTypeBroadcast,
 				Namespace: "ns1",
 			},
@@ -393,7 +396,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
 
@@ -402,6 +405,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 		{
 			Header: fftypes.MessageHeader{
 				ID:        fftypes.NewUUID(),
+				TxType:    fftypes.TransactionTypeBatchPin,
 				Type:      fftypes.MessageTypeBroadcast,
 				Namespace: "ns1",
 			},

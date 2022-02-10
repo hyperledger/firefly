@@ -48,7 +48,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
-		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
+		dispatchers:                make(map[string]*dispatcher),
 		newMessages:                make(chan int64, 1),
 		done:                       make(chan struct{}),
 		retry: &retry.Retry{
@@ -61,7 +61,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 }
 
 type Manager interface {
-	RegisterDispatcher(name string, msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
+	RegisterDispatcher(name string, txType fftypes.TransactionType, msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
 	NewMessages() chan<- int64
 	Start() error
 	Close()
@@ -82,7 +82,7 @@ type batchManager struct {
 	database                   database.Plugin
 	data                       data.Manager
 	dispatcherMux              sync.Mutex
-	dispatchers                map[fftypes.MessageType]*dispatcher
+	dispatchers                map[string]*dispatcher
 	newMessages                chan int64
 	done                       chan struct{}
 	retry                      *retry.Retry
@@ -108,7 +108,11 @@ type dispatcher struct {
 	options    DispatcherOptions
 }
 
-func (bm *batchManager) RegisterDispatcher(name string, msgTypes []fftypes.MessageType, handler DispatchHandler, options DispatcherOptions) {
+func (bm *batchManager) getDispatcherKey(txType fftypes.TransactionType, msgType fftypes.MessageType) string {
+	return fmt.Sprintf("tx:%s/%s", txType, msgType)
+}
+
+func (bm *batchManager) RegisterDispatcher(name string, txType fftypes.TransactionType, msgTypes []fftypes.MessageType, handler DispatchHandler, options DispatcherOptions) {
 	dispatcher := &dispatcher{
 		name:       name,
 		handler:    handler,
@@ -116,7 +120,7 @@ func (bm *batchManager) RegisterDispatcher(name string, msgTypes []fftypes.Messa
 		processors: make(map[string]*batchProcessor),
 	}
 	for _, msgType := range msgTypes {
-		bm.dispatchers[msgType] = dispatcher
+		bm.dispatchers[bm.getDispatcherKey(txType, msgType)] = dispatcher
 	}
 }
 
@@ -129,13 +133,14 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.Identity) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.Identity) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
-	dispatcher, ok := bm.dispatchers[batchType]
+	dispatcherKey := bm.getDispatcherKey(txType, msgType)
+	dispatcher, ok := bm.dispatchers[dispatcherKey]
 	if !ok {
-		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)
+		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, dispatcherKey)
 	}
 	name := fmt.Sprintf("%s|%s|%v", namespace, identity.Author, group)
 	processor, ok := dispatcher.processors[name]
@@ -147,6 +152,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftyp
 			&batchProcessorConf{
 				DispatcherOptions: dispatcher.options,
 				name:              name,
+				txType:            txType,
 				dispatcherName:    dispatcher.name,
 				namespace:         namespace,
 				identity:          *identity,
@@ -274,7 +280,7 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() (done bool) {
 
 func (bm *batchManager) dispatchMessage(msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(bm.ctx)
-	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.Identity)
+	processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.Identity)
 	if err != nil {
 		return err
 	}

@@ -50,11 +50,21 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 
-	mba.On("RegisterDispatcher", []fftypes.MessageType{
-		fftypes.MessageTypeGroupInit,
-		fftypes.MessageTypePrivate,
-		fftypes.MessageTypeTransferPrivate,
-	}, mock.Anything, mock.Anything).Return()
+	mba.On("RegisterDispatcher",
+		pinnedPrivateDispatcherName,
+		fftypes.TransactionTypeBatchPin,
+		[]fftypes.MessageType{
+			fftypes.MessageTypeGroupInit,
+			fftypes.MessageTypePrivate,
+			fftypes.MessageTypeTransferPrivate,
+		}, mock.Anything, mock.Anything).Return()
+
+	mba.On("RegisterDispatcher",
+		unpinnedPrivateDispatcherName,
+		fftypes.TransactionTypeNone,
+		[]fftypes.MessageType{
+			fftypes.MessageTypePrivate,
+		}, mock.Anything, mock.Anything).Return()
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -149,7 +159,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
 
-	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		ID: batchID,
 		Identity: fftypes.Identity{
 			Author: "org1",
@@ -185,7 +195,7 @@ func TestDispatchBatchBadData(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{}, nil)
 
-	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		Group: groupID,
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
@@ -203,7 +213,7 @@ func TestDispatchErrorFindingGroup(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -224,11 +234,11 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
+	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -242,11 +252,11 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("", fmt.Errorf("pop"))
 
-	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
 			Author: "badauthor",
 		},
-	}, []*fftypes.Node{}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
+	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -254,24 +264,20 @@ func TestSendImmediateFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
-	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
 			Author: "org1",
 		},
-	}, []*fftypes.Node{
-		{
-			DX: fftypes.DXInfo{
-				Peer:     "node1",
-				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
-			},
-		},
-	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
+	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -286,9 +292,10 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
 			Author: "org1",
 		},
@@ -297,14 +304,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 				ID: fftypes.NewUUID(),
 			},
 		},
-	}, []*fftypes.Node{
-		{
-			DX: fftypes.DXInfo{
-				Peer:     "node1",
-				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
-			},
-		},
-	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
+	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -316,9 +316,10 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
 			Author: "org1",
 		},
@@ -327,14 +328,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 			},
 		},
-	}, []*fftypes.Node{
-		{
-			DX: fftypes.DXInfo{
-				Peer:     "node1",
-				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
-			},
-		},
-	}, &fftypes.TransportWrapper{}, []*fftypes.Bytes32{})
+	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -343,13 +337,14 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
 
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{
+	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		Identity: fftypes.Identity{
 			Author: "org1",
 		}}, []*fftypes.Bytes32{})

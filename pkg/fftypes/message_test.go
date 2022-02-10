@@ -65,9 +65,35 @@ func TestSealBadTagString(t *testing.T) {
 	assert.Regexp(t, `FF10131.*header.tag`, err)
 }
 
+func TestVerifyTXType(t *testing.T) {
+	msg := Message{
+		Header: MessageHeader{
+			TxType: TransactionTypeBatchPin,
+			Topics: []string{"topic1"},
+		},
+	}
+	err := msg.Seal(context.Background())
+	assert.NoError(t, err)
+	err = msg.Verify(context.Background())
+	assert.NoError(t, err)
+
+	msg.Header.TxType = TransactionTypeNone
+	err = msg.Seal(context.Background())
+	assert.NoError(t, err)
+	err = msg.Verify(context.Background())
+	assert.NoError(t, err)
+
+	msg.Header.TxType = TransactionTypeTokenPool
+	err = msg.Seal(context.Background())
+	assert.NoError(t, err)
+	err = msg.Verify(context.Background())
+	assert.Regexp(t, "FF10343", err)
+}
+
 func TestVerifyEmptyTopicString(t *testing.T) {
 	msg := Message{
 		Header: MessageHeader{
+			TxType: TransactionTypeBatchPin,
 			Topics: []string{""},
 		},
 	}
@@ -78,7 +104,8 @@ func TestVerifyEmptyTopicString(t *testing.T) {
 func TestVerifyBadTagString(t *testing.T) {
 	msg := Message{
 		Header: MessageHeader{
-			Tag: "!wrong",
+			TxType: TransactionTypeBatchPin,
+			Tag:    "!wrong",
 		},
 	}
 	err := msg.Verify(context.Background())
@@ -87,6 +114,9 @@ func TestVerifyBadTagString(t *testing.T) {
 
 func TestSealNilDataID(t *testing.T) {
 	msg := Message{
+		Header: MessageHeader{
+			TxType: TransactionTypeBatchPin,
+		},
 		Data: DataRefs{
 			{},
 		},
@@ -97,6 +127,9 @@ func TestSealNilDataID(t *testing.T) {
 
 func TestVerifyNilDataHash(t *testing.T) {
 	msg := Message{
+		Header: MessageHeader{
+			TxType: TransactionTypeBatchPin,
+		},
 		Data: DataRefs{
 			{ID: NewUUID()},
 		},
@@ -124,6 +157,9 @@ func TestVerifylDupDataHash(t *testing.T) {
 	id2 := NewUUID()
 	hash1 := NewRandB32()
 	msg := Message{
+		Header: MessageHeader{
+			TxType: TransactionTypeBatchPin,
+		},
 		Data: DataRefs{
 			{ID: id1, Hash: hash1},
 			{ID: id2, Hash: hash1},
@@ -134,7 +170,11 @@ func TestVerifylDupDataHash(t *testing.T) {
 }
 
 func TestVerifyNilHashes(t *testing.T) {
-	msg := Message{}
+	msg := Message{
+		Header: MessageHeader{
+			TxType: TransactionTypeBatchPin,
+		},
+	}
 	err := msg.Verify(context.Background())
 	assert.Regexp(t, "FF10147", err)
 }
@@ -142,6 +182,7 @@ func TestVerifyNilHashes(t *testing.T) {
 func TestVerifyNilMisMatchedHashes(t *testing.T) {
 	msg := Message{
 		Header: MessageHeader{
+			TxType:   TransactionTypeBatchPin,
 			DataHash: NewRandB32(),
 		},
 		Hash: NewRandB32(),

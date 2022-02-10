@@ -42,6 +42,7 @@ type batchProcessorConf struct {
 	DispatcherOptions
 	name           string
 	dispatcherName string
+	txType         fftypes.TransactionType
 	namespace      string
 	identity       fftypes.Identity
 	group          *fftypes.Bytes32
@@ -441,13 +442,16 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch
 func (bp *batchProcessor) persistBatch(batch *fftypes.Batch) (contexts []*fftypes.Bytes32, err error) {
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
-			// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
-			if contexts, err = bp.maskContexts(ctx, batch); err != nil {
-				return err
+
+			if bp.conf.txType == fftypes.TransactionTypeBatchPin {
+				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
+				if contexts, err = bp.maskContexts(ctx, batch); err != nil {
+					return err
+				}
 			}
 
-			batch.Payload.TX.Type = fftypes.TransactionTypeBatchPin
-			if batch.Payload.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, batch.Namespace, fftypes.TransactionTypeBatchPin); err != nil {
+			batch.Payload.TX.Type = bp.conf.txType
+			if batch.Payload.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, batch.Namespace, bp.conf.txType); err != nil {
 				return err
 			}
 
@@ -479,10 +483,36 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 				fb.In("id", msgIDs),
 				fb.Eq("state", fftypes.MessageStateReady), // In the outside chance the next state transition happens first (which supersedes this)
 			)
-			update := database.MessageQueryFactory.NewUpdate(ctx).
-				Set("batch", batch.ID).                // Mark the batch they are in
-				Set("state", fftypes.MessageStateSent) // Set them sent, so they won't be picked up and re-sent after restart/rewind
-			return bp.database.UpdateMessages(ctx, filter, update)
+
+			var update database.Update
+			if bp.conf.txType == fftypes.TransactionTypeBatchPin {
+				// Sent state waiting for confirm
+				update = database.MessageQueryFactory.NewUpdate(ctx).
+					Set("batch", batch.ID).                // Mark the batch they are in
+					Set("state", fftypes.MessageStateSent) // Set them sent, so they won't be picked up and re-sent after restart/rewind
+			} else {
+				// Immediate confirmation if no transaction
+				update = database.MessageQueryFactory.NewUpdate(ctx).
+					Set("batch", batch.ID).
+					Set("state", fftypes.MessageStateConfirmed).
+					Set("confirmed", fftypes.Now())
+			}
+
+			if err = bp.database.UpdateMessages(ctx, filter, update); err != nil {
+				return err
+			}
+
+			if bp.conf.txType == fftypes.TransactionTypeNone {
+				for _, msg := range batch.Payload.Messages {
+					// Emit a confirmation event locally immediately
+					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID)
+					if err := bp.database.InsertEvent(ctx, event); err != nil {
+						return err
+					}
+				}
+			}
+
+			return nil
 		})
 	})
 }

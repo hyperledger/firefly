@@ -53,11 +53,13 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	mbp := &batchpinmocks.Submitter{}
 	mbi.On("Name").Return("ut_blockchain").Maybe()
 	mpi.On("Name").Return("ut_publicstorage").Maybe()
-	mba.On("RegisterDispatcher", []fftypes.MessageType{
-		fftypes.MessageTypeBroadcast,
-		fftypes.MessageTypeDefinition,
-		fftypes.MessageTypeTransferBroadcast,
-	}, mock.Anything, mock.Anything).Return()
+	mba.On("RegisterDispatcher",
+		fftypes.TransactionTypeBatchPin,
+		[]fftypes.MessageType{
+			fftypes.MessageTypeBroadcast,
+			fftypes.MessageTypeDefinition,
+			fftypes.MessageTypeTransferBroadcast,
+		}, mock.Anything, mock.Anything).Return()
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
