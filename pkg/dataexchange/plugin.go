@@ -86,10 +86,10 @@ type Plugin interface {
 
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelsim, then report completion asynchronously via the operation ID
-	SendMessage(ctx context.Context, peerID string, data []byte) (trackingID string, err error)
+	SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) (err error)
 
 	// TransferBLOB initiates a transfer of a previoiusly stored blob to another node
-	TransferBLOB(ctx context.Context, peerID string, payloadRef string) (trackingID string, err error)
+	TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID string, payloadRef string) (err error)
 }
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.

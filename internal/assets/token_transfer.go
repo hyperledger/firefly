@@ -252,7 +252,6 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			plugin,
 			s.namespace,
 			txid,
-			"",
 			fftypes.OpTypeTokenTransfer)
 		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
 			err = s.mgr.database.InsertOperation(ctx, op)

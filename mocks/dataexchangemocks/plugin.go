@@ -167,25 +167,18 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// SendMessage provides a mock function with given fields: ctx, peerID, data
-func (_m *Plugin) SendMessage(ctx context.Context, peerID string, data []byte) (string, error) {
-	ret := _m.Called(ctx, peerID, data)
+// SendMessage provides a mock function with given fields: ctx, opID, peerID, data
+func (_m *Plugin) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) error {
+	ret := _m.Called(ctx, opID, peerID, data)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) string); ok {
-		r0 = rf(ctx, peerID, data)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, []byte) error); ok {
+		r0 = rf(ctx, opID, peerID, data)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []byte) error); ok {
-		r1 = rf(ctx, peerID, data)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Start provides a mock function with given fields:
@@ -202,25 +195,18 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// TransferBLOB provides a mock function with given fields: ctx, peerID, payloadRef
-func (_m *Plugin) TransferBLOB(ctx context.Context, peerID string, payloadRef string) (string, error) {
-	ret := _m.Called(ctx, peerID, payloadRef)
+// TransferBLOB provides a mock function with given fields: ctx, opID, peerID, payloadRef
+func (_m *Plugin) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID string, payloadRef string) error {
+	ret := _m.Called(ctx, opID, peerID, payloadRef)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
-		r0 = rf(ctx, peerID, payloadRef)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) error); ok {
+		r0 = rf(ctx, opID, peerID, payloadRef)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, peerID, payloadRef)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // UploadBLOB provides a mock function with given fields: ctx, ns, id, content

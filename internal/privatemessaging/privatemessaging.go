@@ -157,21 +157,21 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
 			}
 
-			trackingID, err := pm.exchange.TransferBLOB(ctx, node.DX.Peer, blob.PayloadRef)
-			if err != nil {
-				return err
-			}
-
+			opID := fftypes.NewUUID()
 			if txid != nil {
 				op := fftypes.NewOperation(
 					pm.exchange,
 					d.Namespace,
 					txid,
-					trackingID,
 					fftypes.OpTypeDataExchangeBlobSend)
 				if err = pm.database.InsertOperation(ctx, op); err != nil {
 					return err
 				}
+				opID = op.ID
+			}
+
+			if err := pm.exchange.TransferBLOB(ctx, opID, node.DX.Peer, blob.PayloadRef); err != nil {
+				return err
 			}
 		}
 	}
@@ -207,18 +207,12 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 			return err
 		}
 
-		// Send the payload itself
-		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload)
-		if err != nil {
-			return err
-		}
-
+		opID := fftypes.NewUUID()
 		if txid != nil {
 			op := fftypes.NewOperation(
 				pm.exchange,
 				ns,
 				txid,
-				trackingID,
 				fftypes.OpTypeDataExchangeBatchSend)
 			op.Input = fftypes.JSONObject{
 				"manifest": tw.Manifest().String(),
@@ -226,8 +220,14 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 			if err = pm.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
+			opID = op.ID
 		}
 
+		// Send the payload itself
+		err := pm.exchange.SendMessage(ctx, opID, node.DX.Peer, payload)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -255,7 +255,6 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	op := mdi.Calls[1].Arguments[1].(*fftypes.Operation)
 	assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 	assert.Equal(t, "ut_publicstorage", op.Plugin)
-	assert.Equal(t, "ipfs_id", op.BackendID)
 	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op.Type)
 
 }

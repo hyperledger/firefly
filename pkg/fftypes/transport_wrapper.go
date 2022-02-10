@@ -60,7 +60,7 @@ func (tw *TransportWrapper) Manifest() *Manifest {
 }
 
 type TransportStatusUpdate struct {
-	Error    string `json:"error,omitempty"`
-	Manifest string `json:"manifest,omitempty"`
-	Info     string `json:"info,omitempty"`
+	Error    string     `json:"error,omitempty"`
+	Manifest string     `json:"manifest,omitempty"`
+	Info     JSONObject `json:"info,omitempty"`
 }

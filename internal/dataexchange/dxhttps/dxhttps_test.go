@@ -347,13 +347,10 @@ func TestSendMessage(t *testing.T) {
 	defer done()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/messages", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
-			"requestID": "abcd1234",
-		}))
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	trackingID, err := h.SendMessage(context.Background(), "peer1", []byte(`some data`))
+	err := h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))
 	assert.NoError(t, err)
-	assert.Equal(t, "abcd1234", trackingID)
 }
 
 func TestSendMessageError(t *testing.T) {
@@ -363,7 +360,7 @@ func TestSendMessageError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/message", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, err := h.SendMessage(context.Background(), "peer1", []byte(`some data`))
+	err := h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -373,13 +370,10 @@ func TestTransferBLOB(t *testing.T) {
 	defer done()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
-			"requestID": "abcd1234",
-		}))
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	trackingID, err := h.TransferBLOB(context.Background(), "peer1", "ns1/id1")
+	err := h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
 	assert.NoError(t, err)
-	assert.Equal(t, "abcd1234", trackingID)
 }
 
 func TestTransferBLOBError(t *testing.T) {
@@ -389,7 +383,7 @@ func TestTransferBLOBError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, err := h.TransferBLOB(context.Background(), "peer1", "ns1/id1")
+	err := h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -416,9 +410,9 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
 	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
-		return ts.Manifest == `{"manifest":true}` && ts.Info == `{"signatures":"and stuff"}`
+		return ts.Manifest == `{"manifest":true}` && ts.Info.String() == `{"signatures":"and stuff"}`
 	})).Return(nil)
-	fromServer <- `{"type":"message-delivered","requestID":"tx12345","info":"{\"signatures\":\"and stuff\"}","manifest":"{\"manifest\":true}"}`
+	fromServer <- `{"type":"message-delivered","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 

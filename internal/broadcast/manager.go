@@ -133,7 +133,6 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		bm.publicstorage,
 		batch.Namespace,
 		batch.Payload.TX.ID,
-		batch.PayloadRef,
 		fftypes.OpTypePublicStorageBatchBroadcast)
 	op.Status = fftypes.OpStatusSucceeded // Note we performed the action synchronously above
 	err = bm.database.InsertOperation(ctx, op)
