@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -49,7 +49,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node 
 		return nil, nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}
 
-	node.DX.Peer, node.DX.Endpoint, err = nm.exchange.GetEndpointInfo(ctx)
+	node.DX, err = nm.exchange.GetEndpointInfo(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

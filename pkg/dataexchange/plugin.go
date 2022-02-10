@@ -70,10 +70,10 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// GetEndpointInfo returns the information about the local endpoint
-	GetEndpointInfo(ctx context.Context) (peerID string, endpoint fftypes.JSONObject, err error)
+	GetEndpointInfo(ctx context.Context) (peer fftypes.DXInfo, err error)
 
 	// AddPeer translates the configuration published by another peer, into a reference string that is used between DX and FireFly to refer to the peer
-	AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) (err error)
+	AddPeer(ctx context.Context, peer fftypes.DXInfo) (err error)
 
 	// UploadBLOB streams a blob to storage, and returns the hash to confirm the hash calculated in Core matches the hash calculated in the plugin
 	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error)

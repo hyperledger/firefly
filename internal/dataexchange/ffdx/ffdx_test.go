@@ -94,14 +94,14 @@ func TestGetEndpointInfo(t *testing.T) {
 			"cert":     "cert data...",
 		}))
 
-	peerID, endpoint, err := h.GetEndpointInfo(context.Background())
+	peer, err := h.GetEndpointInfo(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, "peer1", peerID)
+	assert.Equal(t, "peer1", peer.Peer)
 	assert.Equal(t, fftypes.JSONObject{
 		"id":       "peer1",
 		"endpoint": "https://peer1.example.com",
 		"cert":     "cert data...",
-	}, endpoint)
+	}, peer.Endpoint)
 }
 
 func TestGetEndpointInfoError(t *testing.T) {
@@ -111,7 +111,7 @@ func TestGetEndpointInfoError(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, _, err := h.GetEndpointInfo(context.Background())
+	_, err := h.GetEndpointInfo(context.Background())
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -123,13 +123,14 @@ func TestAddPeer(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), "peer1",
-		fftypes.JSONObject{
+	err := h.AddPeer(context.Background(), fftypes.DXInfo{
+		Peer: "peer1",
+		Endpoint: fftypes.JSONObject{
 			"id":       "peer1",
 			"endpoint": "https://peer1.example.com",
 			"cert":     "cert...",
 		},
-	)
+	})
 	assert.NoError(t, err)
 }
 
@@ -140,7 +141,10 @@ func TestAddPeerError(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), "peer1", fftypes.JSONObject{})
+	err := h.AddPeer(context.Background(), fftypes.DXInfo{
+		Peer:     "peer1",
+		Endpoint: fftypes.JSONObject{},
+	})
 	assert.Regexp(t, "FF10229", err)
 }
 

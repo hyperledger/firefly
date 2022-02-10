@@ -158,20 +158,21 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 	return nil
 }
 
-func (h *FFDX) GetEndpointInfo(ctx context.Context) (peerID string, endpoint fftypes.JSONObject, err error) {
+func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.DXInfo, err error) {
 	res, err := h.client.R().SetContext(ctx).
-		SetResult(&endpoint).
+		SetResult(&peer.Endpoint).
 		Get("/api/v1/id")
 	if err != nil || !res.IsSuccess() {
-		return peerID, endpoint, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return peer, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
-	return endpoint.GetString("id"), endpoint, nil
+	peer.Peer = peer.Endpoint.GetString("id")
+	return peer, nil
 }
 
-func (h *FFDX) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) (err error) {
+func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.DXInfo) (err error) {
 	res, err := h.client.R().SetContext(ctx).
-		SetBody(endpoint).
-		Put(fmt.Sprintf("/api/v1/peers/%s", peerID))
+		SetBody(peer.Endpoint).
+		Put(fmt.Sprintf("/api/v1/peers/%s", peer.Peer))
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
