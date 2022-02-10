@@ -214,7 +214,7 @@ func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftype
 		batchID:       batchID,
 		msgID:         msg.Header.ID,
 		firstPinIndex: msgBaseIndex,
-		lastPinIndex:  msgBaseIndex + int64(len(msg.Header.Topics)),
+		lastPinIndex:  msgBaseIndex + int64(len(msg.Header.Topics)) - 1,
 	})
 }
 
