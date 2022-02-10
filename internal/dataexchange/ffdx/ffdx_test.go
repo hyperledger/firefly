@@ -501,3 +501,46 @@ func TestEventLoopClosedContext(t *testing.T) {
 	wsm.On("Send", mock.Anything, mock.Anything).Return(nil)
 	h.eventLoop() // we're simply looking for it exiting
 }
+
+func TestWebsocketWithReinit(t *testing.T) {
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	_, _, wsURL, cancel := wsclient.NewTestWSServer(nil)
+	defer cancel()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+	h := &FFDX{}
+
+	config.Reset()
+	h.InitPrefix(utConfPrefix)
+	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
+	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.Set(DataExchangeReInitEnabled, true)
+
+	first := true
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		func(r *http.Request) (*http.Response, error) {
+			if first {
+				first = false
+				return httpmock.NewJsonResponse(200, fftypes.JSONObject{
+					"status": "notready",
+				})
+			}
+			return httpmock.NewJsonResponse(200, fftypes.JSONObject{
+				"status": "ready",
+			})
+		})
+
+	h.InitPrefix(utConfPrefix)
+	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	assert.NoError(t, err)
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+}

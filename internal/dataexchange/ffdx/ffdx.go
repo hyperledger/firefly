@@ -41,6 +41,7 @@ type FFDX struct {
 	callbacks    dataexchange.Callbacks
 	client       *resty.Client
 	wsconn       wsclient.WSClient
+	reinit       bool
 }
 
 type wsEvent struct {
@@ -100,6 +101,10 @@ type wsAck struct {
 	Manifest string `json:"manifest,omitempty"` // FireFly core determined that DX should propagate opaquely to TransferResult, if this DX supports delivery acknowledgements.
 }
 
+type dxStatus struct {
+	Status string `json:"status"`
+}
+
 func (h *FFDX) Name() string {
 	return "ffdx"
 }
@@ -107,6 +112,8 @@ func (h *FFDX) Name() string {
 func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, callbacks dataexchange.Callbacks) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "ffdx")
 	h.callbacks = callbacks
+
+	h.reinit = prefix.GetBool(DataExchangeReInitEnabled)
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
@@ -119,7 +126,7 @@ func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, callbacks dataexc
 
 	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
 
-	h.wsconn, err = wsclient.New(ctx, wsConfig, nil, nil)
+	h.wsconn, err = wsclient.New(ctx, wsConfig, h.beforeConnect, nil)
 	if err != nil {
 		return err
 	}
@@ -133,6 +140,22 @@ func (h *FFDX) Start() error {
 
 func (h *FFDX) Capabilities() *dataexchange.Capabilities {
 	return h.capabilities
+}
+
+func (h *FFDX) beforeConnect(ctx context.Context) error {
+	if h.reinit {
+		var status dxStatus
+		res, err := h.client.R().SetContext(ctx).
+			SetResult(&status).
+			Post("/api/v1/init")
+		if err != nil || !res.IsSuccess() {
+			return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		}
+		if status.Status != "ready" {
+			return fmt.Errorf("DX returned non-ready status: %s", status.Status)
+		}
+	}
+	return nil
 }
 
 func (h *FFDX) GetEndpointInfo(ctx context.Context) (peerID string, endpoint fftypes.JSONObject, err error) {
