@@ -19,7 +19,6 @@ package batchpin
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -32,20 +31,18 @@ type Submitter interface {
 }
 
 type batchPinSubmitter struct {
-	database       database.Plugin
-	identity       identity.Manager
-	blockchain     blockchain.Plugin
-	metricsEnabled bool
-	metrics        metrics.Manager
+	database   database.Plugin
+	identity   identity.Manager
+	blockchain blockchain.Plugin
+	metrics    metrics.Manager
 }
 
 func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager) Submitter {
 	return &batchPinSubmitter{
-		database:       di,
-		identity:       im,
-		blockchain:     bi,
-		metricsEnabled: config.GetBool(config.MetricsEnabled),
-		metrics:        mm,
+		database:   di,
+		identity:   im,
+		blockchain: bi,
+		metrics:    mm,
 	}
 }
 
@@ -61,7 +58,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 		return err
 	}
 
-	if bp.metricsEnabled {
+	if bp.metrics.IsMetricsEnabled() {
 		metrics.BatchPinCounter.Inc()
 	}
 	// Write the batch pin to the blockchain

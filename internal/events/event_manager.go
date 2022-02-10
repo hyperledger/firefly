@@ -95,7 +95,6 @@ type eventManager struct {
 	opCorrelationRetries int
 	defaultTransport     string
 	internalEvents       *system.Events
-	metricsEnabled       bool
 	metrics              metrics.Manager
 }
 
@@ -127,7 +126,6 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publ
 		newEventNotifier:     newEventNotifier,
 		newPinNotifier:       newPinNotifier,
 		aggregator:           newAggregator(ctx, di, dh, dm, newPinNotifier, mm),
-		metricsEnabled:       config.GetBool(config.MetricsEnabled),
 		metrics:              mm,
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)

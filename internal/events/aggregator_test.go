@@ -46,6 +46,7 @@ func newTestAggregator() (*aggregator, func()) {
 }
 
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
+	metrics.Registry()
 	ag, cancel := newTestAggregator()
 	defer cancel()
 	bs := newBatchState(ag)
@@ -69,6 +70,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	mmi := ag.metrics.(*metricsmocks.Manager)
 
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
@@ -146,6 +148,8 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	})).Return(nil)
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mmi.On("MessageConfirmed", mock.Anything, fftypes.EventTypeMessageConfirmed).Return()
+	mmi.On("IsMetricsEnabled").Return(true)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -170,7 +174,6 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	metrics.Registry()
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ag.metricsEnabled = true
 	// Generate some pin data
 	member1org := "org1"
 	member2org := "org2"
@@ -192,6 +195,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mmi := ag.metrics.(*metricsmocks.Manager)
 
+	mmi.On("IsMetricsEnabled").Return(false)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -286,6 +290,8 @@ func TestAggregationBroadcast(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
 
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	// Get the batch
 	member1org := "org1"
 	member1key := "0x12345"
@@ -373,6 +379,8 @@ func TestProcessPinsDBGroupFail(t *testing.T) {
 	}
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	_, err := ag.processPinsEventsHandler([]fftypes.LocallySequenced{
 		&fftypes.Pin{
 			Batch: fftypes.NewUUID(),
@@ -602,6 +610,8 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
@@ -1022,6 +1032,9 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 		return true
 	})).Return(nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("MessageConfirmed", mock.Anything, fftypes.EventTypeMessageRejected).Return()
+	mmi.On("IsMetricsEnabled").Return(true)
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -1172,6 +1185,8 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: "org1", Hash: member1NonceOne},
 	}, nil, nil)
 
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	msg1 := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Type:      fftypes.MessageTypePrivate,
@@ -1277,6 +1292,8 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 	}, bs)
@@ -1299,6 +1316,8 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
 
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:   fftypes.NewUUID(),
@@ -1320,6 +1339,8 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
+	mmi := ag.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 	}, bs)

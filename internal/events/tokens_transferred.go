@@ -110,7 +110,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		return false, err
 	}
 	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
-	if em.metricsEnabled && countMetric {
+	if em.metrics.IsMetricsEnabled() && countMetric {
 		em.metrics.TransferConfirmed(transfer)
 	}
 

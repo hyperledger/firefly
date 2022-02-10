@@ -45,7 +45,6 @@ func TestBroadcastMessageOk(t *testing.T) {
 	metrics.Registry()
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	bm.metricsEnabled = true
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
@@ -77,6 +76,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 		},
 	}
 	mmi.On("MessageSubmitted", msgInOut).Return()
+	mmi.On("IsMetricsEnabled").Return(true)
 	msg, err := bm.BroadcastMessage(ctx, "ns1", msgInOut, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, msg.Data[0].ID)
@@ -114,7 +114,8 @@ func TestBroadcastRootOrg(t *testing.T) {
 		Value:     fftypes.JSONAnyPtrBytes(orgBytes),
 		Validator: fftypes.MessageTypeDefinition,
 	}
-
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
@@ -162,7 +163,8 @@ func TestBroadcastRootOrgBadData(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr("not an org"),
 		Validator: fftypes.MessageTypeDefinition,
 	}
-
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(errors.New("not registered"))
 
@@ -204,6 +206,8 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
@@ -252,6 +256,8 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -320,6 +326,8 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -357,6 +365,8 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -385,6 +395,8 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 	ctx := context.Background()
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -403,6 +415,8 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -461,6 +475,8 @@ func TestBroadcastPrepare(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
+	mmi := bm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)

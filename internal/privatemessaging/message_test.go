@@ -39,7 +39,6 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	pm.metricsEnabled = true
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
@@ -82,7 +81,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		}).
 		Return(retMsg, nil).Once()
 	mdi.On("UpsertMessage", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil).Once()
-
+	mmi.On("IsMetricsEnabled").Return(true)
 	msgInOut := &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
@@ -94,10 +93,10 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		},
 	}
 	mmi.On("MessageSubmitted", msgInOut).Return()
+
 	msg, err := pm.SendMessage(pm.ctx, "ns1", msgInOut, true)
 	assert.NoError(t, err)
 	assert.Equal(t, retMsg, msg)
-
 }
 
 func TestSendUnpinnedMessageE2EOk(t *testing.T) {
@@ -117,6 +116,8 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	nodeID1 := fftypes.NewUUID()
 	nodeID2 := fftypes.NewUUID()
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
@@ -178,6 +179,8 @@ func TestSendMessageBadGroup(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 
@@ -198,6 +201,8 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -222,6 +227,8 @@ func TestSendMessageFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
@@ -324,6 +331,8 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	pm.maxBatchPayloadLength = 100000
 	defer cancel()
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*fftypes.Identity)
@@ -386,6 +395,8 @@ func TestMessagePrepare(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
@@ -588,6 +599,8 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
@@ -628,6 +641,8 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
@@ -666,6 +681,8 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("UpsertMessage", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil).Once()
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(nil).Once()
 
@@ -702,6 +719,8 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	nodeID1 := fftypes.NewUUID()

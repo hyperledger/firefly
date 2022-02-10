@@ -63,7 +63,6 @@ type broadcastManager struct {
 	syncasync             syncasync.Bridge
 	batchpin              batchpin.Submitter
 	maxBatchPayloadLength int64
-	metricsEnabled        bool
 	metrics               metrics.Manager
 }
 
@@ -83,7 +82,6 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		syncasync:             sa,
 		batchpin:              bp,
 		maxBatchPayloadLength: config.GetByteSize(config.BroadcastBatchPayloadLimit),
-		metricsEnabled:        config.GetBool(config.MetricsEnabled),
 		metrics:               mm,
 	}
 	bo := batch.Options{

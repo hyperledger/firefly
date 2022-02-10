@@ -63,11 +63,9 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	metrics.Registry()
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	em.metricsEnabled = true
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
-	mmi := em.metrics.(*metricsmocks.Manager)
 
 	transfer := newTransfer()
 	transfer.TX = fftypes.TransactionRef{}
@@ -92,6 +90,8 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
+	mmi := em.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(true)
 	mmi.On("TransferConfirmed", transfer).Return()
 	err := em.TokensTransferred(mti, transfer)
 	assert.NoError(t, err)
@@ -129,6 +129,8 @@ func TestPersistTransferOpFail(t *testing.T) {
 		Namespace: "ns1",
 	}
 
+	mmi := em.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
@@ -283,7 +285,8 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 			"localId": localID.String(),
 		},
 	}}
-
+	mmi := em.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
@@ -362,7 +365,8 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	message := &fftypes.Message{
 		BatchID: fftypes.NewUUID(),
 	}
-
+	mmi := em.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
 	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -422,7 +426,8 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		BatchID: fftypes.NewUUID(),
 		State:   fftypes.MessageStateStaged,
 	}
-
+	mmi := em.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
 	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {

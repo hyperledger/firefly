@@ -39,7 +39,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	broadcast := bm.NewBroadcast(ns, in)
-	if bm.metricsEnabled {
+	if bm.metrics.IsMetricsEnabled() {
 		bm.metrics.MessageSubmitted(in)
 	}
 	if waitConfirm {

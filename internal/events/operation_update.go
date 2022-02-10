@@ -20,8 +20,10 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
@@ -42,7 +44,14 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
-		// TODO: Need to determine transfer type and track metric
+		if em.metrics.IsMetricsEnabled() {
+			var tokenTransfer fftypes.TokenTransfer
+			err = txcommon.RetrieveTokenTransferInputs(ctx, op, &tokenTransfer)
+			if err != nil {
+				log.L(em.ctx).Warnf("Could not determine token transfer type: %s", err)
+			}
+			em.metrics.TransferConfirmed(&tokens.TokenTransfer{TokenTransfer: tokenTransfer})
+		}
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}

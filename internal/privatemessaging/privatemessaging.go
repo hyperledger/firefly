@@ -64,7 +64,6 @@ type privateMessaging struct {
 	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
 	opCorrelationRetries  int
 	maxBatchPayloadLength int64
-	metricsEnabled        bool
 	metrics               metrics.Manager
 }
 
@@ -96,7 +95,6 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		},
 		opCorrelationRetries:  config.GetInt(config.PrivateMessagingOpCorrelationRetries),
 		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
-		metricsEnabled:        config.GetBool(config.MetricsEnabled),
 		metrics:               mm,
 	}
 	pm.groupManager.groupCache = ccache.New(

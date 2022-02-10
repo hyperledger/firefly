@@ -38,7 +38,7 @@ func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysm
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	message := pm.NewMessage(ns, in)
-	if pm.metricsEnabled {
+	if pm.metrics.IsMetricsEnabled() {
 		pm.metrics.MessageSubmitted(in)
 	}
 	if waitConfirm {

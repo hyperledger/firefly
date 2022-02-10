@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
@@ -35,12 +36,14 @@ type Manager interface {
 	AddTime(id string)
 	GetTime(id string) time.Time
 	DeleteTime(id string)
+	IsMetricsEnabled() bool
 	Start() error
 }
 
 type metricsManager struct {
-	ctx     context.Context
-	timeMap map[string]time.Time
+	ctx            context.Context
+	metricsEnabled bool
+	timeMap        map[string]time.Time
 }
 
 func (mm *metricsManager) Start() error {
@@ -49,8 +52,9 @@ func (mm *metricsManager) Start() error {
 
 func NewMetricsManager(ctx context.Context) Manager {
 	mm := &metricsManager{
-		ctx:     ctx,
-		timeMap: make(map[string]time.Time),
+		ctx:            ctx,
+		metricsEnabled: config.GetBool(config.MetricsEnabled),
+		timeMap:        make(map[string]time.Time),
 	}
 
 	return mm
@@ -138,4 +142,8 @@ func (mm *metricsManager) DeleteTime(id string) {
 	mutex.Lock()
 	delete(mm.timeMap, id)
 	mutex.Unlock()
+}
+
+func (mm *metricsManager) IsMetricsEnabled() bool {
+	return mm.metricsEnabled
 }

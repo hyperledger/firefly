@@ -185,3 +185,17 @@ func TestTransferConfirmedMintBurn(t *testing.T) {
 	mm.TransferConfirmed(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 0)
 }
+
+func TestIsMetricsEnabledTrue(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.metricsEnabled = true
+	assert.Equal(t, mm.IsMetricsEnabled(), true)
+}
+
+func TestIsMetricsEnabledFalse(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.metricsEnabled = false
+	assert.Equal(t, mm.IsMetricsEnabled(), false)
+}

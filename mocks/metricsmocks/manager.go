@@ -41,6 +41,20 @@ func (_m *Manager) GetTime(id string) time.Time {
 	return r0
 }
 
+// IsMetricsEnabled provides a mock function with given fields:
+func (_m *Manager) IsMetricsEnabled() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // MessageConfirmed provides a mock function with given fields: msg, eventType
 func (_m *Manager) MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum) {
 	_m.Called(msg, eventType)

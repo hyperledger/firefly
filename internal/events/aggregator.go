@@ -45,7 +45,6 @@ type aggregator struct {
 	offchainBatches chan *fftypes.UUID
 	queuedRewinds   chan *fftypes.UUID
 	retry           *retry.Retry
-	metricsEnabled  bool
 	metrics         metrics.Manager
 }
 
@@ -59,7 +58,6 @@ func newAggregator(ctx context.Context, di database.Plugin, sh definitions.Defin
 		newPins:         make(chan int64),
 		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
 		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
-		metricsEnabled:  config.GetBool(config.MetricsEnabled),
 		metrics:         mm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
@@ -388,7 +386,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		log.L(ctx).Infof("Emitting %s %s for message %s:%s", eventType, event.ID, msg.Header.Namespace, msg.Header.ID)
 		return nil
 	})
-	if ag.metricsEnabled {
+	if ag.metrics.IsMetricsEnabled() {
 		ag.metrics.MessageConfirmed(msg, eventType)
 	}
 
