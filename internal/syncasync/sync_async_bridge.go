@@ -287,8 +287,8 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 			return err
 		}
 		// Extract the LocalID of the transfer
-		var transfer fftypes.TokenTransfer
-		if err := txcommon.RetrieveTokenTransferInputs(sa.ctx, op, &transfer); err != nil {
+		transfer, err := txcommon.RetrieveTokenTransferInputs(sa.ctx, op)
+		if err != nil || transfer.LocalID == nil {
 			log.L(sa.ctx).Warnf("Failed to extract token transfer inputs for operation '%s': %s", op.ID, err)
 		}
 		// See if this is a failure of an inflight token transfer operation

@@ -18,13 +18,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// ActivateTokenPool provides a mock function with given fields: ctx, pool, event
-func (_m *Manager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
-	ret := _m.Called(ctx, pool, event)
+// ActivateTokenPool provides a mock function with given fields: ctx, pool, blockchainInfo
+func (_m *Manager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) error {
+	ret := _m.Called(ctx, pool, blockchainInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, *fftypes.BlockchainEvent) error); ok {
-		r0 = rf(ctx, pool, event)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, pool, blockchainInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -369,20 +369,6 @@ func (_m *Manager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) 
 	return r0
 }
 
-// Start provides a mock function with given fields:
-func (_m *Manager) Start() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // TransferTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
 func (_m *Manager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, transfer, waitConfirm)
@@ -404,9 +390,4 @@ func (_m *Manager) TransferTokens(ctx context.Context, ns string, transfer *ffty
 	}
 
 	return r0, r1
-}
-
-// WaitStop provides a mock function with given fields:
-func (_m *Manager) WaitStop() {
-	_m.Called()
 }

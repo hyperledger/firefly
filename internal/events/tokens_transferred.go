@@ -40,8 +40,10 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 		return err
 	}
 	if len(operations) > 0 {
-		if err = txcommon.RetrieveTokenTransferInputs(ctx, operations[0], transfer); err != nil {
+		if origTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, operations[0]); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
+		} else if origTransfer != nil {
+			transfer.LocalID = origTransfer.LocalID
 		}
 	}
 

@@ -233,12 +233,8 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
-	mam.On("ActivateTokenPool", em.ctx, storedPool, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.ProtocolID == chainPool.Event.ProtocolID
-	})).Return(fmt.Errorf("pop")).Once()
-	mam.On("ActivateTokenPool", em.ctx, storedPool, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.ProtocolID == chainPool.Event.ProtocolID
-	})).Return(nil).Once()
+	mam.On("ActivateTokenPool", em.ctx, storedPool, info).Return(fmt.Errorf("pop")).Once()
+	mam.On("ActivateTokenPool", em.ctx, storedPool, info).Return(nil).Once()
 	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(storedMessage, nil)
 
 	err := em.TokenPoolCreated(mti, chainPool)

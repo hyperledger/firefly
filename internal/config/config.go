@@ -218,12 +218,6 @@ var (
 	SubscriptionsRetryMaxDelay = rootKey("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = rootKey("subscription.retry.factor")
-	// AssetManagerRetryInitialDelay is the initial retry delay
-	AssetManagerRetryInitialDelay = rootKey("asset.manager.retry.initDelay")
-	// AssetManagerRetryMaxDelay is the initial retry delay
-	AssetManagerRetryMaxDelay = rootKey("asset.manager.retry.maxDelay")
-	// AssetManagerRetryFactor the backoff factor to use for retry of database operations
-	AssetManagerRetryFactor = rootKey("asset.manager.retry.factor")
 	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
 	UIEnabled = rootKey("ui.enabled")
 	// UIPath the path on which to serve the UI
@@ -351,9 +345,6 @@ func Reset() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
-	viper.SetDefault(string(AssetManagerRetryInitialDelay), "250ms")
-	viper.SetDefault(string(AssetManagerRetryMaxDelay), "30s")
-	viper.SetDefault(string(AssetManagerRetryFactor), 2.0)
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")

@@ -19,57 +19,54 @@ package txcommon
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func AddTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
-	op.Input = fftypes.JSONObject{
-		"id":        pool.ID.String(),
-		"namespace": pool.Namespace,
-		"name":      pool.Name,
-		"symbol":    pool.Symbol,
-		"config":    pool.Config,
-	}
-}
-
-func RetrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
-	input := &op.Input
-	pool.ID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
-	if err != nil {
-		return err
-	}
-	pool.Namespace = input.GetString("namespace")
-	pool.Name = input.GetString("name")
-	if pool.Namespace == "" || pool.Name == "" {
-		return fmt.Errorf("namespace or name missing from inputs")
-	}
-	pool.Symbol = input.GetString("symbol")
-	pool.Config = input.GetObject("config")
-	return nil
-}
-
-func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	var j []byte
-	if j, err = json.Marshal(transfer); err == nil {
-		err = json.Unmarshal(j, &op.Input)
+func AddTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
+	var poolJSON []byte
+	if poolJSON, err = json.Marshal(pool); err == nil {
+		err = json.Unmarshal(poolJSON, &op.Input)
 	}
 	return err
 }
 
-func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	var t fftypes.TokenTransfer
+func RetrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.TokenPool, error) {
+	var pool fftypes.TokenPool
 	s := op.Input.String()
-	if err = json.Unmarshal([]byte(s), &t); err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
+	if err := json.Unmarshal([]byte(s), &pool); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
 	}
-	if t.LocalID == nil {
-		return i18n.NewError(ctx, i18n.MsgInvalidUUID)
+	return &pool, nil
+}
+
+func AddTokenPoolActivateInputs(op *fftypes.Operation, poolID *fftypes.UUID, blockchainInfo fftypes.JSONObject) {
+	op.Input = fftypes.JSONObject{
+		"id":   poolID.String(),
+		"info": blockchainInfo,
 	}
-	// The LocalID is the only thing that needs to be read back out when processing an event
-	// (everything else should be unpacked from the event)
-	transfer.LocalID = t.LocalID
-	return nil
+}
+
+func RetrieveTokenPoolActivateInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.UUID, fftypes.JSONObject, error) {
+	id, err := fftypes.ParseUUID(ctx, op.Input.GetString("id"))
+	info := op.Input.GetObject("info")
+	return id, info, err
+}
+
+func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
+	var transferJSON []byte
+	if transferJSON, err = json.Marshal(transfer); err == nil {
+		err = json.Unmarshal(transferJSON, &op.Input)
+	}
+	return err
+}
+
+func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.TokenTransfer, error) {
+	var transfer fftypes.TokenTransfer
+	s := op.Input.String()
+	if err := json.Unmarshal([]byte(s), &transfer); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
+	}
+	return &transfer, nil
 }

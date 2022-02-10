@@ -27,7 +27,7 @@ import (
 func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
 	op, err := em.database.GetOperationByID(ctx, operationID)
 	if err != nil || op == nil {
-		log.L(em.ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", operationID)
+		log.L(ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", operationID)
 		return nil
 	}
 
@@ -39,12 +39,11 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
 		if em.metrics.IsMetricsEnabled() {
-			var tokenTransfer fftypes.TokenTransfer
-			err = txcommon.RetrieveTokenTransferInputs(ctx, op, &tokenTransfer)
-			if err != nil {
-				log.L(em.ctx).Warnf("Could not determine token transfer type: %s", err)
+			tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
+			if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
+				log.L(ctx).Warnf("Could not determine token transfer type: %s", err)
 			}
-			em.metrics.TransferConfirmed(&tokenTransfer)
+			em.metrics.TransferConfirmed(tokenTransfer)
 		}
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err

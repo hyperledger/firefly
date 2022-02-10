@@ -18,7 +18,6 @@ package assets
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -228,10 +227,9 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return nil
 	}
 
-	var pool *fftypes.TokenPool
 	var op *fftypes.Operation
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
+		pool, err := s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
 			return err
 		}
@@ -246,6 +244,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 		s.transfer.TX.ID = txid
 		s.transfer.TX.Type = fftypes.TransactionTypeTokenTransfer
+		s.transfer.TokenTransfer.Pool = pool.ID
 
 		op = fftypes.NewOperation(
 			plugin,
@@ -269,21 +268,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return err
 	}
 
-	switch s.transfer.Type {
-	case fftypes.TokenTransferTypeMint:
-		err = plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
-	case fftypes.TokenTransferTypeTransfer:
-		err = plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
-	case fftypes.TokenTransferTypeBurn:
-		err = plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
-	default:
-		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
-	}
-
-	if err != nil {
-		s.mgr.txHelper.WriteOperationFailure(ctx, op.ID, err)
-	}
-	return err
+	return s.mgr.operations.StartOperation(ctx, op)
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {

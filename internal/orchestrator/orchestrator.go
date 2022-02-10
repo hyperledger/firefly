@@ -38,6 +38,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/networkmap"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/publicstorage/psfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -158,6 +159,7 @@ type orchestrator struct {
 	contracts      contracts.Manager
 	node           *fftypes.UUID
 	metrics        metrics.Manager
+	operations     operations.Manager
 }
 
 func NewOrchestrator() Orchestrator {
@@ -446,6 +448,12 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
 	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain, or.metrics)
 
+	if or.operations == nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.database, or.tokens); err != nil {
+			return err
+		}
+	}
+
 	if or.messaging == nil {
 		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics); err != nil {
 			return err
@@ -459,7 +467,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics)
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics, or.operations)
 		if err != nil {
 			return err
 		}

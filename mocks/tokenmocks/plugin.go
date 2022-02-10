@@ -19,20 +19,20 @@ type Plugin struct {
 	mock.Mock
 }
 
-// ActivateTokenPool provides a mock function with given fields: ctx, opID, pool, event
-func (_m *Plugin) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) (bool, error) {
-	ret := _m.Called(ctx, opID, pool, event)
+// ActivateTokenPool provides a mock function with given fields: ctx, opID, pool, blockchainInfo
+func (_m *Plugin) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) (bool, error) {
+	ret := _m.Called(ctx, opID, pool, blockchainInfo)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.BlockchainEvent) bool); ok {
-		r0 = rf(ctx, opID, pool, event)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, fftypes.JSONObject) bool); ok {
+		r0 = rf(ctx, opID, pool, blockchainInfo)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.BlockchainEvent) error); ok {
-		r1 = rf(ctx, opID, pool, event)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, fftypes.JSONObject) error); ok {
+		r1 = rf(ctx, opID, pool, blockchainInfo)
 	} else {
 		r1 = ret.Error(1)
 	}

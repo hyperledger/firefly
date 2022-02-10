@@ -26,8 +26,6 @@ import (
 
 func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
 	pool := announce.Pool
-
-	// Create the pool in pending state
 	pool.State = fftypes.TokenPoolStatePending
 	err = dh.database.UpsertTokenPool(ctx, pool)
 	if err != nil {
@@ -38,7 +36,6 @@ func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *ff
 		log.L(ctx).Errorf("Failed to insert token pool '%s': %s", pool.ID, err)
 		return false, err // retryable
 	}
-
 	return true, nil
 }
 
@@ -63,6 +60,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg 
 		return ActionConfirm, nil, nil
 	}
 
+	// Create the pool in pending state
 	if valid, err := dh.persistTokenPool(ctx, &announce); err != nil {
 		return ActionRetry, nil, err
 	} else if !valid {
@@ -73,7 +71,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, msg 
 	// This will ultimately trigger a pool creation event and a rewind
 	return ActionWait, &DefinitionBatchActions{
 		PreFinalize: func(ctx context.Context) error {
-			if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event); err != nil {
+			if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event.Info); err != nil {
 				log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
 				return err
 			}

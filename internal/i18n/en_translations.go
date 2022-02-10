@@ -263,4 +263,5 @@ var (
 	MsgInvalidTXTypeForMessage      = ffm("FF10343", "Invalid transaction type for sending a message: %s", 400)
 	MsgGroupRequired                = ffm("FF10344", "Group must be set", 400)
 	MsgDBLockFailed                 = ffm("FF10345", "Database lock failed")
+	MsgOperationNotSupported        = ffm("FF10346", "Operation not supported", 400)
 )
