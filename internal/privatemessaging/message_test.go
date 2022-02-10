@@ -523,7 +523,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -560,6 +560,9 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, nil)
+
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(nil).Once()
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -714,7 +717,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("", nil)
+	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 	nodeID1 := fftypes.NewUUID()
@@ -829,8 +832,11 @@ func TestSendDataTransferFail(t *testing.T) {
 	})).Return(nil)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
+
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("", fmt.Errorf("pop"))
+	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(fmt.Errorf("pop"))
 
 	groupID := fftypes.NewRandB32()
 	nodeID2 := fftypes.NewUUID()
@@ -876,9 +882,6 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 	})).Return(nil)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
-	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("", nil)
-
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -909,8 +912,6 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		},
 	}, nodes)
 	assert.Regexp(t, "pop", err)
-
-	mdx.AssertExpectations(t)
 
 }
 

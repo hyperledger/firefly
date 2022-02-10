@@ -44,17 +44,17 @@ type HTTPS struct {
 }
 
 type wsEvent struct {
-	Type      msgType `json:"type"`
-	Sender    string  `json:"sender"`
-	Recipient string  `json:"recipient"`
-	RequestID string  `json:"requestID"`
-	Path      string  `json:"path"`
-	Message   string  `json:"message"`
-	Hash      string  `json:"hash"`
-	Size      int64   `json:"size"`
-	Error     string  `json:"error"`
-	Manifest  string  `json:"manifest"`
-	Info      string  `json:"info"`
+	Type      msgType            `json:"type"`
+	Sender    string             `json:"sender"`
+	Recipient string             `json:"recipient"`
+	RequestID string             `json:"requestId"`
+	Path      string             `json:"path"`
+	Message   string             `json:"message"`
+	Hash      string             `json:"hash"`
+	Size      int64              `json:"size"`
+	Error     string             `json:"error"`
+	Manifest  string             `json:"manifest"`
+	Info      fftypes.JSONObject `json:"info"`
 }
 
 const (
@@ -86,11 +86,13 @@ type uploadBlob struct {
 type sendMessage struct {
 	Message   string `json:"message"`
 	Recipient string `json:"recipient"`
+	RequestID string `json:"requestId"`
 }
 
 type transferBlob struct {
 	Path      string `json:"path"`
 	Recipient string `json:"recipient"`
+	RequestID string `json:"requestId"`
 }
 
 type wsAck struct {
@@ -183,34 +185,36 @@ func (h *HTTPS) DownloadBLOB(ctx context.Context, payloadRef string) (content io
 	return res.RawBody(), nil
 }
 
-func (h *HTTPS) SendMessage(ctx context.Context, peerID string, data []byte) (trackingID string, err error) {
+func (h *HTTPS) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) (err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&sendMessage{
 			Message:   string(data),
 			Recipient: peerID,
+			RequestID: opID.String(),
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/messages")
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
-	return responseData.RequestID, nil
+	return nil
 }
 
-func (h *HTTPS) TransferBLOB(ctx context.Context, peerID, payloadRef string) (trackingID string, err error) {
+func (h *HTTPS) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID, payloadRef string) (err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&transferBlob{
 			Path:      fmt.Sprintf("/%s", payloadRef),
 			Recipient: peerID,
+			RequestID: opID.String(),
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/transfers")
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
-	return responseData.RequestID, nil
+	return nil
 }
 
 func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {

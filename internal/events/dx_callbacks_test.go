@@ -489,17 +489,16 @@ func TestTransferResultOk(t *testing.T) {
 	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:        id,
-			BackendID: "tracking12345",
+			ID: id,
 		},
 	}, nil, nil)
 	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.NoError(t, err)
 
@@ -513,8 +512,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:        id,
-			BackendID: "tracking12345",
+			ID: id,
 			Input: fftypes.JSONObject{
 				"manifest": "Bob",
 			},
@@ -527,8 +525,8 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
 		Manifest: true,
 	})
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-		Info:     `{"extra": "info"}`,
+	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+		Info:     fftypes.JSONObject{"extra": "info"},
 		Manifest: "Sally",
 	})
 	assert.NoError(t, err)
@@ -548,7 +546,7 @@ func TestTransferResultNotCorrelated(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.NoError(t, err)
 
@@ -565,7 +563,7 @@ func TestTransferResultNotFound(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.NoError(t, err)
 
@@ -582,7 +580,7 @@ func TestTransferGetOpFail(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.Regexp(t, "FF10158", err)
 
@@ -596,17 +594,16 @@ func TestTransferUpdateFail(t *testing.T) {
 	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:        id,
-			BackendID: "tracking12345",
+			ID: id,
 		},
 	}, nil, nil)
 	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(fmt.Errorf("pop"))
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info",
-		Info:  `{"extra": "info"}`,
+		Info:  fftypes.JSONObject{"extra": "info"},
 	})
 	assert.Regexp(t, "FF10158", err)
 

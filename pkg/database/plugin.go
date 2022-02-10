@@ -743,7 +743,6 @@ var OperationQueryFactory = &queryFields{
 	"plugin":    &StringField{},
 	"input":     &JSONField{},
 	"output":    &JSONField{},
-	"backendid": &StringField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},
 }
