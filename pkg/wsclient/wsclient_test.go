@@ -39,6 +39,14 @@ func TestWSClientE2E(t *testing.T) {
 	})
 	defer close()
 
+	first := true
+	beforeConnect := func(ctx context.Context) error {
+		if first {
+			first = false
+			return fmt.Errorf("first run fails")
+		}
+		return nil
+	}
 	afterConnect := func(ctx context.Context, w WSClient) error {
 		return w.Send(ctx, []byte(`after connect message`))
 	}
@@ -49,8 +57,9 @@ func TestWSClientE2E(t *testing.T) {
 	wsConfig.HTTPURL = url
 	wsConfig.WSKeyPath = "/test"
 	wsConfig.HeartbeatInterval = 50 * time.Millisecond
+	wsConfig.InitialConnectAttempts = 2
 
-	wsc, err := New(context.Background(), wsConfig, afterConnect)
+	wsc, err := New(context.Background(), wsConfig, beforeConnect, afterConnect)
 	assert.NoError(t, err)
 
 	//  Change the settings and connect
@@ -90,7 +99,7 @@ func TestWSClientBadURL(t *testing.T) {
 	wsConfig := generateConfig()
 	wsConfig.HTTPURL = ":::"
 
-	_, err := New(context.Background(), wsConfig, nil)
+	_, err := New(context.Background(), wsConfig, nil, nil)
 	assert.Regexp(t, "FF10162", err)
 }
 
@@ -134,7 +143,7 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	wsConfig.InitialDelay = 1
 	wsConfig.InitialConnectAttempts = 1
 
-	w, _ := New(context.Background(), wsConfig, nil)
+	w, _ := New(context.Background(), wsConfig, nil, nil)
 	err := w.Connect()
 	assert.Regexp(t, "FF10161", err)
 }
@@ -153,7 +162,7 @@ func TestWSFailStartupConnect(t *testing.T) {
 	wsConfig.InitialDelay = 1
 	wsConfig.InitialConnectAttempts = 1
 
-	w, _ := New(context.Background(), wsConfig, nil)
+	w, _ := New(context.Background(), wsConfig, nil, nil)
 	err := w.Connect()
 	assert.Regexp(t, "FF10161", err)
 }
@@ -163,7 +172,7 @@ func TestWSSendClosed(t *testing.T) {
 	wsConfig := generateConfig()
 	wsConfig.HTTPURL = "http://test:12345"
 
-	w, err := New(context.Background(), wsConfig, nil)
+	w, err := New(context.Background(), wsConfig, nil, nil)
 	assert.NoError(t, err)
 	w.Close()
 
@@ -308,7 +317,7 @@ func TestHeartbeatSendFailed(t *testing.T) {
 	_, _, url, close := NewTestWSServer(func(req *http.Request) {})
 	defer close()
 
-	wsc, err := New(context.Background(), &WSConfig{HTTPURL: url}, func(ctx context.Context, w WSClient) error { return nil })
+	wsc, err := New(context.Background(), &WSConfig{HTTPURL: url}, nil, func(ctx context.Context, w WSClient) error { return nil })
 	assert.NoError(t, err)
 	defer wsc.Close()
 

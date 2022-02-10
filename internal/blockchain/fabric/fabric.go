@@ -189,7 +189,7 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		wsConfig.WSKeyPath = "/ws"
 	}
 
-	f.wsconn, err = wsclient.New(ctx, wsConfig, f.afterConnect)
+	f.wsconn, err = wsclient.New(ctx, wsConfig, nil, f.afterConnect)
 	if err != nil {
 		return err
 	}

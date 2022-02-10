@@ -119,7 +119,7 @@ func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, callbacks dataexc
 
 	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
 
-	h.wsconn, err = wsclient.New(ctx, wsConfig, nil)
+	h.wsconn, err = wsclient.New(ctx, wsConfig, nil, nil)
 	if err != nil {
 		return err
 	}
