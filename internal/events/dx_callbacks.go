@@ -271,7 +271,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		var operations []*fftypes.Operation
 		fb := database.OperationQueryFactory.NewFilter(em.ctx)
 		filter := fb.And(
-			fb.Eq("backendid", trackingID),
+			fb.Eq("id", trackingID),
 			fb.Eq("plugin", dx.Name()),
 		)
 		operations, _, err = em.database.GetOperations(em.ctx, filter)

@@ -234,7 +234,7 @@ func (bm *batchManager) messageSequencer() {
 		}
 
 		// Wait to be woken again
-		if !batchWasFull {
+		if !batchWasFull && !bm.drainNewMessages() {
 			if done := bm.waitForShoulderTapOrPollTimeout(); done {
 				l.Debugf("Exiting: %s", err)
 				return
@@ -243,32 +243,38 @@ func (bm *batchManager) messageSequencer() {
 	}
 }
 
-func (bm *batchManager) waitForShoulderTapOrPollTimeout() (done bool) {
-	l := log.L(bm.ctx)
+func (bm *batchManager) newMessageNotification(seq int64) {
+	log.L(bm.ctx).Debugf("Notification of message %d", seq)
+	if (seq - 1) < bm.readOffset {
+		bm.readOffset = seq - 1
+	}
+}
 
-	// Drain any new message notifications, moving back our
-	// readOffset as required
+func (bm *batchManager) drainNewMessages() bool {
+	// Drain any new message notifications, moving back our readOffset as required
 	newMessages := false
 	checkingMessages := true
 	for checkingMessages {
 		select {
 		case seq := <-bm.newMessages:
-			l.Debugf("Notification of message %d", seq)
-			if (seq - 1) < bm.readOffset {
-				bm.readOffset = seq - 1
-			}
+			bm.newMessageNotification(seq)
 			newMessages = true
 		default:
 			checkingMessages = false
 		}
 	}
-	if newMessages {
-		return false
-	}
+	return newMessages
+}
+
+func (bm *batchManager) waitForShoulderTapOrPollTimeout() (done bool) {
+	l := log.L(bm.ctx)
 
 	// Otherwise set a timeout
 	timeout := time.NewTimer(bm.messagePollTimeout)
 	select {
+	case seq := <-bm.newMessages:
+		bm.newMessageNotification(seq)
+		return false
 	case <-timeout.C:
 		l.Debugf("Woken after poll timeout")
 		return false
