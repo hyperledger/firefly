@@ -96,7 +96,12 @@ func (s *messageSender) setDefaults() {
 	if s.msg.Header.Type == "" {
 		s.msg.Header.Type = fftypes.MessageTypePrivate
 	}
-	if s.msg.Header.TxType == "" {
+	switch s.msg.Header.TxType {
+	case fftypes.TransactionTypeUnpinned, fftypes.TransactionTypeNone:
+		// "unpinned" used to be called "none" (before we introduced batching + a TX on unppinned sends)
+		s.msg.Header.TxType = fftypes.TransactionTypeUnpinned
+	default:
+		// the only other valid option is "batch_pin"
 		s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 }

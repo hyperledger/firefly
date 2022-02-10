@@ -120,7 +120,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		pm.dispatchPinnedBatch, bo)
 
 	ba.RegisterDispatcher(unpinnedPrivateDispatcherName,
-		fftypes.TransactionTypeNone,
+		fftypes.TransactionTypeUnpinned,
 		[]fftypes.MessageType{
 			fftypes.MessageTypePrivate,
 		},
@@ -157,7 +157,7 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, batch *ffty
 		return err
 	}
 
-	if batch.Payload.TX.Type == fftypes.TransactionTypeNone {
+	if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 		// In the case of an un-pinned message we cannot be sure the group has been broadcast via the blockchain.
 		// So we have to take the hit of sending it along with every message.
 		tw.Group = group

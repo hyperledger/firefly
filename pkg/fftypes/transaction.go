@@ -19,8 +19,10 @@ package fftypes
 type TransactionType = FFEnum
 
 var (
-	// TransactionTypeNone indicates no transaction should be used for this message/batch
+	// TransactionTypeNone deprecreated - replaced by TransactionTypeUnpinned
 	TransactionTypeNone TransactionType = ffEnum("txtype", "none")
+	// TransactionTypeUnpinned indicates no transaction should be used for this message/batch
+	TransactionTypeUnpinned TransactionType = ffEnum("txtype", "unpinned")
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
 	TransactionTypeBatchPin TransactionType = ffEnum("txtype", "batch_pin")
 	// TransactionTypeTokenPool represents a token pool creation

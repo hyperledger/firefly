@@ -571,7 +571,7 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -593,7 +593,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -626,7 +626,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -659,7 +659,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -694,7 +694,7 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -729,7 +729,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -765,7 +765,7 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -789,7 +789,7 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeNone, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}

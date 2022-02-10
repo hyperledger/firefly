@@ -61,7 +61,7 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 
 	mba.On("RegisterDispatcher",
 		unpinnedPrivateDispatcherName,
-		fftypes.TransactionTypeNone,
+		fftypes.TransactionTypeUnpinned,
 		[]fftypes.MessageType{
 			fftypes.MessageTypePrivate,
 		}, mock.Anything, mock.Anything).Return()

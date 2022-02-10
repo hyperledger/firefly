@@ -54,7 +54,7 @@ func TestBatch2EWithDB(t *testing.T) {
 				{Header: fftypes.MessageHeader{ID: msgID1}},
 			},
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeNone,
+				Type: fftypes.TransactionTypeUnpinned,
 			},
 		},
 	}

@@ -102,7 +102,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 
 	switch batch.Payload.TX.Type {
 	case fftypes.TransactionTypeBatchPin:
-	case fftypes.TransactionTypeNone:
+	case fftypes.TransactionTypeUnpinned:
 	default:
 		l.Errorf("Invalid batch '%s'. Invalid transaction type: %s", batch.ID, batch.Payload.TX.Type)
 		return false, nil // This is not retryable. skip this batch

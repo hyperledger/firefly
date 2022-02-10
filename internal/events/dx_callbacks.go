@@ -45,7 +45,7 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 	}
 	l.Infof("Private batch received from '%s' (len=%d)", peerID, len(data))
 
-	if wrapper.Batch.Payload.TX.Type == fftypes.TransactionTypeNone {
+	if wrapper.Batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 		valid, err := em.definitions.EnsureLocalGroup(em.ctx, wrapper.Group)
 		if err != nil {
 			return "", err
@@ -140,7 +140,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 			if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
 				// Poke the aggregator to do its stuff
 				em.aggregator.offchainBatches <- batch.ID
-			} else if batch.Payload.TX.Type == fftypes.TransactionTypeNone {
+			} else if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 				// We need to confirm all these messages immediately.
 				if err := em.markUnpinnedMessagesConfirmed(ctx, batch); err != nil {
 					return err

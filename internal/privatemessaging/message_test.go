@@ -120,7 +120,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				TxType: fftypes.TransactionTypeNone,
+				TxType: fftypes.TransactionTypeUnpinned,
 				Group:  groupID,
 			},
 		},
@@ -314,7 +314,7 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				TxType: fftypes.TransactionTypeNone,
+				TxType: fftypes.TransactionTypeUnpinned,
 				Group:  groupID,
 			},
 		},
@@ -426,7 +426,7 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 						Identity: fftypes.Identity{
 							Author: "org1",
 						},
-						TxType: fftypes.TransactionTypeNone,
+						TxType: fftypes.TransactionTypeUnpinned,
 						Group:  groupID,
 					},
 				},
@@ -464,7 +464,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				TxType: fftypes.TransactionTypeNone,
+				TxType: fftypes.TransactionTypeUnpinned,
 				Group:  groupID,
 			},
 		},
@@ -496,7 +496,7 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				TxType: fftypes.TransactionTypeNone,
+				TxType: fftypes.TransactionTypeUnpinned,
 				Group:  fftypes.NewRandB32(),
 			},
 		},
@@ -528,7 +528,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				TxType: fftypes.TransactionTypeNone,
+				TxType: fftypes.TransactionTypeUnpinned,
 				Group:  groupID,
 			},
 		},
@@ -567,7 +567,7 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				TxType: fftypes.TransactionTypeNone,
+				TxType: fftypes.TransactionTypeUnpinned,
 				Group:  groupID,
 			},
 		},
@@ -747,7 +747,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   fftypes.NewUUID(),
-				Type: fftypes.TransactionTypeNone,
+				Type: fftypes.TransactionTypeUnpinned,
 			},
 			Messages: []*fftypes.Message{
 				{

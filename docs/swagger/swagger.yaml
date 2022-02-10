@@ -4710,6 +4710,7 @@ paths:
                   type:
                     enum:
                     - none
+                    - unpinned
                     - batch_pin
                     - token_pool
                     - token_transfer
@@ -7820,6 +7821,7 @@ paths:
                   type:
                     enum:
                     - none
+                    - unpinned
                     - batch_pin
                     - token_pool
                     - token_transfer
@@ -7930,6 +7932,7 @@ paths:
                   type:
                     enum:
                     - none
+                    - unpinned
                     - batch_pin
                     - token_pool
                     - token_transfer

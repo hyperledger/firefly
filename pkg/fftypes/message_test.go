@@ -77,7 +77,7 @@ func TestVerifyTXType(t *testing.T) {
 	err = msg.Verify(context.Background())
 	assert.NoError(t, err)
 
-	msg.Header.TxType = TransactionTypeNone
+	msg.Header.TxType = TransactionTypeUnpinned
 	err = msg.Seal(context.Background())
 	assert.NoError(t, err)
 	err = msg.Verify(context.Background())
