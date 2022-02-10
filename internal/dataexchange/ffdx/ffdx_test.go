@@ -19,6 +19,7 @@ package ffdx
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -54,8 +55,9 @@ func newTestFFDX(t *testing.T) (h *FFDX, toServer, fromServer chan string, httpU
 	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
 
 	h = &FFDX{}
+	nodes := make([]fftypes.DXInfo, 0)
 	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -68,17 +70,19 @@ func newTestFFDX(t *testing.T) (h *FFDX, toServer, fromServer chan string, httpU
 func TestInitBadURL(t *testing.T) {
 	config.Reset()
 	h := &FFDX{}
+	nodes := make([]fftypes.DXInfo, 0)
 	h.InitPrefix(utConfPrefix)
 	utConfPrefix.Set(restclient.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)
 }
 
 func TestInitMissingURL(t *testing.T) {
 	config.Reset()
 	h := &FFDX{}
+	nodes := make([]fftypes.DXInfo, 0)
 	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -518,6 +522,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 	u.Scheme = "http"
 	httpURL := u.String()
 	h := &FFDX{}
+	nodes := []fftypes.DXInfo{{}}
 
 	config.Reset()
 	h.InitPrefix(utConfPrefix)
@@ -527,7 +532,12 @@ func TestWebsocketWithReinit(t *testing.T) {
 
 	first := true
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
-		func(r *http.Request) (*http.Response, error) {
+		func(req *http.Request) (*http.Response, error) {
+			var reqNodes []fftypes.DXInfo
+			err := json.NewDecoder(req.Body).Decode(&reqNodes)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(reqNodes))
+
 			if first {
 				first = false
 				return httpmock.NewJsonResponse(200, fftypes.JSONObject{
@@ -540,7 +550,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 		})
 
 	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	err = h.Start()

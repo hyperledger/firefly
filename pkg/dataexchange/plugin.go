@@ -60,8 +60,7 @@ type Plugin interface {
 	InitPrefix(prefix config.Prefix)
 
 	// Init initializes the plugin, with configuration
-	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
+	Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.DXInfo, callbacks Callbacks) error
 
 	// Data exchange interface must not deliver any events until start is called
 	Start() error

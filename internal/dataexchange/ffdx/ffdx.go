@@ -42,6 +42,7 @@ type FFDX struct {
 	client       *resty.Client
 	wsconn       wsclient.WSClient
 	reinit       bool
+	nodes        []fftypes.DXInfo
 }
 
 type wsEvent struct {
@@ -109,8 +110,8 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, callbacks dataexchange.Callbacks) (err error) {
-	h.ctx = log.WithLogField(ctx, "dx", "ffdx")
+func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.DXInfo, callbacks dataexchange.Callbacks) (err error) {
+	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.callbacks = callbacks
 
 	h.reinit = prefix.GetBool(DataExchangeReInitEnabled)
@@ -118,6 +119,8 @@ func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, callbacks dataexc
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
+
+	h.nodes = nodes
 
 	h.client = restclient.New(h.ctx, prefix)
 	h.capabilities = &dataexchange.Capabilities{
@@ -146,6 +149,7 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 	if h.reinit {
 		var status dxStatus
 		res, err := h.client.R().SetContext(ctx).
+			SetBody(h.nodes).
 			SetResult(&status).
 			Post("/api/v1/init")
 		if err != nil || !res.IsSuccess() {
@@ -166,6 +170,7 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.DXInfo, err er
 		return peer, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
 	peer.Peer = peer.Endpoint.GetString("id")
+	h.nodes = append(h.nodes, peer)
 	return peer, nil
 }
 
