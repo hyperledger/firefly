@@ -259,7 +259,7 @@ func TestStartFlushOverflow(t *testing.T) {
 	})
 	batchID := fftypes.NewUUID()
 	bp.assemblyID = batchID
-	bp.flushedSequences = []int64{100, 101, 102, 103, 104}
+	bp.flushedSequences = []int64{104, 103, 102, 101, 100}
 	bp.assemblyQueue = []*batchWork{
 		{msg: &fftypes.Message{Sequence: 200}},
 		{msg: &fftypes.Message{Sequence: 201}},
@@ -270,7 +270,7 @@ func TestStartFlushOverflow(t *testing.T) {
 
 	flushBatchID, flushAssembly, _ := bp.startFlush(true)
 	assert.Equal(t, batchID, flushBatchID)
-	assert.Equal(t, []int64{200, 201, 202, 100, 101, 102}, bp.flushedSequences)
+	assert.Equal(t, []int64{202, 201, 200, 104, 103, 102}, bp.flushedSequences)
 	assert.Equal(t, []*batchWork{
 		{msg: &fftypes.Message{Sequence: 200}},
 		{msg: &fftypes.Message{Sequence: 201}},

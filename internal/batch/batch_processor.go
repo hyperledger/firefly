@@ -187,7 +187,7 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAssembly []*batchWork, byteSize int64) {
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
-	// Star the clock
+	// Start the clock
 	bp.flushStatus.Blocked = false
 	bp.flushStatus.LastFlushTime = fftypes.Now()
 	// Split the current work if required for overflow
@@ -208,14 +208,15 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	if newFlushedSeqLen > maxFlushedSeqLen && maxFlushedSeqLen > len(bp.flushedSequences) {
 		newFlushedSeqLen = maxFlushedSeqLen
 	}
-	newFlushedSequnces := make([]int64, newFlushedSeqLen)
-	for i, fs := range flushAssembly {
-		newFlushedSequnces[i] = fs.msg.Sequence
+	newFlushedSequences := make([]int64, newFlushedSeqLen)
+	for i := 0; i < len(flushAssembly); i++ {
+		// Add in reverse order - so we can trim the end of it off later (in the next block) and keep the newest
+		newFlushedSequences[len(flushAssembly)-i-1] = flushAssembly[i].msg.Sequence
 	}
 	for i := 0; i < newFlushedSeqLen-len(flushAssembly); i++ {
-		newFlushedSequnces[i+len(flushAssembly)] = bp.flushedSequences[i]
+		newFlushedSequences[i+len(flushAssembly)] = bp.flushedSequences[i]
 	}
-	bp.flushedSequences = newFlushedSequnces
+	bp.flushedSequences = newFlushedSequences
 	// Cycle to the next assembly
 	id = bp.assemblyID
 	byteSize = bp.assemblyQueueBytes
