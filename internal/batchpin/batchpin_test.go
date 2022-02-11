@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -34,18 +33,22 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("metrics")
 
-func newTestBatchPinSubmitter(t *testing.T) *batchPinSubmitter {
+func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitter {
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mmi := &metricsmocks.Manager{}
+	mmi.On("IsMetricsEnabled").Return(enableMetrics)
+	if enableMetrics {
+		mmi.On("CountBatchPin").Return()
+	}
 	mbi.On("Name").Return("ut").Maybe()
 	bps := NewBatchPinSubmitter(mdi, mim, mbi, mmi).(*batchPinSubmitter)
 	return bps
 }
 
 func TestSubmitPinnedBatchOk(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t)
+	bp := newTestBatchPinSubmitter(t, false)
 	ctx := context.Background()
 
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
@@ -79,8 +82,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 }
 
 func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
-	metrics.Registry()
-	bp := newTestBatchPinSubmitter(t)
+	bp := newTestBatchPinSubmitter(t, true)
 	ctx := context.Background()
 
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
@@ -115,7 +117,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 }
 
 func TestSubmitPinnedBatchOpFail(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t)
+	bp := newTestBatchPinSubmitter(t, false)
 	ctx := context.Background()
 
 	mdi := bp.database.(*databasemocks.Plugin)

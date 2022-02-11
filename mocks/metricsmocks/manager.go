@@ -22,6 +22,11 @@ func (_m *Manager) AddTime(id string) {
 	_m.Called(id)
 }
 
+// CountBatchPin provides a mock function with given fields:
+func (_m *Manager) CountBatchPin() {
+	_m.Called()
+}
+
 // DeleteTime provides a mock function with given fields: id
 func (_m *Manager) DeleteTime(id string) {
 	_m.Called(id)

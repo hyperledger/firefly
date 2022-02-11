@@ -55,10 +55,40 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mm := &metricsmocks.Manager{}
+	mmi := &metricsmocks.Manager{}
+	mmi.On("IsMetricsEnabled").Return(false)
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mm)
+	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mmi)
+	em := emi.(*eventManager)
+	em.txHelper = &txcommonmocks.Helper{}
+	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	assert.NoError(t, err)
+	return em, cancel
+}
+
+func newTestEventManagerWithMetrics(t *testing.T) (*eventManager, func()) {
+	config.Reset()
+	ctx, cancel := context.WithCancel(context.Background())
+	mdi := &databasemocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mpi := &publicstoragemocks.Plugin{}
+	met := &eventsmocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	msh := &definitionsmocks.DefinitionHandlers{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mam := &assetmocks.Manager{}
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+	mmi := &metricsmocks.Manager{}
+	mmi.On("IsMetricsEnabled").Return(true)
+	mmi.On("TransferConfirmed", mock.Anything)
+	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
+	met.On("Name").Return("ut").Maybe()
+	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mmi)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()

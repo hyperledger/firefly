@@ -29,6 +29,7 @@ import (
 var mutex = &sync.Mutex{}
 
 type Manager interface {
+	CountBatchPin()
 	MessageSubmitted(in *fftypes.MessageInOut)
 	MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum)
 	TransferSubmitted(transfer *fftypes.TokenTransferInput)
@@ -58,6 +59,10 @@ func NewMetricsManager(ctx context.Context) Manager {
 	}
 
 	return mm
+}
+
+func (mm *metricsManager) CountBatchPin() {
+	BatchPinCounter.Inc()
 }
 
 func (mm *metricsManager) MessageSubmitted(in *fftypes.MessageInOut) {

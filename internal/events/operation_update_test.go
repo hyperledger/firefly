@@ -23,7 +23,6 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +30,7 @@ import (
 )
 
 func TestOperationUpdateSuccess(t *testing.T) {
-	em, cancel := newTestEventManager(t)
+	em, cancel := newTestEventManagerWithMetrics(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
@@ -112,7 +111,7 @@ func TestOperationTXUpdateError(t *testing.T) {
 }
 
 func TestOperationUpdateTransferFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
+	em, cancel := newTestEventManagerWithMetrics(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
@@ -125,9 +124,6 @@ func TestOperationUpdateTransferFail(t *testing.T) {
 		Transaction: fftypes.NewUUID(),
 	}
 
-	mmi := em.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(true)
-	mmi.On("TransferConfirmed", mock.Anything).Return()
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
 	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -157,8 +153,6 @@ func TestOperationUpdateTransferTransactionFail(t *testing.T) {
 		Transaction: fftypes.NewUUID(),
 	}
 
-	mmi := em.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
 	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
@@ -184,8 +178,6 @@ func TestOperationUpdateTransferEventFail(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	mmi := em.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
 	mdi.On("UpdateOperation", em.ctx, op.ID, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {

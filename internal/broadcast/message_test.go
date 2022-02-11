@@ -26,13 +26,11 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -42,13 +40,11 @@ import (
 )
 
 func TestBroadcastMessageOk(t *testing.T) {
-	metrics.Registry()
-	bm, cancel := newTestBroadcast(t)
+	bm, cancel := newTestBroadcastWithMetrics(t)
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mmi := bm.metrics.(*metricsmocks.Manager)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -62,7 +58,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
-	msgInOut := &fftypes.MessageInOut{
+	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -74,10 +70,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
-	}
-	mmi.On("MessageSubmitted", msgInOut).Return()
-	mmi.On("IsMetricsEnabled").Return(true)
-	msg, err := bm.BroadcastMessage(ctx, "ns1", msgInOut, false)
+	}, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, msg.Data[0].ID)
 	assert.NotNil(t, msg.Data[0].Hash)
@@ -114,8 +107,7 @@ func TestBroadcastRootOrg(t *testing.T) {
 		Value:     fftypes.JSONAnyPtrBytes(orgBytes),
 		Validator: fftypes.MessageTypeDefinition,
 	}
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
+
 	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
@@ -163,8 +155,7 @@ func TestBroadcastRootOrgBadData(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr("not an org"),
 		Validator: fftypes.MessageTypeDefinition,
 	}
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
+
 	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(errors.New("not registered"))
 
@@ -206,8 +197,6 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
@@ -256,8 +245,6 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -326,8 +313,6 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -365,8 +350,6 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -395,8 +378,6 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 	ctx := context.Background()
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(fmt.Errorf("pop"))
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -415,8 +396,6 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -475,8 +454,6 @@ func TestBroadcastPrepare(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mmi := bm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)

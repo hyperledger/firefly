@@ -19,13 +19,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
@@ -70,10 +68,8 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 }
 
 func TestMintTokensSuccess(t *testing.T) {
-	metrics.Registry()
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
-	mmi := am.metrics.(*metricsmocks.Manager)
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -95,10 +91,8 @@ func TestMintTokensSuccess(t *testing.T) {
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mmi.On("IsMetricsEnabled").Return(true)
-	mmi.On("TransferSubmitted", mint)
+
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
-	mmi.AssertExpectations(t)
 	assert.NoError(t, err)
 }
 
@@ -121,8 +115,6 @@ func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
@@ -205,8 +197,6 @@ func TestMintTokenBadConnector(t *testing.T) {
 	}
 
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
@@ -227,8 +217,6 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
@@ -269,8 +257,6 @@ func TestMintTokenUnknownPoolNoPools(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
@@ -301,8 +287,6 @@ func TestMintTokenUnknownPoolMultiplePools(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
@@ -358,8 +342,6 @@ func TestMintTokensGetPoolsError(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPools", context.Background(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
@@ -380,8 +362,6 @@ func TestMintTokensBadPool(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, fmt.Errorf("pop"))
 
@@ -426,8 +406,6 @@ func TestMintTokensFail(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
@@ -458,8 +436,6 @@ func TestMintTokensFailAndDbFail(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
@@ -489,8 +465,6 @@ func TestMintTokensOperationFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
@@ -521,8 +495,6 @@ func TestMintTokensConfirm(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(true)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
@@ -534,7 +506,7 @@ func TestMintTokensConfirm(t *testing.T) {
 			send(context.Background())
 		}).
 		Return(&fftypes.TokenTransfer{}, nil)
-	mmi.On("TransferSubmitted", mint).Return(false)
+
 	_, err := am.MintTokens(context.Background(), "ns1", mint, true)
 	assert.NoError(t, err)
 
@@ -545,8 +517,7 @@ func TestMintTokensConfirm(t *testing.T) {
 }
 
 func TestBurnTokensSuccess(t *testing.T) {
-	metrics.Registry()
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	burn := &fftypes.TokenTransferInput{
@@ -564,14 +535,12 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("BurnTokens", context.Background(), mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mmi.On("TransferSubmitted", burn)
-	mmi.On("IsMetricsEnabled").Return(true)
+
 	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
 	assert.NoError(t, err)
 
@@ -619,8 +588,6 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("BurnTokens", context.Background(), mock.Anything, "F1", &burn.TokenTransfer).Return(nil)
@@ -643,8 +610,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 }
 
 func TestTransferTokensSuccess(t *testing.T) {
-	metrics.Registry()
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	transfer := &fftypes.TokenTransferInput{
@@ -664,14 +630,12 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mmi.On("IsMetricsEnabled").Return(true)
-	mmi.On("TransferSubmitted", transfer).Return()
+
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
 
@@ -699,8 +663,6 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
@@ -802,8 +764,6 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(nil, fmt.Errorf("pop"))
@@ -853,8 +813,6 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mbm := am.broadcast.(*broadcastmocks.Manager)
 	mms := &sysmessagingmocks.MessageSender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
@@ -901,8 +859,6 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
 	mms := &sysmessagingmocks.MessageSender{}
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
@@ -954,8 +910,6 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mpm := am.messaging.(*privatemessagingmocks.Manager)
 	mms := &sysmessagingmocks.MessageSender{}
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
@@ -1005,8 +959,6 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 	}
 
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
@@ -1038,8 +990,6 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
@@ -1100,8 +1050,6 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mms := &sysmessagingmocks.MessageSender{}
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mth := am.txHelper.(*txcommonmocks.Helper)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
@@ -1153,8 +1101,6 @@ func TestTransferTokensPoolNotFound(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, nil)
 

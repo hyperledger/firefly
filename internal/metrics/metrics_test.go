@@ -80,6 +80,12 @@ func TestStartDoesNothing(t *testing.T) {
 	assert.NoError(t, mm.Start())
 }
 
+func TestCountBatchPin(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.CountBatchPin()
+}
+
 func TestMessageSubmittedBroadcast(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()

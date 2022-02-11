@@ -59,7 +59,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	}
 
 	if bp.metrics.IsMetricsEnabled() {
-		metrics.BatchPinCounter.Inc()
+		bp.metrics.CountBatchPin()
 	}
 	// Write the batch pin to the blockchain
 	return bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{

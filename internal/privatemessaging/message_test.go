@@ -20,13 +20,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -35,8 +33,8 @@ import (
 )
 
 func TestSendConfirmMessageE2EOk(t *testing.T) {
-	metrics.Registry()
-	pm, cancel := newTestPrivateMessaging(t)
+
+	pm, cancel := newTestPrivateMessagingWithMetrics(t)
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
@@ -51,7 +49,6 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mmi := pm.metrics.(*metricsmocks.Manager)
 	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
 		ID: fftypes.NewUUID(),
 	}, nil)
@@ -81,8 +78,8 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		}).
 		Return(retMsg, nil).Once()
 	mdi.On("UpsertMessage", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil).Once()
-	mmi.On("IsMetricsEnabled").Return(true)
-	msgInOut := &fftypes.MessageInOut{
+
+	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
@@ -91,17 +88,15 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	}
-	mmi.On("MessageSubmitted", msgInOut).Return()
-
-	msg, err := pm.SendMessage(pm.ctx, "ns1", msgInOut, true)
+	}, true)
 	assert.NoError(t, err)
 	assert.Equal(t, retMsg, msg)
+
 }
 
 func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 
-	pm, cancel := newTestPrivateMessaging(t)
+	pm, cancel := newTestPrivateMessagingWithMetrics(t)
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
@@ -116,8 +111,6 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	nodeID1 := fftypes.NewUUID()
 	nodeID2 := fftypes.NewUUID()
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
@@ -179,8 +172,6 @@ func TestSendMessageBadGroup(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 
@@ -201,8 +192,6 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -227,8 +216,6 @@ func TestSendMessageFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
@@ -331,8 +318,6 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	pm.maxBatchPayloadLength = 100000
 	defer cancel()
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*fftypes.Identity)
@@ -395,8 +380,6 @@ func TestMessagePrepare(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
@@ -599,8 +582,6 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
@@ -641,8 +622,6 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
@@ -681,10 +660,8 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("UpsertMessage", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil).Once()
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(nil).Once()
+	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -719,8 +696,6 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
 
-	mmi := pm.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	nodeID1 := fftypes.NewUUID()

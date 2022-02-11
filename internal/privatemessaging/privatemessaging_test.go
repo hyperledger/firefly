@@ -52,6 +52,49 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mbp := &batchpinmocks.Submitter{}
 	mmi := &metricsmocks.Manager{}
 
+	mmi.On("IsMetricsEnabled").Return(false)
+	mba.On("RegisterDispatcher", []fftypes.MessageType{
+		fftypes.MessageTypeGroupInit,
+		fftypes.MessageTypePrivate,
+		fftypes.MessageTypeTransferPrivate,
+	}, mock.Anything, mock.Anything).Return()
+
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi)
+	assert.NoError(t, err)
+
+	// Default mocks to save boilerplate in the tests
+	mdx.On("Name").Return("utdx").Maybe()
+	mbi.On("Name").Return("utblk").Maybe()
+
+	return pm.(*privateMessaging), cancel
+}
+
+func newTestPrivateMessagingWithMetrics(t *testing.T) (*privateMessaging, func()) {
+	config.Reset()
+	config.Set(config.NodeName, "node1")
+	config.Set(config.GroupCacheTTL, "1m")
+	config.Set(config.GroupCacheSize, "1m")
+
+	mdi := &databasemocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mdx := &dataexchangemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mba := &batchmocks.Manager{}
+	mdm := &datamocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mbp := &batchpinmocks.Submitter{}
+	mmi := &metricsmocks.Manager{}
+
+	mmi.On("IsMetricsEnabled").Return(true)
+	mmi.On("MessageSubmitted", mock.Anything).Return()
 	mba.On("RegisterDispatcher", []fftypes.MessageType{
 		fftypes.MessageTypeGroupInit,
 		fftypes.MessageTypePrivate,
