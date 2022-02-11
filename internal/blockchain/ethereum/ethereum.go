@@ -73,7 +73,7 @@ type asyncTXSubmission struct {
 }
 
 type queryOutput struct {
-	Output string `json:"output"`
+	Output interface{} `json:"output"`
 }
 
 type ethWSCommandPayload struct {
