@@ -53,8 +53,6 @@ type Plugin interface {
 	// QueryContract executes a method via custom on-chain logic and returns the result
 	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error)
 
-	ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) error
-
 	// AddSubscription adds a new subscription to a user-specified contract and event
 	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
 
