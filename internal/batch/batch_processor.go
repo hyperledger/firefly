@@ -154,40 +154,30 @@ func (bp *batchProcessor) newAssembly(initalWork ...*batchWork) {
 func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	newQueue := make([]*batchWork, 0, len(bp.assemblyQueue)+1)
 	added := false
-	skip := false
 	// Check it's not in the recently flushed list
 	for _, flushedSequence := range bp.flushedSequences {
 		if newWork.msg.Sequence == flushedSequence {
 			log.L(bp.ctx).Debugf("Ignoring add of recently flushed message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
-			skip = true
-			break
+			return false, false
 		}
 	}
-	if !skip {
-		// Build the new sorted work list, checking there for duplicates too
-		for _, work := range bp.assemblyQueue {
-			if newWork.msg.Sequence == work.msg.Sequence {
-				log.L(bp.ctx).Debugf("Ignoring duplicate add of message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
-				skip = true
-				break
-			}
-			if !added && !skip && newWork.msg.Sequence < work.msg.Sequence {
-				newQueue = append(newQueue, newWork)
-				added = true
-			}
-			newQueue = append(newQueue, work)
+	// Build the new sorted work list, checking there for duplicates too
+	for _, work := range bp.assemblyQueue {
+		if newWork.msg.Sequence == work.msg.Sequence {
+			log.L(bp.ctx).Debugf("Ignoring duplicate add of message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
+			return false, false
 		}
+		if !added && newWork.msg.Sequence < work.msg.Sequence {
+			newQueue = append(newQueue, newWork)
+			added = true
+		}
+		newQueue = append(newQueue, work)
 	}
-	if skip {
-		newQueue = bp.assemblyQueue
-	} else if !added {
+	if !added {
 		newQueue = append(newQueue, newWork)
-		added = true
 	}
-	if added {
-		log.L(bp.ctx).Debugf("Added message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
-		bp.assemblyQueueBytes += newWork.estimateSize()
-	}
+	log.L(bp.ctx).Debugf("Added message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
+	bp.assemblyQueueBytes += newWork.estimateSize()
 	bp.assemblyQueue = newQueue
 	full = len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || (bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes)
 	overflow = len(bp.assemblyQueue) > 1 && (bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
