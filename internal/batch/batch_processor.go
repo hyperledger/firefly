@@ -163,18 +163,20 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 			break
 		}
 	}
-	// Build the new sorted work list, checking there for duplicates too
-	for _, work := range bp.assemblyQueue {
-		if newWork.msg.Sequence == work.msg.Sequence {
-			log.L(bp.ctx).Debugf("Ignoring duplicate add of message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
-			skip = true
-			break
+	if !skip {
+		// Build the new sorted work list, checking there for duplicates too
+		for _, work := range bp.assemblyQueue {
+			if newWork.msg.Sequence == work.msg.Sequence {
+				log.L(bp.ctx).Debugf("Ignoring duplicate add of message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
+				skip = true
+				break
+			}
+			if !added && !skip && newWork.msg.Sequence < work.msg.Sequence {
+				newQueue = append(newQueue, newWork)
+				added = true
+			}
+			newQueue = append(newQueue, work)
 		}
-		if !added && !skip && newWork.msg.Sequence < work.msg.Sequence {
-			newQueue = append(newQueue, newWork)
-			added = true
-		}
-		newQueue = append(newQueue, work)
 	}
 	if skip {
 		newQueue = bp.assemblyQueue
