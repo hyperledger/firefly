@@ -155,7 +155,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/instances/0x12345/BatchPin", httpURL),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
@@ -237,7 +237,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "BatchPin_2f696e7374616e63" /* this is the subname for our combo of instance path and BatchPin */},
+			{ID: "sub12345", Name: "BatchPin_30783132333435e3" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
 		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
@@ -245,7 +245,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	resetConf()
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	utEthconnectConf.Set(EthconnectConfigInstancePath, "0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -256,6 +256,86 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 	assert.NoError(t, err)
 
+}
+
+func TestInitOldInstancePath(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "es12345", body["stream"])
+			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
+		})
+	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
+		httpmock.NewJsonResponderOrPanic(200, map[string]string{
+			"created":      "2022-02-08T22:10:10Z",
+			"address":      "de7d3c600e2e648aa5d714a25bf45df3eafff88a",
+			"path":         "/contracts/firefly",
+			"abi":          "fc49dec3-0660-4dc7-61af-65af4c3ac456",
+			"openapi":      "/contracts/firefly?swagger",
+			"registeredAs": "firefly",
+		}),
+	)
+
+	resetConf()
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstancePath, "/contracts/firefly")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
+	assert.NoError(t, err)
+}
+
+func TestInitOldInstancePathError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "es12345", body["stream"])
+			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
+		})
+	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
+		httpmock.NewJsonResponderOrPanic(500, "pop"),
+	)
+
+	resetConf()
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstancePath, "/contracts/firefly")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
 }
 
 func TestStreamQueryError(t *testing.T) {
@@ -385,7 +465,7 @@ func TestSubQueryCreateError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/instances/0x12345/BatchPin",
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
@@ -421,15 +501,16 @@ func TestSubmitBatchPinOK(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, addr, req.FormValue(defaultPrefixShort+"-from"))
-			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
-			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
-			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", body["payloadRef"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[3])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
@@ -457,15 +538,16 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, addr, req.FormValue("fly-from"))
-			assert.Equal(t, "false", req.FormValue("fly-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
-			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
-			assert.Equal(t, "", body["payloadRef"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
+			assert.Equal(t, "", params[3])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
@@ -494,7 +576,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		httpmock.NewStringResponder(500, "pop"))
 
 	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
@@ -1430,14 +1512,15 @@ func TestInvokeContractOK(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
-			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, float64(2), params[1])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
@@ -1476,12 +1559,39 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
 		})
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10111", err)
+}
+
+func TestInvokeContractPrepareFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := ethHexFormatB32(fftypes.NewRandB32())
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := &fftypes.FFIMethod{
+		Name: "set",
+		Params: fftypes.FFIParams{
+			{
+				Schema: fftypes.JSONAnyPtr("{bad schema!"),
+			},
+		},
+	}
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "invalid json", err)
 }
 
 func TestInvokeContractUnmarshalResponseError(t *testing.T) {
@@ -1500,14 +1610,15 @@ func TestInvokeContractUnmarshalResponseError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, signingKey, req.FormValue(defaultPrefixShort+"-from"))
-			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, float64(1), params[0])
+			assert.Equal(t, float64(2), params[1])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
 	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
@@ -1523,19 +1634,15 @@ func TestQueryContractOK(t *testing.T) {
 		Address: "0x12345",
 	}
 	method := testFFIMethod()
-	params := map[string]interface{}{
-		"x": float64(1),
-		"y": float64(2),
-	}
+	params := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "3"})(req)
 		})
 	result, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
@@ -1543,6 +1650,29 @@ func TestQueryContractOK(t *testing.T) {
 	j, err := json.Marshal(result)
 	assert.NoError(t, err)
 	assert.Equal(t, `{"output":"3"}`, string(j))
+}
+
+func TestQueryContractErrorPrepare(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "0x12345",
+	}
+	method := &fftypes.FFIMethod{
+		Params: fftypes.FFIParams{
+			{
+				Name:   "bad",
+				Schema: fftypes.JSONAnyPtr("{badschema}"),
+			},
+		},
+	}
+	params := map[string]interface{}{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "invalid json", err)
 }
 
 func TestQueryContractAddressNotSet(t *testing.T) {
@@ -1575,7 +1705,7 @@ func TestQueryContractEthconnectError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, queryOutput{})(req)
 		})
@@ -1598,13 +1728,12 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/contracts/0x12345/sum`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "true", req.FormValue(defaultPrefixShort+"-call"))
-			assert.Equal(t, float64(1), body["x"])
-			assert.Equal(t, float64(2), body["y"])
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
 	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
@@ -1621,4 +1750,204 @@ func TestValidateContractLocation(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
+}
+
+func TestGetContractAddressBadJSON(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
+		httpmock.NewBytesResponder(200, []byte("{not json!")),
+	)
+
+	resetConf()
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstancePath, "0x12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	e.client = restclient.New(e.ctx, utEthconnectConf)
+
+	_, err := e.getContractAddress(context.Background(), "/contracts/firefly")
+
+	assert.Regexp(t, "invalid character 'n' looking for beginning of object key string", err)
+}
+
+func TestFFIMethodToABI(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	method := &fftypes.FFIMethod{
+		Name: "set",
+		Params: []*fftypes.FFIParam{
+			{
+				Name: "newValue",
+				Schema: fftypes.JSONAnyPtr(`{
+					"type": "integer",
+					"details": {
+						"type": "uint256"
+					}
+				}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+
+	expectedABIElement := ABIElementMarshaling{
+		Name: "set",
+		Type: "function",
+		Inputs: []ABIArgumentMarshaling{
+			{
+				Name:    "newValue",
+				Type:    "uint256",
+				Indexed: false,
+			},
+		},
+		Outputs: []ABIArgumentMarshaling{},
+	}
+
+	abi, err := e.FFIMethodToABI(context.Background(), method)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedABIElement, abi)
+}
+
+func TestFFIMethodToABIObject(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	method := &fftypes.FFIMethod{
+		Name: "set",
+		Params: []*fftypes.FFIParam{
+			{
+				Name: "widget",
+				Schema: fftypes.JSONAnyPtr(`{
+					"type": "object",
+					"details": {
+						"type": "tuple"
+					},
+					"properties": {
+						"radius": {
+							"type": "integer",
+							"details": {
+								"type": "uint256",
+								"index": 0,
+								"indexed": true
+							}
+						},
+						"numbers": {
+							"type": "array",
+							"details": {
+								"type": "uint256[]",
+								"index": 1
+							},
+							"items": {
+								"type": "integer",
+								"details": {
+									"type": "uint256"
+								}
+							}
+						}
+					}
+				}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+
+	expectedABIElement := ABIElementMarshaling{
+		Name: "set",
+		Type: "function",
+		Inputs: []ABIArgumentMarshaling{
+			{
+				Name:    "widget",
+				Type:    "tuple",
+				Indexed: false,
+				Components: []ABIArgumentMarshaling{
+					{
+						Name:         "radius",
+						Type:         "uint256",
+						Indexed:      true,
+						InternalType: "",
+					},
+					{
+						Name:         "numbers",
+						Type:         "uint256[]",
+						Indexed:      false,
+						InternalType: "",
+					},
+				},
+			},
+		},
+		Outputs: []ABIArgumentMarshaling{},
+	}
+
+	abi, err := e.FFIMethodToABI(context.Background(), method)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedABIElement, abi)
+}
+
+func TestFFIMethodToABIInvalidJSON(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	method := &fftypes.FFIMethod{
+		Name: "set",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "newValue",
+				Schema: fftypes.JSONAnyPtr(`{#!`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+
+	_, err := e.FFIMethodToABI(context.Background(), method)
+	assert.Regexp(t, "invalid json", err)
+}
+
+func TestFFIMethodToABIBadSchema(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	method := &fftypes.FFIMethod{
+		Name: "set",
+		Params: []*fftypes.FFIParam{
+			{
+				Name: "newValue",
+				Schema: fftypes.JSONAnyPtr(`{
+					"type": "integer",
+					"detailz": {
+						"type": "uint256"
+					}
+				}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+
+	_, err := e.FFIMethodToABI(context.Background(), method)
+	assert.Regexp(t, "compilation failed", err)
+}
+
+func TestFFIMethodToABIBadReturn(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	method := &fftypes.FFIMethod{
+		Name:   "set",
+		Params: []*fftypes.FFIParam{},
+		Returns: []*fftypes.FFIParam{
+			{
+				Name: "newValue",
+				Schema: fftypes.JSONAnyPtr(`{
+					"type": "integer",
+					"detailz": {
+						"type": "uint256"
+					}
+				}`),
+			},
+		},
+	}
+
+	_, err := e.FFIMethodToABI(context.Background(), method)
+	assert.Regexp(t, "compilation failed", err)
 }

@@ -14,19 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contracts
+package fftypes
 
 import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
-type FFIParamValidator struct{}
+type BaseFFIParamValidator struct{}
 
-func (v FFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error) {
+func (v BaseFFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error) {
 	return nil, nil
 }
 
-func (v *FFIParamValidator) GetMetaSchema() *jsonschema.Schema {
+func (v *BaseFFIParamValidator) GetMetaSchema() *jsonschema.Schema {
 	return jsonschema.MustCompileString("ffi.json", `{
 	"properties" : {
 		"type": {
@@ -44,6 +44,14 @@ func (v *FFIParamValidator) GetMetaSchema() *jsonschema.Schema {
 }`)
 }
 
-func (v *FFIParamValidator) GetExtensionName() string {
+func (v *BaseFFIParamValidator) GetExtensionName() string {
 	return "ffi"
+}
+
+func NewFFISchemaCompiler() *jsonschema.Compiler {
+	c := jsonschema.NewCompiler()
+	c.Draft = jsonschema.Draft2020
+	v := BaseFFIParamValidator{}
+	c.RegisterExtension(v.GetExtensionName(), v.GetMetaSchema(), v)
+	return c
 }
