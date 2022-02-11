@@ -482,7 +482,7 @@ func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, pins []*fftypes.By
 }
 
 func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
-	return bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
+	return bp.retry.Do(bp.ctx, "mark dispatched messages", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 			// Update all the messages in the batch with the batch ID
 			msgIDs := make([]driver.Value, len(batch.Payload.Messages))
