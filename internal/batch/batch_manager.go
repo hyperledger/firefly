@@ -108,6 +108,10 @@ type dispatcher struct {
 	options    DispatcherOptions
 }
 
+func (bm *batchManager) getProcessorKey(namespace string, identity *fftypes.Identity, groupID *fftypes.Bytes32) string {
+	return fmt.Sprintf("%s|%s|%v", namespace, identity.Author, groupID)
+}
+
 func (bm *batchManager) getDispatcherKey(txType fftypes.TransactionType, msgType fftypes.MessageType) string {
 	return fmt.Sprintf("tx:%s/%s", txType, msgType)
 }
@@ -142,7 +146,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, dispatcherKey)
 	}
-	name := fmt.Sprintf("%s|%s|%v", namespace, identity.Author, group)
+	name := bm.getProcessorKey(namespace, identity, group)
 	processor, ok := dispatcher.processors[name]
 	if !ok {
 		processor = newBatchProcessor(
@@ -235,7 +239,7 @@ func (bm *batchManager) messageSequencer() {
 
 		// Wait to be woken again
 		if !batchWasFull && !bm.drainNewMessages() {
-			if done := bm.waitForShoulderTapOrPollTimeout(); done {
+			if done := bm.waitForNewMessages(); done {
 				l.Debugf("Exiting: %s", err)
 				return
 			}
@@ -245,8 +249,11 @@ func (bm *batchManager) messageSequencer() {
 
 func (bm *batchManager) newMessageNotification(seq int64) {
 	log.L(bm.ctx).Debugf("Notification of message %d", seq)
-	if (seq - 1) < bm.readOffset {
-		bm.readOffset = seq - 1
+	// The readOffset is the last sequence we have already read.
+	// So we need to ensure it is at least one earlier, than this message sequence
+	lastSequenceBeforeMsg := seq - 1
+	if lastSequenceBeforeMsg < bm.readOffset {
+		bm.readOffset = lastSequenceBeforeMsg
 	}
 }
 
@@ -266,7 +273,7 @@ func (bm *batchManager) drainNewMessages() bool {
 	return newMessages
 }
 
-func (bm *batchManager) waitForShoulderTapOrPollTimeout() (done bool) {
+func (bm *batchManager) waitForNewMessages() (done bool) {
 	l := log.L(bm.ctx)
 
 	// Otherwise set a timeout

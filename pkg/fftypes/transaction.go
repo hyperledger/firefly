@@ -21,7 +21,7 @@ type TransactionType = FFEnum
 var (
 	// TransactionTypeNone deprecreated - replaced by TransactionTypeUnpinned
 	TransactionTypeNone TransactionType = ffEnum("txtype", "none")
-	// TransactionTypeUnpinned indicates no transaction should be used for this message/batch
+	// TransactionTypeUnpinned indicates the message will be sent without pinning any evidence to the blockchain. Not supported for broadcast. The FireFly transaction will be used to track the sends to all group members.
 	TransactionTypeUnpinned TransactionType = ffEnum("txtype", "unpinned")
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
 	TransactionTypeBatchPin TransactionType = ffEnum("txtype", "batch_pin")

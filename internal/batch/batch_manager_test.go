@@ -484,7 +484,7 @@ func TestWaitForPollTimeout(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
 	bm.(*batchManager).messagePollTimeout = 1 * time.Microsecond
-	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
+	bm.(*batchManager).waitForNewMessages()
 }
 
 func TestWaitForNewMessage(t *testing.T) {
@@ -495,7 +495,7 @@ func TestWaitForNewMessage(t *testing.T) {
 	bm := bmi.(*batchManager)
 	bm.readOffset = 22222
 	bm.NewMessages() <- 12345
-	bm.waitForShoulderTapOrPollTimeout()
+	bm.waitForNewMessages()
 	assert.Equal(t, int64(12344), bm.readOffset)
 }
 

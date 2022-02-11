@@ -155,7 +155,7 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	newQueue := make([]*batchWork, 0, len(bp.assemblyQueue)+1)
 	added := false
 	skip := false
-	// Check it's not in the recently flushed lish
+	// Check it's not in the recently flushed list
 	for _, flushedSequence := range bp.flushedSequences {
 		if newWork.msg.Sequence == flushedSequence {
 			log.L(bp.ctx).Debugf("Ignoring add of recently flushed message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
