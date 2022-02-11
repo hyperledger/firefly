@@ -74,7 +74,6 @@ func TestMintTokensSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 	mmi := am.metrics.(*metricsmocks.Manager)
-	mmi.On("IsMetricsEnabled").Return(false)
 
 	mint := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
@@ -96,8 +95,10 @@ func TestMintTokensSuccess(t *testing.T) {
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mmi.On("IsMetricsEnabled").Return(true)
 	mmi.On("TransferSubmitted", mint)
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
+	mmi.AssertExpectations(t)
 	assert.NoError(t, err)
 }
 
@@ -669,8 +670,8 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mti.On("TransferTokens", context.Background(), mock.Anything, "F1", &transfer.TokenTransfer).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mmi.On("TransferSubmitted", transfer).Return()
 	mmi.On("IsMetricsEnabled").Return(true)
+	mmi.On("TransferSubmitted", transfer).Return()
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
 
