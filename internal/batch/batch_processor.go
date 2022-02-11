@@ -321,7 +321,7 @@ func (bp *batchProcessor) assemblyLoop() {
 
 			err := bp.flush(overflow)
 			if err != nil {
-				l.Tracef("Batch processor shutting down: %s", err)
+				l.Warnf("Batch processor shutting down: %s", err)
 				_ = batchTimeout.Stop()
 				return
 			}
@@ -493,7 +493,7 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 					Set("batch", batch.ID).                // Mark the batch they are in
 					Set("state", fftypes.MessageStateSent) // Set them sent, so they won't be picked up and re-sent after restart/rewind
 			} else {
-				// Immediate confirmation if no transaction
+				// Immediate confirmation if no batch pinning
 				update = database.MessageQueryFactory.NewUpdate(ctx).
 					Set("batch", batch.ID).
 					Set("state", fftypes.MessageStateConfirmed).

@@ -228,7 +228,10 @@ type iSubscriptionCollection interface {
 }
 
 type iEventCollection interface {
-	// InsertEvent - Insert an event
+	// InsertEvent - Insert an event. The order of the sequences added to the database, must match the order that
+	//               the rows/objects appear available to the event dispatcher. For a concurrency enabled database
+	//               with multi-operation transactions (like PSQL or other enterprise SQL based DB) we need
+	//               to hold an exclusive table lock.
 	InsertEvent(ctx context.Context, data *fftypes.Event) (err error)
 
 	// UpdateEvent - Update event
