@@ -44,9 +44,10 @@ type SQLCommon struct {
 type txContextKey struct{}
 
 type txWrapper struct {
-	sqlTX      *sql.Tx
-	postCommit []func()
-	tableLocks []string
+	sqlTX           *sql.Tx
+	preCommitEvents []*fftypes.Event
+	postCommit      []func()
+	tableLocks      []string
 }
 
 func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.Prefix, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
@@ -318,6 +319,10 @@ func (s *SQLCommon) postCommitEvent(tx *txWrapper, fn func()) {
 	tx.postCommit = append(tx.postCommit, fn)
 }
 
+func (s *SQLCommon) addPreCommitEvent(tx *txWrapper, event *fftypes.Event) {
+	tx.preCommitEvents = append(tx.preCommitEvents, event)
+}
+
 func (tx *txWrapper) tableIsLocked(table string) bool {
 	for _, t := range tx.tableLocks {
 		if t == table {
@@ -365,8 +370,19 @@ func (s *SQLCommon) commitTx(ctx context.Context, tx *txWrapper, autoCommit bool
 		// We're inside of a wide transaction boundary with an auto-commit
 		return nil
 	}
-
 	l := log.L(ctx)
+
+	// Only at this stage do we write to the special events Database table, so we know
+	// regardless of the higher level logic, the events are always written at this point
+	// at the end of the transaction
+	for _, event := range tx.preCommitEvents {
+		if err := s.insertEventPreCommit(ctx, tx, event); err != nil {
+			s.rollbackTx(ctx, tx, false)
+			return err
+		}
+		l.Infof("Emitted %s event %s ref=%s (sequence=%d)", event.Type, event.ID, event.Reference, event.Sequence)
+	}
+
 	l.Debugf(`SQL-> commit`)
 	err := tx.sqlTX.Commit()
 	if err != nil {
