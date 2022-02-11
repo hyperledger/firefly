@@ -41,7 +41,7 @@ type FFDX struct {
 	callbacks    dataexchange.Callbacks
 	client       *resty.Client
 	wsconn       wsclient.WSClient
-	reinit       bool
+	needsInit    bool
 	nodes        []fftypes.DXInfo
 }
 
@@ -114,7 +114,7 @@ func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.D
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.callbacks = callbacks
 
-	h.reinit = prefix.GetBool(DataExchangeReInitEnabled)
+	h.needsInit = prefix.GetBool(DataExchangeInitEnabled)
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
@@ -146,7 +146,7 @@ func (h *FFDX) Capabilities() *dataexchange.Capabilities {
 }
 
 func (h *FFDX) beforeConnect(ctx context.Context) error {
-	if h.reinit {
+	if h.needsInit {
 		var status dxStatus
 		res, err := h.client.R().SetContext(ctx).
 			SetBody(h.nodes).

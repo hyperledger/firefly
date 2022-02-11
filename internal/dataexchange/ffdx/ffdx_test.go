@@ -528,7 +528,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 	h.InitPrefix(utConfPrefix)
 	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
 	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
-	utConfPrefix.Set(DataExchangeReInitEnabled, true)
+	utConfPrefix.Set(DataExchangeInitEnabled, true)
 
 	first := true
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
