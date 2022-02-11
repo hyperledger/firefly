@@ -66,7 +66,11 @@ type Manager interface {
 	Start() error
 	Close()
 	WaitStop()
-	Status() []*ProcessorStatus
+	Status() *ManagerStatus
+}
+
+type ManagerStatus struct {
+	Processors []*ProcessorStatus `json:"processors"`
 }
 
 type ProcessorStatus struct {
@@ -345,13 +349,15 @@ func (bm *batchManager) getProcessors() []*batchProcessor {
 	return processors
 }
 
-func (bm *batchManager) Status() []*ProcessorStatus {
+func (bm *batchManager) Status() *ManagerStatus {
 	processors := bm.getProcessors()
-	status := make([]*ProcessorStatus, len(processors))
+	pStatus := make([]*ProcessorStatus, len(processors))
 	for i, p := range processors {
-		status[i] = p.status()
+		pStatus[i] = p.status()
 	}
-	return status
+	return &ManagerStatus{
+		Processors: pStatus,
+	}
 }
 
 func (bm *batchManager) Close() {

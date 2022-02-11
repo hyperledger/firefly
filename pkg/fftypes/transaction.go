@@ -19,7 +19,7 @@ package fftypes
 type TransactionType = FFEnum
 
 var (
-	// TransactionTypeNone deprecreated - replaced by TransactionTypeUnpinned
+	// TransactionTypeNone deprecated - replaced by TransactionTypeUnpinned
 	TransactionTypeNone TransactionType = ffEnum("txtype", "none")
 	// TransactionTypeUnpinned indicates the message will be sent without pinning any evidence to the blockchain. Not supported for broadcast. The FireFly transaction will be used to track the sends to all group members.
 	TransactionTypeUnpinned TransactionType = ffEnum("txtype", "unpinned")

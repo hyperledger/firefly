@@ -126,7 +126,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 
 	// Check the status while we know there's a flush going on
 	status := bm.Status()
-	assert.NotNil(t, status[0].Status.Flushing)
+	assert.NotNil(t, status.Processors[0].Status.Flushing)
 
 	b := <-waitForDispatch
 	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)

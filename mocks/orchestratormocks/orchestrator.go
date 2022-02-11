@@ -4,6 +4,8 @@ package orchestratormocks
 
 import (
 	assets "github.com/hyperledger/firefly/internal/assets"
+	batch "github.com/hyperledger/firefly/internal/batch"
+
 	broadcast "github.com/hyperledger/firefly/internal/broadcast"
 
 	context "context"
@@ -42,6 +44,22 @@ func (_m *Orchestrator) Assets() assets.Manager {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(assets.Manager)
+		}
+	}
+
+	return r0
+}
+
+// BatchManager provides a mock function with given fields:
+func (_m *Orchestrator) BatchManager() batch.Manager {
+	ret := _m.Called()
+
+	var r0 batch.Manager
+	if rf, ok := ret.Get(0).(func() batch.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(batch.Manager)
 		}
 	}
 

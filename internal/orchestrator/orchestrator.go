@@ -73,6 +73,7 @@ type Orchestrator interface {
 	Assets() assets.Manager
 	Contracts() contracts.Manager
 	Metrics() metrics.Manager
+	BatchManager() batch.Manager
 	IsPreInit() bool
 
 	// Status
@@ -253,6 +254,10 @@ func (or *orchestrator) PrivateMessaging() privatemessaging.Manager {
 
 func (or *orchestrator) Events() events.EventManager {
 	return or.events
+}
+
+func (or *orchestrator) BatchManager() batch.Manager {
+	return or.batch
 }
 
 func (or *orchestrator) NetworkMap() networkmap.Manager {

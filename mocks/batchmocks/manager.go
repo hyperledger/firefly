@@ -55,15 +55,15 @@ func (_m *Manager) Start() error {
 }
 
 // Status provides a mock function with given fields:
-func (_m *Manager) Status() []*batch.ProcessorStatus {
+func (_m *Manager) Status() *batch.ManagerStatus {
 	ret := _m.Called()
 
-	var r0 []*batch.ProcessorStatus
-	if rf, ok := ret.Get(0).(func() []*batch.ProcessorStatus); ok {
+	var r0 *batch.ManagerStatus
+	if rf, ok := ret.Get(0).(func() *batch.ManagerStatus); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*batch.ProcessorStatus)
+			r0 = ret.Get(0).(*batch.ManagerStatus)
 		}
 	}
 

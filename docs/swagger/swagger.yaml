@@ -8697,5 +8697,64 @@ paths:
           description: Success
         default:
           description: ""
+  /status/batchmanager:
+    get:
+      description: 'TODO: Description'
+      operationId: getStatusBatchManager
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  processors:
+                    items:
+                      properties:
+                        dispatcher:
+                          type: string
+                        name:
+                          type: string
+                        status:
+                          properties:
+                            averageBatchBytes:
+                              format: int64
+                              type: integer
+                            averageBatchData:
+                              format: double
+                              type: number
+                            averageBatchMessages:
+                              format: double
+                              type: number
+                            averageFlushTimeMS:
+                              format: int64
+                              type: integer
+                            blocked:
+                              type: boolean
+                            flushing: {}
+                            lastFlushError:
+                              type: string
+                            lastFlushErrorTime: {}
+                            lastFlushStartTime: {}
+                            totalBatches:
+                              format: int64
+                              type: integer
+                            totalErrors:
+                              format: int64
+                              type: integer
+                          type: object
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
 servers:
 - url: http://localhost:12345
