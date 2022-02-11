@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -70,9 +71,10 @@ type assetManager struct {
 	messaging privatemessaging.Manager
 	tokens    map[string]tokens.Plugin
 	retry     retry.Retry
+	metrics   metrics.Manager
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin) (Manager, error) {
+func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager) (Manager, error) {
 	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -91,6 +93,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 			MaximumDelay: config.GetDuration(config.AssetManagerRetryMaxDelay),
 			Factor:       config.GetFloat64(config.AssetManagerRetryFactor),
 		},
+		metrics: mm,
 	}
 	return am, nil
 }

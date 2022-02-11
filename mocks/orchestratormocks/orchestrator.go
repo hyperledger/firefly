@@ -18,6 +18,8 @@ import (
 
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
+	metrics "github.com/hyperledger/firefly/internal/metrics"
+
 	mock "github.com/stretchr/testify/mock"
 
 	networkmap "github.com/hyperledger/firefly/internal/networkmap"
@@ -1181,6 +1183,22 @@ func (_m *Orchestrator) IsPreInit() bool {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Metrics provides a mock function with given fields:
+func (_m *Orchestrator) Metrics() metrics.Manager {
+	ret := _m.Called()
+
+	var r0 metrics.Manager
+	if rf, ok := ret.Get(0).(func() metrics.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(metrics.Manager)
+		}
 	}
 
 	return r0

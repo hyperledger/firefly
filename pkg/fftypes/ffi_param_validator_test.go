@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,25 +19,17 @@ package fftypes
 import (
 	"testing"
 
+	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 )
 
-type fakePlugin struct{}
-
-func (f *fakePlugin) Name() string { return "fake" }
-
-func TestNewPendingMessageOp(t *testing.T) {
-
-	txID := NewUUID()
-	op := NewOperation(&fakePlugin{}, "ns1", txID, OpTypePublicStorageBatchBroadcast)
-	assert.Equal(t, Operation{
-		ID:          op.ID,
-		Namespace:   "ns1",
-		Transaction: txID,
-		Plugin:      "fake",
-		Type:        OpTypePublicStorageBatchBroadcast,
-		Status:      OpStatusPending,
-		Created:     op.Created,
-		Updated:     op.Created,
-	}, *op)
+func TestGetBaseFFIParamValidator(t *testing.T) {
+	c := NewFFISchemaCompiler()
+	assert.NotNil(t, c)
+}
+func TestBaseFFIParamValidatorCompile(t *testing.T) {
+	v := BaseFFIParamValidator{}
+	c, err := v.Compile(jsonschema.CompilerContext{}, map[string]interface{}{})
+	assert.Nil(t, c)
+	assert.NoError(t, err)
 }

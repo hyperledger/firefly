@@ -29,13 +29,14 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
+func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateMessaging, func()) {
 	config.Reset()
 	config.Set(config.NodeName, "node1")
 	config.Set(config.GroupCacheTTL, "1m")
@@ -49,6 +50,7 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mdm := &datamocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
+	mmi := &metricsmocks.Manager{}
 
 	mba.On("RegisterDispatcher",
 		pinnedPrivateDispatcherName,
@@ -65,6 +67,7 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 		[]fftypes.MessageType{
 			fftypes.MessageTypePrivate,
 		}, mock.Anything, mock.Anything).Return()
+	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -74,7 +77,7 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp)
+	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -82,6 +85,17 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mbi.On("Name").Return("utblk").Maybe()
 
 	return pm.(*privateMessaging), cancel
+}
+
+func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
+	return newTestPrivateMessagingCommon(t, false)
+}
+
+func newTestPrivateMessagingWithMetrics(t *testing.T) (*privateMessaging, func()) {
+	pm, cancel := newTestPrivateMessagingCommon(t, true)
+	mmi := pm.metrics.(*metricsmocks.Manager)
+	mmi.On("MessageSubmitted", mock.Anything).Return()
+	return pm, cancel
 }
 
 func TestDispatchBatchWithBlobs(t *testing.T) {
@@ -183,7 +197,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
-	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

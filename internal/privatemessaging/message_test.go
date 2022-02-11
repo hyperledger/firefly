@@ -34,7 +34,7 @@ import (
 
 func TestSendConfirmMessageE2EOk(t *testing.T) {
 
-	pm, cancel := newTestPrivateMessaging(t)
+	pm, cancel := newTestPrivateMessagingWithMetrics(t)
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
@@ -96,7 +96,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 
 func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 
-	pm, cancel := newTestPrivateMessaging(t)
+	pm, cancel := newTestPrivateMessagingWithMetrics(t)
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
@@ -524,6 +524,9 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
+
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{

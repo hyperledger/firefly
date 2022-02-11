@@ -302,11 +302,9 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			}
 		}
 
-		update := database.OperationQueryFactory.NewUpdate(em.ctx).
-			Set("status", status).
-			Set("error", update.Error).
-			Set("output", update.Info) // We don't need the manifest to be kept here, as it's already in the input
-		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
+		// Resolve the operation
+		// Note that we don't need the manifest to be kept here, as it's already in the input
+		if err := em.database.ResolveOperation(em.ctx, op.ID, status, update.Error, update.Info); err != nil {
 			return true, err // this is always retryable
 		}
 		return false, nil

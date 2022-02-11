@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,30 +14,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package metrics
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-type fakePlugin struct{}
+var BatchPinCounter prometheus.Counter
 
-func (f *fakePlugin) Name() string { return "fake" }
+// MetricsBatchPin is the prometheus metric for total number of batch pins submitted
+var MetricsBatchPin = "ff_batchpin_total"
 
-func TestNewPendingMessageOp(t *testing.T) {
+func InitBatchPinMetrics() {
+	BatchPinCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: MetricsBatchPin,
+		Help: "Number of batch pins submitted",
+	})
+}
 
-	txID := NewUUID()
-	op := NewOperation(&fakePlugin{}, "ns1", txID, OpTypePublicStorageBatchBroadcast)
-	assert.Equal(t, Operation{
-		ID:          op.ID,
-		Namespace:   "ns1",
-		Transaction: txID,
-		Plugin:      "fake",
-		Type:        OpTypePublicStorageBatchBroadcast,
-		Status:      OpStatusPending,
-		Created:     op.Created,
-		Updated:     op.Created,
-	}, *op)
+func RegisterBatchPinMetrics() {
+	registry.MustRegister(BatchPinCounter)
 }

@@ -2227,6 +2227,20 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *fftypes.Message) 
 	return r0
 }
 
+// ResolveOperation provides a mock function with given fields: ctx, id, status, errorMsg, output
+func (_m *Plugin) ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) error {
+	ret := _m.Called(ctx, id, status, errorMsg, output)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, id, status, errorMsg, output)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RunAsGroup provides a mock function with given fields: ctx, fn
 func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error) error {
 	ret := _m.Called(ctx, fn)
@@ -2374,20 +2388,6 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64, database.Update) error); ok {
 		r0 = rf(ctx, rowID, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateOperation provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
