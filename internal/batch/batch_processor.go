@@ -293,7 +293,7 @@ func (bp *batchProcessor) assemblyLoop() {
 			_ = batchTimeout.Stop()
 			return
 		case <-batchTimeout.C:
-			l.Errorf("Batch timer popped")
+			l.Debugf("Batch timer popped")
 			if len(bp.assemblyQueue) == 0 {
 				bp.startQuiesce()
 			} else {
