@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,6 +48,14 @@ func (s *SQLCommon) InsertEvent(ctx context.Context, event *fftypes.Event) (err 
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	// This is special to events - we take the cost of a full table lock on the events table, so
+	// that nobody can add rows that increment the sequence, until our transaction has committed.
+	// This allows us to rely on the sequence to always be increasing, even when writing events
+	// concurrently (it does not guarantee we won't get a gap in the sequences).
+	if err = s.lockTableExclusiveTx(ctx, tx, "events"); err != nil {
+		return err
+	}
 
 	event.Sequence, err = s.insertTx(ctx, tx,
 		sq.Insert("events").

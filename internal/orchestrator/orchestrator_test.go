@@ -628,6 +628,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mpm, or.PrivateMessaging())
 	assert.Equal(t, or.mem, or.Events())
+	assert.Equal(t, or.mba, or.BatchManager())
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mdm, or.Data())
 	assert.Equal(t, or.mam, or.Assets())

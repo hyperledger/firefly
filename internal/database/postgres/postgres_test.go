@@ -40,6 +40,7 @@ func TestPostgresProvider(t *testing.T) {
 
 	assert.Equal(t, "postgres", psql.Name())
 	assert.Equal(t, sq.Dollar, psql.Features().PlaceholderFormat)
+	assert.Equal(t, `LOCK TABLE "events" IN EXCLUSIVE MODE;`, psql.Features().ExclusiveTableLockSQL("events"))
 
 	insert := sq.Insert("test").Columns("col1").Values("val1")
 	insert, query := psql.UpdateInsertForSequenceReturn(insert)

@@ -38,6 +38,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
+const broadcastDispatcherName = "pinned_broadcast"
+
 type Manager interface {
 	NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
@@ -84,17 +86,19 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		maxBatchPayloadLength: config.GetByteSize(config.BroadcastBatchPayloadLimit),
 		metrics:               mm,
 	}
-	bo := batch.Options{
+	bo := batch.DispatcherOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
 		BatchMaxBytes:  bm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
-	ba.RegisterDispatcher([]fftypes.MessageType{
-		fftypes.MessageTypeBroadcast,
-		fftypes.MessageTypeDefinition,
-		fftypes.MessageTypeTransferBroadcast,
-	}, bm.dispatchBatch, bo)
+	ba.RegisterDispatcher(broadcastDispatcherName,
+		fftypes.TransactionTypeBatchPin,
+		[]fftypes.MessageType{
+			fftypes.MessageTypeBroadcast,
+			fftypes.MessageTypeDefinition,
+			fftypes.MessageTypeTransferBroadcast,
+		}, bm.dispatchBatch, bo)
 	return bm, nil
 }
 

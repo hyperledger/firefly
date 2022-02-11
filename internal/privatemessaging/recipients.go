@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -30,7 +30,15 @@ import (
 func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftypes.MessageInOut) error {
 	if in.Header.Group != nil {
 		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
-		return nil // validity of existing group checked later
+		group, err := pm.database.GetGroupByHash(ctx, in.Header.Group)
+		if err != nil {
+			return err
+		}
+		if group == nil {
+			return i18n.NewError(ctx, i18n.MsgGroupNotFound, in.Header.Group)
+		}
+		// We have a group already resolved
+		return nil
 	}
 	if in.Group == nil || len(in.Group.Members) == 0 {
 		return i18n.NewError(ctx, i18n.MsgGroupMustHaveMembers)

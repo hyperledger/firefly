@@ -96,7 +96,15 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	now := fftypes.Now()
 
 	if batch.ID == nil || batch.Payload.TX.ID == nil {
-		l.Errorf("Invalid batch '%s'. Missing ID (%v) or transaction ID (%v)", batch.ID, batch.ID, batch.Payload.TX.ID)
+		l.Errorf("Invalid batch '%s'. Missing ID or transaction ID (%v)", batch.ID, batch.Payload.TX.ID)
+		return false, nil // This is not retryable. skip this batch
+	}
+
+	switch batch.Payload.TX.Type {
+	case fftypes.TransactionTypeBatchPin:
+	case fftypes.TransactionTypeUnpinned:
+	default:
+		l.Errorf("Invalid batch '%s'. Invalid transaction type: %s", batch.ID, batch.Payload.TX.Type)
 		return false, nil // This is not retryable. skip this batch
 	}
 
@@ -111,7 +119,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err = em.database.UpsertBatch(ctx, batch, false)
+	err = em.database.UpsertBatch(ctx, batch)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)

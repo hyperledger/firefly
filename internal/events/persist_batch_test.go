@@ -37,7 +37,7 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 	mim.On("ResolveSigningKeyIdentity", em.ctx, mock.Anything).Return("", nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", em.ctx, mock.Anything, false).Return(fmt.Errorf(("pop")))
+	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf(("pop")))
 
 	org := fftypes.Organization{
 		ID:     fftypes.NewUUID(),
