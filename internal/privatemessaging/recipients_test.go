@@ -53,7 +53,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDRemote, Name: "node2", Owner: signingKeyRemote}}, nil, nil).Once()
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDLocal, Name: "node1", Owner: signingKeyLocal}}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil, nil)
-	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return(orgDIDLocal, nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: signingKeyLocal}, nil)

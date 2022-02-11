@@ -282,8 +282,8 @@ type iNodeCollection interface {
 }
 
 type iGroupCollection interface {
-	// UpserGroup - Upsert a group
-	UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) (err error)
+	// UpserGroup - Upsert a group, with a hint to whether to optmize for existing or new
+	UpsertGroup(ctx context.Context, data *fftypes.Group, optimization UpsertOptimization) (err error)
 
 	// UpdateGroup - Update group
 	UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)

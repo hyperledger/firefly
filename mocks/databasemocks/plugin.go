@@ -2591,13 +2591,13 @@ func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod
 	return r0
 }
 
-// UpsertGroup provides a mock function with given fields: ctx, data, allowExisting
-func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) error {
-	ret := _m.Called(ctx, data, allowExisting)
+// UpsertGroup provides a mock function with given fields: ctx, data, optimization
+func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -44,7 +44,7 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	group := &fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
@@ -65,7 +65,7 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", mock.Anything, mock.Anything, true).Return(nil)
+	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	group := &fftypes.Group{
@@ -214,7 +214,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -254,7 +254,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("InsertEvent", pm.ctx, mock.Anything).Return(nil)
 
 	group, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
@@ -278,7 +278,7 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&fftypes.Group{}, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
@@ -509,7 +509,7 @@ func TestEnsureLocalGroupNewOk(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertGroup", pm.ctx, group, false).Return(nil)
+	mdi.On("UpsertGroup", pm.ctx, group, database.UpsertOptimizationNew).Return(nil)
 
 	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.NoError(t, err)
@@ -590,7 +590,7 @@ func TestEnsureLocalGroupInsertErr(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertGroup", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.EqualError(t, err, "pop")
