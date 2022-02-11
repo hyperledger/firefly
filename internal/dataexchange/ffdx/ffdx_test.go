@@ -54,7 +54,7 @@ func newTestFFDX(t *testing.T) (h *FFDX, toServer, fromServer chan string, httpU
 	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
 	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
 
-	h = &FFDX{}
+	h = &FFDX{initialized: true}
 	nodes := make([]fftypes.DXInfo, 0)
 	h.InitPrefix(utConfPrefix)
 	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
@@ -87,7 +87,6 @@ func TestInitMissingURL(t *testing.T) {
 }
 
 func TestGetEndpointInfo(t *testing.T) {
-
 	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
@@ -120,7 +119,6 @@ func TestGetEndpointInfoError(t *testing.T) {
 }
 
 func TestAddPeer(t *testing.T) {
-
 	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
@@ -538,6 +536,8 @@ func TestWebsocketWithReinit(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(reqNodes))
 
+			assert.False(t, h.initialized)
+
 			if first {
 				first = false
 				return httpmock.NewJsonResponse(200, fftypes.JSONObject{
@@ -557,4 +557,24 @@ func TestWebsocketWithReinit(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.True(t, h.initialized)
+}
+
+func TestDXUninitialized(t *testing.T) {
+	h, _, _, _, done := newTestFFDX(t)
+	defer done()
+
+	h.initialized = false
+
+	_, err := h.GetEndpointInfo(context.Background())
+	assert.Regexp(t, "FF10342", err)
+
+	err = h.AddPeer(context.Background(), fftypes.DXInfo{})
+	assert.Regexp(t, "FF10342", err)
+
+	err = h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	assert.Regexp(t, "FF10342", err)
+
+	err = h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))
+	assert.Regexp(t, "FF10342", err)
 }
