@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
@@ -52,11 +53,13 @@ func (v *FFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string
 				valid = false
 			}
 		case "array":
-			// TODO: Anything else here?
-			valid = true
+			if !strings.HasSuffix(blockchainType, "[]") {
+				valid = false
+			}
 		case "object":
-			// TODO: Anything else here?
-			valid = true
+			if blockchainType != "tuple" {
+				valid = false
+			}
 		}
 
 		if valid {
@@ -69,22 +72,124 @@ func (v *FFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string
 
 func (v *FFIParamValidator) GetMetaSchema() *jsonschema.Schema {
 	return jsonschema.MustCompileString("ffiParamDetails.json", `{
-	"properties" : {
-		"details": {
+		"$ref": "#/$defs/ethereumParam",
+		"$defs": {
+			"ethereumParam": {
+			"oneOf": [
+				{
+				"type": "object",
+				"properties": {
+					"type": {
+					"type": "string",
+					"not": {
+						"const": "object"
+					}
+					},
+					"details": {
+					"$ref": "#/$defs/details"
+					}
+				},
+				"required": ["details"]
+				},
+				{
+				"type": "object",
+				"properties": {
+					"type": {
+					"const": "object"
+					},
+					"details": {
+					"$ref": "#/$defs/details"
+					},
+					"properties": {
+					"type": "object",
+					"patternProperties": {
+						".*": {
+						"$ref": "#/$defs/ethereumObjectChildParam"
+						}
+					}
+					}
+				},
+				"required": ["details"]
+				}
+			]
+			},
+
+			"ethereumObjectChildParam": {
+			"oneOf": [
+				{
+				"type": "object",
+				"properties": {
+					"type": {
+					"type": "string",
+					"not": {
+						"const": "object"
+					}
+					},
+					"details": {
+					"$ref": "#/$defs/objectFieldDetails"
+					}
+				},
+				"required": ["details"]
+				},
+				{
+				"type": "object",
+				"properties": {
+					"type": {
+					"const": "object"
+					},
+					"details": {
+					"$ref": "#/$defs/objectFieldDetails"
+					},
+					"properties": {
+					"type": "object",
+					"patternProperties": {
+						".*": {
+						"$ref": "#/$defs/ethereumObjectChildParam"
+						}
+					}
+					}
+				},
+				"required": ["details"]
+				}
+			]
+			},
+
+			"details": {
 			"type": "object",
 			"properties": {
 				"type": {
-					"type": "string"
+				"type": "string"
+				},
+				"internalType": {
+				"type": "string"
 				},
 				"indexed": {
-					"type": "boolean"
+				"type": "boolean"
 				}
 			},
 			"required": ["type"]
+			},
+
+			"objectFieldDetails": {
+			"type": "object",
+			"properties": {
+				"type": {
+				"type": "string"
+				},
+				"internalType": {
+				"type": "string"
+				},
+				"indexed": {
+				"type": "boolean"
+				},
+				"index": {
+				"type": "integer"
+				}
+			},
+			"required": ["type", "index"]
+			}
 		}
-	},
-	"required": ["details"]
-}`)
+	}`)
 }
 
 func (v *FFIParamValidator) GetExtensionName() string {

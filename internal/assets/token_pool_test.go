@@ -210,6 +210,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
+	mth.On("WriteOperationFailure", context.Background(), mock.Anything, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -257,7 +258,7 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestCreateTokenPoolOpUpdateFail(t *testing.T) {
+func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -276,13 +277,13 @@ func TestCreateTokenPoolOpUpdateFail(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mth.On("WriteOperationSuccess", context.Background(), mock.Anything, mock.Anything)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
-	assert.Regexp(t, "pop", err)
+	assert.NoError(t, err)
 }
 
-func TestCreateTokenPoolSuccess(t *testing.T) {
+func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -411,17 +412,19 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	mdm := am.data.(*datamocks.Manager)
 	mdi := am.database.(*databasemocks.Plugin)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(nil)
 	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(false, fmt.Errorf("pop"))
+	mth.On("WriteOperationFailure", context.Background(), mock.Anything, fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool, ev)
 	assert.EqualError(t, err, "pop")
 }
 
-func TestActivateTokenPoolOpUpdateFail(t *testing.T) {
+func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -434,15 +437,16 @@ func TestActivateTokenPoolOpUpdateFail(t *testing.T) {
 	mdm := am.data.(*datamocks.Manager)
 	mdi := am.database.(*databasemocks.Plugin)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mth := am.txHelper.(*txcommonmocks.Helper)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(nil)
 	mti.On("ActivateTokenPool", context.Background(), mock.Anything, pool, ev).Return(true, nil)
-	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mth.On("WriteOperationSuccess", context.Background(), mock.Anything, mock.Anything)
 
 	err := am.ActivateTokenPool(context.Background(), pool, ev)
-	assert.EqualError(t, err, "pop")
+	assert.NoError(t, err)
 }
 
 func TestGetTokenPool(t *testing.T) {

@@ -21,7 +21,6 @@ import (
 
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
@@ -33,11 +32,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 		return nil
 	}
 
-	update := database.OperationQueryFactory.NewUpdate(ctx).
-		Set("status", txState).
-		Set("error", errorMessage).
-		Set("output", opOutput)
-	if err := em.database.UpdateOperation(ctx, op.ID, update); err != nil {
+	if err := em.database.ResolveOperation(ctx, op.ID, txState, errorMessage, opOutput); err != nil {
 		return err
 	}
 

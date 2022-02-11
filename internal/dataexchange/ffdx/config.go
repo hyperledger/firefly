@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,30 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package ffdx
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config/wsconfig"
 )
 
-type fakePlugin struct{}
+const (
+	// DataExchangeManifestEnabled determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector
+	DataExchangeManifestEnabled = "manifestEnabled"
+)
 
-func (f *fakePlugin) Name() string { return "fake" }
-
-func TestNewPendingMessageOp(t *testing.T) {
-
-	txID := NewUUID()
-	op := NewOperation(&fakePlugin{}, "ns1", txID, OpTypePublicStorageBatchBroadcast)
-	assert.Equal(t, Operation{
-		ID:          op.ID,
-		Namespace:   "ns1",
-		Transaction: txID,
-		Plugin:      "fake",
-		Type:        OpTypePublicStorageBatchBroadcast,
-		Status:      OpStatusPending,
-		Created:     op.Created,
-		Updated:     op.Created,
-	}, *op)
+func (h *FFDX) InitPrefix(prefix config.Prefix) {
+	wsconfig.InitPrefix(prefix)
+	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
 }

@@ -338,13 +338,20 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
+	dxPlugin := config.GetString(config.DataexchangeType)
 	if or.dataexchange == nil {
-		dxType := config.GetString(config.DataexchangeType)
-		if or.dataexchange, err = dxfactory.GetPlugin(ctx, dxType); err != nil {
+		pluginName := dxPlugin
+		if pluginName == "https" {
+			// Migration path for old plugin name
+			// TODO: eventually make this fatal
+			log.L(ctx).Warnf("Your data exchange config uses the old plugin name 'https' - this plugin has been renamed to 'ffdx'")
+			pluginName = "ffdx"
+		}
+		if or.dataexchange, err = dxfactory.GetPlugin(ctx, pluginName); err != nil {
 			return err
 		}
 	}
-	if err = or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), &or.bc); err != nil {
+	if err = or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(dxPlugin), &or.bc); err != nil {
 		return err
 	}
 

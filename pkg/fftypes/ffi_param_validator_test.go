@@ -14,19 +14,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxhttps
+package fftypes
 
 import (
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
+	"testing"
+
+	"github.com/santhosh-tekuri/jsonschema/v5"
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	// DataExchangeManifestEnabled determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector
-	DataExchangeManifestEnabled = "manifestEnabled"
-)
-
-func (h *HTTPS) InitPrefix(prefix config.Prefix) {
-	wsconfig.InitPrefix(prefix)
-	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
+func TestGetBaseFFIParamValidator(t *testing.T) {
+	c := NewFFISchemaCompiler()
+	assert.NotNil(t, c)
+}
+func TestBaseFFIParamValidatorCompile(t *testing.T) {
+	v := BaseFFIParamValidator{}
+	c, err := v.Compile(jsonschema.CompilerContext{}, map[string]interface{}{})
+	assert.Nil(t, c)
+	assert.NoError(t, err)
 }

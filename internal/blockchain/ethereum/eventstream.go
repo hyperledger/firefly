@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type streamManager struct {
@@ -44,25 +43,13 @@ type eventStream struct {
 	Timestamps     bool                 `json:"timestamps"`
 }
 
-type subscriptionEventArg struct {
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Indexed bool   `json:"indexed"`
-}
-
-type subscriptionEvent struct {
-	Name   string                 `json:"name"`
-	Type   string                 `json:"type"`
-	Inputs []subscriptionEventArg `json:"inputs"`
-}
-
 type subscription struct {
-	ID        string            `json:"id"`
-	Name      string            `json:"name,omitempty"`
-	Stream    string            `json:"stream"`
-	FromBlock string            `json:"fromBlock"`
-	Address   string            `json:"address"`
-	Event     subscriptionEvent `json:"event"`
+	ID        string               `json:"id"`
+	Name      string               `json:"name,omitempty"`
+	Stream    string               `json:"stream"`
+	FromBlock string               `json:"fromBlock"`
+	Address   string               `json:"address"`
+	Event     ABIElementMarshaling `json:"event"`
 }
 
 func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
@@ -146,46 +133,12 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 	return subs, nil
 }
 
-func (s *streamManager) createInstanceSubscription(ctx context.Context, instancePath, name, stream, event string) (*subscription, error) {
-	sub := subscription{
-		Name:      name,
-		Stream:    stream,
-		FromBlock: "0",
-	}
-	res, err := s.client.R().
-		SetContext(ctx).
-		SetBody(&sub).
-		SetResult(&sub).
-		Post(fmt.Sprintf("%s/%s", instancePath, event))
-	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
-	}
-	return &sub, nil
-}
-
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream string, event fftypes.FFIEventDefinition) (*subscription, error) {
-	inputs := make([]subscriptionEventArg, 0, len(event.Params))
-	for _, param := range event.Params {
-		paramDetails, err := parseParamDetails(ctx, param.Schema)
-		if err != nil {
-			return nil, err
-		}
-		inputs = append(inputs, subscriptionEventArg{
-			Name:    param.Name,
-			Type:    paramDetails.Type,
-			Indexed: paramDetails.Indexed,
-		})
-	}
-
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream string, abi ABIElementMarshaling) (*subscription, error) {
 	sub := subscription{
 		Stream:    stream,
 		FromBlock: "0",
 		Address:   location.Address,
-		Event: subscriptionEvent{
-			Type:   "event",
-			Name:   event.Name,
-			Inputs: inputs,
-		},
+		Event:     abi,
 	}
 	res, err := s.client.R().
 		SetContext(ctx).
@@ -208,7 +161,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, stream, event string) (sub *subscription, err error) {
+func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, stream string, abi ABIElementMarshaling) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -219,24 +172,28 @@ func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, st
 		return nil, err
 	}
 
-	subName := fmt.Sprintf("%s_%s", event, instanceUniqueHash)
+	subName := fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)
 
 	for _, s := range existingSubs {
 		if s.Name == subName ||
 			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
 			   If one of these very early environments needed a new subscription, the existing one would need to
 				 be deleted manually. */
-			s.Name == event {
+			s.Name == abi.Name {
 			sub = s
 		}
 	}
 
+	location := &Location{
+		Address: instancePath,
+	}
+
 	if sub == nil {
-		if sub, err = s.createInstanceSubscription(ctx, instancePath, subName, stream, event); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, abi); err != nil {
 			return nil, err
 		}
 	}
 
-	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
+	log.L(ctx).Infof("%s subscription: %s", abi.Name, sub.ID)
 	return sub, nil
 }

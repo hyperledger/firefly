@@ -63,29 +63,28 @@ type Plugin interface {
 // has completed. However, it does not matter if these events are workload balance between the firefly core
 // cluster instances of the node.
 type Callbacks interface {
-	// TokensOpUpdate notifies firefly of an update to this plugin's operation within a transaction.
+	// TokenOpUpdate notifies firefly of an update to this plugin's operation within a transaction.
 	// Only success/failure and errorMessage (for errors) are modeled.
 	// opOutput can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
 	//
-	// Error should will only be returned in shutdown scenarios
+	// Error should only be returned in shutdown scenarios
 	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	//
-	// Error should will only be returned in shutdown scenarios
+	// Error should only be returned in shutdown scenarios
 	TokenPoolCreated(plugin Plugin, pool *TokenPool) error
 
 	// TokensTransferred notifies on a transfer between token accounts.
 	//
-	// Error should will only be returned in shutdown scenarios
+	// Error should only be returned in shutdown scenarios
 	TokensTransferred(plugin Plugin, transfer *TokenTransfer) error
 }
 
-// Capabilities the supported featureset of the tokens
-// interface implemented by the plugin, with the specified config
+// Capabilities is the supported featureset of the tokens interface implemented by the plugin, with the specified config
 type Capabilities struct {
 }
 
@@ -112,6 +111,8 @@ type TokenPool struct {
 }
 
 type TokenTransfer struct {
+	// Although not every field will be filled in, embed fftypes.TokenTransfer to avoid duplicating lots of fields
+	// Notable fields NOT expected to be populated by plugins: Namespace, LocalID, Pool
 	fftypes.TokenTransfer
 
 	// PoolProtocolID is the ID assigned to the token pool by the connector

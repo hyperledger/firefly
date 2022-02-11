@@ -45,6 +45,13 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
+	if op, err := em.findTXOperation(ctx, pool.TX.ID, fftypes.OpTypeTokenActivatePool); err != nil {
+		return err
+	} else if op == nil {
+		log.L(ctx).Warnf("No activate operation found for token pool transaction=%s", pool.TX.ID)
+	} else if err := em.database.ResolveOperation(ctx, op.ID, fftypes.OpStatusSucceeded, "", nil); err != nil {
+		return err
+	}
 	if _, err := em.txHelper.PersistTransaction(ctx, pool.Namespace, pool.TX.ID, pool.TX.Type, blockchainTXID); err != nil {
 		return err
 	}
@@ -57,12 +64,12 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 	return em.database.InsertEvent(ctx, event)
 }
 
-func (em *eventManager) findTokenPoolCreateOp(ctx context.Context, tx *fftypes.UUID) (*fftypes.Operation, error) {
+func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, opType fftypes.OpType) (*fftypes.Operation, error) {
 	// Find a matching operation within this transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", tx),
-		fb.Eq("type", fftypes.OpTypeTokenCreatePool),
+		fb.Eq("type", opType),
 	)
 	if operations, _, err := em.database.GetOperations(ctx, filter); err != nil {
 		return nil, err
@@ -92,7 +99,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 }
 
 func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPool) (announcePool *fftypes.TokenPool, err error) {
-	op, err := em.findTokenPoolCreateOp(ctx, pool.TransactionID)
+	op, err := em.findTXOperation(ctx, pool.TransactionID, fftypes.OpTypeTokenCreatePool)
 	if err != nil {
 		return nil, err
 	} else if op == nil {
