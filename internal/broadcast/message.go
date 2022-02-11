@@ -89,9 +89,8 @@ func (s *broadcastSender) setDefaults() {
 	if s.msg.Header.Type == "" {
 		s.msg.Header.Type = fftypes.MessageTypeBroadcast
 	}
-	if s.msg.Header.TxType == "" {
-		s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
-	}
+	// We only have one transaction type for broadcast currently
+	s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
 }
 
 func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod) error {
