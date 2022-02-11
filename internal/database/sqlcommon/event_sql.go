@@ -49,7 +49,7 @@ var (
 // We choose (today) to coordinate the emission of these, into a DB transaction where the other
 // state changes happen - so the event is assured atomically to happen "after" the other state
 // changes, but also not to be lost. Downstream fan-out of those events occurs via
-// Wehook/WebSocket (.../NATS/Kafka) pluggable pub/sub interfaces.
+// Webhook/WebSocket (.../NATS/Kafka) pluggable pub/sub interfaces.
 //
 // Implementing this single stream of incrementing (note not guaranteed to be gapless) ordered
 // items on top of a SQL database, means taking a lock (see below).
