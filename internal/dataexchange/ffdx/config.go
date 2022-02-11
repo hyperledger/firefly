@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxhttps
+package ffdx
 
 import (
 	"github.com/hyperledger/firefly/internal/config"
@@ -26,7 +26,7 @@ const (
 	DataExchangeManifestEnabled = "manifestEnabled"
 )
 
-func (h *HTTPS) InitPrefix(prefix config.Prefix) {
+func (h *FFDX) InitPrefix(prefix config.Prefix) {
 	wsconfig.InitPrefix(prefix)
 	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
 }

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -277,9 +278,25 @@ func TestBadDataExchangeInitFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestDataExchangePluginOldName(t *testing.T) {
+	or := newTestOrchestrator()
+	dxfactory.InitPrefix(dataexchangeConfig)
+	config.Set(config.DataexchangeType, "https")
+	dataexchangeConfig.SubPrefix("https").Set(restclient.HTTPConfigURL, "http://test")
+	or.dataexchange = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
 func TestBadTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig = config.NewPluginConfig("tokens").Array()
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
@@ -321,7 +338,6 @@ func TestBadTokensPluginNoConnector(t *testing.T) {
 
 func TestBadTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig = config.NewPluginConfig("tokens").Array()
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName)
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
@@ -342,7 +358,6 @@ func TestBadTokensPluginNoName(t *testing.T) {
 
 func TestBadTokensPluginInvalidName(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig = config.NewPluginConfig("tokens").Array()
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "!wrong")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "text")
@@ -363,7 +378,6 @@ func TestBadTokensPluginInvalidName(t *testing.T) {
 
 func TestBadTokensPluginNoType(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig = config.NewPluginConfig("tokens").Array()
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
