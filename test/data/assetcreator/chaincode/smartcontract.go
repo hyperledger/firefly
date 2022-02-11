@@ -24,3 +24,11 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	ctx.GetStub().SetEvent("AssetCreated", assetJSON)
 	return ctx.GetStub().PutState(name, assetJSON)
 }
+
+func (s *SmartContract) GetAsset(ctx contractapi.TransactionContextInterface, name string) (string, error) {
+	b, err := ctx.GetStub().GetState(name)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}

@@ -1888,6 +1888,51 @@ func TestFFIMethodToABIObject(t *testing.T) {
 	assert.Equal(t, expectedABIElement, abi)
 }
 
+func TestFFIMethodToABINestedArray(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	method := &fftypes.FFIMethod{
+		Name: "set",
+		Params: []*fftypes.FFIParam{
+			{
+				Name: "widget",
+				Schema: fftypes.JSONAnyPtr(`{
+					"type": "array",
+					"details": {
+						"type": "string[][]",
+						"internalType": "string[][]"
+					},
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				}`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+
+	expectedABIElement := ABIElementMarshaling{
+		Name: "set",
+		Type: "function",
+		Inputs: []ABIArgumentMarshaling{
+			{
+				Name:         "widget",
+				Type:         "string[][]",
+				InternalType: "string[][]",
+				Indexed:      false,
+			},
+		},
+		Outputs: []ABIArgumentMarshaling{},
+	}
+
+	abi, err := e.FFIMethodToABI(context.Background(), method)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedABIElement, abi)
+}
+
 func TestFFIMethodToABIInvalidJSON(t *testing.T) {
 	e, _ := newTestEthereum()
 
@@ -1950,4 +1995,319 @@ func TestFFIMethodToABIBadReturn(t *testing.T) {
 
 	_, err := e.FFIMethodToABI(context.Background(), method)
 	assert.Regexp(t, "compilation failed", err)
+}
+
+func TestConvertABIToFFI(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abi := []ABIElementMarshaling{
+		{
+			Name: "set",
+			Type: "function",
+			Inputs: []ABIArgumentMarshaling{
+				{
+					Name:         "newValue",
+					Type:         "uint256",
+					InternalType: "uint256",
+				},
+			},
+			Outputs: []ABIArgumentMarshaling{},
+		},
+		{
+			Name:   "get",
+			Type:   "function",
+			Inputs: []ABIArgumentMarshaling{},
+			Outputs: []ABIArgumentMarshaling{
+				{
+					Name:         "value",
+					Type:         "uint256",
+					InternalType: "uint256",
+				},
+			},
+		},
+		{
+			Name: "Updated",
+			Type: "event",
+			Inputs: []ABIArgumentMarshaling{{
+				Name:         "value",
+				Type:         "uint256",
+				InternalType: "uint256",
+			}},
+			Outputs: []ABIArgumentMarshaling{},
+		},
+	}
+
+	schema := fftypes.JSONAnyPtr(`{"type":"integer","details":{"type":"uint256","internalType":"uint256"}}`)
+
+	expectedFFI := &fftypes.FFI{
+		Name:      "SimpleStorage",
+		Version:   "v0.0.1",
+		Namespace: "default",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "set",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "newValue",
+						Schema: schema,
+					},
+				},
+				Returns: fftypes.FFIParams{},
+			},
+			{
+				Name:   "get",
+				Params: fftypes.FFIParams{},
+				Returns: fftypes.FFIParams{
+					{
+						Name:   "value",
+						Schema: schema,
+					},
+				},
+			},
+		},
+		Events: []*fftypes.FFIEvent{
+			{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "Updated",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: schema,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	actualFFI := e.convertABIToFFI("default", "SimpleStorage", "v0.0.1", abi)
+	assert.NotNil(t, actualFFI)
+	assert.Equal(t, expectedFFI, actualFFI)
+}
+
+func TestConvertABIToFFIWithObject(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abi := []ABIElementMarshaling{
+		{
+			Name: "set",
+			Type: "function",
+			Inputs: []ABIArgumentMarshaling{
+				{
+					Name:         "newValue",
+					Type:         "tuple",
+					InternalType: "struct WidgetFactory.Widget",
+					Components: []ABIArgumentMarshaling{
+						{
+							Name:         "size",
+							Type:         "uint256",
+							InternalType: "uint256",
+						},
+						{
+							Name:         "description",
+							Type:         "string",
+							InternalType: "string",
+						},
+					},
+				},
+			},
+			Outputs: []ABIArgumentMarshaling{},
+		},
+	}
+
+	schema := fftypes.JSONAnyPtr(`{"type":"object","details":{"type":"tuple","internalType":"struct WidgetFactory.Widget"},"properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":1}},"size":{"type":"integer","details":{"type":"uint256","internalType":"uint256","index":0}}}}`)
+
+	expectedFFI := &fftypes.FFI{
+		Name:      "WidgetTest",
+		Version:   "v0.0.1",
+		Namespace: "default",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "set",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "newValue",
+						Schema: schema,
+					},
+				},
+				Returns: fftypes.FFIParams{},
+			},
+		},
+		Events: []*fftypes.FFIEvent{},
+	}
+
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	assert.NotNil(t, actualFFI)
+	assert.Equal(t, expectedFFI, actualFFI)
+}
+
+func TestConvertABIToFFIWithArray(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abi := []ABIElementMarshaling{
+		{
+			Name: "set",
+			Type: "function",
+			Inputs: []ABIArgumentMarshaling{
+				{
+					Name:         "newValue",
+					Type:         "string[]",
+					InternalType: "string[]",
+				},
+			},
+			Outputs: []ABIArgumentMarshaling{},
+		},
+	}
+
+	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"string[]","internalType":"string[]"},"items":{"type":"string"}}`)
+
+	expectedFFI := &fftypes.FFI{
+		Name:      "WidgetTest",
+		Version:   "v0.0.1",
+		Namespace: "default",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "set",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "newValue",
+						Schema: schema,
+					},
+				},
+				Returns: fftypes.FFIParams{},
+			},
+		},
+		Events: []*fftypes.FFIEvent{},
+	}
+
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	assert.NotNil(t, actualFFI)
+	assert.Equal(t, expectedFFI, actualFFI)
+}
+
+func TestConvertABIToFFIWithNestedArray(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abi := []ABIElementMarshaling{
+		{
+			Name: "set",
+			Type: "function",
+			Inputs: []ABIArgumentMarshaling{
+				{
+					Name:         "newValue",
+					Type:         "string[][]",
+					InternalType: "string[][]",
+				},
+			},
+			Outputs: []ABIArgumentMarshaling{},
+		},
+	}
+
+	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"string[][]","internalType":"string[][]"},"items":{"type":"array","items":{"type":"string"}}}`)
+	expectedFFI := &fftypes.FFI{
+		Name:      "WidgetTest",
+		Version:   "v0.0.1",
+		Namespace: "default",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "set",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "newValue",
+						Schema: schema,
+					},
+				},
+				Returns: fftypes.FFIParams{},
+			},
+		},
+		Events: []*fftypes.FFIEvent{},
+	}
+
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	assert.NotNil(t, actualFFI)
+	assert.Equal(t, expectedFFI, actualFFI)
+}
+
+func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abi := []ABIElementMarshaling{
+		{
+			Name: "set",
+			Type: "function",
+			Inputs: []ABIArgumentMarshaling{
+				{
+					InternalType: "struct WidgetFactory.Widget[][]",
+					Name:         "gears",
+					Type:         "tuple[][]",
+					Components: []ABIArgumentMarshaling{
+						{
+							InternalType: "string",
+							Name:         "description",
+							Type:         "string",
+						},
+						{
+							InternalType: "uint256",
+							Name:         "size",
+							Type:         "uint256",
+						},
+						{
+							InternalType: "bool",
+							Name:         "inUse",
+							Type:         "bool",
+						},
+					},
+				},
+			},
+			Outputs: []ABIArgumentMarshaling{},
+		},
+	}
+
+	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"tuple[][]","internalType":"struct WidgetFactory.Widget[][]"},"items":{"type":"array","items":{"type":"object","properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":0}},"inUse":{"type":"boolean","details":{"type":"bool","internalType":"bool","index":2}},"size":{"type":"integer","details":{"type":"uint256","internalType":"uint256","index":1}}}}}}`)
+	expectedFFI := &fftypes.FFI{
+		Name:      "WidgetTest",
+		Version:   "v0.0.1",
+		Namespace: "default",
+		Methods: []*fftypes.FFIMethod{
+			{
+				Name: "set",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "gears",
+						Schema: schema,
+					},
+				},
+				Returns: fftypes.FFIParams{},
+			},
+		},
+		Events: []*fftypes.FFIEvent{},
+	}
+
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	assert.NotNil(t, actualFFI)
+	assert.Equal(t, expectedFFI, actualFFI)
+}
+
+func TestGenerateFFI(t *testing.T) {
+	e, _ := newTestEthereum()
+	_, err := e.GenerateFFI(context.Background(), "default", "Simple", "v0.0.01", fftypes.JSONAnyPtr(`[]`))
+	assert.NoError(t, err)
+}
+
+func TestGenerateFFIFail(t *testing.T) {
+	e, _ := newTestEthereum()
+	_, err := e.GenerateFFI(context.Background(), "default", "SimpleFailure", "v0.0.01", fftypes.JSONAnyPtr(`{"type": "not an ABI"}`))
+	assert.Regexp(t, "FF10346", err)
+}
+
+func TestGetFFIType(t *testing.T) {
+	e, _ := newTestEthereum()
+	assert.Equal(t, e.getFFIType("string"), "string")
+	assert.Equal(t, e.getFFIType("address"), "string")
+	assert.Equal(t, e.getFFIType("byte"), "string")
+	assert.Equal(t, e.getFFIType("bool"), "boolean")
+	assert.Equal(t, e.getFFIType("uint256"), "integer")
+	assert.Equal(t, e.getFFIType("string[]"), "array")
+	assert.Equal(t, e.getFFIType("tuple"), "object")
+	assert.Equal(t, e.getFFIType("foobar"), "")
 }

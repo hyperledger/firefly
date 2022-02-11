@@ -649,3 +649,7 @@ func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVali
 	// Fabconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil
 }
+
+func (f *Fabric) GenerateFFI(ctx context.Context, ns, name, version string, input *fftypes.JSONAny) (*fftypes.FFI, error) {
+	return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationUnsupported)
+}

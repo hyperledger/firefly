@@ -38,6 +38,11 @@ import (
 
 const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
+	booleanType                  = "boolean"
+	integerType                  = "integer"
+	stringType                   = "string"
+	arrayType                    = "array"
+	objectType                   = "object"
 )
 
 type Ethereum struct {
@@ -81,10 +86,22 @@ type Location struct {
 }
 
 type paramDetails struct {
-	Type         string
-	InternalType string
-	Indexed      bool
-	Index        int
+	Type         string `json:"type"`
+	InternalType string `json:"internalType,omitempty"`
+	Indexed      bool   `json:"indexed,omitempty"`
+	Index        *int   `json:"index,omitempty"`
+}
+
+type Schema struct {
+	Type       string             `json:"type"`
+	Details    *paramDetails      `json:"details,omitempty"`
+	Properties map[string]*Schema `json:"properties,omitempty"`
+	Items      *Schema            `json:"items,omitempty"`
+}
+
+func (s *Schema) ToJSON() string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }
 
 // ABIArgumentMarshaling is abi.ArgumentMarshaling
@@ -671,11 +688,12 @@ func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgume
 func processField(name string, schema *jsonschema.Schema) ABIArgumentMarshaling {
 	details := getParamDetails(schema)
 	arg := ABIArgumentMarshaling{
-		Name:    name,
-		Type:    details.Type,
-		Indexed: details.Indexed,
+		Name:         name,
+		Type:         details.Type,
+		InternalType: details.InternalType,
+		Indexed:      details.Indexed,
 	}
-	if schema.Types[0] == "object" {
+	if schema.Types[0] == objectType {
 		arg.Components = buildABIArgumentArray(schema.Properties)
 	}
 	return arg
@@ -686,7 +704,7 @@ func buildABIArgumentArray(properties map[string]*jsonschema.Schema) []ABIArgume
 	for propertyName, propertySchema := range properties {
 		details := getParamDetails(propertySchema)
 		arg := processField(propertyName, propertySchema)
-		args[details.Index] = arg
+		args[*details.Index] = arg
 	}
 	return args
 }
@@ -700,10 +718,14 @@ func getParamDetails(schema *jsonschema.Schema) *paramDetails {
 	}
 	if i, ok := details["index"]; ok {
 		index, _ := i.(json.Number).Int64()
-		paramDetails.Index = int(index)
+		paramDetails.Index = new(int)
+		*paramDetails.Index = int(index)
 	}
 	if i, ok := details["indexed"]; ok {
 		paramDetails.Indexed = i.(bool)
+	}
+	if i, ok := details["internalType"]; ok {
+		paramDetails.InternalType = i.(string)
 	}
 	return paramDetails
 }
@@ -732,4 +754,126 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 		return "", err
 	}
 	return output["address"], nil
+}
+
+func (e *Ethereum) GenerateFFI(ctx context.Context, ns, name, version string, input *fftypes.JSONAny) (*fftypes.FFI, error) {
+	var abi []ABIElementMarshaling
+	err := json.Unmarshal(input.Bytes(), &abi)
+	if err != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
+	}
+	ffi := e.convertABIToFFI(ns, name, version, abi)
+	return ffi, nil
+}
+
+func (e *Ethereum) convertABIToFFI(ns, name, version string, abi []ABIElementMarshaling) *fftypes.FFI {
+	ffi := &fftypes.FFI{
+		Namespace: ns,
+		Name:      name,
+		Version:   version,
+		Methods:   []*fftypes.FFIMethod{},
+		Events:    []*fftypes.FFIEvent{},
+	}
+
+	for _, element := range abi {
+		switch element.Type {
+		case "event":
+			event := &fftypes.FFIEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name:   element.Name,
+					Params: e.convertABIArgumentsToFFI(element.Inputs),
+				},
+			}
+			ffi.Events = append(ffi.Events, event)
+		case "function":
+			method := &fftypes.FFIMethod{
+				Name:    element.Name,
+				Params:  e.convertABIArgumentsToFFI(element.Inputs),
+				Returns: e.convertABIArgumentsToFFI(element.Outputs),
+			}
+			ffi.Methods = append(ffi.Methods, method)
+		}
+	}
+	return ffi
+}
+
+func (e *Ethereum) convertABIArgumentsToFFI(args []ABIArgumentMarshaling) fftypes.FFIParams {
+	ffiParams := fftypes.FFIParams{}
+	for _, arg := range args {
+		param := &fftypes.FFIParam{
+			Name: arg.Name,
+		}
+		s := e.getSchema(arg)
+		param.Schema = fftypes.JSONAnyPtr(s.ToJSON())
+		ffiParams = append(ffiParams, param)
+	}
+	return ffiParams
+}
+
+func (e *Ethereum) getSchema(arg ABIArgumentMarshaling) *Schema {
+	s := &Schema{
+		Type: e.getFFIType(arg.Type),
+		Details: &paramDetails{
+			Type:         arg.Type,
+			InternalType: arg.InternalType,
+			Indexed:      arg.Indexed,
+		},
+	}
+	var properties map[string]*Schema
+	if len(arg.Components) > 0 {
+		properties = e.getSchemaForObjectComponents(arg)
+	}
+	if s.Type == arrayType {
+		levels := strings.Count(arg.Type, "[]")
+		innerType := e.getFFIType(strings.ReplaceAll(arg.Type, "[]", ""))
+		innerSchema := &Schema{
+			Type: innerType,
+		}
+		if len(arg.Components) > 0 {
+			innerSchema.Properties = e.getSchemaForObjectComponents(arg)
+		}
+		for i := 1; i < levels; i++ {
+			innerSchema = &Schema{
+				Type:  arrayType,
+				Items: innerSchema,
+			}
+		}
+		s.Items = innerSchema
+	} else {
+		s.Properties = properties
+	}
+	return s
+}
+
+func (e *Ethereum) getSchemaForObjectComponents(arg ABIArgumentMarshaling) map[string]*Schema {
+	m := make(map[string]*Schema, len(arg.Components))
+	for i, component := range arg.Components {
+		componentSchema := e.getSchema(component)
+		componentSchema.Details.Index = new(int)
+		*componentSchema.Details.Index = i
+		m[component.Name] = componentSchema
+	}
+	return m
+}
+
+func (e *Ethereum) getFFIType(solitidyType string) string {
+
+	switch solitidyType {
+	case stringType, "address":
+		return stringType
+	case "bool":
+		return booleanType
+	case "tuple":
+		return objectType
+	default:
+		switch {
+		case strings.HasSuffix(solitidyType, "[]"):
+			return arrayType
+		case strings.Contains(solitidyType, "byte"):
+			return stringType
+		case strings.Contains(solitidyType, "int"):
+			return integerType
+		}
+	}
+	return ""
 }

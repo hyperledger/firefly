@@ -41,9 +41,9 @@ type FFI struct {
 	ID          *UUID        `json:"id,omitempty"`
 	Message     *UUID        `json:"message,omitempty"`
 	Namespace   string       `json:"namespace,omitempty"`
-	Name        string       `json:"name,omitempty"`
+	Name        string       `json:"name"`
 	Description string       `json:"description"`
-	Version     string       `json:"version,omitempty"`
+	Version     string       `json:"version"`
 	Methods     []*FFIMethod `json:"methods,omitempty"`
 	Events      []*FFIEvent  `json:"events,omitempty"`
 }

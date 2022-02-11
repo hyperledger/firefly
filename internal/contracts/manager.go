@@ -53,6 +53,7 @@ type Manager interface {
 	GetContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractSubscription, error)
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
+	GenerateFFI(ctx context.Context, ns, name, version string, input *fftypes.JSONAny) (*fftypes.FFI, error)
 }
 
 type contractManager struct {
@@ -591,4 +592,8 @@ func (cm *contractManager) checkParamSchema(ctx context.Context, input interface
 		return i18n.WrapError(ctx, err, i18n.MsgFFIValidationFail, param.Name)
 	}
 	return nil
+}
+
+func (cm *contractManager) GenerateFFI(ctx context.Context, ns, name, version string, input *fftypes.JSONAny) (*fftypes.FFI, error) {
+	return cm.blockchain.GenerateFFI(ctx, ns, name, version, input)
 }

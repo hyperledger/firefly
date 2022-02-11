@@ -62,6 +62,29 @@ func (_m *Plugin) DeleteSubscription(ctx context.Context, subscription *fftypes.
 	return r0
 }
 
+// GenerateFFI provides a mock function with given fields: ctx, ns, name, version, input
+func (_m *Plugin) GenerateFFI(ctx context.Context, ns string, name string, version string, input *fftypes.JSONAny) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, ns, name, version, input)
+
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.JSONAny) *fftypes.FFI); ok {
+		r0 = rf(ctx, ns, name, version, input)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, ns, name, version, input)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFFIParamValidator provides a mock function with given fields: ctx
 func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	ret := _m.Called(ctx)
