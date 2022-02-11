@@ -184,6 +184,32 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	return full, overflow
 }
 
+func (bp *batchProcessor) addFlushedSequences(flushAssembly []*batchWork) {
+	// We need to keep track of the sequences we're flushing, because until we finish our flush
+	// the batch processor might be re-queuing the same messages to use due to rewinds.
+
+	// We keep twice the batch size, which might be made up of multiple batches
+	maxFlushedSeqLen := int(2 * bp.conf.BatchMaxSize)
+
+	// We keep as much of the END of the existing set as we can, and shift it forwards.
+	// Then we add the whole of the current flush set after that
+	combinedLen := len(flushAssembly) + len(bp.flushedSequences)
+	newLength := combinedLen
+	if combinedLen > maxFlushedSeqLen {
+		newLength = maxFlushedSeqLen
+	}
+	dropLength := combinedLen - newLength
+	retainLength := len(bp.flushedSequences) - dropLength
+	newFlushedSequences := make([]int64, newLength)
+	for i := 0; i < retainLength; i++ {
+		newFlushedSequences[i] = bp.flushedSequences[dropLength+i]
+	}
+	for i := 0; i < len(flushAssembly); i++ {
+		newFlushedSequences[retainLength+i] = flushAssembly[i].msg.Sequence
+	}
+	bp.flushedSequences = newFlushedSequences
+}
+
 func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAssembly []*batchWork, byteSize int64) {
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
@@ -199,24 +225,7 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	} else {
 		flushAssembly = bp.assemblyQueue
 	}
-	// We need to keep track of the sequences we're flushing, because until we finish our flush
-	// the batch processor might be re-queuing the same messages to use due to rewinds.
-	// We keep all of the last batch, and up to twice the batch size over time (noting our channel
-	// size is our batch size - so the batch manager cannot get further than that ahead).
-	newFlushedSeqLen := len(flushAssembly) + len(bp.flushedSequences)
-	maxFlushedSeqLen := int(2 * bp.conf.BatchMaxSize)
-	if newFlushedSeqLen > maxFlushedSeqLen && maxFlushedSeqLen > len(bp.flushedSequences) {
-		newFlushedSeqLen = maxFlushedSeqLen
-	}
-	newFlushedSequences := make([]int64, newFlushedSeqLen)
-	for i := 0; i < len(flushAssembly); i++ {
-		// Add in reverse order - so we can trim the end of it off later (in the next block) and keep the newest
-		newFlushedSequences[len(flushAssembly)-i-1] = flushAssembly[i].msg.Sequence
-	}
-	for i := 0; i < newFlushedSeqLen-len(flushAssembly); i++ {
-		newFlushedSequences[i+len(flushAssembly)] = bp.flushedSequences[i]
-	}
-	bp.flushedSequences = newFlushedSequences
+	bp.addFlushedSequences(flushAssembly)
 	// Cycle to the next assembly
 	id = bp.assemblyID
 	byteSize = bp.assemblyQueueBytes
