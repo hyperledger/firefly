@@ -168,6 +168,7 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 		if newWork.msg.Sequence == work.msg.Sequence {
 			log.L(bp.ctx).Debugf("Ignoring duplicate add of message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
 			skip = true
+			break
 		}
 		if !added && !skip && newWork.msg.Sequence < work.msg.Sequence {
 			newQueue = append(newQueue, newWork)
@@ -175,7 +176,9 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 		}
 		newQueue = append(newQueue, work)
 	}
-	if !added && !skip {
+	if skip {
+		newQueue = bp.assemblyQueue
+	} else if !added {
 		newQueue = append(newQueue, newWork)
 		added = true
 	}
