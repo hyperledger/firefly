@@ -62,7 +62,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	clientPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
 	wsConfig := wsconfig.GenerateConfigFromPrefix(clientPrefix)
 
-	wsc, err := wsclient.New(ctx, wsConfig, nil)
+	wsc, err := wsclient.New(ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)
 	err = wsc.Connect()
 	assert.NoError(t, err)

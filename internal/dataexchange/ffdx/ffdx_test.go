@@ -19,6 +19,7 @@ package ffdx
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -53,9 +54,10 @@ func newTestFFDX(t *testing.T) (h *FFDX, toServer, fromServer chan string, httpU
 	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
 	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
 
-	h = &FFDX{}
+	h = &FFDX{initialized: true}
+	nodes := make([]fftypes.DXInfo, 0)
 	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -68,22 +70,23 @@ func newTestFFDX(t *testing.T) (h *FFDX, toServer, fromServer chan string, httpU
 func TestInitBadURL(t *testing.T) {
 	config.Reset()
 	h := &FFDX{}
+	nodes := make([]fftypes.DXInfo, 0)
 	h.InitPrefix(utConfPrefix)
 	utConfPrefix.Set(restclient.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)
 }
 
 func TestInitMissingURL(t *testing.T) {
 	config.Reset()
 	h := &FFDX{}
+	nodes := make([]fftypes.DXInfo, 0)
 	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
 
 func TestGetEndpointInfo(t *testing.T) {
-
 	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
@@ -94,14 +97,14 @@ func TestGetEndpointInfo(t *testing.T) {
 			"cert":     "cert data...",
 		}))
 
-	peerID, endpoint, err := h.GetEndpointInfo(context.Background())
+	peer, err := h.GetEndpointInfo(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, "peer1", peerID)
+	assert.Equal(t, "peer1", peer.Peer)
 	assert.Equal(t, fftypes.JSONObject{
 		"id":       "peer1",
 		"endpoint": "https://peer1.example.com",
 		"cert":     "cert data...",
-	}, endpoint)
+	}, peer.Endpoint)
 }
 
 func TestGetEndpointInfoError(t *testing.T) {
@@ -111,25 +114,25 @@ func TestGetEndpointInfoError(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, _, err := h.GetEndpointInfo(context.Background())
+	_, err := h.GetEndpointInfo(context.Background())
 	assert.Regexp(t, "FF10229", err)
 }
 
 func TestAddPeer(t *testing.T) {
-
 	h, _, _, httpURL, done := newTestFFDX(t)
 	defer done()
 
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), "peer1",
-		fftypes.JSONObject{
+	err := h.AddPeer(context.Background(), fftypes.DXInfo{
+		Peer: "peer1",
+		Endpoint: fftypes.JSONObject{
 			"id":       "peer1",
 			"endpoint": "https://peer1.example.com",
 			"cert":     "cert...",
 		},
-	)
+	})
 	assert.NoError(t, err)
 }
 
@@ -140,7 +143,10 @@ func TestAddPeerError(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), "peer1", fftypes.JSONObject{})
+	err := h.AddPeer(context.Background(), fftypes.DXInfo{
+		Peer:     "peer1",
+		Endpoint: fftypes.JSONObject{},
+	})
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -500,4 +506,75 @@ func TestEventLoopClosedContext(t *testing.T) {
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Return(nil)
 	h.eventLoop() // we're simply looking for it exiting
+}
+
+func TestWebsocketWithReinit(t *testing.T) {
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	_, _, wsURL, cancel := wsclient.NewTestWSServer(nil)
+	defer cancel()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+	h := &FFDX{}
+	nodes := []fftypes.DXInfo{{}}
+
+	config.Reset()
+	h.InitPrefix(utConfPrefix)
+	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
+	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.Set(DataExchangeInitEnabled, true)
+
+	first := true
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			var reqNodes []fftypes.DXInfo
+			err := json.NewDecoder(req.Body).Decode(&reqNodes)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(reqNodes))
+
+			assert.False(t, h.initialized)
+
+			if first {
+				first = false
+				return httpmock.NewJsonResponse(200, fftypes.JSONObject{
+					"status": "notready",
+				})
+			}
+			return httpmock.NewJsonResponse(200, fftypes.JSONObject{
+				"status": "ready",
+			})
+		})
+
+	h.InitPrefix(utConfPrefix)
+	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	assert.NoError(t, err)
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.True(t, h.initialized)
+}
+
+func TestDXUninitialized(t *testing.T) {
+	h, _, _, _, done := newTestFFDX(t)
+	defer done()
+
+	h.initialized = false
+
+	_, err := h.GetEndpointInfo(context.Background())
+	assert.Regexp(t, "FF10342", err)
+
+	err = h.AddPeer(context.Background(), fftypes.DXInfo{})
+	assert.Regexp(t, "FF10342", err)
+
+	err = h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	assert.Regexp(t, "FF10342", err)
+
+	err = h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))
+	assert.Regexp(t, "FF10342", err)
 }

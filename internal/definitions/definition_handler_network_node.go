@@ -73,7 +73,7 @@ func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *ffty
 	return ActionConfirm, &DefinitionBatchActions{
 		PreFinalize: func(ctx context.Context) error {
 			// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-			return dh.exchange.AddPeer(ctx, node.DX.Peer, node.DX.Endpoint)
+			return dh.exchange.AddPeer(ctx, node.DX)
 		},
 	}, nil
 }

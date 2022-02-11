@@ -54,8 +54,8 @@ func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("AddPeer", mock.Anything, "peer1", node.DX.Endpoint).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	mdx.On("AddPeer", mock.Anything, node.DX).Return(nil)
+	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
@@ -66,6 +66,9 @@ func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
+	assert.NoError(t, err)
+
+	err = ba.PreFinalize(context.Background())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -136,7 +139,7 @@ func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(fmt.Errorf("pop"))
+	mdx.On("AddPeer", mock.Anything, node.DX).Return(fmt.Errorf("pop"))
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
@@ -217,7 +220,7 @@ func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x23456"}, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(nil)
+	mdx.On("AddPeer", mock.Anything, node.DX).Return(nil)
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",

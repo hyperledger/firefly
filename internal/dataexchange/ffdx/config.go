@@ -24,9 +24,12 @@ import (
 const (
 	// DataExchangeManifestEnabled determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector
 	DataExchangeManifestEnabled = "manifestEnabled"
+	// DataExchangeInitEnabled instructs FireFly to always post all current nodes to the /init API before connecting or reconnecting to the connector
+	DataExchangeInitEnabled = "initEnabled"
 )
 
 func (h *FFDX) InitPrefix(prefix config.Prefix) {
 	wsconfig.InitPrefix(prefix)
 	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
+	prefix.AddKnownKey(DataExchangeInitEnabled, false)
 }

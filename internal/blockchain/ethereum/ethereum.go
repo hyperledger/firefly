@@ -183,7 +183,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		wsConfig.WSKeyPath = "/ws"
 	}
 
-	e.wsconn, err = wsclient.New(ctx, wsConfig, e.afterConnect)
+	e.wsconn, err = wsclient.New(ctx, wsConfig, nil, e.afterConnect)
 	if err != nil {
 		return err
 	}
