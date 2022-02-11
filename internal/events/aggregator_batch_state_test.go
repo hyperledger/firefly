@@ -52,7 +52,7 @@ func TestSetContextBlockedByNoState(t *testing.T) {
 	unmaskedContext := fftypes.NewRandB32()
 	bs.SetContextBlockedBy(ag.ctx, *unmaskedContext, 10)
 
-	ready, err := bs.CheckUnmaskedContextReady(ag.ctx, *unmaskedContext, &fftypes.Message{}, "topic1", 1)
+	ready, err := bs.CheckUnmaskedContextReady(ag.ctx, unmaskedContext, &fftypes.Message{}, "topic1", 1)
 	assert.NoError(t, err)
 	assert.False(t, ready)
 }

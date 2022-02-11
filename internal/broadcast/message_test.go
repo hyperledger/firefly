@@ -40,7 +40,7 @@ import (
 )
 
 func TestBroadcastMessageOk(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	bm, cancel := newTestBroadcastWithMetrics(t)
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)

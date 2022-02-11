@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/contracts"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +30,7 @@ import (
 func NewTestSchema(input string) (*jsonschema.Schema, error) {
 	c := jsonschema.NewCompiler()
 	c.Draft = jsonschema.Draft2020
-	f := contracts.FFIParamValidator{}
+	f := fftypes.BaseFFIParamValidator{}
 	c.RegisterExtension(f.GetExtensionName(), f.GetMetaSchema(), f)
 	e, _ := newTestEthereum()
 	v, err := e.GetFFIParamValidator(context.Background())
@@ -108,7 +108,7 @@ func TestSchemaTypeInvalidFFIType(t *testing.T) {
 
 func TestSchemaTypeMissing(t *testing.T) {
 	_, err := NewTestSchema(`{}`)
-	assert.Regexp(t, "missing properties", err)
+	assert.Regexp(t, "compilation failed", err)
 }
 
 func TestSchemaDetailsTypeMissing(t *testing.T) {
@@ -119,7 +119,7 @@ func TestSchemaDetailsTypeMissing(t *testing.T) {
 		"indexed": true
 	}
 }`)
-	assert.Regexp(t, "missing properties: 'type'", err)
+	assert.Regexp(t, "compilation failed", err)
 }
 
 func TestSchemaDetailsIndexedWrongType(t *testing.T) {
@@ -131,7 +131,7 @@ func TestSchemaDetailsIndexedWrongType(t *testing.T) {
 		"indexed": "string"
 	}
 }`)
-	assert.Regexp(t, "expected boolean, but got string", err)
+	assert.Regexp(t, "compilation failed", err)
 }
 
 func TestSchemaTypeMismatch(t *testing.T) {
@@ -143,6 +143,28 @@ func TestSchemaTypeMismatch(t *testing.T) {
 	}
 }`)
 	assert.Regexp(t, "cannot cast string to boolean", err)
+}
+
+func TestSchemaTypeMismatchArray(t *testing.T) {
+	_, err := NewTestSchema(`
+{
+	"type": "array",
+	"details": {
+		"type": "string"
+	}
+}`)
+	assert.Regexp(t, "cannot cast array to string", err)
+}
+
+func TestSchemaTypeMismatchObject(t *testing.T) {
+	_, err := NewTestSchema(`
+{
+	"type": "object",
+	"details": {
+		"type": "string"
+	}
+}`)
+	assert.Regexp(t, "cannot cast object to string", err)
 }
 
 func TestInputString(t *testing.T) {
@@ -189,25 +211,28 @@ func TestInputStruct(t *testing.T) {
 {
 	"type": "object",
 	"details": {
-		"type": "struct"
+		"type": "tuple"
 	},
 	"properties": {
 		"x": {
 			"type": "integer",
 			"details": {
-				"type": "uint8"
+				"type": "uint8",
+				"index": 0
 			}
 		},
 		"y": {
 			"type": "integer",
 			"details": {
-				"type": "uint8"
+				"type": "uint8",
+				"index": 1
 			}
 		},
 		"z": {
 			"type": "integer",
 			"details": {
-				"type": "uint8"
+				"type": "uint8",
+				"index": 2
 			}
 		}
 	},
@@ -260,13 +285,14 @@ func TestInputInvalidNestedBlockchainType(t *testing.T) {
 {
 	"type": "object",
 	"details": {
-		"type": "struct"
+		"type": "tuple"
 	},
 	"properties": {
 		"amount": {
 			"type": "integer",
 			"details": {
-				"type": "string"
+				"type": "string",
+				"index": 0
 			}
 		}
 	}
@@ -279,13 +305,14 @@ func TestInputNoAdditionalProperties(t *testing.T) {
 {
 	"type": "object",
 	"details": {
-		"type": "struct"
+		"type": "tuple"
 	},
 	"properties": {
 		"foo": {
 			"type": "string",
 			"details": {
-				"type": "string"
+				"type": "string",
+				"index": 0
 			}
 		}
 	},

@@ -18,6 +18,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	"database/sql"
 
@@ -53,6 +54,9 @@ func (psql *Postgres) Features() sqlcommon.SQLFeatures {
 	features := sqlcommon.DefaultSQLProviderFeatures()
 	features.PlaceholderFormat = sq.Dollar
 	features.UseILIKE = false // slower than lower()
+	features.ExclusiveTableLockSQL = func(table string) string {
+		return fmt.Sprintf(`LOCK TABLE "%s" IN EXCLUSIVE MODE;`, table)
+	}
 	return features
 }
 

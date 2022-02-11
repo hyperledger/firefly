@@ -18,6 +18,7 @@ package sqlcommon
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -109,9 +110,21 @@ func TestInsertEventFailBegin(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestInsertEventFailLock(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("LOCK .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	eventID := fftypes.NewUUID()
+	err := s.InsertEvent(context.Background(), &fftypes.Event{ID: eventID})
+	assert.Regexp(t, "FF10345", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestInsertEventFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	eventID := fftypes.NewUUID()
@@ -124,6 +137,7 @@ func TestInsertEventFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectBegin()
+	mock.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertEvent(context.Background(), &fftypes.Event{ID: eventID})

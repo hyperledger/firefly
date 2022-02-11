@@ -28,8 +28,9 @@ const (
 )
 
 type SQLFeatures struct {
-	UseILIKE          bool
-	PlaceholderFormat sq.PlaceholderFormat
+	UseILIKE              bool
+	PlaceholderFormat     sq.PlaceholderFormat
+	ExclusiveTableLockSQL func(table string) string
 }
 
 func DefaultSQLProviderFeatures() SQLFeatures {

@@ -54,7 +54,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 	}
 
 	existing := batchRows.Next()
-	if existing && !allowHashUpdate {
+	if existing {
 		var hash *fftypes.Bytes32
 		_ = batchRows.Scan(&hash)
 		if !fftypes.SafeHashCompare(hash, batch.Hash) {

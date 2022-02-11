@@ -58,7 +58,7 @@ func newTransfer() *tokens.TokenTransfer {
 }
 
 func TestTokensTransferredSucceedWithRetries(t *testing.T) {
-	em, cancel := newTestEventManager(t)
+	em, cancel := newTestEventManagerWithMetrics(t)
 	defer cancel()
 
 	mdi := em.database.(*databasemocks.Plugin)

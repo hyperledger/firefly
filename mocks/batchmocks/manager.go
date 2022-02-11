@@ -35,9 +35,9 @@ func (_m *Manager) NewMessages() chan<- int64 {
 	return r0
 }
 
-// RegisterDispatcher provides a mock function with given fields: msgTypes, handler, batchOptions
-func (_m *Manager) RegisterDispatcher(msgTypes []fftypes.FFEnum, handler batch.DispatchHandler, batchOptions batch.Options) {
-	_m.Called(msgTypes, handler, batchOptions)
+// RegisterDispatcher provides a mock function with given fields: name, txType, msgTypes, handler, batchOptions
+func (_m *Manager) RegisterDispatcher(name string, txType fftypes.FFEnum, msgTypes []fftypes.FFEnum, handler batch.DispatchHandler, batchOptions batch.DispatcherOptions) {
+	_m.Called(name, txType, msgTypes, handler, batchOptions)
 }
 
 // Start provides a mock function with given fields:
@@ -49,6 +49,22 @@ func (_m *Manager) Start() error {
 		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Status provides a mock function with given fields:
+func (_m *Manager) Status() *batch.ManagerStatus {
+	ret := _m.Called()
+
+	var r0 *batch.ManagerStatus
+	if rf, ok := ret.Get(0).(func() *batch.ManagerStatus); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*batch.ManagerStatus)
+		}
 	}
 
 	return r0

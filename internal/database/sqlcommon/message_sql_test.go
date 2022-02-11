@@ -58,7 +58,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Topics:    []string{"test1"},
 			Group:     nil,
 			DataHash:  fftypes.NewRandB32(),
-			TxType:    fftypes.TransactionTypeNone,
+			TxType:    fftypes.TransactionTypeUnpinned,
 		},
 		Hash:      fftypes.NewRandB32(),
 		State:     fftypes.MessageStateStaged,

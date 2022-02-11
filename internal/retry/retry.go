@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,6 +33,7 @@ type Retry struct {
 	InitialDelay time.Duration
 	MaximumDelay time.Duration
 	Factor       float64
+	ErrCallback  func(err error)
 }
 
 // DoCustomLog disables the automatic attempt logging, so the caller should do logging for each attempt
@@ -55,6 +56,9 @@ func (r *Retry) Do(ctx context.Context, logDescription string, f func(attempt in
 		retry, err := f(attempt)
 		if err != nil && logDescription != "" {
 			log.L(ctx).Errorf("%s attempt %d: %s", logDescription, attempt, err)
+			if r.ErrCallback != nil {
+				r.ErrCallback(err)
+			}
 		}
 		if !retry || err == nil {
 			return err

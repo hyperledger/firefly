@@ -22,10 +22,10 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -33,17 +33,22 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("metrics")
 
-func newTestBatchPinSubmitter(t *testing.T) *batchPinSubmitter {
+func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitter {
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+	mmi := &metricsmocks.Manager{}
+	mmi.On("IsMetricsEnabled").Return(enableMetrics)
+	if enableMetrics {
+		mmi.On("CountBatchPin").Return()
+	}
 	mbi.On("Name").Return("ut").Maybe()
-	bps := NewBatchPinSubmitter(mdi, mim, mbi).(*batchPinSubmitter)
+	bps := NewBatchPinSubmitter(mdi, mim, mbi, mmi).(*batchPinSubmitter)
 	return bps
 }
 
 func TestSubmitPinnedBatchOk(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t)
+	bp := newTestBatchPinSubmitter(t, false)
 	ctx := context.Background()
 
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
@@ -70,20 +75,19 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 		return true
 	})).Return(nil)
 	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), "0x12345", mock.Anything).Return(nil)
-
+	mmi := bp.metrics.(*metricsmocks.Manager)
+	mmi.On("IsMetricsEnabled").Return(false)
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.NoError(t, err)
 }
 
 func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
-	metrics.Registry()
-	config.Set(config.MetricsEnabled, true)
-	bp := newTestBatchPinSubmitter(t)
+	bp := newTestBatchPinSubmitter(t, true)
 	ctx := context.Background()
 
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
-
+	mmi := bp.metrics.(*metricsmocks.Manager)
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
 		Identity: fftypes.Identity{
@@ -105,17 +109,19 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 		return true
 	})).Return(nil)
 	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), "0x12345", mock.Anything).Return(nil)
+	mmi.On("IsMetricsEnabled").Return(true)
+	mmi.On("BatchPinCounter").Return()
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.NoError(t, err)
 }
 
 func TestSubmitPinnedBatchOpFail(t *testing.T) {
-
-	bp := newTestBatchPinSubmitter(t)
+	bp := newTestBatchPinSubmitter(t, false)
 	ctx := context.Background()
 
 	mdi := bp.database.(*databasemocks.Plugin)
+	mmi := bp.metrics.(*metricsmocks.Manager)
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -132,7 +138,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	contexts := []*fftypes.Bytes32{}
 
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
-
+	mmi.On("IsMetricsEnabled").Return(false)
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.Regexp(t, "pop", err)
 

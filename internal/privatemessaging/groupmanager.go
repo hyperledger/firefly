@@ -49,6 +49,10 @@ type groupHashEntry struct {
 }
 
 func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
+	if group == nil {
+		return false, i18n.NewError(ctx, i18n.MsgGroupRequired)
+	}
+
 	// In the case that we've received a private message for a group, it's possible (likely actually)
 	// that the private message using the group will arrive before the group init message confirming
 	// the group via the blockchain.

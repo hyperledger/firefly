@@ -46,6 +46,7 @@ type txContextKey struct{}
 type txWrapper struct {
 	sqlTX      *sql.Tx
 	postCommit []func()
+	tableLocks []string
 }
 
 func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.Prefix, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
@@ -315,6 +316,32 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuil
 
 func (s *SQLCommon) postCommitEvent(tx *txWrapper, fn func()) {
 	tx.postCommit = append(tx.postCommit, fn)
+}
+
+func (tx *txWrapper) tableIsLocked(table string) bool {
+	for _, t := range tx.tableLocks {
+		if t == table {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *SQLCommon) lockTableExclusiveTx(ctx context.Context, tx *txWrapper, table string) error {
+	l := log.L(ctx)
+	if s.features.ExclusiveTableLockSQL != nil && !tx.tableIsLocked(table) {
+		sqlQuery := s.features.ExclusiveTableLockSQL(table)
+
+		l.Debugf(`SQL-> lock: %s`, sqlQuery)
+		_, err := tx.sqlTX.ExecContext(ctx, sqlQuery)
+		if err != nil {
+			l.Errorf(`SQL lock failed: %s sql=[ %s ]`, err, sqlQuery)
+			return i18n.WrapError(ctx, err, i18n.MsgDBLockFailed)
+		}
+		tx.tableLocks = append(tx.tableLocks, table)
+		l.Debugf(`SQL<- lock %s`, table)
+	}
+	return nil
 }
 
 // rollbackTx be safely called as a defer, as it is a cheap no-op if the transaction is complete

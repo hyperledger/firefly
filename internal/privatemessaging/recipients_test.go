@@ -418,10 +418,14 @@ func TestResolveReceipientListExisting(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	groupID := fftypes.NewRandB32()
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{Hash: groupID}, nil)
+
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Group: fftypes.NewRandB32(),
+				Group: groupID,
 			},
 		},
 	})
