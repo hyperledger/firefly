@@ -30,7 +30,7 @@ import (
 )
 
 func TestOperationUpdateSuccess(t *testing.T) {
-	em, cancel := newTestEventManager(t)
+	em, cancel := newTestEventManagerWithMetrics(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
@@ -111,7 +111,7 @@ func TestOperationTXUpdateError(t *testing.T) {
 }
 
 func TestOperationUpdateTransferFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
+	em, cancel := newTestEventManagerWithMetrics(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}

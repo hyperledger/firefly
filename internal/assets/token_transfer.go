@@ -124,6 +124,9 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 	}
 
 	sender := am.NewTransfer(ns, transfer)
+	if am.metrics.IsMetricsEnabled() {
+		am.metrics.TransferSubmitted(transfer)
+	}
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -139,6 +142,9 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 	}
 
 	sender := am.NewTransfer(ns, transfer)
+	if am.metrics.IsMetricsEnabled() {
+		am.metrics.TransferSubmitted(transfer)
+	}
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -157,6 +163,9 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 	}
 
 	sender := am.NewTransfer(ns, transfer)
+	if am.metrics.IsMetricsEnabled() {
+		am.metrics.TransferSubmitted(transfer)
+	}
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {

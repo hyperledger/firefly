@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -51,6 +52,8 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	mdx := &dataexchangemocks.Plugin{}
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
+	mmi := &metricsmocks.Manager{}
+	mmi.On("IsMetricsEnabled").Return(false)
 	mbi.On("Name").Return("ut_blockchain").Maybe()
 	mpi.On("Name").Return("ut_publicstorage").Maybe()
 	mba.On("RegisterDispatcher", []fftypes.MessageType{
@@ -67,13 +70,48 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp)
+	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi)
+	assert.NoError(t, err)
+	return b.(*broadcastManager), cancel
+}
+
+func newTestBroadcastWithMetrics(t *testing.T) (*broadcastManager, func()) {
+	config.Reset()
+	mdi := &databasemocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mdm := &datamocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	mpi := &publicstoragemocks.Plugin{}
+	mba := &batchmocks.Manager{}
+	mdx := &dataexchangemocks.Plugin{}
+	msa := &syncasyncmocks.Bridge{}
+	mbp := &batchpinmocks.Submitter{}
+	mmi := &metricsmocks.Manager{}
+	mmi.On("MessageSubmitted", mock.Anything).Return()
+	mmi.On("IsMetricsEnabled").Return(true)
+	mbi.On("Name").Return("ut_blockchain").Maybe()
+	mpi.On("Name").Return("ut_publicstorage").Maybe()
+	mba.On("RegisterDispatcher", []fftypes.MessageType{
+		fftypes.MessageTypeBroadcast,
+		fftypes.MessageTypeDefinition,
+		fftypes.MessageTypeTransferBroadcast,
+	}, mock.Anything, mock.Anything).Return()
+
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

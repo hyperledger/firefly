@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
@@ -66,6 +67,7 @@ type testOrchestrator struct {
 	mam *assetmocks.Manager
 	mti *tokenmocks.Plugin
 	mcm *contractmocks.Manager
+	mmi *metricsmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -91,6 +93,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mam: &assetmocks.Manager{},
 		mti: &tokenmocks.Plugin{},
 		mcm: &contractmocks.Manager{},
+		mmi: &metricsmocks.Manager{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -107,6 +110,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
+	tor.orchestrator.metrics = tor.mmi
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -116,6 +120,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mam.On("Name").Return("mock-am").Maybe()
 	tor.mti.On("Name").Return("mock-tk").Maybe()
 	tor.mcm.On("Name").Return("mock-cm").Maybe()
+	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	return tor
 }
 
@@ -468,6 +473,12 @@ func TestInitDataComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitMetricsComponent(t *testing.T) {
+	or := newTestOrchestrator()
+	or.metrics = nil
+	or.initComponents(context.Background())
+}
+
 func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
@@ -525,6 +536,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mpm.On("Start").Return(nil)
 	or.mam.On("Start").Return(nil)
 	or.mti.On("Start").Return(nil)
+	or.mmi.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
@@ -605,6 +617,7 @@ func TestInitOK(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mmi.On("Init").Return(nil)
 	err := config.ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -619,4 +632,5 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mdm, or.Data())
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mcm, or.Contracts())
+	assert.Equal(t, or.mmi, or.Metrics())
 }

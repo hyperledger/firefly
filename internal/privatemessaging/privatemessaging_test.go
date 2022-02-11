@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,9 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mdm := &datamocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
+	mmi := &metricsmocks.Manager{}
 
+	mmi.On("IsMetricsEnabled").Return(false)
 	mba.On("RegisterDispatcher", []fftypes.MessageType{
 		fftypes.MessageTypeGroupInit,
 		fftypes.MessageTypePrivate,
@@ -64,7 +67,49 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp)
+	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi)
+	assert.NoError(t, err)
+
+	// Default mocks to save boilerplate in the tests
+	mdx.On("Name").Return("utdx").Maybe()
+	mbi.On("Name").Return("utblk").Maybe()
+
+	return pm.(*privateMessaging), cancel
+}
+
+func newTestPrivateMessagingWithMetrics(t *testing.T) (*privateMessaging, func()) {
+	config.Reset()
+	config.Set(config.NodeName, "node1")
+	config.Set(config.GroupCacheTTL, "1m")
+	config.Set(config.GroupCacheSize, "1m")
+
+	mdi := &databasemocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mdx := &dataexchangemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mba := &batchmocks.Manager{}
+	mdm := &datamocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mbp := &batchpinmocks.Submitter{}
+	mmi := &metricsmocks.Manager{}
+
+	mmi.On("IsMetricsEnabled").Return(true)
+	mmi.On("MessageSubmitted", mock.Anything).Return()
+	mba.On("RegisterDispatcher", []fftypes.MessageType{
+		fftypes.MessageTypeGroupInit,
+		fftypes.MessageTypePrivate,
+		fftypes.MessageTypeTransferPrivate,
+	}, mock.Anything, mock.Anything).Return()
+
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -173,7 +218,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
-	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

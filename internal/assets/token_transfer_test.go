@@ -68,7 +68,7 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 }
 
 func TestMintTokensSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	mint := &fftypes.TokenTransferInput{
@@ -517,7 +517,7 @@ func TestMintTokensConfirm(t *testing.T) {
 }
 
 func TestBurnTokensSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	burn := &fftypes.TokenTransferInput{
@@ -610,7 +610,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 }
 
 func TestTransferTokensSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	transfer := &fftypes.TokenTransferInput{
