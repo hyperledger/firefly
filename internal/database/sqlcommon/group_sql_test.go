@@ -18,7 +18,6 @@ package sqlcommon
 
 import (
 	"context"
-	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -56,7 +55,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, fftypes.ChangeEventTypeCreated, "ns1", groupHash, mock.Anything).Return()
 	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, fftypes.ChangeEventTypeUpdated, "ns1", groupHash, mock.Anything).Return()
 
-	err := s.UpsertGroup(ctx, group, true)
+	err := s.UpsertGroup(ctx, group, database.UpsertOptimizationNew)
 	assert.NoError(t, err)
 
 	// Check we get the exact same group back
@@ -72,18 +71,15 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		GroupIdentity: fftypes.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: fftypes.Members{
-				{Identity: "0x12345", Node: fftypes.NewUUID()},
-				group.Members[0],
-			},
-			Ledger: fftypes.NewUUID(),
+			Members:   group.Members,
+			Ledger:    fftypes.NewUUID(),
 		},
 		Created: fftypes.Now(),
 		Message: fftypes.NewUUID(),
 		Hash:    groupHash,
 	}
 
-	err = s.UpsertGroup(context.Background(), groupUpdated, true)
+	err = s.UpsertGroup(context.Background(), groupUpdated, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
 
 	// Check we get the exact same group back - note the removal of one of the data elements
@@ -139,7 +135,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 func TestUpsertGroupFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{}, true)
+	err := s.UpsertGroup(context.Background(), &fftypes.Group{}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -150,7 +146,7 @@ func TestUpsertGroupFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	groupID := fftypes.NewRandB32()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, true)
+	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -162,7 +158,7 @@ func TestUpsertGroupFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	groupID := fftypes.NewRandB32()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, true)
+	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -174,21 +170,28 @@ func TestUpsertGroupFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow(groupID.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, true)
+	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertGroupFailUpdateMembers(t *testing.T) {
+func TestUpsertGroupFailMembers(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow(groupID.String()))
-	mock.ExpectExec("UPDATE .*").WillReturnResult(driver.ResultNoRows)
-	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}))
+	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, true)
-	assert.Regexp(t, "FF10118", err)
+	err := s.UpsertGroup(context.Background(), &fftypes.Group{
+		Hash: groupID,
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: "org1", Node: fftypes.NewUUID()},
+			},
+		},
+	}, database.UpsertOptimizationSkip)
+	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -199,8 +202,24 @@ func TestUpsertGroupFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, true)
+	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateMembersRecreateFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	groupID := fftypes.NewRandB32()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	tx, _ := s.db.Begin()
+	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
+		Hash: groupID,
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{{Node: fftypes.NewUUID()}},
+		},
+	}, true)
+	assert.Regexp(t, "FF10118", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

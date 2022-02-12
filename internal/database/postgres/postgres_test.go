@@ -43,9 +43,9 @@ func TestPostgresProvider(t *testing.T) {
 	assert.Equal(t, `LOCK TABLE "events" IN EXCLUSIVE MODE;`, psql.Features().ExclusiveTableLockSQL("events"))
 
 	insert := sq.Insert("test").Columns("col1").Values("val1")
-	insert, query := psql.UpdateInsertForSequenceReturn(insert)
+	insert, query := psql.ApplyInsertQueryCustomizations(insert, true)
 	sql, _, err := insert.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "INSERT INTO test (col1) VALUES (?)  RETURNING seq", sql)
+	assert.Equal(t, "INSERT INTO test (col1) VALUES (?)  ON CONFLICT DO NOTHING RETURNING seq", sql)
 	assert.True(t, query)
 }
