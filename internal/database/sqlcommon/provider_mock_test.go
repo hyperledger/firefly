@@ -77,7 +77,7 @@ func (psql *mockProvider) Features() SQLFeatures {
 	return features
 }
 
-func (mp *mockProvider) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
+func (mp *mockProvider) UpdateInsertForSequenceReturn(insert sq.InsertBuilder, requestConflictEmptyResult bool) (sq.InsertBuilder, bool) {
 	if mp.fakePSQLInsert {
 		return insert.Suffix(" RETURNING seq"), true
 	}

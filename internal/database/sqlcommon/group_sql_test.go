@@ -175,6 +175,26 @@ func TestUpsertGroupFailUpdate(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestUpsertGroupFailMembers(t *testing.T) {
+	s, mock := newMockProvider().init()
+	groupID := fftypes.NewRandB32()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}))
+	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.UpsertGroup(context.Background(), &fftypes.Group{
+		Hash: groupID,
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: "org1", Node: fftypes.NewUUID()},
+			},
+		},
+	}, database.UpsertOptimizationSkip)
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestUpsertGroupFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()

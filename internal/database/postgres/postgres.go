@@ -60,8 +60,13 @@ func (psql *Postgres) Features() sqlcommon.SQLFeatures {
 	return features
 }
 
-func (psql *Postgres) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
-	return insert.Suffix(" RETURNING seq"), true
+func (psql *Postgres) UpdateInsertForSequenceReturn(insert sq.InsertBuilder, requestConflictEmptyResult bool) (sq.InsertBuilder, bool) {
+	suffix := " RETURNING seq"
+	if requestConflictEmptyResult {
+		// Caller wants us to return an empty result set on insert conflict, rather than an error
+		suffix = fmt.Sprintf(" ON CONFLICT DO NOTHING%s", suffix)
+	}
+	return insert.Suffix(suffix), true
 }
 
 func (psql *Postgres) Open(url string) (*sql.DB, error) {

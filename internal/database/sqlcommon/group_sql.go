@@ -52,13 +52,14 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, optim
 	// try to perform an insert concurrently and ensure a non-failure outcome.
 	optimized := false
 	if optimization == database.UpsertOptimizationNew {
-		opErr := s.attemptGroupInsert(ctx, tx, group)
+		opErr := s.attemptGroupInsert(ctx, tx, group, true /* we want a failure here we can progress past */)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
 		rowsAffected, opErr := s.attemptGroupUpdate(ctx, tx, group)
 		optimized = opErr == nil && rowsAffected == 1
 	}
 
+	existing := false
 	if !optimized {
 		// Do a select within the transaction to determine if the UUID already exists
 		groupRows, _, err := s.queryTx(ctx, tx,
@@ -69,7 +70,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, optim
 		if err != nil {
 			return err
 		}
-		existing := groupRows.Next()
+		existing = groupRows.Next()
 		groupRows.Close()
 
 		if existing {
@@ -77,7 +78,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, optim
 				return err
 			}
 		} else {
-			if err = s.attemptGroupInsert(ctx, tx, group); err != nil {
+			if err = s.attemptGroupInsert(ctx, tx, group, false); err != nil {
 				return err
 			}
 		}
@@ -86,7 +87,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, optim
 	// Note the member list is not allowed to change, as it is part of the hash.
 	// So the optimization above relies on the fact these are in a transaction, so the
 	// whole group (with members) will have been inserted
-	if !optimized || optimization == database.UpsertOptimizationNew {
+	if (optimized && optimization == database.UpsertOptimizationNew) || (!optimized && !existing) {
 		if err = s.updateMembers(ctx, tx, group, false); err != nil {
 			return err
 		}
@@ -112,8 +113,8 @@ func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group
 	)
 }
 
-func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group *fftypes.Group) error {
-	_, err := s.insertTx(ctx, tx,
+func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group *fftypes.Group, requestConflictEmptyResult bool) error {
+	_, err := s.insertTxExt(ctx, tx,
 		sq.Insert("groups").
 			Columns(groupColumns...).
 			Values(
@@ -127,6 +128,7 @@ func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group
 		func() {
 			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeCreated, group.Namespace, group.Hash)
 		},
+		requestConflictEmptyResult,
 	)
 	return err
 }
