@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/sirupsen/logrus"
 
 	// Import migrate file source
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -253,7 +254,11 @@ func (s *SQLCommon) insertTxExt(ctx context.Context, tx *txWrapper, q sq.InsertB
 	if useQuery {
 		err := tx.sqlTX.QueryRowContext(ctx, sqlQuery, args...).Scan(&sequence)
 		if err != nil {
-			l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
+			level := logrus.DebugLevel
+			if !requestConflictEmptyResult {
+				level = logrus.ErrorLevel
+			}
+			l.Logf(level, `SQL insert failed (conflictEmptyRequested=%t): %s sql=[ %s ]: %s`, requestConflictEmptyResult, err, sqlQuery, err)
 			return -1, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
 		}
 	} else {
