@@ -148,6 +148,21 @@ func (h *FFDX) Capabilities() *dataexchange.Capabilities {
 	return h.capabilities
 }
 
+func (h *FFDX) dxEndpointArray(nodes []fftypes.DXInfo) []fftypes.JSONObject {
+	// The remote DataExchange connector HTTP API expects a flat array
+	// where "id" is in embedded in each entry - because that's how it
+	// originally passed the data to us.
+	// In the DXInfo contract on the Go plugin in FireFly we raise the "id" up
+	// to be a first class "peer" field, so it can be indexed outside of the opaque
+	// endpoint payload.
+	// This function just converts back to a flat array.
+	dxEndpointArray := make([]fftypes.JSONObject, len(nodes))
+	for i, node := range nodes {
+		dxEndpointArray[i] = node.Endpoint
+	}
+	return dxEndpointArray
+}
+
 func (h *FFDX) beforeConnect(ctx context.Context) error {
 	h.initMutex.Lock()
 	defer h.initMutex.Unlock()
@@ -156,7 +171,7 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 		h.initialized = false
 		var status dxStatus
 		res, err := h.client.R().SetContext(ctx).
-			SetBody(h.nodes).
+			SetBody(h.dxEndpointArray(h.nodes)).
 			SetResult(&status).
 			Post("/api/v1/init")
 		if err != nil || !res.IsSuccess() {

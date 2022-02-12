@@ -528,7 +528,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
 	utConfPrefix.Set(DataExchangeInitEnabled, true)
 
-	first := true
+	count := 0
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			var reqNodes []fftypes.DXInfo
@@ -538,11 +538,14 @@ func TestWebsocketWithReinit(t *testing.T) {
 
 			assert.False(t, h.initialized)
 
-			if first {
-				first = false
+			count++
+			if count == 1 {
 				return httpmock.NewJsonResponse(200, fftypes.JSONObject{
 					"status": "notready",
 				})
+			}
+			if count == 2 {
+				return nil, fmt.Errorf("pop")
 			}
 			return httpmock.NewJsonResponse(200, fftypes.JSONObject{
 				"status": "ready",
@@ -556,7 +559,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 	err = h.Start()
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.True(t, h.initialized)
 }
 
