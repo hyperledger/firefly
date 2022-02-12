@@ -73,7 +73,7 @@ func (sqlite *SQLite3) Features() sqlcommon.SQLFeatures {
 	return features
 }
 
-func (sqlite *SQLite3) UpdateInsertForSequenceReturn(insert sq.InsertBuilder, requestConflictEmptyResult bool) (sq.InsertBuilder, bool) {
+func (sqlite *SQLite3) ApplyInsertQueryCustomizations(insert sq.InsertBuilder, requestConflictEmptyResult bool) (sq.InsertBuilder, bool) {
 	return insert, false
 }
 

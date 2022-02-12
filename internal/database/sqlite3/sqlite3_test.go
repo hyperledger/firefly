@@ -51,7 +51,7 @@ func TestSQLite3GoProvider(t *testing.T) {
 	assert.Equal(t, sq.Dollar, sqlite.Features().PlaceholderFormat)
 
 	insert := sq.Insert("test").Columns("col1").Values("val1")
-	insert, query := sqlite.UpdateInsertForSequenceReturn(insert, false)
+	insert, query := sqlite.ApplyInsertQueryCustomizations(insert, false)
 	sql, _, err := insert.ToSql()
 	assert.NoError(t, err)
 	assert.Equal(t, "INSERT INTO test (col1) VALUES (?)", sql)

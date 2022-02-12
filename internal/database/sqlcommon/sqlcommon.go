@@ -242,7 +242,7 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 
 func (s *SQLCommon) insertTxExt(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func(), requestConflictEmptyResult bool) (int64, error) {
 	l := log.L(ctx)
-	q, useQuery := s.provider.UpdateInsertForSequenceReturn(q, requestConflictEmptyResult)
+	q, useQuery := s.provider.ApplyInsertQueryCustomizations(q, requestConflictEmptyResult)
 
 	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {

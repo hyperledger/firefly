@@ -60,7 +60,7 @@ func (psql *Postgres) Features() sqlcommon.SQLFeatures {
 	return features
 }
 
-func (psql *Postgres) UpdateInsertForSequenceReturn(insert sq.InsertBuilder, requestConflictEmptyResult bool) (sq.InsertBuilder, bool) {
+func (psql *Postgres) ApplyInsertQueryCustomizations(insert sq.InsertBuilder, requestConflictEmptyResult bool) (sq.InsertBuilder, bool) {
 	suffix := " RETURNING seq"
 	if requestConflictEmptyResult {
 		// Caller wants us to return an empty result set on insert conflict, rather than an error
