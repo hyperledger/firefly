@@ -23,17 +23,16 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 var mutex = &sync.Mutex{}
 
 type Manager interface {
 	CountBatchPin()
-	MessageSubmitted(in *fftypes.MessageInOut)
+	MessageSubmitted(msg *fftypes.Message)
 	MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum)
-	TransferSubmitted(transfer *fftypes.TokenTransferInput)
-	TransferConfirmed(transfer *tokens.TokenTransfer)
+	TransferSubmitted(transfer *fftypes.TokenTransfer)
+	TransferConfirmed(transfer *fftypes.TokenTransfer)
 	AddTime(id string)
 	GetTime(id string) time.Time
 	DeleteTime(id string)
@@ -65,15 +64,15 @@ func (mm *metricsManager) CountBatchPin() {
 	BatchPinCounter.Inc()
 }
 
-func (mm *metricsManager) MessageSubmitted(in *fftypes.MessageInOut) {
-	if len(in.Header.ID.String()) > 0 {
-		switch in.Message.Header.Type {
+func (mm *metricsManager) MessageSubmitted(msg *fftypes.Message) {
+	if len(msg.Header.ID.String()) > 0 {
+		switch msg.Header.Type {
 		case fftypes.MessageTypeBroadcast:
 			BroadcastSubmittedCounter.Inc()
 		case fftypes.MessageTypePrivate:
 			PrivateMsgSubmittedCounter.Inc()
 		}
-		mm.AddTime(in.Header.ID.String())
+		mm.AddTime(msg.Header.ID.String())
 	}
 }
 
@@ -99,7 +98,7 @@ func (mm *metricsManager) MessageConfirmed(msg *fftypes.Message, eventType fftyp
 	}
 }
 
-func (mm *metricsManager) TransferSubmitted(transfer *fftypes.TokenTransferInput) {
+func (mm *metricsManager) TransferSubmitted(transfer *fftypes.TokenTransfer) {
 	if len(transfer.LocalID.String()) > 0 {
 		switch transfer.Type {
 		case fftypes.TokenTransferTypeMint: // Mint submitted
@@ -113,7 +112,7 @@ func (mm *metricsManager) TransferSubmitted(transfer *fftypes.TokenTransferInput
 	}
 }
 
-func (mm *metricsManager) TransferConfirmed(transfer *tokens.TokenTransfer) {
+func (mm *metricsManager) TransferConfirmed(transfer *fftypes.TokenTransfer) {
 	timeElapsed := time.Since(mm.GetTime(transfer.LocalID.String())).Seconds()
 	mm.DeleteTime(transfer.LocalID.String())
 

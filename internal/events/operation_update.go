@@ -22,7 +22,6 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
@@ -45,7 +44,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 			if err != nil {
 				log.L(em.ctx).Warnf("Could not determine token transfer type: %s", err)
 			}
-			em.metrics.TransferConfirmed(&tokens.TokenTransfer{TokenTransfer: tokenTransfer})
+			em.metrics.TransferConfirmed(&tokenTransfer)
 		}
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
