@@ -3786,11 +3786,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: group
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: id
         schema:
           type: string
@@ -3807,6 +3802,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3862,6 +3862,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted
@@ -3920,6 +3921,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted
@@ -4509,11 +4511,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: group
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: id
         schema:
           type: string
@@ -4530,6 +4527,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4585,6 +4587,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted

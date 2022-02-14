@@ -178,7 +178,7 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 	}
 
 	for _, msg := range batch.Payload.Messages {
-		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID)
+		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}

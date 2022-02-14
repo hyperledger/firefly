@@ -875,7 +875,7 @@ func TestAttemptMessageDispatchFailGetData(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, nil)
+	}, nil, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -893,7 +893,7 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil)
+	}, nil, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -919,7 +919,7 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 
 	dispatched, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, nil)
+	}, nil, nil)
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -942,7 +942,7 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil)
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -967,7 +967,7 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil)
 	assert.EqualError(t, err, "pop")
 	assert.False(t, dispatched)
 
@@ -998,7 +998,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
 
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil)
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1012,7 +1012,7 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 	bs := newBatchState(ag)
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionReject, &definitions.DefinitionBatchActions{}, nil)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionReject, &definitions.DefinitionBatchActions{}, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -1046,7 +1046,7 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, bs)
+	}, nil, bs)
 	assert.NoError(t, err)
 
 }
@@ -1236,7 +1236,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	defer cancel()
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionRetry, &definitions.DefinitionBatchActions{}, fmt.Errorf("pop"))
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionRetry, &definitions.DefinitionBatchActions{}, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -1250,7 +1250,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil)
+	}, nil, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1260,7 +1260,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 	defer cancel()
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionWait, &definitions.DefinitionBatchActions{}, nil)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionWait, &definitions.DefinitionBatchActions{}, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -1274,7 +1274,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil)
+	}, nil, nil)
 	assert.NoError(t, err)
 
 }
@@ -1293,7 +1293,7 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, bs)
+	}, nil, bs)
 	assert.NoError(t, err)
 
 	err = bs.RunFinalize(ag.ctx)
@@ -1318,7 +1318,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.MessageTypeGroupInit,
 		},
-	}, bs)
+	}, nil, bs)
 	assert.NoError(t, err)
 
 }
@@ -1336,7 +1336,7 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, bs)
+	}, nil, bs)
 	assert.NoError(t, err)
 
 	err = bs.RunFinalize(ag.ctx)

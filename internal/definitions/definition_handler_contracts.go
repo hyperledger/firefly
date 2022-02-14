@@ -65,7 +65,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	return err == nil, err
 }
 
-func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -91,13 +91,13 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, msg *fftyp
 	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
 	return ActionConfirm, &DefinitionBatchActions{
 		Finalize: func(ctx context.Context) error {
-			event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID, tx)
 			return dh.database.InsertEvent(ctx, event)
 		},
 	}, nil
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.ContractAPI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -123,7 +123,7 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, ms
 	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
 	return ActionConfirm, &DefinitionBatchActions{
 		Finalize: func(ctx context.Context) error {
-			event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID, tx)
 			return dh.database.InsertEvent(ctx, event)
 		},
 	}, nil
