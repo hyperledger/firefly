@@ -49,6 +49,10 @@ type groupHashEntry struct {
 }
 
 func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
+	if group == nil {
+		return false, i18n.NewError(ctx, i18n.MsgGroupRequired)
+	}
+
 	// In the case that we've received a private message for a group, it's possible (likely actually)
 	// that the private message using the group will arrive before the group init message confirming
 	// the group via the blockchain.
@@ -66,7 +70,7 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Gro
 		log.L(ctx).Errorf("Attempt to insert invalid group %s:%s: %s", group.Namespace, group.Hash, err)
 		return false, nil
 	}
-	err = gm.database.UpsertGroup(ctx, group, false)
+	err = gm.database.UpsertGroup(ctx, group, database.UpsertOptimizationNew /* it could have been created by another thread, but we think we're first */)
 	if err != nil {
 		return false, err
 	}
@@ -98,7 +102,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	// So it can be used straight away.
 	// We're able to do this by making the identifier of the group a hash of the identity fields
 	// (name, ledger and member list), as that is all the group contains. There's no data in there.
-	if err = gm.database.UpsertGroup(ctx, group, true); err != nil {
+	if err = gm.database.UpsertGroup(ctx, group, database.UpsertOptimizationNew /* we think we're first */); err != nil {
 		return err
 	}
 
@@ -223,7 +227,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 			return nil, nil
 		}
 		newGroup.Message = msg.Header.ID
-		err = gm.database.UpsertGroup(ctx, &newGroup, true)
+		err = gm.database.UpsertGroup(ctx, &newGroup, database.UpsertOptimizationNew /* we think we're first to create this */)
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,16 +41,27 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allowExisting bool) (err error) {
+func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
+	// We use an upsert optimization here for performance, but also to account for the situation where two threads
+	// try to perform an insert concurrently and ensure a non-failure outcome.
+	optimized := false
+	if optimization == database.UpsertOptimizationNew {
+		opErr := s.attemptGroupInsert(ctx, tx, group, true /* we want a failure here we can progress past */)
+		optimized = opErr == nil
+	} else if optimization == database.UpsertOptimizationExisting {
+		rowsAffected, opErr := s.attemptGroupUpdate(ctx, tx, group)
+		optimized = opErr == nil && rowsAffected == 1
+	}
+
 	existing := false
-	if allowExisting {
-		// Do a select within the transaction to detemine if the UUID already exists
+	if !optimized {
+		// Do a select within the transaction to determine if the UUID already exists
 		groupRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash").
 				From("groups").
@@ -61,53 +72,65 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 		}
 		existing = groupRows.Next()
 		groupRows.Close()
+
+		if existing {
+			if _, err = s.attemptGroupUpdate(ctx, tx, group); err != nil {
+				return err
+			}
+		} else {
+			if err = s.attemptGroupInsert(ctx, tx, group, false); err != nil {
+				return err
+			}
+		}
 	}
 
-	if existing {
-
-		// Update the group
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("groups").
-				Set("message_id", group.Message).
-				Set("namespace", group.Namespace).
-				Set("name", group.Name).
-				Set("ledger", group.Ledger).
-				Set("hash", group.Hash).
-				Set("created", group.Created).
-				Where(sq.Eq{"hash": group.Hash}),
-			func() {
-				s.callbacks.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeUpdated, group.Namespace, group.Hash)
-			},
-		); err != nil {
+	// Note the member list is not allowed to change, as it is part of the hash.
+	// So the optimization above relies on the fact these are in a transaction, so the
+	// whole group (with members) will have been inserted
+	if (optimized && optimization == database.UpsertOptimizationNew) || (!optimized && !existing) {
+		if err = s.updateMembers(ctx, tx, group, false); err != nil {
 			return err
 		}
-	} else {
-		_, err := s.insertTx(ctx, tx,
-			sq.Insert("groups").
-				Columns(groupColumns...).
-				Values(
-					group.Message,
-					group.Namespace,
-					group.Name,
-					group.Ledger,
-					group.Hash,
-					group.Created,
-				),
-			func() {
-				s.callbacks.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeCreated, group.Namespace, group.Hash)
-			},
-		)
-		if err != nil {
-			return err
-		}
-
-	}
-
-	if err = s.updateMembers(ctx, tx, group, existing); err != nil {
-		return err
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group *fftypes.Group) (int64, error) {
+	// Update the group
+	return s.updateTx(ctx, tx,
+		sq.Update("groups").
+			Set("message_id", group.Message).
+			Set("namespace", group.Namespace).
+			Set("name", group.Name).
+			Set("ledger", group.Ledger).
+			Set("hash", group.Hash).
+			Set("created", group.Created).
+			Where(sq.Eq{"hash": group.Hash}),
+		func() {
+			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeUpdated, group.Namespace, group.Hash)
+		},
+	)
+}
+
+func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group *fftypes.Group, requestConflictEmptyResult bool) error {
+	_, err := s.insertTxExt(ctx, tx,
+		sq.Insert("groups").
+			Columns(groupColumns...).
+			Values(
+				group.Message,
+				group.Namespace,
+				group.Name,
+				group.Ledger,
+				group.Hash,
+				group.Created,
+			),
+		func() {
+			s.callbacks.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeCreated, group.Namespace, group.Hash)
+		},
+		requestConflictEmptyResult,
+	)
+	return err
 }
 
 func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fftypes.Group, existing bool) error {

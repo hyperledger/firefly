@@ -212,17 +212,3 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 
 	return r0
 }
-
-// ValidateContractLocation provides a mock function with given fields: ctx, location
-func (_m *Plugin) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) error {
-	ret := _m.Called(ctx, location)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) error); ok {
-		r0 = rf(ctx, location)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}

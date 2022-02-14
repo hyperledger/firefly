@@ -17,75 +17,138 @@
 package metrics
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	muxprom "gitlab.com/hfuss/mux-prometheus/pkg/middleware"
+	"context"
+	"sync"
+	"time"
+
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-var registry *prometheus.Registry
-var adminInstrumentation *muxprom.Instrumentation
-var restInstrumentation *muxprom.Instrumentation
-var BatchPinCounter prometheus.Counter
+var mutex = &sync.Mutex{}
 
-// MetricsBatchPin is the prometheus metric for total number of batch pins submitted
-var MetricsBatchPin = "ff_batchpin_total"
+type Manager interface {
+	CountBatchPin()
+	MessageSubmitted(in *fftypes.MessageInOut)
+	MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum)
+	TransferSubmitted(transfer *fftypes.TokenTransferInput)
+	TransferConfirmed(transfer *tokens.TokenTransfer)
+	AddTime(id string)
+	GetTime(id string) time.Time
+	DeleteTime(id string)
+	IsMetricsEnabled() bool
+	Start() error
+}
 
-// Registry returns FireFly's customized Prometheus registry
-func Registry() *prometheus.Registry {
-	if registry == nil {
-		initMetricsCollectors()
-		registry = prometheus.NewRegistry()
-		registerMetricsCollectors()
+type metricsManager struct {
+	ctx            context.Context
+	metricsEnabled bool
+	timeMap        map[string]time.Time
+}
+
+func (mm *metricsManager) Start() error {
+	return nil
+}
+
+func NewMetricsManager(ctx context.Context) Manager {
+	mm := &metricsManager{
+		ctx:            ctx,
+		metricsEnabled: config.GetBool(config.MetricsEnabled),
+		timeMap:        make(map[string]time.Time),
 	}
 
-	return registry
+	return mm
 }
 
-// GetAdminServerInstrumentation returns the admin server's Prometheus middleware, ensuring its metrics are never
-// registered twice
-func GetAdminServerInstrumentation() *muxprom.Instrumentation {
-	if adminInstrumentation == nil {
-		adminInstrumentation = newInstrumentation("admin")
+func (mm *metricsManager) CountBatchPin() {
+	BatchPinCounter.Inc()
+}
+
+func (mm *metricsManager) MessageSubmitted(in *fftypes.MessageInOut) {
+	if len(in.Header.ID.String()) > 0 {
+		switch in.Message.Header.Type {
+		case fftypes.MessageTypeBroadcast:
+			BroadcastSubmittedCounter.Inc()
+		case fftypes.MessageTypePrivate:
+			PrivateMsgSubmittedCounter.Inc()
+		}
+		mm.AddTime(in.Header.ID.String())
 	}
-	return adminInstrumentation
 }
 
-// GetRestServerInstrumentation returns the REST server's Prometheus middleware, ensuring its metrics are never
-// registered twice
-func GetRestServerInstrumentation() *muxprom.Instrumentation {
-	if restInstrumentation == nil {
-		restInstrumentation = newInstrumentation("rest")
+func (mm *metricsManager) MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum) {
+	timeElapsed := time.Since(mm.GetTime(msg.Header.ID.String())).Seconds()
+	mm.DeleteTime(msg.Header.ID.String())
+
+	switch msg.Header.Type {
+	case fftypes.MessageTypeBroadcast:
+		BroadcastHistogram.Observe(timeElapsed)
+		if eventType == fftypes.EventTypeMessageConfirmed { // Broadcast Confirmed
+			BroadcastConfirmedCounter.Inc()
+		} else if eventType == fftypes.EventTypeMessageRejected { // Broadcast Rejected
+			BroadcastRejectedCounter.Inc()
+		}
+	case fftypes.MessageTypePrivate:
+		PrivateMsgHistogram.Observe(timeElapsed)
+		if eventType == fftypes.EventTypeMessageConfirmed { // Private Msg Confirmed
+			PrivateMsgConfirmedCounter.Inc()
+		} else if eventType == fftypes.EventTypeMessageRejected { // Private Msg Rejected
+			PrivateMsgRejectedCounter.Inc()
+		}
 	}
-	return restInstrumentation
 }
 
-func newInstrumentation(subsystem string) *muxprom.Instrumentation {
-	return muxprom.NewCustomInstrumentation(
-		true,
-		"ff_apiserver",
-		subsystem,
-		prometheus.DefBuckets,
-		map[string]string{},
-		Registry(),
-	)
+func (mm *metricsManager) TransferSubmitted(transfer *fftypes.TokenTransferInput) {
+	if len(transfer.LocalID.String()) > 0 {
+		switch transfer.Type {
+		case fftypes.TokenTransferTypeMint: // Mint submitted
+			MintSubmittedCounter.Inc()
+		case fftypes.TokenTransferTypeTransfer: // Transfer submitted
+			TransferSubmittedCounter.Inc()
+		case fftypes.TokenTransferTypeBurn: // Burn submitted
+			BurnSubmittedCounter.Inc()
+		}
+		mm.AddTime(transfer.LocalID.String())
+	}
 }
 
-func initMetricsCollectors() {
-	BatchPinCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: MetricsBatchPin,
-		Help: "Number of batch pins submitted",
-	})
+func (mm *metricsManager) TransferConfirmed(transfer *tokens.TokenTransfer) {
+	timeElapsed := time.Since(mm.GetTime(transfer.LocalID.String())).Seconds()
+	mm.DeleteTime(transfer.LocalID.String())
+
+	switch transfer.Type {
+	case fftypes.TokenTransferTypeMint: // Mint confirmed
+		MintHistogram.Observe(timeElapsed)
+		MintConfirmedCounter.Inc()
+	case fftypes.TokenTransferTypeTransfer: // Transfer confirmed
+		TransferHistogram.Observe(timeElapsed)
+		TransferConfirmedCounter.Inc()
+	case fftypes.TokenTransferTypeBurn: // Burn confirmed
+		BurnHistogram.Observe(timeElapsed)
+		BurnConfirmedCounter.Inc()
+	}
 }
 
-func registerMetricsCollectors() {
-	registry.MustRegister(collectors.NewGoCollector())
-	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-	registry.MustRegister(BatchPinCounter)
+func (mm *metricsManager) AddTime(id string) {
+	mutex.Lock()
+	mm.timeMap[id] = time.Now()
+	mutex.Unlock()
 }
 
-// Clear will reset the Prometheus metrics registry and instrumentations, useful for testing
-func Clear() {
-	registry = nil
-	adminInstrumentation = nil
-	restInstrumentation = nil
+func (mm *metricsManager) GetTime(id string) time.Time {
+	mutex.Lock()
+	time := mm.timeMap[id]
+	mutex.Unlock()
+	return time
+}
+
+func (mm *metricsManager) DeleteTime(id string) {
+	mutex.Lock()
+	delete(mm.timeMap, id)
+	mutex.Unlock()
+}
+
+func (mm *metricsManager) IsMetricsEnabled() bool {
+	return mm.metricsEnabled
 }

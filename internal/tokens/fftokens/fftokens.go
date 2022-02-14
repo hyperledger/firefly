@@ -132,7 +132,7 @@ func (ft *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix,
 		wsConfig.WSKeyPath = "/api/ws"
 	}
 
-	ft.wsconn, err = wsclient.New(ctx, wsConfig, nil)
+	ft.wsconn, err = wsclient.New(ctx, wsConfig, nil, nil)
 	if err != nil {
 		return err
 	}

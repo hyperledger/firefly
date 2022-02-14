@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/publicstorage/psfactory"
@@ -71,6 +72,8 @@ type Orchestrator interface {
 	Data() data.Manager
 	Assets() assets.Manager
 	Contracts() contracts.Manager
+	Metrics() metrics.Manager
+	BatchManager() batch.Manager
 	IsPreInit() bool
 
 	// Status
@@ -154,6 +157,7 @@ type orchestrator struct {
 	preInitMode    bool
 	contracts      contracts.Manager
 	node           *fftypes.UUID
+	metrics        metrics.Manager
 }
 
 func NewOrchestrator() Orchestrator {
@@ -214,6 +218,9 @@ func (or *orchestrator) Start() error {
 			}
 		}
 	}
+	if err == nil {
+		err = or.metrics.Start()
+	}
 	or.started = true
 	return err
 }
@@ -249,6 +256,10 @@ func (or *orchestrator) Events() events.EventManager {
 	return or.events
 }
 
+func (or *orchestrator) BatchManager() batch.Manager {
+	return or.batch
+}
+
 func (or *orchestrator) NetworkMap() networkmap.Manager {
 	return or.networkmap
 }
@@ -265,8 +276,11 @@ func (or *orchestrator) Contracts() contracts.Manager {
 	return or.contracts
 }
 
-func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
+func (or *orchestrator) Metrics() metrics.Manager {
+	return or.metrics
+}
 
+func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
 	if or.database == nil {
 		diType := config.GetString(config.DatabaseType)
 		if or.database, err = difactory.GetPlugin(ctx, diType); err != nil {
@@ -288,6 +302,33 @@ func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error
 		return nil
 	}
 	return config.MergeConfig(configRecords)
+}
+
+func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
+	dxPlugin := config.GetString(config.DataexchangeType)
+	if or.dataexchange == nil {
+		pluginName := dxPlugin
+		if pluginName == "https" {
+			// Migration path for old plugin name
+			// TODO: eventually make this fatal
+			log.L(ctx).Warnf("Your data exchange config uses the old plugin name 'https' - this plugin has been renamed to 'ffdx'")
+			pluginName = "ffdx"
+		}
+		if or.dataexchange, err = dxfactory.GetPlugin(ctx, pluginName); err != nil {
+			return err
+		}
+	}
+
+	nodes, _, err := or.database.GetNodes(ctx, database.NodeQueryFactory.NewFilter(ctx).And())
+	if err != nil {
+		return err
+	}
+	nodeInfo := make([]fftypes.DXInfo, len(nodes))
+	for i, node := range nodes {
+		nodeInfo[i] = node.DX
+	}
+
+	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(dxPlugin), nodeInfo, &or.bc)
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
@@ -328,13 +369,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
-	if or.dataexchange == nil {
-		dxType := config.GetString(config.DataexchangeType)
-		if or.dataexchange, err = dxfactory.GetPlugin(ctx, dxType); err != nil {
-			return err
-		}
-	}
-	if err = or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), &or.bc); err != nil {
+	if err = or.initDataExchange(ctx); err != nil {
 		return err
 	}
 
@@ -383,6 +418,9 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
+	if or.metrics == nil {
+		or.metrics = metrics.NewMetricsManager(ctx)
+	}
 
 	if or.identity == nil {
 		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain)
@@ -406,22 +444,22 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
-	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain)
+	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain, or.metrics)
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync, or.batchpin); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync, or.batchpin, or.metrics); err != nil {
 			return err
 		}
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens)
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics)
 		if err != nil {
 			return err
 		}
@@ -437,7 +475,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets, or.contracts)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets)
+		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
 		if err != nil {
 			return err
 		}

@@ -85,7 +85,7 @@ func (psql *sqliteGoTestProvider) Features() SQLFeatures {
 	return features
 }
 
-func (tp *sqliteGoTestProvider) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
+func (tp *sqliteGoTestProvider) ApplyInsertQueryCustomizations(insert sq.InsertBuilder, requestConflictEmptyResult bool) (sq.InsertBuilder, bool) {
 	// Nothing required - QL supports the query for returning the generated ID, and we use that for the sequence
 	return insert, false
 }

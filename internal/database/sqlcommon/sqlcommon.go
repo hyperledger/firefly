@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/sirupsen/logrus"
 
 	// Import migrate file source
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -44,8 +45,10 @@ type SQLCommon struct {
 type txContextKey struct{}
 
 type txWrapper struct {
-	sqlTX      *sql.Tx
-	postCommit []func()
+	sqlTX           *sql.Tx
+	preCommitEvents []*fftypes.Event
+	postCommit      []func()
+	tableLocks      []string
 }
 
 func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.Prefix, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
@@ -234,8 +237,12 @@ func (s *SQLCommon) queryRes(ctx context.Context, tx *txWrapper, tableName strin
 }
 
 func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func()) (int64, error) {
+	return s.insertTxExt(ctx, tx, q, postCommit, false)
+}
+
+func (s *SQLCommon) insertTxExt(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func(), requestConflictEmptyResult bool) (int64, error) {
 	l := log.L(ctx)
-	q, useQuery := s.provider.UpdateInsertForSequenceReturn(q)
+	q, useQuery := s.provider.ApplyInsertQueryCustomizations(q, requestConflictEmptyResult)
 
 	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {
@@ -247,7 +254,11 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 	if useQuery {
 		err := tx.sqlTX.QueryRowContext(ctx, sqlQuery, args...).Scan(&sequence)
 		if err != nil {
-			l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
+			level := logrus.DebugLevel
+			if !requestConflictEmptyResult {
+				level = logrus.ErrorLevel
+			}
+			l.Logf(level, `SQL insert failed (conflictEmptyRequested=%t): %s sql=[ %s ]: %s`, requestConflictEmptyResult, err, sqlQuery, err)
 			return -1, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
 		}
 	} else {
@@ -317,6 +328,36 @@ func (s *SQLCommon) postCommitEvent(tx *txWrapper, fn func()) {
 	tx.postCommit = append(tx.postCommit, fn)
 }
 
+func (s *SQLCommon) addPreCommitEvent(tx *txWrapper, event *fftypes.Event) {
+	tx.preCommitEvents = append(tx.preCommitEvents, event)
+}
+
+func (tx *txWrapper) tableIsLocked(table string) bool {
+	for _, t := range tx.tableLocks {
+		if t == table {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *SQLCommon) lockTableExclusiveTx(ctx context.Context, tx *txWrapper, table string) error {
+	l := log.L(ctx)
+	if s.features.ExclusiveTableLockSQL != nil && !tx.tableIsLocked(table) {
+		sqlQuery := s.features.ExclusiveTableLockSQL(table)
+
+		l.Debugf(`SQL-> lock: %s`, sqlQuery)
+		_, err := tx.sqlTX.ExecContext(ctx, sqlQuery)
+		if err != nil {
+			l.Errorf(`SQL lock failed: %s sql=[ %s ]`, err, sqlQuery)
+			return i18n.WrapError(ctx, err, i18n.MsgDBLockFailed)
+		}
+		tx.tableLocks = append(tx.tableLocks, table)
+		l.Debugf(`SQL<- lock %s`, table)
+	}
+	return nil
+}
+
 // rollbackTx be safely called as a defer, as it is a cheap no-op if the transaction is complete
 func (s *SQLCommon) rollbackTx(ctx context.Context, tx *txWrapper, autoCommit bool) {
 	if autoCommit {
@@ -338,8 +379,19 @@ func (s *SQLCommon) commitTx(ctx context.Context, tx *txWrapper, autoCommit bool
 		// We're inside of a wide transaction boundary with an auto-commit
 		return nil
 	}
-
 	l := log.L(ctx)
+
+	// Only at this stage do we write to the special events Database table, so we know
+	// regardless of the higher level logic, the events are always written at this point
+	// at the end of the transaction
+	for _, event := range tx.preCommitEvents {
+		if err := s.insertEventPreCommit(ctx, tx, event); err != nil {
+			s.rollbackTx(ctx, tx, false)
+			return err
+		}
+		l.Infof("Emitted %s event %s ref=%s (sequence=%d)", event.Type, event.ID, event.Reference, event.Sequence)
+	}
+
 	l.Debugf(`SQL-> commit`)
 	err := tx.sqlTX.Commit()
 	if err != nil {

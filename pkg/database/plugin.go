@@ -117,9 +117,8 @@ type iDataCollection interface {
 }
 
 type iBatchCollection interface {
-	// UpsertBatch - Upsert a batch
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) (err error)
+	// UpsertBatch - Upsert a batch - the hash cannot change
+	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
 
 	// UpdateBatch - Update data
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -197,8 +196,8 @@ type iOperationCollection interface {
 	// InsertOperation - Insert an operation
 	InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
 
-	// UpdateOperation - Update operation by ID
-	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	// ResolveOperation - Resolve operation upon completion
+	ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
@@ -229,7 +228,10 @@ type iSubscriptionCollection interface {
 }
 
 type iEventCollection interface {
-	// InsertEvent - Insert an event
+	// InsertEvent - Insert an event. The order of the sequences added to the database, must match the order that
+	//               the rows/objects appear available to the event dispatcher. For a concurrency enabled database
+	//               with multi-operation transactions (like PSQL or other enterprise SQL based DB) we need
+	//               to hold an exclusive table lock.
 	InsertEvent(ctx context.Context, data *fftypes.Event) (err error)
 
 	// UpdateEvent - Update event
@@ -280,8 +282,8 @@ type iNodeCollection interface {
 }
 
 type iGroupCollection interface {
-	// UpserGroup - Upsert a group
-	UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) (err error)
+	// UpsertGroup - Upsert a group, with a hint to whether to optmize for existing or new
+	UpsertGroup(ctx context.Context, data *fftypes.Group, optimization UpsertOptimization) (err error)
 
 	// UpdateGroup - Update group
 	UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
@@ -744,7 +746,6 @@ var OperationQueryFactory = &queryFields{
 	"plugin":    &StringField{},
 	"input":     &JSONField{},
 	"output":    &JSONField{},
-	"backendid": &StringField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},
 }

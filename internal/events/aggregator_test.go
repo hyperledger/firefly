@@ -24,9 +24,11 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -37,14 +39,28 @@ func newTestAggregator() (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
+	mmi := &metricsmocks.Manager{}
+	mmi.On("IsMetricsEnabled").Return(false)
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"))
+	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"), mmi)
+	return ag, cancel
+}
+
+func newTestAggregatorWithMetrics() (*aggregator, func()) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	msh := &definitionsmocks.DefinitionHandlers{}
+	mmi := &metricsmocks.Manager{}
+	mmi.On("MessageConfirmed", mock.Anything, fftypes.EventTypeMessageConfirmed).Return()
+	mmi.On("IsMetricsEnabled").Return(true)
+	ctx, cancel := context.WithCancel(context.Background())
+	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"), mmi)
 	return ag, cancel
 }
 
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
-	ag, cancel := newTestAggregator()
+	ag, cancel := newTestAggregatorWithMetrics()
 	defer cancel()
 	bs := newBatchState(ag)
 
@@ -166,6 +182,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 }
 
 func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
+	log.SetLevel("debug")
 
 	ag, cancel := newTestAggregator()
 	defer cancel()

@@ -69,6 +69,7 @@ type wsClient struct {
 	send                 chan []byte
 	sendDone             chan []byte
 	closing              chan struct{}
+	beforeConnect        WSPreConnectHandler
 	afterConnect         WSPostConnectHandler
 	heartbeatInterval    time.Duration
 	heartbeatMux         sync.Mutex
@@ -76,10 +77,13 @@ type wsClient struct {
 	lastPingCompleted    time.Time
 }
 
+// WSPreConnectHandler will be called before every connect/reconnect. Any error returned will prevent the websocket from connecting.
+type WSPreConnectHandler func(ctx context.Context) error
+
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
 type WSPostConnectHandler func(ctx context.Context, w WSClient) error
 
-func New(ctx context.Context, config *WSConfig, afterConnect WSPostConnectHandler) (WSClient, error) {
+func New(ctx context.Context, config *WSConfig, beforeConnect WSPreConnectHandler, afterConnect WSPostConnectHandler) (WSClient, error) {
 
 	wsURL, err := buildWSUrl(ctx, config)
 	if err != nil {
@@ -102,6 +106,7 @@ func New(ctx context.Context, config *WSConfig, afterConnect WSPostConnectHandle
 		receive:              make(chan []byte),
 		send:                 make(chan []byte),
 		closing:              make(chan struct{}),
+		beforeConnect:        beforeConnect,
 		afterConnect:         afterConnect,
 		heartbeatInterval:    config.HeartbeatInterval,
 	}
@@ -204,6 +209,15 @@ func (w *wsClient) connect(initial bool) error {
 		if w.closed {
 			return false, i18n.NewError(w.ctx, i18n.MsgWSClosing)
 		}
+
+		retry = !initial || attempt < w.initialRetryAttempts
+		if w.beforeConnect != nil {
+			if err = w.beforeConnect(w.ctx); err != nil {
+				l.Warnf("WS %s connect attempt %d failed in beforeConnect", w.url, attempt)
+				return retry, err
+			}
+		}
+
 		var res *http.Response
 		w.wsconn, res, err = w.wsdialer.Dial(w.url, w.headers)
 		if err != nil {
@@ -215,8 +229,9 @@ func (w *wsClient) connect(initial bool) error {
 				status = res.StatusCode
 			}
 			l.Warnf("WS %s connect attempt %d failed [%d]: %s", w.url, attempt, status, string(b))
-			return !initial || attempt > w.initialRetryAttempts, i18n.WrapError(w.ctx, err, i18n.MsgWSConnectFailed)
+			return retry, i18n.WrapError(w.ctx, err, i18n.MsgWSConnectFailed)
 		}
+
 		w.pongReceivedOrReset(false)
 		w.wsconn.SetPongHandler(w.pongHandler)
 		l.Infof("WS %s connected", w.url)
@@ -309,7 +324,7 @@ func (w *wsClient) receiveReconnectLoop() {
 	l := log.L(w.ctx)
 	defer close(w.receive)
 	for !w.closed {
-		// Start the sender, letting it close without blocking sending a notifiation on the sendDone
+		// Start the sender, letting it close without blocking sending a notification on the sendDone
 		w.sendDone = make(chan []byte, 1)
 		receiverDone := make(chan struct{})
 		go w.sendLoop(receiverDone)

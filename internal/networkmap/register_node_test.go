@@ -49,7 +49,10 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+		Peer:     "peer1",
+		Endpoint: fftypes.JSONObject{"endpoint": "details"},
+	}, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
@@ -147,7 +150,10 @@ func TestRegisterNodeParentNotFound(t *testing.T) {
 	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+		Peer:     "peer1",
+		Endpoint: fftypes.JSONObject{"endpoint": "details"},
+	}, nil)
 
 	_, _, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "FF10214", err)
@@ -167,7 +173,10 @@ func TestRegisterNodeParentBadNode(t *testing.T) {
 	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+		Peer:     "peer1",
+		Endpoint: fftypes.JSONObject{"endpoint": "details"},
+	}, nil)
 
 	_, _, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "FF10188", err)
@@ -184,7 +193,10 @@ func TestRegisterNodeParentDXEndpointFail(t *testing.T) {
 	config.Set(config.NodeName, "node1")
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return("", nil, fmt.Errorf("pop"))
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+		Peer:     "",
+		Endpoint: nil,
+	}, fmt.Errorf("pop"))
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)

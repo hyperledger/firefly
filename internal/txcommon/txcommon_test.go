@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -371,6 +371,37 @@ func TestAddBlockchainTXUnchanged(t *testing.T) {
 
 	err := txHelper.AddBlockchainTX(ctx, txid, "0x111111")
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestWriteOperationSuccess(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	txHelper := NewTransactionHelper(mdi)
+	ctx := context.Background()
+
+	opID := fftypes.NewUUID()
+	output := fftypes.JSONObject{"some": "info"}
+	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusSucceeded, "", output).Return(fmt.Errorf("pop"))
+
+	txHelper.WriteOperationSuccess(ctx, opID, output)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestWriteOperationFailure(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	txHelper := NewTransactionHelper(mdi)
+	ctx := context.Background()
+
+	opID := fftypes.NewUUID()
+	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("pop"))
+
+	txHelper.WriteOperationFailure(ctx, opID, fmt.Errorf("pop"))
 
 	mdi.AssertExpectations(t)
 

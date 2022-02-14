@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -36,6 +37,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/karlseguin/ccache"
 )
+
+const pinnedPrivateDispatcherName = "pinned_private"
+const unpinnedPrivateDispatcherName = "unpinned_private"
 
 type Manager interface {
 	GroupManager
@@ -63,9 +67,10 @@ type privateMessaging struct {
 	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
 	opCorrelationRetries  int
 	maxBatchPayloadLength int64
+	metrics               metrics.Manager
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -93,6 +98,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		},
 		opCorrelationRetries:  config.GetInt(config.PrivateMessagingOpCorrelationRetries),
 		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
+		metrics:               mm,
 	}
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -100,18 +106,28 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 			MaxSize(config.GetByteSize(config.GroupCacheSize)),
 	)
 
-	bo := batch.Options{
+	bo := batch.DispatcherOptions{
 		BatchMaxSize:   config.GetUint(config.PrivateMessagingBatchSize),
 		BatchMaxBytes:  pm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(config.PrivateMessagingBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.PrivateMessagingBatchAgentTimeout),
 	}
 
-	ba.RegisterDispatcher([]fftypes.MessageType{
-		fftypes.MessageTypeGroupInit,
-		fftypes.MessageTypePrivate,
-		fftypes.MessageTypeTransferPrivate,
-	}, pm.dispatchBatch, bo)
+	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
+		fftypes.TransactionTypeBatchPin,
+		[]fftypes.MessageType{
+			fftypes.MessageTypeGroupInit,
+			fftypes.MessageTypePrivate,
+			fftypes.MessageTypeTransferPrivate,
+		},
+		pm.dispatchPinnedBatch, bo)
+
+	ba.RegisterDispatcher(unpinnedPrivateDispatcherName,
+		fftypes.TransactionTypeUnpinned,
+		[]fftypes.MessageType{
+			fftypes.MessageTypePrivate,
+		},
+		pm.dispatchUnpinnedBatch, bo)
 
 	return pm, nil
 }
@@ -120,23 +136,37 @@ func (pm *privateMessaging) Start() error {
 	return pm.exchange.Start()
 }
 
-func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
-
-	// Serialize the full payload, which has already been sealed for us by the BatchManager
-	tw := &fftypes.TransportWrapper{
-		Type:  fftypes.TransportPayloadTypeBatch,
-		Batch: batch,
-	}
-
-	// Retrieve the group
-	_, nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group)
+func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
+	err := pm.dispatchBatchCommon(ctx, batch)
 	if err != nil {
 		return err
 	}
 
-	return pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return pm.sendAndSubmitBatch(ctx, batch, nodes, tw, contexts)
-	})
+	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
+}
+
+func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
+	return pm.dispatchBatchCommon(ctx, batch)
+}
+
+func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, batch *fftypes.Batch) error {
+	tw := &fftypes.TransportWrapper{
+		Batch: batch,
+	}
+
+	// Retrieve the group
+	group, nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group)
+	if err != nil {
+		return err
+	}
+
+	if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
+		// In the case of an un-pinned message we cannot be sure the group has been broadcast via the blockchain.
+		// So we have to take the hit of sending it along with every message.
+		tw.Group = group
+	}
+
+	return pm.sendData(ctx, tw, nodes)
 }
 
 func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.Data, txid *fftypes.UUID, node *fftypes.Node) error {
@@ -152,29 +182,26 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
 			}
 
-			trackingID, err := pm.exchange.TransferBLOB(ctx, node.DX.Peer, blob.PayloadRef)
-			if err != nil {
+			op := fftypes.NewOperation(
+				pm.exchange,
+				d.Namespace,
+				txid,
+				fftypes.OpTypeDataExchangeBlobSend)
+			if err = pm.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
 
-			if txid != nil {
-				op := fftypes.NewOperation(
-					pm.exchange,
-					d.Namespace,
-					txid,
-					trackingID,
-					fftypes.OpTypeDataExchangeBlobSend)
-				if err = pm.database.InsertOperation(ctx, op); err != nil {
-					return err
-				}
+			if err := pm.exchange.TransferBLOB(ctx, op.ID, node.DX.Peer, blob.PayloadRef); err != nil {
+				return err
 			}
 		}
 	}
 	return nil
 }
 
-func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, tw *fftypes.TransportWrapper, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
+func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportWrapper, nodes []*fftypes.Node) (err error) {
 	l := log.L(ctx)
+	batch := tw.Batch
 
 	payload, err := json.Marshal(tw)
 	if err != nil {
@@ -191,50 +218,35 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 	for i, node := range nodes {
 
 		if node.Owner == localOrgSigingKey {
-			l.Debugf("Skipping send of %s for local node %s:%s for group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
+			l.Debugf("Skipping send of batch for local node %s:%s for group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 			continue
 		}
 
-		l.Debugf("Sending %s %s:%s to group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
+		l.Debugf("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 
 		// Initiate transfer of any blobs first
-		if err = pm.transferBlobs(ctx, data, txid, node); err != nil {
+		if err = pm.transferBlobs(ctx, batch.Payload.Data, batch.Payload.TX.ID, node); err != nil {
+			return err
+		}
+
+		op := fftypes.NewOperation(
+			pm.exchange,
+			batch.Namespace,
+			batch.Payload.TX.ID,
+			fftypes.OpTypeDataExchangeBatchSend)
+		op.Input = fftypes.JSONObject{
+			"manifest": tw.Batch.Manifest().String(),
+		}
+		if err = pm.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
 
 		// Send the payload itself
-		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload)
+		err := pm.exchange.SendMessage(ctx, op.ID, node.DX.Peer, payload)
 		if err != nil {
 			return err
 		}
-
-		if txid != nil {
-			op := fftypes.NewOperation(
-				pm.exchange,
-				ns,
-				txid,
-				trackingID,
-				fftypes.OpTypeDataExchangeBatchSend)
-			op.Input = fftypes.JSONObject{
-				"manifest": tw.Manifest().String(),
-			}
-			if err = pm.database.InsertOperation(ctx, op); err != nil {
-				return err
-			}
-		}
-
 	}
 
 	return nil
-}
-
-func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, tw *fftypes.TransportWrapper, contexts []*fftypes.Bytes32) (err error) {
-	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, tw, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
-		return err
-	}
-	return pm.writeTransaction(ctx, batch, contexts)
-}
-
-func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
-	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }

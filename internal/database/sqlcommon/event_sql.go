@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,12 +42,37 @@ var (
 	}
 )
 
+// Events are special.
+//
+// They are an ordered sequence of recorded state, that must be detected and processed in order.
+//
+// We choose (today) to coordinate the emission of these, into a DB transaction where the other
+// state changes happen - so the event is assured atomically to happen "after" the other state
+// changes, but also not to be lost. Downstream fan-out of those events occurs via
+// Webhook/WebSocket (.../NATS/Kafka) pluggable pub/sub interfaces.
+//
+// Implementing this single stream of incrementing (note not guaranteed to be gapless) ordered
+// items on top of a SQL database, means taking a lock (see below).
+// This is not safe to do unless you are really sure what other locks will be taken after
+// that in the transaction. So we defer the emission of the events to a pre-commit capture.
 func (s *SQLCommon) InsertEvent(ctx context.Context, event *fftypes.Event) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
+	event.Sequence = -1 // the sequence is not allocated until the post-commit callback
+	s.addPreCommitEvent(tx, event)
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) insertEventPreCommit(ctx context.Context, tx *txWrapper, event *fftypes.Event) (err error) {
+
+	// We take the cost of a full table lock on the events table.
+	// This allows us to rely on the sequence to always be increasing, even when writing events
+	// concurrently (it does not guarantee we won't get a gap in the sequences).
+	if err = s.lockTableExclusiveTx(ctx, tx, "events"); err != nil {
+		return err
+	}
 
 	event.Sequence, err = s.insertTx(ctx, tx,
 		sq.Insert("events").
@@ -63,11 +88,7 @@ func (s *SQLCommon) InsertEvent(ctx context.Context, event *fftypes.Event) (err 
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
 		},
 	)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
+	return err
 }
 
 func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Event, error) {

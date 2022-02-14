@@ -14,19 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxhttps
+package metrics
 
 import (
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	// DataExchangeManifestEnabled determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector
-	DataExchangeManifestEnabled = "manifestEnabled"
-)
-
-func (h *HTTPS) InitPrefix(prefix config.Prefix) {
-	wsconfig.InitPrefix(prefix)
-	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
+func TestPrometheusMiddleware(t *testing.T) {
+	Registry()
+	adminInstrumentation = nil
+	restInstrumentation = nil
+	assert.NotNil(t, GetAdminServerInstrumentation())
+	assert.NotNil(t, GetRestServerInstrumentation())
 }

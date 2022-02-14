@@ -39,6 +39,9 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	broadcast := bm.NewBroadcast(ns, in)
+	if bm.metrics.IsMetricsEnabled() {
+		bm.metrics.MessageSubmitted(in)
+	}
 	if waitConfirm {
 		err = broadcast.SendAndWait(ctx)
 	} else {
@@ -86,9 +89,8 @@ func (s *broadcastSender) setDefaults() {
 	if s.msg.Header.Type == "" {
 		s.msg.Header.Type = fftypes.MessageTypeBroadcast
 	}
-	if s.msg.Header.TxType == "" {
-		s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
-	}
+	// We only have one transaction type for broadcast currently
+	s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
 }
 
 func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod) error {
@@ -166,7 +168,7 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Sent broadcast message %s:%s", s.msg.Header.Namespace, s.msg.Header.ID)
+	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
 
 	return err
 }

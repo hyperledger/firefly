@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxhttps
+package ffdx
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
@@ -35,26 +36,30 @@ import (
 	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
-type HTTPS struct {
+type FFDX struct {
 	ctx          context.Context
 	capabilities *dataexchange.Capabilities
 	callbacks    dataexchange.Callbacks
 	client       *resty.Client
 	wsconn       wsclient.WSClient
+	needsInit    bool
+	initialized  bool
+	initMutex    sync.Mutex
+	nodes        []fftypes.DXInfo
 }
 
 type wsEvent struct {
-	Type      msgType `json:"type"`
-	Sender    string  `json:"sender"`
-	Recipient string  `json:"recipient"`
-	RequestID string  `json:"requestID"`
-	Path      string  `json:"path"`
-	Message   string  `json:"message"`
-	Hash      string  `json:"hash"`
-	Size      int64   `json:"size"`
-	Error     string  `json:"error"`
-	Manifest  string  `json:"manifest"`
-	Info      string  `json:"info"`
+	Type      msgType            `json:"type"`
+	Sender    string             `json:"sender"`
+	Recipient string             `json:"recipient"`
+	RequestID string             `json:"requestId"`
+	Path      string             `json:"path"`
+	Message   string             `json:"message"`
+	Hash      string             `json:"hash"`
+	Size      int64              `json:"size"`
+	Error     string             `json:"error"`
+	Manifest  string             `json:"manifest"`
+	Info      fftypes.JSONObject `json:"info"`
 }
 
 const (
@@ -86,11 +91,13 @@ type uploadBlob struct {
 type sendMessage struct {
 	Message   string `json:"message"`
 	Recipient string `json:"recipient"`
+	RequestID string `json:"requestId"`
 }
 
 type transferBlob struct {
 	Path      string `json:"path"`
 	Recipient string `json:"recipient"`
+	RequestID string `json:"requestId"`
 }
 
 type wsAck struct {
@@ -98,17 +105,25 @@ type wsAck struct {
 	Manifest string `json:"manifest,omitempty"` // FireFly core determined that DX should propagate opaquely to TransferResult, if this DX supports delivery acknowledgements.
 }
 
-func (h *HTTPS) Name() string {
-	return "https"
+type dxStatus struct {
+	Status string `json:"status"`
 }
 
-func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataexchange.Callbacks) (err error) {
+func (h *FFDX) Name() string {
+	return "ffdx"
+}
+
+func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.DXInfo, callbacks dataexchange.Callbacks) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.callbacks = callbacks
 
+	h.needsInit = prefix.GetBool(DataExchangeInitEnabled)
+
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "dataexchange.https")
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
+
+	h.nodes = nodes
 
 	h.client = restclient.New(h.ctx, prefix)
 	h.capabilities = &dataexchange.Capabilities{
@@ -117,7 +132,7 @@ func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataex
 
 	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
 
-	h.wsconn, err = wsclient.New(ctx, wsConfig, nil)
+	h.wsconn, err = wsclient.New(ctx, wsConfig, h.beforeConnect, nil)
 	if err != nil {
 		return err
 	}
@@ -125,35 +140,92 @@ func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataex
 	return nil
 }
 
-func (h *HTTPS) Start() error {
+func (h *FFDX) Start() error {
 	return h.wsconn.Connect()
 }
 
-func (h *HTTPS) Capabilities() *dataexchange.Capabilities {
+func (h *FFDX) Capabilities() *dataexchange.Capabilities {
 	return h.capabilities
 }
 
-func (h *HTTPS) GetEndpointInfo(ctx context.Context) (peerID string, endpoint fftypes.JSONObject, err error) {
-	res, err := h.client.R().SetContext(ctx).
-		SetResult(&endpoint).
-		Get("/api/v1/id")
-	if err != nil || !res.IsSuccess() {
-		return peerID, endpoint, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+func (h *FFDX) dxEndpointArray(nodes []fftypes.DXInfo) []fftypes.JSONObject {
+	// The remote DataExchange connector HTTP API expects a flat array
+	// where "id" is in embedded in each entry - because that's how it
+	// originally passed the data to us.
+	// In the DXInfo contract on the Go plugin in FireFly we raise the "id" up
+	// to be a first class "peer" field, so it can be indexed outside of the opaque
+	// endpoint payload.
+	// This function just converts back to a flat array.
+	dxEndpointArray := make([]fftypes.JSONObject, len(nodes))
+	for i, node := range nodes {
+		dxEndpointArray[i] = node.Endpoint
 	}
-	return endpoint.GetString("id"), endpoint, nil
+	return dxEndpointArray
 }
 
-func (h *HTTPS) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) (err error) {
+func (h *FFDX) beforeConnect(ctx context.Context) error {
+	h.initMutex.Lock()
+	defer h.initMutex.Unlock()
+
+	if h.needsInit {
+		h.initialized = false
+		var status dxStatus
+		res, err := h.client.R().SetContext(ctx).
+			SetBody(h.dxEndpointArray(h.nodes)).
+			SetResult(&status).
+			Post("/api/v1/init")
+		if err != nil || !res.IsSuccess() {
+			return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		}
+		if status.Status != "ready" {
+			return fmt.Errorf("DX returned non-ready status: %s", status.Status)
+		}
+	}
+	h.initialized = true
+	return nil
+}
+
+func (h *FFDX) checkInitialized(ctx context.Context) error {
+	h.initMutex.Lock()
+	defer h.initMutex.Unlock()
+
+	if !h.initialized {
+		return i18n.NewError(ctx, i18n.MsgDXNotInitialized)
+	}
+	return nil
+}
+
+func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.DXInfo, err error) {
+	if err := h.checkInitialized(ctx); err != nil {
+		return peer, err
+	}
+
 	res, err := h.client.R().SetContext(ctx).
-		SetBody(endpoint).
-		Put(fmt.Sprintf("/api/v1/peers/%s", peerID))
+		SetResult(&peer.Endpoint).
+		Get("/api/v1/id")
+	if err != nil || !res.IsSuccess() {
+		return peer, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+	}
+	peer.Peer = peer.Endpoint.GetString("id")
+	h.nodes = append(h.nodes, peer)
+	return peer, nil
+}
+
+func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.DXInfo) (err error) {
+	if err := h.checkInitialized(ctx); err != nil {
+		return err
+	}
+
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(peer.Endpoint).
+		Put(fmt.Sprintf("/api/v1/peers/%s", peer.Peer))
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
 	return nil
 }
 
-func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
+func (h *FFDX) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
 	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
 	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
@@ -170,7 +242,7 @@ func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, cont
 	return payloadRef, hash, upload.Size, nil
 }
 
-func (h *HTTPS) DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
+func (h *FFDX) DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
 	res, err := h.client.R().SetContext(ctx).
 		SetDoNotParseResponse(true).
 		Get(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
@@ -183,37 +255,47 @@ func (h *HTTPS) DownloadBLOB(ctx context.Context, payloadRef string) (content io
 	return res.RawBody(), nil
 }
 
-func (h *HTTPS) SendMessage(ctx context.Context, peerID string, data []byte) (trackingID string, err error) {
+func (h *FFDX) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) (err error) {
+	if err := h.checkInitialized(ctx); err != nil {
+		return err
+	}
+
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&sendMessage{
 			Message:   string(data),
 			Recipient: peerID,
+			RequestID: opID.String(),
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/messages")
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
-	return responseData.RequestID, nil
+	return nil
 }
 
-func (h *HTTPS) TransferBLOB(ctx context.Context, peerID, payloadRef string) (trackingID string, err error) {
+func (h *FFDX) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID, payloadRef string) (err error) {
+	if err := h.checkInitialized(ctx); err != nil {
+		return err
+	}
+
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&transferBlob{
 			Path:      fmt.Sprintf("/%s", payloadRef),
 			Recipient: peerID,
+			RequestID: opID.String(),
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/transfers")
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
-	return responseData.RequestID, nil
+	return nil
 }
 
-func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
+func (h *FFDX) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetResult(&responseData).
@@ -237,7 +319,7 @@ func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fft
 	return hash, size, nil
 }
 
-func (h *HTTPS) eventLoop() {
+func (h *FFDX) eventLoop() {
 	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)

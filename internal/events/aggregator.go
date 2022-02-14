@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -44,9 +45,10 @@ type aggregator struct {
 	offchainBatches chan *fftypes.UUID
 	queuedRewinds   chan *fftypes.UUID
 	retry           *retry.Retry
+	metrics         metrics.Manager
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, sh definitions.DefinitionHandlers, dm data.Manager, en *eventNotifier) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, sh definitions.DefinitionHandlers, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:             log.WithLogField(ctx, "role", "aggregator"),
@@ -56,6 +58,7 @@ func newAggregator(ctx context.Context, di database.Plugin, sh definitions.Defin
 		newPins:         make(chan int64),
 		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
 		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
+		metrics:         mm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
@@ -183,6 +186,20 @@ func (ag *aggregator) getPins(ctx context.Context, filter database.Filter) ([]ff
 	return ls, err
 }
 
+func (ag *aggregator) extractBatchMessagePin(batch *fftypes.Batch, requiredIndex int64) (totalBatchPins int64, msg *fftypes.Message, msgBaseIndex int64) {
+	for _, batchMsg := range batch.Payload.Messages {
+		batchMsgBaseIdx := totalBatchPins
+		for i := 0; i < len(batchMsg.Header.Topics); i++ {
+			if totalBatchPins == requiredIndex {
+				msg = batchMsg
+				msgBaseIndex = batchMsgBaseIdx
+			}
+			totalBatchPins++
+		}
+	}
+	return totalBatchPins, msg, msgBaseIndex
+}
+
 func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, state *batchState) (err error) {
 	l := log.L(ctx)
 
@@ -192,7 +209,6 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 	// We must check all the contexts in the message, and mark them dispatched together.
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
-		l.Debugf("Aggregating pin %.10d batch=%s hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Hash, pin.Masked)
 
 		if batch == nil || *batch.ID != *pin.Batch {
 			batch, err = ag.database.GetBatchByID(ctx, pin.Batch)
@@ -206,23 +222,14 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 		}
 
 		// Extract the message from the batch - where the index is of a topic within a message
-		var msg *fftypes.Message
-		var i int64 = -1
-		var msgBaseIndex int64
-		for iM := 0; i < pin.Index && iM < len(batch.Payload.Messages); iM++ {
-			msg = batch.Payload.Messages[iM]
-			msgBaseIndex = i
-			for iT := 0; i < pin.Index && iT < len(msg.Header.Topics); iT++ {
-				i++
-			}
-		}
-
-		if i < pin.Index {
-			l.Errorf("Batch %s does not have message-topic index %d - pin %s is invalid", pin.Batch, pin.Index, pin.Hash)
+		batchPinCount, msg, msgBaseIndex := ag.extractBatchMessagePin(batch, pin.Index)
+		if msg == nil {
+			l.Errorf("Pin %.10d outside of range: batch=%s pinCount=%d pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, batchPinCount, pin.Index, pin.Hash, pin.Masked)
 			continue
 		}
-		l.Tracef("Batch %s message %d: %+v", batch.ID, pin.Index, msg)
-		if msg == nil || msg.Header.ID == nil {
+
+		l.Debugf("Aggregating pin %.10d batch=%s msg=%s pinIndex=%d msgBaseIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, msg.Header.ID, pin.Index, msgBaseIndex, pin.Hash, pin.Masked)
+		if msg.Header.ID == nil {
 			l.Errorf("null message entry %d in batch '%s'", pin.Index, batch.ID)
 			continue
 		}
@@ -243,6 +250,8 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 }
 
 func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, pin *fftypes.Pin, msgBaseIndex int64, msg *fftypes.Message, state *batchState) (err error) {
+	l := log.L(ctx)
+
 	// Check if it's ready to be processed
 	unmaskedContexts := make([]*fftypes.Bytes32, 0, len(msg.Header.Topics))
 	nextPins := make([]*nextPinState, 0, len(msg.Header.Topics))
@@ -250,14 +259,14 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 		// Private messages have one or more masked "pin" hashes that allow us to work
 		// out if it's the next message in the sequence, given the previous messages
 		if msg.Header.Group == nil || len(msg.Pins) == 0 || len(msg.Header.Topics) != len(msg.Pins) {
-			log.L(ctx).Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, batch.ID, msg.Pins, msg.Header.Topics)
+			l.Errorf("Message '%s' in batch '%s' has invalid pin data pins=%v topics=%v", msg.Header.ID, batch.ID, msg.Pins, msg.Header.Topics)
 			return nil
 		}
 		for i, pinStr := range msg.Pins {
 			var msgContext fftypes.Bytes32
 			err := msgContext.UnmarshalText([]byte(pinStr))
 			if err != nil {
-				log.L(ctx).Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, batch.ID, i, pinStr)
+				l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, batch.ID, i, pinStr)
 				return nil
 			}
 			nextPin, err := state.CheckMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext)
@@ -272,7 +281,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 			h.Write([]byte(topic))
 			msgContext := fftypes.HashResult(h)
 			unmaskedContexts = append(unmaskedContexts, msgContext)
-			ready, err := state.CheckUnmaskedContextReady(ctx, *msgContext, msg, msg.Header.Topics[i], pin.Sequence)
+			ready, err := state.CheckUnmaskedContextReady(ctx, msgContext, msg, msg.Header.Topics[i], pin.Sequence)
 			if err != nil || !ready {
 				return err
 			}
@@ -280,6 +289,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 
 	}
 
+	l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
 	dispatched, err := ag.attemptMessageDispatch(ctx, msg, state)
 	if err != nil {
 		return err
@@ -383,6 +393,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		log.L(ctx).Infof("Emitting %s %s for message %s:%s", eventType, event.ID, msg.Header.Namespace, msg.Header.ID)
 		return nil
 	})
+	if ag.metrics.IsMetricsEnabled() {
+		ag.metrics.MessageConfirmed(msg, eventType)
+	}
 
 	return true, nil
 }

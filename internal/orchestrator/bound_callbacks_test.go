@@ -59,7 +59,7 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
 	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
-		Error: "error info", Info: info.String(),
+		Error: "error info", Info: info,
 	})
 	assert.EqualError(t, err, "pop")
 

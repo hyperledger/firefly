@@ -388,7 +388,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 	reply := RequestReply(suite.testState, suite.testState.client1, &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "myrequest", fftypes.TransactionTypeNone)
+	}, "myrequest", fftypes.TransactionTypeUnpinned)
 	assert.NotNil(suite.T(), reply)
 
 	bodyData := reply.InlineData[0].Value.JSONObject().GetString("body")

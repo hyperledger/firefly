@@ -68,7 +68,7 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 }
 
 func TestMintTokensSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	mint := &fftypes.TokenTransferInput{
@@ -411,7 +411,7 @@ func TestMintTokensFail(t *testing.T) {
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(nil)
+	mth.On("WriteOperationFailure", context.Background(), mock.Anything, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")
@@ -441,7 +441,7 @@ func TestMintTokensFailAndDbFail(t *testing.T) {
 	mti.On("MintTokens", context.Background(), mock.Anything, "F1", &mint.TokenTransfer).Return(fmt.Errorf("pop"))
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("UpdateOperation", context.Background(), mock.Anything, mock.Anything).Return(fmt.Errorf("Update fail"))
+	mth.On("WriteOperationFailure", context.Background(), mock.Anything, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")
@@ -517,7 +517,7 @@ func TestMintTokensConfirm(t *testing.T) {
 }
 
 func TestBurnTokensSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	burn := &fftypes.TokenTransferInput{
@@ -610,7 +610,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 }
 
 func TestTransferTokensSuccess(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
 	transfer := &fftypes.TokenTransferInput{

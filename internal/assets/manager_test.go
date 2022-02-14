@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
@@ -43,9 +44,36 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mti := &tokenmocks.Plugin{}
+	mm := &metricsmocks.Manager{}
 	mti.On("Name").Return("ut_tokens").Maybe()
+	mm.On("IsMetricsEnabled").Return(false)
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti})
+	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	assert.NoError(t, err)
+	am := a.(*assetManager)
+	am.txHelper = &txcommonmocks.Helper{}
+	return am, cancel
+}
+
+func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
+	config.Reset()
+	mdi := &databasemocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mdm := &datamocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mti := &tokenmocks.Plugin{}
+	mm := &metricsmocks.Manager{}
+	mti.On("Name").Return("ut_tokens").Maybe()
+	mm.On("IsMetricsEnabled").Return(true)
+	mm.On("TransferSubmitted", mock.Anything)
+	ctx, cancel := context.WithCancel(context.Background())
+	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -57,7 +85,7 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

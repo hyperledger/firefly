@@ -80,7 +80,6 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 			plugin,
 			pool.Namespace,
 			txid,
-			"",
 			fftypes.OpTypeTokenCreatePool)
 		txcommon.AddTokenPoolCreateInputs(op, pool)
 
@@ -91,10 +90,10 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	}
 
 	if complete, err := plugin.CreateTokenPool(ctx, op.ID, pool); err != nil {
+		am.txHelper.WriteOperationFailure(ctx, op.ID, err)
 		return nil, err
 	} else if complete {
-		update := database.OperationQueryFactory.NewUpdate(ctx).Set("status", fftypes.OpStatusSucceeded)
-		return pool, am.database.UpdateOperation(ctx, op.ID, update)
+		am.txHelper.WriteOperationSuccess(ctx, op.ID, nil)
 	}
 	return pool, nil
 }
@@ -109,17 +108,16 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 		plugin,
 		pool.Namespace,
 		pool.TX.ID,
-		"",
 		fftypes.OpTypeTokenActivatePool)
 	if err := am.database.InsertOperation(ctx, op); err != nil {
 		return err
 	}
 
 	if complete, err := plugin.ActivateTokenPool(ctx, op.ID, pool, event); err != nil {
+		am.txHelper.WriteOperationFailure(ctx, op.ID, err)
 		return err
 	} else if complete {
-		update := database.OperationQueryFactory.NewUpdate(ctx).Set("status", fftypes.OpStatusSucceeded)
-		return am.database.UpdateOperation(ctx, op.ID, update)
+		am.txHelper.WriteOperationSuccess(ctx, op.ID, nil)
 	}
 	return nil
 }

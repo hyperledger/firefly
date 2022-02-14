@@ -28,8 +28,9 @@ const (
 )
 
 type SQLFeatures struct {
-	UseILIKE          bool
-	PlaceholderFormat sq.PlaceholderFormat
+	UseILIKE              bool
+	PlaceholderFormat     sq.PlaceholderFormat
+	ExclusiveTableLockSQL func(table string) string
 }
 
 func DefaultSQLProviderFeatures() SQLFeatures {
@@ -57,6 +58,6 @@ type Provider interface {
 	// Features returns database specific configuration switches
 	Features() SQLFeatures
 
-	// UpdateInsertForSequenceReturn updates the INSERT query for returning the Sequence, and returns whether it needs to be run as a query to return the Sequence field
-	UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (updatedInsert sq.InsertBuilder, runAsQuery bool)
+	// ApplyInsertQueryCustomizations updates the INSERT query for returning the Sequence, and returns whether it needs to be run as a query to return the Sequence field
+	ApplyInsertQueryCustomizations(insert sq.InsertBuilder, requestConflictEmptyResult bool) (updatedInsert sq.InsertBuilder, runAsQuery bool)
 }

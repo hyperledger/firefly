@@ -53,7 +53,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDRemote, Name: "node2", Owner: signingKeyRemote}}, nil, nil).Once()
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDLocal, Name: "node1", Owner: signingKeyLocal}}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil, nil)
-	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return(orgDIDLocal, nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: signingKeyLocal}, nil)
@@ -418,10 +418,14 @@ func TestResolveReceipientListExisting(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	groupID := fftypes.NewRandB32()
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{Hash: groupID}, nil)
+
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Group: fftypes.NewRandB32(),
+				Group: groupID,
 			},
 		},
 	})

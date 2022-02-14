@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,7 +43,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Transaction: fftypes.NewUUID(),
 		Status:      fftypes.OpStatusFailed,
 		Plugin:      "ethereum",
-		BackendID:   fftypes.NewRandB32().String(),
 		Error:       "pop",
 		Input:       fftypes.JSONObject{"some": "input-info"},
 		Output:      fftypes.JSONObject{"some": "output-info"},
@@ -70,7 +69,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		fb.Eq("status", operation.Status),
 		fb.Eq("error", operation.Error),
 		fb.Eq("plugin", operation.Plugin),
-		fb.Eq("backendid", operation.BackendID),
 		fb.Gt("created", 0),
 		fb.Gt("updated", 0),
 	)
@@ -92,12 +90,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(operations))
 
 	// Update
-	updateTime := fftypes.Now()
-	up := database.OperationQueryFactory.NewUpdate(ctx).
-		Set("status", fftypes.OpStatusSucceeded).
-		Set("updated", updateTime).
-		Set("error", "")
-	err = s.UpdateOperation(ctx, operation.ID, up)
+	err = s.ResolveOperation(ctx, operation.ID, fftypes.OpStatusSucceeded, "", fftypes.JSONObject{"extra": "info"})
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -200,7 +193,7 @@ func TestOperationUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -208,7 +201,7 @@ func TestOperationUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -218,6 +211,6 @@ func TestOperationUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -36,6 +37,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
+
+const broadcastDispatcherName = "pinned_broadcast"
 
 type Manager interface {
 	NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender
@@ -62,9 +65,10 @@ type broadcastManager struct {
 	syncasync             syncasync.Bridge
 	batchpin              batchpin.Submitter
 	maxBatchPayloadLength int64
+	metrics               metrics.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -80,18 +84,21 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		syncasync:             sa,
 		batchpin:              bp,
 		maxBatchPayloadLength: config.GetByteSize(config.BroadcastBatchPayloadLimit),
+		metrics:               mm,
 	}
-	bo := batch.Options{
+	bo := batch.DispatcherOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
 		BatchMaxBytes:  bm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
-	ba.RegisterDispatcher([]fftypes.MessageType{
-		fftypes.MessageTypeBroadcast,
-		fftypes.MessageTypeDefinition,
-		fftypes.MessageTypeTransferBroadcast,
-	}, bm.dispatchBatch, bo)
+	ba.RegisterDispatcher(broadcastDispatcherName,
+		fftypes.TransactionTypeBatchPin,
+		[]fftypes.MessageType{
+			fftypes.MessageTypeBroadcast,
+			fftypes.MessageTypeDefinition,
+			fftypes.MessageTypeTransferBroadcast,
+		}, bm.dispatchBatch, bo)
 	return bm, nil
 }
 
@@ -128,7 +135,6 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		bm.publicstorage,
 		batch.Namespace,
 		batch.Payload.TX.ID,
-		batch.PayloadRef,
 		fftypes.OpTypePublicStorageBatchBroadcast)
 	op.Status = fftypes.OpStatusSucceeded // Note we performed the action synchronously above
 	err = bm.database.InsertOperation(ctx, op)

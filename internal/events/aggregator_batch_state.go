@@ -137,12 +137,12 @@ func (bs *batchState) RunFinalize(ctx context.Context) error {
 	return bs.flushPins(ctx)
 }
 
-func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked fftypes.Bytes32, msg *fftypes.Message, topic string, firstMsgPinSequence int64) (bool, error) {
+func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *fftypes.Message, topic string, firstMsgPinSequence int64) (bool, error) {
 
-	ucs, found := bs.unmaskedContexts[contextUnmasked]
+	ucs, found := bs.unmaskedContexts[*contextUnmasked]
 	if !found {
 		ucs = &contextState{blockedBy: -1}
-		bs.unmaskedContexts[contextUnmasked] = ucs
+		bs.unmaskedContexts[*contextUnmasked] = ucs
 
 		// We need to check there's no earlier sequences with the same unmasked context
 		fb := database.PinQueryFactory.NewFilterLimit(ctx, 1) // only need the first one
@@ -214,7 +214,7 @@ func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftype
 		batchID:       batchID,
 		msgID:         msg.Header.ID,
 		firstPinIndex: msgBaseIndex,
-		lastPinIndex:  msgBaseIndex + int64(len(msg.Header.Topics)),
+		lastPinIndex:  msgBaseIndex + int64(len(msg.Header.Topics)) - 1,
 	})
 }
 
@@ -261,6 +261,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 			fb.Gte("index", dm.firstPinIndex),
 			fb.Lte("index", dm.lastPinIndex),
 		)
+		log.L(ctx).Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d lastIndex=%d", dm.batchID, dm.msgID, dm.firstPinIndex, dm.lastPinIndex)
 		update := database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true)
 		if err := bs.database.UpdatePins(ctx, filter, update); err != nil {
 			return err

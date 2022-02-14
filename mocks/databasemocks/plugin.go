@@ -2227,6 +2227,20 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *fftypes.Message) 
 	return r0
 }
 
+// ResolveOperation provides a mock function with given fields: ctx, id, status, errorMsg, output
+func (_m *Plugin) ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) error {
+	ret := _m.Called(ctx, id, status, errorMsg, output)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, id, status, errorMsg, output)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RunAsGroup provides a mock function with given fields: ctx, fn
 func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error) error {
 	ret := _m.Called(ctx, fn)
@@ -2381,20 +2395,6 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database
 	return r0
 }
 
-// UpdateOperation provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdateOrganization provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateOrganization(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -2465,13 +2465,13 @@ func (_m *Plugin) UpdateTransaction(ctx context.Context, id *fftypes.UUID, updat
 	return r0
 }
 
-// UpsertBatch provides a mock function with given fields: ctx, data, allowHashUpdate
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowHashUpdate)
+// UpsertBatch provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch) error {
+	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool) error); ok {
-		r0 = rf(ctx, data, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2591,13 +2591,13 @@ func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod
 	return r0
 }
 
-// UpsertGroup provides a mock function with given fields: ctx, data, allowExisting
-func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) error {
-	ret := _m.Called(ctx, data, allowExisting)
+// UpsertGroup provides a mock function with given fields: ctx, data, optimization
+func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, optimization database.UpsertOptimization) error {
+	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group, database.UpsertOptimization) error); ok {
+		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)
 	}

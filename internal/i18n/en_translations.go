@@ -259,4 +259,8 @@ var (
 	MsgAddressResolveFailed         = ffm("FF10339", "Failed to resolve signing key string '%s': %s", 500)
 	MsgAddressResolveBadStatus      = ffm("FF10340", "Failed to resolve signing key string '%s' [%d]: %s", 500)
 	MsgAddressResolveBadResData     = ffm("FF10341", "Failed to resolve signing key string '%s' - invalid address returned '%s': %s", 500)
+	MsgDXNotInitialized             = ffm("FF10342", "Data exchange is initializing")
+	MsgInvalidTXTypeForMessage      = ffm("FF10343", "Invalid transaction type for sending a message: %s", 400)
+	MsgGroupRequired                = ffm("FF10344", "Group must be set", 400)
+	MsgDBLockFailed                 = ffm("FF10345", "Database lock failed")
 )

@@ -38,6 +38,9 @@ func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysm
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	message := pm.NewMessage(ns, in)
+	if pm.metrics.IsMetricsEnabled() {
+		pm.metrics.MessageSubmitted(in)
+	}
 	if waitConfirm {
 		err = message.SendAndWait(ctx)
 	} else {
@@ -75,8 +78,6 @@ const (
 	methodSend
 	// methodSendAndWait requests that the message be sent and waits until it is pinned and confirmed by the blockchain
 	methodSendAndWait
-	// methodSendImmediate requests that the message be sent immediately, with no blockchain pinning
-	methodSendImmediate
 )
 
 func (s *messageSender) Prepare(ctx context.Context) error {
@@ -84,16 +85,10 @@ func (s *messageSender) Prepare(ctx context.Context) error {
 }
 
 func (s *messageSender) Send(ctx context.Context) error {
-	if s.msg.Header.TxType == fftypes.TransactionTypeNone {
-		return s.resolveAndSend(ctx, methodSendImmediate)
-	}
 	return s.resolveAndSend(ctx, methodSend)
 }
 
 func (s *messageSender) SendAndWait(ctx context.Context) error {
-	if s.msg.Header.TxType == fftypes.TransactionTypeNone {
-		return s.resolveAndSend(ctx, methodSendImmediate)
-	}
 	return s.resolveAndSend(ctx, methodSendAndWait)
 }
 
@@ -104,7 +99,12 @@ func (s *messageSender) setDefaults() {
 	if s.msg.Header.Type == "" {
 		s.msg.Header.Type = fftypes.MessageTypePrivate
 	}
-	if s.msg.Header.TxType == "" {
+	switch s.msg.Header.TxType {
+	case fftypes.TransactionTypeUnpinned, fftypes.TransactionTypeNone:
+		// "unpinned" used to be called "none" (before we introduced batching + a TX on unppinned sends)
+		s.msg.Header.TxType = fftypes.TransactionTypeUnpinned
+	default:
+		// the only other valid option is "batch_pin"
 		s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 }
@@ -176,50 +176,11 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 		return nil
 	}
 
-	if method == methodSendImmediate {
-		s.msg.Confirmed = fftypes.Now()
-		// msg.Header.Key = "" // there is no on-chain signing assurance with this message
-	}
-
 	// Store the message - this asynchronously triggers the next step in process
 	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Sent private message %s:%s", s.msg.Header.Namespace, s.msg.Header.ID)
-
-	if method == methodSendImmediate {
-		if err := s.sendUnpinned(ctx); err != nil {
-			return err
-		}
-
-		// Emit a confirmation event locally immediately
-		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, s.namespace, s.msg.Header.ID)
-		if err := s.mgr.database.InsertEvent(ctx, event); err != nil {
-			return err
-		}
-	}
+	log.L(ctx).Infof("Sent private message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
 
 	return nil
-}
-
-func (s *messageSender) sendUnpinned(ctx context.Context) (err error) {
-	// Retrieve the group
-	group, nodes, err := s.mgr.groupManager.getGroupNodes(ctx, s.msg.Header.Group)
-	if err != nil {
-		return err
-	}
-
-	data, _, err := s.mgr.data.GetMessageData(ctx, &s.msg.Message, true)
-	if err != nil {
-		return err
-	}
-
-	tw := &fftypes.TransportWrapper{
-		Type:    fftypes.TransportPayloadTypeMessage,
-		Message: &s.msg.Message,
-		Data:    data,
-		Group:   group,
-	}
-
-	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, tw, nil, data)
 }

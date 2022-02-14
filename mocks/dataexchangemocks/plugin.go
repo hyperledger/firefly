@@ -21,13 +21,13 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddPeer provides a mock function with given fields: ctx, peerID, endpoint
-func (_m *Plugin) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) error {
-	ret := _m.Called(ctx, peerID, endpoint)
+// AddPeer provides a mock function with given fields: ctx, peer
+func (_m *Plugin) AddPeer(ctx context.Context, peer fftypes.DXInfo) error {
+	ret := _m.Called(ctx, peer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, peerID, endpoint)
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.DXInfo) error); ok {
+		r0 = rf(ctx, peer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -105,42 +105,33 @@ func (_m *Plugin) DownloadBLOB(ctx context.Context, payloadRef string) (io.ReadC
 }
 
 // GetEndpointInfo provides a mock function with given fields: ctx
-func (_m *Plugin) GetEndpointInfo(ctx context.Context) (string, fftypes.JSONObject, error) {
+func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.DXInfo, error) {
 	ret := _m.Called(ctx)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+	var r0 fftypes.DXInfo
+	if rf, ok := ret.Get(0).(func(context.Context) fftypes.DXInfo); ok {
 		r0 = rf(ctx)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Get(0).(fftypes.DXInfo)
 	}
 
-	var r1 fftypes.JSONObject
-	if rf, ok := ret.Get(1).(func(context.Context) fftypes.JSONObject); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(fftypes.JSONObject)
-		}
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
-		r2 = rf(ctx)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, prefix, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks dataexchange.Callbacks) error {
-	ret := _m.Called(ctx, prefix, callbacks)
+// Init provides a mock function with given fields: ctx, prefix, nodes, callbacks
+func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.DXInfo, callbacks dataexchange.Callbacks) error {
+	ret := _m.Called(ctx, prefix, nodes, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, dataexchange.Callbacks) error); ok {
-		r0 = rf(ctx, prefix, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, []fftypes.DXInfo, dataexchange.Callbacks) error); ok {
+		r0 = rf(ctx, prefix, nodes, callbacks)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -167,25 +158,18 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// SendMessage provides a mock function with given fields: ctx, peerID, data
-func (_m *Plugin) SendMessage(ctx context.Context, peerID string, data []byte) (string, error) {
-	ret := _m.Called(ctx, peerID, data)
+// SendMessage provides a mock function with given fields: ctx, opID, peerID, data
+func (_m *Plugin) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) error {
+	ret := _m.Called(ctx, opID, peerID, data)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) string); ok {
-		r0 = rf(ctx, peerID, data)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, []byte) error); ok {
+		r0 = rf(ctx, opID, peerID, data)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []byte) error); ok {
-		r1 = rf(ctx, peerID, data)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Start provides a mock function with given fields:
@@ -202,25 +186,18 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// TransferBLOB provides a mock function with given fields: ctx, peerID, payloadRef
-func (_m *Plugin) TransferBLOB(ctx context.Context, peerID string, payloadRef string) (string, error) {
-	ret := _m.Called(ctx, peerID, payloadRef)
+// TransferBLOB provides a mock function with given fields: ctx, opID, peerID, payloadRef
+func (_m *Plugin) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID string, payloadRef string) error {
+	ret := _m.Called(ctx, opID, peerID, payloadRef)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
-		r0 = rf(ctx, peerID, payloadRef)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) error); ok {
+		r0 = rf(ctx, opID, peerID, payloadRef)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, peerID, payloadRef)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // UploadBLOB provides a mock function with given fields: ctx, ns, id, content

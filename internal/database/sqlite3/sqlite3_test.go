@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build cgo
 // +build cgo
 
 package sqlite3
@@ -50,7 +51,7 @@ func TestSQLite3GoProvider(t *testing.T) {
 	assert.Equal(t, sq.Dollar, sqlite.Features().PlaceholderFormat)
 
 	insert := sq.Insert("test").Columns("col1").Values("val1")
-	insert, query := sqlite.UpdateInsertForSequenceReturn(insert)
+	insert, query := sqlite.ApplyInsertQueryCustomizations(insert, false)
 	sql, _, err := insert.ToSql()
 	assert.NoError(t, err)
 	assert.Equal(t, "INSERT INTO test (col1) VALUES (?)", sql)
