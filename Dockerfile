@@ -49,5 +49,5 @@ RUN ln -s /firefly/firefly /usr/bin/firefly \
     && apk add --update --no-cache postgresql-client curl jq \
     && curl -sL "https://github.com/golang-migrate/migrate/releases/download/$(curl -sL https://api.github.com/repos/golang-migrate/migrate/releases/latest | jq -r '.name')/migrate.linux-amd64.tar.gz" | tar xz \
     && chmod +x ./migrate \
-    && cp ./migrate /usr/bin/migrate
+    && mv ./migrate /usr/bin/migrate
 ENTRYPOINT [ "firefly" ]
