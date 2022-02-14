@@ -24,11 +24,13 @@ import (
 
 func TestNewEvent(t *testing.T) {
 
-	u := NewUUID()
-	e := NewEvent(EventTypeMessageConfirmed, "ns1", u)
+	ref := NewUUID()
+	tx := NewUUID()
+	e := NewEvent(EventTypeMessageConfirmed, "ns1", ref, tx)
 	assert.Equal(t, EventTypeMessageConfirmed, e.Type)
 	assert.Equal(t, "ns1", e.Namespace)
-	assert.Equal(t, *u, *e.Reference)
+	assert.Equal(t, *ref, *e.Reference)
+	assert.Equal(t, *tx, *e.Transaction)
 
 	e.Sequence = 12345
 	var ls LocallySequenced = e

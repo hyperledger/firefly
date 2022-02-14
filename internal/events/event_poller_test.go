@@ -207,7 +207,7 @@ func TestReadPageSingleCommitEvent(t *testing.T) {
 		return false, nil
 	}, nil)
 	cancel()
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{ev1}, nil, nil).Once()
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil)
 	ep.eventLoop()
@@ -227,7 +227,7 @@ func TestReadPageRewind(t *testing.T) {
 		return true, 12345
 	})
 	cancel()
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil)
 	mdi.On("GetEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
 		f, err := filter.Finalize()
 		assert.NoError(t, err)
@@ -248,7 +248,7 @@ func TestReadPageProcessEventsRetryExit(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, func(events []fftypes.LocallySequenced) (bool, error) { return false, fmt.Errorf("pop") }, nil)
 	cancel()
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{ev1}, nil, nil).Once()
 	ep.eventLoop()
 
@@ -262,7 +262,7 @@ func TestProcessEventsFail(t *testing.T) {
 	}, nil)
 	defer cancel()
 	_, err := ep.conf.newEventsHandler([]fftypes.LocallySequenced{
-		fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID()),
+		fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil),
 	})
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
