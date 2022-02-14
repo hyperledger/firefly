@@ -112,7 +112,7 @@ type dispatcher struct {
 	options    DispatcherOptions
 }
 
-func (bm *batchManager) getProcessorKey(namespace string, identity *fftypes.Identity, groupID *fftypes.Bytes32) string {
+func (bm *batchManager) getProcessorKey(namespace string, identity *fftypes.IdentityRef, groupID *fftypes.Bytes32) string {
 	return fmt.Sprintf("%s|%s|%v", namespace, identity.Author, groupID)
 }
 
@@ -141,7 +141,7 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.Identity) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.IdentityRef) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 

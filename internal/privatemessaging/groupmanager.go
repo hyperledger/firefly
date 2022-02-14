@@ -77,7 +77,7 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Gro
 	return true, nil
 }
 
-func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity, group *fftypes.Group) (err error) {
+func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.IdentityRef, group *fftypes.Group) (err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
@@ -115,13 +115,13 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	msg := &fftypes.Message{
 		State: fftypes.MessageStateReady,
 		Header: fftypes.MessageHeader{
-			Group:     group.Hash,
-			Namespace: group.Namespace, // Must go into the same ordering context as the message itself
-			Type:      fftypes.MessageTypeGroupInit,
-			Identity:  *signer,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Topics:    fftypes.FFStringArray{group.Topic()},
-			TxType:    fftypes.TransactionTypeBatchPin,
+			Group:       group.Hash,
+			Namespace:   group.Namespace, // Must go into the same ordering context as the message itself
+			Type:        fftypes.MessageTypeGroupInit,
+			IdentityRef: *signer,
+			Tag:         string(fftypes.SystemTagDefineGroup),
+			Topics:      fftypes.FFStringArray{group.Topic()},
+			TxType:      fftypes.TransactionTypeBatchPin,
 		},
 		Data: fftypes.DataRefs{
 			{ID: data.ID, Hash: data.Hash},

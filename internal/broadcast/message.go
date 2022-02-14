@@ -136,7 +136,7 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
 	// Resolve the sending identity
 	if !s.isRootOrgBroadcast(ctx) {
-		if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.Identity); err != nil {
+		if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.IdentityRef); err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 		}
 	}

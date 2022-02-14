@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,9 +16,35 @@
 
 package fftypes
 
-// Identity is the nested structure representing an identity, that might comprise a resolvable
-// by FireFly identity DID, a blockchain signing key, or both.
+// IdentityType is the type of an identity
+type IdentityType = FFEnum
+
+var (
+	// IdentityTypeOrg is an organization
+	IdentityTypeOrg IdentityType = ffEnum("identitytype", "org")
+	// IdentityTypeNode is a node
+	IdentityTypeNode IdentityType = ffEnum("identitytype", "node")
+	// IdentityTypeCustom is a user defined identity within a namespace
+	IdentityTypeCustom IdentityType = ffEnum("identitytype", "custom")
+)
+
+// Identity is the persisted structure backing all identities, including orgs, nodes and custom identities
 type Identity struct {
+	ID          *UUID        `json:"id"`
+	DID         string       `json:"did"`
+	Type        IdentityType `json:"type" ffenum:"identitytype"`
+	Parent      string       `json:"parent,omitempty"`
+	Namespace   string       `json:"namespace"`
+	Name        string       `json:"name,omitempty"`
+	Description string       `json:"description,omitempty"`
+	Profile     JSONObject   `json:"profile,omitempty"`
+	Message     *UUID        `json:"message,omitempty"`
+	Created     *FFTime      `json:"created,omitempty"`
+}
+
+// IdentityRef is the nested structure representing an identity, that might comprise a resolvable
+// by FireFly identity DID, a blockchain signing key, or both.
+type IdentityRef struct {
 	Author string `json:"author,omitempty"`
 	Key    string `json:"key,omitempty"`
 }

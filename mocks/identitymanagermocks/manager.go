@@ -74,11 +74,11 @@ func (_m *Manager) OrgDID(org *fftypes.Organization) string {
 }
 
 // ResolveInputIdentity provides a mock function with given fields: ctx, _a1
-func (_m *Manager) ResolveInputIdentity(ctx context.Context, _a1 *fftypes.Identity) error {
+func (_m *Manager) ResolveInputIdentity(ctx context.Context, _a1 *fftypes.IdentityRef) error {
 	ret := _m.Called(ctx, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.IdentityRef) error); ok {
 		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)

@@ -49,7 +49,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			ID:   msgID,
 			CID:  nil,
 			Type: fftypes.MessageTypeBroadcast,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Key:    "0x12345",
 				Author: "did:firefly:org/abcd",
 			},
@@ -95,7 +95,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			ID:   msgID,
 			CID:  cid,
 			Type: fftypes.MessageTypeBroadcast,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Key:    "0x12345",
 				Author: "did:firefly:org/abcd",
 			},

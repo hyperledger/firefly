@@ -88,7 +88,7 @@ func TestBroadcastDefinitionBadIdentity(t *testing.T) {
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := bm.BroadcastDefinition(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.Identity{
+	_, err := bm.BroadcastDefinition(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.IdentityRef{
 		Author: "wrong",
 		Key:    "wrong",
 	}, fftypes.SystemTagDefineNamespace, false)
@@ -107,7 +107,7 @@ func TestBroadcastRootOrgDefinitionPassedThroughAnyIdentity(t *testing.T) {
 
 	_, err := bm.BroadcastRootOrgDefinition(bm.ctx, &fftypes.Organization{
 		ID: fftypes.NewUUID(),
-	}, &fftypes.Identity{
+	}, &fftypes.IdentityRef{
 		Author: "anything - overridden",
 		Key:    "0x12345",
 	}, fftypes.SystemTagDefineNamespace, false)

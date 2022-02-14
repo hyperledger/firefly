@@ -93,7 +93,7 @@ func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Org
 	signingIdentityString := org.Identity
 	if org.Parent != "" {
 		// Check the identity itself is ok
-		if err = nm.identity.ResolveInputIdentity(ctx, &fftypes.Identity{
+		if err = nm.identity.ResolveInputIdentity(ctx, &fftypes.IdentityRef{
 			Key: signingIdentityString,
 		}); err != nil {
 			return nil, err
@@ -107,7 +107,7 @@ func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Org
 		}
 	}
 
-	return nm.broadcast.BroadcastRootOrgDefinition(ctx, org, &fftypes.Identity{
+	return nm.broadcast.BroadcastRootOrgDefinition(ctx, org, &fftypes.IdentityRef{
 		Key: signingIdentityString,
 	}, fftypes.SystemTagDefineOrganization, waitConfirm)
 }

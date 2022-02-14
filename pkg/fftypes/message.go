@@ -72,7 +72,7 @@ type MessageHeader struct {
 	CID    *UUID           `json:"cid,omitempty"`
 	Type   MessageType     `json:"type" ffenum:"messagetype"`
 	TxType TransactionType `json:"txtype,omitempty"`
-	Identity
+	IdentityRef
 	Created   *FFTime       `json:"created,omitempty"`
 	Namespace string        `json:"namespace,omitempty"`
 	Group     *Bytes32      `json:"group,omitempty"`

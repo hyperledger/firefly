@@ -56,7 +56,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "id1",
 			Key:    "0x12345",
 		},
@@ -90,7 +90,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mmi := bp.metrics.(*metricsmocks.Manager)
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "id1",
 			Key:    "0x12345",
 		},
@@ -125,7 +125,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "id1",
 			Key:    "0x12345",
 		},

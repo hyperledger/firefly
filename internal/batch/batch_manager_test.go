@@ -82,12 +82,12 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	dataHash := fftypes.NewRandB32()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			TxType:    fftypes.TransactionTypeBatchPin,
-			Type:      fftypes.MessageTypeBroadcast,
-			ID:        fftypes.NewUUID(),
-			Topics:    []string{"topic1", "topic2"},
-			Namespace: "ns1",
-			Identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
+			TxType:      fftypes.TransactionTypeBatchPin,
+			Type:        fftypes.MessageTypeBroadcast,
+			ID:          fftypes.NewUUID(),
+			Topics:      []string{"topic1", "topic2"},
+			Namespace:   "ns1",
+			IdentityRef: fftypes.IdentityRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		},
 		Data: fftypes.DataRefs{
 			{ID: dataID1, Hash: dataHash},
@@ -197,13 +197,13 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	dataHash := fftypes.NewRandB32()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			TxType:    fftypes.TransactionTypeBatchPin,
-			Type:      fftypes.MessageTypePrivate,
-			ID:        fftypes.NewUUID(),
-			Topics:    []string{"topic1", "topic2"},
-			Namespace: "ns1",
-			Identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
-			Group:     &groupID,
+			TxType:      fftypes.TransactionTypeBatchPin,
+			Type:        fftypes.MessageTypePrivate,
+			ID:          fftypes.NewUUID(),
+			Topics:      []string{"topic1", "topic2"},
+			Namespace:   "ns1",
+			IdentityRef: fftypes.IdentityRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
+			Group:       &groupID,
 		},
 		Data: fftypes.DataRefs{
 			{ID: dataID1, Hash: dataHash},

@@ -50,7 +50,7 @@ func TestNewIdentityManagerMissingDeps(t *testing.T) {
 
 func TestResolveInputIdentityBlankBlank(t *testing.T) {
 
-	identity := &fftypes.Identity{}
+	identity := &fftypes.IdentityRef{}
 	org := &fftypes.Organization{
 		ID:       fftypes.NewUUID(),
 		Name:     "org1",
@@ -69,14 +69,14 @@ func TestResolveInputIdentityBlankBlank(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("did:firefly:org/%s", org.ID), identity.Author)
 
 	// Cached result (note once above)
-	err = im.ResolveInputIdentity(ctx, &fftypes.Identity{})
+	err = im.ResolveInputIdentity(ctx, &fftypes.IdentityRef{})
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
 
 func TestResolveInputIdentityBlankShortKeyNameResolved(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Key: "org1key",
 	}
 	org := &fftypes.Organization{
@@ -104,7 +104,7 @@ func TestResolveInputIdentityBlankShortKeyNameResolved(t *testing.T) {
 
 func TestResolveInputIdentityBlankShortKeyNameUnresolved(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Key: "org1key",
 	}
 	org := &fftypes.Organization{
@@ -134,7 +134,7 @@ func TestResolveInputIdentityBlankShortKeyNameUnresolved(t *testing.T) {
 
 func TestResolveInputIdentityBlankShortKeyNameFail(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Key: "org1key",
 	}
 
@@ -156,7 +156,7 @@ func TestResolveInputIdentityBlankShortKeyNameFail(t *testing.T) {
 
 func TestResolveInputIdentityOrgIdShortKeyName(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Key:    "org1key",
 		Author: "org1",
 	}
@@ -178,7 +178,7 @@ func TestResolveInputIdentityOrgIdShortKeyName(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("did:firefly:org/%s", org.ID), identity.Author)
 
 	// Cached result (note once on mocks above)
-	err = im.ResolveInputIdentity(ctx, &fftypes.Identity{
+	err = im.ResolveInputIdentity(ctx, &fftypes.IdentityRef{
 		Key:    "org1key",
 		Author: "org1",
 	})
@@ -190,7 +190,7 @@ func TestResolveInputIdentityOrgIdShortKeyName(t *testing.T) {
 
 func TestResolveInputIdentityOrgKeyMismatch(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Key:    "org1key",
 		Author: "org1",
 	}
@@ -215,7 +215,7 @@ func TestResolveInputIdentityOrgKeyMismatch(t *testing.T) {
 
 func TestResolveInputIdentityResolveKeyFail(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Key: "org1key",
 	}
 
@@ -230,7 +230,7 @@ func TestResolveInputIdentityResolveKeyFail(t *testing.T) {
 
 func TestResolveInputIdentityBadOrgDID(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Author: "did:firefly:org/!NoUUIDHere!",
 	}
 
@@ -243,7 +243,7 @@ func TestResolveInputIdentityBadOrgDID(t *testing.T) {
 func TestResolveInputIdentityOrgLookupByDIDFail(t *testing.T) {
 
 	orgId := fftypes.NewUUID()
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Author: fmt.Sprintf("did:firefly:org/%s", orgId),
 	}
 
@@ -259,7 +259,7 @@ func TestResolveInputIdentityOrgLookupByDIDFail(t *testing.T) {
 func TestResolveInputIdentityOrgLookupByDIDNotFound(t *testing.T) {
 
 	orgId := fftypes.NewUUID()
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Author: fmt.Sprintf("did:firefly:org/%s", orgId),
 	}
 
@@ -274,7 +274,7 @@ func TestResolveInputIdentityOrgLookupByDIDNotFound(t *testing.T) {
 
 func TestResolveInputIdentityOrgLookupByNameFail(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Author: "org1",
 	}
 
@@ -289,7 +289,7 @@ func TestResolveInputIdentityOrgLookupByNameFail(t *testing.T) {
 
 func TestResolveInputIdentityOrgLookupByNameNotFound(t *testing.T) {
 
-	identity := &fftypes.Identity{
+	identity := &fftypes.IdentityRef{
 		Author: "org1",
 	}
 

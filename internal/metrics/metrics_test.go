@@ -32,7 +32,7 @@ var MessageInOut = &fftypes.MessageInOut{
 	Message: fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: msgID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "did:firefly:org/abcd",
 				Key:    "0x12345",
 			},

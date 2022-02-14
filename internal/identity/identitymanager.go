@@ -33,7 +33,7 @@ import (
 )
 
 type Manager interface {
-	ResolveInputIdentity(ctx context.Context, identity *fftypes.Identity) (err error)
+	ResolveInputIdentity(ctx context.Context, identity *fftypes.IdentityRef) (err error)
 	ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error)
 	ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error)
 	ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error)
@@ -91,7 +91,7 @@ func (im *identityManager) OrgDID(org *fftypes.Organization) string {
 
 // ResolveInputIdentity takes in identity input information from an API call, or configuration load, and resolves
 // the combination
-func (im *identityManager) ResolveInputIdentity(ctx context.Context, identity *fftypes.Identity) (err error) {
+func (im *identityManager) ResolveInputIdentity(ctx context.Context, identity *fftypes.IdentityRef) (err error) {
 	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", identity.Key, identity.Author)
 
 	identity.Key, err = im.ResolveSigningKey(ctx, identity.Key)
@@ -231,7 +231,7 @@ func (im *identityManager) cachedOrgLookupByAuthor(ctx context.Context, author s
 	return org, nil
 }
 
-func (im *identityManager) resolveInputAuthor(ctx context.Context, identity *fftypes.Identity) (err error) {
+func (im *identityManager) resolveInputAuthor(ctx context.Context, identity *fftypes.IdentityRef) (err error) {
 
 	var org *fftypes.Organization
 	if identity.Author == "" {

@@ -95,7 +95,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 						ID:     msgID,
 						Group:  groupID,
 						Topics: []string{topic},
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Author: member2org,
 							Key:    member2key,
 						},
@@ -222,7 +222,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 						ID:     msgID,
 						Group:  groupID,
 						Topics: []string{topic},
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Author: member2org,
 							Key:    member2key,
 						},
@@ -311,7 +311,7 @@ func TestAggregationBroadcast(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						ID:     msgID,
 						Topics: []string{topic},
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Author: member1org,
 							Key:    member1key,
 						},
@@ -646,7 +646,7 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -668,7 +668,7 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -690,7 +690,7 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -721,7 +721,7 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -750,7 +750,7 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -783,7 +783,7 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -818,7 +818,7 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -853,7 +853,7 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1126,7 +1126,7 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 			Namespace: "any",
 			Topics:    fftypes.FFStringArray{"topic1"},
 			Group:     groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "org1",
 			},
 		},
@@ -1139,7 +1139,7 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 			Namespace: "any",
 			Topics:    fftypes.FFStringArray{"topic1"},
 			Group:     groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "org1",
 			},
 		},
@@ -1193,7 +1193,7 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 			Namespace: "any",
 			Topics:    fftypes.FFStringArray{"topic1"},
 			Group:     groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "org1",
 			},
 		},
@@ -1206,7 +1206,7 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 			Namespace: "any",
 			Topics:    fftypes.FFStringArray{"topic1"},
 			Group:     groupID,
-			Identity: fftypes.Identity{
+			IdentityRef: fftypes.IdentityRef{
 				Author: "org1",
 			},
 		},

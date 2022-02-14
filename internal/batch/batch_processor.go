@@ -44,7 +44,7 @@ type batchProcessorConf struct {
 	dispatcherName string
 	txType         fftypes.TransactionType
 	namespace      string
-	identity       fftypes.Identity
+	identity       fftypes.IdentityRef
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
 }
@@ -371,13 +371,13 @@ func (bp *batchProcessor) flush(overflow bool) error {
 func (bp *batchProcessor) buildFlushBatch(id *fftypes.UUID, newWork []*batchWork) *fftypes.Batch {
 	log.L(bp.ctx).Debugf("Flushing batch %s", id)
 	batch := &fftypes.Batch{
-		ID:        id,
-		Namespace: bp.conf.namespace,
-		Identity:  bp.conf.identity,
-		Group:     bp.conf.group,
-		Payload:   fftypes.BatchPayload{},
-		Created:   fftypes.Now(),
-		Node:      bp.ni.GetNodeUUID(bp.ctx),
+		ID:          id,
+		Namespace:   bp.conf.namespace,
+		IdentityRef: bp.conf.identity,
+		Group:       bp.conf.group,
+		Payload:     fftypes.BatchPayload{},
+		Created:     fftypes.Now(),
+		Node:        bp.ni.GetNodeUUID(bp.ctx),
 	}
 	for _, w := range newWork {
 		if w.msg != nil {

@@ -61,7 +61,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -120,7 +120,7 @@ func TestBroadcastRootOrg(t *testing.T) {
 			Header: fftypes.MessageHeader{
 				ID:   fftypes.NewUUID(),
 				Type: fftypes.MessageTypeDefinition,
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/12345",
 					Key:    "0x12345",
 				},
@@ -164,7 +164,7 @@ func TestBroadcastRootOrgBadData(t *testing.T) {
 			Header: fftypes.MessageHeader{
 				ID:   fftypes.NewUUID(),
 				Type: fftypes.MessageTypeDefinition,
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/12345",
 					Key:    "0x12345",
 				},
@@ -219,7 +219,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -285,7 +285,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -328,7 +328,7 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -428,7 +428,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -469,7 +469,7 @@ func TestBroadcastPrepare(t *testing.T) {
 	msg := &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},

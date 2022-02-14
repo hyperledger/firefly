@@ -96,7 +96,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Namespace: "ns1",
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -130,7 +130,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -162,7 +162,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -189,7 +189,7 @@ func TestResolveMemberListLocalOrgUnregistered(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -216,7 +216,7 @@ func TestResolveMemberListLocalOrgLookupFailed(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -247,7 +247,7 @@ func TestResolveMemberListMissingLocalMemberLookupFailed(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -278,7 +278,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -309,7 +309,7 @@ func TestResolveMemberOrgNameNotFound(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -344,7 +344,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},

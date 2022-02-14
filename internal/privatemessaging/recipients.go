@@ -52,7 +52,7 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 
 	// If the group is new, we need to do a group initialization, before we send the message itself.
 	if isNew {
-		return pm.groupManager.groupInit(ctx, &in.Header.Identity, group)
+		return pm.groupManager.groupInit(ctx, &in.Header.IdentityRef, group)
 	}
 	return err
 }

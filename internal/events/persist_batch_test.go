@@ -54,7 +54,7 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "did:firefly:org/12345",
 			Key:    "0x12345",
 		},
@@ -68,7 +68,7 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						ID:   fftypes.NewUUID(),
 						Type: fftypes.MessageTypeDefinition,
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Author: "did:firefly:org/12345",
 							Key:    "0x12345",
 						},
@@ -109,7 +109,7 @@ func TestPersistBatchFromBroadcastRootOrgBadData(t *testing.T) {
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Key: "0x12345",
 		},
 		Payload: fftypes.BatchPayload{
@@ -122,7 +122,7 @@ func TestPersistBatchFromBroadcastRootOrgBadData(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						ID:   fftypes.NewUUID(),
 						Type: fftypes.MessageTypeDefinition,
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Key: "0x12345",
 						},
 					},
@@ -157,7 +157,7 @@ func TestPersistBatchFromBroadcastNoRootOrgBadIdentity(t *testing.T) {
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Key: "0x12345",
 		},
 	}

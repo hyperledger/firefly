@@ -101,7 +101,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+		identity := args[1].(*fftypes.IdentityRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -196,7 +196,7 @@ func TestSendMessageFail(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+		identity := args[1].(*fftypes.IdentityRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -246,7 +246,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+		identity := args[1].(*fftypes.IdentityRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -296,7 +296,7 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+		identity := args[1].(*fftypes.IdentityRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -363,7 +363,7 @@ func TestMessagePrepare(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+		identity := args[1].(*fftypes.IdentityRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -423,7 +423,7 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 			Messages: []*fftypes.Message{
 				{
 					Header: fftypes.MessageHeader{
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Author: "org1",
 						},
 						TxType: fftypes.TransactionTypeUnpinned,
@@ -445,7 +445,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Empty(t, identity.Author)
 		return true
 	})).Return(nil)
@@ -651,7 +651,7 @@ func TestRequestReplySuccess(t *testing.T) {
 			Header: fftypes.MessageHeader{
 				Tag:   "mytag",
 				Group: groupID,
-				Identity: fftypes.Identity{
+				IdentityRef: fftypes.IdentityRef{
 					Author: "org1",
 				},
 			},
@@ -666,7 +666,7 @@ func TestDispatchedUnpinnedMessageMarshalFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
@@ -713,7 +713,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
@@ -757,7 +757,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						Tag:   "mytag",
 						Group: groupID,
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Author: "org1",
 						},
 					},
@@ -777,7 +777,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
@@ -803,7 +803,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 						Header: fftypes.MessageHeader{
 							Tag:   "mytag",
 							Group: groupID,
-							Identity: fftypes.Identity{
+							IdentityRef: fftypes.IdentityRef{
 								Author: "org1",
 							},
 						},
@@ -829,7 +829,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
@@ -858,7 +858,7 @@ func TestSendDataTransferFail(t *testing.T) {
 						Header: fftypes.MessageHeader{
 							Tag:   "mytag",
 							Group: groupID,
-							Identity: fftypes.Identity{
+							IdentityRef: fftypes.IdentityRef{
 								Author: "org1",
 							},
 						},
@@ -879,7 +879,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
@@ -905,7 +905,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 						Header: fftypes.MessageHeader{
 							Tag:   "mytag",
 							Group: groupID,
-							Identity: fftypes.Identity{
+							IdentityRef: fftypes.IdentityRef{
 								Author: "org1",
 							},
 						},
@@ -924,7 +924,7 @@ func TestDispatchedUnpinnedMessageGetOrgFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
@@ -960,7 +960,7 @@ func TestDispatchedUnpinnedMessageGetOrgFail(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						Tag:   "mytag",
 						Group: groupID,
-						Identity: fftypes.Identity{
+						IdentityRef: fftypes.IdentityRef{
 							Author: "org1",
 						},
 					},

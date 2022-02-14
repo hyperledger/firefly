@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -155,7 +155,7 @@ func (s *SQLCommon) UpdateNextPin(ctx context.Context, sequence int64, update da
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("nextpins"), update, nodeFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update("nextpins"), update, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}

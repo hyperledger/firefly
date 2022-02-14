@@ -430,7 +430,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFStringArray{"topic1"},
 					Tag:    "tag1",
 					Group:  nil,
-					Identity: fftypes.Identity{
+					IdentityRef: fftypes.IdentityRef{
 						Author: "signingOrg",
 						Key:    "0x12345",
 					},
@@ -447,7 +447,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFStringArray{"topic1"},
 					Tag:    "tag2",
 					Group:  gid1,
-					Identity: fftypes.Identity{
+					IdentityRef: fftypes.IdentityRef{
 						Author: "org2",
 						Key:    "0x23456",
 					},
@@ -464,7 +464,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFStringArray{"topic2"},
 					Tag:    "tag1",
 					Group:  nil,
-					Identity: fftypes.Identity{
+					IdentityRef: fftypes.IdentityRef{
 						Author: "signingOrg",
 						Key:    "0x12345",
 					},

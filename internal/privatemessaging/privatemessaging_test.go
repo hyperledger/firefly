@@ -120,7 +120,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+		identity := args[1].(*fftypes.IdentityRef)
 		assert.Equal(t, "org1", identity.Author)
 		identity.Key = "0x12345"
 	}).Return(nil)
@@ -175,7 +175,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
 		ID: batchID,
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "org1",
 		},
 		Group:     groupID,
@@ -240,7 +240,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorgkey", nil)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.IdentityRef) bool {
 		assert.Equal(t, "badauthor", identity.Author)
 		return true
 	})).Return(fmt.Errorf("pop"))
@@ -249,7 +249,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "badauthor",
 		},
 	}, []*fftypes.Bytes32{})
@@ -267,7 +267,7 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	mim.On("GetLocalOrgKey", pm.ctx).Return("", fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "badauthor",
 		},
 	}, []*fftypes.Bytes32{})
@@ -288,7 +288,7 @@ func TestSendImmediateFail(t *testing.T) {
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "org1",
 		},
 	}, []*fftypes.Bytes32{})
@@ -310,7 +310,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "org1",
 		},
 		Payload: fftypes.BatchPayload{
@@ -334,7 +334,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "org1",
 		},
 		Payload: fftypes.BatchPayload{
@@ -359,7 +359,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Identity: fftypes.Identity{
+		IdentityRef: fftypes.IdentityRef{
 			Author: "org1",
 		}}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
