@@ -46,5 +46,8 @@ COPY --from=firefly-builder /firefly/db ./db
 COPY --from=solidity-builder /firefly/solidity_firefly/build/contracts ./contracts
 COPY --from=fabric-builder /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz ./contracts/firefly_fabric.tar.gz
 RUN ln -s /firefly/firefly /usr/bin/firefly \
-    && apk add --update --no-cache postgresql-client curl jq
+    && apk add --update --no-cache postgresql-client curl jq \
+    && curl -sL "https://github.com/golang-migrate/migrate/releases/download/$(curl -sL https://api.github.com/repos/golang-migrate/migrate/releases/latest | jq -r '.name')/migrate.linux-amd64.tar.gz" | tar xz \
+    && chmod +x ./migrate \
+    && mv ./migrate /usr/bin/migrate
 ENTRYPOINT [ "firefly" ]
