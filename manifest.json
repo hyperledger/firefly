@@ -1,8 +1,8 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.1.2",
-    "sha": "1153b7f2926e1cf0ac20d24e82cafef6b40c86ff2f4663684e0ccebbe077970d"
+    "tag": "v3.1.3",
+    "sha": "8283da4a9408b626c2bbf55ab6d7f44f132129eb2fbf289eb22e3959b0132033"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
