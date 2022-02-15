@@ -4,6 +4,7 @@ CREATE TABLE identities (
   did            VARCHAR(256)    NOT NULL,
   parent         UUID,
   message_id     UUID            NOT NULL,
+  itype          VARCHAR(64)     NOT NULL,
   namespace      VARCHAR(64)     NOT NULL,
   name           VARCHAR(64)     NOT NULL,
   description    VARCHAR(4096)   NOT NULL,
@@ -13,7 +14,7 @@ CREATE TABLE identities (
 
 CREATE UNIQUE INDEX identities_id ON identities(id);
 CREATE UNIQUE INDEX identities_did ON identities(did);
-CREATE UNIQUE INDEX identities_name ON identities(namespace, name);
+CREATE UNIQUE INDEX identities_name ON identities(itype, namespace, name);
 
 CREATE TABLE verifiers (
   seq            INTEGER         PRIMARY KEY AUTOINCREMENT,

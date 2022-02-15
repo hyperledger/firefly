@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.identity/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,237 +29,236 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOrganizationsE2EWithDB(t *testing.T) {
+func TestIdentitiesE2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 
 	s, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
 	ctx := context.Background()
 
-	// Create a new organization entry
-	orgID := fftypes.NewUUID()
-	organization := &fftypes.Organization{
-		ID:       orgID,
-		Message:  fftypes.NewUUID(),
-		Name:     "org1",
-		Identity: "0x12345",
-		Created:  fftypes.Now(),
-	}
-
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionOrganizations, fftypes.ChangeEventTypeCreated, orgID).Return()
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionOrganizations, fftypes.ChangeEventTypeUpdated, orgID).Return()
-
-	err := s.UpsertOrganization(ctx, organization, true)
-	assert.NoError(t, err)
-
-	// Check we get the exact same organization back
-	organizationRead, err := s.GetOrganizationByIdentity(ctx, organization.Identity)
-	assert.NoError(t, err)
-	assert.NotNil(t, organizationRead)
-	organizationJson, _ := json.Marshal(&organization)
-	organizationReadJson, _ := json.Marshal(&organizationRead)
-	assert.Equal(t, string(organizationJson), string(organizationReadJson))
-
-	// Rejects attempt to update ID
-	err = s.UpsertOrganization(context.Background(), &fftypes.Organization{
-		ID:       fftypes.NewUUID(),
-		Identity: "0x12345",
-	}, true)
-	assert.Equal(t, database.IDMismatch, err)
-
-	// Update the organization (this is testing what's possible at the database layer,
-	// and does not account for the verification that happens at the higher level)
-	organizationUpdated := &fftypes.Organization{
-		ID:          nil, // as long as we don't specify one we're fine
+	// Create a new identity entry
+	identityID := fftypes.NewUUID()
+	identity := &fftypes.Identity{
+		ID:          identityID,
+		DID:         "did:firefly:/ns/ns1/1",
 		Message:     fftypes.NewUUID(),
-		Name:        "org1",
-		Parent:      "0x23456",
-		Identity:    "0x12345",
-		Description: "organization1",
-		Profile:     fftypes.JSONObject{"some": "info"},
+		Parent:      fftypes.NewUUID(),
+		Type:        fftypes.IdentityTypeCustom,
+		Namespace:   "ns1",
+		Name:        "identity1",
+		Description: "Identity One",
 		Created:     fftypes.Now(),
 	}
-	err = s.UpsertOrganization(context.Background(), organizationUpdated, true)
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, fftypes.ChangeEventTypeCreated, "ns1", identityID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, fftypes.ChangeEventTypeUpdated, "ns2", identityID).Return()
+
+	err := s.UpsertIdentity(ctx, identity, database.UpsertOptimizationNew)
 	assert.NoError(t, err)
 
-	// Check we get the exact same data back - note the removal of one of the organization elements
-	organizationRead, err = s.GetOrganizationByName(ctx, organization.Name)
+	// Check we get the exact same identity back
+	identityRead, err := s.GetIdentityByID(ctx, identity.ID)
 	assert.NoError(t, err)
-	organizationJson, _ = json.Marshal(&organizationUpdated)
-	organizationReadJson, _ = json.Marshal(&organizationRead)
-	assert.Equal(t, string(organizationJson), string(organizationReadJson))
+	assert.NotNil(t, identityRead)
+	identityJson, _ := json.Marshal(&identity)
+	identityReadJson, _ := json.Marshal(&identityRead)
+	assert.Equal(t, string(identityJson), string(identityReadJson))
 
-	// Query back the organization
-	fb := database.OrganizationQueryFactory.NewFilter(ctx)
+	// Update the identity (this is testing what's possible at the database layer,
+	// and does not account for the verification that happens at the higher level)
+	identityUpdated := &fftypes.Identity{
+		ID:          identityID,
+		DID:         "did:firefly:/nodes/2",
+		Message:     fftypes.NewUUID(),
+		Parent:      fftypes.NewUUID(),
+		Type:        fftypes.IdentityTypeNode,
+		Namespace:   "ns2",
+		Name:        "identity2",
+		Description: "Identity Two",
+		Profile:     fftypes.JSONObject{"some": "value"},
+		Created:     identity.Created,
+	}
+	err = s.UpsertIdentity(context.Background(), identityUpdated, database.UpsertOptimizationExisting)
+	assert.NoError(t, err)
+
+	// Check we get the exact same data back - note the removal of one of the identity elements
+	identityRead, err = s.GetIdentityByName(ctx, identityUpdated.Type, identityUpdated.Namespace, identityUpdated.Name)
+	assert.NoError(t, err)
+	identityJson, _ = json.Marshal(&identityUpdated)
+	identityReadJson, _ = json.Marshal(&identityRead)
+	assert.Equal(t, string(identityJson), string(identityReadJson))
+
+	// Query back the identity
+	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("description", string(organizationUpdated.Description)),
-		fb.Eq("identity", organizationUpdated.Identity),
+		fb.Eq("description", string(identityUpdated.Description)),
+		fb.Eq("did", identityUpdated.DID),
 	)
-	organizationRes, res, err := s.GetOrganizations(ctx, filter.Count(true))
+	identityRes, res, err := s.GetIdentities(ctx, filter.Count(true))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(organizationRes))
+	assert.Equal(t, 1, len(identityRes))
 	assert.Equal(t, int64(1), *res.TotalCount)
-	organizationReadJson, _ = json.Marshal(organizationRes[0])
-	assert.Equal(t, string(organizationJson), string(organizationReadJson))
+	identityReadJson, _ = json.Marshal(identityRes[0])
+	assert.Equal(t, string(identityJson), string(identityReadJson))
 
 	// Update
 	updateTime := fftypes.Now()
-	up := database.OrganizationQueryFactory.NewUpdate(ctx).Set("created", updateTime)
-	err = s.UpdateOrganization(ctx, organizationUpdated.ID, up)
+	up := database.IdentityQueryFactory.NewUpdate(ctx).Set("created", updateTime)
+	err = s.UpdateIdentity(ctx, identityUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
-		fb.Eq("identity", organizationUpdated.Identity),
+		fb.Eq("did", identityUpdated.DID),
 		fb.Eq("created", updateTime.String()),
 	)
-	organizations, _, err := s.GetOrganizations(ctx, filter)
+	identities, _, err := s.GetIdentities(ctx, filter)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(organizations))
+	assert.Equal(t, 1, len(identities))
 
 	s.callbacks.AssertExpectations(t)
 }
 
-func TestUpsertOrganizationFailBegin(t *testing.T) {
+func TestUpsertIdentityFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertOrganization(context.Background(), &fftypes.Organization{}, true)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertOrganizationFailSelect(t *testing.T) {
+func TestUpsertIdentityFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertOrganization(context.Background(), &fftypes.Organization{Identity: "id1"}, true)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertOrganizationFailInsert(t *testing.T) {
+func TestUpsertIdentityFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertOrganization(context.Background(), &fftypes.Organization{Identity: "id1"}, true)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertOrganizationFailUpdate(t *testing.T) {
+func TestUpsertIdentityFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).
 		AddRow("id1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertOrganization(context.Background(), &fftypes.Organization{Identity: "id1"}, true)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertOrganizationFailCommit(t *testing.T) {
+func TestUpsertIdentityFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertOrganization(context.Background(), &fftypes.Organization{Identity: "id1"}, true)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOrganizationByIDSelectFail(t *testing.T) {
+func TestGetIdentityByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetOrganizationByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetIdentityByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOrganizationByNameSelectFail(t *testing.T) {
+func TestGetIdentityByNameSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetOrganizationByName(context.Background(), "org1")
+	_, err := s.GetIdentityByName(context.Background(), fftypes.IdentityTypeOrg, "ff_system", "org1")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOrganizationByIdentitySelectFail(t *testing.T) {
+func TestGetIdentityByIdentitySelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetOrganizationByIdentity(context.Background(), "id1")
+	_, err := s.GetIdentityByDID(context.Background(), "did:firefly:org/org1")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOrganizationByIDNotFound(t *testing.T) {
+func TestGetIdentityByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "organization", "identity"}))
-	msg, err := s.GetOrganizationByID(context.Background(), fftypes.NewUUID())
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "identity", "identity"}))
+	msg, err := s.GetIdentityByID(context.Background(), fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOrganizationByIDScanFail(t *testing.T) {
+func TestGetIdentityByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
-	_, err := s.GetOrganizationByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetIdentityByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOrganizationQueryFail(t *testing.T) {
+func TestGetIdentityQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.OrganizationQueryFactory.NewFilter(context.Background()).Eq("identity", "")
-	_, _, err := s.GetOrganizations(context.Background(), f)
+	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", "")
+	_, _, err := s.GetIdentities(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOrganizationBuildQueryFail(t *testing.T) {
+func TestGetIdentityBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.OrganizationQueryFactory.NewFilter(context.Background()).Eq("identity", map[bool]bool{true: false})
-	_, _, err := s.GetOrganizations(context.Background(), f)
+	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", map[bool]bool{true: false})
+	_, _, err := s.GetIdentities(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
-func TestGetOrganizationReadMessageFail(t *testing.T) {
+func TestGetIdentityReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
-	f := database.OrganizationQueryFactory.NewFilter(context.Background()).Eq("identity", "")
-	_, _, err := s.GetOrganizations(context.Background(), f)
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"did"}).AddRow("only one"))
+	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", "")
+	_, _, err := s.GetIdentities(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestOrganizationUpdateBeginFail(t *testing.T) {
+func TestIdentityUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.OrganizationQueryFactory.NewUpdate(context.Background()).Set("identity", "anything")
-	err := s.UpdateOrganization(context.Background(), fftypes.NewUUID(), u)
+	u := database.IdentityQueryFactory.NewUpdate(context.Background()).Set("did", "anything")
+	err := s.UpdateIdentity(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
-func TestOrganizationUpdateBuildQueryFail(t *testing.T) {
+func TestIdentityUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	u := database.OrganizationQueryFactory.NewUpdate(context.Background()).Set("identity", map[bool]bool{true: false})
-	err := s.UpdateOrganization(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*identity", err)
+	u := database.IdentityQueryFactory.NewUpdate(context.Background()).Set("did", map[bool]bool{true: false})
+	err := s.UpdateIdentity(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10149.*did", err)
 }
 
-func TestOrganizationUpdateFail(t *testing.T) {
+func TestIdentityUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	u := database.OrganizationQueryFactory.NewUpdate(context.Background()).Set("identity", fftypes.NewUUID())
-	err := s.UpdateOrganization(context.Background(), fftypes.NewUUID(), u)
+	u := database.IdentityQueryFactory.NewUpdate(context.Background()).Set("did", fftypes.NewUUID())
+	err := s.UpdateIdentity(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

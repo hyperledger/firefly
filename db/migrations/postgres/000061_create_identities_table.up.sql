@@ -16,7 +16,7 @@ CREATE TABLE identities (
 
 CREATE UNIQUE INDEX identities_id ON identities(id);
 CREATE UNIQUE INDEX identities_did ON identities(did);
-CREATE UNIQUE INDEX identities_name ON identities(namespace, name);
+CREATE UNIQUE INDEX identities_name ON identities(itype, namespace, name);
 
 CREATE TABLE verifiers (
   seq            SERIAL          PRIMARY KEY,

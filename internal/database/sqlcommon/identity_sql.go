@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -30,90 +30,103 @@ import (
 var (
 	identityColumns = []string{
 		"id",
-		"message_id",
-		"name",
+		"did",
 		"parent",
-		"identity",
+		"itype",
+		"namespace",
+		"name",
 		"description",
 		"profile",
+		"message_id",
 		"created",
 	}
 	identityFilterFieldMap = map[string]string{
-		"message": "message_id",
+		"identity": "identity_id",
+		"type":     "itype",
+		"message":  "message_id",
 	}
 )
 
-func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *fftypes.Identity, allowExisting bool) (err error) {
+func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, identity *fftypes.Identity) (int64, error) {
+	return s.updateTx(ctx, tx,
+		sq.Update("identities").
+			Set("did", identity.DID).
+			Set("parent", identity.Parent).
+			Set("itype", identity.Type).
+			Set("namespace", identity.Namespace).
+			Set("name", identity.Name).
+			Set("description", identity.Description).
+			Set("profile", identity.Profile).
+			Set("message_id", identity.Message).
+			Where(sq.Eq{
+				"id": identity.ID,
+			}),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, fftypes.ChangeEventTypeUpdated, identity.Namespace, identity.ID)
+		})
+}
+
+func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *fftypes.Identity) (err error) {
+	identity.Created = fftypes.Now()
+	_, err = s.insertTx(ctx, tx,
+		sq.Insert("identities").
+			Columns(identityColumns...).
+			Values(
+				identity.ID,
+				identity.DID,
+				identity.Parent,
+				identity.Type,
+				identity.Namespace,
+				identity.Name,
+				identity.Description,
+				identity.Profile,
+				identity.Message,
+				identity.Created,
+			),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, fftypes.ChangeEventTypeCreated, identity.Namespace, identity.ID)
+		})
+	return err
+}
+
+func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *fftypes.Identity, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	existing := false
-	if allowExisting {
+	optimized := false
+	if optimization == database.UpsertOptimizationNew {
+		opErr := s.attemptIdentityInsert(ctx, tx, identity)
+		optimized = opErr == nil
+	} else if optimization == database.UpsertOptimizationExisting {
+		rowsAffected, opErr := s.attemptIdentityUpdate(ctx, tx, identity)
+		optimized = opErr == nil && rowsAffected == 1
+	}
+
+	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
-		identityRows, _, err := s.queryTx(ctx, tx,
+		msgRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("identities").
-				Where(sq.Eq{"identity": identity.Identity}),
+				Where(sq.Eq{"id": identity.ID}),
 		)
 		if err != nil {
 			return err
 		}
-		existing = identityRows.Next()
+		existing := msgRows.Next()
+		msgRows.Close()
 
 		if existing {
-			var id fftypes.UUID
-			_ = identityRows.Scan(&id)
-			if identity.ID != nil {
-				if *identity.ID != id {
-					identityRows.Close()
-					return database.IDMismatch
-				}
+			// Update the identity
+			if _, err = s.attemptIdentityUpdate(ctx, tx, identity); err != nil {
+				return err
 			}
-			identity.ID = &id // Update on returned object
-		}
-		identityRows.Close()
-	}
-
-	if existing {
-		// Update the identity
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("identities").
-				// Note we do not update ID
-				Set("message_id", identity.Message).
-				Set("parent", identity.Parent).
-				Set("identity", identity.Identity).
-				Set("description", identity.Description).
-				Set("profile", identity.Profile).
-				Set("created", identity.Created).
-				Where(sq.Eq{"identity": identity.Identity}),
-			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionIdentitys, fftypes.ChangeEventTypeUpdated, identity.ID)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("identities").
-				Columns(identityColumns...).
-				Values(
-					identity.ID,
-					identity.Message,
-					identity.Name,
-					identity.Parent,
-					identity.Identity,
-					identity.Description,
-					identity.Profile,
-					identity.Created,
-				),
-			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionIdentitys, fftypes.ChangeEventTypeCreated, identity.ID)
-			},
-		); err != nil {
-			return err
+		} else {
+			if err = s.attemptIdentityInsert(ctx, tx, identity); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -124,12 +137,14 @@ func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*fftypes
 	identity := fftypes.Identity{}
 	err := row.Scan(
 		&identity.ID,
-		&identity.Message,
-		&identity.Name,
+		&identity.DID,
 		&identity.Parent,
-		&identity.Identity,
+		&identity.Type,
+		&identity.Namespace,
+		&identity.Name,
 		&identity.Description,
 		&identity.Profile,
+		&identity.Message,
 		&identity.Created,
 	)
 	if err != nil {
@@ -138,7 +153,7 @@ func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*fftypes
 	return &identity, nil
 }
 
-func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Identity, err error) {
+func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred interface{}) (identity *fftypes.Identity, err error) {
 
 	rows, _, err := s.query(ctx,
 		sq.Select(identityColumns...).
@@ -155,27 +170,22 @@ func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred inter
 		return nil, nil
 	}
 
-	identity, err := s.identityResult(ctx, rows)
-	if err != nil {
-		return nil, err
-	}
-
-	return identity, nil
+	return s.identityResult(ctx, rows)
 }
 
-func (s *SQLCommon) GetIdentityByName(ctx context.Context, name string) (message *fftypes.Identity, err error) {
-	return s.getIdentityPred(ctx, name, sq.Eq{"name": name})
+func (s *SQLCommon) GetIdentityByName(ctx context.Context, iType fftypes.IdentityType, namespace, name string) (identity *fftypes.Identity, err error) {
+	return s.getIdentityPred(ctx, name, sq.Eq{"itype": iType, "namespace": namespace, "name": name})
 }
 
-func (s *SQLCommon) GetIdentityByIdentity(ctx context.Context, identity string) (message *fftypes.Identity, err error) {
-	return s.getIdentityPred(ctx, identity, sq.Eq{"identity": identity})
+func (s *SQLCommon) GetIdentityByDID(ctx context.Context, did string) (identity *fftypes.Identity, err error) {
+	return s.getIdentityPred(ctx, did, sq.Eq{"did": did})
 }
 
-func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Identity, err error) {
+func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error) {
 	return s.getIdentityPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetIdentitys(ctx context.Context, filter database.Filter) (message []*fftypes.Identity, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (identities []*fftypes.Identity, fr *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From("identities"), filter, identityFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -188,16 +198,16 @@ func (s *SQLCommon) GetIdentitys(ctx context.Context, filter database.Filter) (m
 	}
 	defer rows.Close()
 
-	identity := []*fftypes.Identity{}
+	identities = []*fftypes.Identity{}
 	for rows.Next() {
 		d, err := s.identityResult(ctx, rows)
 		if err != nil {
 			return nil, nil, err
 		}
-		identity = append(identity, d)
+		identities = append(identities, d)
 	}
 
-	return identity, s.queryRes(ctx, tx, "identities", fop, fi), err
+	return identities, s.queryRes(ctx, tx, "identities", fop, fi), err
 
 }
 

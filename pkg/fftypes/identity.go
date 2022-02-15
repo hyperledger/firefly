@@ -33,7 +33,7 @@ type Identity struct {
 	ID          *UUID        `json:"id"`
 	DID         string       `json:"did"`
 	Type        IdentityType `json:"type" ffenum:"identitytype"`
-	Parent      string       `json:"parent,omitempty"`
+	Parent      *UUID        `json:"parent,omitempty"`
 	Namespace   string       `json:"namespace"`
 	Name        string       `json:"name,omitempty"`
 	Description string       `json:"description,omitempty"`

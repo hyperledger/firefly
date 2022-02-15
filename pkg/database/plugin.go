@@ -575,6 +575,7 @@ const (
 	CollectionFFIEvents             UUIDCollectionNS = "ffievents"
 	CollectionContractAPIs          UUIDCollectionNS = "contractapis"
 	CollectionContractSubscriptions UUIDCollectionNS = "contractsubscriptions"
+	CollectionIdentities            UUIDCollectionNS = "identities"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can
@@ -591,8 +592,6 @@ type UUIDCollection CollectionName
 
 const (
 	CollectionNamespaces     UUIDCollection = "namespaces"
-	CollectionNodes          UUIDCollection = "nodes"
-	CollectionOrganizations  UUIDCollection = "organizations"
 	CollectionTokenTransfers UUIDCollection = "tokentransfers"
 )
 
@@ -786,26 +785,17 @@ var PinQueryFactory = &queryFields{
 	"created":    &TimeField{},
 }
 
-// OrganizationQueryFactory filter fields for organizations
-var OrganizationQueryFactory = &queryFields{
+// IdentityQueryFactory filter fields for identities
+var IdentityQueryFactory = &queryFields{
 	"id":          &UUIDField{},
+	"did":         &StringField{},
+	"parent":      &UUIDField{},
 	"message":     &UUIDField{},
-	"parent":      &StringField{},
-	"identity":    &StringField{},
-	"description": &StringField{},
-	"profile":     &JSONField{},
-	"created":     &TimeField{},
-}
-
-// NodeQueryFactory filter fields for nodes
-var NodeQueryFactory = &queryFields{
-	"id":          &UUIDField{},
-	"message":     &UUIDField{},
-	"owner":       &StringField{},
+	"type":        &StringField{},
+	"namespace":   &StringField{},
 	"name":        &StringField{},
 	"description": &StringField{},
-	"dx.peer":     &StringField{},
-	"dx.endpoint": &JSONField{},
+	"profile":     &JSONField{},
 	"created":     &TimeField{},
 }
 
