@@ -63,7 +63,7 @@ type Plugin interface {
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
 
 	// GenerateFFI returns an FFI from a blockchain specific interface format e.g. an Ethereum ABI
-	GenerateFFI(ctx context.Context, ns, name, version string, input *fftypes.JSONAny) (*fftypes.FFI, error)
+	GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

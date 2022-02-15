@@ -1504,6 +1504,11 @@ func TestGetFFIParamValidator(t *testing.T) {
 
 func TestGenerateFFI(t *testing.T) {
 	e, _ := newTestFabric()
-	_, err := e.GenerateFFI(context.Background(), "default", "Simple", "v0.0.01", fftypes.JSONAnyPtr(`[]`))
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+		Name:        "Simple",
+		Version:     "v0.0.1",
+		Description: "desc",
+		Input:       fftypes.JSONAnyPtr(`[]`),
+	})
 	assert.Regexp(t, "FF10347", err)
 }

@@ -62,13 +62,13 @@ func (_m *Plugin) DeleteSubscription(ctx context.Context, subscription *fftypes.
 	return r0
 }
 
-// GenerateFFI provides a mock function with given fields: ctx, ns, name, version, input
-func (_m *Plugin) GenerateFFI(ctx context.Context, ns string, name string, version string, input *fftypes.JSONAny) (*fftypes.FFI, error) {
-	ret := _m.Called(ctx, ns, name, version, input)
+// GenerateFFI provides a mock function with given fields: ctx, generationRequest
+func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, generationRequest)
 
 	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.JSONAny) *fftypes.FFI); ok {
-		r0 = rf(ctx, ns, name, version, input)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIGenerationRequest) *fftypes.FFI); ok {
+		r0 = rf(ctx, generationRequest)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.FFI)
@@ -76,8 +76,8 @@ func (_m *Plugin) GenerateFFI(ctx context.Context, ns string, name string, versi
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.JSONAny) error); ok {
-		r1 = rf(ctx, ns, name, version, input)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFIGenerationRequest) error); ok {
+		r1 = rf(ctx, generationRequest)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -650,6 +650,6 @@ func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVali
 	return nil, nil
 }
 
-func (f *Fabric) GenerateFFI(ctx context.Context, ns, name, version string, input *fftypes.JSONAny) (*fftypes.FFI, error) {
+func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationUnsupported)
 }

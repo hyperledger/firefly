@@ -80,6 +80,14 @@ type FFIParam struct {
 
 type FFIParams []*FFIParam
 
+type FFIGenerationRequest struct {
+	Namespace   string   `json:"namespace,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Version     string   `json:"version"`
+	Input       *JSONAny `json:"input"`
+}
+
 func (f *FFI) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, f.Namespace, "namespace"); err != nil {
 		return err

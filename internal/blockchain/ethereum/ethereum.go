@@ -756,23 +756,24 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 	return output["address"], nil
 }
 
-func (e *Ethereum) GenerateFFI(ctx context.Context, ns, name, version string, input *fftypes.JSONAny) (*fftypes.FFI, error) {
+func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	var abi []ABIElementMarshaling
-	err := json.Unmarshal(input.Bytes(), &abi)
+	err := json.Unmarshal(generationRequest.Input.Bytes(), &abi)
 	if err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
 	}
-	ffi := e.convertABIToFFI(ns, name, version, abi)
+	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, abi)
 	return ffi, nil
 }
 
-func (e *Ethereum) convertABIToFFI(ns, name, version string, abi []ABIElementMarshaling) *fftypes.FFI {
+func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi []ABIElementMarshaling) *fftypes.FFI {
 	ffi := &fftypes.FFI{
-		Namespace: ns,
-		Name:      name,
-		Version:   version,
-		Methods:   []*fftypes.FFIMethod{},
-		Events:    []*fftypes.FFIEvent{},
+		Namespace:   ns,
+		Name:        name,
+		Version:     version,
+		Description: description,
+		Methods:     []*fftypes.FFIMethod{},
+		Events:      []*fftypes.FFIEvent{},
 	}
 
 	for _, element := range abi {

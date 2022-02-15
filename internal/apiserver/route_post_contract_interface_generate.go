@@ -32,16 +32,15 @@ var postContractInterfaceGenerate = &oapispec.Route{
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
-	},
+	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return fftypes.JSONAnyPtr("{}") },
+	JSONInputValue:  func() interface{} { return &fftypes.FFIGenerationRequest{} },
 	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().GenerateFFI(r.Ctx, r.PP["ns"], "", "", r.Input.(*fftypes.JSONAny))
+		generationRequest := r.Input.(*fftypes.FFIGenerationRequest)
+		return getOr(r.Ctx).Contracts().GenerateFFI(r.Ctx, r.PP["ns"], generationRequest)
 	},
 }

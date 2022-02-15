@@ -2040,9 +2040,10 @@ func TestConvertABIToFFI(t *testing.T) {
 	schema := fftypes.JSONAnyPtr(`{"type":"integer","details":{"type":"uint256","internalType":"uint256"}}`)
 
 	expectedFFI := &fftypes.FFI{
-		Name:      "SimpleStorage",
-		Version:   "v0.0.1",
-		Namespace: "default",
+		Name:        "SimpleStorage",
+		Version:     "v0.0.1",
+		Namespace:   "default",
+		Description: "desc",
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "set",
@@ -2080,7 +2081,7 @@ func TestConvertABIToFFI(t *testing.T) {
 		},
 	}
 
-	actualFFI := e.convertABIToFFI("default", "SimpleStorage", "v0.0.1", abi)
+	actualFFI := e.convertABIToFFI("default", "SimpleStorage", "v0.0.1", "desc", abi)
 	assert.NotNil(t, actualFFI)
 	assert.Equal(t, expectedFFI, actualFFI)
 }
@@ -2118,9 +2119,10 @@ func TestConvertABIToFFIWithObject(t *testing.T) {
 	schema := fftypes.JSONAnyPtr(`{"type":"object","details":{"type":"tuple","internalType":"struct WidgetFactory.Widget"},"properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":1}},"size":{"type":"integer","details":{"type":"uint256","internalType":"uint256","index":0}}}}`)
 
 	expectedFFI := &fftypes.FFI{
-		Name:      "WidgetTest",
-		Version:   "v0.0.1",
-		Namespace: "default",
+		Name:        "WidgetTest",
+		Version:     "v0.0.1",
+		Namespace:   "default",
+		Description: "desc",
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "set",
@@ -2136,7 +2138,7 @@ func TestConvertABIToFFIWithObject(t *testing.T) {
 		Events: []*fftypes.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
 	assert.NotNil(t, actualFFI)
 	assert.Equal(t, expectedFFI, actualFFI)
 }
@@ -2162,9 +2164,10 @@ func TestConvertABIToFFIWithArray(t *testing.T) {
 	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"string[]","internalType":"string[]"},"items":{"type":"string"}}`)
 
 	expectedFFI := &fftypes.FFI{
-		Name:      "WidgetTest",
-		Version:   "v0.0.1",
-		Namespace: "default",
+		Name:        "WidgetTest",
+		Version:     "v0.0.1",
+		Namespace:   "default",
+		Description: "desc",
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "set",
@@ -2180,7 +2183,7 @@ func TestConvertABIToFFIWithArray(t *testing.T) {
 		Events: []*fftypes.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
 	assert.NotNil(t, actualFFI)
 	assert.Equal(t, expectedFFI, actualFFI)
 }
@@ -2205,9 +2208,10 @@ func TestConvertABIToFFIWithNestedArray(t *testing.T) {
 
 	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"string[][]","internalType":"string[][]"},"items":{"type":"array","items":{"type":"string"}}}`)
 	expectedFFI := &fftypes.FFI{
-		Name:      "WidgetTest",
-		Version:   "v0.0.1",
-		Namespace: "default",
+		Name:        "WidgetTest",
+		Version:     "v0.0.1",
+		Namespace:   "default",
+		Description: "desc",
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "set",
@@ -2223,7 +2227,7 @@ func TestConvertABIToFFIWithNestedArray(t *testing.T) {
 		Events: []*fftypes.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
 	assert.NotNil(t, actualFFI)
 	assert.Equal(t, expectedFFI, actualFFI)
 }
@@ -2265,9 +2269,10 @@ func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
 
 	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"tuple[][]","internalType":"struct WidgetFactory.Widget[][]"},"items":{"type":"array","items":{"type":"object","properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":0}},"inUse":{"type":"boolean","details":{"type":"bool","internalType":"bool","index":2}},"size":{"type":"integer","details":{"type":"uint256","internalType":"uint256","index":1}}}}}}`)
 	expectedFFI := &fftypes.FFI{
-		Name:      "WidgetTest",
-		Version:   "v0.0.1",
-		Namespace: "default",
+		Name:        "WidgetTest",
+		Version:     "v0.0.1",
+		Namespace:   "default",
+		Description: "desc",
 		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "set",
@@ -2283,20 +2288,43 @@ func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
 		Events: []*fftypes.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", abi)
+	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
 	assert.NotNil(t, actualFFI)
 	assert.Equal(t, expectedFFI, actualFFI)
 }
 
 func TestGenerateFFI(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), "default", "Simple", "v0.0.01", fftypes.JSONAnyPtr(`[]`))
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+		Name:        "Simple",
+		Version:     "v0.0.1",
+		Description: "desc",
+		Input:       fftypes.JSONAnyPtr(`[]`),
+	})
 	assert.NoError(t, err)
+}
+
+func TestGenerateFFIInlineNamespace(t *testing.T) {
+	e, _ := newTestEthereum()
+	ffi, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+		Name:        "Simple",
+		Version:     "v0.0.1",
+		Description: "desc",
+		Namespace:   "ns1",
+		Input:       fftypes.JSONAnyPtr(`[]`),
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, ffi.Namespace, "ns1")
 }
 
 func TestGenerateFFIFail(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), "default", "SimpleFailure", "v0.0.01", fftypes.JSONAnyPtr(`{"type": "not an ABI"}`))
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+		Name:        "Simple",
+		Version:     "v0.0.1",
+		Description: "desc",
+		Input:       fftypes.JSONAnyPtr(`{"type": "not an ABI"}`),
+	})
 	assert.Regexp(t, "FF10346", err)
 }
 
