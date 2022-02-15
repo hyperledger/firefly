@@ -465,6 +465,63 @@ func TestMintTokens(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestTokenApproval(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	approval := &fftypes.TokenApproval{
+		LocalID:  fftypes.NewUUID(),
+		Operator: "0x02",
+		Key:      "0x123",
+		Approved: true,
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenApproval,
+		},
+	}
+	opID := fftypes.NewUUID()
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/approval", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"poolId":    "123",
+				"operator":  "0x02",
+				"approved":  true,
+				"owner":     "0x123",
+				"requestId": opID.String(),
+				"data":      `{"tx":"` + approval.TX.ID.String() + `"}`,
+			}, body)
+
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 202,
+			}
+			return res, nil
+		})
+
+	err := h.TokensApproval(context.Background(), opID, "123", approval)
+	assert.NoError(t, err)
+}
+
+func TestTokenApprovalError(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	approval := &fftypes.TokenApproval{}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/approval", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+
+	err := h.TokensApproval(context.Background(), fftypes.NewUUID(), "F1", approval)
+	assert.Regexp(t, "FF10274", err)
+}
+
 func TestMintTokensError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
@@ -863,6 +920,54 @@ func TestEvents(t *testing.T) {
 	}.String()
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"16"},"event":"ack"}`, string(msg))
+
+	// token-approval: success
+	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
+		return t.Approved == true && t.Operator == "0x0" && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "000000000010/000020/000030/000040"
+	})).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "17",
+		"event": "token-approval",
+		"data": fftypes.JSONObject{
+			"id":       "000000000010/000020/000030/000040",
+			"poolId":   "F1",
+			"signer":   "0x0",
+			"operator": "0x0",
+			"approved": true,
+			"data":     fftypes.JSONObject{"tx": txID.String()}.String(),
+			"transaction": fftypes.JSONObject{
+				"transactionHash": "0xffffeeee",
+			},
+		},
+	}.String()
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"17"},"event":"ack"}`, string(msg))
+
+	// token-approval: success (no data)
+	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
+		return t.Approved == true && t.Operator == "0x0" && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "000000000010/000020/000030/000040"
+	})).Return(nil).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "18",
+		"event": "token-approval",
+		"data": fftypes.JSONObject{
+			"id":       "000000000010/000020/000030/000040",
+			"poolId":   "F1",
+			"signer":   "0x0",
+			"operator": "0x0",
+			"approved": true,
+		},
+	}.String()
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"18"},"event":"ack"}`, string(msg))
+
+	// token-approval: missing data
+	fromServer <- fftypes.JSONObject{
+		"id":    "9",
+		"event": "token-approval",
+	}.String()
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }

@@ -406,6 +406,20 @@ type iTokenTransferCollection interface {
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
+type iTokenApprovalCollection interface {
+	// UpsertTokenApproval - Upsert a token approval
+	UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error
+
+	// GetTokenApproval - Get a token approval by ID
+	GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
+
+	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
+	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenApproval, error)
+
+	// GetTokenApprovals - Get token approvals
+	GetTokenApprovals(ctx context.Context, filter Filter) ([]*fftypes.TokenApproval, *FilterResult, error)
+}
+
 type iFFICollection interface {
 	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
 	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
@@ -526,6 +540,7 @@ type PersistenceInterface interface {
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
+	iTokenApprovalCollection
 	iFFICollection
 	iFFIMethodCollection
 	iFFIEventCollection
@@ -594,6 +609,7 @@ const (
 	CollectionNodes          UUIDCollection = "nodes"
 	CollectionOrganizations  UUIDCollection = "organizations"
 	CollectionTokenTransfers UUIDCollection = "tokentransfers"
+	CollectionTokenApprovals UUIDCollection = "tokenapprovals"
 )
 
 // OtherCollection are odd balls, that don't fit any of the categories above.
@@ -912,6 +928,21 @@ var TokenTransferQueryFactory = &queryFields{
 	"tx.id":           &UUIDField{},
 	"blockchainevent": &UUIDField{},
 	"type":            &StringField{},
+}
+
+var TokenApprovalQueryFacory = &queryFields{
+	"localid":         &StringField{},
+	"pool":            &UUIDField{},
+	"connector":       &StringField{},
+	"namespace":       &StringField{},
+	"key":             &StringField{},
+	"operator":        &StringField{},
+	"approved":        &BoolField{},
+	"protocolid":      &StringField{},
+	"created":         &TimeField{},
+	"tx.type":         &StringField{},
+	"tx.id":           &UUIDField{},
+	"blockchainevent": &UUIDField{},
 }
 
 // FFIQueryFactory filter fields for contract definitions
