@@ -23,12 +23,13 @@ CREATE TABLE verifiers (
   id             UUID            NOT NULL,
   identity       UUID            NOT NULL,
   vtype          VARCHAR(256)    NOT NULL,
+  namespace      VARCHAR(64)     NOT NULL,
   value          TEXT            NOT NULL,
   created        BIGINT          NOT NULL
 );
 
 CREATE UNIQUE INDEX verifiers_id ON verifiers(id);
-CREATE UNIQUE INDEX verifiers_value ON verifiers(vtype, value);
+CREATE UNIQUE INDEX verifiers_value ON verifiers(vtype, namespace, value);
 CREATE UNIQUE INDEX verifiers_identity ON verifiers(identity);
 
 INSERT INTO identities (

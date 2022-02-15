@@ -21,18 +21,19 @@ type VerifierType = FFEnum
 
 var (
 	// VerifierTypeEthAddress is an Ethereum (secp256k1) address string
-	VerifierTypeEthAddress VerifierType = ffEnum("verifiertype", "EcdsaSecp256k1VerificationKey2019")
+	VerifierTypeEthAddress VerifierType = ffEnum("verifiertype", "ethereum_address")
 	// VerifierTypeMSPIdentity is the MSP id (X509 distinguished name) of a signing identity
-	VerifierTypeMSPIdentity VerifierType = ffEnum("verifiertype", "HyperledgerFabricMSPIdentity")
+	VerifierTypeMSPIdentity VerifierType = ffEnum("verifiertype", "fabric_msp_id")
 	// VerifierTypeFFDXPeerID is the peer identifier that FireFly Data Exchange verifies (using plugin specific tech) when receiving data
-	VerifierTypeFFDXPeerID VerifierType = ffEnum("verifiertype", "FireFlyDataExchangePeerId")
+	VerifierTypeFFDXPeerID VerifierType = ffEnum("verifiertype", "dx_peer_id")
 )
 
 // Verifier is an identity verification system that has been established for this identity, such as a blockchain signing key identifier
 type Verifier struct {
-	ID       *UUID        `json:"id"`
-	Type     VerifierType `json:"type" ffenum:"verifiertype"`
-	Identity *UUID        `json:"identity,omitempty"`
-	Value    string       `json:"value"`
-	Created  *FFTime      `json:"created,omitempty"`
+	ID        *UUID        `json:"id"`
+	Type      VerifierType `json:"type" ffenum:"verifiertype"`
+	Identity  *UUID        `json:"identity,omitempty"`
+	Namespace string       `json:"namespace"`
+	Value     string       `json:"value"`
+	Created   *FFTime      `json:"created,omitempty"`
 }

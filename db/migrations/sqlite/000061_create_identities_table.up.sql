@@ -21,6 +21,7 @@ CREATE TABLE verifiers (
   id             UUID            NOT NULL,
   identity       UUID            NOT NULL,
   vtype          VARCHAR(256)    NOT NULL,
+  namespace      VARCHAR(64)     NOT NULL,
   value          TEXT            NOT NULL,
   created        BIGINT          NOT NULL
 );

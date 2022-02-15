@@ -576,6 +576,7 @@ const (
 	CollectionContractAPIs          UUIDCollectionNS = "contractapis"
 	CollectionContractSubscriptions UUIDCollectionNS = "contractsubscriptions"
 	CollectionIdentities            UUIDCollectionNS = "identities"
+	CollectionVerifiers             UUIDCollectionNS = "verifiers"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can
@@ -797,6 +798,16 @@ var IdentityQueryFactory = &queryFields{
 	"description": &StringField{},
 	"profile":     &JSONField{},
 	"created":     &TimeField{},
+}
+
+// VerifierQueryFactory filter fields for identities
+var VerifierQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"identity":  &UUIDField{},
+	"type":      &StringField{},
+	"namespace": &StringField{},
+	"value":     &StringField{},
+	"created":   &TimeField{},
 }
 
 // GroupQueryFactory filter fields for nodes
