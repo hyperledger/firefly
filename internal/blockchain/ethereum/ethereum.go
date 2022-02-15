@@ -155,6 +155,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	if e.instancePath == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
 	}
+
 	// Backwards compatibility from when instance path was not a contract address
 	if strings.HasPrefix(strings.ToLower(e.instancePath), "/contracts/") {
 		address, err := e.getContractAddress(ctx, e.instancePath)
@@ -162,6 +163,8 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 			return err
 		}
 		e.instancePath = address
+	} else if strings.HasPrefix(e.instancePath, "/instances/") {
+		e.instancePath = strings.Replace(e.instancePath, "/instances/", "", 1)
 	}
 
 	// Ethconnect needs the "0x" prefix in some cases
