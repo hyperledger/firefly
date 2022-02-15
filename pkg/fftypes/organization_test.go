@@ -60,6 +60,6 @@ func TestGetDID(t *testing.T) {
 	org = &Organization{
 		ID: NewUUID(),
 	}
-	assert.Equal(t, fmt.Sprintf("did:firefly:org/%s", org.ID), org.GetDID())
+	assert.Equal(t, fmt.Sprintf("did:firefly:org/%s", org.Name), org.GetDID())
 
 }

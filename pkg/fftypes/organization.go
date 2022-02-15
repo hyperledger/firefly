@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,8 +24,11 @@ import (
 )
 
 const (
-	FireflyOrgDIDPrefix = "did:firefly:org/"
-	OrgTopic            = "ff_organizations"
+	DIDPrefix            = "did:"
+	FireFlyDIDPrefix     = "did:firefly:"
+	FireFlyOrgDIDPrefix  = "did:firefly:org/"
+	FireFlyNodeDIDPrefix = "did:firefly:node/"
+	OrgTopic             = "ff_organizations"
 )
 
 // Organization is a top-level identity in the network
@@ -67,5 +70,5 @@ func (org *Organization) GetDID() string {
 	if org == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s%s", FireflyOrgDIDPrefix, org.ID)
+	return fmt.Sprintf("%s%s", FireFlyOrgDIDPrefix, org.Name)
 }

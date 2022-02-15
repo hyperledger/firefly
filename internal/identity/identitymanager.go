@@ -180,48 +180,61 @@ func (im *identityManager) ResolveSigningKey(ctx context.Context, inputKey strin
 	return
 }
 
-func (im *identityManager) cachedOrgLookupBySigningKey(ctx context.Context, signingKey string) (org *fftypes.Organization, err error) {
-	cacheKey := fmt.Sprintf("key:%s", signingKey)
+func (im *identityManager) cachedIdentityLookupBySigningKey(ctx context.Context, iType fftypes.VerifierType, namespace, signingKey string) (identity *fftypes.Identity, err error) {
+	cacheKey := fmt.Sprintf("key=%s|%s|%s", iType, namespace, signingKey)
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
-		org = cached.Value().(*fftypes.Organization)
+		identity = cached.Value().(*fftypes.Identity)
 	} else {
-		if org, err = im.database.GetOrganizationByIdentity(ctx, signingKey); err != nil || org == nil {
-			return org, err
+		verifier, err := im.database.GetVerifierByValue(ctx, iType, namespace, signingKey)
+		if err != nil || verifier == nil {
+			return nil, err
+		}
+		identity, err = im.database.GetIdentityByID(ctx, verifier.Identity)
+		if err != nil || identity == nil {
+			return nil, err
 		}
 		// Cache the result
-		im.identityCache.Set(cacheKey, org, im.identityCacheTTL)
+		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}
-	return org, nil
+	return identity, nil
 }
 
-func (im *identityManager) cachedOrgLookupByAuthor(ctx context.Context, author string) (org *fftypes.Organization, err error) {
+func (im *identityManager) cachedIdentityLookupByDID(ctx context.Context, namespace, did string) (identity *fftypes.Identity, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
-	cacheKey := fmt.Sprintf("author:%s", author)
+	cacheKey := fmt.Sprintf("did=%s|%s|%s", iType, namespace, did)
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
-		org = cached.Value().(*fftypes.Organization)
+		identity = cached.Value().(*fftypes.Identity)
 	} else {
-		// TODO: Per comments in https://github.com/hyperledger/firefly/issues/187 we need to resolve whether "Organization"
-		//       is the right thing to resolve here. We might want to fall-back to that in the case of plain string, but likely
-		//       we need something more sophisticated here where we have an Identity object in the database.
-		if strings.HasPrefix(author, fftypes.FireflyOrgDIDPrefix) {
-			orgUUID, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(author, fftypes.FireflyOrgDIDPrefix))
-			if err != nil {
+		if !strings.HasPrefix(did, fftypes.DIDPrefix) {
+			if !strings.HasPrefix(did, fftypes.FireFlyDIDPrefix) {
+				return nil, i18n.NewError(ctx, i18n.MsgDIDResovlerUnknown)
+			}
+			// Look up by the full DID
+			if identity, err = im.database.GetIdentityByDID(ctx, namespace, did); err != nil {
 				return nil, err
 			}
-			if org, err = im.database.GetOrganizationByID(ctx, orgUUID); err != nil {
-				return nil, err
+			if identity == nil && strings.HasPrefix(did, fftypes.FireFlyOrgDIDPrefix) {
+				// We allow the org UUID to be used to resolve organization DIDs as an alias to the name
+				// This is historical, for when we first introduced Organization DIDs
+				orgUUID, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(namespace, fftypes.FireFlyOrgDIDPrefix))
+				if err == nil {
+					if identity, err = im.database.GetIdentityByID(ctx, orgUUID); err != nil {
+						return nil, err
+					}
+				}
 			}
-			if org == nil {
-				return nil, i18n.NewError(ctx, i18n.MsgAuthorNotFoundByDID, author)
+			if identity == nil {
+				return nil, i18n.NewError(ctx, i18n.MsgAuthorNotFoundByDID, did)
 			}
 		} else {
-			if org, err = im.database.GetOrganizationByName(ctx, author); err != nil {
+			// If there is just a name in there, then it could be an Org type identity (from the very original usage of the field)
+			if identity, err = im.database.GetIdentityByName(ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, did); err != nil {
 				return nil, err
 			}
-			if org == nil {
-				return nil, i18n.NewError(ctx, i18n.MsgAuthorOrgNotFoundByName, author)
+			if identity == nil {
+				return nil, i18n.NewError(ctx, i18n.MsgAuthorOrgNotFoundByName, did)
 			}
 		}
 

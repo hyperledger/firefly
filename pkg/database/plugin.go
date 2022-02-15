@@ -244,41 +244,41 @@ type iEventCollection interface {
 	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, res *FilterResult, err error)
 }
 
-type iOrganizationsCollection interface {
-	// UpsertOrganization - Upsert an organization
-	UpsertOrganization(ctx context.Context, data *fftypes.Organization, allowExisting bool) (err error)
+type iIdentitiesCollection interface {
+	// UpsertIdentity - Upsert an identity
+	UpsertIdentity(ctx context.Context, data *fftypes.Identity, optimization UpsertOptimization) (err error)
 
-	// UpdateOrganization - Update organization
-	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	// UpdateIdentity - Update identity
+	UpdateIdentity(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetOrganizationByIdentity - Get a organization by identity
-	GetOrganizationByIdentity(ctx context.Context, identity string) (org *fftypes.Organization, err error)
+	// GetIdentityByDID - Get a identity by DID
+	GetIdentityByDID(ctx context.Context, namespace, did string) (org *fftypes.Identity, err error)
 
-	// GetOrganizationByName - Get a organization by name
-	GetOrganizationByName(ctx context.Context, name string) (org *fftypes.Organization, err error)
+	// GetIdentityByName - Get a identity by name
+	GetIdentityByName(ctx context.Context, iType fftypes.IdentityType, namespace, name string) (org *fftypes.Identity, err error)
 
-	// GetOrganizationByID - Get a organization by ID
-	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
+	// GetIdentityByID - Get a identity by ID
+	GetIdentityByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Identity, err error)
 
-	// GetOrganizations - Get organizations
-	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, res *FilterResult, err error)
+	// GetIdentities - Get identities
+	GetIdentities(ctx context.Context, filter Filter) (org []*fftypes.Identity, res *FilterResult, err error)
 }
 
-type iNodeCollection interface {
-	// UpsertNode - Upsert a node
-	UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) (err error)
+type iVerifiersCollection interface {
+	// UpsertVerifier - Upsert an verifier
+	UpsertVerifier(ctx context.Context, data *fftypes.Verifier, optimization UpsertOptimization) (err error)
 
-	// UpdateNode - Update node
-	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	// UpdateVerifier - Update verifier
+	UpdateVerifier(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetNode - Get a node by ID
-	GetNode(ctx context.Context, owner, name string) (node *fftypes.Node, err error)
+	// GetVerifierByValue - Get a verifier by name
+	GetVerifierByValue(ctx context.Context, iType fftypes.VerifierType, namespace, value string) (org *fftypes.Verifier, err error)
 
-	// GetNodeByID- Get a node by ID
-	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
+	// GetVerifierByID - Get a verifier by ID
+	GetVerifierByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Verifier, err error)
 
-	// GetNodes - Get nodes
-	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, res *FilterResult, err error)
+	// GetVerifiers - Get verifiers
+	GetVerifiers(ctx context.Context, filter Filter) (org []*fftypes.Verifier, res *FilterResult, err error)
 }
 
 type iGroupCollection interface {
@@ -516,8 +516,8 @@ type PersistenceInterface interface {
 	iOperationCollection
 	iSubscriptionCollection
 	iEventCollection
-	iOrganizationsCollection
-	iNodeCollection
+	iIdentitiesCollection
+	iVerifiersCollection
 	iGroupCollection
 	iNonceCollection
 	iNextPinCollection
