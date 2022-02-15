@@ -1,5 +1,5 @@
 remote_theme: pmarsceill/just-the-docs
-logo: "firefly_logo.png"
+logo: "firefly_logo_36h.png"
 title: Hyperledger FireFly Docs
 baseurl: /firefly
 aux_links:
@@ -14,4 +14,6 @@ aux_links:
   "Calendar":
     - "https://lists.hyperledger.org/g/firefly/calendar"
 
-theme: just-the-docs
+remote_theme: pmarsceill/just-the-docs
+plugins:
+- jekyll-remote-theme # add this line to the plugins list if you already have one
