@@ -258,7 +258,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 }
 
-func TestInitOldInstancePath(t *testing.T) {
+func TestInitOldInstancePathContracts(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf()
@@ -283,7 +283,7 @@ func TestInitOldInstancePath(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
 		httpmock.NewJsonResponderOrPanic(200, map[string]string{
 			"created":      "2022-02-08T22:10:10Z",
-			"address":      "de7d3c600e2e648aa5d714a25bf45df3eafff88a",
+			"address":      "12345",
 			"path":         "/contracts/firefly",
 			"abi":          "fc49dec3-0660-4dc7-61af-65af4c3ac456",
 			"openapi":      "/contracts/firefly?swagger",
@@ -299,6 +299,41 @@ func TestInitOldInstancePath(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.NoError(t, err)
+	assert.Equal(t, e.instancePath, "0x12345")
+}
+
+func TestInitOldInstancePathInstances(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "es12345", body["stream"])
+			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
+		})
+
+	resetConf()
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
+	assert.NoError(t, err)
+	assert.Equal(t, e.instancePath, "0x12345")
 }
 
 func TestInitOldInstancePathError(t *testing.T) {
