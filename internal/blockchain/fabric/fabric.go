@@ -66,10 +66,6 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
-type asyncTXSubmission struct {
-	ID string `json:"id"`
-}
-
 type fabBatchPinInput struct {
 	Namespace  string   `json:"namespace"`
 	UUIDs      string   `json:"uuids"`
@@ -553,11 +549,11 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
 	// All arguments must be JSON serialized
 	args, err := jsonEncodeInput(input)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
+		return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
 	}
 	in := &fabTxNamedInput{
 		Func:    method.Name,
@@ -579,18 +575,14 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, signingKey, operationID.String(), in)
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
-	tx := &asyncTXSubmission{}
-	if err = json.Unmarshal(res.Body(), tx); err != nil {
-		return nil, err
-	}
-	return tx, nil
+	return nil
 }
 
 func jsonEncodeInput(params map[string]interface{}) (output map[string]string, err error) {

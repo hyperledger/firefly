@@ -996,7 +996,7 @@ func TestInvokeContract(t *testing.T) {
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(struct{}{}, nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1030,7 +1030,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil, fmt.Errorf("pop"))
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(fmt.Errorf("pop"))
 	mth.On("WriteOperationFailure", mock.Anything, mock.Anything, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1070,7 +1070,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	}
 
 	mim.On("ResolveSigningKey", mock.Anything, "").Return("key-resolved", nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(struct{}{}, nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1389,7 +1389,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
-	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, mock.AnythingOfType("*fftypes.FFIMethod"), req.Input).Return(struct{}{}, nil)
+	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, mock.AnythingOfType("*fftypes.FFIMethod"), req.Input).Return(nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
 

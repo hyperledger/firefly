@@ -63,10 +63,6 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
-type asyncTXSubmission struct {
-	ID string `json:"id"`
-}
-
 type queryOutput struct {
 	Output string `json:"output"`
 }
@@ -540,24 +536,20 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	abi, orderedInput, err := e.prepareRequest(ctx, method, input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	res, err := e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
-	tx := &asyncTXSubmission{}
-	if err = json.Unmarshal(res.Body(), tx); err != nil {
-		return nil, err
-	}
-	return tx, nil
+	return nil
 }
 
 func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {

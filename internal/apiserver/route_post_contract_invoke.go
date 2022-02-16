@@ -39,7 +39,7 @@ var postContractInvoke = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
 	JSONInputMask:   []string{"Type"},
-	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+	JSONOutputValue: func() interface{} { return &fftypes.ContractCallResponse{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		req := r.Input.(*fftypes.ContractCallRequest)

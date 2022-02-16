@@ -597,7 +597,10 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                properties:
+                  id: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -2025,7 +2028,10 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                properties:
+                  id: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -2409,7 +2415,10 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                properties:
+                  id: {}
+                type: object
           description: Success
         default:
           description: ""

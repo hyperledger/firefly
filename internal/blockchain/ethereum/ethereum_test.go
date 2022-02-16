@@ -546,7 +546,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
 			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
 			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[3])
-			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
 	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
@@ -583,7 +583,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
 			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
 			assert.Equal(t, "", params[3])
-			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
 	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
@@ -1556,9 +1556,9 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, "SendTransaction", headers["type"])
 			assert.Equal(t, float64(1), params[0])
 			assert.Equal(t, float64(2), params[1])
-			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.NoError(t, err)
 }
 
@@ -1574,7 +1574,7 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -1596,9 +1596,9 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			return httpmock.NewJsonResponderOrPanic(400, asyncTXSubmission{})(req)
+			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -1625,39 +1625,8 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.Regexp(t, "invalid json", err)
-}
-
-func TestInvokeContractUnmarshalResponseError(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	httpmock.ActivateNonDefault(e.client.GetClient())
-	defer httpmock.DeactivateAndReset()
-	signingKey := ethHexFormatB32(fftypes.NewRandB32())
-	location := &Location{
-		Address: "0x12345",
-	}
-	method := testFFIMethod()
-	params := map[string]interface{}{
-		"x": float64(1),
-		"y": float64(2),
-	}
-	locationBytes, err := json.Marshal(location)
-	assert.NoError(t, err)
-	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			params := body["params"].([]interface{})
-			headers := body["headers"].(map[string]interface{})
-			assert.Equal(t, "SendTransaction", headers["type"])
-			assert.Equal(t, float64(1), params[0])
-			assert.Equal(t, float64(2), params[1])
-			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
-		})
-	_, err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.Regexp(t, "invalid character", err)
 }
 
 func TestQueryContractOK(t *testing.T) {
