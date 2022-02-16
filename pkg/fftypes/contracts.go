@@ -37,6 +37,10 @@ type ContractCallRequest struct {
 	Input     map[string]interface{} `json:"input"`
 }
 
+type ContractCallResponse struct {
+	ID *UUID `json:"id"`
+}
+
 type ContractSubscribeRequest struct {
 	Interface *UUID     `json:"interface,omitempty"`
 	Location  *JSONAny  `json:"location,omitempty"`
