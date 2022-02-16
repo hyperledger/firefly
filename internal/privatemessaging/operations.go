@@ -49,14 +49,13 @@ func retrieveTransferBlobInputs(ctx context.Context, op *fftypes.Operation) (nod
 	return nodeID, blobHash, err
 }
 
-func addBatchSendInputs(op *fftypes.Operation, nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID, manifest string) error {
+func addBatchSendInputs(op *fftypes.Operation, nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID, manifest string) {
 	op.Input = fftypes.JSONObject{
 		"node":     nodeID.String(),
 		"group":    groupHash.String(),
 		"batch":    batchID.String(),
 		"manifest": manifest,
 	}
-	return nil
 }
 
 func retrieveBatchSendInputs(ctx context.Context, op *fftypes.Operation) (nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID, manifest string, err error) {

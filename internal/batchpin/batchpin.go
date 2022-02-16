@@ -19,6 +19,7 @@ package batchpin
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/operations"
@@ -43,7 +44,10 @@ type batchPinSubmitter struct {
 	operations operations.Manager
 }
 
-func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) Submitter {
+func NewBatchPinSubmitter(ctx context.Context, di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
+	if di == nil || im == nil || bi == nil || mm == nil || om == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
 	bp := &batchPinSubmitter{
 		database:   di,
 		identity:   im,
@@ -54,7 +58,7 @@ func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain
 	om.RegisterHandler(bp, []fftypes.OpType{
 		fftypes.OpTypeBlockchainBatchPin,
 	})
-	return bp
+	return bp, nil
 }
 
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {

@@ -152,7 +152,6 @@ func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, batch *ffty
 	if err != nil {
 		return err
 	}
-
 	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 
@@ -243,14 +242,13 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 		if tw.Group != nil {
 			groupHash = tw.Group.Hash
 		}
-		if err = addBatchSendInputs(op, node.ID, groupHash, batch.ID, tw.Batch.Manifest().String()); err != nil {
-			return err
-		}
+		addBatchSendInputs(op, node.ID, groupHash, batch.ID, tw.Batch.Manifest().String())
 		if err = pm.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
-
-		return pm.operations.RunOperation(ctx, opBatchSend(op, node, tw))
+		if err = pm.operations.RunOperation(ctx, opBatchSend(op, node, tw)); err != nil {
+			return err
+		}
 	}
 
 	return nil

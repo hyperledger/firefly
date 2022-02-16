@@ -70,6 +70,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 			fftypes.MessageTypePrivate,
 		}, mock.Anything, mock.Anything).Return()
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -120,12 +121,8 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
+	mom := pm.operations.(*operationmocks.Manager)
 
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
-		assert.Equal(t, "org1", identity.Author)
-		identity.Key = "0x12345"
-	}).Return(nil)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: fftypes.NewRandB32(),
@@ -155,23 +152,46 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		Hash:       blob1,
 		PayloadRef: "/blob/1",
 	}, nil)
-	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "node1", "/blob/1").Return(nil).Once()
 	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeDataExchangeBlobSend
 	})).Return(nil, nil)
-	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "node2", "/blob/1").Return(nil).Once()
 	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeDataExchangeBlobSend
 	})).Return(nil, nil)
-
-	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeDataExchangeBatchSend
 	})).Return(nil, nil)
-	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("InsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeDataExchangeBatchSend
 	})).Return(nil, nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		if op.Type != fftypes.OpTypeDataExchangeBlobSend {
+			return false
+		}
+		data := op.Data.(transferBlobData)
+		return *data.Node.ID == *node1
+	})).Return(nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		if op.Type != fftypes.OpTypeDataExchangeBlobSend {
+			return false
+		}
+		data := op.Data.(transferBlobData)
+		return *data.Node.ID == *node2
+	})).Return(nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		if op.Type != fftypes.OpTypeDataExchangeBatchSend {
+			return false
+		}
+		data := op.Data.(batchSendData)
+		return *data.Node.ID == *node1
+	})).Return(nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		if op.Type != fftypes.OpTypeDataExchangeBatchSend {
+			return false
+		}
+		data := op.Data.(batchSendData)
+		return *data.Node.ID == *node2
+	})).Return(nil)
 
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
 
@@ -195,31 +215,15 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+	mbp.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
 	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
-}
-
-func TestDispatchBatchBadData(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	groupID := fftypes.NewRandB32()
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{}, nil)
-
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{Value: fftypes.JSONAnyPtr(`{!json}`)},
-			},
-		},
-	}, []*fftypes.Bytes32{})
-	assert.Regexp(t, "FF10137", err)
 }
 
 func TestDispatchErrorFindingGroup(t *testing.T) {
@@ -385,15 +389,27 @@ func TestTransferBlobsFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mom := pm.operations.(*operationmocks.Manager)
+
+	node := &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}}
+
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(&fftypes.Blob{PayloadRef: "blob/1"}, nil)
-	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "peer1", "blob/1").Return(fmt.Errorf("pop"))
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		if op.Type != fftypes.OpTypeDataExchangeBlobSend {
+			return false
+		}
+		data := op.Data.(transferBlobData)
+		return *data.Node.ID == *node.ID
+	})).Return(fmt.Errorf("pop"))
 
 	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
-	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
+	}, fftypes.NewUUID(), node)
 	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestTransferBlobsOpInsertFail(t *testing.T) {

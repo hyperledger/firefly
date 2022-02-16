@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
+	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -70,6 +71,7 @@ type testOrchestrator struct {
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
 	mom *operationmocks.Manager
+	mbp *batchpinmocks.Submitter
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -97,6 +99,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
 		mom: &operationmocks.Manager{},
+		mbp: &batchpinmocks.Submitter{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -115,6 +118,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
+	tor.orchestrator.batchpin = tor.mbp
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -511,6 +515,14 @@ func TestInitContractsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.contracts = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitBatchPinComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.batchpin = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

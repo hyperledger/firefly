@@ -41,20 +41,23 @@ func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitt
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
 	mmi.On("IsMetricsEnabled").Return(enableMetrics)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything)
 	if enableMetrics {
 		mmi.On("CountBatchPin").Return()
 	}
 	mbi.On("Name").Return("ut").Maybe()
-	bps := NewBatchPinSubmitter(mdi, mim, mbi, mmi, mom).(*batchPinSubmitter)
-	return bps
+	bps, err := NewBatchPinSubmitter(context.Background(), mdi, mim, mbi, mmi, mom)
+	assert.NoError(t, err)
+	return bps.(*batchPinSubmitter)
 }
 
 func TestSubmitPinnedBatchOk(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 	ctx := context.Background()
 
-	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
+	mmi := bp.metrics.(*metricsmocks.Manager)
+	mom := bp.operations.(*operationmocks.Manager)
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -76,20 +79,28 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 		return true
 	})).Return(nil)
-	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), "0x12345", mock.Anything).Return(nil)
-	mmi := bp.metrics.(*metricsmocks.Manager)
 	mmi.On("IsMetricsEnabled").Return(false)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(batchPinData)
+		return op.Type == fftypes.OpTypeBlockchainBatchPin && data.Batch == batch
+	})).Return(nil)
+
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mmi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, true)
 	ctx := context.Background()
 
-	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
 	mmi := bp.metrics.(*metricsmocks.Manager)
+	mom := bp.operations.(*operationmocks.Manager)
+
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
 		Identity: fftypes.Identity{
@@ -110,12 +121,18 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 		return true
 	})).Return(nil)
-	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), "0x12345", mock.Anything).Return(nil)
 	mmi.On("IsMetricsEnabled").Return(true)
-	mmi.On("BatchPinCounter").Return()
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(batchPinData)
+		return op.Type == fftypes.OpTypeBlockchainBatchPin && data.Batch == batch
+	})).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mmi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestSubmitPinnedBatchOpFail(t *testing.T) {

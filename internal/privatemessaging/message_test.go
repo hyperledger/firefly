@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -660,53 +661,6 @@ func TestRequestReplySuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDispatchedUnpinnedMessageMarshalFail(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
-		assert.Equal(t, "localorg", identity.Author)
-		return true
-	})).Return(nil)
-
-	groupID := fftypes.NewRandB32()
-	nodeID1 := fftypes.NewUUID()
-	nodeID2 := fftypes.NewUUID()
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
-		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				{Node: nodeID1, Identity: "localorg"},
-				{Node: nodeID2, Identity: "remoteorg"},
-			},
-		},
-	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID1).Return(&fftypes.Node{
-		ID: nodeID1, Name: "node1", Owner: "localorg", DX: fftypes.DXInfo{Peer: "peer1-local"},
-	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
-		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
-	}, nil).Once()
-
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		ID:    fftypes.NewUUID(),
-		Group: groupID,
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{Value: fftypes.JSONAnyPtr("!Bad JSON")},
-			},
-		},
-	}, []*fftypes.Bytes32{})
-	assert.Regexp(t, "FF10137", err)
-
-	mdi.AssertExpectations(t)
-
-}
-
 func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -727,6 +681,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	nodeID2 := fftypes.NewUUID()
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mom := pm.operations.(*operationmocks.Manager)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
@@ -743,6 +698,10 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
 	}, nil).Once()
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(batchSendData)
+		return op.Type == fftypes.OpTypeDataExchangeBatchSend && *data.Node.ID == *nodeID2
+	})).Return(nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
 		ID:    fftypes.NewUUID(),
@@ -768,6 +727,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 
 }
 
@@ -828,21 +788,20 @@ func TestSendDataTransferFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	groupID := fftypes.NewRandB32()
+	nodeID2 := fftypes.NewUUID()
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
-		assert.Equal(t, "localorg", identity.Author)
-		return true
-	})).Return(nil)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
 
-	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(fmt.Errorf("pop"))
-
-	groupID := fftypes.NewRandB32()
-	nodeID2 := fftypes.NewUUID()
+	mom := pm.operations.(*operationmocks.Manager)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(batchSendData)
+		return op.Type == fftypes.OpTypeDataExchangeBatchSend && *data.Node.ID == *nodeID2
+	})).Return(fmt.Errorf("pop"))
 
 	nodes := []*fftypes.Node{{
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
@@ -869,7 +828,9 @@ func TestSendDataTransferFail(t *testing.T) {
 	}, nodes)
 	assert.Regexp(t, "pop", err)
 
-	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 
 }
 
