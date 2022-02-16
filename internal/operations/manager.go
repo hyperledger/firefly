@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -40,7 +40,6 @@ type Manager interface {
 type operationsManager struct {
 	ctx      context.Context
 	database database.Plugin
-	txHelper txcommon.Helper
 	tokens   map[string]tokens.Plugin
 	handlers map[fftypes.OpType]OperationHandler
 }
@@ -52,7 +51,6 @@ func NewOperationsManager(ctx context.Context, di database.Plugin, ti map[string
 	om := &operationsManager{
 		ctx:      ctx,
 		database: di,
-		txHelper: txcommon.NewTransactionHelper(di),
 		tokens:   ti,
 		handlers: make(map[fftypes.OpType]OperationHandler),
 	}
@@ -79,10 +77,22 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 		return i18n.NewError(ctx, i18n.MsgOperationNotSupported)
 	}
 	if complete, err := handler.RunOperation(ctx, op); err != nil {
-		om.txHelper.WriteOperationFailure(ctx, op.ID, err)
+		om.writeOperationFailure(ctx, op.ID, err)
 		return err
 	} else if complete {
-		om.txHelper.WriteOperationSuccess(ctx, op.ID, nil)
+		om.writeOperationSuccess(ctx, op.ID, nil)
 	}
 	return nil
+}
+
+func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject) {
+	if err := om.database.ResolveOperation(ctx, opID, fftypes.OpStatusSucceeded, "", output); err != nil {
+		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
+	}
+}
+
+func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, err error) {
+	if err := om.database.ResolveOperation(ctx, opID, fftypes.OpStatusFailed, err.Error(), nil); err != nil {
+		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
+	}
 }

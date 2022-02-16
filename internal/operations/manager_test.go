@@ -16,6 +16,7 @@ package operations
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -24,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
@@ -45,4 +47,37 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 
 	_, err := om.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10346", err)
+}
+
+func TestWriteOperationSuccess(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+	output := fftypes.JSONObject{"some": "info"}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusSucceeded, "", output).Return(fmt.Errorf("pop"))
+
+	om.writeOperationSuccess(ctx, opID, output)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestWriteOperationFailure(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("pop"))
+
+	om.writeOperationFailure(ctx, opID, fmt.Errorf("pop"))
+
+	mdi.AssertExpectations(t)
+
 }
