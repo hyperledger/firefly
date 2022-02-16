@@ -595,8 +595,6 @@ func (cm *contractManager) checkParamSchema(ctx context.Context, input interface
 }
 
 func (cm *contractManager) GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
-	if generationRequest.Namespace == "" {
-		generationRequest.Namespace = ns
-	}
+	generationRequest.Namespace = ns
 	return cm.blockchain.GenerateFFI(ctx, generationRequest)
 }
