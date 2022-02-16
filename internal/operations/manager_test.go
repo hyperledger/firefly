@@ -37,12 +37,12 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	return om.(*operationsManager), cancel
 }
 
-func TestStartOperationNotSupported(t *testing.T) {
+func TestPrepareOperationNotSupported(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
 	op := &fftypes.Operation{}
 
-	err := om.StartOperation(context.Background(), op)
+	_, err := om.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10346", err)
 }

@@ -63,8 +63,9 @@ func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenCreatePool && op.Input.GetString("name") == "testpool" && op.Input.GetString("connector") == "magic-tokens"
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(createPoolData)
+		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -210,8 +211,9 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenCreatePool && op.Input.GetString("name") == "testpool" && op.Input.GetString("connector") == "magic-tokens"
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(createPoolData)
+		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -293,8 +295,9 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenCreatePool && op.Input.GetString("name") == "testpool" && op.Input.GetString("connector") == "magic-tokens"
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(createPoolData)
+		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -325,8 +328,9 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenCreatePool && op.Input.GetString("name") == "testpool" && op.Input.GetString("connector") == "magic-tokens"
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(createPoolData)
+		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -364,8 +368,9 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 			send(context.Background())
 		}).
 		Return(nil, nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenCreatePool && op.Input.GetString("name") == "testpool" && op.Input.GetString("connector") == "magic-tokens"
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(createPoolData)
+		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, true)
@@ -397,9 +402,10 @@ func TestActivateTokenPool(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		assert.Equal(t, info, op.Input.GetObject("info"))
-		return op.Type == fftypes.OpTypeTokenActivatePool && op.Input.GetString("id") == pool.ID.String()
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(activatePoolData)
+		assert.Equal(t, info, data.BlockchainInfo)
+		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
@@ -462,9 +468,10 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		assert.Equal(t, info, op.Input.GetObject("info"))
-		return op.Type == fftypes.OpTypeTokenActivatePool && op.Input.GetString("id") == pool.ID.String()
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(activatePoolData)
+		assert.Equal(t, info, data.BlockchainInfo)
+		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
@@ -493,9 +500,10 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(nil)
-	mom.On("StartOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		assert.Equal(t, info, op.Input.GetObject("info"))
-		return op.Type == fftypes.OpTypeTokenActivatePool && op.Input.GetString("id") == pool.ID.String()
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(activatePoolData)
+		assert.Equal(t, info, data.BlockchainInfo)
+		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)

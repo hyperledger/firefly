@@ -228,8 +228,9 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 	}
 
 	var op *fftypes.Operation
+	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err := s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
+		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
 			return err
 		}
@@ -268,7 +269,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return err
 	}
 
-	return s.mgr.operations.StartOperation(ctx, op)
+	return s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {

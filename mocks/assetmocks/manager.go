@@ -369,6 +369,50 @@ func (_m *Manager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) 
 	return r0
 }
 
+// PrepareOperation provides a mock function with given fields: ctx, op
+func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+	ret := _m.Called(ctx, op)
+
+	var r0 *fftypes.PreparedOperation
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) *fftypes.PreparedOperation); ok {
+		r0 = rf(ctx, op)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.PreparedOperation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Operation) error); ok {
+		r1 = rf(ctx, op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RunOperation provides a mock function with given fields: ctx, op
+func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (bool, error) {
+	ret := _m.Called(ctx, op)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation) bool); ok {
+		r0 = rf(ctx, op)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.PreparedOperation) error); ok {
+		r1 = rf(ctx, op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // TransferTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
 func (_m *Manager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, transfer, waitConfirm)

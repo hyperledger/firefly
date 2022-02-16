@@ -49,6 +49,7 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mom := &operationmocks.Manager{}
 	mti.On("Name").Return("ut_tokens").Maybe()
 	mm.On("IsMetricsEnabled").Return(false)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything)
 	ctx, cancel := context.WithCancel(context.Background())
 	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
@@ -75,6 +76,7 @@ func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
 	mti.On("Name").Return("ut_tokens").Maybe()
 	mm.On("IsMetricsEnabled").Return(true)
 	mm.On("TransferSubmitted", mock.Anything)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything)
 	ctx, cancel := context.WithCancel(context.Background())
 	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()

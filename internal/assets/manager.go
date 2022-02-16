@@ -54,6 +54,10 @@ type Manager interface {
 	TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
+
+	// From operations.OperationHandler
+	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
 }
 
 type assetManager struct {
@@ -87,6 +91,11 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 		metrics:    mm,
 		operations: ops,
 	}
+	ops.RegisterHandler(am, []fftypes.OpType{
+		fftypes.OpTypeTokenCreatePool,
+		fftypes.OpTypeTokenActivatePool,
+		fftypes.OpTypeTokenTransfer,
+	})
 	return am, nil
 }
 
