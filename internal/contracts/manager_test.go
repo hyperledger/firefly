@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -41,6 +42,7 @@ func newTestContractManager() *contractManager {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+	mom := &operationmocks.Manager{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
 
 	mbi.On("Name").Return("mockblockchain").Maybe()
@@ -51,13 +53,13 @@ func newTestContractManager() *contractManager {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	cm, _ := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
+	cm, _ := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi, mom)
 	cm.(*contractManager).txHelper = &txcommonmocks.Helper{}
 	return cm.(*contractManager)
 }
 
 func TestNewContractManagerFail(t *testing.T) {
-	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil)
+	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -67,8 +69,9 @@ func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+	mom := &operationmocks.Manager{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	_, err := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
+	_, err := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi, mom)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -78,8 +81,9 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
+	mom := &operationmocks.Manager{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
-	_, err := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi)
+	_, err := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi, mom)
 	assert.NoError(t, err)
 }
 

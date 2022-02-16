@@ -26,17 +26,17 @@ import (
 )
 
 type createPoolData struct {
-	Pool *fftypes.TokenPool
+	Pool *fftypes.TokenPool `json:"pool"`
 }
 
 type activatePoolData struct {
-	Pool           *fftypes.TokenPool
-	BlockchainInfo fftypes.JSONObject
+	Pool           *fftypes.TokenPool `json:"pool"`
+	BlockchainInfo fftypes.JSONObject `json:"blockchainInfo"`
 }
 
 type transferData struct {
-	Pool     *fftypes.TokenPool
-	Transfer *fftypes.TokenTransfer
+	Pool     *fftypes.TokenPool     `json:"pool"`
+	Transfer *fftypes.TokenTransfer `json:"transfer"`
 }
 
 func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {

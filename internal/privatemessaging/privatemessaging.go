@@ -18,7 +18,6 @@ package privatemessaging
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -28,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -48,6 +48,10 @@ type Manager interface {
 	NewMessage(ns string, msg *fftypes.MessageInOut) sysmessaging.MessageSender
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
+
+	// From operations.OperationHandler
+	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
 }
 
 type privateMessaging struct {
@@ -68,10 +72,11 @@ type privateMessaging struct {
 	opCorrelationRetries  int
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
+	operations            operations.Manager
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager) (Manager, error) {
-	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
+	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 
@@ -99,6 +104,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		opCorrelationRetries:  config.GetInt(config.PrivateMessagingOpCorrelationRetries),
 		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
 		metrics:               mm,
+		operations:            om,
 	}
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -128,6 +134,11 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 			fftypes.MessageTypePrivate,
 		},
 		pm.dispatchUnpinnedBatch, bo)
+
+	om.RegisterHandler(pm, []fftypes.OpType{
+		fftypes.OpTypeDataExchangeBlobSend,
+		fftypes.OpTypeDataExchangeBatchSend,
+	})
 
 	return pm, nil
 }
@@ -187,13 +198,12 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 				d.Namespace,
 				txid,
 				fftypes.OpTypeDataExchangeBlobSend)
+			addTransferBlobInputs(op, node.ID, blob.Hash)
 			if err = pm.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
 
-			if err := pm.exchange.TransferBLOB(ctx, op.ID, node.DX.Peer, blob.PayloadRef); err != nil {
-				return err
-			}
+			return pm.operations.RunOperation(ctx, opTransferBlob(op, node, blob))
 		}
 	}
 	return nil
@@ -202,11 +212,6 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportWrapper, nodes []*fftypes.Node) (err error) {
 	l := log.L(ctx)
 	batch := tw.Batch
-
-	payload, err := json.Marshal(tw)
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
-	}
 
 	// TODO: move to using DIDs consistently as the way to reference the node/organization (i.e. node.Owner becomes a DID)
 	localOrgSigingKey, err := pm.identity.GetLocalOrgKey(ctx)
@@ -234,18 +239,18 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 			batch.Namespace,
 			batch.Payload.TX.ID,
 			fftypes.OpTypeDataExchangeBatchSend)
-		op.Input = fftypes.JSONObject{
-			"manifest": tw.Batch.Manifest().String(),
+		var groupHash *fftypes.Bytes32
+		if tw.Group != nil {
+			groupHash = tw.Group.Hash
+		}
+		if err = addBatchSendInputs(op, node.ID, groupHash, batch.ID, tw.Batch.Manifest().String()); err != nil {
+			return err
 		}
 		if err = pm.database.InsertOperation(ctx, op); err != nil {
 			return err
 		}
 
-		// Send the payload itself
-		err := pm.exchange.SendMessage(ctx, op.ID, node.DX.Peer, payload)
-		if err != nil {
-			return err
-		}
+		return pm.operations.RunOperation(ctx, opBatchSend(op, node, tw))
 	}
 
 	return nil

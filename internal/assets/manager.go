@@ -74,8 +74,8 @@ type assetManager struct {
 	operations operations.Manager
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager, ops operations.Manager) (Manager, error) {
-	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil || mm == nil || ops == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager, om operations.Manager) (Manager, error) {
+	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
@@ -89,9 +89,9 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 		messaging:  pm,
 		tokens:     ti,
 		metrics:    mm,
-		operations: ops,
+		operations: om,
 	}
-	ops.RegisterHandler(am, []fftypes.OpType{
+	om.RegisterHandler(am, []fftypes.OpType{
 		fftypes.OpTypeTokenCreatePool,
 		fftypes.OpTypeTokenActivatePool,
 		fftypes.OpTypeTokenTransfer,

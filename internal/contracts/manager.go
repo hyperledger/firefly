@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -53,6 +54,10 @@ type Manager interface {
 	GetContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractSubscription, error)
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
+
+	// From operations.OperationHandler
+	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
 }
 
 type contractManager struct {
@@ -63,25 +68,34 @@ type contractManager struct {
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
 	ffiParamValidator fftypes.FFIParamValidator
+	operations        operations.Manager
 }
 
-func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
-	if database == nil || publicStorage == nil || broadcast == nil || identity == nil || blockchain == nil {
+func NewContractManager(ctx context.Context, di database.Plugin, ps publicstorage.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager) (Manager, error) {
+	if di == nil || ps == nil || bm == nil || im == nil || bi == nil || om == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	v, err := blockchain.GetFFIParamValidator(ctx)
+	v, err := bi.GetFFIParamValidator(ctx)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgPluginInitializationFailed)
 	}
-	return &contractManager{
-		database:          database,
-		txHelper:          txcommon.NewTransactionHelper(database),
-		publicStorage:     publicStorage,
-		broadcast:         broadcast,
-		identity:          identity,
-		blockchain:        blockchain,
+
+	cm := &contractManager{
+		database:          di,
+		txHelper:          txcommon.NewTransactionHelper(di),
+		publicStorage:     ps,
+		broadcast:         bm,
+		identity:          im,
+		blockchain:        bi,
 		ffiParamValidator: v,
-	}, nil
+		operations:        om,
+	}
+
+	om.RegisterHandler(cm, []fftypes.OpType{
+		fftypes.OpTypeBlockchainInvoke,
+	})
+
+	return cm, nil
 }
 
 func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
@@ -160,7 +174,7 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
-func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string, input fftypes.JSONObject) (*fftypes.Operation, error) {
+func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (*fftypes.Operation, error) {
 	txid, err := cm.txHelper.SubmitNewTransaction(ctx, ns, fftypes.TransactionTypeContractInvoke)
 	if err != nil {
 		return nil, err
@@ -171,7 +185,9 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 		ns,
 		txid,
 		fftypes.OpTypeBlockchainInvoke)
-	op.Input = input
+	if err := addBlockchainInvokeInputs(op, req); err != nil {
+		return nil, err
+	}
 	return op, cm.database.InsertOperation(ctx, op)
 }
 
@@ -190,7 +206,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 			return err
 		}
 		if req.Type == fftypes.CallTypeInvoke {
-			op, err = cm.writeInvokeTransaction(ctx, ns, req.Input)
+			op, err = cm.writeInvokeTransaction(ctx, ns, req)
 			if err != nil {
 				return err
 			}
@@ -203,18 +219,13 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 
 	switch req.Type {
 	case fftypes.CallTypeInvoke:
-		err = cm.blockchain.InvokeContract(ctx, op.ID, req.Key, req.Location, req.Method, req.Input)
 		res = &fftypes.ContractCallResponse{ID: op.ID}
+		return res, cm.operations.RunOperation(ctx, opBlockchainInvoke(op, req))
 	case fftypes.CallTypeQuery:
-		res, err = cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
-
-	if op != nil && err != nil {
-		cm.txHelper.WriteOperationFailure(ctx, op.ID, err)
-	}
-	return res, err
 }
 
 func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error) {

@@ -445,23 +445,23 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
-	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain, or.metrics)
-
 	if or.operations == nil {
 		if or.operations, err = operations.NewOperationsManager(ctx, or.database, or.tokens); err != nil {
 			return err
 		}
 	}
 
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
+	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain, or.metrics, or.operations)
+
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync, or.batchpin, or.metrics); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -474,7 +474,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.publicstorage, or.broadcast, or.identity, or.blockchain)
+		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.publicstorage, or.broadcast, or.identity, or.blockchain, or.operations)
 		if err != nil {
 			return err
 		}

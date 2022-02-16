@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -53,6 +54,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 	mmi := &metricsmocks.Manager{}
+	mom := &operationmocks.Manager{}
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mbi.On("Name").Return("ut_blockchain").Maybe()
 	mpi.On("Name").Return("ut_publicstorage").Maybe()
@@ -73,7 +75,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi)
+	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi, mom)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }
@@ -90,7 +92,7 @@ func newTestBroadcastWithMetrics(t *testing.T) (*broadcastManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -192,86 +194,6 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "wrong", Key: "wrong"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.EqualError(t, err, "pop")
-}
-
-func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
-
-	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "org1", Key: "0x12345"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
-	assert.Regexp(t, "pop", err)
-}
-
-func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-
-	mdi := bm.database.(*databasemocks.Plugin)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
-	mbi.On("Name").Return("unittest")
-
-	batch := &fftypes.Batch{
-		Identity: fftypes.Identity{Author: "org1", Key: "0x12345"},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{
-					ID: fftypes.NewUUID(),
-				}},
-			},
-		},
-	}
-
-	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
-	assert.Regexp(t, "pop", err)
-}
-
-func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-
-	mdi := bm.database.(*databasemocks.Plugin)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
-	mbp := bm.batchpin.(*batchpinmocks.Submitter)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
-	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	msgID := fftypes.NewUUID()
-	batch := &fftypes.Batch{
-		Identity: fftypes.Identity{Author: "org1", Key: "0x12345"},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   fftypes.NewUUID(),
-			},
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{
-					ID: msgID,
-				}},
-			},
-		},
-		PayloadRef: "ipfs_id",
-	}
-
-	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
-	assert.NoError(t, err)
-
-	op := mdi.Calls[1].Arguments[1].(*fftypes.Operation)
-	assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
-	assert.Equal(t, "ut_publicstorage", op.Plugin)
-	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op.Type)
-
 }
 
 func TestPublishBlobsUpdateDataFail(t *testing.T) {

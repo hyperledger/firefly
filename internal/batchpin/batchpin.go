@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -28,6 +29,10 @@ import (
 
 type Submitter interface {
 	SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error
+
+	// From operations.OperationHandler
+	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
 }
 
 type batchPinSubmitter struct {
@@ -35,25 +40,31 @@ type batchPinSubmitter struct {
 	identity   identity.Manager
 	blockchain blockchain.Plugin
 	metrics    metrics.Manager
+	operations operations.Manager
 }
 
-func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager) Submitter {
-	return &batchPinSubmitter{
+func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) Submitter {
+	bp := &batchPinSubmitter{
 		database:   di,
 		identity:   im,
 		blockchain: bi,
 		metrics:    mm,
+		operations: om,
 	}
+	om.RegisterHandler(bp, []fftypes.OpType{
+		fftypes.OpTypeBlockchainBatchPin,
+	})
+	return bp
 }
 
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
-
 	// The pending blockchain transaction
 	op := fftypes.NewOperation(
 		bp.blockchain,
 		batch.Namespace,
 		batch.Payload.TX.ID,
 		fftypes.OpTypeBlockchainBatchPin)
+	addBatchPinInputs(op, batch.ID, contexts)
 	if err := bp.database.InsertOperation(ctx, op); err != nil {
 		return err
 	}
@@ -61,13 +72,5 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	if bp.metrics.IsMetricsEnabled() {
 		bp.metrics.CountBatchPin()
 	}
-	// Write the batch pin to the blockchain
-	return bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
-		Namespace:       batch.Namespace,
-		TransactionID:   batch.Payload.TX.ID,
-		BatchID:         batch.ID,
-		BatchHash:       batch.Hash,
-		BatchPayloadRef: batch.PayloadRef,
-		Contexts:        contexts,
-	})
+	return bp.operations.RunOperation(ctx, opBatchPin(op, batch, contexts))
 }

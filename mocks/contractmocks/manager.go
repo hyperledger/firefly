@@ -357,6 +357,50 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 	return r0, r1
 }
 
+// PrepareOperation provides a mock function with given fields: ctx, op
+func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+	ret := _m.Called(ctx, op)
+
+	var r0 *fftypes.PreparedOperation
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) *fftypes.PreparedOperation); ok {
+		r0 = rf(ctx, op)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.PreparedOperation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Operation) error); ok {
+		r1 = rf(ctx, op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RunOperation provides a mock function with given fields: ctx, op
+func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (bool, error) {
+	ret := _m.Called(ctx, op)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation) bool); ok {
+		r0 = rf(ctx, op)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.PreparedOperation) error); ok {
+		r1 = rf(ctx, op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SubscribeContract provides a mock function with given fields: ctx, ns, eventPath, req
 func (_m *Manager) SubscribeContract(ctx context.Context, ns string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
 	ret := _m.Called(ctx, ns, eventPath, req)
