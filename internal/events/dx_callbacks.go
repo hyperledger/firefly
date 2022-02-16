@@ -293,7 +293,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		op := operations[0]
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
 			switch op.Type {
-			case "dataexchange_batch_send":
+			case fftypes.OpTypeDataExchangeBatchSend:
 				expectedManifest := op.Input.GetString("manifest")
 				if update.Manifest != expectedManifest {
 					// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
@@ -302,7 +302,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 					update.Error = mismatchErr.Error()
 					status = fftypes.OpStatusFailed
 				}
-			case "dataexchange_blob_send":
+			case fftypes.OpTypeDataExchangeBlobSend:
 				expectedHash := op.Input.GetString("hash")
 				if update.Hash != expectedHash {
 					// Log and map to failure for user to see that the receiver did not provide a matching hash
