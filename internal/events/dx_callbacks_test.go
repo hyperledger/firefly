@@ -492,7 +492,7 @@ func TestTransferResultHashtMismatch(t *testing.T) {
 		},
 	}, nil, nil)
 	mdi.On("ResolveOperation", mock.Anything, id, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
-		return strings.Contains(errorMsg, "FF10346")
+		return strings.Contains(errorMsg, "FF10348")
 	}), fftypes.JSONObject{
 		"extra": "info",
 	}).Return(nil)
