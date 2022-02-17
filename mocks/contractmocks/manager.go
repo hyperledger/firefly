@@ -100,6 +100,29 @@ func (_m *Manager) DeleteContractSubscriptionByNameOrID(ctx context.Context, ns 
 	return r0
 }
 
+// GenerateFFI provides a mock function with given fields: ctx, ns, generationRequest
+func (_m *Manager) GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, ns, generationRequest)
+
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.FFIGenerationRequest) *fftypes.FFI); ok {
+		r0 = rf(ctx, ns, generationRequest)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.FFIGenerationRequest) error); ok {
+		r1 = rf(ctx, ns, generationRequest)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetContractAPI provides a mock function with given fields: ctx, httpServerURL, ns, apiName
 func (_m *Manager) GetContractAPI(ctx context.Context, httpServerURL string, ns string, apiName string) (*fftypes.ContractAPI, error) {
 	ret := _m.Called(ctx, httpServerURL, ns, apiName)

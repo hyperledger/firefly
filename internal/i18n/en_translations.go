@@ -263,5 +263,7 @@ var (
 	MsgInvalidTXTypeForMessage      = ffm("FF10343", "Invalid transaction type for sending a message: %s", 400)
 	MsgGroupRequired                = ffm("FF10344", "Group must be set", 400)
 	MsgDBLockFailed                 = ffm("FF10345", "Database lock failed")
-	MsgOperationNotSupported        = ffm("FF10346", "Operation not supported", 400)
+	MsgFFIGenerationFailed          = ffm("FF10346", "Error generating smart contract interface: %s", 400)
+	MsgFFIGenerationUnsupported     = ffm("FF10347", "Smart contract interface generation is not supported by this blockchain plugin", 400)
+	MsgOperationNotSupported        = ffm("FF10348", "Operation not supported", 400)
 )

@@ -71,7 +71,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 
 	_, err := bm.PrepareOperation(context.Background(), &fftypes.Operation{})
 
-	assert.Regexp(t, "FF10346", err)
+	assert.Regexp(t, "FF10348", err)
 }
 
 func TestPrepareOperationBatchBroadcastBadInput(t *testing.T) {
@@ -128,7 +128,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	complete, err := bm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10346", err)
+	assert.Regexp(t, "FF10348", err)
 }
 
 func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {

@@ -69,7 +69,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 	po, err := cm.PrepareOperation(context.Background(), &fftypes.Operation{})
 
 	assert.Nil(t, po)
-	assert.Regexp(t, "FF10346", err)
+	assert.Regexp(t, "FF10348", err)
 }
 
 func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
@@ -90,5 +90,5 @@ func TestRunOperationNotSupported(t *testing.T) {
 	complete, err := cm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10346", err)
+	assert.Regexp(t, "FF10348", err)
 }

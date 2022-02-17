@@ -55,6 +55,8 @@ type Manager interface {
 	GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error)
 	DeleteContractSubscriptionByNameOrID(ctx context.Context, ns, nameOrID string) error
 
+	GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
+
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
@@ -603,4 +605,9 @@ func (cm *contractManager) checkParamSchema(ctx context.Context, input interface
 		return i18n.WrapError(ctx, err, i18n.MsgFFIValidationFail, param.Name)
 	}
 	return nil
+}
+
+func (cm *contractManager) GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+	generationRequest.Namespace = ns
+	return cm.blockchain.GenerateFFI(ctx, generationRequest)
 }
