@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.identity/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,48 +18,34 @@ package fftypes
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOrganizationValidation(t *testing.T) {
+func TestIdentityValidation(t *testing.T) {
 
-	org := &Organization{
+	identity := &Identity{
 		Name: "!name",
 	}
-	assert.Regexp(t, "FF10131.*name", org.Validate(context.Background(), false))
+	assert.Regexp(t, "FF10131.*name", identity.Validate(context.Background(), false))
 
-	org = &Organization{
+	identity = &Identity{
 		Name:        "ok",
 		Description: string(make([]byte, 4097)),
 	}
-	assert.Regexp(t, "FF10188.*description", org.Validate(context.Background(), false))
+	assert.Regexp(t, "FF10188.*description", identity.Validate(context.Background(), false))
 
-	org = &Organization{
+	identity = &Identity{
 		Name:        "ok",
 		Description: "ok",
-		Identity:    "ok",
 	}
-	assert.NoError(t, org.Validate(context.Background(), false))
+	assert.NoError(t, identity.Validate(context.Background(), false))
 
-	assert.Regexp(t, "FF10203", org.Validate(context.Background(), true))
+	assert.Regexp(t, "FF10203", identity.Validate(context.Background(), true))
 
-	var def Definition = org
-	assert.Equal(t, "ff_organizations", def.Topic())
+	var def Definition = identity
+	assert.Equal(t, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", def.Topic())
 	def.SetBroadcastMessage(NewUUID())
-	assert.NotNil(t, org.Message)
-}
-
-func TestGetDID(t *testing.T) {
-
-	var org *Organization
-	assert.Equal(t, "", org.GetDID())
-
-	org = &Organization{
-		ID: NewUUID(),
-	}
-	assert.Equal(t, fmt.Sprintf("did:firefly:org/%s", org.Name), org.GetDID())
-
+	assert.NotNil(t, identity.Message)
 }

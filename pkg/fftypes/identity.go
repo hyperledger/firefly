@@ -16,6 +16,13 @@
 
 package fftypes
 
+import (
+	"context"
+	"crypto/sha256"
+
+	"github.com/hyperledger/firefly/internal/i18n"
+)
+
 // IdentityType is the type of an identity
 type IdentityType = FFEnum
 
@@ -47,4 +54,37 @@ type Identity struct {
 type IdentityRef struct {
 	Author string `json:"author,omitempty"`
 	Key    string `json:"key,omitempty"`
+}
+
+const (
+	DIDPrefix            = "did:"
+	FireFlyDIDPrefix     = "did:firefly:"
+	FireFlyOrgDIDPrefix  = "did:firefly:org/"
+	FireFlyNodeDIDPrefix = "did:firefly:node/"
+	OrgTopic             = "ff_organizations"
+)
+
+func (identity *Identity) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameFieldNoUUID(ctx, identity.Name, "name"); err != nil {
+		return err
+	}
+	if err = ValidateLength(ctx, identity.Description, "description", 4096); err != nil {
+		return err
+	}
+	if existing {
+		if identity.ID == nil {
+			return i18n.NewError(ctx, i18n.MsgNilID)
+		}
+	}
+	return nil
+}
+
+func (identity *Identity) Topic() string {
+	// Topic is the hash of the DID to assure all nodes process first-come-first-serve consistently
+	var b Bytes32 = sha256.Sum256([]byte(identity.DID))
+	return b.String()
+}
+
+func (identity *Identity) SetBroadcastMessage(msgID *UUID) {
+	identity.Message = msgID
 }

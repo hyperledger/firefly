@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -29,5 +29,8 @@ func NewError(ctx context.Context, msg MessageKey, inserts ...interface{}) error
 
 // WrapError wraps an error
 func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...interface{}) error {
+	if err == nil {
+		return NewError(ctx, msg, inserts...)
+	}
 	return errors.Wrap(err, SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
 }

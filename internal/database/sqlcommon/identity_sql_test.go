@@ -190,7 +190,7 @@ func TestGetIdentityByNameSelectFail(t *testing.T) {
 func TestGetIdentityByIdentitySelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetIdentityByDID(context.Background(), "ns1", "did:firefly:org/org1")
+	_, err := s.GetIdentityByDID(context.Background(), "did:firefly:org/org1")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -252,7 +252,7 @@ type iIdentitiesCollection interface {
 	UpdateIdentity(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetIdentityByDID - Get a identity by DID
-	GetIdentityByDID(ctx context.Context, namespace, did string) (org *fftypes.Identity, err error)
+	GetIdentityByDID(ctx context.Context, did string) (org *fftypes.Identity, err error)
 
 	// GetIdentityByName - Get a identity by name
 	GetIdentityByName(ctx context.Context, iType fftypes.IdentityType, namespace, name string) (org *fftypes.Identity, err error)
@@ -272,7 +272,7 @@ type iVerifiersCollection interface {
 	UpdateVerifier(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetVerifierByValue - Get a verifier by name
-	GetVerifierByValue(ctx context.Context, iType fftypes.VerifierType, namespace, value string) (org *fftypes.Verifier, err error)
+	GetVerifierByValue(ctx context.Context, vType fftypes.VerifierType, namespace, value string) (org *fftypes.Verifier, err error)
 
 	// GetVerifierByID - Get a verifier by ID
 	GetVerifierByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Verifier, err error)

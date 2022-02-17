@@ -169,6 +169,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())
+	assert.Equal(t, fftypes.VerifierTypeMSPIdentity, e.VerifierType())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)

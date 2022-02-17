@@ -177,8 +177,8 @@ func (s *SQLCommon) GetIdentityByName(ctx context.Context, iType fftypes.Identit
 	return s.getIdentityPred(ctx, name, sq.Eq{"itype": iType, "namespace": namespace, "name": name})
 }
 
-func (s *SQLCommon) GetIdentityByDID(ctx context.Context, namespace string, did string) (identity *fftypes.Identity, err error) {
-	return s.getIdentityPred(ctx, did, sq.Eq{"namespace": namespace, "did": did})
+func (s *SQLCommon) GetIdentityByDID(ctx context.Context, did string) (identity *fftypes.Identity, err error) {
+	return s.getIdentityPred(ctx, did, sq.Eq{"did": did})
 }
 
 func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error) {

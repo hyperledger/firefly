@@ -152,6 +152,10 @@ func (f *Fabric) Name() string {
 	return "fabric"
 }
 
+func (f *Fabric) VerifierType() fftypes.VerifierType {
+	return fftypes.VerifierTypeMSPIdentity
+}
+
 func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	fabconnectConf := prefix.SubPrefix(FabconnectConfigKey)

@@ -128,6 +128,10 @@ func (e *Ethereum) Name() string {
 	return "ethereum"
 }
 
+func (e *Ethereum) VerifierType() fftypes.VerifierType {
+	return fftypes.VerifierTypeEthAddress
+}
+
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)

@@ -164,20 +164,20 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	return r0, r1
 }
 
-// ResolveSigningKey provides a mock function with given fields: ctx, signingKey
-func (_m *Plugin) ResolveSigningKey(ctx context.Context, signingKey string) (string, error) {
-	ret := _m.Called(ctx, signingKey)
+// ResolveSigningKey provides a mock function with given fields: ctx, keyRef
+func (_m *Plugin) ResolveSigningKey(ctx context.Context, keyRef string) (string, error) {
+	ret := _m.Called(ctx, keyRef)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, signingKey)
+		r0 = rf(ctx, keyRef)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, signingKey)
+		r1 = rf(ctx, keyRef)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -208,6 +208,20 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 		r0 = rf(ctx, operationID, ledgerID, signingKey, batch)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// VerifierType provides a mock function with given fields:
+func (_m *Plugin) VerifierType() fftypes.FFEnum {
+	ret := _m.Called()
+
+	var r0 fftypes.FFEnum
+	if rf, ok := ret.Get(0).(func() fftypes.FFEnum); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(fftypes.FFEnum)
 	}
 
 	return r0

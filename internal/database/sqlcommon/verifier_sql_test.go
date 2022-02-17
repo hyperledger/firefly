@@ -40,10 +40,12 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	verifierID := fftypes.NewUUID()
 	verifier := &fftypes.Verifier{
 		ID:        verifierID,
-		Type:      fftypes.VerifierTypeEthAddress,
 		Identity:  fftypes.NewUUID(),
 		Namespace: "ns1",
-		Value:     "0x12345",
+		VerifierRef: fftypes.VerifierRef{
+			Type:  fftypes.VerifierTypeEthAddress,
+			Value: "0x12345",
+		},
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionVerifiers, fftypes.ChangeEventTypeCreated, "ns1", verifierID).Return()
@@ -64,11 +66,13 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	verifierUpdated := &fftypes.Verifier{
 		ID:        verifierID,
-		Type:      fftypes.VerifierTypeFFDXPeerID,
 		Identity:  fftypes.NewUUID(),
 		Namespace: "ns2",
-		Value:     "peer1",
-		Created:   verifier.Created,
+		VerifierRef: fftypes.VerifierRef{
+			Type:  fftypes.VerifierTypeFFDXPeerID,
+			Value: "peer1",
+		},
+		Created: verifier.Created,
 	}
 	err = s.UpsertVerifier(context.Background(), verifierUpdated, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)

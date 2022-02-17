@@ -33,13 +33,13 @@ import (
 )
 
 type Manager interface {
-	ResolveInputIdentity(ctx context.Context, identity *fftypes.IdentityRef) (err error)
-	ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error)
-	ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error)
-	ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error)
-	GetLocalOrgKey(ctx context.Context) (string, error)
-	OrgDID(org *fftypes.Organization) string
-	GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error)
+	ResolveInputSigningIdentity(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error)
+	ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error)
+	ResolveNodeOwnerSigningIdentity(ctx context.Context, msgIdentityRef *fftypes.IdentityRef) (err error)
+	ResolveBlockchainKey(ctx context.Context, inputKey string) (verifier *fftypes.VerifierRef, err error)
+	FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.IdentityType, namespace string, verifier *fftypes.VerifierRef) (identity *fftypes.Identity, err error)
+	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
+	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
 }
 
 type identityManager struct {
@@ -47,12 +47,12 @@ type identityManager struct {
 	plugin     identity.Plugin
 	blockchain blockchain.Plugin
 
-	localOrgSigningKey string
-	localOrgDID        string
-	identityCacheTTL   time.Duration
-	identityCache      *ccache.Cache
-	signingKeyCacheTTL time.Duration
-	signingKeyCache    *ccache.Cache
+	nodeOwnerBlockchainKey *fftypes.VerifierRef
+	nodeOwningOrgIdentity  *fftypes.Identity
+	identityCacheTTL       time.Duration
+	identityCache          *ccache.Cache
+	signingKeyCacheTTL     time.Duration
+	signingKeyCache        *ccache.Cache
 }
 
 func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin) (Manager, error) {
@@ -77,148 +77,245 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 	return im, nil
 }
 
-func (im *identityManager) GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error) {
-	orgDID, err := im.ResolveLocalOrgDID(ctx)
+func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error) {
+	return im.resolveInputSigningIdentity(ctx, namespace, msgIdentityRef, false)
+}
+
+func (im *identityManager) ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error) {
+	return im.resolveInputSigningIdentity(ctx, namespace, msgIdentityRef, true)
+}
+
+// ResolveInputIdentity takes in blockchain signing input information from an API call,
+// and resolves the final information that should be written in the message etc..
+func (im *identityManager) resolveInputSigningIdentity(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef, rootRegistration bool) (err error) {
+	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", msgIdentityRef.Key, msgIdentityRef.Author)
+
+	var verifier *fftypes.VerifierRef
+	switch {
+	case msgIdentityRef.Author == "" && msgIdentityRef.Key == "":
+		err = im.ResolveNodeOwnerSigningIdentity(ctx, msgIdentityRef)
+		if err != nil {
+			return err
+		}
+	case msgIdentityRef.Key != "":
+		if verifier, err = im.ResolveBlockchainKey(ctx, msgIdentityRef.Key); err != nil {
+			return err
+		}
+		msgIdentityRef.Key = verifier.Value
+		// Fill in or verify the author DID based on the verfier, if it's been registered
+		identity, err := im.FindIdentityForVerifier(ctx, []fftypes.IdentityType{
+			fftypes.IdentityTypeOrg,
+			fftypes.IdentityTypeCustom,
+		}, namespace, verifier)
+		if err != nil {
+			return err
+		}
+		switch {
+		case identity != nil:
+			if msgIdentityRef.Author == identity.Name || msgIdentityRef.Author == "" {
+				// Switch to full DID automatically
+				msgIdentityRef.Author = identity.DID
+			}
+			if msgIdentityRef.Author != identity.DID {
+				return i18n.NewError(ctx, i18n.MsgAuthorRegistrationMismatch, verifier.Value, msgIdentityRef.Author, identity.DID)
+			}
+		case msgIdentityRef.Author != "":
+			if rootRegistration {
+				if namespace != fftypes.SystemNamespace || !strings.HasPrefix(msgIdentityRef.Author, fftypes.FireFlyOrgDIDPrefix) {
+					return i18n.NewError(ctx, i18n.MsgAuthorIncorrectForRootReg, namespace, msgIdentityRef.Author)
+				}
+			} else {
+				identity, err := im.cachedIdentityLookupByDID(ctx, msgIdentityRef.Author)
+				if err != nil {
+					return err
+				}
+				msgIdentityRef.Author = identity.DID
+			}
+		default:
+			return i18n.NewError(ctx, i18n.MsgAuthorMissingForKey, msgIdentityRef.Key)
+		}
+	case msgIdentityRef.Author != "":
+		// Author must be non-empty (see above), so we want to find that identity and then
+		// use the first blockchain key that's associated with it.
+		identity, err := im.cachedIdentityLookupByDID(ctx, msgIdentityRef.Author)
+		if err != nil {
+			return err
+		}
+		msgIdentityRef.Author = identity.DID
+		verifier, err = im.firstVerifierForIdentity(ctx, im.blockchain.VerifierType(), identity)
+		if err != nil {
+			return err
+		}
+		msgIdentityRef.Key = verifier.Value
+	}
+
+	log.L(ctx).Debugf("Resolved identity: key='%s' author='%s'", msgIdentityRef.Key, msgIdentityRef.Author)
+	return nil
+}
+
+// firstVerifierForIdentity does a lookup of the first verifier of a given type (such as a blockchain signing key) registered to an identity,
+// as a convenience to allow you to only specify the org name/DID when sending a message
+func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType fftypes.VerifierType, identity *fftypes.Identity) (*fftypes.VerifierRef, error) {
+	fb := database.VerifierQueryFactory.NewFilterLimit(ctx, 1)
+	filter := fb.And(
+		fb.Eq("type", vType),
+		fb.Eq("identity", identity.ID),
+	)
+	verifiers, _, err := im.database.GetVerifiers(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	return im.cachedOrgLookupByAuthor(ctx, orgDID)
+	if len(verifiers) == 0 {
+		return nil, i18n.NewError(ctx, i18n.MsgNoVerifierForIdentity, vType, identity.DID)
+	}
+	return &verifiers[0].VerifierRef, nil
 }
 
-func (im *identityManager) OrgDID(org *fftypes.Organization) string {
-	return org.GetDID()
-}
-
-// ResolveInputIdentity takes in identity input information from an API call, or configuration load, and resolves
-// the combination
-func (im *identityManager) ResolveInputIdentity(ctx context.Context, identity *fftypes.IdentityRef) (err error) {
-	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", identity.Key, identity.Author)
-
-	identity.Key, err = im.ResolveSigningKey(ctx, identity.Key)
+// ResolveNodeOwnerSigningIdentity add the node owner identity into a message
+func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, msgIdentityRef *fftypes.IdentityRef) (err error) {
+	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
 	if err != nil {
 		return err
 	}
-
-	// Resolve the identity
-	if err = im.resolveInputAuthor(ctx, identity); err != nil {
+	identity, err := im.GetNodeOwnerOrg(ctx)
+	if err != nil {
 		return err
 	}
-
-	log.L(ctx).Debugf("Resolved identity: key='%s' author='%s'", identity.Key, identity.Author)
-	return
+	msgIdentityRef.Author = identity.DID
+	msgIdentityRef.Key = verifierRef.Value
+	return nil
 }
 
-func (im *identityManager) ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error) {
-
-	signingKey, err = im.ResolveSigningKey(ctx, signingKey)
-	if err != nil {
-		return "", err
+// GetNodeOwnerBlockchainKey gets the blockchain key of the node owner, from the configuration
+func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error) {
+	if im.nodeOwnerBlockchainKey != nil {
+		return im.nodeOwnerBlockchainKey, nil
 	}
 
-	// TODO: Consider other ways identity could be resolved
-	org, err := im.cachedOrgLookupBySigningKey(ctx, signingKey)
-	if err != nil {
-		return "", err
-	}
-
-	return im.OrgDID(org), nil
-
-}
-
-func (im *identityManager) getConfigOrgKey() string {
 	orgKey := config.GetString(config.OrgKey)
 	if orgKey == "" {
 		orgKey = config.GetString(config.OrgIdentityDeprecated)
-	}
-	return orgKey
-}
-
-func (im *identityManager) GetLocalOrgKey(ctx context.Context) (string, error) {
-	if im.localOrgSigningKey != "" {
-		return im.localOrgSigningKey, nil
-	}
-	resolvedSigningKey, err := im.blockchain.ResolveSigningKey(ctx, im.getConfigOrgKey())
-	if err != nil {
-		return "", err
-	}
-	im.localOrgSigningKey = resolvedSigningKey
-	return im.localOrgSigningKey, nil
-}
-
-func (im *identityManager) ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error) {
-	if im.localOrgDID != "" {
-		return im.localOrgDID, nil
-	}
-	orgKey := im.getConfigOrgKey()
-
-	im.localOrgDID, err = im.ResolveSigningKeyIdentity(ctx, orgKey)
-	if err != nil {
-		return "", i18n.WrapError(ctx, err, i18n.MsgLocalOrgLookupFailed, orgKey)
-	}
-	if im.localOrgDID == "" {
-		return "", i18n.NewError(ctx, i18n.MsgLocalOrgLookupFailed, orgKey)
-	}
-	return im.localOrgDID, err
-}
-
-func (im *identityManager) ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error) {
-	// Resolve the signing key
-	if inputKey != "" {
-		if cached := im.signingKeyCache.Get(inputKey); cached != nil {
-			cached.Extend(im.identityCacheTTL)
-			outputKey = cached.Value().(string)
-		} else {
-			outputKey, err = im.blockchain.ResolveSigningKey(ctx, inputKey)
-			if err != nil {
-				return "", err
-			}
-			im.signingKeyCache.Set(inputKey, outputKey, im.identityCacheTTL)
+		if orgKey != "" {
+			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", config.OrgIdentityDeprecated, config.OrgKey)
 		}
-	} else {
-		return im.localOrgSigningKey, nil
 	}
-	return
+	if orgKey == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgNodeMissingBlockchainKey)
+	}
+
+	verifier, err := im.ResolveBlockchainKey(ctx, orgKey)
+	if err != nil {
+		return nil, err
+	}
+	im.nodeOwnerBlockchainKey = verifier
+	return im.nodeOwnerBlockchainKey, nil
 }
 
-func (im *identityManager) cachedIdentityLookupBySigningKey(ctx context.Context, iType fftypes.VerifierType, namespace, signingKey string) (identity *fftypes.Identity, err error) {
-	cacheKey := fmt.Sprintf("key=%s|%s|%s", iType, namespace, signingKey)
+// ResolveBlockchainKey does a cached lookup of the fully qualified key, associated with a key reference string
+func (im *identityManager) ResolveBlockchainKey(ctx context.Context, inputKey string) (verifier *fftypes.VerifierRef, err error) {
+	if inputKey == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgBlockchainKeyNotSet)
+	}
+	if cached := im.signingKeyCache.Get(inputKey); cached != nil {
+		cached.Extend(im.identityCacheTTL)
+		return cached.Value().(*fftypes.VerifierRef), nil
+	}
+	keyString, err := im.blockchain.ResolveSigningKey(ctx, inputKey)
+	if err != nil {
+		return nil, err
+	}
+	verifier = &fftypes.VerifierRef{
+		Type:  im.blockchain.VerifierType(),
+		Value: keyString,
+	}
+	im.signingKeyCache.Set(inputKey, verifier, im.identityCacheTTL)
+	return verifier, nil
+}
+
+// FindIdentityForVerifier is a reverse lookup function to look up an identity registered as owner of the specified verifier.
+// Each of the supplied identity types will be checked in order. Returns nil if not found
+func (im *identityManager) FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.IdentityType, namespace string, verifier *fftypes.VerifierRef) (identity *fftypes.Identity, err error) {
+	for _, iType := range iTypes {
+		verifierNS := namespace
+		if iType != fftypes.IdentityTypeCustom {
+			// Non-custom identity types are always in the system namespace
+			verifierNS = fftypes.SystemNamespace
+		}
+		identity, err = im.cachedIdentityLookupByVerifierRef(ctx, verifierNS, verifier)
+		if err != nil || identity != nil {
+			return identity, err
+		}
+	}
+	return nil, nil
+}
+
+// GetNodeOwnerOrg returns the identity of the organization that owns the node, if fully registered
+func (im *identityManager) GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error) {
+	if im.nodeOwningOrgIdentity != nil {
+		return im.nodeOwningOrgIdentity, nil
+	}
+	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
+	if err != nil {
+		return nil, err
+	}
+	orgName := config.GetString(config.OrgName)
+	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, verifierRef)
+	if err != nil || identity == nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
+	}
+	// Confirm that the specified blockchain key is associated with the correct org
+	if identity.Type != fftypes.IdentityTypeOrg || identity.Name != orgName {
+		return nil, i18n.NewError(ctx, i18n.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
+	}
+	im.nodeOwningOrgIdentity = identity
+	return im.nodeOwningOrgIdentity, nil
+}
+
+func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context, namespace string, verifierRef *fftypes.VerifierRef) (*fftypes.Identity, error) {
+	cacheKey := fmt.Sprintf("key=%s|%s|%s", namespace, verifierRef.Type, verifierRef.Value)
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
-		identity = cached.Value().(*fftypes.Identity)
-	} else {
-		verifier, err := im.database.GetVerifierByValue(ctx, iType, namespace, signingKey)
-		if err != nil || verifier == nil {
-			return nil, err
-		}
-		identity, err = im.database.GetIdentityByID(ctx, verifier.Identity)
-		if err != nil || identity == nil {
-			return nil, err
-		}
-		// Cache the result
-		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+		return cached.Value().(*fftypes.Identity), nil
 	}
+	verifier, err := im.database.GetVerifierByValue(ctx, verifierRef.Type, namespace, verifierRef.Value)
+	if err != nil || verifier == nil {
+		return nil, err
+	}
+	identity, err := im.database.GetIdentityByID(ctx, verifier.Identity)
+	if err != nil {
+		return nil, err
+	}
+	if identity == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgEmptyMemberIdentity, verifier.Identity)
+	}
+	// Cache the result
+	im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	return identity, nil
 }
 
-func (im *identityManager) cachedIdentityLookupByDID(ctx context.Context, namespace, did string) (identity *fftypes.Identity, err error) {
+func (im *identityManager) cachedIdentityLookupByDID(ctx context.Context, did string) (identity *fftypes.Identity, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
-	cacheKey := fmt.Sprintf("did=%s|%s|%s", iType, namespace, did)
+	cacheKey := fmt.Sprintf("did=%s", did)
+	defer func() {
+		log.L(ctx).Debugf("Resolved DID '%s' to identity: %v (err=%v)", did, identity, err)
+	}()
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
 		identity = cached.Value().(*fftypes.Identity)
 	} else {
-		if !strings.HasPrefix(did, fftypes.DIDPrefix) {
+		if strings.HasPrefix(did, fftypes.DIDPrefix) {
 			if !strings.HasPrefix(did, fftypes.FireFlyDIDPrefix) {
-				return nil, i18n.NewError(ctx, i18n.MsgDIDResovlerUnknown)
+				return nil, i18n.NewError(ctx, i18n.MsgDIDResovlerUnknown, did)
 			}
 			// Look up by the full DID
-			if identity, err = im.database.GetIdentityByDID(ctx, namespace, did); err != nil {
+			if identity, err = im.database.GetIdentityByDID(ctx, did); err != nil {
 				return nil, err
 			}
 			if identity == nil && strings.HasPrefix(did, fftypes.FireFlyOrgDIDPrefix) {
 				// We allow the org UUID to be used to resolve organization DIDs as an alias to the name
-				// This is historical, for when we first introduced Organization DIDs
-				orgUUID, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(namespace, fftypes.FireFlyOrgDIDPrefix))
+				// This is historical, for when we first introduced Organization DIDs.
+				// An error parsing it as a UUID is not interesting -
+				orgUUID, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(did, fftypes.FireFlyOrgDIDPrefix))
 				if err == nil {
 					if identity, err = im.database.GetIdentityByID(ctx, orgUUID); err != nil {
 						return nil, err
@@ -239,43 +336,7 @@ func (im *identityManager) cachedIdentityLookupByDID(ctx context.Context, namesp
 		}
 
 		// Cache the result
-		im.identityCache.Set(cacheKey, org, im.identityCacheTTL)
+		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}
-	return org, nil
-}
-
-func (im *identityManager) resolveInputAuthor(ctx context.Context, identity *fftypes.IdentityRef) (err error) {
-
-	var org *fftypes.Organization
-	if identity.Author == "" {
-		// We allow lookup of an org by signing key (this convenience mechanism is currently not cached)
-		if identity.Key != "" {
-			if org, err = im.database.GetOrganizationByIdentity(ctx, identity.Key); err != nil {
-				return err
-			}
-		}
-		if org == nil {
-			// Otherwise default to the org identity that owns this node, if no input author specified
-			identity.Author = config.GetString(config.OrgName)
-		}
-	}
-
-	if org == nil {
-		if org, err = im.cachedOrgLookupByAuthor(ctx, identity.Author); err != nil {
-			return err
-		}
-	}
-
-	// TODO: Organizations should be able to have multiple signing keys. See notes below about whether a level of
-	//       indirection is needed in front of orgs (likely it is).
-	if identity.Key == "" {
-		identity.Key = org.Identity
-	} else if org.Identity != identity.Key {
-		return i18n.NewError(ctx, i18n.MsgAuthorOrgSigningKeyMismatch, org.ID, identity.Key)
-	}
-
-	// We normalize the author to the DID
-	identity.Author = im.OrgDID(org)
-	return nil
-
+	return identity, nil
 }

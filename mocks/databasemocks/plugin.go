@@ -1101,13 +1101,13 @@ func (_m *Plugin) GetIdentities(ctx context.Context, filter database.Filter) ([]
 	return r0, r1, r2
 }
 
-// GetIdentityByDID provides a mock function with given fields: ctx, namespace, did
-func (_m *Plugin) GetIdentityByDID(ctx context.Context, namespace string, did string) (*fftypes.Identity, error) {
-	ret := _m.Called(ctx, namespace, did)
+// GetIdentityByDID provides a mock function with given fields: ctx, did
+func (_m *Plugin) GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, did)
 
 	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Identity); ok {
-		r0 = rf(ctx, namespace, did)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
+		r0 = rf(ctx, did)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Identity)
@@ -1115,8 +1115,8 @@ func (_m *Plugin) GetIdentityByDID(ctx context.Context, namespace string, did st
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, namespace, did)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, did)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2041,13 +2041,13 @@ func (_m *Plugin) GetVerifierByID(ctx context.Context, id *fftypes.UUID) (*fftyp
 	return r0, r1
 }
 
-// GetVerifierByValue provides a mock function with given fields: ctx, iType, namespace, value
-func (_m *Plugin) GetVerifierByValue(ctx context.Context, iType fftypes.FFEnum, namespace string, value string) (*fftypes.Verifier, error) {
-	ret := _m.Called(ctx, iType, namespace, value)
+// GetVerifierByValue provides a mock function with given fields: ctx, vType, namespace, value
+func (_m *Plugin) GetVerifierByValue(ctx context.Context, vType fftypes.FFEnum, namespace string, value string) (*fftypes.Verifier, error) {
+	ret := _m.Called(ctx, vType, namespace, value)
 
 	var r0 *fftypes.Verifier
 	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string, string) *fftypes.Verifier); ok {
-		r0 = rf(ctx, iType, namespace, value)
+		r0 = rf(ctx, vType, namespace, value)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Verifier)
@@ -2056,7 +2056,7 @@ func (_m *Plugin) GetVerifierByValue(ctx context.Context, iType fftypes.FFEnum, 
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string, string) error); ok {
-		r1 = rf(ctx, iType, namespace, value)
+		r1 = rf(ctx, vType, namespace, value)
 	} else {
 		r1 = ret.Error(1)
 	}
