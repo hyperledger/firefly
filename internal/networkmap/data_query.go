@@ -19,30 +19,51 @@ package networkmap
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) GetOrganizationByID(ctx context.Context, id string) (*fftypes.Organization, error) {
+func (nm *networkMap) GetOrganizationByID(ctx context.Context, id string) (*fftypes.Identity, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return nm.database.GetOrganizationByID(ctx, u)
+	o, err := nm.database.GetIdentityByID(ctx, u)
+	if err != nil || o == nil {
+		return nil, err
+	}
+	if o.Type != fftypes.IdentityTypeOrg {
+		log.L(ctx).Warnf("Identity '%s' (%s) is not an org identity", o.DID, o.ID)
+		return nil, nil
+	}
+	return o, nil
 }
 
-func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, *database.FilterResult, error) {
-	return nm.database.GetOrganizations(ctx, filter)
+func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
+	filter.Condition(filter.Builder().Eq("type", fftypes.IdentityTypeOrg))
+	filter.Condition(filter.Builder().Eq("namespace", fftypes.SystemNamespace))
+	return nm.database.GetIdentities(ctx, filter)
 }
 
-func (nm *networkMap) GetNodeByID(ctx context.Context, id string) (*fftypes.Node, error) {
+func (nm *networkMap) GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return nm.database.GetNodeByID(ctx, u)
+	n, err := nm.database.GetIdentityByID(ctx, u)
+	if err != nil || n == nil {
+		return nil, err
+	}
+	if n.Type != fftypes.IdentityTypeNode {
+		log.L(ctx).Warnf("Identity '%s' (%s) is not a node identity", n.DID, n.ID)
+		return nil, nil
+	}
+	return n, nil
 }
 
-func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, *database.FilterResult, error) {
-	return nm.database.GetNodes(ctx, filter)
+func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
+	filter.Condition(filter.Builder().Eq("type", fftypes.IdentityTypeNode))
+	filter.Condition(filter.Builder().Eq("namespace", fftypes.SystemNamespace))
+	return nm.database.GetIdentities(ctx, filter)
 }

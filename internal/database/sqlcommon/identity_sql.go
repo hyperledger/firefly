@@ -37,13 +37,17 @@ var (
 		"name",
 		"description",
 		"profile",
-		"message_id",
+		"messages_claim",
+		"messages_verification",
+		"messages_update",
 		"created",
 	}
 	identityFilterFieldMap = map[string]string{
-		"identity": "identity_id",
-		"type":     "itype",
-		"message":  "message_id",
+		"identity":              "identity_id",
+		"type":                  "itype",
+		"messages.claim":        "messages_claim",
+		"messages.verification": "messages_verification",
+		"messages.update":       "messages_update",
 	}
 )
 
@@ -57,7 +61,9 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 			Set("name", identity.Name).
 			Set("description", identity.Description).
 			Set("profile", identity.Profile).
-			Set("message_id", identity.Message).
+			Set("messages_claim", identity.Messages.Claim).
+			Set("messages_verification", identity.Messages.Verification).
+			Set("messages_update", identity.Messages.Update).
 			Where(sq.Eq{
 				"id": identity.ID,
 			}),
@@ -80,7 +86,9 @@ func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, id
 				identity.Name,
 				identity.Description,
 				identity.Profile,
-				identity.Message,
+				identity.Messages.Claim,
+				identity.Messages.Verification,
+				identity.Messages.Update,
 				identity.Created,
 			),
 		func() {
@@ -144,7 +152,9 @@ func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*fftypes
 		&identity.Name,
 		&identity.Description,
 		&identity.Profile,
-		&identity.Message,
+		&identity.Messages.Claim,
+		&identity.Messages.Verification,
+		&identity.Messages.Update,
 		&identity.Created,
 	)
 	if err != nil {

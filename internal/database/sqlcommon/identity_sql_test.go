@@ -39,9 +39,11 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 	// Create a new identity entry
 	identityID := fftypes.NewUUID()
 	identity := &fftypes.Identity{
-		ID:          identityID,
-		DID:         "did:firefly:/ns/ns1/1",
-		Message:     fftypes.NewUUID(),
+		ID:  identityID,
+		DID: "did:firefly:/ns/ns1/1",
+		Messages: fftypes.IdentityMessages{
+			Claim: fftypes.NewUUID(),
+		},
 		Parent:      fftypes.NewUUID(),
 		Type:        fftypes.IdentityTypeCustom,
 		Namespace:   "ns1",
@@ -67,9 +69,13 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 	// Update the identity (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	identityUpdated := &fftypes.Identity{
-		ID:          identityID,
-		DID:         "did:firefly:/nodes/2",
-		Message:     fftypes.NewUUID(),
+		ID:  identityID,
+		DID: "did:firefly:/nodes/2",
+		Messages: fftypes.IdentityMessages{
+			Claim:        fftypes.NewUUID(),
+			Verification: fftypes.NewUUID(),
+			Update:       fftypes.NewUUID(),
+		},
 		Parent:      fftypes.NewUUID(),
 		Type:        fftypes.IdentityTypeNode,
 		Namespace:   "ns2",
@@ -110,6 +116,9 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("did", identityUpdated.DID),
+		fb.Eq("messages.claim", identityUpdated.Messages.Claim),
+		fb.Eq("messages.verification", identityUpdated.Messages.Verification),
+		fb.Eq("messages.update", identityUpdated.Messages.Update),
 		fb.Eq("created", updateTime.String()),
 	)
 	identities, _, err := s.GetIdentities(ctx, filter)

@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,7 +50,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+	mdx.On("GetEndpointInfo", nm.ctx).Return(dataexchange.DXInfo{
 		Peer:     "peer1",
 		Endpoint: fftypes.JSONObject{"endpoint": "details"},
 	}, nil)
@@ -150,7 +151,7 @@ func TestRegisterNodeParentNotFound(t *testing.T) {
 	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+	mdx.On("GetEndpointInfo", nm.ctx).Return(dataexchange.DXInfo{
 		Peer:     "peer1",
 		Endpoint: fftypes.JSONObject{"endpoint": "details"},
 	}, nil)
@@ -173,7 +174,7 @@ func TestRegisterNodeParentBadNode(t *testing.T) {
 	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+	mdx.On("GetEndpointInfo", nm.ctx).Return(dataexchange.DXInfo{
 		Peer:     "peer1",
 		Endpoint: fftypes.JSONObject{"endpoint": "details"},
 	}, nil)
@@ -193,7 +194,7 @@ func TestRegisterNodeParentDXEndpointFail(t *testing.T) {
 	config.Set(config.NodeName, "node1")
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
+	mdx.On("GetEndpointInfo", nm.ctx).Return(dataexchange.DXInfo{
 		Peer:     "",
 		Endpoint: nil,
 	}, fmt.Errorf("pop"))

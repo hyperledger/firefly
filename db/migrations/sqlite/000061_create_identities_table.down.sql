@@ -44,7 +44,7 @@ INSERT INTO orgs (
   ) SELECT 
     i.id,
     COALESCE(pv.value, '') as parent,
-    i.message_id,
+    i.messages_claim,
     i.name,
     i.description,
     i.profile,
@@ -69,7 +69,7 @@ INSERT INTO nodes (
   ) SELECT 
     i.id,
     COALESCE(pv.value, '') as owner,
-    i.message_id,
+    i.messages_claim,
     i.name,
     i.description,
     i.profile,

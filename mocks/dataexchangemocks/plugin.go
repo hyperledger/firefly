@@ -22,11 +22,11 @@ type Plugin struct {
 }
 
 // AddPeer provides a mock function with given fields: ctx, peer
-func (_m *Plugin) AddPeer(ctx context.Context, peer fftypes.DXInfo) error {
+func (_m *Plugin) AddPeer(ctx context.Context, peer dataexchange.DXInfo) error {
 	ret := _m.Called(ctx, peer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.DXInfo) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, dataexchange.DXInfo) error); ok {
 		r0 = rf(ctx, peer)
 	} else {
 		r0 = ret.Error(0)
@@ -105,14 +105,14 @@ func (_m *Plugin) DownloadBLOB(ctx context.Context, payloadRef string) (io.ReadC
 }
 
 // GetEndpointInfo provides a mock function with given fields: ctx
-func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.DXInfo, error) {
+func (_m *Plugin) GetEndpointInfo(ctx context.Context) (dataexchange.DXInfo, error) {
 	ret := _m.Called(ctx)
 
-	var r0 fftypes.DXInfo
-	if rf, ok := ret.Get(0).(func(context.Context) fftypes.DXInfo); ok {
+	var r0 dataexchange.DXInfo
+	if rf, ok := ret.Get(0).(func(context.Context) dataexchange.DXInfo); ok {
 		r0 = rf(ctx)
 	} else {
-		r0 = ret.Get(0).(fftypes.DXInfo)
+		r0 = ret.Get(0).(dataexchange.DXInfo)
 	}
 
 	var r1 error
@@ -126,11 +126,11 @@ func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.DXInfo, error) {
 }
 
 // Init provides a mock function with given fields: ctx, prefix, nodes, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.DXInfo, callbacks dataexchange.Callbacks) error {
+func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, nodes []dataexchange.DXInfo, callbacks dataexchange.Callbacks) error {
 	ret := _m.Called(ctx, prefix, nodes, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, []fftypes.DXInfo, dataexchange.Callbacks) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, []dataexchange.DXInfo, dataexchange.Callbacks) error); ok {
 		r0 = rf(ctx, prefix, nodes, callbacks)
 	} else {
 		r0 = ret.Error(0)

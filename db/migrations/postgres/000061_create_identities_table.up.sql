@@ -1,17 +1,19 @@
 BEGIN;
 
 CREATE TABLE identities (
-  seq            SERIAL          PRIMARY KEY,
-  id             UUID            NOT NULL,
-  did            VARCHAR(256)    NOT NULL,
-  parent         UUID,
-  message_id     UUID            NOT NULL,
-  itype          VARCHAR(64)     NOT NULL,
-  namespace      VARCHAR(64)     NOT NULL,
-  name           VARCHAR(64)     NOT NULL,
-  description    VARCHAR(4096)   NOT NULL,
-  profile        TEXT,
-  created        BIGINT          NOT NULL
+  seq                   SERIAL          PRIMARY KEY,
+  id                    UUID            NOT NULL,
+  did                   VARCHAR(256)    NOT NULL,
+  parent                UUID,
+  messages_claim        UUID            NOT NULL,
+  messages_verification UUID,
+  messages_update       UUID,
+  itype                 VARCHAR(64)     NOT NULL,
+  namespace             VARCHAR(64)     NOT NULL,
+  name                  VARCHAR(64)     NOT NULL,
+  description           VARCHAR(4096)   NOT NULL,
+  profile               TEXT,
+  created               BIGINT          NOT NULL
 );
 
 CREATE UNIQUE INDEX identities_id ON identities(id);
@@ -36,7 +38,7 @@ INSERT INTO identities (
     id,
     did,
     parent,
-    message_id,
+    messages_claim,
     itype,
     namespace,
     name,
@@ -61,7 +63,7 @@ INSERT INTO identities (
     id,
     did,
     parent,
-    message_id,
+    messages_claim,
     itype,
     namespace,
     name,

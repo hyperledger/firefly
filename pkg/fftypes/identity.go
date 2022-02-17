@@ -18,7 +18,6 @@ package fftypes
 
 import (
 	"context"
-	"crypto/sha256"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 )
@@ -35,18 +34,24 @@ var (
 	IdentityTypeCustom IdentityType = ffEnum("identitytype", "custom")
 )
 
+type IdentityMessages struct {
+	Claim        *UUID `json:"claim"`
+	Verification *UUID `json:"verification"`
+	Update       *UUID `json:"update"`
+}
+
 // Identity is the persisted structure backing all identities, including orgs, nodes and custom identities
 type Identity struct {
-	ID          *UUID        `json:"id"`
-	DID         string       `json:"did"`
-	Type        IdentityType `json:"type" ffenum:"identitytype"`
-	Parent      *UUID        `json:"parent,omitempty"`
-	Namespace   string       `json:"namespace"`
-	Name        string       `json:"name,omitempty"`
-	Description string       `json:"description,omitempty"`
-	Profile     JSONObject   `json:"profile,omitempty"`
-	Message     *UUID        `json:"message,omitempty"`
-	Created     *FFTime      `json:"created,omitempty"`
+	ID          *UUID            `json:"id"`
+	DID         string           `json:"did"`
+	Type        IdentityType     `json:"type" ffenum:"identitytype"`
+	Parent      *UUID            `json:"parent,omitempty"`
+	Namespace   string           `json:"namespace"`
+	Name        string           `json:"name,omitempty"`
+	Description string           `json:"description,omitempty"`
+	Profile     JSONObject       `json:"profile,omitempty"`
+	Messages    IdentityMessages `json:"messages,omitempty"`
+	Created     *FFTime          `json:"created,omitempty"`
 }
 
 // IdentityRef is the nested structure representing an identity, that might comprise a resolvable
@@ -77,14 +82,4 @@ func (identity *Identity) Validate(ctx context.Context, existing bool) (err erro
 		}
 	}
 	return nil
-}
-
-func (identity *Identity) Topic() string {
-	// Topic is the hash of the DID to assure all nodes process first-come-first-serve consistently
-	var b Bytes32 = sha256.Sum256([]byte(identity.DID))
-	return b.String()
-}
-
-func (identity *Identity) SetBroadcastMessage(msgID *UUID) {
-	identity.Message = msgID
 }

@@ -788,16 +788,18 @@ var PinQueryFactory = &queryFields{
 
 // IdentityQueryFactory filter fields for identities
 var IdentityQueryFactory = &queryFields{
-	"id":          &UUIDField{},
-	"did":         &StringField{},
-	"parent":      &UUIDField{},
-	"message":     &UUIDField{},
-	"type":        &StringField{},
-	"namespace":   &StringField{},
-	"name":        &StringField{},
-	"description": &StringField{},
-	"profile":     &JSONField{},
-	"created":     &TimeField{},
+	"id":                    &UUIDField{},
+	"did":                   &StringField{},
+	"parent":                &UUIDField{},
+	"messages.claim":        &UUIDField{},
+	"messages.verification": &UUIDField{},
+	"messages.update":       &UUIDField{},
+	"type":                  &StringField{},
+	"namespace":             &StringField{},
+	"name":                  &StringField{},
+	"description":           &StringField{},
+	"profile":               &JSONField{},
+	"created":               &TimeField{},
 }
 
 // VerifierQueryFactory filter fields for identities

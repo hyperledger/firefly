@@ -44,8 +44,4 @@ func TestIdentityValidation(t *testing.T) {
 
 	assert.Regexp(t, "FF10203", identity.Validate(context.Background(), true))
 
-	var def Definition = identity
-	assert.Equal(t, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", def.Topic())
-	def.SetBroadcastMessage(NewUUID())
-	assert.NotNil(t, identity.Message)
 }
