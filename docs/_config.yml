@@ -1,5 +1,6 @@
+repository: hyperledger/firefly
 remote_theme: pmarsceill/just-the-docs
-logo: "firefly_logo_36h.png"
+logo: "images/hyperledger-firefly_color.svg"
 title: Hyperledger FireFly Docs
 baseurl: /firefly
 aux_links:
