@@ -2,5 +2,4 @@
 **/coverage
 **/.nyc_output
 smart_contracts/ethereum/solidity_firefly/build
-.git
 firefly

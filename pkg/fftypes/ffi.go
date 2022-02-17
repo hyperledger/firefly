@@ -41,9 +41,9 @@ type FFI struct {
 	ID          *UUID        `json:"id,omitempty"`
 	Message     *UUID        `json:"message,omitempty"`
 	Namespace   string       `json:"namespace,omitempty"`
-	Name        string       `json:"name,omitempty"`
+	Name        string       `json:"name"`
 	Description string       `json:"description"`
-	Version     string       `json:"version,omitempty"`
+	Version     string       `json:"version"`
 	Methods     []*FFIMethod `json:"methods,omitempty"`
 	Events      []*FFIEvent  `json:"events,omitempty"`
 }
@@ -79,6 +79,14 @@ type FFIParam struct {
 }
 
 type FFIParams []*FFIParam
+
+type FFIGenerationRequest struct {
+	Namespace   string   `json:"namespace,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Version     string   `json:"version"`
+	Input       *JSONAny `json:"input"`
+}
 
 func (f *FFI) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, f.Namespace, "namespace"); err != nil {

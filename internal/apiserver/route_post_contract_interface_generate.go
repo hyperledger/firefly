@@ -25,25 +25,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContractInvoke = &oapispec.Route{
-	Name:   "postContractInvoke",
-	Path:   "namespaces/{ns}/contracts/invoke",
+var postContractInterfaceGenerate = &oapispec.Route{
+	Name:   "postGenerateContractInterface",
+	Path:   "namespaces/{ns}/contracts/interfaces/generate",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
-	},
+	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
-	JSONInputMask:   []string{"Type"},
-	JSONOutputValue: func() interface{} { return &fftypes.ContractCallResponse{} },
+	JSONInputValue:  func() interface{} { return &fftypes.FFIGenerationRequest{} },
+	JSONInputMask:   nil,
+	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		req := r.Input.(*fftypes.ContractCallRequest)
-		req.Type = fftypes.CallTypeInvoke
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req)
+		generationRequest := r.Input.(*fftypes.FFIGenerationRequest)
+		return getOr(r.Ctx).Contracts().GenerateFFI(r.Ctx, r.PP["ns"], generationRequest)
 	},
 }
