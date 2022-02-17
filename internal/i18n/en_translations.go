@@ -265,4 +265,5 @@ var (
 	MsgDBLockFailed                 = ffm("FF10345", "Database lock failed")
 	MsgFFIGenerationFailed          = ffm("FF10346", "Error generating smart contract interface: %s", 400)
 	MsgFFIGenerationUnsupported     = ffm("FF10347", "Smart contract interface generation is not supported by this blockchain plugin", 400)
+	MsgBlobHashMismatch             = ffm("FF10348", "Blob hash mismatch sent=%s received=%s", 400)
 )

@@ -187,6 +187,9 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 				d.Namespace,
 				txid,
 				fftypes.OpTypeDataExchangeBlobSend)
+			op.Input = fftypes.JSONObject{
+				"hash": d.Blob.Hash,
+			}
 			if err = pm.database.InsertOperation(ctx, op); err != nil {
 				return err
 			}
