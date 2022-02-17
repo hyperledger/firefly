@@ -37,14 +37,14 @@ type batchSendData struct {
 func addTransferBlobInputs(op *fftypes.Operation, nodeID *fftypes.UUID, blobHash *fftypes.Bytes32) {
 	op.Input = fftypes.JSONObject{
 		"node": nodeID.String(),
-		"blob": blobHash.String(),
+		"hash": blobHash.String(),
 	}
 }
 
 func retrieveTransferBlobInputs(ctx context.Context, op *fftypes.Operation) (nodeID *fftypes.UUID, blobHash *fftypes.Bytes32, err error) {
 	nodeID, err = fftypes.ParseUUID(ctx, op.Input.GetString("node"))
 	if err == nil {
-		blobHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("blob"))
+		blobHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("hash"))
 	}
 	return nodeID, blobHash, err
 }

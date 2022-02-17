@@ -74,7 +74,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 	op := &fftypes.Operation{}
 
 	_, err := om.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10348", err)
+	assert.Regexp(t, "FF10349", err)
 }
 
 func TestPrepareOperationSuccess(t *testing.T) {
@@ -98,7 +98,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	op := &fftypes.PreparedOperation{}
 
 	err := om.RunOperation(context.Background(), op)
-	assert.Regexp(t, "FF10348", err)
+	assert.Regexp(t, "FF10349", err)
 }
 
 func TestRunOperationSuccess(t *testing.T) {
