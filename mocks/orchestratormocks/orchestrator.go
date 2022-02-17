@@ -26,6 +26,8 @@ import (
 
 	networkmap "github.com/hyperledger/firefly/internal/networkmap"
 
+	operations "github.com/hyperledger/firefly/internal/operations"
+
 	privatemessaging "github.com/hyperledger/firefly/internal/privatemessaging"
 )
 
@@ -1232,6 +1234,22 @@ func (_m *Orchestrator) NetworkMap() networkmap.Manager {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(networkmap.Manager)
+		}
+	}
+
+	return r0
+}
+
+// Operations provides a mock function with given fields:
+func (_m *Orchestrator) Operations() operations.Manager {
+	ret := _m.Called()
+
+	var r0 operations.Manager
+	if rf, ok := ret.Get(0).(func() operations.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(operations.Manager)
 		}
 	}
 

@@ -667,6 +667,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
+	assert.Equal(t, or.mom, or.Operations())
 }
 
 func TestInitDataExchangeGetNodesFail(t *testing.T) {

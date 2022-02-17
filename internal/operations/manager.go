@@ -35,6 +35,7 @@ type Manager interface {
 	RegisterHandler(handler OperationHandler, ops []fftypes.OpType)
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) error
+	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 }
 
 type operationsManager struct {
@@ -83,6 +84,40 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 		om.writeOperationSuccess(ctx, op.ID)
 	}
 	return nil
+}
+
+func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
+	var po *fftypes.PreparedOperation
+	err = om.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		op, err = om.database.GetOperationByID(ctx, opID)
+		if err != nil {
+			return err
+		}
+
+		// Create a copy of the operation with a new ID
+		op.ID = fftypes.NewUUID()
+		op.Status = fftypes.OpStatusPending
+		op.Output = nil
+		op.Created = fftypes.Now()
+		op.Updated = op.Created
+		if err = om.database.InsertOperation(ctx, op); err != nil {
+			return err
+		}
+
+		// Update the old operation to point to the new one
+		update := database.OperationQueryFactory.NewUpdate(ctx).Set("retry", op.ID)
+		if err = om.database.UpdateOperation(ctx, opID, update); err != nil {
+			return err
+		}
+
+		po, err = om.PrepareOperation(ctx, op)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return op, om.RunOperation(ctx, po)
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID) {

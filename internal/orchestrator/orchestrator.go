@@ -75,6 +75,7 @@ type Orchestrator interface {
 	Contracts() contracts.Manager
 	Metrics() metrics.Manager
 	BatchManager() batch.Manager
+	Operations() operations.Manager
 	IsPreInit() bool
 
 	// Status
@@ -280,6 +281,10 @@ func (or *orchestrator) Contracts() contracts.Manager {
 
 func (or *orchestrator) Metrics() metrics.Manager {
 	return or.metrics
+}
+
+func (or *orchestrator) Operations() operations.Manager {
+	return or.operations
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {

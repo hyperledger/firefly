@@ -84,6 +84,7 @@ type Operation struct {
 	Output      JSONObject `json:"output,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Updated     *FFTime    `json:"updated,omitempty"`
+	Retry       *UUID      `json:"retry,omitempty"`
 }
 
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin

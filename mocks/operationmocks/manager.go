@@ -44,6 +44,29 @@ func (_m *Manager) RegisterHandler(handler operations.OperationHandler, ops []ff
 	_m.Called(handler, ops)
 }
 
+// RetryOperation provides a mock function with given fields: ctx, ns, opID
+func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, opID)
+
+	var r0 *fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *fftypes.Operation); ok {
+		r0 = rf(ctx, ns, opID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, ns, opID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RunOperation provides a mock function with given fields: ctx, op
 func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) error {
 	ret := _m.Called(ctx, op)
