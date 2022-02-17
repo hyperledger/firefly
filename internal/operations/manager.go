@@ -80,13 +80,13 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 		om.writeOperationFailure(ctx, op.ID, err)
 		return err
 	} else if complete {
-		om.writeOperationSuccess(ctx, op.ID, nil)
+		om.writeOperationSuccess(ctx, op.ID)
 	}
 	return nil
 }
 
-func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject) {
-	if err := om.database.ResolveOperation(ctx, opID, fftypes.OpStatusSucceeded, "", output); err != nil {
+func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID) {
+	if err := om.database.ResolveOperation(ctx, opID, fftypes.OpStatusSucceeded, "", nil); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }

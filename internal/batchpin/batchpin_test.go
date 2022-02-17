@@ -51,6 +51,11 @@ func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitt
 	return bps.(*batchPinSubmitter)
 }
 
+func TestInitFail(t *testing.T) {
+	_, err := NewBatchPinSubmitter(context.Background(), nil, nil, nil, nil, nil)
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestSubmitPinnedBatchOk(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 	ctx := context.Background()

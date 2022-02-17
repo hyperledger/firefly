@@ -96,7 +96,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 		return plugin.ActivateTokenPool(ctx, op.ID, data.Pool, data.BlockchainInfo)
 
 	case transferData:
-		plugin, err := am.selectTokenPlugin(ctx, data.Transfer.Connector)
+		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
 			return false, err
 		}

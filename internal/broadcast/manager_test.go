@@ -138,6 +138,42 @@ func TestBroadcastMessageBad(t *testing.T) {
 
 }
 
+func TestDispatchBatchInsertOpFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	batch := &fftypes.Batch{}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestDispatchBatchUploadFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	batch := &fftypes.Batch{}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mom := bm.operations.(*operationmocks.Manager)
+	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(batchBroadcastData)
+		return op.Type == fftypes.OpTypePublicStorageBatchBroadcast && data.Batch == batch
+	})).Return(fmt.Errorf("pop"))
+
+	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
 func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()

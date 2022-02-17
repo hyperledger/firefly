@@ -28,6 +28,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+type mockHandler struct {
+	Complete bool
+	Err      error
+}
+
+func (m *mockHandler) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+	return nil, m.Err
+}
+
+func (m *mockHandler) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error) {
+	return m.Complete, m.Err
+}
+
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	config.Reset()
 	mdi := &databasemocks.Plugin{}
@@ -37,6 +50,11 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	om, err := NewOperationsManager(ctx, mdi, map[string]tokens.Plugin{"magic-tokens": mti})
 	assert.NoError(t, err)
 	return om.(*operationsManager), cancel
+}
+
+func TestInitFail(t *testing.T) {
+	_, err := NewOperationsManager(context.Background(), nil, nil)
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestPrepareOperationNotSupported(t *testing.T) {
@@ -49,18 +67,93 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 	assert.Regexp(t, "FF10346", err)
 }
 
+func TestPrepareOperationSuccess(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeBlockchainBatchPin,
+	}
+
+	om.RegisterHandler(&mockHandler{}, []fftypes.OpType{fftypes.OpTypeBlockchainBatchPin})
+	_, err := om.PrepareOperation(context.Background(), op)
+
+	assert.NoError(t, err)
+}
+
+func TestRunOperationNotSupported(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	op := &fftypes.PreparedOperation{}
+
+	err := om.RunOperation(context.Background(), op)
+	assert.Regexp(t, "FF10346", err)
+}
+
+func TestRunOperationSuccess(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	op := &fftypes.PreparedOperation{
+		Type: fftypes.OpTypeBlockchainBatchPin,
+	}
+
+	om.RegisterHandler(&mockHandler{}, []fftypes.OpType{fftypes.OpTypeBlockchainBatchPin})
+	err := om.RunOperation(context.Background(), op)
+
+	assert.NoError(t, err)
+}
+
+func TestRunOperationSyncSuccess(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &fftypes.PreparedOperation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeBlockchainBatchPin,
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
+
+	om.RegisterHandler(&mockHandler{Complete: true}, []fftypes.OpType{fftypes.OpTypeBlockchainBatchPin})
+	err := om.RunOperation(context.Background(), op)
+
+	assert.NoError(t, err)
+}
+
+func TestRunOperationFail(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &fftypes.PreparedOperation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeBlockchainBatchPin,
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
+
+	om.RegisterHandler(&mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainBatchPin})
+	err := om.RunOperation(context.Background(), op)
+
+	assert.EqualError(t, err, "pop")
+}
+
 func TestWriteOperationSuccess(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
 	ctx := context.Background()
 	opID := fftypes.NewUUID()
-	output := fftypes.JSONObject{"some": "info"}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusSucceeded, "", output).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
 
-	om.writeOperationSuccess(ctx, opID, output)
+	om.writeOperationSuccess(ctx, opID)
 
 	mdi.AssertExpectations(t)
 

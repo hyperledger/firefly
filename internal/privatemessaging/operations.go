@@ -60,24 +60,21 @@ func addBatchSendInputs(op *fftypes.Operation, nodeID *fftypes.UUID, groupHash *
 
 func retrieveBatchSendInputs(ctx context.Context, op *fftypes.Operation) (nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID, manifest string, err error) {
 	nodeID, err = fftypes.ParseUUID(ctx, op.Input.GetString("node"))
-	if err != nil {
-		return nil, nil, nil, "", err
+	if err == nil {
+		groupHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("group"))
 	}
-	groupHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("group"))
-	if err != nil {
-		return nil, nil, nil, "", err
+	if err == nil {
+		batchID, err = fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 	}
-	batchID, err = fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
-	if err != nil {
-		return nil, nil, nil, "", err
+	if err == nil {
+		manifest = op.Input.GetString("manifest")
 	}
-	manifest = op.Input.GetString("manifest")
-	return nodeID, groupHash, batchID, manifest, nil
+	return nodeID, groupHash, batchID, manifest, err
 }
 
 func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypePublicStorageBatchBroadcast:
+	case fftypes.OpTypeDataExchangeBlobSend:
 		nodeID, blobHash, err := retrieveTransferBlobInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -85,10 +82,14 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		node, err := pm.database.GetNodeByID(ctx, nodeID)
 		if err != nil {
 			return nil, err
+		} else if node == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		blob, err := pm.database.GetBlobMatchingHash(ctx, blobHash)
 		if err != nil {
 			return nil, err
+		} else if blob == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		return opTransferBlob(op, node, blob), nil
 
@@ -100,14 +101,20 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		node, err := pm.database.GetNodeByID(ctx, nodeID)
 		if err != nil {
 			return nil, err
+		} else if node == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		group, err := pm.database.GetGroupByHash(ctx, groupHash)
 		if err != nil {
 			return nil, err
+		} else if group == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		batch, err := pm.database.GetBatchByID(ctx, batchID)
 		if err != nil {
 			return nil, err
+		} else if batch == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		transport := &fftypes.TransportWrapper{Group: group, Batch: batch}
 		return opBatchSend(op, node, transport), nil

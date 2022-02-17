@@ -185,10 +185,10 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 		ns,
 		txid,
 		fftypes.OpTypeBlockchainInvoke)
-	if err := addBlockchainInvokeInputs(op, req); err != nil {
-		return nil, err
+	if err = addBlockchainInvokeInputs(op, req); err == nil {
+		err = cm.database.InsertOperation(ctx, op)
 	}
-	return op, cm.database.InsertOperation(ctx, op)
+	return op, err
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {

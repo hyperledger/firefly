@@ -66,6 +66,8 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.O
 		batch, err := bp.database.GetBatchByID(ctx, batchID)
 		if err != nil {
 			return nil, err
+		} else if batch == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		return opBatchPin(op, batch, contexts), nil
 

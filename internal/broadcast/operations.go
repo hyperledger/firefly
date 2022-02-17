@@ -50,6 +50,8 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 		batch, err := bm.database.GetBatchByID(ctx, id)
 		if err != nil {
 			return nil, err
+		} else if batch == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		return opBatchBroadcast(op, batch), nil
 
