@@ -1898,6 +1898,18 @@ func TestAddJSONSchemaExtension(t *testing.T) {
 	assert.NotNil(t, c)
 }
 
+func TestGenerateFFI(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GenerateFFI", mock.Anything, mock.Anything).Return(&fftypes.FFI{
+		Name: "generated",
+	}, nil)
+	ffi, err := cm.GenerateFFI(context.Background(), "default", &fftypes.FFIGenerationRequest{})
+	assert.NoError(t, err)
+	assert.NotNil(t, ffi)
+	assert.Equal(t, "generated", ffi.Name)
+}
+
 type MockFFIParamValidator struct{}
 
 func (v MockFFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error) {
