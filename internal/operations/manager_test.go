@@ -231,6 +231,44 @@ func TestRetryOperationGetFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestRetryTwiceOperationInsertFail(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+	opID2 := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Status: fftypes.OpStatusFailed,
+		Retry:  opID2,
+	}
+	op2 := &fftypes.Operation{
+		ID:     opID2,
+		Plugin: "blockchain",
+		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Status: fftypes.OpStatusFailed,
+	}
+	po := &fftypes.PreparedOperation{
+		ID:   op.ID,
+		Type: op.Type,
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", ctx, opID).Return(op, nil)
+	mdi.On("GetOperationByID", ctx, opID2).Return(op2, nil)
+	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	om.RegisterHandler(&mockHandler{Prepared: po}, []fftypes.OpType{fftypes.OpTypeBlockchainBatchPin})
+	_, err := om.RetryOperation(ctx, "ns1", op.ID)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
 func TestRetryOperationInsertFail(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()

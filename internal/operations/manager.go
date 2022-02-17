@@ -86,10 +86,21 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 	return nil
 }
 
+func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
+	op, err = om.database.GetOperationByID(ctx, opID)
+	if err != nil {
+		return nil, err
+	}
+	if op.Retry == nil {
+		return op, nil
+	}
+	return om.findLatestRetry(ctx, op.Retry)
+}
+
 func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
 	var po *fftypes.PreparedOperation
 	err = om.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		op, err = om.database.GetOperationByID(ctx, opID)
+		op, err = om.findLatestRetry(ctx, opID)
 		if err != nil {
 			return err
 		}
@@ -97,6 +108,7 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 		// Create a copy of the operation with a new ID
 		op.ID = fftypes.NewUUID()
 		op.Status = fftypes.OpStatusPending
+		op.Error = ""
 		op.Output = nil
 		op.Created = fftypes.Now()
 		op.Updated = op.Created
