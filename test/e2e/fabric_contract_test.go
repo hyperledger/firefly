@@ -154,8 +154,6 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
 
 	assetName := nanoid.New()
-	// invokeFabContract(suite.T(), suite.fabClient, "firefly", suite.chaincodeName, "org_0", "CreateAsset", []string{asset})
-
 	location := map[string]interface{}{
 		"chaincode": suite.chaincodeName,
 		"channel":   "firefly",
