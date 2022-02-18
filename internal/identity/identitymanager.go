@@ -40,6 +40,7 @@ type Manager interface {
 	FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.IdentityType, namespace string, verifier *fftypes.VerifierRef) (identity *fftypes.Identity, err error)
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
+	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (isRoot bool, err error)
 }
 
 type identityManager struct {
@@ -271,6 +272,59 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identi
 	return im.nodeOwningOrgIdentity, nil
 }
 
+func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentity *fftypes.Identity) (isRoot bool, err error) {
+
+	loopDetect := make(map[fftypes.UUID]bool)
+	current := checkIdentity
+	for {
+		err := current.IdentityBase.Validate(ctx)
+		if err != nil {
+			return false, err
+		}
+		loopDetect[*current.ID] = true
+		parentID := current.Parent
+		if parentID == nil {
+			// This is a root identity if we've not gone round the loop yet.
+			// Validate above checks the rules for only orgs being a root identity.
+			return current == checkIdentity, nil
+		}
+		if _, ok := loopDetect[*parentID]; ok {
+			return false, i18n.NewError(ctx, i18n.MsgIdentityChainLoop, parentID, current.DID, current.ID)
+		}
+		parent, err := im.cachedIdentityLookupByID(ctx, parentID)
+		if err != nil {
+			return false, err
+		}
+		if parent == nil {
+			return false, i18n.NewError(ctx, i18n.MsgParentIdentityNotFound, parentID, current.DID, current.ID)
+		}
+		if err := im.validateParentType(ctx, current, parent); err != nil {
+			return false, err
+		}
+		current = parent
+	}
+
+}
+
+func (im *identityManager) validateParentType(ctx context.Context, child *fftypes.Identity, parent *fftypes.Identity) error {
+
+	switch child.Type {
+	case fftypes.IdentityTypeNode, fftypes.IdentityTypeOrg:
+		if parent.Type != fftypes.IdentityTypeOrg {
+			return i18n.NewError(ctx, i18n.MsgInvalidIdentityParentType, parent.DID, parent.ID, parent.Type, child.DID, child.ID, child.Type)
+		}
+		return nil
+	case fftypes.IdentityTypeCustom:
+		if parent.Type != fftypes.IdentityTypeOrg && parent.Type != fftypes.IdentityTypeCustom {
+			return i18n.NewError(ctx, i18n.MsgInvalidIdentityParentType, parent.DID, parent.ID, parent.Type, child.DID, child.ID, child.Type)
+		}
+		return nil
+	default:
+		return i18n.NewError(ctx, i18n.MsgUnknownIdentityType, child.Type)
+	}
+
+}
+
 func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context, namespace string, verifierRef *fftypes.VerifierRef) (*fftypes.Identity, error) {
 	cacheKey := fmt.Sprintf("key=%s|%s|%s", namespace, verifierRef.Type, verifierRef.Value)
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
@@ -335,6 +389,23 @@ func (im *identityManager) cachedIdentityLookupByDID(ctx context.Context, did st
 			}
 		}
 
+		// Cache the result
+		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+	}
+	return identity, nil
+}
+
+func (im *identityManager) cachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error) {
+	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
+	cacheKey := fmt.Sprintf("id=%s", id)
+	if cached := im.identityCache.Get(cacheKey); cached != nil {
+		cached.Extend(im.identityCacheTTL)
+		identity = cached.Value().(*fftypes.Identity)
+	} else {
+		identity, err = im.database.GetIdentityByID(ctx, id)
+		if err != nil || identity == nil {
+			return identity, err
+		}
 		// Cache the result
 		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}

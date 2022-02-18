@@ -31,7 +31,7 @@ func TestGetOrganizationByIDOk(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetOrganizationByID", nm.ctx, id).
-		Return(&fftypes.Identity{ID: id, Type: fftypes.IdentityTypeOrg}, nil)
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg}}, nil)
 	res, err := nm.GetOrganizationByID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
@@ -42,7 +42,7 @@ func TestGetOrganizationByIDNotOrg(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetOrganizationByID", nm.ctx, id).
-		Return(&fftypes.Identity{ID: id, Type: fftypes.IdentityTypeNode}, nil)
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeNode}}, nil)
 	res, err := nm.GetOrganizationByID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Nil(t, res)
@@ -60,7 +60,7 @@ func TestGetNodeByIDOk(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetNodeByID", nm.ctx, id).
-		Return(&fftypes.Identity{ID: id, Type: fftypes.IdentityTypeNode}, nil)
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeNode}}, nil)
 	res, err := nm.GetNodeByID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
@@ -71,7 +71,7 @@ func TestGetNodeByIDWrongType(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetNodeByID", nm.ctx, id).
-		Return(&fftypes.Identity{ID: id, Type: fftypes.IdentityTypeOrg}, nil)
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg}}, nil)
 	res, err := nm.GetNodeByID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
