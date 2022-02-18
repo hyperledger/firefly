@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Working with custom smart contracts
+title: Work with custom smart contracts
 parent: Getting Started
 nav_order: 10
 ---
 
-# Working with custom smart contracts
+# Work with custom smart contracts
 {: .no_toc }
 
 FireFly includes robust support for custom smart contracts with an easy to use API to work with them. FireFly's unified API creates a consistent application experience regardless of the specific underlying blockchain implementation. It also provides developer-friendly features like automatic OpenAPI Specification generation for smart contracts, plus a Swagger UI built-in.
@@ -398,9 +398,11 @@ Now comes the fun part where we see some of the power, developer-friendly featur
 
 We need to copy the `id` field we got in the response from the previous step to the `interface.id` field in the request body below. We will also pick a name `simple-storage` here that will be part of the URL for our HTTP API. So be sure to pick a name that is URL friendly. Lastly, in the `location.address` field, we're telling FireFly where an instance of the contract is deployed on-chain.
 
-### Request
+>**NOTE**: The `location` field is optional here, but if it is omitted, it will be required in every request to invoke or query the contract. This can be useful if you have multiple instances of the same contract deployed to different addresses.
 
-`POST`
+### Request 
+
+`POST` `http://localhost:5000/api/v1/namespaces/default/apis`
 
 ```json
 {
@@ -416,7 +418,6 @@ We need to copy the `id` field we got in the response from the previous step to 
 
 ### Response
 
-`POST` `http://localhost:5000/api/v1/namespaces/default/apis`
 ```json
 {
     "id": "9a681ec6-1dee-42a0-b91b-61d23a814b0f",
@@ -577,7 +578,7 @@ After creating the subscription, you should see an event arrive on the connected
 }
 ```
 
-## Retrieving the output of a blockchain event
+## Retrieve the output of a blockchain event
 
 Once we have received a blockchain event, we can go look up the output of that event to see the interesting things about it, like what value the stored integer was actually set to. To do that, we use the `reference` ID from the WebSocket event, and query the `blockchainevents` endpoint.
 
@@ -616,3 +617,81 @@ Once we have received a blockchain event, we can go look up the output of that e
 ```
 
 Here we can see the `output.value` is `3` just like we submitted in our original request to invoke the contract.
+
+## Appendix I: Work with a custom contract without creating a named API
+
+FireFly aims to offer a developer-friendly and flexible approach to using custom smart contracts. The guide above has detailed the most robust and feature-rich way to use custom contracts with FireFly, but there are several alternative API usage patterns to do so.
+
+It is possible to broadcast a contract interface and use a smart contract that implements that interface without also broadcasting a named API as above. There are several key differences (which may or may not be desirable) compared to the method outlined in the full guide above:
+
+- OpenAPI Spec and Swagger UI are not available
+- Each HTTP request to invoke/query the contract will need to include the contract location
+- The contract location will *not* have been broadcasted to all other members of the network
+- The URL to invoke/query the contract will be different (described below)
+
+### Request
+
+`POST` `http://localhost:5000/api/v1/namespaces/default/contracts/interfaces/8bdd27a5-67c1-4960-8d1e-7aa31b9084d3/invoke/set`
+```json
+{
+    "location": {
+        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+    },
+    "input": {
+        "newValue": 7
+    }
+}
+```
+
+### Response
+
+```json
+{
+    "id": "f310fa4a-73d8-4777-9f9d-dfa5012a052f"
+}
+```
+
+All of the same invoke, query, and subscribe endpoints are available on the contract interface itself.
+
+## Appendix II: Work directly with contracts with inline requests
+
+The final way of working with custom smart contracts with FireFly is to just put everything FireFly needs all in one request, each time a contract is invoked or queried. This is the most lightweight, but least feature-rich way of using a custom contract.
+
+To do this, we will need to put both the contract location, and a subset of a FireFly Interface that describes the method we want to invoke in the request body, in addition to the function input.
+
+### Request
+
+`POST` `http://localhost:5000/api/v1/namespaces/default/contracts/invoke`
+```json
+{
+    "location": {
+        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+    },
+    "method": {
+        "name": "set",
+        "params": [
+            {
+                "name": "x",
+                "schema": {
+                    "type": "integer",
+                    "details": {
+                        "type": "uint256"
+                    }
+                }
+            }
+        ],
+        "returns": []
+    },
+    "input": {
+        "x": 42
+    }
+}
+```
+
+### Response
+
+```json
+{
+    "id": "386d3e23-e4bc-4a9b-bc1f-452f0a8c9ae5"
+}
+```

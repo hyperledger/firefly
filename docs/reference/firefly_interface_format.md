@@ -109,7 +109,7 @@ For example, the Ethereum plugin always needs to know what Solidity type the fie
 
 A convenience endpoint exists on the API to facilitate converting from native blockchain interface formats such as an Ethereum ABI to the FireFly Interface format. For details, please see the [API documentation for the contract interface generation endpoint](../swagger/swagger.html#/default/postGenerateContractInterface).
 
-For an example of using this endpoint with a specific Ethereum contract, please see the [Getting Started guide on Working with custom smart contracts](../gettingstarted/custom_contracts.html#the-firefly-interface-format).
+For an example of using this endpoint with a specific Ethereum contract, please see the [Getting Started guide to Work with custom smart contracts](../gettingstarted/custom_contracts.html#the-firefly-interface-format).
 
 ## Full Example
 
