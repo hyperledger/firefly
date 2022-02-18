@@ -39,17 +39,21 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 	// Create a new identity entry
 	identityID := fftypes.NewUUID()
 	identity := &fftypes.Identity{
-		ID:  identityID,
-		DID: "did:firefly:/ns/ns1/1",
+		IdentityBase: fftypes.IdentityBase{
+			ID:        identityID,
+			DID:       "did:firefly:/ns/ns1/1",
+			Parent:    fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeCustom,
+			Namespace: "ns1",
+			Name:      "identity1",
+		},
+		IdentityProfile: fftypes.IdentityProfile{
+			Description: "Identity One",
+		},
 		Messages: fftypes.IdentityMessages{
 			Claim: fftypes.NewUUID(),
 		},
-		Parent:      fftypes.NewUUID(),
-		Type:        fftypes.IdentityTypeCustom,
-		Namespace:   "ns1",
-		Name:        "identity1",
-		Description: "Identity One",
-		Created:     fftypes.Now(),
+		Created: fftypes.Now(),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, fftypes.ChangeEventTypeCreated, "ns1", identityID).Return()
@@ -69,20 +73,24 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 	// Update the identity (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	identityUpdated := &fftypes.Identity{
-		ID:  identityID,
-		DID: "did:firefly:/nodes/2",
+		IdentityBase: fftypes.IdentityBase{
+			ID:        identityID,
+			DID:       "did:firefly:/nodes/2",
+			Parent:    fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeNode,
+			Namespace: "ns2",
+			Name:      "identity2",
+		},
+		IdentityProfile: fftypes.IdentityProfile{
+			Description: "Identity Two",
+			Profile:     fftypes.JSONObject{"some": "value"},
+		},
 		Messages: fftypes.IdentityMessages{
 			Claim:        fftypes.NewUUID(),
 			Verification: fftypes.NewUUID(),
 			Update:       fftypes.NewUUID(),
 		},
-		Parent:      fftypes.NewUUID(),
-		Type:        fftypes.IdentityTypeNode,
-		Namespace:   "ns2",
-		Name:        "identity2",
-		Description: "Identity Two",
-		Profile:     fftypes.JSONObject{"some": "value"},
-		Created:     identity.Created,
+		Created: identity.Created,
 	}
 	err = s.UpsertIdentity(context.Background(), identityUpdated, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
@@ -141,7 +149,11 @@ func TestUpsertIdentityFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -152,7 +164,11 @@ func TestUpsertIdentityFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -164,7 +180,11 @@ func TestUpsertIdentityFailUpdate(t *testing.T) {
 		AddRow("id1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -175,7 +195,11 @@ func TestUpsertIdentityFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

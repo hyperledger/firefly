@@ -21,49 +21,49 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Node, msg *fftypes.Message, err error) {
+func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Identity, err error) {
 
-	localOrgSigningKey, err := nm.getLocalOrgSigningKey(ctx)
+	nodeOwningOrg, err := nm.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	node = &fftypes.Node{
-		ID:          fftypes.NewUUID(),
-		Created:     fftypes.Now(),
-		Owner:       localOrgSigningKey, // TODO: Switch hierarchy to DID based, not signing key. Introducing an intermediate identity object
-		Name:        config.GetString(config.NodeName),
-		Description: config.GetString(config.NodeDescription),
+	// There is only one message for a node broadcast, as there is no second blockchain key
+	nodeClaim := &fftypes.IdentityClaim{
+		Identity: fftypes.Identity{
+			IdentityBase: fftypes.IdentityBase{
+				ID:        fftypes.NewUUID(),
+				Parent:    nodeOwningOrg.ID,
+				Namespace: fftypes.SystemNamespace,
+				Name:      config.GetString(config.NodeName),
+			},
+			IdentityProfile: fftypes.IdentityProfile{
+				Description: config.GetString(config.NodeDescription),
+			},
+		},
 	}
+	node = &nodeClaim.Identity
+	node.DID, _ = node.GenerateDID(ctx)
 	if node.Name == "" {
-		orgName := config.GetString(config.OrgName)
-		if orgName != "" {
-			node.Name = fmt.Sprintf("%s.node", orgName)
+		if nodeOwningOrg.Name != "" {
+			node.Name = fmt.Sprintf("%s.node", nodeOwningOrg.Name)
 		}
 	}
-	if node.Owner == "" || node.Name == "" {
-		return nil, nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
-	}
 
-	node.DX, err = nm.exchange.GetEndpointInfo(ctx)
+	dxInfo, err := nm.exchange.GetEndpointInfo(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+	node.Profile = dxInfo.Endpoint
+
+	if _, err = nm.identity.VerifyIdentityChain(ctx, node); err != nil {
+		return nil, err
 	}
 
-	err = node.Validate(ctx, false)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if err = nm.findOrgsToRoot(ctx, "node", node.Name, node.Owner); err != nil {
-		return nil, nil, err
-	}
-
-	msg, err = nm.broadcast.BroadcastDefinitionAsNode(ctx, fftypes.SystemNamespace, node, fftypes.SystemTagDefineNode, waitConfirm)
+	msg, err = nm.broadcast.BroadcastDefinitionAsNode(ctx, fftypes.SystemNamespace, nodeClaim, fftypes.SystemTagDefineNode, waitConfirm)
 	if msg != nil {
 		node.Message = msg.Header.ID
 	}

@@ -202,3 +202,37 @@ func TestIdentityCompare(t *testing.T) {
 	i2.Parent = nil
 	assert.False(t, i1.Equals(ctx, i2))
 }
+
+func TestDefinitionObjects(t *testing.T) {
+
+	o := testOrg()
+	assert.Equal(t, "7ea456fa05fc63778e7c4cb22d0498d73f184b2778c11fd2ba31b5980f8490b9", o.IdentityBase.Topic())
+	assert.Equal(t, o.Topic(), o.IdentityBase.Topic())
+
+	ic := IdentityClaim{
+		Identity: o,
+	}
+	assert.Equal(t, o.Topic(), ic.Topic())
+	claimMsg := NewUUID()
+	ic.SetBroadcastMessage(claimMsg)
+	assert.Equal(t, *claimMsg, *o.Messages.Claim)
+
+	iv := IdentityVerification{
+		Identity:    o.IdentityBase,
+		IdentityRef: o,
+	}
+	assert.Equal(t, o.Topic(), iv.Topic())
+	verificationMsg := NewUUID()
+	iv.SetBroadcastMessage(verificationMsg)
+	assert.Equal(t, *verificationMsg, *o.Messages.Verification)
+
+	var iu Definition = &IdentityProfileUpdate{
+		Identity:    o.IdentityBase,
+		IdentityRef: o,
+	}
+	assert.Equal(t, o.Topic(), iu.Topic())
+	updateMsg := NewUUID()
+	iu.SetBroadcastMessage(updateMsg)
+	assert.Equal(t, *updateMsg, *o.Messages.Update)
+
+}

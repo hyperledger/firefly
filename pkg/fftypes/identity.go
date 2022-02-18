@@ -18,6 +18,7 @@ package fftypes
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -86,7 +87,7 @@ type IdentityRef struct {
 // from the parent identity to be published (on the same topic) before the identity is considered valid
 // and is stored as a confirmed identity.
 type IdentityClaim struct {
-	IdentityBase
+	Identity *Identity `json:"identity"`
 }
 
 // IdentityVerification is the data payload used in message to broadcast a verification of a child identity.
@@ -94,6 +95,9 @@ type IdentityClaim struct {
 type IdentityVerification struct {
 	Claim    MessageRef   `json:"claim"`
 	Identity IdentityBase `json:"identity"`
+
+	// IdentityRef lets us store back the message when broadcasting, but isn't part of the payload
+	IdentityRef *Identity `json:"-"`
 }
 
 // IdentityProfileUpdate is the data payload used in message to broadcast an update to an identity profile.
@@ -103,6 +107,43 @@ type IdentityVerification struct {
 type IdentityProfileUpdate struct {
 	Identity IdentityBase    `json:"identity"`
 	Profile  IdentityProfile `json:"profile,omitempty"`
+
+	// IdentityRef lets us store back the message when broadcasting, but isn't part of the payload
+	IdentityRef *Identity `json:"-"`
+}
+
+func (ic *IdentityClaim) Topic() string {
+	return ic.Identity.Topic()
+}
+
+func (ic *IdentityClaim) SetBroadcastMessage(msgID *UUID) {
+	ic.Identity.Messages.Claim = msgID
+}
+
+func (iv *IdentityVerification) Topic() string {
+	return iv.Identity.Topic()
+}
+
+func (iv *IdentityVerification) SetBroadcastMessage(msgID *UUID) {
+	if iv.IdentityRef != nil {
+		iv.IdentityRef.Messages.Verification = msgID
+	}
+}
+
+func (iu *IdentityProfileUpdate) Topic() string {
+	return iu.Identity.Topic()
+}
+
+func (iu *IdentityProfileUpdate) SetBroadcastMessage(msgID *UUID) {
+	if iu.IdentityRef != nil {
+		iu.IdentityRef.Messages.Update = msgID
+	}
+}
+
+func (i *IdentityBase) Topic() string {
+	h := sha256.New()
+	h.Write([]byte(i.DID))
+	return HashResult(h).String()
 }
 
 func (i *IdentityBase) Validate(ctx context.Context) (err error) {

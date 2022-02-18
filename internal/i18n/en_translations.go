@@ -133,7 +133,6 @@ var (
 	MsgUnknownDataExchangePlugin    = ffm("FF10213", "Unknown Data Exchange plugin '%s'")
 	MsgParentIdentityNotFound       = ffm("FF10214", "Identity '%s' not found in identity chain for %s '%s'")
 	MsgInvalidSigningIdentity       = ffm("FF10215", "Invalid signing identity")
-	MsgNodeAndOrgIDMustBeSet        = ffm("FF10216", "node.name, org.name and org.identity must be configured first", 409)
 	MsgBlobStreamingFailed          = ffm("FF10217", "Blob streaming terminated with error", 500)
 	MsgMultiPartFormReadError       = ffm("FF10218", "Error reading multi-part form input", 400)
 	MsgGroupMustHaveMembers         = ffm("FF10219", "Group must have at least one member", 400)
