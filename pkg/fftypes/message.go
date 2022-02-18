@@ -33,7 +33,7 @@ const (
 type MessageType = FFEnum
 
 var (
-	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, members, data definitions, etc.)
+	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, identities, data definitions, etc.)
 	MessageTypeDefinition MessageType = ffEnum("messagetype", "definition")
 	// MessageTypeBroadcast is a broadcast message, meaning it is intended to be visible by all parties in the network
 	MessageTypeBroadcast MessageType = ffEnum("messagetype", "broadcast")

@@ -18,30 +18,187 @@ package fftypes
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIdentityValidation(t *testing.T) {
-
-	identity := &Identity{
-		Name: "!name",
+func testOrg() *Identity {
+	return &Identity{
+		IdentityBase: IdentityBase{
+			ID:        NewUUID(),
+			DID:       "did:firefly:org/org1",
+			Type:      IdentityTypeOrg,
+			Namespace: SystemNamespace,
+			Name:      "org1",
+		},
+		IdentityProfile: IdentityProfile{
+			Description: "desc",
+			Profile: JSONObject{
+				"some": "profiledata",
+			},
+		},
 	}
-	assert.Regexp(t, "FF10131.*name", identity.Validate(context.Background(), false))
+}
 
-	identity = &Identity{
-		Name:        "ok",
-		Description: string(make([]byte, 4097)),
+func testNode() *Identity {
+	return &Identity{
+		IdentityBase: IdentityBase{
+			ID:        NewUUID(),
+			DID:       "did:firefly:node/node1",
+			Parent:    NewUUID(),
+			Type:      IdentityTypeNode,
+			Namespace: SystemNamespace,
+			Name:      "node1",
+		},
+		IdentityProfile: IdentityProfile{
+			Description: "desc",
+			Profile: JSONObject{
+				"some": "profiledata",
+			},
+		},
 	}
-	assert.Regexp(t, "FF10188.*description", identity.Validate(context.Background(), false))
+}
 
-	identity = &Identity{
-		Name:        "ok",
-		Description: "ok",
+func testCustom(ns, name string) *Identity {
+	return &Identity{
+		IdentityBase: IdentityBase{
+			ID:        NewUUID(),
+			DID:       fmt.Sprintf("did:firefly:ns/%s/%s", ns, name),
+			Parent:    NewUUID(),
+			Type:      IdentityTypeCustom,
+			Namespace: ns,
+			Name:      name,
+		},
+		IdentityProfile: IdentityProfile{
+			Description: "desc",
+			Profile: JSONObject{
+				"some": "profiledata",
+			},
+		},
 	}
-	assert.NoError(t, identity.Validate(context.Background(), false))
+}
+func TestIdentityValidationOrgs(t *testing.T) {
 
-	assert.Regexp(t, "FF10203", identity.Validate(context.Background(), true))
+	ctx := context.Background()
+	o := testOrg()
+	assert.NoError(t, o.Validate(ctx))
 
+	o = testOrg()
+	o.ID = nil
+	assert.Regexp(t, "FF10203", o.Validate(ctx))
+
+	o = testOrg()
+	o.Namespace = "!namespace"
+	assert.Regexp(t, "FF10131", o.Validate(ctx))
+
+	o = testOrg()
+	o.Name = "!name"
+	assert.Regexp(t, "FF10131", o.Validate(ctx))
+
+	o = testOrg()
+	o.Type = IdentityType("wrong")
+	assert.Regexp(t, "FF10359", o.Validate(ctx))
+
+	o = testOrg()
+	o.Description = string(make([]byte, 4097))
+	assert.Regexp(t, "FF10188", o.Validate(ctx))
+
+	o = testOrg()
+	o.DID = "did:firefly:node/node1"
+	assert.Regexp(t, "FF10360", o.Validate(ctx))
+
+	o = testOrg()
+	o.Namespace = "nonsystem"
+	assert.Regexp(t, "FF10358", o.Validate(ctx))
+
+}
+
+func TestIdentityValidationNodes(t *testing.T) {
+
+	ctx := context.Background()
+	n := testNode()
+	assert.NoError(t, n.Validate(ctx))
+
+	n = testNode()
+	n.Parent = nil
+	assert.Regexp(t, "FF10357", n.Validate(ctx))
+
+	n = testNode()
+	n.DID = "did:firefly:org/org1"
+	assert.Regexp(t, "FF10360", n.Validate(ctx))
+
+	n = testNode()
+	n.Namespace = "nonsystem"
+	assert.Regexp(t, "FF10358", n.Validate(ctx))
+
+}
+
+func TestIdentityValidationCustom(t *testing.T) {
+
+	ctx := context.Background()
+	c := testCustom("ns1", "custom1")
+	assert.NoError(t, c.Validate(ctx))
+
+	c = testCustom("ns1", "custom1")
+	c.Parent = nil
+	assert.Regexp(t, "FF10357", c.Validate(ctx))
+
+	c = testCustom("ns1", "custom1")
+	c.DID = "did:firefly:ns/ns2/custom1"
+	assert.Regexp(t, "FF10360", c.Validate(ctx))
+
+	c = testCustom("ns1", "custom1")
+	c.Namespace = SystemNamespace
+	assert.Regexp(t, "FF10356", c.Validate(ctx))
+
+}
+
+func TestIdentityCompare(t *testing.T) {
+
+	ctx := context.Background()
+
+	getMatching := func() (*IdentityBase, *IdentityBase) {
+		i1 := testCustom("ns1", "custom1")
+		i2 := testCustom("ns1", "custom1")
+		*i1.ID = *i2.ID
+		*i1.Parent = *i2.Parent
+		return &i1.IdentityBase, &i2.IdentityBase
+	}
+
+	i1, i2 := getMatching()
+	assert.True(t, i1.Equals(ctx, i2))
+
+	i1, i2 = getMatching()
+	i1.ID = NewUUID()
+	assert.False(t, i1.Equals(ctx, i2))
+
+	i1, i2 = getMatching()
+	i1.Parent = NewUUID()
+	assert.False(t, i1.Equals(ctx, i2))
+	i1.Parent = nil
+	assert.False(t, i1.Equals(ctx, i2))
+
+	i1, i2 = getMatching()
+	i1.DID = "bad"
+	assert.False(t, i1.Equals(ctx, i2))
+
+	i1, i2 = getMatching()
+	i2.DID = "bad"
+	assert.False(t, i1.Equals(ctx, i2))
+
+	i1, i2 = getMatching()
+	i2 = &testCustom("ns1", "custom2").IdentityBase
+	*i2.ID = *i1.ID
+	i1.Parent = nil
+	i2.Parent = nil
+	assert.False(t, i1.Equals(ctx, i2))
+
+	i1, i2 = getMatching()
+	i2 = &testCustom("ns2", "custom1").IdentityBase
+	*i2.ID = *i1.ID
+	i1.Parent = nil
+	i2.Parent = nil
+	assert.False(t, i1.Equals(ctx, i2))
 }

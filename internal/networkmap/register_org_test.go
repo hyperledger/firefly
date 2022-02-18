@@ -35,7 +35,7 @@ func TestRegisterOrganizationChildOk(t *testing.T) {
 	defer cancel()
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
+	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Identity{
 		Identity:    "0x23456",
 		Description: "parent organization",
 	}, nil)
