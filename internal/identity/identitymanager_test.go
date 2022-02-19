@@ -55,7 +55,7 @@ func TestResolveInputSigningIdentityNoOrgKey(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	msgIdentity := &fftypes.IdentityRef{}
+	msgIdentity := &fftypes.SignerRef{}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
 	assert.Regexp(t, "FF10351", err)
 
@@ -94,7 +94,7 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 			},
 		}, nil)
 
-	msgIdentity := &fftypes.IdentityRef{}
+	msgIdentity := &fftypes.SignerRef{}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
 	assert.NoError(t, err)
 	assert.Equal(t, "did:firefly:org/org1", msgIdentity.Author)
@@ -136,7 +136,7 @@ func TestResolveInputSigningIdentityByKeyOk(t *testing.T) {
 			},
 		}, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key: "mykey123",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -172,7 +172,7 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 			},
 		}, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key:    "mykey123",
 		Author: "did:firefly:ns/ns1/myid",
 	}
@@ -197,7 +197,7 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key: "mykey123",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -239,7 +239,7 @@ func TestResolveInputSigningIdentityByKeyDIDMismatch(t *testing.T) {
 			},
 		}, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key:    "mykey123",
 		Author: "did:firefly:ns/ns1/notmyid",
 	}
@@ -266,7 +266,7 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:ns/ns1/unknown").
 		Return(nil, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key:    "mykey123",
 		Author: "did:firefly:ns/ns1/unknown",
 	}
@@ -289,7 +289,7 @@ func TestResolveInputSigningIdentityForRootOrgRegOk(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
 		Return(nil, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key:    "mykey123",
 		Author: "did:firefly:org/neworgname",
 	}
@@ -314,7 +314,7 @@ func TestResolveInputSigningIdentityForRootOrgRegBadNS(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "fullkey123").
 		Return(nil, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key:    "mykey123",
 		Author: "did:firefly:orgs/neworgname",
 	}
@@ -337,7 +337,7 @@ func TestResolveInputSigningIdentityForRootOrgRegBadDID(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
 		Return(nil, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key:    "mykey123",
 		Author: "did:firefly:nodes/node1",
 	}
@@ -360,7 +360,7 @@ func TestResolveInputSigningIdentityByKeyFail(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
 		Return(nil, fmt.Errorf("pop"))
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key: "mykey123",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -378,7 +378,7 @@ func TestResolveInputSigningIdentityByKeyResolveFail(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("", fmt.Errorf("pop"))
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Key: "mykey123",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -417,7 +417,7 @@ func TestResolveInputSigningIdentityByOrgNameOk(t *testing.T) {
 			},
 		}, nil, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Author: "org1",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -437,7 +437,7 @@ func TestResolveInputSigningIdentityByOrgLookkupNotFound(t *testing.T) {
 	mdi.On("GetIdentityByName", ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, "org1").
 		Return(nil, nil)
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Author: "org1",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -455,7 +455,7 @@ func TestResolveInputSigningIdentityByOrgLookkupFail(t *testing.T) {
 	mdi.On("GetIdentityByName", ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, "org1").
 		Return(nil, fmt.Errorf("pop"))
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Author: "org1",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -484,7 +484,7 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 		}, nil)
 	mdi.On("GetVerifiers", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	msgIdentity := &fftypes.IdentityRef{
+	msgIdentity := &fftypes.SignerRef{
 		Author: "org1",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
@@ -530,7 +530,7 @@ func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "key12345").Return(nil, nil)
 
-	err := im.ResolveNodeOwnerSigningIdentity(ctx, &fftypes.IdentityRef{})
+	err := im.ResolveNodeOwnerSigningIdentity(ctx, &fftypes.SignerRef{})
 	assert.Regexp(t, "FF10281", err)
 
 	mdi.AssertExpectations(t)
@@ -828,11 +828,11 @@ func TestCachedIdentityLookupByIDCaching(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(id, nil).Once()
 
-	v1, err := im.cachedIdentityLookupByID(ctx, id.ID)
+	v1, err := im.CachedIdentityLookupByID(ctx, id.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
-	v2, err := im.cachedIdentityLookupByID(ctx, id.ID)
+	v2, err := im.CachedIdentityLookupByID(ctx, id.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, id, v2)
 
@@ -851,6 +851,9 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 			Name:      "org1",
 			Type:      fftypes.IdentityTypeOrg,
 		},
+		Messages: fftypes.IdentityMessages{
+			Claim: fftypes.NewUUID(),
+		},
 	}
 	idIntermediateOrg := &fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
@@ -861,6 +864,9 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 			Name:      "org2",
 			Type:      fftypes.IdentityTypeOrg,
 		},
+		Messages: fftypes.IdentityMessages{
+			Claim: fftypes.NewUUID(),
+		},
 	}
 	idIntermediateCustom := &fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
@@ -870,6 +876,9 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 			Namespace: "ns1",
 			Name:      "custom1",
 			Type:      fftypes.IdentityTypeCustom,
+		},
+		Messages: fftypes.IdentityMessages{
+			Claim: fftypes.NewUUID(),
 		},
 	}
 	idLeaf := &fftypes.Identity{
@@ -887,8 +896,8 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, idIntermediateCustom.ID).Return(idIntermediateCustom, nil).Once()
 	mdi.On("GetIdentityByID", ctx, idRoot.ID).Return(idRoot, nil).Once()
 
-	isRoot, err := im.VerifyIdentityChain(ctx, idLeaf)
-	assert.False(t, isRoot)
+	immeidateParent, err := im.VerifyIdentityChain(ctx, idLeaf)
+	assert.Equal(t, idIntermediateCustom, immeidateParent)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -922,6 +931,9 @@ func TestVerifyIdentityChainLoop(t *testing.T) {
 			Name:      "org1",
 			Type:      fftypes.IdentityTypeOrg,
 		},
+		Messages: fftypes.IdentityMessages{
+			Claim: fftypes.NewUUID(),
+		},
 	}
 	id2 := &fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
@@ -932,13 +944,51 @@ func TestVerifyIdentityChainLoop(t *testing.T) {
 			Name:      "org2",
 			Type:      fftypes.IdentityTypeOrg,
 		},
+		Messages: fftypes.IdentityMessages{
+			Claim: fftypes.NewUUID(),
+		},
 	}
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, id2.ID).Return(id2, nil).Once()
+	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
 
 	_, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10361", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestVerifyIdentityChainBadParent(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	idID1 := fftypes.NewUUID()
+	idID2 := fftypes.NewUUID()
+	id1 := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        idID1,
+			Parent:    idID2,
+			DID:       "did:firefly:org/org1",
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+			Type:      fftypes.IdentityTypeOrg,
+		},
+	}
+	id2 := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        idID2,
+			DID:       "did:firefly:org/org2",
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org2",
+			Type:      fftypes.IdentityTypeOrg,
+		},
+	}
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
+
+	_, err := im.VerifyIdentityChain(ctx, id1)
+	assert.Regexp(t, "FF10363", err)
 
 	mdi.AssertExpectations(t)
 }

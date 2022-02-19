@@ -26,12 +26,12 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
-	return bm.BroadcastDefinition(ctx, ns, def, &fftypes.IdentityRef{ /* resolve to node default */ }, tag, waitConfirm)
+	return bm.BroadcastDefinition(ctx, ns, def, &fftypes.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.IdentityRef, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
-	err = bm.identity.ResolveInputIdentity(ctx, signingIdentity)
+	err = bm.identity.ResolveInputSigningIdentity(ctx, ns, signingIdentity)
 	if err != nil {
 		return nil, err
 	}
@@ -39,14 +39,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, 
 	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.IdentityRef, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
-
-	signingIdentity.Author = bm.identity.OrgDID(def)
-
-	return bm.broadcastDefinitionCommon(ctx, fftypes.SystemNamespace, def, signingIdentity, tag, waitConfirm)
-}
-
-func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.IdentityRef, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
@@ -73,12 +66,12 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 	in := &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Namespace:   ns,
-				Type:        fftypes.MessageTypeDefinition,
-				IdentityRef: *signingIdentity,
-				Topics:      fftypes.FFStringArray{def.Topic()},
-				Tag:         string(tag),
-				TxType:      fftypes.TransactionTypeBatchPin,
+				Namespace: ns,
+				Type:      fftypes.MessageTypeDefinition,
+				SignerRef: *signingIdentity,
+				Topics:    fftypes.FFStringArray{def.Topic()},
+				Tag:       string(tag),
+				TxType:    fftypes.TransactionTypeBatchPin,
 			},
 			Data: fftypes.DataRefs{
 				{ID: data.ID, Hash: data.Hash},

@@ -88,30 +88,9 @@ func TestBroadcastDefinitionBadIdentity(t *testing.T) {
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := bm.BroadcastDefinition(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.IdentityRef{
+	_, err := bm.BroadcastDefinition(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",
 	}, fftypes.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
-}
-
-func TestBroadcastRootOrgDefinitionPassedThroughAnyIdentity(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-
-	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("OrgDID", mock.Anything, mock.Anything).Return("did:firefly:org/12345", nil)
-	// Should call through to upsert data, stop test there
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
-
-	_, err := bm.BroadcastRootOrgDefinition(bm.ctx, &fftypes.Organization{
-		ID: fftypes.NewUUID(),
-	}, &fftypes.IdentityRef{
-		Author: "anything - overridden",
-		Key:    "0x12345",
-	}, fftypes.SystemTagDefineNamespace, false)
-	assert.Regexp(t, "pop", err)
-
-	mim.AssertExpectations(t)
 }

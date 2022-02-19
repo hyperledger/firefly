@@ -75,9 +75,21 @@ type Identity struct {
 	Created  *FFTime          `json:"created,omitempty"`
 }
 
-// IdentityRef is the nested structure representing an identity, that might comprise a resolvable
-// by FireFly identity DID, a blockchain signing key, or both.
-type IdentityRef struct {
+// IdentityCreateDTO is the input structure to submit to register an identity.
+// The blockchain key that will be used to establish the claim for the identity
+// needs to be provided.
+type IdentityCreateDTO struct {
+	Namespace string       `json:"namespace,omitempty"`
+	Name      string       `json:"name"`
+	Type      IdentityType `json:"type,omitempty"`
+	Parent    *UUID        `json:"parent,omitempty"`
+	Key       string       `json:"key,omitempty"`
+	IdentityProfile
+}
+
+// SignerRef is the nested structure representing the identity that signed a message.
+// It might comprise a resolvable by FireFly identity DID, a blockchain signing key, or both.
+type SignerRef struct {
 	Author string `json:"author,omitempty"`
 	Key    string `json:"key,omitempty"`
 }
@@ -96,8 +108,8 @@ type IdentityVerification struct {
 	Claim    MessageRef   `json:"claim"`
 	Identity IdentityBase `json:"identity"`
 
-	// IdentityRef lets us store back the message when broadcasting, but isn't part of the payload
-	IdentityRef *Identity `json:"-"`
+	// SignerRef lets us store back the message when broadcasting, but isn't part of the payload
+	SignerRef *Identity `json:"-"`
 }
 
 // IdentityProfileUpdate is the data payload used in message to broadcast an update to an identity profile.
@@ -108,8 +120,8 @@ type IdentityProfileUpdate struct {
 	Identity IdentityBase    `json:"identity"`
 	Profile  IdentityProfile `json:"profile,omitempty"`
 
-	// IdentityRef lets us store back the message when broadcasting, but isn't part of the payload
-	IdentityRef *Identity `json:"-"`
+	// SignerRef lets us store back the message when broadcasting, but isn't part of the payload
+	SignerRef *Identity `json:"-"`
 }
 
 func (ic *IdentityClaim) Topic() string {
@@ -125,8 +137,8 @@ func (iv *IdentityVerification) Topic() string {
 }
 
 func (iv *IdentityVerification) SetBroadcastMessage(msgID *UUID) {
-	if iv.IdentityRef != nil {
-		iv.IdentityRef.Messages.Verification = msgID
+	if iv.SignerRef != nil {
+		iv.SignerRef.Messages.Verification = msgID
 	}
 }
 
@@ -135,8 +147,8 @@ func (iu *IdentityProfileUpdate) Topic() string {
 }
 
 func (iu *IdentityProfileUpdate) SetBroadcastMessage(msgID *UUID) {
-	if iu.IdentityRef != nil {
-		iu.IdentityRef.Messages.Update = msgID
+	if iu.SignerRef != nil {
+		iu.SignerRef.Messages.Update = msgID
 	}
 }
 

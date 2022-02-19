@@ -37,12 +37,12 @@ import (
 )
 
 func sampleBatch(t *testing.T, txType fftypes.TransactionType, data ...*fftypes.Data) *fftypes.Batch {
-	identity := fftypes.IdentityRef{Author: "signingOrg", Key: "0x12345"}
+	identity := fftypes.SignerRef{Author: "signingOrg", Key: "0x12345"}
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			IdentityRef: identity,
-			ID:          fftypes.NewUUID(),
-			TxType:      txType,
+			SignerRef: identity,
+			ID:        fftypes.NewUUID(),
+			TxType:    txType,
 		},
 	}
 	for _, d := range data {
@@ -50,9 +50,9 @@ func sampleBatch(t *testing.T, txType fftypes.TransactionType, data ...*fftypes.
 		assert.NoError(t, err)
 	}
 	batch := &fftypes.Batch{
-		IdentityRef: identity,
-		ID:          fftypes.NewUUID(),
-		Node:        fftypes.NewUUID(),
+		SignerRef: identity,
+		ID:        fftypes.NewUUID(),
+		Node:      fftypes.NewUUID(),
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   fftypes.NewUUID(),
@@ -86,7 +86,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	batchData := &fftypes.Batch{
 		ID:        batch.BatchID,
 		Namespace: "ns1",
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -291,7 +291,7 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -317,7 +317,7 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -342,7 +342,7 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -367,7 +367,7 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -394,7 +394,7 @@ func TestPersistBatchBadHash(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -417,7 +417,7 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -443,7 +443,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -474,7 +474,7 @@ func TestPersistBatchGoodDataUpsertOptimizeExistingFail(t *testing.T) {
 	batch := &fftypes.Batch{
 		ID:   fftypes.NewUUID(),
 		Node: testNodeID,
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -507,7 +507,7 @@ func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
 	batch := &fftypes.Batch{
 		ID:   fftypes.NewUUID(),
 		Node: fftypes.NewUUID(),
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},

@@ -136,7 +136,7 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
 	// Resolve the sending identity
 	if !s.isRootOrgBroadcast(ctx) {
-		if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.IdentityRef); err != nil {
+		if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.SignerRef); err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 		}
 	}
@@ -175,7 +175,7 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 
 func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
 	// Look into message to see if it contains a data item that is a root organization definition
-	if s.msg.Header.Type == fftypes.MessageTypeDefinition {
+	if s.msg.Header.Type == fftypes.MessageTypeDefinition && s.msg.Header.Tag == fftypes.SystemTagDefineOrganization {
 		messageData, ok, err := s.mgr.data.GetMessageData(ctx, &s.msg.Message, true)
 		if ok && err == nil {
 			if len(messageData) > 0 {

@@ -33,14 +33,15 @@ import (
 )
 
 type Manager interface {
-	ResolveInputSigningIdentity(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error)
-	ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error)
-	ResolveNodeOwnerSigningIdentity(ctx context.Context, msgIdentityRef *fftypes.IdentityRef) (err error)
+	ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error)
+	ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error)
+	ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSignerRef *fftypes.SignerRef) (err error)
 	ResolveBlockchainKey(ctx context.Context, inputKey string) (verifier *fftypes.VerifierRef, err error)
 	FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.IdentityType, namespace string, verifier *fftypes.VerifierRef) (identity *fftypes.Identity, err error)
+	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error)
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
-	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (isRoot bool, err error)
+	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (immediateParent *fftypes.Identity, err error)
 }
 
 type identityManager struct {
@@ -78,31 +79,31 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 	return im, nil
 }
 
-func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error) {
-	return im.resolveInputSigningIdentity(ctx, namespace, msgIdentityRef, false)
+func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error) {
+	return im.resolveInputSigningIdentity(ctx, namespace, msgSignerRef, false)
 }
 
-func (im *identityManager) ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef) (err error) {
-	return im.resolveInputSigningIdentity(ctx, namespace, msgIdentityRef, true)
+func (im *identityManager) ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error) {
+	return im.resolveInputSigningIdentity(ctx, namespace, msgSignerRef, true)
 }
 
 // ResolveInputIdentity takes in blockchain signing input information from an API call,
 // and resolves the final information that should be written in the message etc..
-func (im *identityManager) resolveInputSigningIdentity(ctx context.Context, namespace string, msgIdentityRef *fftypes.IdentityRef, rootRegistration bool) (err error) {
-	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", msgIdentityRef.Key, msgIdentityRef.Author)
+func (im *identityManager) resolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef, rootRegistration bool) (err error) {
+	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", msgSignerRef.Key, msgSignerRef.Author)
 
 	var verifier *fftypes.VerifierRef
 	switch {
-	case msgIdentityRef.Author == "" && msgIdentityRef.Key == "":
-		err = im.ResolveNodeOwnerSigningIdentity(ctx, msgIdentityRef)
+	case msgSignerRef.Author == "" && msgSignerRef.Key == "":
+		err = im.ResolveNodeOwnerSigningIdentity(ctx, msgSignerRef)
 		if err != nil {
 			return err
 		}
-	case msgIdentityRef.Key != "":
-		if verifier, err = im.ResolveBlockchainKey(ctx, msgIdentityRef.Key); err != nil {
+	case msgSignerRef.Key != "":
+		if verifier, err = im.ResolveBlockchainKey(ctx, msgSignerRef.Key); err != nil {
 			return err
 		}
-		msgIdentityRef.Key = verifier.Value
+		msgSignerRef.Key = verifier.Value
 		// Fill in or verify the author DID based on the verfier, if it's been registered
 		identity, err := im.FindIdentityForVerifier(ctx, []fftypes.IdentityType{
 			fftypes.IdentityTypeOrg,
@@ -113,44 +114,44 @@ func (im *identityManager) resolveInputSigningIdentity(ctx context.Context, name
 		}
 		switch {
 		case identity != nil:
-			if msgIdentityRef.Author == identity.Name || msgIdentityRef.Author == "" {
+			if msgSignerRef.Author == identity.Name || msgSignerRef.Author == "" {
 				// Switch to full DID automatically
-				msgIdentityRef.Author = identity.DID
+				msgSignerRef.Author = identity.DID
 			}
-			if msgIdentityRef.Author != identity.DID {
-				return i18n.NewError(ctx, i18n.MsgAuthorRegistrationMismatch, verifier.Value, msgIdentityRef.Author, identity.DID)
+			if msgSignerRef.Author != identity.DID {
+				return i18n.NewError(ctx, i18n.MsgAuthorRegistrationMismatch, verifier.Value, msgSignerRef.Author, identity.DID)
 			}
-		case msgIdentityRef.Author != "":
+		case msgSignerRef.Author != "":
 			if rootRegistration {
-				if namespace != fftypes.SystemNamespace || !strings.HasPrefix(msgIdentityRef.Author, fftypes.FireFlyOrgDIDPrefix) {
-					return i18n.NewError(ctx, i18n.MsgAuthorIncorrectForRootReg, namespace, msgIdentityRef.Author)
+				if namespace != fftypes.SystemNamespace || !strings.HasPrefix(msgSignerRef.Author, fftypes.FireFlyOrgDIDPrefix) {
+					return i18n.NewError(ctx, i18n.MsgAuthorIncorrectForRootReg, namespace, msgSignerRef.Author)
 				}
 			} else {
-				identity, err := im.cachedIdentityLookupByDID(ctx, msgIdentityRef.Author)
+				identity, err := im.cachedIdentityLookupByDID(ctx, msgSignerRef.Author)
 				if err != nil {
 					return err
 				}
-				msgIdentityRef.Author = identity.DID
+				msgSignerRef.Author = identity.DID
 			}
 		default:
-			return i18n.NewError(ctx, i18n.MsgAuthorMissingForKey, msgIdentityRef.Key)
+			return i18n.NewError(ctx, i18n.MsgAuthorMissingForKey, msgSignerRef.Key)
 		}
-	case msgIdentityRef.Author != "":
+	case msgSignerRef.Author != "":
 		// Author must be non-empty (see above), so we want to find that identity and then
 		// use the first blockchain key that's associated with it.
-		identity, err := im.cachedIdentityLookupByDID(ctx, msgIdentityRef.Author)
+		identity, err := im.cachedIdentityLookupByDID(ctx, msgSignerRef.Author)
 		if err != nil {
 			return err
 		}
-		msgIdentityRef.Author = identity.DID
+		msgSignerRef.Author = identity.DID
 		verifier, err = im.firstVerifierForIdentity(ctx, im.blockchain.VerifierType(), identity)
 		if err != nil {
 			return err
 		}
-		msgIdentityRef.Key = verifier.Value
+		msgSignerRef.Key = verifier.Value
 	}
 
-	log.L(ctx).Debugf("Resolved identity: key='%s' author='%s'", msgIdentityRef.Key, msgIdentityRef.Author)
+	log.L(ctx).Debugf("Resolved identity: key='%s' author='%s'", msgSignerRef.Key, msgSignerRef.Author)
 	return nil
 }
 
@@ -173,7 +174,7 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType f
 }
 
 // ResolveNodeOwnerSigningIdentity add the node owner identity into a message
-func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, msgIdentityRef *fftypes.IdentityRef) (err error) {
+func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSignerRef *fftypes.SignerRef) (err error) {
 	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
 	if err != nil {
 		return err
@@ -182,8 +183,8 @@ func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	msgIdentityRef.Author = identity.DID
-	msgIdentityRef.Key = verifierRef.Value
+	msgSignerRef.Author = identity.DID
+	msgSignerRef.Key = verifierRef.Value
 	return nil
 }
 
@@ -272,36 +273,40 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identi
 	return im.nodeOwningOrgIdentity, nil
 }
 
-func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentity *fftypes.Identity) (isRoot bool, err error) {
+func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentity *fftypes.Identity) (immediateParent *fftypes.Identity, err error) {
 
 	loopDetect := make(map[fftypes.UUID]bool)
 	current := checkIdentity
 	for {
 		err := current.IdentityBase.Validate(ctx)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		loopDetect[*current.ID] = true
 		parentID := current.Parent
 		if parentID == nil {
-			// This is a root identity if we've not gone round the loop yet.
-			// Validate above checks the rules for only orgs being a root identity.
-			return current == checkIdentity, nil
+			return immediateParent, nil
 		}
 		if _, ok := loopDetect[*parentID]; ok {
-			return false, i18n.NewError(ctx, i18n.MsgIdentityChainLoop, parentID, current.DID, current.ID)
+			return nil, i18n.NewError(ctx, i18n.MsgIdentityChainLoop, parentID, current.DID, current.ID)
 		}
-		parent, err := im.cachedIdentityLookupByID(ctx, parentID)
+		parent, err := im.CachedIdentityLookupByID(ctx, parentID)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		if parent == nil {
-			return false, i18n.NewError(ctx, i18n.MsgParentIdentityNotFound, parentID, current.DID, current.ID)
+			return nil, i18n.NewError(ctx, i18n.MsgParentIdentityNotFound, parentID, current.DID, current.ID)
 		}
 		if err := im.validateParentType(ctx, current, parent); err != nil {
-			return false, err
+			return nil, err
+		}
+		if parent.Messages.Claim == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgParentIdentityMissingClaim, parent.DID, parent.ID)
 		}
 		current = parent
+		if immediateParent == nil {
+			immediateParent = parent
+		}
 	}
 
 }
@@ -395,7 +400,7 @@ func (im *identityManager) cachedIdentityLookupByDID(ctx context.Context, did st
 	return identity, nil
 }
 
-func (im *identityManager) cachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error) {
+func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("id=%s", id)
 	if cached := im.identityCache.Get(cacheKey); cached != nil {

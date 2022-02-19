@@ -28,24 +28,22 @@ import (
 
 var msgID = fftypes.NewUUID()
 var Message = &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID: msgID,
-			IdentityRef: fftypes.IdentityRef{
-				Author: "did:firefly:org/abcd",
-				Key:    "0x12345",
-			},
-			Type: "",
+	Header: fftypes.MessageHeader{
+		ID: msgID,
+		SignerRef: fftypes.SignerRef{
+			Author: "did:firefly:org/abcd",
+			Key:    "0x12345",
 		},
-	}
-
+		Type: "",
+	},
+}
 
 var tokenLocalID = fftypes.NewUUID()
 var TokenTransfer = &fftypes.TokenTransfer{
-		Amount:  *fftypes.NewFFBigInt(1),
-		LocalID: tokenLocalID,
-		Type:    "",
-	}
-
+	Amount:  *fftypes.NewFFBigInt(1),
+	LocalID: tokenLocalID,
+	Type:    "",
+}
 
 func newTestMetricsManager(t *testing.T) (*metricsManager, func()) {
 	config.Reset()

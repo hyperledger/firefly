@@ -28,9 +28,9 @@ import (
 )
 
 type Manager interface {
-	RegisterOrganization(ctx context.Context, org *fftypes.Identity, waitConfirm bool) (msg *fftypes.Message, err error)
-	RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Identity, msg *fftypes.Message, err error)
-	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Identity, msg *fftypes.Message, err error)
+	RegisterOrganization(ctx context.Context, org *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
+	RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Identity, err error)
+	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Identity, err error)
 
 	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Identity, error)
 	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)

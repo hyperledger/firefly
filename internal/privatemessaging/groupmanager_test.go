@@ -34,7 +34,7 @@ func TestGroupInitSealFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.groupInit(pm.ctx, &fftypes.IdentityRef{}, &fftypes.Group{})
+	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, &fftypes.Group{})
 	assert.Regexp(t, "FF10137", err)
 }
 
@@ -55,7 +55,7 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 		},
 	}
 	group.Seal()
-	err := pm.groupInit(pm.ctx, &fftypes.IdentityRef{}, group)
+	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -77,7 +77,7 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 		},
 	}
 	group.Seal()
-	err := pm.groupInit(pm.ctx, &fftypes.IdentityRef{}, group)
+	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -94,7 +94,7 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -119,7 +119,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -144,7 +144,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -182,7 +182,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -222,7 +222,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     group.Hash,
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -263,7 +263,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     group.Hash,
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -287,7 +287,7 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -309,7 +309,7 @@ func TestResolveInitGroupExistingFail(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -331,7 +331,7 @@ func TestResolveInitGroupExistingNotFound(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},

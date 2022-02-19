@@ -41,7 +41,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	batch := &fftypes.Batch{
 		ID:   batchID,
 		Type: fftypes.MessageTypeBroadcast,
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Key:    "0x12345",
 			Author: "did:firefly:org/abcd",
 		},
@@ -81,7 +81,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	batchUpdated := &fftypes.Batch{
 		ID:   batchID,
 		Type: fftypes.MessageTypeBroadcast,
-		IdentityRef: fftypes.IdentityRef{
+		SignerRef: fftypes.SignerRef{
 			Key:    "0x12345",
 			Author: "did:firefly:org/abcd",
 		},

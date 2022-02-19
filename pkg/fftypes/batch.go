@@ -30,7 +30,7 @@ type Batch struct {
 	Namespace string      `json:"namespace"`
 	Type      MessageType `json:"type"`
 	Node      *UUID       `json:"node,omitempty"`
-	IdentityRef
+	SignerRef
 	Group      *Bytes32     `jdon:"group,omitempty"`
 	Hash       *Bytes32     `json:"hash"`
 	Created    *FFTime      `json:"created"`

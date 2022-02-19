@@ -24,32 +24,25 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Identity, err error) {
+func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (identity *fftypes.Identity, err error) {
 
 	nodeOwningOrg, err := nm.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// There is only one message for a node broadcast, as there is no second blockchain key
-	nodeClaim := &fftypes.IdentityClaim{
-		Identity: fftypes.Identity{
-			IdentityBase: fftypes.IdentityBase{
-				ID:        fftypes.NewUUID(),
-				Parent:    nodeOwningOrg.ID,
-				Namespace: fftypes.SystemNamespace,
-				Name:      config.GetString(config.NodeName),
-			},
-			IdentityProfile: fftypes.IdentityProfile{
-				Description: config.GetString(config.NodeDescription),
-			},
+	nodeRequest := &fftypes.IdentityCreateDTO{
+		Parent:    nodeOwningOrg.ID,
+		Namespace: fftypes.SystemNamespace,
+		Name:      config.GetString(config.NodeName),
+		Type:      fftypes.IdentityTypeNode,
+		IdentityProfile: fftypes.IdentityProfile{
+			Description: config.GetString(config.NodeDescription),
 		},
 	}
-	node = &nodeClaim.Identity
-	node.DID, _ = node.GenerateDID(ctx)
-	if node.Name == "" {
+	if nodeRequest.Name == "" {
 		if nodeOwningOrg.Name != "" {
-			node.Name = fmt.Sprintf("%s.node", nodeOwningOrg.Name)
+			nodeRequest.Name = fmt.Sprintf("%s.node", nodeOwningOrg.Name)
 		}
 	}
 
@@ -57,15 +50,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node 
 	if err != nil {
 		return nil, err
 	}
-	node.Profile = dxInfo.Endpoint
+	nodeRequest.Profile = dxInfo.Endpoint
 
-	if _, err = nm.identity.VerifyIdentityChain(ctx, node); err != nil {
-		return nil, err
-	}
-
-	msg, err = nm.broadcast.BroadcastDefinitionAsNode(ctx, fftypes.SystemNamespace, nodeClaim, fftypes.SystemTagDefineNode, waitConfirm)
-	if msg != nil {
-		node.Message = msg.Header.ID
-	}
-	return node, msg, err
+	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
 }

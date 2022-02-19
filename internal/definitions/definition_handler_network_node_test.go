@@ -58,7 +58,7 @@ func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -101,7 +101,7 @@ func TestHandleDefinitionBroadcastNodeUpsertFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -143,7 +143,7 @@ func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -183,7 +183,7 @@ func TestHandleDefinitionBroadcastNodeDupMismatch(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -224,7 +224,7 @@ func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -262,7 +262,7 @@ func TestHandleDefinitionBroadcastNodeGetFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -299,7 +299,7 @@ func TestHandleDefinitionBroadcastNodeBadAuthor(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x12345",
 			},
@@ -336,7 +336,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgNotFound(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -373,7 +373,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -408,7 +408,7 @@ func TestHandleDefinitionBroadcastNodeValidateFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -429,7 +429,7 @@ func TestHandleDefinitionBroadcastNodeUnmarshalFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},

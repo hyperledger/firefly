@@ -61,7 +61,7 @@ func TestHandleDefinitionBroadcastChildOrgOk(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -105,7 +105,7 @@ func TestHandleDefinitionBroadcastChildOrgDupOk(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -147,7 +147,7 @@ func TestHandleDefinitionBroadcastChildOrgBadKey(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x34567",
 			},
@@ -182,7 +182,7 @@ func TestHandleDefinitionBroadcastOrgDupMismatch(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -219,7 +219,7 @@ func TestHandleDefinitionBroadcastOrgUpsertFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "0x12345",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
@@ -252,7 +252,7 @@ func TestHandleDefinitionBroadcastOrgGetOrgFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "0x12345",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
@@ -285,7 +285,7 @@ func TestHandleDefinitionBroadcastOrgAuthorMismatch(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -320,7 +320,7 @@ func TestHandleDefinitionBroadcastGetParentFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -355,7 +355,7 @@ func TestHandleDefinitionBroadcastGetParentNotFound(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -386,7 +386,7 @@ func TestHandleDefinitionBroadcastValidateFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
@@ -407,7 +407,7 @@ func TestHandleDefinitionBroadcastUnmarshalFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			IdentityRef: fftypes.IdentityRef{
+			SignerRef: fftypes.SignerRef{
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},

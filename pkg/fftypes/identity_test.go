@@ -218,8 +218,8 @@ func TestDefinitionObjects(t *testing.T) {
 	assert.Equal(t, *claimMsg, *o.Messages.Claim)
 
 	iv := IdentityVerification{
-		Identity:    o.IdentityBase,
-		IdentityRef: o,
+		Identity:  o.IdentityBase,
+		SignerRef: o,
 	}
 	assert.Equal(t, o.Topic(), iv.Topic())
 	verificationMsg := NewUUID()
@@ -227,8 +227,8 @@ func TestDefinitionObjects(t *testing.T) {
 	assert.Equal(t, *verificationMsg, *o.Messages.Verification)
 
 	var iu Definition = &IdentityProfileUpdate{
-		Identity:    o.IdentityBase,
-		IdentityRef: o,
+		Identity:  o.IdentityBase,
+		SignerRef: o,
 	}
 	assert.Equal(t, o.Topic(), iu.Topic())
 	updateMsg := NewUUID()

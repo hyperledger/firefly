@@ -24,73 +24,25 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) findOrgsToRoot(ctx context.Context, idType, identity, parent string) (err error) {
-
-	var root *fftypes.Organization
-	for parent != "" {
-		root, err = nm.database.GetOrganizationByIdentity(ctx, parent)
-		if err != nil {
-			return err
-		}
-		if root == nil {
-			return i18n.NewError(ctx, i18n.MsgParentIdentityNotFound, parent, idType, identity)
-		}
-		parent = root.Parent
-	}
-	return err
-}
-
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
-func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Organization, msg *fftypes.Message, err error) {
+func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*fftypes.Identity, error) {
 
-	localOrgSigningKey, err := nm.getLocalOrgSigningKey(ctx)
-	if err != nil {
-		return nil, nil, err
+	orgRequest := &fftypes.IdentityCreateDTO{
+		Name: config.GetString(config.OrgName),
+		IdentityProfile: fftypes.IdentityProfile{
+			Description: config.GetString(config.OrgDescription),
+		},
 	}
-
-	org = &fftypes.Organization{
-		Name:        config.GetString(config.OrgName),
-		Identity:    localOrgSigningKey, // TODO: Switch hierarchy to DID based, not signing key. Introducing an intermediate identity object
-		Description: config.GetString(config.OrgDescription),
+	if orgRequest.Name == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}
-	if org.Identity == "" || org.Name == "" {
-		return nil, nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
-	}
-	msg, err = nm.RegisterOrganization(ctx, org, waitConfirm)
-	if msg != nil {
-		org.Message = msg.Header.ID
-	}
-	return org, msg, err
+	return nm.RegisterOrganization(ctx, orgRequest, waitConfirm)
 }
 
-func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Organization, waitConfirm bool) (*fftypes.Message, error) {
+func (nm *networkMap) RegisterOrganization(ctx context.Context, orgRequest *fftypes.IdentityCreateDTO, waitConfirm bool) (*fftypes.Identity, error) {
 
-	err := org.Validate(ctx, false)
-	if err != nil {
-		return nil, err
-	}
-	org.ID = fftypes.NewUUID()
-	org.Created = fftypes.Now()
+	orgRequest.Namespace = fftypes.SystemNamespace
+	orgRequest.Type = fftypes.IdentityTypeOrg
 
-	// If we're a root identity, we self-sign
-	signingIdentityString := org.Identity
-	if org.Parent != "" {
-		// Check the identity itself is ok
-		if err = nm.identity.ResolveInputIdentity(ctx, &fftypes.IdentityRef{
-			Key: signingIdentityString,
-		}); err != nil {
-			return nil, err
-		}
-
-		// Otherwise we must have access to the signing key of the parent, and the parents
-		// must already have been broadcast to the network
-		signingIdentityString = org.Parent
-		if err = nm.findOrgsToRoot(ctx, "organization", org.Identity, signingIdentityString); err != nil {
-			return nil, err
-		}
-	}
-
-	return nm.broadcast.BroadcastRootOrgDefinition(ctx, org, &fftypes.IdentityRef{
-		Key: signingIdentityString,
-	}, fftypes.SystemTagDefineOrganization, waitConfirm)
+	return nm.RegisterIdentity(ctx, orgRequest, waitConfirm)
 }
