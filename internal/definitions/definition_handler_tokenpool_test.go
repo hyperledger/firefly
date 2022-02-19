@@ -53,7 +53,7 @@ func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftyp
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
+			Tag: fftypes.SystemTagDefinePool,
 		},
 	}
 	b, err := json.Marshal(announce)
@@ -243,7 +243,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:  fftypes.NewUUID(),
-			Tag: string(fftypes.SystemTagDefinePool),
+			Tag: fftypes.SystemTagDefinePool,
 		},
 	}
 

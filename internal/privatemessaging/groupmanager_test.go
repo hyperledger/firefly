@@ -92,7 +92,7 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: fftypes.SignerRef{
 				Author: "author1",
@@ -117,7 +117,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: fftypes.SignerRef{
 				Author: "author1",
@@ -142,7 +142,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: fftypes.SignerRef{
 				Author: "author1",
@@ -180,7 +180,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: fftypes.SignerRef{
 				Author: "author1",
@@ -220,7 +220,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     group.Hash,
 			SignerRef: fftypes.SignerRef{
 				Author: "author1",
@@ -261,7 +261,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     group.Hash,
 			SignerRef: fftypes.SignerRef{
 				Author: "author1",

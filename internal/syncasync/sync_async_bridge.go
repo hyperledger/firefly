@@ -248,7 +248,7 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 			go sa.resolveRejected(inflight, msg.Header.ID)
 		}
 		// See if this is a rejection of an inflight token pool
-		if msg.Header.Type == fftypes.MessageTypeDefinition && msg.Header.Tag == string(fftypes.SystemTagDefinePool) {
+		if msg.Header.Type == fftypes.MessageTypeDefinition && msg.Header.Tag == fftypes.SystemTagDefinePool {
 			if pool, err := sa.getPoolFromMessage(msg); err != nil {
 				return err
 			} else if pool != nil {

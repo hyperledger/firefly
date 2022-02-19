@@ -62,7 +62,7 @@ func TestHandleDefinitionBroadcastNodeOk(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -105,7 +105,7 @@ func TestHandleDefinitionBroadcastNodeUpsertFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -147,7 +147,7 @@ func TestHandleDefinitionBroadcastNodeAddPeerFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -187,7 +187,7 @@ func TestHandleDefinitionBroadcastNodeDupMismatch(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -228,7 +228,7 @@ func TestHandleDefinitionBroadcastNodeDupOK(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -266,7 +266,7 @@ func TestHandleDefinitionBroadcastNodeGetFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -303,7 +303,7 @@ func TestHandleDefinitionBroadcastNodeBadAuthor(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x12345",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -340,7 +340,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgNotFound(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -377,7 +377,7 @@ func TestHandleDefinitionBroadcastNodeGetOrgFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -412,7 +412,7 @@ func TestHandleDefinitionBroadcastNodeValidateFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -433,7 +433,7 @@ func TestHandleDefinitionBroadcastNodeUnmarshalFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineNode),
+			Tag: fftypes.SystemTagDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)

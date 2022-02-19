@@ -119,7 +119,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.SignerRef
 			Namespace: group.Namespace, // Must go into the same ordering context as the message itself
 			Type:      fftypes.MessageTypeGroupInit,
 			SignerRef: *signer,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Topics:    fftypes.FFStringArray{group.Topic()},
 			TxType:    fftypes.TransactionTypeBatchPin,
 		},
@@ -204,7 +204,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 //
 // Errors are only returned for database issues. For validation issues, a nil group is returned without an error.
 func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
-	if msg.Header.Tag == string(fftypes.SystemTagDefineGroup) {
+	if msg.Header.Tag == fftypes.SystemTagDefineGroup {
 		// Store the new group
 		data, foundAll, err := gm.data.GetMessageData(ctx, msg, true)
 		if err != nil || !foundAll || len(data) == 0 {

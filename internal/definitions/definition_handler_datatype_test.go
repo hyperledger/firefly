@@ -55,7 +55,7 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -93,7 +93,7 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -124,7 +124,7 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -153,7 +153,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -177,7 +177,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{})
 	assert.Equal(t, ActionReject, action)
@@ -209,7 +209,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineDatatype),
+			Tag:       fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -244,7 +244,7 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -278,7 +278,7 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)

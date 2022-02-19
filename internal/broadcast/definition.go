@@ -25,11 +25,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
 	return bm.BroadcastDefinition(ctx, ns, def, &fftypes.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	err = bm.identity.ResolveInputSigningIdentity(ctx, ns, signingIdentity)
 	if err != nil {
@@ -39,7 +39,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, 
 	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
@@ -70,7 +70,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 				Type:      fftypes.MessageTypeDefinition,
 				SignerRef: *signingIdentity,
 				Topics:    fftypes.FFStringArray{def.Topic()},
-				Tag:       string(tag),
+				Tag:       tag,
 				TxType:    fftypes.TransactionTypeBatchPin,
 			},
 			Data: fftypes.DataRefs{

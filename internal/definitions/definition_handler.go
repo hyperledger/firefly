@@ -107,7 +107,7 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (msgAction DefinitionMessageAction, batchActions *DefinitionBatchActions, err error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
-	switch fftypes.SystemTag(msg.Header.Tag) {
+	switch msg.Header.Tag {
 	case fftypes.SystemTagDefineDatatype:
 		return dh.handleDatatypeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNamespace:

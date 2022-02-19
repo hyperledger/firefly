@@ -47,7 +47,7 @@ func TestHandleDefinitionBroadcastNSOk(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -77,7 +77,7 @@ func TestHandleDefinitionBroadcastNSEventFail(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -106,7 +106,7 @@ func TestHandleDefinitionBroadcastNSUpsertFail(t *testing.T) {
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -120,7 +120,7 @@ func TestHandleDefinitionBroadcastNSMissingData(t *testing.T) {
 
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{})
 	assert.Equal(t, ActionReject, action)
@@ -139,7 +139,7 @@ func TestHandleDefinitionBroadcastNSBadID(t *testing.T) {
 
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -155,7 +155,7 @@ func TestHandleDefinitionBroadcastNSBadData(t *testing.T) {
 
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -179,7 +179,7 @@ func TestHandleDefinitionBroadcastDuplicate(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -209,7 +209,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocal(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -239,7 +239,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocalFail(t *testing.T) {
 	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -265,7 +265,7 @@ func TestHandleDefinitionBroadcastDupCheckFail(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineNamespace),
+			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)

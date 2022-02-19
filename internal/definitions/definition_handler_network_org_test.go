@@ -65,7 +65,7 @@ func TestHandleDefinitionBroadcastChildOrgOk(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -109,7 +109,7 @@ func TestHandleDefinitionBroadcastChildOrgDupOk(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -151,7 +151,7 @@ func TestHandleDefinitionBroadcastChildOrgBadKey(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x34567",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -186,7 +186,7 @@ func TestHandleDefinitionBroadcastOrgDupMismatch(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -222,7 +222,7 @@ func TestHandleDefinitionBroadcastOrgUpsertFail(t *testing.T) {
 			SignerRef: fftypes.SignerRef{
 				Author: "0x12345",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -255,7 +255,7 @@ func TestHandleDefinitionBroadcastOrgGetOrgFail(t *testing.T) {
 			SignerRef: fftypes.SignerRef{
 				Author: "0x12345",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -289,7 +289,7 @@ func TestHandleDefinitionBroadcastOrgAuthorMismatch(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -324,7 +324,7 @@ func TestHandleDefinitionBroadcastGetParentFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -359,7 +359,7 @@ func TestHandleDefinitionBroadcastGetParentNotFound(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -390,7 +390,7 @@ func TestHandleDefinitionBroadcastValidateFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -411,7 +411,7 @@ func TestHandleDefinitionBroadcastUnmarshalFail(t *testing.T) {
 				Author: "did:firefly:org/0x23456",
 				Key:    "0x23456",
 			},
-			Tag: string(fftypes.SystemTagDefineOrganization),
+			Tag: fftypes.SystemTagDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)

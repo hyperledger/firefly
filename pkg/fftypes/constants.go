@@ -30,11 +30,11 @@ const (
 	// SystemTagDefineNamespace is the tag for messages that broadcast namespace definitions
 	SystemTagDefineNamespace = "ff_define_namespace"
 
-	// SystemTagDefineOrganization is the tag for messages that broadcast organization definitions
-	SystemTagDefineOrganization = "ff_define_organization"
+	// DeprecatedSystemTagDefineOrganization is the tag for messages that broadcast organization definitions
+	DeprecatedSystemTagDefineOrganization = "ff_define_organization"
 
-	// SystemTagDefineNode is the tag for messages that broadcast node definitions
-	SystemTagDefineNode = "ff_define_node"
+	// DeprecatedSystemTagDefineNode is the tag for messages that broadcast node definitions
+	DeprecatedSystemTagDefineNode = "ff_define_node"
 
 	// SystemTagDefineGroup is the tag for messages that send the definition of a group, to all parties in that group
 	SystemTagDefineGroup = "ff_define_group"

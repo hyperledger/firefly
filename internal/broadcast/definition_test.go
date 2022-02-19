@@ -38,7 +38,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, "ff_system", mock.Anything).Return(nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, true)
@@ -59,7 +59,7 @@ func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	ns := "customNamespace"
 
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, ns, mock.Anything).Return(nil)
 	msa.On("WaitForMessage", bm.ctx, ns, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, ns, &fftypes.Datatype{}, fftypes.SystemTagDefineNamespace, true)
@@ -77,7 +77,7 @@ func TestBroadcastDefinitionAsNodeUpsertFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, fftypes.SystemNamespace, mock.Anything).Return(nil)
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
 }
@@ -87,7 +87,7 @@ func TestBroadcastDefinitionBadIdentity(t *testing.T) {
 	defer cancel()
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", mock.Anything, fftypes.SystemNamespace, mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := bm.BroadcastDefinition(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",

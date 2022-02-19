@@ -104,7 +104,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineFFI),
+			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -132,7 +132,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, _, err := dh.handleFFIBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineFFI),
+			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{})
 	assert.Equal(t, ActionReject, action)
@@ -191,7 +191,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineFFI),
+			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -213,7 +213,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineFFI),
+			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)
@@ -235,7 +235,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineContractAPI),
+			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionConfirm, action)
@@ -289,7 +289,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineContractAPI),
+			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionReject, action)
@@ -310,7 +310,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineContractAPI),
+			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data})
 	assert.Equal(t, ActionRetry, action)

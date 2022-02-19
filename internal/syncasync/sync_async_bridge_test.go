@@ -461,7 +461,7 @@ func TestEventCallbackTokenPoolRejectedNoData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.MessageTypeDefinition,
-			Tag:  string(fftypes.SystemTagDefinePool),
+			Tag:  fftypes.SystemTagDefinePool,
 		},
 		Data: fftypes.DataRefs{},
 	}
@@ -499,7 +499,7 @@ func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.MessageTypeDefinition,
-			Tag:  string(fftypes.SystemTagDefinePool),
+			Tag:  fftypes.SystemTagDefinePool,
 		},
 		Data: fftypes.DataRefs{
 			{ID: dataID},
@@ -614,7 +614,7 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.MessageTypeDefinition,
-			Tag:  string(fftypes.SystemTagDefinePool),
+			Tag:  fftypes.SystemTagDefinePool,
 		},
 		Data: fftypes.DataRefs{
 			{ID: data.ID},
