@@ -89,14 +89,14 @@ func TestIsRootOgBroadcastTrue(t *testing.T) {
 
 	org := &fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
-			ID:        fftypes.NewUUID(),
+			ID: fftypes.NewUUID(),
+			// Note DID is filled in for us, for migration compliance
 			Type:      fftypes.IdentityTypeOrg,
 			Parent:    nil,
 			Namespace: fftypes.SystemNamespace,
 			Name:      "org1",
 		},
 	}
-	org.DID, _ = org.GenerateDID(bm.ctx)
 	b, _ := json.Marshal(&org)
 
 	ctx := context.Background()

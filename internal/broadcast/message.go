@@ -192,6 +192,9 @@ func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
 					if org.Parent != nil {
 						return false
 					}
+					if s.msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization {
+						org.DID, _ = org.GenerateDID(ctx)
+					}
 					err := org.Validate(ctx)
 					if err != nil {
 						log.L(ctx).Warnf("Invalid org broadcast '%s': %s", s.msg.Header.ID, err)

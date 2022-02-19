@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -59,11 +59,10 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.Identit
 		if identity.Type == "" {
 			identity.Type = fftypes.IdentityTypeOrg
 		}
-	} else {
-		if identity.Type == "" {
-			identity.Type = fftypes.IdentityTypeCustom
-		}
+	} else if identity.Type == "" {
+		identity.Type = fftypes.IdentityTypeCustom
 	}
+
 	identity.DID, _ = identity.GenerateDID(ctx)
 
 	// Verify the chain
@@ -99,10 +98,11 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.Identit
 	// Send the claim
 	claimMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityClaim{
 		Identity: identity,
-	}, claimSigner, fftypes.SystemTagDefineOrganization, waitConfirm)
+	}, claimSigner, fftypes.SystemTagIdentityClaim, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
+	identity.Messages.Claim = claimMsg.Header.ID
 
 	// Send the verification if one is required.
 	if parentSigner != nil {
@@ -112,10 +112,11 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.Identit
 				Hash: claimMsg.Hash,
 			},
 			Identity: identity.IdentityBase,
-		}, claimSigner, fftypes.SystemTagDefineOrganization, waitConfirm)
+		}, claimSigner, fftypes.SystemTagIdentityVerification, waitConfirm)
 		if err != nil {
 			return nil, err
 		}
+		identity.Messages.Verification = claimMsg.Header.ID
 	}
 
 	return identity, err

@@ -40,11 +40,11 @@ func (_m *Manager) BroadcastDatatype(ctx context.Context, ns string, datatype *f
 }
 
 // BroadcastDefinition provides a mock function with given fields: ctx, ns, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag fftypes.SystemTag, waitConfirm bool) (*fftypes.Message, error) {
+func (_m *Manager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, def, signingIdentity, tag, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, fftypes.SystemTag, bool) *fftypes.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, string, bool) *fftypes.Message); ok {
 		r0 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -53,7 +53,7 @@ func (_m *Manager) BroadcastDefinition(ctx context.Context, ns string, def fftyp
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, fftypes.SystemTag, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, string, bool) error); ok {
 		r1 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -63,11 +63,11 @@ func (_m *Manager) BroadcastDefinition(ctx context.Context, ns string, def fftyp
 }
 
 // BroadcastDefinitionAsNode provides a mock function with given fields: ctx, ns, def, tag, waitConfirm
-func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (*fftypes.Message, error) {
+func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag string, waitConfirm bool) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, def, tag, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, fftypes.SystemTag, bool) *fftypes.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, string, bool) *fftypes.Message); ok {
 		r0 = rf(ctx, ns, def, tag, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -76,7 +76,7 @@ func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, fftypes.SystemTag, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, string, bool) error); ok {
 		r1 = rf(ctx, ns, def, tag, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -124,29 +124,6 @@ func (_m *Manager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Namespace, bool) error); ok {
 		r1 = rf(ctx, ns, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastRootOrgDefinition provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.SignerRef, tag fftypes.SystemTag, waitConfirm bool) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
-
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Organization, *fftypes.SignerRef, fftypes.SystemTag, bool) *fftypes.Message); ok {
-		r0 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Organization, *fftypes.SignerRef, fftypes.SystemTag, bool) error); ok {
-		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
