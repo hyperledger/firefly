@@ -373,8 +373,9 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 				if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
 					return err
 				}
+			} else {
+				return err
 			}
-			return err
 		}
 	}
 	if err = or.sharedstorage.Init(ctx, sharedstorageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
