@@ -36,6 +36,8 @@ type Manager interface {
 	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 	GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error)
 	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetIdentityByID(ctx context.Context, id string) (*fftypes.Identity, error)
+	GetIdentities(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 }
 
 type networkMap struct {

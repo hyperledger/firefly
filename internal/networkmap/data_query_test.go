@@ -121,3 +121,30 @@ func TestGetNodes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, res)
 }
+
+func TestGetIdentityByIDOk(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg}}, nil)
+	res, err := nm.GetIdentityByID(nm.ctx, id.String())
+	assert.NoError(t, err)
+	assert.Equal(t, *id, *res.ID)
+}
+
+func TestGetIdentityByIDBadUUID(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	_, err := nm.GetIdentityByID(nm.ctx, "bad")
+	assert.Regexp(t, "FF10142", err)
+}
+
+func TestGetIdentities(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	res, _, err := nm.GetIdentities(nm.ctx, database.IdentityQueryFactory.NewFilter(nm.ctx).And())
+	assert.NoError(t, err)
+	assert.Empty(t, res)
+}
