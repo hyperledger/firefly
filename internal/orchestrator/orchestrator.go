@@ -19,6 +19,7 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
@@ -56,6 +57,8 @@ var (
 	databaseConfig      = config.NewPluginConfig("database")
 	identityConfig      = config.NewPluginConfig("identity")
 	sharedstorageConfig = config.NewPluginConfig("sharedstorage")
+	// For backward compatibility with the old "publicstorage" prefix
+	publicstorageConfig = config.NewPluginConfig("publicstorage")
 	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
 	tokensConfig        = config.NewPluginConfig("tokens").Array()
 )
@@ -167,6 +170,8 @@ func NewOrchestrator() Orchestrator {
 	bifactory.InitPrefix(blockchainConfig)
 	difactory.InitPrefix(databaseConfig)
 	ssfactory.InitPrefix(sharedstorageConfig)
+	// For backward compatibility also init with the old "publicstorage" prefix
+	ssfactory.InitPrefix(publicstorageConfig)
 	dxfactory.InitPrefix(dataexchangeConfig)
 	tifactory.InitPrefix(tokensConfig)
 
@@ -360,13 +365,22 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	if or.sharedstorage == nil {
-		psType := config.GetString(config.SharedStorageType)
-		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, psType); err != nil {
+		ssType := config.GetString(config.SharedStorageType)
+		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
+			if strings.Contains(err.Error(), i18n.Expand(ctx, i18n.MsgUnknownSharedStoragePlugin, "")) {
+				// backward compatibility for old "publicstorage" name
+				ssType = config.GetString(config.PublicStorageType)
+				if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
+					return err
+				}
+			}
 			return err
 		}
 	}
 	if err = or.sharedstorage.Init(ctx, sharedstorageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
-		return err
+		if err = or.sharedstorage.Init(ctx, publicstorageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
+			return err
+		}
 	}
 
 	if err = or.initDataExchange(ctx); err != nil {

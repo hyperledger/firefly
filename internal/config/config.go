@@ -208,6 +208,8 @@ var (
 	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
 	// SharedStorageType specifies which shared storage interface plugin to use
 	SharedStorageType = rootKey("sharedstorage.type")
+	// PublicStorageType specifies which shared storage interface plugin to use
+	PublicStorageType = rootKey("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = rootKey("subscription.defaults.batchSize")
 	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
