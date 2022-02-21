@@ -17,7 +17,7 @@
 package networkmap
 
 import (
-	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -30,28 +30,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func testOrg(name string) *fftypes.Identity {
-	i := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.IdentityTypeOrg,
-			Namespace: fftypes.SystemNamespace,
-			Name:      name,
-		},
-		IdentityProfile: fftypes.IdentityProfile{
-			Description: "desc",
-			Profile: fftypes.JSONObject{
-				"some": "profiledata",
-			},
-		},
-		Messages: fftypes.IdentityMessages{
-			Claim: fftypes.NewUUID(),
-		},
-	}
-	i.DID, _ = i.GenerateDID(context.Background())
-	return i
-}
 
 func TestRegisterNodeOk(t *testing.T) {
 
@@ -95,5 +73,51 @@ func TestRegisterNodeOk(t *testing.T) {
 	node, err := nm.RegisterNode(nm.ctx, true)
 	assert.NoError(t, err)
 	assert.Equal(t, *mockMsg.Header.ID, *node.Messages.Claim)
+
+}
+
+func TestRegisterNodePeerInfoFail(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	config.Set(config.OrgKey, "0x23456")
+	config.Set(config.OrgName, "org1")
+	config.Set(config.NodeDescription, "Node 1")
+
+	parentOrg := testOrg("org1")
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, nil)
+
+	parentClaimMsg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			SignerRef: fftypes.SignerRef{
+				Key: "0x12345",
+			},
+		},
+	}
+	mdi := nm.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageByID", nm.ctx, parentOrg.Messages.Claim).Return(parentClaimMsg, nil)
+
+	mdx := nm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("GetEndpointInfo", nm.ctx).Return(dataexchange.DXInfo{}, fmt.Errorf("pop"))
+
+	_, err := nm.RegisterNode(nm.ctx, true)
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestRegisterNodeGetOwnerFail(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetNodeOwnerOrg", nm.ctx).Return(nil, fmt.Errorf("pop"))
+
+	_, err := nm.RegisterNode(nm.ctx, true)
+	assert.Regexp(t, "pop", err)
 
 }

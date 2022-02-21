@@ -27,11 +27,17 @@ import (
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
 func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*fftypes.Identity, error) {
 
+	key, err := nm.identity.GetNodeOwnerBlockchainKey(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	orgRequest := &fftypes.IdentityCreateDTO{
 		Name: config.GetString(config.OrgName),
 		IdentityProfile: fftypes.IdentityProfile{
 			Description: config.GetString(config.OrgDescription),
 		},
+		Key: key.Value,
 	}
 	if orgRequest.Name == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)

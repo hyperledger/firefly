@@ -106,17 +106,17 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.Identit
 
 	// Send the verification if one is required.
 	if parentSigner != nil {
-		_, err = nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityVerification{
+		verifyMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityVerification{
 			Claim: fftypes.MessageRef{
 				ID:   claimMsg.Header.ID,
 				Hash: claimMsg.Hash,
 			},
 			Identity: identity.IdentityBase,
-		}, claimSigner, fftypes.SystemTagIdentityVerification, waitConfirm)
+		}, parentSigner, fftypes.SystemTagIdentityVerification, waitConfirm)
 		if err != nil {
 			return nil, err
 		}
-		identity.Messages.Verification = claimMsg.Header.ID
+		identity.Messages.Verification = verifyMsg.Header.ID
 	}
 
 	return identity, err
