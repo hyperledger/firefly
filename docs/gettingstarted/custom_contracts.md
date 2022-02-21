@@ -18,11 +18,11 @@ FireFly includes robust support for custom smart contracts with an easy to use A
 
 ---
 
-> **NOTE:** This guide assumes that you are running a local FireFly stack with at least 2 members and an Ethereum blockchain created by the FireFly CLI
+> **NOTE:** This guide assumes that you are running a local FireFly stack with at least 2 members and an Ethereum blockchain created by the FireFly CLI. If you need help getting that set up, please see the [Getting Started guide to Start your environment](https://nguyer.github.io/firefly/gettingstarted/setup_env.html).
 
 ## Example smart contract
 
-For this tutorial, we will be using a well known, but slightly modified smart contract called `SimpleStorage`, and be working with this contract on an Ethereum blockchain. As the name implies, it's a very simple contract which stores an unsigned 256 bit integer, emits and event when the value is updated, and allows you to retrieve the current value.
+For this tutorial, we will be using a well known, but slightly modified smart contract called `SimpleStorage`, and will be using this contract on an Ethereum blockchain. As the name implies, it's a very simple contract which stores an unsigned 256 bit integer, emits and event when the value is updated, and allows you to retrieve the current value.
 
 Here is the source for this contract:
 
@@ -54,9 +54,9 @@ contract SimpleStorage {
 
 For the this guide, we will assume that the SimpleStorage contract is deployed at the Ethereum address of: `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`
 
-**Deployment of smart contracts is not currently within the scope of responsibility for FireFly.** You can use your standard blockchain specific tools to deploy your contract to whichever blockchain you are using. For Ethereum blockchains you can use [Truffle](https://trufflesuite.com/) or [Hardhat](https://hardhat.org/).
+**Deployment of smart contracts is not currently within the scope of responsibility for FireFly.** You can use your standard blockchain specific tools to deploy your contract to whichever blockchain you are using. For Ethereum blockchains you could use [Truffle](https://trufflesuite.com/) or [Hardhat](https://hardhat.org/).
 
-If you're using Truffle, you'll need to set your `truffle-config.js` file to point to the locally running blockchain node. Make sure your `networks` section looks like this:
+If you're using Truffle, you'll need to set your `truffle-config.js` file to point to the locally running blockchain node that the FireFly CLI created. Make sure your `networks` section looks like this:
 
 ```javascript
 networks: {
@@ -70,11 +70,11 @@ networks: {
 
 ## The FireFly Interface Format
 
-FireFly defines a common, blockchain agnostic way to describe smart contracts. This is referred to as a **Contract Interface**, and it is written in the FireFly Interface (FFI) format. It is a simple JSON document that has a name, a namespace, a version, a list of methods, and a list of events.
+Before we jump into using our contract with FireFly, it's helpful to understand a couple of key concepts. One of those is the FireFly Interface format. FireFly defines a common, blockchain agnostic way to describe smart contracts. This is referred to as a **Contract Interface**, and it is written in the FireFly Interface (FFI) format. It is a simple JSON document that has a name, a namespace, a version, a list of methods, and a list of events.
 
 For more details, you can also have a look at the [Reference page for the FireFly Interface Format](../reference/firefly_interface_format).
 
-If you have an Ethereum ABI for an existing smart contract, there is an HTTP endpoint on the FireFly API that will take the ABI as input and automatically generate the FireFly Interface for you.
+If you have an Ethereum ABI for an existing smart contract, there is an HTTP endpoint on the FireFly API that will take the ABI as input and automatically generate the FireFly Interface for you. Rather than handcrafting our FFI, we'll let FireFly generate it for us using that endpoint now.
 
 ### Request
 
@@ -394,9 +394,9 @@ We will take the output from the previous HTTP response above, **fill in the nam
 
 ## Create an HTTP API for the contract
 
-Now comes the fun part where we see some of the power, developer-friendly features of FireFly. The next thing we're going to to is tell FireFly to build an HTTP API for this smart contract, complete with an OpenAPI Specification and Swagger UI. As part of this, we'll also tell FireFly where the contract is on the blockchain. Like the interface broadcast above, this will also generate a broadcast which will be pinned to the blockchain so all the members of the network will be aware of and able to interact with this API.
+Now comes the fun part where we see some of the powerful, developer-friendly features of FireFly. The next thing we're going to to is tell FireFly to build an HTTP API for this smart contract, complete with an OpenAPI Specification and Swagger UI. As part of this, we'll also tell FireFly where the contract is on the blockchain. Like the interface broadcast above, this will also generate a broadcast which will be pinned to the blockchain so all the members of the network will be aware of and able to interact with this API.
 
-We need to copy the `id` field we got in the response from the previous step to the `interface.id` field in the request body below. We will also pick a name `simple-storage` here that will be part of the URL for our HTTP API. So be sure to pick a name that is URL friendly. Lastly, in the `location.address` field, we're telling FireFly where an instance of the contract is deployed on-chain.
+We need to copy the `id` field we got in the response from the previous step to the `interface.id` field in the request body below. We will also pick a name that will be part of the URL for our HTTP API, so be sure to pick a name that is URL friendly. In this case we'll call it `simple-storage`. Lastly, in the `location.address` field, we're telling FireFly where an instance of the contract is deployed on-chain.
 
 >**NOTE**: The `location` field is optional here, but if it is omitted, it will be required in every request to invoke or query the contract. This can be useful if you have multiple instances of the same contract deployed to different addresses.
 
@@ -514,7 +514,7 @@ This URL has a few parameters included in it that will:
 
 ## Subscribe to events from our contract
 
-You'll notice that when you connect your WebSocket client, you don't receive any events, even if you continue to invoke your contract after your connected. This is because we haven't yet told FireFly to *subscribe* to those events being emitted from our contract. To do that, we can make a `POST` request to the `/subscribe/Changed` endpoint on our generated API.
+You'll notice at first when you connect your WebSocket client, you don't receive any events, even if you continue to invoke your contract after your connected. This is because we haven't yet told FireFly to *subscribe* to those events being emitted from our contract. To do that, we can make a `POST` request to the `/subscribe/Changed` endpoint on our generated API.
 
 ### Request
 
@@ -628,9 +628,11 @@ Once we have received a blockchain event, we can go look up the output of that e
 
 Here we can see the `output.value` is `3` just like we submitted in our original request to invoke the contract.
 
+**You've reached the end of the main guide to working with custom smart contracts in FireFly**. Hopefully this was helpful and gives you what you need to get up and running with your own contracts. There are several additional ways to invoke or query smart contracts detailed below, so feel free to keep reading if you're curious.
+
 ## Appendix I: Work with a custom contract without creating a named API
 
-FireFly aims to offer a developer-friendly and flexible approach to using custom smart contracts. The guide above has detailed the most robust and feature-rich way to use custom contracts with FireFly, but there are several alternative API usage patterns to do so.
+FireFly aims to offer a developer-friendly and flexible approach to using custom smart contracts. The guide above has detailed the most robust and feature-rich way to use custom contracts with FireFly, but there are several alternative API usage patterns available as well.
 
 It is possible to broadcast a contract interface and use a smart contract that implements that interface without also broadcasting a named API as above. There are several key differences (which may or may not be desirable) compared to the method outlined in the full guide above:
 
@@ -667,7 +669,7 @@ All of the same invoke, query, and subscribe endpoints are available on the cont
 
 The final way of working with custom smart contracts with FireFly is to just put everything FireFly needs all in one request, each time a contract is invoked or queried. This is the most lightweight, but least feature-rich way of using a custom contract.
 
-To do this, we will need to put both the contract location, and a subset of a FireFly Interface that describes the method we want to invoke in the request body, in addition to the function input.
+To do this, we will need to put both the contract location, and a subset of the FireFly Interface that describes the method we want to invoke in the request body, in addition to the function input.
 
 ### Request
 
