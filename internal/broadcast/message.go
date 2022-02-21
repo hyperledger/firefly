@@ -173,6 +173,41 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	return err
 }
 
+func (s *broadcastSender) isValidRootOrgIdentityClaim(ctx context.Context, data *fftypes.Data) bool {
+	var claim *fftypes.IdentityClaim
+	if data.Value != nil {
+		err := json.Unmarshal([]byte(*data.Value), &claim)
+		if err != nil {
+			return false
+		}
+	}
+	return s.isValidRootOrgCommon(ctx, claim.Identity)
+}
+
+func (s *broadcastSender) isValidRootOrgDeprecated(ctx context.Context, data *fftypes.Data) bool {
+	var org *fftypes.Identity
+	if data.Value != nil {
+		err := json.Unmarshal([]byte(*data.Value), &org)
+		if err != nil {
+			return false
+		}
+	}
+	org.DID, _ = org.GenerateDID(ctx)
+	return s.isValidRootOrgCommon(ctx, org)
+}
+
+func (s *broadcastSender) isValidRootOrgCommon(ctx context.Context, org *fftypes.Identity) bool {
+	if org == nil || org.Parent != nil {
+		return false
+	}
+	err := org.Validate(ctx)
+	if err != nil {
+		log.L(ctx).Warnf("Invalid org broadcast '%s': %s", s.msg.Header.ID, err)
+		return false
+	}
+	return true
+}
+
 func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
 	// Look into message to see if it contains a data item that is a root organization definition
 	if s.msg.Header.Type == fftypes.MessageTypeDefinition &&
@@ -182,25 +217,10 @@ func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
 			if len(messageData) > 0 {
 				dataItem := messageData[0]
 				if dataItem.Validator == fftypes.MessageTypeDefinition {
-					var org *fftypes.Identity
-					if dataItem.Value != nil {
-						err := json.Unmarshal([]byte(*dataItem.Value), &org)
-						if err != nil {
-							return false
-						}
-					}
-					if org.Parent != nil {
-						return false
-					}
 					if s.msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization {
-						org.DID, _ = org.GenerateDID(ctx)
+						return s.isValidRootOrgDeprecated(ctx, dataItem)
 					}
-					err := org.Validate(ctx)
-					if err != nil {
-						log.L(ctx).Warnf("Invalid org broadcast '%s': %s", s.msg.Header.ID, err)
-						return false
-					}
-					return true
+					return s.isValidRootOrgIdentityClaim(ctx, dataItem)
 				}
 			}
 		}

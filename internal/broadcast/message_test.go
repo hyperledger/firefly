@@ -80,7 +80,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestIsRootOgBroadcastTrue(t *testing.T) {
+func TestIsRootOgBroadcastDeprecatedTrue(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
@@ -134,6 +134,62 @@ func TestIsRootOgBroadcastTrue(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
+func TestIsRootOgBroadcastIdentityClaimTrue(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	org := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeOrg,
+			Parent:    nil,
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+		},
+	}
+	org.DID, _ = org.GenerateDID(bm.ctx)
+	claim := &fftypes.IdentityClaim{
+		Identity: org,
+	}
+	b, _ := json.Marshal(&claim)
+
+	ctx := context.Background()
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtrBytes(b),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(errors.New("not registered"))
+
+	isRoot := bm.NewBroadcast("ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.MessageTypeDefinition,
+				Tag:  fftypes.SystemTagIdentityClaim,
+				SignerRef: fftypes.SignerRef{
+					Author: "did:firefly:org/12345",
+					Key:    "0x12345",
+				},
+			},
+			Data: fftypes.DataRefs{
+				{
+					ID:   data.ID,
+					Hash: data.Hash,
+				},
+			},
+		},
+	}).(*broadcastSender).isRootOrgBroadcast(ctx)
+	assert.True(t, isRoot)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
 func TestIsRootOgBroadcastNonRoot(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -240,7 +296,7 @@ func TestIsRootOgBroadcastBadOrg(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
-func TestIsRootOgBroadcastBadData(t *testing.T) {
+func TestIsRootOrgDeprecatedBroadcastBadData(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
@@ -281,6 +337,49 @@ func TestIsRootOgBroadcastBadData(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
+
+func TestIsRootOrgBroadcastBadData(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	ctx := context.Background()
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtr("not an identity claim"),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(errors.New("not registered"))
+
+	isRoot := bm.NewBroadcast("ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.MessageTypeDefinition,
+				Tag:  fftypes.SystemTagIdentityClaim,
+				SignerRef: fftypes.SignerRef{
+					Author: "did:firefly:org/12345",
+					Key:    "0x12345",
+				},
+			},
+			Data: fftypes.DataRefs{
+				{
+					ID:   data.ID,
+					Hash: data.Hash,
+				},
+			},
+		},
+	}).(*broadcastSender).isRootOrgBroadcast(ctx)
+	assert.False(t, isRoot)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
 func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
