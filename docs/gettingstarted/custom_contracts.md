@@ -443,6 +443,16 @@ You'll notice in the response body that there are a couple of URLs near the bott
 
 ![Swagger UI](../images/simple_storage_swagger.png "Swagger UI")
 
+## Smart contracts async programming in FireFly
+
+Before we start using our smart contract, it's worth taking a moment to understand the programming model when working with smart contracts in FireFly. Like the rest of FireFly, smart contracts are implemented with an asynchronous programming model. The key concepts here are:
+
+- Transactions are submitted to FireFly and will immediately be assigned an ID. This is the **Operation ID**.
+- The transaction itself happens asynchronously from the HTTP request that initiated it
+- Events emitted by the smart contract will be stored in FireFly's event database, and emitted on its event bus to an application if one has subscribed to those events
+
+![Smart Contracts Async Flow](../images/smart_contracts_async_flow.svg "Smart Contracts Async Flow")
+
 ## Invoke the smart contract
 
 Now that we've got everything set up, it's time to use our smart contract! We're going to make a `POST` request to the `invoke/set` endpoint to set the integer value on-chain. Let's set it to the value of `3` right now.
