@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE events DROP COLUMN tx_id;
+COMMIT;

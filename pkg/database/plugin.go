@@ -770,7 +770,7 @@ var EventQueryFactory = &queryFields{
 	"type":      &StringField{},
 	"namespace": &StringField{},
 	"reference": &UUIDField{},
-	"group":     &Bytes32Field{},
+	"tx":        &UUIDField{},
 	"sequence":  &Int64Field{},
 	"created":   &TimeField{},
 }

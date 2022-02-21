@@ -38,6 +38,11 @@ import (
 
 const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
+	booleanType                  = "boolean"
+	integerType                  = "integer"
+	stringType                   = "string"
+	arrayType                    = "array"
+	objectType                   = "object"
 )
 
 type Ethereum struct {
@@ -63,12 +68,8 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
-type asyncTXSubmission struct {
-	ID string `json:"id"`
-}
-
 type queryOutput struct {
-	Output string `json:"output"`
+	Output interface{} `json:"output"`
 }
 
 type ethWSCommandPayload struct {
@@ -81,10 +82,22 @@ type Location struct {
 }
 
 type paramDetails struct {
-	Type         string
-	InternalType string
-	Indexed      bool
-	Index        int
+	Type         string `json:"type"`
+	InternalType string `json:"internalType,omitempty"`
+	Indexed      bool   `json:"indexed,omitempty"`
+	Index        *int   `json:"index,omitempty"`
+}
+
+type Schema struct {
+	Type       string             `json:"type"`
+	Details    *paramDetails      `json:"details,omitempty"`
+	Properties map[string]*Schema `json:"properties,omitempty"`
+	Items      *Schema            `json:"items,omitempty"`
+}
+
+func (s *Schema) ToJSON() string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }
 
 // ABIArgumentMarshaling is abi.ArgumentMarshaling
@@ -159,6 +172,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	if e.instancePath == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
 	}
+
 	// Backwards compatibility from when instance path was not a contract address
 	if strings.HasPrefix(strings.ToLower(e.instancePath), "/contracts/") {
 		address, err := e.getContractAddress(ctx, e.instancePath)
@@ -166,6 +180,8 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 			return err
 		}
 		e.instancePath = address
+	} else if strings.HasPrefix(e.instancePath, "/instances/") {
+		e.instancePath = strings.Replace(e.instancePath, "/instances/", "", 1)
 	}
 
 	// Ethconnect needs the "0x" prefix in some cases
@@ -541,24 +557,20 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return nil
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	abi, orderedInput, err := e.prepareRequest(ctx, method, input)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	res, err := e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
-	tx := &asyncTXSubmission{}
-	if err = json.Unmarshal(res.Body(), tx); err != nil {
-		return nil, err
-	}
-	return tx, nil
+	return nil
 }
 
 func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
@@ -675,11 +687,12 @@ func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgume
 func processField(name string, schema *jsonschema.Schema) ABIArgumentMarshaling {
 	details := getParamDetails(schema)
 	arg := ABIArgumentMarshaling{
-		Name:    name,
-		Type:    details.Type,
-		Indexed: details.Indexed,
+		Name:         name,
+		Type:         details.Type,
+		InternalType: details.InternalType,
+		Indexed:      details.Indexed,
 	}
-	if schema.Types[0] == "object" {
+	if schema.Types[0] == objectType {
 		arg.Components = buildABIArgumentArray(schema.Properties)
 	}
 	return arg
@@ -690,7 +703,7 @@ func buildABIArgumentArray(properties map[string]*jsonschema.Schema) []ABIArgume
 	for propertyName, propertySchema := range properties {
 		details := getParamDetails(propertySchema)
 		arg := processField(propertyName, propertySchema)
-		args[details.Index] = arg
+		args[*details.Index] = arg
 	}
 	return args
 }
@@ -704,10 +717,14 @@ func getParamDetails(schema *jsonschema.Schema) *paramDetails {
 	}
 	if i, ok := details["index"]; ok {
 		index, _ := i.(json.Number).Int64()
-		paramDetails.Index = int(index)
+		paramDetails.Index = new(int)
+		*paramDetails.Index = int(index)
 	}
 	if i, ok := details["indexed"]; ok {
 		paramDetails.Indexed = i.(bool)
+	}
+	if i, ok := details["internalType"]; ok {
+		paramDetails.InternalType = i.(string)
 	}
 	return paramDetails
 }
@@ -736,4 +753,127 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 		return "", err
 	}
 	return output["address"], nil
+}
+
+func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+	var abi []ABIElementMarshaling
+	err := json.Unmarshal(generationRequest.Input.Bytes(), &abi)
+	if err != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
+	}
+	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, abi)
+	return ffi, nil
+}
+
+func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi []ABIElementMarshaling) *fftypes.FFI {
+	ffi := &fftypes.FFI{
+		Namespace:   ns,
+		Name:        name,
+		Version:     version,
+		Description: description,
+		Methods:     []*fftypes.FFIMethod{},
+		Events:      []*fftypes.FFIEvent{},
+	}
+
+	for _, element := range abi {
+		switch element.Type {
+		case "event":
+			event := &fftypes.FFIEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name:   element.Name,
+					Params: e.convertABIArgumentsToFFI(element.Inputs),
+				},
+			}
+			ffi.Events = append(ffi.Events, event)
+		case "function":
+			method := &fftypes.FFIMethod{
+				Name:    element.Name,
+				Params:  e.convertABIArgumentsToFFI(element.Inputs),
+				Returns: e.convertABIArgumentsToFFI(element.Outputs),
+			}
+			ffi.Methods = append(ffi.Methods, method)
+		}
+	}
+	return ffi
+}
+
+func (e *Ethereum) convertABIArgumentsToFFI(args []ABIArgumentMarshaling) fftypes.FFIParams {
+	ffiParams := fftypes.FFIParams{}
+	for _, arg := range args {
+		param := &fftypes.FFIParam{
+			Name: arg.Name,
+		}
+		s := e.getSchema(arg)
+		param.Schema = fftypes.JSONAnyPtr(s.ToJSON())
+		ffiParams = append(ffiParams, param)
+	}
+	return ffiParams
+}
+
+func (e *Ethereum) getSchema(arg ABIArgumentMarshaling) *Schema {
+	s := &Schema{
+		Type: e.getFFIType(arg.Type),
+		Details: &paramDetails{
+			Type:         arg.Type,
+			InternalType: arg.InternalType,
+			Indexed:      arg.Indexed,
+		},
+	}
+	var properties map[string]*Schema
+	if len(arg.Components) > 0 {
+		properties = e.getSchemaForObjectComponents(arg)
+	}
+	if s.Type == arrayType {
+		levels := strings.Count(arg.Type, "[]")
+		innerType := e.getFFIType(strings.ReplaceAll(arg.Type, "[]", ""))
+		innerSchema := &Schema{
+			Type: innerType,
+		}
+		if len(arg.Components) > 0 {
+			innerSchema.Properties = e.getSchemaForObjectComponents(arg)
+		}
+		for i := 1; i < levels; i++ {
+			innerSchema = &Schema{
+				Type:  arrayType,
+				Items: innerSchema,
+			}
+		}
+		s.Items = innerSchema
+	} else {
+		s.Properties = properties
+	}
+	return s
+}
+
+func (e *Ethereum) getSchemaForObjectComponents(arg ABIArgumentMarshaling) map[string]*Schema {
+	m := make(map[string]*Schema, len(arg.Components))
+	for i, component := range arg.Components {
+		componentSchema := e.getSchema(component)
+		componentSchema.Details.Index = new(int)
+		*componentSchema.Details.Index = i
+		m[component.Name] = componentSchema
+	}
+	return m
+}
+
+func (e *Ethereum) getFFIType(solitidyType string) string {
+
+	switch solitidyType {
+	case stringType, "address":
+		return stringType
+	case "bool":
+		return booleanType
+	case "tuple":
+		return objectType
+	default:
+		switch {
+		case strings.HasSuffix(solitidyType, "[]"):
+			return arrayType
+		case strings.Contains(solitidyType, "byte"):
+			return stringType
+		case strings.Contains(solitidyType, "int"):
+			return integerType
+		}
+	}
+	return ""
 }

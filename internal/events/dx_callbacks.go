@@ -178,7 +178,7 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 	}
 
 	for _, msg := range batch.Payload.Messages {
-		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID)
+		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
@@ -292,13 +292,25 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		// The maniest should exactly match that stored into the operation input, if supported
 		op := operations[0]
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
-			expectedManifest := op.Input.GetString("manifest")
-			if update.Manifest != expectedManifest {
-				// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
-				mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)
-				log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
-				update.Error = mismatchErr.Error()
-				status = fftypes.OpStatusFailed
+			switch op.Type {
+			case fftypes.OpTypeDataExchangeBatchSend:
+				expectedManifest := op.Input.GetString("manifest")
+				if update.Manifest != expectedManifest {
+					// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
+					mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)
+					log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
+					update.Error = mismatchErr.Error()
+					status = fftypes.OpStatusFailed
+				}
+			case fftypes.OpTypeDataExchangeBlobSend:
+				expectedHash := op.Input.GetString("hash")
+				if update.Hash != expectedHash {
+					// Log and map to failure for user to see that the receiver did not provide a matching hash
+					mismatchErr := i18n.NewError(em.ctx, i18n.MsgBlobHashMismatch, expectedHash, update.Hash)
+					log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
+					update.Error = mismatchErr.Error()
+					status = fftypes.OpStatusFailed
+				}
 			}
 		}
 

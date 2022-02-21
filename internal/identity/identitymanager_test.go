@@ -57,7 +57,7 @@ func TestResolveInputSigningIdentityNoOrgKey(t *testing.T) {
 
 	msgIdentity := &fftypes.SignerRef{}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
-	assert.Regexp(t, "FF10351", err)
+	assert.Regexp(t, "FF10354", err)
 
 }
 
@@ -201,7 +201,7 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 		Key: "mykey123",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
-	assert.Regexp(t, "FF10353", err)
+	assert.Regexp(t, "FF10356", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -244,7 +244,7 @@ func TestResolveInputSigningIdentityByKeyDIDMismatch(t *testing.T) {
 		Author: "did:firefly:ns/ns1/notmyid",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
-	assert.Regexp(t, "FF10352", err)
+	assert.Regexp(t, "FF10355", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -319,7 +319,7 @@ func TestResolveInputSigningIdentityForRootOrgRegBadNS(t *testing.T) {
 		Author: "did:firefly:orgs/neworgname",
 	}
 	err := im.ResolveRootOrgRegistrationSigningKey(ctx, "ns1", msgIdentity)
-	assert.Regexp(t, "FF10354", err)
+	assert.Regexp(t, "FF10357", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -342,7 +342,7 @@ func TestResolveInputSigningIdentityForRootOrgRegBadDID(t *testing.T) {
 		Author: "did:firefly:nodes/node1",
 	}
 	err := im.ResolveRootOrgRegistrationSigningKey(ctx, fftypes.SystemNamespace, msgIdentity)
-	assert.Regexp(t, "FF10354", err)
+	assert.Regexp(t, "FF10357", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -512,7 +512,7 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 	mdi.On("GetVerifiers", ctx, mock.Anything).Return([]*fftypes.Verifier{}, nil, nil)
 
 	_, err := im.firstVerifierForIdentity(ctx, fftypes.VerifierTypeEthAddress, id)
-	assert.Regexp(t, "FF10350", err)
+	assert.Regexp(t, "FF10353", err)
 
 	mdi.AssertExpectations(t)
 
@@ -557,7 +557,7 @@ func TestResolveBlockchainKeyEmptyRequest(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	_, err := im.ResolveBlockchainKey(ctx, "")
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10352", err)
 
 }
 
@@ -597,7 +597,7 @@ func TestGetNodeOwnerOrgKeyNotSet(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	_, err := im.GetNodeOwnerOrg(ctx)
-	assert.Regexp(t, "FF10351", err)
+	assert.Regexp(t, "FF10354", err)
 
 }
 
@@ -779,7 +779,7 @@ func TestCachedIdentityLookupByDIDUnknownResolver(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	_, err := im.cachedIdentityLookupByDID(ctx, "did:random:anything")
-	assert.Regexp(t, "FF10346", err)
+	assert.Regexp(t, "FF10349", err)
 
 }
 
@@ -953,7 +953,7 @@ func TestVerifyIdentityChainLoop(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
 
 	_, err := im.VerifyIdentityChain(ctx, id1)
-	assert.Regexp(t, "FF10361", err)
+	assert.Regexp(t, "FF10364", err)
 
 	mdi.AssertExpectations(t)
 }
@@ -988,7 +988,7 @@ func TestVerifyIdentityChainBadParent(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
 
 	_, err := im.VerifyIdentityChain(ctx, id1)
-	assert.Regexp(t, "FF10363", err)
+	assert.Regexp(t, "FF10366", err)
 
 	mdi.AssertExpectations(t)
 }
@@ -1072,7 +1072,7 @@ func TestVerifyIdentityChainInvalidParent(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, id1.ID).Return(id1, nil).Once()
 
 	_, err := im.VerifyIdentityChain(ctx, id2)
-	assert.Regexp(t, "FF10362", err)
+	assert.Regexp(t, "FF10365", err)
 
 	mdi.AssertExpectations(t)
 }
@@ -1093,7 +1093,7 @@ func TestValidateParentTypeCustomToNode(t *testing.T) {
 	}
 
 	err := im.validateParentType(ctx, id2, id1)
-	assert.Regexp(t, "FF10362", err)
+	assert.Regexp(t, "FF10365", err)
 
 }
 
@@ -1113,6 +1113,6 @@ func TestValidateParentTypeInvalidType(t *testing.T) {
 	}
 
 	err := im.validateParentType(ctx, id2, id1)
-	assert.Regexp(t, "FF10359", err)
+	assert.Regexp(t, "FF10362", err)
 
 }

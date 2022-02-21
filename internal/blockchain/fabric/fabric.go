@@ -66,21 +66,13 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
-type asyncTXSubmission struct {
-	ID string `json:"id"`
-}
-
-type fabBatchPinInput struct {
-	Namespace  string   `json:"namespace"`
-	UUIDs      string   `json:"uuids"`
-	BatchHash  string   `json:"batchHash"`
-	PayloadRef string   `json:"payloadRef"`
-	Contexts   []string `json:"contexts"`
-}
-
 type fabTxInputHeaders struct {
+	ID            string         `json:"id,omitempty"`
 	Type          string         `json:"type"`
 	PayloadSchema *PayloadSchema `json:"payloadSchema,omitempty"`
+	Signer        string         `json:"signer,omitempty"`
+	Channel       string         `json:"channel,omitempty"`
+	Chaincode     string         `json:"chaincode,omitempty"`
 }
 
 type PayloadSchema struct {
@@ -93,39 +85,19 @@ type PrefixItem struct {
 	Type string `json:"type"`
 }
 
-func newTxInputHeaders() *fabTxInputHeaders {
-	return &fabTxInputHeaders{
-		Type: "SendTransaction",
-	}
-}
-
-type fabTxInput struct {
-	Headers *fabTxInputHeaders `json:"headers"`
-	Func    string             `json:"func"`
-	Args    []string           `json:"args"`
-}
-
 type fabTxNamedInput struct {
 	Headers *fabTxInputHeaders `json:"headers"`
 	Func    string             `json:"func"`
 	Args    map[string]string  `json:"args"`
 }
 
-func newTxInput(pinInput *fabBatchPinInput) *fabTxInput {
-	hashesJSON, _ := json.Marshal(pinInput.Contexts)
-	stringifiedHashes := string(hashesJSON)
-	input := &fabTxInput{
-		Headers: newTxInputHeaders(),
-		Func:    "PinBatch",
-		Args: []string{
-			pinInput.Namespace,
-			pinInput.UUIDs,
-			pinInput.BatchHash,
-			pinInput.PayloadRef,
-			stringifiedHashes,
-		},
-	}
-	return input
+type fabQueryNamedOutput struct {
+	Headers *fabTxInputHeaders `json:"headers"`
+	Result  interface{}        `json:"result"`
+}
+
+type ffiParamSchema struct {
+	Type string `json:"type,omitempty"`
 }
 
 type fabWSCommandPayload struct {
@@ -145,8 +117,33 @@ type Location struct {
 }
 
 var batchPinEvent = "BatchPin"
+var batchPinMethodName = "PinBatch"
+var batchPinPrefixItems = []*PrefixItem{
+	{
+		Name: "namespace",
+		Type: "string",
+	},
+	{
+		Name: "uuids",
+		Type: "string",
+	},
+	{
+		Name: "batchHash",
+		Type: "string",
+	},
+	{
+		Name: "payloadRef",
+		Type: "string",
+	},
+	{
+		Name: "contexts",
+		Type: "string",
+	},
+}
+
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
-var cnPatteren = regexp.MustCompile("CN=([^,]+)")
+
+var cnPattern = regexp.MustCompile("CN=([^,]+)")
 
 func (f *Fabric) Name() string {
 	return "fabric"
@@ -503,15 +500,25 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string) 
 	return signingKeyInput, nil
 }
 
-func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, signingKey string, requestID string, input interface{}) (*resty.Response, error) {
+func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]string) (*resty.Response, error) {
+	in := &fabTxNamedInput{
+		Headers: &fabTxInputHeaders{
+			ID: requestID,
+			PayloadSchema: &PayloadSchema{
+				Type:        "array",
+				PrefixItems: prefixItems,
+			},
+			Channel:   channel,
+			Chaincode: chaincode,
+			Signer:    getUserName(signingKey),
+		},
+		Func: methodName,
+		Args: input,
+	}
+
 	return f.client.R().
 		SetContext(ctx).
-		SetQueryParam(f.prefixShort+"-signer", getUserName(signingKey)).
-		SetQueryParam(f.prefixShort+"-channel", channel).
-		SetQueryParam(f.prefixShort+"-chaincode", chaincode).
-		SetQueryParam(f.prefixShort+"-sync", "false").
-		SetQueryParam(f.prefixShort+"-id", requestID).
-		SetBody(input).
+		SetBody(in).
 		Post("/transactions")
 }
 
@@ -520,7 +527,7 @@ func getUserName(fullIDString string) string {
 	if len(matches) == 0 {
 		return fullIDString
 	}
-	matches = cnPatteren.FindStringSubmatch(matches[1])
+	matches = cnPattern.FindStringSubmatch(matches[1])
 	if len(matches) > 1 {
 		return matches[1]
 	}
@@ -542,43 +549,62 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	pinInput := &fabBatchPinInput{
-		Namespace:  batch.Namespace,
-		UUIDs:      hexFormatB32(&uuids),
-		BatchHash:  hexFormatB32(batch.BatchHash),
-		PayloadRef: batch.BatchPayloadRef,
-		Contexts:   hashes,
+	pinInput := map[string]interface{}{
+		"namespace":  batch.Namespace,
+		"uuids":      hexFormatB32(&uuids),
+		"batchHash":  hexFormatB32(batch.BatchHash),
+		"payloadRef": batch.BatchPayloadRef,
+		"contexts":   hashes,
 	}
-	input := newTxInput(pinInput)
-	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, signingKey, operationID.String(), input)
+
+	input, _ := jsonEncodeInput(pinInput)
+
+	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
 	return nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
+	// All arguments must be JSON serialized
+	args, err := jsonEncodeInput(input)
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
+	}
+
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	// Build the payload schema for the method parameters
+	prefixItems := make([]*PrefixItem, len(method.Params))
+	for i, param := range method.Params {
+		var paramSchema ffiParamSchema
+		if err := json.Unmarshal(param.Schema.Bytes(), &paramSchema); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("%s.schema", param.Name))
+		}
+
+		prefixItems[i] = &PrefixItem{
+			Name: param.Name,
+			Type: paramSchema.Type,
+		}
+	}
+
+	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, args)
+
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
+	}
+	return nil
+}
+
+func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	// All arguments must be JSON serialized
 	args, err := jsonEncodeInput(input)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
-	}
-	in := &fabTxNamedInput{
-		Func:    method.Name,
-		Headers: newTxInputHeaders(),
-		Args:    args,
-	}
-	in.Headers.PayloadSchema = &PayloadSchema{
-		Type:        "array",
-		PrefixItems: make([]*PrefixItem, len(method.Params)),
-	}
-
-	// Build the payload schema for the method parameters
-	for i, param := range method.Params {
-		in.Headers.PayloadSchema.PrefixItems[i] = &PrefixItem{
-			Name: param.Name,
-			Type: "string",
-		}
 	}
 
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
@@ -586,31 +612,60 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		return nil, err
 	}
 
-	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, signingKey, operationID.String(), in)
+	// Build the payload schema for the method parameters
+	prefixItems := make([]*PrefixItem, len(method.Params))
+	for i, param := range method.Params {
+		prefixItems[i] = &PrefixItem{
+			Name: param.Name,
+			Type: "string",
+		}
+	}
+
+	in := &fabTxNamedInput{
+		Headers: &fabTxInputHeaders{
+			PayloadSchema: &PayloadSchema{
+				Type:        "array",
+				PrefixItems: prefixItems,
+			},
+			Channel:   fabricOnChainLocation.Channel,
+			Chaincode: fabricOnChainLocation.Chaincode,
+			Signer:    f.signer,
+		},
+		Func: method.Name,
+		Args: args,
+	}
+
+	res, err := f.client.R().
+		SetContext(ctx).
+		SetBody(in).
+		Post("/query")
+
 	if err != nil || !res.IsSuccess() {
 		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}
-	tx := &asyncTXSubmission{}
-	if err = json.Unmarshal(res.Body(), tx); err != nil {
+	output := &fabQueryNamedOutput{}
+	if err = json.Unmarshal(res.Body(), output); err != nil {
 		return nil, err
 	}
-	return tx, nil
+	return output.Result, nil
 }
 
 func jsonEncodeInput(params map[string]interface{}) (output map[string]string, err error) {
 	output = make(map[string]string, len(params))
 	for field, value := range params {
-		encodedValue, err := json.Marshal(value)
-		if err != nil {
-			return nil, err
+		switch v := value.(type) {
+		case string:
+			output[field] = v
+		default:
+			encodedValue, err := json.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+			output[field] = string(encodedValue)
 		}
-		output[field] = string(encodedValue)
+
 	}
 	return
-}
-
-func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
-	return nil, fmt.Errorf(("not yet supported"))
 }
 
 func (f *Fabric) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
@@ -652,4 +707,8 @@ func (f *Fabric) DeleteSubscription(ctx context.Context, subscription *fftypes.C
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	// Fabconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil
+}
+
+func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+	return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationUnsupported)
 }

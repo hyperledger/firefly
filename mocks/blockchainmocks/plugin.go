@@ -62,6 +62,29 @@ func (_m *Plugin) DeleteSubscription(ctx context.Context, subscription *fftypes.
 	return r0
 }
 
+// GenerateFFI provides a mock function with given fields: ctx, generationRequest
+func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+	ret := _m.Called(ctx, generationRequest)
+
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIGenerationRequest) *fftypes.FFI); ok {
+		r0 = rf(ctx, generationRequest)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.FFI)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFIGenerationRequest) error); ok {
+		r1 = rf(ctx, generationRequest)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFFIParamValidator provides a mock function with given fields: ctx
 func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	ret := _m.Called(ctx)
@@ -105,26 +128,17 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 }
 
 // InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, location, method, input
-func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
 	ret := _m.Called(ctx, operationID, signingKey, location, method, input)
 
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}) interface{}); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}) error); ok {
 		r0 = rf(ctx, operationID, signingKey, location, method, input)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}) error); ok {
-		r1 = rf(ctx, operationID, signingKey, location, method, input)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Name provides a mock function with given fields:

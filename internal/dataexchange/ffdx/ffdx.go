@@ -70,12 +70,14 @@ const (
 type msgType string
 
 const (
-	messageReceived  msgType = "message-received"
-	messageDelivered msgType = "message-delivered"
-	messageFailed    msgType = "message-failed"
-	blobReceived     msgType = "blob-received"
-	blobDelivered    msgType = "blob-delivered"
-	blobFailed       msgType = "blob-failed"
+	messageReceived     msgType = "message-received"
+	messageDelivered    msgType = "message-delivered"
+	messageAcknowledged msgType = "message-acknowledged"
+	messageFailed       msgType = "message-failed"
+	blobReceived        msgType = "blob-received"
+	blobDelivered       msgType = "blob-delivered"
+	blobAcknowledged    msgType = "blob-acknowledged"
+	blobFailed          msgType = "blob-failed"
 )
 
 type responseWithRequestID struct {
@@ -345,8 +347,19 @@ func (h *FFDX) eventLoop() {
 			var manifest string
 			switch msg.Type {
 			case messageFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+					Error: msg.Error,
+					Info:  msg.Info,
+				})
 			case messageDelivered:
+				status := fftypes.OpStatusSucceeded
+				if h.capabilities.Manifest {
+					status = fftypes.OpStatusPending
+				}
+				err = h.callbacks.TransferResult(msg.RequestID, status, fftypes.TransportStatusUpdate{
+					Info: msg.Info,
+				})
+			case messageAcknowledged:
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
 					Manifest: msg.Manifest,
 					Info:     msg.Info,
@@ -354,9 +367,18 @@ func (h *FFDX) eventLoop() {
 			case messageReceived:
 				manifest, err = h.callbacks.MessageReceived(msg.Sender, []byte(msg.Message))
 			case blobFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+					Error: msg.Error,
+					Info:  msg.Info,
+				})
 			case blobDelivered:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{})
+				status := fftypes.OpStatusSucceeded
+				if h.capabilities.Manifest {
+					status = fftypes.OpStatusPending
+				}
+				err = h.callbacks.TransferResult(msg.RequestID, status, fftypes.TransportStatusUpdate{
+					Info: msg.Info,
+				})
 			case blobReceived:
 				var hash *fftypes.Bytes32
 				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)
@@ -366,6 +388,11 @@ func (h *FFDX) eventLoop() {
 				} else {
 					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Size, msg.Path)
 				}
+			case blobAcknowledged:
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+					Hash: msg.Hash,
+					Info: msg.Info,
+				})
 			default:
 				l.Errorf("Message unexpected: %s", msg.Type)
 			}

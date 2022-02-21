@@ -106,7 +106,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 	err = ba.Finalize(context.Background())
@@ -134,7 +134,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
-	}, []*fftypes.Data{})
+	}, []*fftypes.Data{}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
@@ -193,7 +193,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
@@ -215,7 +215,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.Regexp(t, "pop", err)
 }
@@ -237,7 +237,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 	err = ba.Finalize(context.Background())
@@ -291,7 +291,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
@@ -312,7 +312,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.Regexp(t, "pop", err)
 }

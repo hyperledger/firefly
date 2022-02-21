@@ -82,7 +82,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
 
-	action, ba, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, ba, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionWait, action)
 	assert.NoError(t, err)
 
@@ -103,7 +103,7 @@ func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, fmt.Errorf("pop"))
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
@@ -126,7 +126,7 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionWait, action)
 	assert.NoError(t, err)
 
@@ -147,7 +147,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(existing, nil)
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
@@ -168,7 +168,7 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(database.IDMismatch)
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
@@ -189,7 +189,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(fmt.Errorf("pop"))
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
@@ -212,7 +212,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 	})).Return(nil)
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(fmt.Errorf("pop"))
 
-	action, batchAction, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, batchAction, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionWait, action)
 	assert.NoError(t, err)
 
@@ -232,7 +232,7 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, data, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
@@ -247,7 +247,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 		},
 	}
 
-	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, nil)
+	action, _, err := sh.HandleDefinitionBroadcast(context.Background(), msg, nil, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }

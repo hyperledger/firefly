@@ -57,7 +57,7 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 	err = ba.Finalize(context.Background())
@@ -95,7 +95,7 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 	err = ba.Finalize(context.Background())
@@ -126,7 +126,7 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
@@ -155,7 +155,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
@@ -179,7 +179,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{})
+	}, []*fftypes.Data{}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
@@ -211,7 +211,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
@@ -246,7 +246,7 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
@@ -280,7 +280,7 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 

@@ -450,7 +450,8 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	id := fftypes.NewUUID()
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID: id,
+			ID:   id,
+			Type: "dataexchange_batch_send",
 			Input: fftypes.JSONObject{
 				"manifest": "Bob",
 			},
@@ -470,6 +471,40 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
 		Info:     fftypes.JSONObject{"extra": "info"},
 		Manifest: "Sally",
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestTransferResultHashtMismatch(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	id := fftypes.NewUUID()
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:   id,
+			Type: "dataexchange_blob_send",
+			Input: fftypes.JSONObject{
+				"hash": "Bob",
+			},
+		},
+	}, nil, nil)
+	mdi.On("ResolveOperation", mock.Anything, id, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+		return strings.Contains(errorMsg, "FF10348")
+	}), fftypes.JSONObject{
+		"extra": "info",
+	}).Return(nil)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	err := em.TransferResult(mdx, id.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+		Info: fftypes.JSONObject{"extra": "info"},
+		Hash: "Sally",
 	})
 	assert.NoError(t, err)
 

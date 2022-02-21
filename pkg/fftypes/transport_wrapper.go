@@ -33,4 +33,5 @@ type TransportStatusUpdate struct {
 	Error    string     `json:"error,omitempty"`
 	Manifest string     `json:"manifest,omitempty"`
 	Info     JSONObject `json:"info,omitempty"`
+	Hash     string     `json:"hash,omitempty"`
 }

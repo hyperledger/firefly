@@ -49,12 +49,13 @@ var (
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
 type Event struct {
-	ID        *UUID     `json:"id"`
-	Sequence  int64     `json:"sequence"`
-	Type      EventType `json:"type" ffenum:"eventtype"`
-	Namespace string    `json:"namespace"`
-	Reference *UUID     `json:"reference"`
-	Created   *FFTime   `json:"created"`
+	ID          *UUID     `json:"id"`
+	Sequence    int64     `json:"sequence"`
+	Type        EventType `json:"type" ffenum:"eventtype"`
+	Namespace   string    `json:"namespace"`
+	Reference   *UUID     `json:"reference"`
+	Transaction *UUID     `json:"tx,omitempty"`
+	Created     *FFTime   `json:"created"`
 }
 
 // EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to
@@ -75,13 +76,14 @@ type EventDeliveryResponse struct {
 	Reply        *MessageInOut   `json:"reply,omitempty"`
 }
 
-func NewEvent(t EventType, ns string, ref *UUID) *Event {
+func NewEvent(t EventType, ns string, ref *UUID, tx *UUID) *Event {
 	return &Event{
-		ID:        NewUUID(),
-		Type:      t,
-		Namespace: ns,
-		Reference: ref,
-		Created:   Now(),
+		ID:          NewUUID(),
+		Type:        t,
+		Namespace:   ns,
+		Reference:   ref,
+		Transaction: tx,
+		Created:     Now(),
 	}
 }
 

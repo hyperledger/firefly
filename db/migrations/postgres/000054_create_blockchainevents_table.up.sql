@@ -8,8 +8,8 @@ CREATE TABLE blockchainevents (
   protocol_id      VARCHAR(256)    NOT NULL,
   timestamp        BIGINT          NOT NULL,
   subscription_id  UUID,
-  output           BYTEA,
-  info             BYTEA,
+  output           TEXT,
+  info             TEXT,
   tx_type          VARCHAR(64),
   tx_id            UUID
 );

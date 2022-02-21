@@ -516,7 +516,7 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 			if bp.conf.txType == fftypes.TransactionTypeUnpinned {
 				for _, msg := range batch.Payload.Messages {
 					// Emit a confirmation event locally immediately
-					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID)
+					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
 					if err := bp.database.InsertEvent(ctx, event); err != nil {
 						return err
 					}

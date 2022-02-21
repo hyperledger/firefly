@@ -35,7 +35,7 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error)
+	HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, *DefinitionBatchActions, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
@@ -104,14 +104,14 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (msgAction DefinitionMessageAction, batchActions *DefinitionBatchActions, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (msgAction DefinitionMessageAction, batchActions *DefinitionBatchActions, err error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
 	case fftypes.SystemTagDefineDatatype:
-		return dh.handleDatatypeBroadcast(ctx, msg, data)
+		return dh.handleDatatypeBroadcast(ctx, msg, data, tx)
 	case fftypes.SystemTagDefineNamespace:
-		return dh.handleNamespaceBroadcast(ctx, msg, data)
+		return dh.handleNamespaceBroadcast(ctx, msg, data, tx)
 	case fftypes.SystemTagDefineOrganization:
 		return dh.handleOrganizationBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNode:
@@ -119,9 +119,9 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineFFI:
-		return dh.handleFFIBroadcast(ctx, msg, data)
+		return dh.handleFFIBroadcast(ctx, msg, data, tx)
 	case fftypes.SystemTagDefineContractAPI:
-		return dh.handleContractAPIBroadcast(ctx, msg, data)
+		return dh.handleContractAPIBroadcast(ctx, msg, data, tx)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 		return ActionReject, nil, nil

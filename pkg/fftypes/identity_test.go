@@ -79,6 +79,7 @@ func testCustom(ns, name string) *Identity {
 		},
 	}
 }
+
 func TestIdentityValidationOrgs(t *testing.T) {
 
 	ctx := context.Background()
@@ -99,7 +100,7 @@ func TestIdentityValidationOrgs(t *testing.T) {
 
 	o = testOrg()
 	o.Type = IdentityType("wrong")
-	assert.Regexp(t, "FF10359", o.Validate(ctx))
+	assert.Regexp(t, "FF10362", o.Validate(ctx))
 
 	o = testOrg()
 	o.Description = string(make([]byte, 4097))
@@ -107,11 +108,11 @@ func TestIdentityValidationOrgs(t *testing.T) {
 
 	o = testOrg()
 	o.DID = "did:firefly:node/node1"
-	assert.Regexp(t, "FF10360", o.Validate(ctx))
+	assert.Regexp(t, "FF10363", o.Validate(ctx))
 
 	o = testOrg()
 	o.Namespace = "nonsystem"
-	assert.Regexp(t, "FF10358", o.Validate(ctx))
+	assert.Regexp(t, "FF10361", o.Validate(ctx))
 
 }
 
@@ -123,15 +124,15 @@ func TestIdentityValidationNodes(t *testing.T) {
 
 	n = testNode()
 	n.Parent = nil
-	assert.Regexp(t, "FF10357", n.Validate(ctx))
-
-	n = testNode()
-	n.DID = "did:firefly:org/org1"
 	assert.Regexp(t, "FF10360", n.Validate(ctx))
 
 	n = testNode()
+	n.DID = "did:firefly:org/org1"
+	assert.Regexp(t, "FF10363", n.Validate(ctx))
+
+	n = testNode()
 	n.Namespace = "nonsystem"
-	assert.Regexp(t, "FF10358", n.Validate(ctx))
+	assert.Regexp(t, "FF10361", n.Validate(ctx))
 
 }
 
@@ -143,15 +144,15 @@ func TestIdentityValidationCustom(t *testing.T) {
 
 	c = testCustom("ns1", "custom1")
 	c.Parent = nil
-	assert.Regexp(t, "FF10357", c.Validate(ctx))
-
-	c = testCustom("ns1", "custom1")
-	c.DID = "did:firefly:ns/ns2/custom1"
 	assert.Regexp(t, "FF10360", c.Validate(ctx))
 
 	c = testCustom("ns1", "custom1")
+	c.DID = "did:firefly:ns/ns2/custom1"
+	assert.Regexp(t, "FF10363", c.Validate(ctx))
+
+	c = testCustom("ns1", "custom1")
 	c.Namespace = SystemNamespace
-	assert.Regexp(t, "FF10356", c.Validate(ctx))
+	assert.Regexp(t, "FF10359", c.Validate(ctx))
 
 }
 

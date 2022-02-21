@@ -597,7 +597,10 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                properties:
+                  id: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -2025,7 +2028,10 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                properties:
+                  id: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -2333,6 +2339,118 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/contracts/interfaces/generate:
+    post:
+      description: 'TODO: Description'
+      operationId: postGenerateContractInterface
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                description:
+                  type: string
+                input:
+                  type: string
+                name:
+                  type: string
+                namespace:
+                  type: string
+                version:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  description:
+                    type: string
+                  events:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              schema:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                      type: object
+                    type: array
+                  id: {}
+                  message: {}
+                  methods:
+                    items:
+                      properties:
+                        contract: {}
+                        description:
+                          type: string
+                        id: {}
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              schema:
+                                type: string
+                            type: object
+                          type: array
+                        pathname:
+                          type: string
+                        returns:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              schema:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/contracts/invoke:
     post:
       description: 'TODO: Description'
@@ -2409,7 +2527,10 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                properties:
+                  id: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -3786,11 +3907,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: group
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: id
         schema:
           type: string
@@ -3807,6 +3923,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3862,6 +3983,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted
@@ -3920,6 +4042,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted
@@ -4509,11 +4632,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: group
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: id
         schema:
           type: string
@@ -4530,6 +4648,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4585,6 +4708,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted

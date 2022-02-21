@@ -67,7 +67,7 @@ func TestHandleDefinitionBroadcastChildOrgOk(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
@@ -111,7 +111,7 @@ func TestHandleDefinitionBroadcastChildOrgDupOk(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
@@ -153,7 +153,7 @@ func TestHandleDefinitionBroadcastChildOrgBadKey(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
@@ -188,7 +188,7 @@ func TestHandleDefinitionBroadcastOrgDupMismatch(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
@@ -224,7 +224,7 @@ func TestHandleDefinitionBroadcastOrgUpsertFail(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
@@ -257,7 +257,7 @@ func TestHandleDefinitionBroadcastOrgGetOrgFail(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
@@ -291,7 +291,7 @@ func TestHandleDefinitionBroadcastOrgAuthorMismatch(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
@@ -326,7 +326,7 @@ func TestHandleDefinitionBroadcastGetParentFail(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.EqualError(t, err, "pop")
 
@@ -361,7 +361,7 @@ func TestHandleDefinitionBroadcastGetParentNotFound(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 
@@ -392,7 +392,7 @@ func TestHandleDefinitionBroadcastValidateFail(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
@@ -413,7 +413,7 @@ func TestHandleDefinitionBroadcastUnmarshalFail(t *testing.T) {
 			},
 			Tag: fftypes.SystemTagDefineOrganization,
 		},
-	}, []*fftypes.Data{data})
+	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }
