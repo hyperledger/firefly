@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,13 +28,13 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
 type IPFS struct {
 	ctx          context.Context
-	capabilities *publicstorage.Capabilities
-	callbacks    publicstorage.Callbacks
+	capabilities *sharedstorage.Capabilities
+	callbacks    sharedstorage.Callbacks
 	apiClient    *resty.Client
 	gwClient     *resty.Client
 }
@@ -49,9 +49,9 @@ func (i *IPFS) Name() string {
 	return "ipfs"
 }
 
-func (i *IPFS) Init(ctx context.Context, prefix config.Prefix, callbacks publicstorage.Callbacks) error {
+func (i *IPFS) Init(ctx context.Context, prefix config.Prefix, callbacks sharedstorage.Callbacks) error {
 
-	i.ctx = log.WithLogField(ctx, "publicstorage", "ipfs")
+	i.ctx = log.WithLogField(ctx, "sharedstorage", "ipfs")
 	i.callbacks = callbacks
 
 	apiPrefix := prefix.SubPrefix(IPFSConfAPISubconf)
@@ -64,11 +64,11 @@ func (i *IPFS) Init(ctx context.Context, prefix config.Prefix, callbacks publics
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, gwPrefix.Resolve(restclient.HTTPConfigURL), "ipfs")
 	}
 	i.gwClient = restclient.New(i.ctx, gwPrefix)
-	i.capabilities = &publicstorage.Capabilities{}
+	i.capabilities = &sharedstorage.Capabilities{}
 	return nil
 }
 
-func (i *IPFS) Capabilities() *publicstorage.Capabilities {
+func (i *IPFS) Capabilities() *sharedstorage.Capabilities {
 	return i.capabilities
 }
 

@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/karlseguin/ccache"
 )
 
@@ -50,26 +50,26 @@ type dataManager struct {
 	blobStore
 
 	database          database.Plugin
-	publicstorage     publicstorage.Plugin
+	sharedstorage     sharedstorage.Plugin
 	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
 }
 
-func NewDataManager(ctx context.Context, di database.Plugin, pi publicstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
+func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
 	if di == nil || pi == nil || dx == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	dm := &dataManager{
 		database:          di,
-		publicstorage:     pi,
+		sharedstorage:     pi,
 		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
 	}
 	dm.blobStore = blobStore{
 		dm:            dm,
 		database:      di,
-		publicstorage: pi,
+		sharedstorage: pi,
 		exchange:      dx,
 	}
 	dm.validatorCache = ccache.New(
@@ -293,7 +293,7 @@ func (dm *dataManager) ResolveInlineDataPrivate(ctx context.Context, ns string, 
 }
 
 // ResolveInlineDataBroadcast ensures the data object are stored, and returns a list of any data that does not currently
-// have a public storage reference, and hence must be published to publicstorage before a broadcast message can be sent.
+// have a shared storage reference, and hence must be published to sharedstorage before a broadcast message can be sent.
 // We deliberately do NOT perform those publishes inside of this action, as we expect to be in a RunAsGroup (trnasaction)
 // at this point, and hence expensive things like a multi-megabyte upload should be decoupled by our caller.
 func (dm *dataManager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {

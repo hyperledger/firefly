@@ -35,7 +35,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
 const broadcastDispatcherName = "pinned_broadcast"
@@ -60,7 +60,7 @@ type broadcastManager struct {
 	data                  data.Manager
 	blockchain            blockchain.Plugin
 	exchange              dataexchange.Plugin
-	publicstorage         publicstorage.Plugin
+	sharedstorage         sharedstorage.Plugin
 	batch                 batch.Manager
 	syncasync             syncasync.Bridge
 	batchpin              batchpin.Submitter
@@ -68,7 +68,7 @@ type broadcastManager struct {
 	metrics               metrics.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi sharedstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -79,7 +79,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		data:                  dm,
 		blockchain:            bi,
 		exchange:              dx,
-		publicstorage:         pi,
+		sharedstorage:         pi,
 		batch:                 ba,
 		syncasync:             sa,
 		batchpin:              bp,
@@ -112,7 +112,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 
 	// Write it to IPFS to get a payload reference
 	// The payload ref will be persisted back to the batch, as well as being used in the TX
-	batch.PayloadRef, err = bm.publicstorage.PublishData(ctx, bytes.NewReader(payload))
+	batch.PayloadRef, err = bm.sharedstorage.PublishData(ctx, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
@@ -130,12 +130,12 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		return err
 	}
 
-	// The completed PublicStorage upload
+	// The completed SharedStorage upload
 	op := fftypes.NewOperation(
-		bm.publicstorage,
+		bm.sharedstorage,
 		batch.Namespace,
 		batch.Payload.TX.ID,
-		fftypes.OpTypePublicStorageBatchBroadcast)
+		fftypes.OpTypeSharedStorageBatchBroadcast)
 	op.Status = fftypes.OpStatusSucceeded // Note we performed the action synchronously above
 	err = bm.database.InsertOperation(ctx, op)
 	if err != nil {
@@ -154,16 +154,16 @@ func (bm *broadcastManager) publishBlobs(ctx context.Context, dataToPublish []*f
 		}
 		defer reader.Close()
 
-		// ... to the public storage
-		publicRef, err := bm.publicstorage.PublishData(ctx, reader)
+		// ... to the shared storage
+		sharedRef, err := bm.sharedstorage.PublishData(ctx, reader)
 		if err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage: '%s'", d.Blob.Hash, d.Data.ID, publicRef)
+		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.Data.ID, sharedRef)
 
-		// Update the data in the database, with the public reference.
+		// Update the data in the database, with the shared reference.
 		// We do this independently for each piece of data
-		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", publicRef)
+		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", sharedRef)
 		err = bm.database.UpdateData(ctx, d.Data.ID, update)
 		if err != nil {
 			return err

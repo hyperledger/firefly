@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +35,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
+	mps := &sharedstoragemocks.Plugin{}
 	dm, err := NewDataManager(ctx, mdi, mps, mdx)
 	assert.NoError(t, err)
 	return dm.(*dataManager), ctx, cancel

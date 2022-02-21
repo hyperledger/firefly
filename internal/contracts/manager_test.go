@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -37,7 +37,7 @@ import (
 
 func newTestContractManager() *contractManager {
 	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
+	mps := &sharedstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
@@ -63,7 +63,7 @@ func TestNewContractManagerFail(t *testing.T) {
 
 func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
+	mps := &sharedstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
@@ -74,7 +74,7 @@ func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 
 func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
-	mps := &publicstoragemocks.Plugin{}
+	mps := &sharedstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
@@ -1888,7 +1888,7 @@ func TestCheckParamSchemaCompileFail(t *testing.T) {
 func TestAddJSONSchemaExtension(t *testing.T) {
 	cm := &contractManager{
 		database:          &databasemocks.Plugin{},
-		publicStorage:     &publicstoragemocks.Plugin{},
+		sharedStorage:     &sharedstoragemocks.Plugin{},
 		broadcast:         &broadcastmocks.Manager{},
 		identity:          &identitymanagermocks.Manager{},
 		blockchain:        &blockchainmocks.Plugin{},

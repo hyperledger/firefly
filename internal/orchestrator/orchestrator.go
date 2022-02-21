@@ -39,7 +39,7 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
-	"github.com/hyperledger/firefly/internal/publicstorage/psfactory"
+	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -47,7 +47,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	idplugin "github.com/hyperledger/firefly/pkg/identity"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -55,7 +55,7 @@ var (
 	blockchainConfig    = config.NewPluginConfig("blockchain")
 	databaseConfig      = config.NewPluginConfig("database")
 	identityConfig      = config.NewPluginConfig("identity")
-	publicstorageConfig = config.NewPluginConfig("publicstorage")
+	sharedstorageConfig = config.NewPluginConfig("sharedstorage")
 	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
 	tokensConfig        = config.NewPluginConfig("tokens").Array()
 )
@@ -140,7 +140,7 @@ type orchestrator struct {
 	blockchain     blockchain.Plugin
 	identity       identity.Manager
 	identityPlugin idplugin.Plugin
-	publicstorage  publicstorage.Plugin
+	sharedstorage  sharedstorage.Plugin
 	dataexchange   dataexchange.Plugin
 	events         events.EventManager
 	networkmap     networkmap.Manager
@@ -166,7 +166,7 @@ func NewOrchestrator() Orchestrator {
 	// Initialize the config on all the factories
 	bifactory.InitPrefix(blockchainConfig)
 	difactory.InitPrefix(databaseConfig)
-	psfactory.InitPrefix(publicstorageConfig)
+	ssfactory.InitPrefix(sharedstorageConfig)
 	dxfactory.InitPrefix(dataexchangeConfig)
 	tifactory.InitPrefix(tokensConfig)
 
@@ -359,13 +359,13 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
-	if or.publicstorage == nil {
-		psType := config.GetString(config.PublicStorageType)
-		if or.publicstorage, err = psfactory.GetPlugin(ctx, psType); err != nil {
+	if or.sharedstorage == nil {
+		psType := config.GetString(config.SharedStorageType)
+		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, psType); err != nil {
 			return err
 		}
 	}
-	if err = or.publicstorage.Init(ctx, publicstorageConfig.SubPrefix(or.publicstorage.Name()), or); err != nil {
+	if err = or.sharedstorage.Init(ctx, sharedstorageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
 		return err
 	}
 
@@ -430,7 +430,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database, or.publicstorage, or.dataexchange)
+		or.data, err = data.NewDataManager(ctx, or.database, or.sharedstorage, or.dataexchange)
 		if err != nil {
 			return err
 		}
@@ -453,7 +453,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync, or.batchpin, or.metrics); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics); err != nil {
 			return err
 		}
 	}
@@ -466,7 +466,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.publicstorage, or.broadcast, or.identity, or.blockchain)
+		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.sharedstorage, or.broadcast, or.identity, or.blockchain)
 		if err != nil {
 			return err
 		}
@@ -475,7 +475,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets, or.contracts)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
+		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
 		if err != nil {
 			return err
 		}

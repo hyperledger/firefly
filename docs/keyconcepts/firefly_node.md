@@ -27,7 +27,7 @@ The minimum set of runtimes is as follows:
 - FireFly Core - the API and event server for your multi-party applications
 - Blockchain node - the decentralized ledger technology establishing a shared source of truth
 - Blockchain interface - transaction submission and event streams for your chosen protocol
-- Public storage node - a network-wide peer-to-peer store of shared data
+- Shared storage node - a network-wide peer-to-peer store of shared data
 - Data exchange - for private member to member communications of messages and files
 
 > _Check out the [FireFly CLI](https://github.com/hyperledger/firefly-cli) to get a

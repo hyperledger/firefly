@@ -31,7 +31,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -243,7 +243,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()

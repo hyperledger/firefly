@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -59,15 +59,15 @@ type Manager interface {
 type contractManager struct {
 	database          database.Plugin
 	txHelper          txcommon.Helper
-	publicStorage     publicstorage.Plugin
+	sharedStorage     sharedstorage.Plugin
 	broadcast         broadcast.Manager
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
 	ffiParamValidator fftypes.FFIParamValidator
 }
 
-func NewContractManager(ctx context.Context, database database.Plugin, publicStorage publicstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
-	if database == nil || publicStorage == nil || broadcast == nil || identity == nil || blockchain == nil {
+func NewContractManager(ctx context.Context, database database.Plugin, sharedStorage sharedstorage.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
+	if database == nil || sharedStorage == nil || broadcast == nil || identity == nil || blockchain == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	v, err := blockchain.GetFFIParamValidator(ctx)
@@ -77,7 +77,7 @@ func NewContractManager(ctx context.Context, database database.Plugin, publicSto
 	return &contractManager{
 		database:          database,
 		txHelper:          txcommon.NewTransactionHelper(database),
-		publicStorage:     publicStorage,
+		sharedStorage:     sharedStorage,
 		broadcast:         broadcast,
 		identity:          identity,
 		blockchain:        blockchain,

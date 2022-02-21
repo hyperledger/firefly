@@ -33,7 +33,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -47,7 +47,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
-	mpi := &publicstoragemocks.Plugin{}
+	mpi := &sharedstoragemocks.Plugin{}
 	mba := &batchmocks.Manager{}
 	mdx := &dataexchangemocks.Plugin{}
 	msa := &syncasyncmocks.Bridge{}
@@ -55,7 +55,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	mmi := &metricsmocks.Manager{}
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mbi.On("Name").Return("ut_blockchain").Maybe()
-	mpi.On("Name").Return("ut_publicstorage").Maybe()
+	mpi.On("Name").Return("ut_sharedstorage").Maybe()
 	mba.On("RegisterDispatcher",
 		broadcastDispatcherName,
 		fftypes.TransactionTypeBatchPin,
@@ -152,7 +152,7 @@ func TestDispatchBatchInvalidData(t *testing.T) {
 func TestDispatchBatchUploadFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+	bm.sharedstorage.(*sharedstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.EqualError(t, err, "pop")
@@ -167,7 +167,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 	mdi.On("UpdateBatch", mock.Anything, batch.ID, mock.Anything).Return(nil)
@@ -183,7 +183,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	defer cancel()
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -269,8 +269,8 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 
 	op := mdi.Calls[1].Arguments[1].(*fftypes.Operation)
 	assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
-	assert.Equal(t, "ut_publicstorage", op.Plugin)
-	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op.Type)
+	assert.Equal(t, "ut_sharedstorage", op.Plugin)
+	assert.Equal(t, fftypes.OpTypeSharedStorageBatchBroadcast, op.Type)
 
 }
 
@@ -279,7 +279,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
@@ -320,7 +320,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()

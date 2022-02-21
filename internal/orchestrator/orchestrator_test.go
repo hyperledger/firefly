@@ -39,7 +39,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -58,7 +58,7 @@ type testOrchestrator struct {
 	mba *batchmocks.Manager
 	mem *eventmocks.EventManager
 	mnm *networkmapmocks.Manager
-	mps *publicstoragemocks.Plugin
+	mps *sharedstoragemocks.Plugin
 	mpm *privatemessagingmocks.Manager
 	mbi *blockchainmocks.Plugin
 	mii *identitymocks.Plugin
@@ -84,7 +84,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mba: &batchmocks.Manager{},
 		mem: &eventmocks.EventManager{},
 		mnm: &networkmapmocks.Manager{},
-		mps: &publicstoragemocks.Plugin{},
+		mps: &sharedstoragemocks.Plugin{},
 		mpm: &privatemessagingmocks.Manager{},
 		mbi: &blockchainmocks.Plugin{},
 		mii: &identitymocks.Plugin{},
@@ -101,7 +101,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.networkmap = tor.mnm
-	tor.orchestrator.publicstorage = tor.mps
+	tor.orchestrator.sharedstorage = tor.mps
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.identity = tor.mim
@@ -231,10 +231,10 @@ func TestBlockchainInitMergeConfigRecordsFail(t *testing.T) {
 	assert.EqualError(t, err, "invalid character 'c' looking for beginning of value")
 }
 
-func TestBadPublicStoragePlugin(t *testing.T) {
+func TestBadSharedStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.PublicStorageType, "wrong")
-	or.publicstorage = nil
+	config.Set(config.SharedStorageType, "wrong")
+	or.sharedstorage = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -244,7 +244,7 @@ func TestBadPublicStoragePlugin(t *testing.T) {
 	assert.Regexp(t, "FF10134.*wrong", err)
 }
 
-func TestBadPublicStorageInitFail(t *testing.T) {
+func TestBadSharedStorageInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
