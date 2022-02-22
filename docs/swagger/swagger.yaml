@@ -7475,6 +7475,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: uri
         schema:
           type: string
