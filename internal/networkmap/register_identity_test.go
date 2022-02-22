@@ -66,7 +66,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		fftypes.SystemTagIdentityVerification, true).Return(mockMsg2, nil)
+		fftypes.SystemTagIdentityVerification, false).Return(mockMsg2, nil)
 
 	org, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
 		Name:   "child1",
@@ -120,7 +120,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		fftypes.SystemTagIdentityVerification, true).Return(nil, fmt.Errorf("pop"))
+		fftypes.SystemTagIdentityVerification, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
 		Namespace: "ns1",
@@ -159,7 +159,6 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestRegisterIdentityGetParentMsgNotFound(t *testing.T) {
@@ -181,10 +180,9 @@ func TestRegisterIdentityGetParentMsgNotFound(t *testing.T) {
 		Key:       "0x12345",
 		Parent:    fftypes.NewUUID(),
 	}, true)
-	assert.Regexp(t, "FF10363", err)
+	assert.Regexp(t, "FF10366", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -228,7 +226,7 @@ func TestRegisterIdentityMissingKey(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "custom1",
 	}, true)
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10352", err)
 
 	mim.AssertExpectations(t)
 }

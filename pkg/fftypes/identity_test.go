@@ -228,8 +228,8 @@ func TestDefinitionObjects(t *testing.T) {
 	assert.Equal(t, *verificationMsg, *o.Messages.Verification)
 
 	var iu Definition = &IdentityProfileUpdate{
-		Identity:  o.IdentityBase,
-		SignerRef: o,
+		Identity:    o.IdentityBase,
+		IdentityRef: o,
 	}
 	assert.Equal(t, o.Topic(), iu.Topic())
 	updateMsg := NewUUID()

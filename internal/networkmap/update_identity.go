@@ -1,0 +1,60 @@
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package networkmap
+
+import (
+	"context"
+
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+)
+
+func (nm *networkMap) UpdateIdentityProfile(ctx context.Context, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
+
+	// Get the original identity
+	identity, err = nm.identity.CachedIdentityLookupByID(ctx, dto.ID)
+	if err != nil {
+		return nil, err
+	}
+	if identity == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
+	}
+
+	// Resolve the signer of the original claim
+	updateSigner, err := nm.resolveIdentitySigner(ctx, identity)
+	if err != nil {
+		return nil, err
+	}
+
+	identity.IdentityProfile = dto.IdentityProfile
+	if err := identity.Validate(ctx); err != nil {
+		return nil, err
+	}
+
+	// Send the update
+	updateMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityProfileUpdate{
+		Identity:    identity.IdentityBase,
+		Profile:     dto.IdentityProfile,
+		IdentityRef: identity,
+	}, updateSigner, fftypes.SystemTagIdentityUpdate, waitConfirm)
+	if err != nil {
+		return nil, err
+	}
+	identity.Messages.Update = updateMsg.Header.ID
+
+	return identity, err
+}

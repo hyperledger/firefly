@@ -87,6 +87,13 @@ type IdentityCreateDTO struct {
 	IdentityProfile
 }
 
+// IdentityUpdateDTO is the input structure to submit to update an identityprofile.
+// The same key in the claim will be used for the update.
+type IdentityUpdateDTO struct {
+	ID *UUID `json:"id,omitempty"`
+	IdentityProfile
+}
+
 // SignerRef is the nested structure representing the identity that signed a message.
 // It might comprise a resolvable by FireFly identity DID, a blockchain signing key, or both.
 type SignerRef struct {
@@ -120,8 +127,8 @@ type IdentityProfileUpdate struct {
 	Identity IdentityBase    `json:"identity"`
 	Profile  IdentityProfile `json:"profile,omitempty"`
 
-	// SignerRef lets us store back the message when broadcasting, but isn't part of the payload
-	SignerRef *Identity `json:"-"`
+	// IdentityRef lets us store back the message when broadcasting, but isn't part of the payload
+	IdentityRef *Identity `json:"-"`
 }
 
 func (ic *IdentityClaim) Topic() string {
@@ -147,8 +154,8 @@ func (iu *IdentityProfileUpdate) Topic() string {
 }
 
 func (iu *IdentityProfileUpdate) SetBroadcastMessage(msgID *UUID) {
-	if iu.SignerRef != nil {
-		iu.SignerRef.Messages.Update = msgID
+	if iu.IdentityRef != nil {
+		iu.IdentityRef.Messages.Update = msgID
 	}
 }
 
