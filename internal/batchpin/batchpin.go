@@ -69,7 +69,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 		batch.Payload.TX.ID,
 		fftypes.OpTypeBlockchainBatchPin)
 	addBatchPinInputs(op, batch.ID, contexts)
-	if err := bp.database.InsertOperation(ctx, op); err != nil {
+	if err := bp.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
 

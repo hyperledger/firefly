@@ -16,6 +16,20 @@ type Manager struct {
 	mock.Mock
 }
 
+// AddOrReuseOperation provides a mock function with given fields: ctx, op
+func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error {
+	ret := _m.Called(ctx, op)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
+		r0 = rf(ctx, op)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // PrepareOperation provides a mock function with given fields: ctx, op
 func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	ret := _m.Called(ctx, op)

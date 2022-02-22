@@ -144,13 +144,13 @@ func TestDispatchBatchInsertOpFail(t *testing.T) {
 
 	batch := &fftypes.Batch{}
 
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mom := bm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 }
 
 func TestDispatchBatchUploadFail(t *testing.T) {
@@ -159,9 +159,8 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 
 	batch := &fftypes.Batch{}
 
-	mdi := bm.database.(*databasemocks.Plugin)
 	mom := bm.operations.(*operationmocks.Manager)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
 		return op.Type == fftypes.OpTypePublicStorageBatchBroadcast && data.Batch == batch
@@ -170,7 +169,6 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
 
@@ -185,7 +183,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mom := bm.operations.(*operationmocks.Manager)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
@@ -209,7 +207,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mom := bm.operations.(*operationmocks.Manager)
-	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)

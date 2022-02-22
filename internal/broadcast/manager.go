@@ -121,7 +121,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 		batch.Payload.TX.ID,
 		fftypes.OpTypePublicStorageBatchBroadcast)
 	addBatchBroadcastInputs(op, batch.ID)
-	if err := bm.database.InsertOperation(ctx, op); err != nil {
+	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
 	if err := bm.operations.RunOperation(ctx, opBatchBroadcast(op, batch)); err != nil {

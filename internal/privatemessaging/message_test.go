@@ -697,7 +697,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
 	}, nil).Once()
-	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == fftypes.OpTypeDataExchangeBatchSend && *data.Node.ID == *nodeID2
@@ -794,10 +794,8 @@ func TestSendDataTransferFail(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
-
 	mom := pm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == fftypes.OpTypeDataExchangeBatchSend && *data.Node.ID == *nodeID2
@@ -829,7 +827,6 @@ func TestSendDataTransferFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mom.AssertExpectations(t)
 
 }
@@ -846,8 +843,8 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 	})).Return(nil)
 	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mom := pm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	groupID := fftypes.NewRandB32()
 	nodeID2 := fftypes.NewUUID()

@@ -36,6 +36,7 @@ type Manager interface {
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) error
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
+	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
 }
 
 type operationsManager struct {

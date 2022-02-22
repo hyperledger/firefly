@@ -198,7 +198,7 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 				txid,
 				fftypes.OpTypeDataExchangeBlobSend)
 			addTransferBlobInputs(op, node.ID, blob.Hash)
-			if err = pm.database.InsertOperation(ctx, op); err != nil {
+			if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 				return err
 			}
 
@@ -243,7 +243,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 			groupHash = tw.Group.Hash
 		}
 		addBatchSendInputs(op, node.ID, groupHash, batch.ID, tw.Batch.Manifest().String())
-		if err = pm.database.InsertOperation(ctx, op); err != nil {
+		if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 			return err
 		}
 		if err = pm.operations.RunOperation(ctx, opBatchSend(op, node, tw)); err != nil {

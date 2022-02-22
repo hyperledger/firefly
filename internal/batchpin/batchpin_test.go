@@ -78,7 +78,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
@@ -120,7 +120,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
@@ -144,7 +144,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 	ctx := context.Background()
 
-	mdi := bp.database.(*databasemocks.Plugin)
+	mom := bp.operations.(*operationmocks.Manager)
 	mmi := bp.metrics.(*metricsmocks.Manager)
 
 	batch := &fftypes.Batch{
@@ -161,7 +161,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mom.On("AddOrReuseOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mmi.On("IsMetricsEnabled").Return(false)
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.Regexp(t, "pop", err)
