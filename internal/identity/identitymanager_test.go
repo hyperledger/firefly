@@ -18,12 +18,14 @@ package identity
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -35,19 +37,20 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
+	mdm := &datamocks.Manager{}
 
 	config.Reset()
 
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
 
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, mdi, mii, mbi)
+	im, err := NewIdentityManager(ctx, mdi, mii, mbi, mdm)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -652,13 +655,13 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "peer1").
+	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1").
 		Return(&fftypes.Verifier{
 			ID:        fftypes.NewUUID(),
 			Identity:  id.ID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
-				Type:  fftypes.VerifierTypeEthAddress,
+				Type:  fftypes.VerifierTypeFFDXPeerID,
 				Value: "peer1",
 			},
 		}, nil)
@@ -666,14 +669,14 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 		Return(id, nil)
 
 	v1, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
 	v2, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	})
 	assert.NoError(t, err)
@@ -1115,4 +1118,324 @@ func TestValidateParentTypeInvalidType(t *testing.T) {
 	err := im.validateParentType(ctx, id2, id1)
 	assert.Regexp(t, "FF10362", err)
 
+}
+
+func TestCachedVerifierLookupCaching(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	verifier := &fftypes.Verifier{
+		ID:        fftypes.NewUUID(),
+		Namespace: fftypes.SystemNamespace,
+		VerifierRef: fftypes.VerifierRef{
+			Value: "peer1",
+			Type:  fftypes.VerifierTypeFFDXPeerID,
+		},
+	}
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetVerifierByValue", ctx, verifier.Type, verifier.Namespace, verifier.Value).Return(verifier, nil).Once()
+
+	v1, err := im.CachedVerifierLookup(ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1")
+	assert.NoError(t, err)
+	assert.Equal(t, verifier, v1)
+
+	v2, err := im.CachedVerifierLookup(ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1")
+	assert.NoError(t, err)
+	assert.Equal(t, verifier, v2)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestCachedVerifierLookupError(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := im.CachedVerifierLookup(ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1")
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestIsRootOgBroadcastWrongType(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeBroadcast,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+	}
+	assert.False(t, im.IsRootOrgBroadcast(ctx, msg))
+}
+
+func TestIsRootOgBroadcastDeprecatedTrue(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdm := im.data.(*datamocks.Manager)
+
+	org := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: fftypes.NewUUID(),
+			// Note DID is filled in for us, for migration compliance
+			Type:      fftypes.IdentityTypeOrg,
+			Parent:    nil,
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+		},
+	}
+	b, _ := json.Marshal(&org)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtrBytes(b),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  fftypes.DeprecatedSystemTagDefineOrganization,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Data: fftypes.DataRefs{
+			{
+				ID:   data.ID,
+				Hash: data.Hash,
+			},
+		},
+	}
+	assert.True(t, im.IsRootOrgBroadcast(ctx, msg))
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestIsRootOgBroadcastIdentityClaimTrue(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdm := im.data.(*datamocks.Manager)
+
+	org := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeOrg,
+			Parent:    nil,
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+		},
+	}
+	org.DID, _ = org.GenerateDID(ctx)
+	claim := &fftypes.IdentityClaim{
+		Identity: org,
+	}
+	b, _ := json.Marshal(&claim)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtrBytes(b),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  fftypes.SystemTagIdentityClaim,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Data: fftypes.DataRefs{
+			{
+				ID:   data.ID,
+				Hash: data.Hash,
+			},
+		},
+	}
+	assert.True(t, im.IsRootOrgBroadcast(ctx, msg))
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+func TestIsRootOgBroadcastNonRoot(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdm := im.data.(*datamocks.Manager)
+
+	org := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeOrg,
+			Parent:    fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+		},
+	}
+	org.DID, _ = org.GenerateDID(ctx)
+	b, _ := json.Marshal(&org)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtrBytes(b),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  fftypes.DeprecatedSystemTagDefineOrganization,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Data: fftypes.DataRefs{
+			{
+				ID:   data.ID,
+				Hash: data.Hash,
+			},
+		},
+	}
+	assert.False(t, im.IsRootOrgBroadcast(ctx, msg))
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestIsRootOgBroadcastBadOrg(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdm := im.data.(*datamocks.Manager)
+
+	org := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeCustom,
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+		},
+	}
+	org.DID, _ = org.GenerateDID(ctx)
+	b, _ := json.Marshal(&org)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtrBytes(b),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  fftypes.DeprecatedSystemTagDefineOrganization,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Data: fftypes.DataRefs{
+			{
+				ID:   data.ID,
+				Hash: data.Hash,
+			},
+		},
+	}
+	assert.False(t, im.IsRootOrgBroadcast(ctx, msg))
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestIsRootOrgDeprecatedBroadcastBadData(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdm := im.data.(*datamocks.Manager)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtr("not an org"),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  fftypes.DeprecatedSystemTagDefineOrganization,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Data: fftypes.DataRefs{
+			{
+				ID:   data.ID,
+				Hash: data.Hash,
+			},
+		},
+	}
+	assert.False(t, im.IsRootOrgBroadcast(ctx, msg))
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestIsRootOrgBroadcastBadData(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdm := im.data.(*datamocks.Manager)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtr("not an identity claim"),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  fftypes.SystemTagIdentityClaim,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Data: fftypes.DataRefs{
+			{
+				ID:   data.ID,
+				Hash: data.Hash,
+			},
+		},
+	}
+	assert.False(t, im.IsRootOrgBroadcast(ctx, msg))
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }

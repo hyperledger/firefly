@@ -18,7 +18,6 @@ package events
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -59,34 +58,6 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 
 	valid, err = em.persistBatch(ctx, batch)
 	return valid, err
-}
-
-func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
-	// Look into batch to see if it contains a message that contains a data item that is a root organization definition
-	if len(batch.Payload.Messages) > 0 {
-		message := batch.Payload.Messages[0]
-		if message.Header.Type == fftypes.MessageTypeDefinition {
-			if len(message.Data) > 0 {
-				messageDataItem := message.Data[0]
-				if len(batch.Payload.Data) > 0 {
-					batchDataItem := batch.Payload.Data[0]
-					if batchDataItem.ID.Equals(messageDataItem.ID) {
-						if batchDataItem.Validator == fftypes.MessageTypeDefinition {
-							var org *fftypes.Organization
-							err := json.Unmarshal(batchDataItem.Value.Bytes(), &org)
-							if err != nil {
-								return false
-							}
-							if org != nil && org.Name != "" && org.ID != nil && org.Parent == "" {
-								return true
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return false
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists

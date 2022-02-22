@@ -18,7 +18,6 @@ package broadcast
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
@@ -135,7 +134,7 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 
 func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
 	// Resolve the sending identity
-	if !s.isRootOrgBroadcast(ctx) {
+	if !s.mgr.identity.IsRootOrgBroadcast(ctx, &s.msg.Message) {
 		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, s.msg.Header.Namespace, &s.msg.Header.SignerRef); err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 		}
@@ -171,59 +170,4 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
 
 	return err
-}
-
-func (s *broadcastSender) isValidRootOrgIdentityClaim(ctx context.Context, data *fftypes.Data) bool {
-	var claim *fftypes.IdentityClaim
-	if data.Value != nil {
-		err := json.Unmarshal([]byte(*data.Value), &claim)
-		if err != nil {
-			return false
-		}
-	}
-	return s.isValidRootOrgCommon(ctx, claim.Identity)
-}
-
-func (s *broadcastSender) isValidRootOrgDeprecated(ctx context.Context, data *fftypes.Data) bool {
-	var org *fftypes.Identity
-	if data.Value != nil {
-		err := json.Unmarshal([]byte(*data.Value), &org)
-		if err != nil {
-			return false
-		}
-	}
-	org.DID, _ = org.GenerateDID(ctx)
-	return s.isValidRootOrgCommon(ctx, org)
-}
-
-func (s *broadcastSender) isValidRootOrgCommon(ctx context.Context, org *fftypes.Identity) bool {
-	if org == nil || org.Parent != nil {
-		return false
-	}
-	err := org.Validate(ctx)
-	if err != nil {
-		log.L(ctx).Warnf("Invalid org broadcast '%s': %s", s.msg.Header.ID, err)
-		return false
-	}
-	return true
-}
-
-func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
-	// Look into message to see if it contains a data item that is a root organization definition
-	if s.msg.Header.Type == fftypes.MessageTypeDefinition &&
-		(s.msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization || s.msg.Header.Tag == fftypes.SystemTagIdentityClaim) {
-		messageData, ok, err := s.mgr.data.GetMessageData(ctx, &s.msg.Message, true)
-		if ok && err == nil {
-			if len(messageData) > 0 {
-				dataItem := messageData[0]
-				if dataItem.Validator == fftypes.MessageTypeDefinition {
-					if s.msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization {
-						return s.isValidRootOrgDeprecated(ctx, dataItem)
-					}
-					return s.isValidRootOrgIdentityClaim(ctx, dataItem)
-				}
-			}
-		}
-	}
-	return false
 }

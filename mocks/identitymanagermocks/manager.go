@@ -61,6 +61,29 @@ func (_m *Manager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUI
 	return r0, r1
 }
 
+// CachedVerifierLookup provides a mock function with given fields: ctx, vType, ns, value
+func (_m *Manager) CachedVerifierLookup(ctx context.Context, vType fftypes.FFEnum, ns string, value string) (*fftypes.Verifier, error) {
+	ret := _m.Called(ctx, vType, ns, value)
+
+	var r0 *fftypes.Verifier
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string, string) *fftypes.Verifier); ok {
+		r0 = rf(ctx, vType, ns, value)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Verifier)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string, string) error); ok {
+		r1 = rf(ctx, vType, ns, value)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FindIdentityForVerifier provides a mock function with given fields: ctx, iTypes, namespace, verifier
 func (_m *Manager) FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.FFEnum, namespace string, verifier *fftypes.VerifierRef) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx, iTypes, namespace, verifier)
@@ -128,6 +151,20 @@ func (_m *Manager) GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, erro
 	}
 
 	return r0, r1
+}
+
+// IsRootOrgBroadcast provides a mock function with given fields: ctx, msg
+func (_m *Manager) IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message) bool {
+	ret := _m.Called(ctx, msg)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) bool); ok {
+		r0 = rf(ctx, msg)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
 }
 
 // ResolveBlockchainKey provides a mock function with given fields: ctx, inputKey

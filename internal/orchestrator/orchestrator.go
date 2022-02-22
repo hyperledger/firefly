@@ -422,15 +422,15 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		or.metrics = metrics.NewMetricsManager(ctx)
 	}
 
-	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain)
+	if or.data == nil {
+		or.data, err = data.NewDataManager(ctx, or.database, or.publicstorage, or.dataexchange)
 		if err != nil {
 			return err
 		}
 	}
 
-	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database, or.publicstorage, or.dataexchange)
+	if or.identity == nil {
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data)
 		if err != nil {
 			return err
 		}

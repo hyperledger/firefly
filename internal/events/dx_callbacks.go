@@ -64,51 +64,75 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 	return string(manifestBytes), err
 }
 
-func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID, author, signingKey string) (node *fftypes.Node, err error) {
+func (em *eventManager) getNodeForPeerID(ctx context.Context, peerID string) (node *fftypes.Identity, err error) {
 	l := log.L(em.ctx)
 
 	// Find the node associated with the peer
-	filter := database.NodeQueryFactory.NewFilter(ctx).Eq("dx.peer", peerID)
-	nodes, _, err := em.database.GetNodes(ctx, filter)
+	fb := database.VerifierQueryFactory.NewFilterLimit(ctx, 1)
+	filter := fb.And(
+		fb.Eq("type", fftypes.VerifierTypeFFDXPeerID),
+		fb.Eq("namespace", fftypes.SystemNamespace),
+		fb.Eq("value", peerID),
+	)
+	peerIDs, _, err := em.database.GetVerifiers(ctx, filter)
 	if err != nil {
-		l.Errorf("Failed to retrieve node: %v", err)
+		l.Errorf("Failed to retrieve node peer verifier: %v", err)
 		return nil, err // retry for persistence error
 	}
-	if len(nodes) < 1 {
+	if len(peerIDs) < 1 {
 		l.Errorf("Node not found for peer %s", peerID)
 		return nil, nil
 	}
-	node = nodes[0]
+	node, err = em.database.GetIdentityByID(ctx, peerIDs[0].Identity)
+	if err != nil || node == nil {
+		l.Errorf("Failed to retrieve node '%s': %v", peerIDs[0].Identity, err)
+		return nil, err // retry for persistence error
+	}
+
+	return node, nil
+}
+
+// checkReceivedIdentity checks only the OFF-CHAIN identity (the peer node that
+// the data came from) matches the org listed in the batch. The on-chain identity check
+// is performed by the aggregator, across broadcast and private consistently.
+func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID, author string) (node *fftypes.Identity, err error) {
+	l := log.L(em.ctx)
+
+	// Resolve the node for the peer ID
+	node, err = em.getNodeForPeerID(ctx, peerID)
+	if err != nil || node == nil {
+		return nil, err
+	}
 
 	// Find the identity in the mesage
-	org, err := em.database.GetOrganizationByIdentity(ctx, signingKey)
+	org, err := em.identity.CachedIdentityLookup(ctx, author)
 	if err != nil {
 		l.Errorf("Failed to retrieve org: %v", err)
 		return nil, err // retry for persistence error
 	}
 	if org == nil {
-		l.Errorf("Org not found for identity %s", author)
+		l.Errorf("Identity %s not found", author)
 		return nil, nil
 	}
 
 	// One of the orgs in the hierarchy of the author must be the owner of the peer node
 	candidate := org
-	foundNodeOrg := signingKey == node.Owner
-	for !foundNodeOrg && candidate.Parent != "" {
+	foundNodeOrg := org.ID.Equals(node.Parent)
+	for !foundNodeOrg && candidate.Parent != nil {
 		parent := candidate.Parent
-		candidate, err = em.database.GetOrganizationByIdentity(ctx, parent)
+		candidate, err = em.identity.CachedIdentityLookupByID(ctx, parent)
 		if err != nil {
 			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
 			return nil, err // retry for persistence error
 		}
 		if candidate == nil {
-			l.Errorf("Did not find org '%s' in chain for identity '%s'", parent, org.Identity)
+			l.Errorf("Did not find org '%s' in chain for identity '%s' (%s)", parent, org.DID, org.ID)
 			return nil, nil
 		}
-		foundNodeOrg = candidate.Identity == node.Owner
+		foundNodeOrg = candidate.ID.Equals(node.Parent)
 	}
 	if !foundNodeOrg {
-		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Owner, node.ID, node.Name)
+		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Parent, node.ID, node.Name)
 		return nil, nil
 	}
 
@@ -122,7 +146,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			l := log.L(ctx)
 
-			node, err := em.checkReceivedIdentity(ctx, peerID, batch.Author, batch.Key)
+			node, err := em.checkReceivedIdentity(ctx, peerID, batch.Author)
 			if err != nil {
 				return err
 			}
@@ -133,7 +157,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 
 			valid, err := em.persistBatch(ctx, batch)
 			if err != nil || !valid {
-				l.Errorf("Batch received from %s/%s processing failed valid=%t: %s", node.Owner, node.Name, valid, err)
+				l.Errorf("Batch received from org=%s node=%s processing failed valid=%t: %s", node.Parent, node.Name, valid, err)
 				return err // retry - persistBatch only returns retryable errors
 			}
 

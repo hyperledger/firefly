@@ -18,11 +18,13 @@ package identity
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -40,15 +42,18 @@ type Manager interface {
 	FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.IdentityType, namespace string, verifier *fftypes.VerifierRef) (identity *fftypes.Identity, err error)
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error)
 	CachedIdentityLookup(ctx context.Context, did string) (identity *fftypes.Identity, err error)
+	CachedVerifierLookup(ctx context.Context, vType fftypes.VerifierType, ns, value string) (verifier *fftypes.Verifier, err error)
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
 	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (immediateParent *fftypes.Identity, err error)
+	IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message) bool
 }
 
 type identityManager struct {
 	database   database.Plugin
 	plugin     identity.Plugin
 	blockchain blockchain.Plugin
+	data       data.Manager
 
 	nodeOwnerBlockchainKey *fftypes.VerifierRef
 	nodeOwningOrgIdentity  *fftypes.Identity
@@ -58,7 +63,7 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin) (Manager, error) {
+func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
 	if di == nil || ii == nil || bi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -66,6 +71,7 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 		database:           di,
 		plugin:             ii,
 		blockchain:         bi,
+		data:               dm,
 		identityCacheTTL:   config.GetDuration(config.IdentityManagerCacheTTL),
 		signingKeyCacheTTL: config.GetDuration(config.IdentityManagerCacheTTL),
 	}
@@ -414,4 +420,76 @@ func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fft
 		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}
 	return identity, nil
+}
+
+func (im *identityManager) CachedVerifierLookup(ctx context.Context, vType fftypes.VerifierType, ns, value string) (verifier *fftypes.Verifier, err error) {
+	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
+	cacheKey := fmt.Sprintf("v=%s|%s|%s", vType, ns, value)
+	if cached := im.identityCache.Get(cacheKey); cached != nil {
+		cached.Extend(im.identityCacheTTL)
+		verifier = cached.Value().(*fftypes.Verifier)
+	} else {
+		verifier, err = im.database.GetVerifierByValue(ctx, vType, ns, value)
+		if err != nil || verifier == nil {
+			return verifier, err
+		}
+		// Cache the result
+		im.identityCache.Set(cacheKey, verifier, im.identityCacheTTL)
+	}
+	return verifier, nil
+}
+
+func (im *identityManager) isValidRootOrgIdentityClaim(ctx context.Context, msg *fftypes.Message, data *fftypes.Data) bool {
+	var claim *fftypes.IdentityClaim
+	if data.Value != nil {
+		err := json.Unmarshal([]byte(*data.Value), &claim)
+		if err != nil {
+			return false
+		}
+	}
+	return im.isValidRootOrgCommon(ctx, msg, claim.Identity)
+}
+
+func (im *identityManager) isValidRootOrgDeprecated(ctx context.Context, msg *fftypes.Message, data *fftypes.Data) bool {
+	var org *fftypes.Identity
+	if data.Value != nil {
+		err := json.Unmarshal([]byte(*data.Value), &org)
+		if err != nil {
+			return false
+		}
+	}
+	org.DID, _ = org.GenerateDID(ctx)
+	return im.isValidRootOrgCommon(ctx, msg, org)
+}
+
+func (im *identityManager) isValidRootOrgCommon(ctx context.Context, msg *fftypes.Message, org *fftypes.Identity) bool {
+	if org == nil || org.Parent != nil {
+		return false
+	}
+	err := org.Validate(ctx)
+	if err != nil {
+		log.L(ctx).Warnf("Invalid org broadcast '%s': %s", msg.Header.ID, err)
+		return false
+	}
+	return true
+}
+
+func (im *identityManager) IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message) bool {
+	// Look into message to see if it contains a data item that is a root organization definition
+	if msg.Header.Type == fftypes.MessageTypeDefinition &&
+		(msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization || msg.Header.Tag == fftypes.SystemTagIdentityClaim) {
+		messageData, ok, err := im.data.GetMessageData(ctx, msg, true)
+		if ok && err == nil {
+			if len(messageData) > 0 {
+				dataItem := messageData[0]
+				if dataItem.Validator == fftypes.MessageTypeDefinition {
+					if msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization {
+						return im.isValidRootOrgDeprecated(ctx, msg, dataItem)
+					}
+					return im.isValidRootOrgIdentityClaim(ctx, msg, dataItem)
+				}
+			}
+		}
+	}
+	return false
 }
