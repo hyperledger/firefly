@@ -53,7 +53,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 
 	// Special handling for OpTypeTokenApproval, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenApproval && txState == fftypes.OpStatusFailed {
-		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID)
+		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction)
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}

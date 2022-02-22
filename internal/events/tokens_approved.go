@@ -102,7 +102,7 @@ func (em *eventManager) TokensApproved(ti tokens.Plugin, approval *tokens.TokenA
 				return err
 			}
 
-			event := fftypes.NewEvent(fftypes.EventTypeApprovalConfirmed, approval.Namespace, approval.LocalID)
+			event := fftypes.NewEvent(fftypes.EventTypeApprovalConfirmed, approval.Namespace, approval.LocalID, approval.TX.ID)
 			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
