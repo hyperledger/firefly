@@ -911,7 +911,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"tx.type":         &StringField{},
 	"tx.id":           &UUIDField{},
 	"blockchainevent": &UUIDField{},
-	"type":            &UUIDField{},
+	"type":            &StringField{},
 }
 
 // FFIQueryFactory filter fields for contract definitions
