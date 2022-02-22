@@ -652,13 +652,13 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1").
+	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "peer1").
 		Return(&fftypes.Verifier{
 			ID:        fftypes.NewUUID(),
 			Identity:  id.ID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
-				Type:  fftypes.VerifierTypeFFDXPeerID,
+				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "peer1",
 			},
 		}, nil)
@@ -666,14 +666,14 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 		Return(id, nil)
 
 	v1, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "peer1",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
 	v2, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "peer1",
 	})
 	assert.NoError(t, err)
@@ -695,20 +695,20 @@ func TestCachedIdentityLookupByVerifierRefError(t *testing.T) {
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1").
+	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "peer1").
 		Return(&fftypes.Verifier{
 			ID:        fftypes.NewUUID(),
 			Identity:  id.ID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
-				Type:  fftypes.VerifierTypeFFDXPeerID,
+				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "peer1",
 			},
 		}, nil)
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "peer1",
 	})
 	assert.Regexp(t, "pop", err)
@@ -729,27 +729,27 @@ func TestCachedIdentityLookupByVerifierRefNotFound(t *testing.T) {
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1").
+	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "0x12345").
 		Return(&fftypes.Verifier{
 			ID:        fftypes.NewUUID(),
 			Identity:  id.ID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
-				Type:  fftypes.VerifierTypeFFDXPeerID,
+				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "peer1",
 			},
 		}, nil)
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, nil)
 
 	_, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeFFDXPeerID,
-		Value: "peer1",
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
 	})
 	assert.Regexp(t, "FF10220", err)
 
 }
 
-func TestCachedIdentityLookupByDIDCaching(t *testing.T) {
+func TestCachedIdentityLookupCaching(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
@@ -765,32 +765,32 @@ func TestCachedIdentityLookupByDIDCaching(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(id, nil).Once()
 
-	v1, err := im.cachedIdentityLookupByDID(ctx, "did:firefly:node/peer1")
+	v1, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
-	v2, err := im.cachedIdentityLookupByDID(ctx, "did:firefly:node/peer1")
+	v2, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v2)
 }
 
-func TestCachedIdentityLookupByDIDUnknownResolver(t *testing.T) {
+func TestCachedIdentityLookupUnknownResolver(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	_, err := im.cachedIdentityLookupByDID(ctx, "did:random:anything")
+	_, err := im.CachedIdentityLookup(ctx, "did:random:anything")
 	assert.Regexp(t, "FF10349", err)
 
 }
 
-func TestCachedIdentityLookupByDIDGetIDFail(t *testing.T) {
+func TestCachedIdentityLookupGetIDFail(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.cachedIdentityLookupByDID(ctx, "did:firefly:node/peer1")
+	_, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
 	assert.Regexp(t, "pop", err)
 }
 
@@ -807,7 +807,7 @@ func TestCachedIdentityLookupByVerifierByOldDIDFail(t *testing.T) {
 		return uuid.Equals(orgUUID)
 	})).Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.cachedIdentityLookupByDID(ctx, did)
+	_, err := im.CachedIdentityLookup(ctx, did)
 	assert.Regexp(t, "pop", err)
 
 }

@@ -45,7 +45,7 @@ type groupManager struct {
 
 type groupHashEntry struct {
 	group *fftypes.Group
-	nodes []*fftypes.Node
+	nodes []*fftypes.Identity
 }
 
 func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
@@ -157,7 +157,7 @@ func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter
 	return gm.database.GetGroups(ctx, filter)
 }
 
-func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32) (*fftypes.Group, []*fftypes.Node, error) {
+func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32) (*fftypes.Group, []*fftypes.Identity, error) {
 
 	if cached := gm.groupCache.Get(groupHash.String()); cached != nil {
 		cached.Extend(gm.groupCacheTTL)
@@ -175,14 +175,14 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 
 	// We de-duplicate nodes in the case that the payload needs to be received by multiple org identities
 	// that share a single node.
-	nodes := make([]*fftypes.Node, 0, len(group.Members))
+	nodes := make([]*fftypes.Identity, 0, len(group.Members))
 	knownIDs := make(map[fftypes.UUID]bool)
 	for _, r := range group.Members {
-		node, err := gm.database.GetNodeByID(ctx, r.Node)
+		node, err := gm.database.GetIdentityByID(ctx, r.Node)
 		if err != nil {
 			return nil, nil, err
 		}
-		if node == nil {
+		if node == nil || node.Type != fftypes.IdentityTypeNode {
 			return nil, nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, r.Node)
 		}
 		if !knownIDs[*node.ID] {

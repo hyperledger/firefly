@@ -69,8 +69,8 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 		Identity:  fftypes.NewUUID(),
 		Namespace: "ns2",
 		VerifierRef: fftypes.VerifierRef{
-			Type:  fftypes.VerifierTypeFFDXPeerID,
-			Value: "peer1",
+			Type:  fftypes.VerifierTypeEthAddress,
+			Value: "0x12345",
 		},
 		Created: verifier.Created,
 	}

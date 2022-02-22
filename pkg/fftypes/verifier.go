@@ -24,8 +24,6 @@ var (
 	VerifierTypeEthAddress VerifierType = ffEnum("verifiertype", "ethereum_address")
 	// VerifierTypeMSPIdentity is the MSP id (X509 distinguished name) of an issued signing certificate / keypair
 	VerifierTypeMSPIdentity VerifierType = ffEnum("verifiertype", "fabric_msp_id")
-	// VerifierTypeFFDXPeerID is the peer identifier that FireFly Data Exchange verifies (using plugin specific tech) when receiving data
-	VerifierTypeFFDXPeerID VerifierType = ffEnum("verifiertype", "dx_peer_id")
 )
 
 // VerifierRef is just the type + value (public key identifier etc.) from the verifier

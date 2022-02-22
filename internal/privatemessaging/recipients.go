@@ -19,7 +19,6 @@ package privatemessaging
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
@@ -57,49 +56,27 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 	return err
 }
 
-func (pm *privateMessaging) resolveOrg(ctx context.Context, orgInput string) (org *fftypes.Organization, err error) {
-	orgInput = strings.TrimPrefix(orgInput, fftypes.FireflyOrgDIDPrefix)
-	orgID, err := fftypes.ParseUUID(ctx, orgInput)
-	if err == nil {
-		org, err = pm.database.GetOrganizationByID(ctx, orgID)
-	} else {
-		org, err = pm.database.GetOrganizationByName(ctx, orgInput)
-		if err == nil && org == nil {
-			org, err = pm.database.GetOrganizationByIdentity(ctx, orgInput)
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	if org == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgOrgNotFound, orgInput)
-	}
-	return org, nil
-}
-
-func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organization, nodeInput string) (node *fftypes.Node, err error) {
+func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
 	if nodeInput != "" {
-		var nodeID *fftypes.UUID
-		nodeID, err = fftypes.ParseUUID(ctx, nodeInput)
-		if err == nil {
-			node, err = pm.database.GetNodeByID(ctx, nodeID)
-		} else {
-			node, err = pm.database.GetNode(ctx, org.Identity, nodeInput)
-		}
+		node, err = pm.identity.CachedIdentityLookup(ctx, nodeInput)
 	} else {
 		// Find any node owned by this organization
-		var nodes []*fftypes.Node
-		originalOrgName := fmt.Sprintf("%s/%s", org.Name, org.Identity)
+		var nodes []*fftypes.Identity
+		originalOrgName := fmt.Sprintf("%s/%s", org.Name, org.ID)
 		for org != nil && node == nil {
-			filter := database.NodeQueryFactory.NewFilterLimit(ctx, 1).Eq("owner", org.Identity)
-			nodes, _, err = pm.database.GetNodes(ctx, filter)
+			fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
+			filter := fb.And(
+				fb.Eq("parent", org.ID),
+				fb.Eq("type", fftypes.IdentityTypeNode),
+			)
+			nodes, _, err = pm.database.GetIdentities(ctx, filter)
 			switch {
 			case err == nil && len(nodes) > 0:
 				// This org owns a node
 				node = nodes[0]
-			case err == nil && org.Parent != "":
+			case err == nil && org.Parent != nil:
 				// This org has a parent, maybe that org owns a node
-				org, err = pm.database.GetOrganizationByIdentity(ctx, org.Parent)
+				org, err = pm.identity.CachedIdentityLookupByID(ctx, org.Parent)
 			default:
 				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFoundInOrg, originalOrgName)
 			}
@@ -116,12 +93,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 
 func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.MessageInOut) (gi *fftypes.GroupIdentity, err error) {
 
-	localOrgDID, err := pm.identity.ResolveLocalOrgDID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	localOrg, err := pm.identity.GetLocalOrganization(ctx)
+	localOrg, err := pm.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +107,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the org
-		org, err := pm.resolveOrg(ctx, rInput.Identity)
+		org, err := pm.identity.CachedIdentityLookup(ctx, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}
@@ -144,36 +116,37 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 		if err != nil {
 			return nil, err
 		}
-		foundLocal = foundLocal || (node.Owner == localOrg.Identity && node.Name == pm.localNodeName)
+		foundLocal = foundLocal || (node.Parent == localOrg.ID && node.Name == pm.localNodeName)
 		gi.Members[i] = &fftypes.Member{
-			Identity: org.GetDID(),
+			Identity: org.DID,
 			Node:     node.ID,
 		}
 	}
 	if !foundLocal {
 		// Add in the local org identity
-		localNodeID, err := pm.resolveLocalNode(ctx, localOrg.Identity)
+		localNodeID, err := pm.resolveLocalNode(ctx, localOrg)
 		if err != nil {
 			return nil, err
 		}
 		gi.Members = append(gi.Members, &fftypes.Member{
-			Identity: localOrgDID,
+			Identity: localOrg.DID,
 			Node:     localNodeID,
 		})
 	}
 	return gi, nil
 }
 
-func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrgSigningKey string) (*fftypes.UUID, error) {
+func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *fftypes.Identity) (*fftypes.UUID, error) {
 	if pm.localNodeID != nil {
 		return pm.localNodeID, nil
 	}
-	fb := database.NodeQueryFactory.NewFilterLimit(ctx, 1)
+	fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
 	filter := fb.And(
-		fb.Eq("owner", localOrgSigningKey),
+		fb.Eq("parent", localOrg.ID),
+		fb.Eq("type", fftypes.IdentityTypeNode),
 		fb.Eq("name", pm.localNodeName),
 	)
-	nodes, _, err := pm.database.GetNodes(ctx, filter)
+	nodes, _, err := pm.database.GetIdentities(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

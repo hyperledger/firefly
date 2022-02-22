@@ -50,7 +50,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 	if err != nil {
 		return nil, err
 	}
-	nodeRequest.Profile = dxInfo.Endpoint
+	nodeRequest.Profile = dxInfo
 
 	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
 }

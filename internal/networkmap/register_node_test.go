@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -57,9 +56,9 @@ func TestRegisterNodeOk(t *testing.T) {
 	mdi.On("GetMessageByID", nm.ctx, parentOrg.Messages.Claim).Return(parentClaimMsg, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(dataexchange.DXInfo{
-		Peer:     "peer1",
-		Endpoint: fftypes.JSONObject{"endpoint": "details"},
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{
+		"id":       "peer1",
+		"endpoint": "details",
 	}, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
@@ -102,7 +101,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	mdi.On("GetMessageByID", nm.ctx, parentOrg.Messages.Claim).Return(parentClaimMsg, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(dataexchange.DXInfo{}, fmt.Errorf("pop"))
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterNode(nm.ctx, true)
 	assert.Regexp(t, "pop", err)

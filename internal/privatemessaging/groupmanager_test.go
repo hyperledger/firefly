@@ -409,8 +409,10 @@ func TestGetGroupNodesCache(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, mock.Anything).Return(&fftypes.Node{
-		ID: node1,
+	mdi.On("GetIdentityByID", pm.ctx, mock.Anything).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: node1,
+		},
 	}, nil).Once()
 
 	g, nodes, err := pm.getGroupNodes(pm.ctx, group.Hash)
