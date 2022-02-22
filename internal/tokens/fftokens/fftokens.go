@@ -75,12 +75,13 @@ type createPool struct {
 }
 
 type tokenApproval struct {
-	Owner     string `json:"owner"`
-	Operator  string `json:"operator"`
-	Approved  bool   `json:"approved"`
-	PoolID    string `json:"poolId"`
-	RequestID string `json:"requestId,omitempty"`
-	Data      string `json:"data,omitempty"`
+	Signer    string             `json:"signer"`
+	Operator  string             `json:"operator"`
+	Approved  bool               `json:"approved"`
+	PoolID    string             `json:"poolId"`
+	RequestID string             `json:"requestId,omitempty"`
+	Data      string             `json:"data,omitempty"`
+	Config    fftypes.JSONObject `json:"config"`
 }
 
 type activatePool struct {
@@ -571,11 +572,12 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, pool
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&tokenApproval{
 			PoolID:    poolProtocolID,
-			Owner:     approval.Key,
+			Signer:    approval.Key,
 			Operator:  approval.Operator,
 			Approved:  approval.Approved,
 			RequestID: opID.String(),
 			Data:      string(data),
+			Config:    approval.Config,
 		}).
 		Post("/api/v1/approval")
 	if err != nil || !res.IsSuccess() {

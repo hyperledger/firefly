@@ -474,6 +474,9 @@ func TestTokenApproval(t *testing.T) {
 		Operator: "0x02",
 		Key:      "0x123",
 		Approved: true,
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenApproval,
@@ -487,10 +490,13 @@ func TestTokenApproval(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"poolId":    "123",
-				"operator":  "0x02",
-				"approved":  true,
-				"owner":     "0x123",
+				"poolId":   "123",
+				"operator": "0x02",
+				"approved": true,
+				"signer":   "0x123",
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
 				"requestId": opID.String(),
 				"data":      `{"tx":"` + approval.TX.ID.String() + `"}`,
 			}, body)

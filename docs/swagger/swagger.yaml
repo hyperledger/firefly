@@ -6538,6 +6538,9 @@ paths:
                   approved:
                     type: boolean
                   blockchainEvent: {}
+                  config:
+                    additionalProperties: {}
+                    type: object
                   connector:
                     type: string
                   created: {}
@@ -6597,6 +6600,9 @@ paths:
                 approved:
                   type: boolean
                 blockchainEvent: {}
+                config:
+                  additionalProperties: {}
+                  type: object
                 connector:
                   type: string
                 created: {}
@@ -6632,6 +6638,9 @@ paths:
                   approved:
                     type: boolean
                   blockchainEvent: {}
+                  config:
+                    additionalProperties: {}
+                    type: object
                   connector:
                     type: string
                   created: {}
@@ -6666,6 +6675,9 @@ paths:
                   approved:
                     type: boolean
                   blockchainEvent: {}
+                  config:
+                    additionalProperties: {}
+                    type: object
                   connector:
                     type: string
                   created: {}

@@ -35,4 +35,5 @@ type TokenApproval struct {
 	Created         *FFTime        `json:"created,omitempty"`
 	TX              TransactionRef `json:"tx"`
 	BlockchainEvent *UUID          `json:"blockchainEvent,omitempty"`
+	Config          JSONObject     `json:"config,omitempty"` // for REST calls only (not stored)
 }
