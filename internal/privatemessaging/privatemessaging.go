@@ -220,7 +220,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 
-		if node.ID.Equals(localOrg.ID) {
+		if node.Parent.Equals(localOrg.ID) {
 			l.Debugf("Skipping send of batch for local node %s:%s for group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 			continue
 		}
@@ -245,7 +245,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 		}
 
 		// Send the payload itself
-		err := pm.exchange.SendMessage(ctx, op.ID, node.Profile, payload)
+		err := pm.exchange.SendMessage(ctx, op.ID, node.Profile.GetString("id"), payload)
 		if err != nil {
 			return err
 		}
