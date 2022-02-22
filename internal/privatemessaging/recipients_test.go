@@ -141,6 +141,37 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 
 }
 
+func TestResolveMemberListLookupFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	localOrg := newTestOrg("org1")
+	localNode := newTestNode("node1", localOrg)
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(nil, fmt.Errorf("pop"))
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
+
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				SignerRef: fftypes.SignerRef{
+					Author: "org1",
+				},
+			},
+		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	})
+	assert.Regexp(t, "pop", err)
+	mim.AssertExpectations(t)
+
+}
+
 func TestResolveMemberListGetGroupsFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -348,61 +379,61 @@ func TestResolveNodeByIDNoResult(t *testing.T) {
 
 }
 
-// func TestResolveReceipientListExisting(t *testing.T) {
-// 	pm, cancel := newTestPrivateMessaging(t)
-// 	defer cancel()
+func TestResolveReceipientListExisting(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
 
-// 	groupID := fftypes.NewRandB32()
-// 	mdi := pm.database.(*databasemocks.Plugin)
-// 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{Hash: groupID}, nil)
+	groupID := fftypes.NewRandB32()
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{Hash: groupID}, nil)
 
-// 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
-// 		Message: fftypes.Message{
-// 			Header: fftypes.MessageHeader{
-// 				Group: groupID,
-// 			},
-// 		},
-// 	})
-// 	assert.NoError(t, err)
-// }
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Group: groupID,
+			},
+		},
+	})
+	assert.NoError(t, err)
+}
 
-// func TestResolveReceipientListEmptyList(t *testing.T) {
-// 	pm, cancel := newTestPrivateMessaging(t)
-// 	defer cancel()
+func TestResolveReceipientListEmptyList(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
 
-// 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{})
-// 	assert.Regexp(t, "FF10219", err)
-// }
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{})
+	assert.Regexp(t, "FF10219", err)
+}
 
-// func TestResolveLocalNodeCached(t *testing.T) {
-// 	pm, cancel := newTestPrivateMessaging(t)
-// 	defer cancel()
+func TestResolveLocalNodeCached(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
 
-// 	pm.localNodeID = fftypes.NewUUID()
+	pm.localNodeID = fftypes.NewUUID()
 
-// 	ni, err := pm.resolveLocalNode(pm.ctx, "localorg")
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, pm.localNodeID, ni)
-// }
+	ni, err := pm.resolveLocalNode(pm.ctx, newTestOrg("localorg"))
+	assert.NoError(t, err)
+	assert.Equal(t, pm.localNodeID, ni)
+}
 
-// func TestResolveLocalNodeNotFound(t *testing.T) {
-// 	pm, cancel := newTestPrivateMessaging(t)
-// 	defer cancel()
+func TestResolveLocalNodeNotFound(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
 
-// 	mdi := pm.database.(*databasemocks.Plugin)
-// 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 
-// 	_, err := pm.resolveLocalNode(pm.ctx, "localorg")
-// 	assert.Regexp(t, "FF10225", err)
-// }
+	_, err := pm.resolveLocalNode(pm.ctx, newTestOrg("localorg"))
+	assert.Regexp(t, "FF10225", err)
+}
 
-// func TestResolveLocalNodeNotError(t *testing.T) {
-// 	pm, cancel := newTestPrivateMessaging(t)
-// 	defer cancel()
+func TestResolveLocalNodeNotError(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
 
-// 	mdi := pm.database.(*databasemocks.Plugin)
-// 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-// 	_, err := pm.resolveLocalNode(pm.ctx, "localorg")
-// 	assert.EqualError(t, err, "pop")
-// }
+	_, err := pm.resolveLocalNode(pm.ctx, newTestOrg("localorg"))
+	assert.EqualError(t, err, "pop")
+}
