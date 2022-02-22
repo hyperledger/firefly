@@ -381,7 +381,7 @@ func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupSt
 				}
 			}
 			if identity == nil {
-				return nil, i18n.NewError(ctx, i18n.MsgAuthorNotFoundByDID, didLookupStr)
+				return nil, i18n.NewError(ctx, i18n.MsgIdentityNotFoundByString, didLookupStr)
 			}
 		} else {
 			// If there is just a name in there, then it could be an Org type identity (from the very original usage of the field)
