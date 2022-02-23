@@ -46,7 +46,7 @@ type Manager interface {
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
 	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (immediateParent *fftypes.Identity, err error)
-	IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message) bool
+	IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) bool
 }
 
 type identityManager struct {
@@ -474,20 +474,25 @@ func (im *identityManager) isValidRootOrgCommon(ctx context.Context, msg *fftype
 	return true
 }
 
-func (im *identityManager) IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message) bool {
+func (im *identityManager) IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) bool {
 	// Look into message to see if it contains a data item that is a root organization definition
 	if msg.Header.Type == fftypes.MessageTypeDefinition &&
 		(msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization || msg.Header.Tag == fftypes.SystemTagIdentityClaim) {
-		messageData, ok, err := im.data.GetMessageData(ctx, msg, true)
-		if ok && err == nil {
-			if len(messageData) > 0 {
-				dataItem := messageData[0]
-				if dataItem.Validator == fftypes.MessageTypeDefinition {
-					if msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization {
-						return im.isValidRootOrgDeprecated(ctx, msg, dataItem)
-					}
-					return im.isValidRootOrgIdentityClaim(ctx, msg, dataItem)
+		messageData := data
+		if len(messageData) == 0 {
+			data, ok, err := im.data.GetMessageData(ctx, msg, true)
+			if !ok || err != nil {
+				return false
+			}
+			messageData = data
+		}
+		if len(messageData) > 0 {
+			dataItem := messageData[0]
+			if dataItem.Validator == fftypes.MessageTypeDefinition {
+				if msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization {
+					return im.isValidRootOrgDeprecated(ctx, msg, dataItem)
 				}
+				return im.isValidRootOrgIdentityClaim(ctx, msg, dataItem)
 			}
 		}
 	}

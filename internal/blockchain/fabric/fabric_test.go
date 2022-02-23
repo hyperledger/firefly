@@ -602,7 +602,12 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server").Return(nil)
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -616,7 +621,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[1].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[1].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -646,7 +651,12 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(nil)
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -660,7 +670,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[0].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -690,7 +700,12 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)

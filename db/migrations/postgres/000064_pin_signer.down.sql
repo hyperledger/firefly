@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE pins DROP COLUMN signer;
+COMMIT;

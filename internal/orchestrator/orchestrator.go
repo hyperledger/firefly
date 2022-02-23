@@ -475,7 +475,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets, or.contracts)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
+		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
 		if err != nil {
 			return err
 		}

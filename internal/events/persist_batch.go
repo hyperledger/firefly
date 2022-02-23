@@ -24,40 +24,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32, signingKey string) (valid bool, err error) {
-	l := log.L(ctx)
-
-	// Verify that we can resolve the signing key back to this identity.
-	// This is a specific rule for broadcasts, so we know the authenticity of the data.
-	resolvedAuthor, err := em.identity.ResolveSigningKeyIdentity(ctx, signingKey)
-	if err != nil {
-		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
-		return false, nil // This is not retryable. skip this batch
-	}
-
-	// The special case of a root org broadcast is allowed to not have a resolved author, because it's not in the database yet
-	if (resolvedAuthor == "" || resolvedAuthor != batch.Author) || signingKey != batch.Key {
-		if resolvedAuthor == "" && signingKey == batch.Key && em.isRootOrgBroadcast(batch) {
-
-			// This is where a future "gatekeeper" plugin should sit, to allow pluggable authorization of new root
-			// identities joining the network
-			l.Infof("New root org broadcast: %s", batch.Author)
-
-		} else {
-
-			l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Key, batch.Author, signingKey, resolvedAuthor)
-			return false, nil // This is not retryable. skip this batch
-
-		}
-	}
+func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32) (valid bool, err error) {
 
 	if !onchainHash.Equals(batch.Hash) {
-		l.Errorf("Invalid batch '%s'. Hash in batch '%s' does not match transaction hash '%s'", batch.ID, batch.Hash, onchainHash)
+		log.L(ctx).Errorf("Invalid batch '%s'. Hash in batch '%s' does not match transaction hash '%s'", batch.ID, batch.Hash, onchainHash)
 		return false, nil // This is not retryable. skip this batch
 	}
 
-	valid, err = em.persistBatch(ctx, batch)
-	return valid, err
+	return em.persistBatch(ctx, batch)
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists

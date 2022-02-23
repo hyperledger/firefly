@@ -88,7 +88,7 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, signingIdentity string) error
+	BatchPinComplete(batch *BatchPin, signingKey *fftypes.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error

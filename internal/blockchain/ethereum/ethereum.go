@@ -341,7 +341,10 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, authorAddress)
+	return e.callbacks.BatchPinComplete(batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: authorAddress,
+	})
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {

@@ -25,9 +25,11 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -35,27 +37,29 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestAggregator() (*aggregator, func()) {
+func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
+	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
-	mmi.On("IsMetricsEnabled").Return(false)
+	mbi := &blockchainmocks.Plugin{}
+	if metrics {
+		mmi.On("MessageConfirmed", mock.Anything, fftypes.EventTypeMessageConfirmed).Return()
+	}
+	mmi.On("IsMetricsEnabled").Return(metrics)
+	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"), mmi)
+	ag := newAggregator(ctx, mdi, mbi, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
 	return ag, cancel
 }
 
 func newTestAggregatorWithMetrics() (*aggregator, func()) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandlers{}
-	mmi := &metricsmocks.Manager{}
-	mmi.On("MessageConfirmed", mock.Anything, fftypes.EventTypeMessageConfirmed).Return()
-	mmi.On("IsMetricsEnabled").Return(true)
-	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, msh, mdm, newEventNotifier(ctx, "ut"), mmi)
-	return ag, cancel
+	return newTestAggregatorCommon(true)
+}
+
+func newTestAggregator() (*aggregator, func()) {
+	return newTestAggregatorCommon(false)
 }
 
 func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
@@ -875,7 +879,7 @@ func TestAttemptMessageDispatchFailGetData(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, nil, nil)
+	}, nil, nil, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -893,7 +897,7 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil)
+	}, nil, nil, nil)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -919,7 +923,7 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 
 	dispatched, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, nil, nil)
+	}, nil, nil, &fftypes.Pin{})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -942,7 +946,7 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil, &fftypes.Pin{})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -967,7 +971,7 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil, &fftypes.Pin{})
 	assert.EqualError(t, err, "pop")
 	assert.False(t, dispatched)
 
@@ -998,7 +1002,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
 
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil)
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil, &fftypes.Pin{})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1046,7 +1050,7 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, bs)
+	}, nil, bs, &fftypes.Pin{})
 	assert.NoError(t, err)
 
 }
@@ -1250,7 +1254,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil)
+	}, nil, nil, &fftypes.Pin{})
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1274,7 +1278,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil)
+	}, nil, nil, &fftypes.Pin{})
 	assert.NoError(t, err)
 
 }
@@ -1293,7 +1297,7 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, nil, bs)
+	}, nil, bs, &fftypes.Pin{})
 	assert.NoError(t, err)
 
 	err = bs.RunFinalize(ag.ctx)
@@ -1318,7 +1322,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.MessageTypeGroupInit,
 		},
-	}, nil, bs)
+	}, nil, bs, &fftypes.Pin{})
 	assert.NoError(t, err)
 
 }
@@ -1336,7 +1340,7 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-	}, nil, bs)
+	}, nil, bs, &fftypes.Pin{})
 	assert.NoError(t, err)
 
 	err = bs.RunFinalize(ag.ctx)

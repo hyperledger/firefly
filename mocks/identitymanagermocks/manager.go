@@ -153,13 +153,20 @@ func (_m *Manager) GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, erro
 	return r0, r1
 }
 
-// IsRootOrgBroadcast provides a mock function with given fields: ctx, msg
-func (_m *Manager) IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message) bool {
-	ret := _m.Called(ctx, msg)
+// IsRootOrgBroadcast provides a mock function with given fields: ctx, msg, data
+func (_m *Manager) IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) bool {
+	_va := make([]interface{}, len(data))
+	for _i := range data {
+		_va[_i] = data[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, msg)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) bool); ok {
-		r0 = rf(ctx, msg)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, ...*fftypes.Data) bool); ok {
+		r0 = rf(ctx, msg, data...)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}

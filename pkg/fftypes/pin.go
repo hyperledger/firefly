@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,6 +43,7 @@ type Pin struct {
 	Batch      *UUID    `json:"batch,omitempty"`
 	Index      int64    `json:"index,omitempty"`
 	Dispatched bool     `json:"dispatched,omitempty"`
+	Signer     string   `json:"signer,omitempty"`
 	Created    *FFTime  `json:"created,omitempty"`
 }
 

@@ -24,9 +24,11 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -39,8 +41,10 @@ type aggregator struct {
 	ctx             context.Context
 	database        database.Plugin
 	definitions     definitions.DefinitionHandlers
+	identity        identity.Manager
 	data            data.Manager
 	eventPoller     *eventPoller
+	verifierType    fftypes.VerifierType
 	newPins         chan int64
 	offchainBatches chan *fftypes.UUID
 	queuedRewinds   chan *fftypes.UUID
@@ -48,13 +52,15 @@ type aggregator struct {
 	metrics         metrics.Manager
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, sh definitions.DefinitionHandlers, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:             log.WithLogField(ctx, "role", "aggregator"),
 		database:        di,
 		definitions:     sh,
+		identity:        im,
 		data:            dm,
+		verifierType:    bi.VerifierType(),
 		newPins:         make(chan int64),
 		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
 		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
@@ -249,6 +255,37 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 	return err
 }
 
+func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, pin *fftypes.Pin) (valid bool, err error) {
+	l := log.L(ctx)
+
+	verifierRef := &fftypes.VerifierRef{
+		Type:  ag.verifierType,
+		Value: pin.Signer,
+	}
+
+	// Verify that we can resolve the signing key back to the identity that is claimed in the batch.
+	resolvedAuthor, err := ag.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{
+		fftypes.IdentityTypeOrg,
+		fftypes.IdentityTypeCustom,
+	}, msg.Header.Namespace, verifierRef)
+	if err != nil {
+		return false, err
+	}
+	if resolvedAuthor == nil {
+		// Only private messages, or root org broadcasts can have an unregistered key
+		if msg.Header.Type != fftypes.MessageTypePrivate && !ag.identity.IsRootOrgBroadcast(ctx, msg, data...) {
+			l.Errorf("Invalid message '%s'. Author '%s' cound not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
+			return false, nil // This is not retryable. skip this batch
+		}
+	} else if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
+		l.Errorf("Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)", msg.Header.ID, msg.Header.Author, verifierRef.Value, resolvedAuthor.DID, resolvedAuthor.ID)
+		return false, nil // This is not retryable. skip this batch
+
+	}
+
+	return true, nil
+}
+
 func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, pin *fftypes.Pin, msgBaseIndex int64, msg *fftypes.Message, state *batchState) (err error) {
 	l := log.L(ctx)
 
@@ -290,7 +327,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	}
 
 	l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-	dispatched, err := ag.attemptMessageDispatch(ctx, msg, batch.Payload.TX.ID, state)
+	dispatched, err := ag.attemptMessageDispatch(ctx, msg, batch.Payload.TX.ID, state, pin)
 	if err != nil {
 		return err
 	}
@@ -312,11 +349,16 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	return nil
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, tx *fftypes.UUID, state *batchState) (bool, error) {
+func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, tx *fftypes.UUID, state *batchState, pin *fftypes.Pin) (bool, error) {
 
 	// If we don't find all the data, then we don't dispatch
 	data, foundAll, err := ag.data.GetMessageData(ctx, msg, true)
 	if err != nil || !foundAll {
+		return false, err
+	}
+
+	// Check the pin signer is valid for the message
+	if valid, err := ag.checkOnchainConsistency(ctx, msg, data, pin); err != nil || !valid {
 		return false, err
 	}
 

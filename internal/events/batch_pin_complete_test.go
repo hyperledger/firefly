@@ -88,7 +88,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		Namespace: "ns1",
 		SignerRef: fftypes.SignerRef{
 			Author: "author1",
-			Key:    "0x12345",
+			Key:    "0x22222",
 		},
 		PayloadRef: batch.BatchPayloadRef,
 		Payload: fftypes.BatchPayload{
@@ -143,7 +143,10 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
 
-	err = em.BatchPinComplete(mbi, batch, "0x12345")
+	err = em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -192,7 +195,10 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err = em.BatchPinComplete(mbi, batch, "0xffffeeee")
+	err = em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
 	assert.NoError(t, err)
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
@@ -223,7 +229,10 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0xffffeeee")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
 	mpi.AssertExpectations(t)
 	assert.Regexp(t, "FF10158", err)
 }
@@ -245,7 +254,10 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0xffffeeee")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
 }
 
@@ -256,7 +268,10 @@ func TestBatchPinCompleteNoTX(t *testing.T) {
 	batch := &blockchain.BatchPin{}
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
 	assert.NoError(t, err)
 }
 
@@ -273,7 +288,10 @@ func TestBatchPinCompleteBadNamespace(t *testing.T) {
 	}
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
 	assert.NoError(t, err)
 }
 
@@ -306,7 +324,7 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
+	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash)
 	assert.NoError(t, err) // retryable
 	assert.False(t, valid)
 }
@@ -332,7 +350,7 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author2", nil)
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
+	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash)
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -357,7 +375,7 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author1", nil)
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32(), "0x12345")
+	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32())
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -710,6 +728,9 @@ func TestPersistContextsFail(t *testing.T) {
 		Contexts: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 		},
+	}, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
 	}, false)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)

@@ -325,7 +325,10 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, signer)
+	return f.callbacks.BatchPinComplete(batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: signer,
+	})
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {

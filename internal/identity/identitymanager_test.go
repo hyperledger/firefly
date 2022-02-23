@@ -1223,7 +1223,7 @@ func TestIsRootOgBroadcastDeprecatedTrue(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestIsRootOgBroadcastIdentityClaimTrue(t *testing.T) {
+func TestIsRootOrgBroadcastBatchIdentityClaimTrue(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 	mdi := im.database.(*databasemocks.Plugin)
 	mdm := im.data.(*datamocks.Manager)
@@ -1380,6 +1380,42 @@ func TestIsRootOrgDeprecatedBroadcastBadData(t *testing.T) {
 	}
 
 	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeDefinition,
+			Tag:  fftypes.DeprecatedSystemTagDefineOrganization,
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Data: fftypes.DataRefs{
+			{
+				ID:   data.ID,
+				Hash: data.Hash,
+			},
+		},
+	}
+	assert.False(t, im.IsRootOrgBroadcast(ctx, msg))
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestIsRootOrgDeprecatedBroadcastMissingData(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdm := im.data.(*datamocks.Manager)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     fftypes.JSONAnyPtr("not an org"),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{}, false, nil)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{

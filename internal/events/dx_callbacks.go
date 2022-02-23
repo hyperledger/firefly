@@ -64,43 +64,17 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 	return string(manifestBytes), err
 }
 
-func (em *eventManager) getNodeForPeerID(ctx context.Context, peerID string) (node *fftypes.Identity, err error) {
-	l := log.L(em.ctx)
-
-	// Find the node associated with the peer
-	fb := database.VerifierQueryFactory.NewFilterLimit(ctx, 1)
-	filter := fb.And(
-		fb.Eq("type", fftypes.VerifierTypeFFDXPeerID),
-		fb.Eq("namespace", fftypes.SystemNamespace),
-		fb.Eq("value", peerID),
-	)
-	peerIDs, _, err := em.database.GetVerifiers(ctx, filter)
-	if err != nil {
-		l.Errorf("Failed to retrieve node peer verifier: %v", err)
-		return nil, err // retry for persistence error
-	}
-	if len(peerIDs) < 1 {
-		l.Errorf("Node not found for peer %s", peerID)
-		return nil, nil
-	}
-	node, err = em.database.GetIdentityByID(ctx, peerIDs[0].Identity)
-	if err != nil || node == nil {
-		l.Errorf("Failed to retrieve node '%s': %v", peerIDs[0].Identity, err)
-		return nil, err // retry for persistence error
-	}
-
-	return node, nil
-}
-
-// checkReceivedIdentity checks only the OFF-CHAIN identity (the peer node that
 // the data came from) matches the org listed in the batch. The on-chain identity check
 // is performed by the aggregator, across broadcast and private consistently.
-func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID, author string) (node *fftypes.Identity, err error) {
+func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string) (node *fftypes.Identity, err error) {
 	l := log.L(em.ctx)
 
 	// Resolve the node for the peer ID
-	node, err = em.getNodeForPeerID(ctx, peerID)
-	if err != nil || node == nil {
+	node, err = em.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: peerID,
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -146,7 +120,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			l := log.L(ctx)
 
-			node, err := em.checkReceivedIdentity(ctx, peerID, batch.Author)
+			node, err := em.checkReceivedOffchainIdentity(ctx, peerID, batch.Author)
 			if err != nil {
 				return err
 			}
