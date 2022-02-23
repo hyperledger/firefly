@@ -114,12 +114,14 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		TokenTransfer: fftypes.TokenTransfer{
 			To:     suite.testState.org2.Identity,
 			Amount: *fftypes.NewFFBigInt(1),
+			From:   suite.testState.org1.Identity,
+			Key:    suite.testState.org2.Identity,
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
-					Value: fftypes.JSONAnyPtr(`"payment for data"`),
+					Value: fftypes.JSONAnyPtr(`"token approval - payment for data"`),
 				},
 			},
 		},
@@ -134,7 +136,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
 	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].Message)
 	assert.Equal(suite.T(), 1, len(data))
-	assert.Equal(suite.T(), `"payment for data"`, data[0].Value.String())
+	assert.Equal(suite.T(), `"token approval - payment for data"`, data[0].Value.String())
 	validateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 1,
@@ -271,6 +273,8 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			TokenIndex: "1",
 			To:         suite.testState.org2.Identity,
 			Amount:     *fftypes.NewFFBigInt(1),
+			From:       suite.testState.org1.Identity,
+			Key:        suite.testState.org2.Identity,
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{
