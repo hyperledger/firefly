@@ -234,7 +234,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		time.Sleep(3 * time.Second)
 	}
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event|token_approval_confirmed"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
 
 	wsUrl1 := url.URL{

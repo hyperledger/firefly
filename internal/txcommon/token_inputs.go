@@ -73,3 +73,26 @@ func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, tra
 	transfer.LocalID = t.LocalID
 	return nil
 }
+
+func AddTokenApprovalInputs(op *fftypes.Operation, approval *fftypes.TokenApproval) (err error) {
+	var j []byte
+	if j, err = json.Marshal(approval); err == nil {
+		err = json.Unmarshal(j, &op.Input)
+	}
+	return err
+}
+
+func RetrieveTokenApprovalInputs(ctx context.Context, op *fftypes.Operation, approval *fftypes.TokenApproval) (err error) {
+	var a fftypes.TokenApproval
+	s := op.Input.String()
+	if err = json.Unmarshal([]byte(s), &a); err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
+	}
+	if a.LocalID == nil {
+		return i18n.NewError(ctx, i18n.MsgInvalidUUID)
+	}
+	// The LocalID is the only thing that needs to be read back out when processing an event
+	// (everything else should be unpacked from the event)
+	approval.LocalID = a.LocalID
+	return nil
+}

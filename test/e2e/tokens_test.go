@@ -69,6 +69,21 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
+	approval := &fftypes.TokenApprovalInput{
+		TokenApproval: fftypes.TokenApproval{
+			Key:      suite.testState.org1.Identity,
+			Operator: suite.testState.org2.Identity,
+			Approved: true,
+		},
+	}
+	approvalOut := TokenApproval(suite.T(), suite.testState.client1, approval, false)
+
+	waitForEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.LocalID)
+	approvals := GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
+	assert.Equal(suite.T(), 1, len(approvals))
+	assert.Equal(suite.T(), "erc1155", approvals[0].Connector)
+	assert.Equal(suite.T(), true, approvals[0].Approved)
+
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
@@ -99,12 +114,14 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		TokenTransfer: fftypes.TokenTransfer{
 			To:     suite.testState.org2.Identity,
 			Amount: *fftypes.NewFFBigInt(1),
+			From:   suite.testState.org1.Identity,
+			Key:    suite.testState.org2.Identity,
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
 				{
-					Value: fftypes.JSONAnyPtr(`"payment for data"`),
+					Value: fftypes.JSONAnyPtr(`"token approval - payment for data"`),
 				},
 			},
 		},
@@ -119,7 +136,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
 	data := GetDataForMessage(suite.T(), suite.testState.client1, suite.testState.startTime, transfers[0].Message)
 	assert.Equal(suite.T(), 1, len(data))
-	assert.Equal(suite.T(), `"payment for data"`, data[0].Value.String())
+	assert.Equal(suite.T(), `"token approval - payment for data"`, data[0].Value.String())
 	validateAccountBalances(suite.T(), suite.testState.client1, poolID, "", map[string]int64{
 		suite.testState.org1.Identity: 0,
 		suite.testState.org2.Identity: 1,
@@ -212,6 +229,22 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
 
+	approval := &fftypes.TokenApprovalInput{
+		TokenApproval: fftypes.TokenApproval{
+			Key:      suite.testState.org1.Identity,
+			Operator: suite.testState.org2.Identity,
+			Approved: true,
+		},
+		Pool: poolName,
+	}
+	approvalOut := TokenApproval(suite.T(), suite.testState.client1, approval, true)
+
+	waitForEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.LocalID)
+	approvals := GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
+	assert.Equal(suite.T(), 1, len(approvals))
+	assert.Equal(suite.T(), "erc1155", approvals[0].Connector)
+	assert.Equal(suite.T(), true, approvals[0].Approved)
+
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{Amount: *fftypes.NewFFBigInt(1)},
 		Pool:          poolName,
@@ -240,6 +273,8 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			TokenIndex: "1",
 			To:         suite.testState.org2.Identity,
 			Amount:     *fftypes.NewFFBigInt(1),
+			From:       suite.testState.org1.Identity,
+			Key:        suite.testState.org2.Identity,
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{

@@ -266,6 +266,20 @@ func (_m *EventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 	return r0
 }
 
+// TokensApproved provides a mock function with given fields: ti, approval
+func (_m *EventManager) TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error {
+	ret := _m.Called(ti, approval)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenApproval) error); ok {
+		r0 = rf(ti, approval)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TokensTransferred provides a mock function with given fields: ti, transfer
 func (_m *EventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error {
 	ret := _m.Called(ti, transfer)
