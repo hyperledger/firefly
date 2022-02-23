@@ -36,6 +36,7 @@ import (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error)
+	ResolveInputSigningKeyOnly(ctx context.Context, namespace string) (signingKey string, err error)
 	ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error)
 	ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSignerRef *fftypes.SignerRef) (err error)
 	ResolveBlockchainKey(ctx context.Context, inputKey string) (verifier *fftypes.VerifierRef, err error)
@@ -92,6 +93,22 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, name
 
 func (im *identityManager) ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error) {
 	return im.resolveInputSigningIdentity(ctx, namespace, msgSignerRef, true)
+}
+
+func (im *identityManager) ResolveInputSigningKeyOnly(ctx context.Context, inputKey string) (signingKey string, err error) {
+	if inputKey == "" {
+		msgSignerRef := &fftypes.SignerRef{}
+		err = im.ResolveNodeOwnerSigningIdentity(ctx, msgSignerRef)
+		if err != nil {
+			return "", err
+		}
+		return msgSignerRef.Key, nil
+	}
+	signer, err := im.ResolveBlockchainKey(ctx, inputKey)
+	if err != nil {
+		return "", err
+	}
+	return signer.Value, nil
 }
 
 // ResolveInputIdentity takes in blockchain signing input information from an API call,

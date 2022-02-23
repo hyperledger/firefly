@@ -86,7 +86,7 @@ func (s *transferSender) setDefaults() {
 	s.transfer.LocalID = fftypes.NewUUID()
 }
 
-func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput) error {
+func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput) (err error) {
 	if transfer.Connector == "" {
 		connector, err := am.getTokenConnectorName(ctx, ns)
 		if err != nil {
@@ -101,12 +101,8 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 		}
 		transfer.Pool = pool
 	}
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return err
-		}
-		transfer.Key = org.Identity
+	if transfer.Key, err = am.identity.ResolveInputSigningKeyOnly(ctx, transfer.Key); err != nil {
+		return err
 	}
 	if transfer.From == "" {
 		transfer.From = transfer.Key

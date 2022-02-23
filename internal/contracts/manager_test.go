@@ -992,10 +992,7 @@ func TestInvokeContract(t *testing.T) {
 
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
@@ -1029,10 +1026,7 @@ func TestInvokeContractFail(t *testing.T) {
 
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
@@ -1045,7 +1039,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mth.AssertExpectations(t)
 }
 
-func TestInvokeContractFailResolveSigningKey(t *testing.T) {
+func TestInvokeContractFailResolveInputSigningKeyOnly(t *testing.T) {
 	cm := newTestContractManager()
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
@@ -1056,7 +1050,7 @@ func TestInvokeContractFailResolveSigningKey(t *testing.T) {
 		Location:  fftypes.JSONAnyPtr(""),
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("", fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1075,10 +1069,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 		Location:  fftypes.JSONAnyPtr(""),
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1104,10 +1095,7 @@ func TestInvokeContractTXFail(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeContractInvoke).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1128,10 +1116,7 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1153,10 +1138,7 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.Method.Name).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
@@ -1194,10 +1176,7 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 			},
 		},
 	}
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 	assert.Regexp(t, "FF10304", err)
@@ -1223,10 +1202,7 @@ func TestQueryContract(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
@@ -1256,10 +1232,7 @@ func TestCallContractInvalidType(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
@@ -1409,10 +1382,7 @@ func TestInvokeContractAPI(t *testing.T) {
 		Location: fftypes.JSONAnyPtr(""),
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(&fftypes.FFIMethod{Name: "peel"}, nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
@@ -1440,10 +1410,7 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
@@ -1465,10 +1432,7 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveBlockchainKey", mock.Anything, "").Return(&fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "key-resolved",
-	}, nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "").Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)

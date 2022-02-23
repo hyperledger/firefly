@@ -497,6 +497,100 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 
 }
 
+func TestResolveInputSigningKeyOnlyOrgFallbackOk(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	config.Set(config.OrgKey, "key123")
+	config.Set(config.OrgName, "org1")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
+
+	orgID := fftypes.NewUUID()
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
+		Return(&fftypes.Verifier{
+			ID:        fftypes.NewUUID(),
+			Identity:  orgID,
+			Namespace: fftypes.SystemNamespace,
+			VerifierRef: fftypes.VerifierRef{
+				Type:  fftypes.VerifierTypeEthAddress,
+				Value: "fullkey123",
+			},
+		}, nil)
+	mdi.On("GetIdentityByID", ctx, orgID).
+		Return(&fftypes.Identity{
+			IdentityBase: fftypes.IdentityBase{
+				ID:        orgID,
+				DID:       "did:firefly:org/org1",
+				Namespace: fftypes.SystemNamespace,
+				Name:      "org1",
+				Type:      fftypes.IdentityTypeOrg,
+			},
+		}, nil)
+
+	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "")
+	assert.NoError(t, err)
+	assert.Equal(t, "fullkey123", resolvedKey)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveInputSigningKeyOnlyOrgFallbackErr(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	config.Set(config.OrgKey, "key123")
+	config.Set(config.OrgName, "org1")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
+		Return(nil, fmt.Errorf("pop"))
+
+	_, err := im.ResolveInputSigningKeyOnly(ctx, "")
+	assert.Regexp(t, "pop", err)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveInputSigningKeyOk(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	config.Set(config.OrgKey, "key123")
+	config.Set(config.OrgName, "org1")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
+
+	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "key123")
+	assert.NoError(t, err)
+	assert.Equal(t, "fullkey123", resolvedKey)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeyFail(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	config.Set(config.OrgKey, "key123")
+	config.Set(config.OrgName, "org1")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key123").Return("", fmt.Errorf("pop"))
+
+	_, err := im.ResolveInputSigningKeyOnly(ctx, "key123")
+	assert.Regexp(t, "pop", err)
+
+	mbi.AssertExpectations(t)
+}
+
 func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)

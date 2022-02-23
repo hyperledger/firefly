@@ -177,11 +177,10 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {
-	verifier, err := cm.identity.ResolveBlockchainKey(ctx, req.Key)
+	req.Key, err = cm.identity.ResolveInputSigningKeyOnly(ctx, req.Key)
 	if err != nil {
 		return nil, err
 	}
-	req.Key = verifier.Value
 
 	var op *fftypes.Operation
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
