@@ -16,7 +16,7 @@ type Manager struct {
 }
 
 // CachedIdentityLookup provides a mock function with given fields: ctx, did
-func (_m *Manager) CachedIdentityLookup(ctx context.Context, did string) (*fftypes.Identity, error) {
+func (_m *Manager) CachedIdentityLookup(ctx context.Context, did string) (*fftypes.Identity, bool, error) {
 	ret := _m.Called(ctx, did)
 
 	var r0 *fftypes.Identity
@@ -28,14 +28,21 @@ func (_m *Manager) CachedIdentityLookup(ctx context.Context, did string) (*fftyp
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(context.Context, string) bool); ok {
 		r1 = rf(ctx, did)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(bool)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, did)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // CachedIdentityLookupByID provides a mock function with given fields: ctx, id
@@ -190,6 +197,29 @@ func (_m *Manager) ResolveBlockchainKey(ctx context.Context, inputKey string) (*
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, inputKey)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResolveIdentitySigner provides a mock function with given fields: ctx, _a1
+func (_m *Manager) ResolveIdentitySigner(ctx context.Context, _a1 *fftypes.Identity) (*fftypes.SignerRef, error) {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 *fftypes.SignerRef
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity) *fftypes.SignerRef); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.SignerRef)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Identity) error); ok {
+		r1 = rf(ctx, _a1)
 	} else {
 		r1 = ret.Error(1)
 	}

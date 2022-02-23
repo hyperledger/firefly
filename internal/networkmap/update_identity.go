@@ -35,7 +35,7 @@ func (nm *networkMap) UpdateIdentityProfile(ctx context.Context, dto *fftypes.Id
 	}
 
 	// Resolve the signer of the original claim
-	updateSigner, err := nm.resolveIdentitySigner(ctx, identity)
+	updateSigner, err := nm.identity.ResolveIdentitySigner(ctx, identity)
 	if err != nil {
 		return nil, err
 	}

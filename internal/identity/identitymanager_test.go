@@ -608,8 +608,9 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifiers", ctx, mock.Anything).Return([]*fftypes.Verifier{}, nil, nil)
 
-	_, err := im.firstVerifierForIdentity(ctx, fftypes.VerifierTypeEthAddress, id)
+	_, retryable, err := im.firstVerifierForIdentity(ctx, fftypes.VerifierTypeEthAddress, id)
 	assert.Regexp(t, "FF10353", err)
+	assert.False(t, retryable)
 
 	mdi.AssertExpectations(t)
 
@@ -862,11 +863,11 @@ func TestCachedIdentityLookupCaching(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(id, nil).Once()
 
-	v1, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
+	v1, _, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
-	v2, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
+	v2, _, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v2)
 }
@@ -875,8 +876,9 @@ func TestCachedIdentityLookupUnknownResolver(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	_, err := im.CachedIdentityLookup(ctx, "did:random:anything")
+	_, retryable, err := im.CachedIdentityLookup(ctx, "did:random:anything")
 	assert.Regexp(t, "FF10349", err)
+	assert.False(t, retryable)
 
 }
 
@@ -887,8 +889,10 @@ func TestCachedIdentityLookupGetIDFail(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
+	_, retryable, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
 	assert.Regexp(t, "pop", err)
+	assert.True(t, retryable)
+
 }
 
 func TestCachedIdentityLookupByVerifierByOldDIDFail(t *testing.T) {
@@ -904,8 +908,9 @@ func TestCachedIdentityLookupByVerifierByOldDIDFail(t *testing.T) {
 		return uuid.Equals(orgUUID)
 	})).Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.CachedIdentityLookup(ctx, did)
+	_, retryable, err := im.CachedIdentityLookup(ctx, did)
 	assert.Regexp(t, "pop", err)
+	assert.True(t, retryable)
 
 }
 
@@ -1568,4 +1573,83 @@ func TestIsRootOrgBroadcastBadData(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+}
+
+func TestResolveIdentitySignerOk(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+
+	msgID := fftypes.NewUUID()
+	mdi.On("GetMessageByID", ctx, msgID).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{
+			SignerRef: fftypes.SignerRef{
+				Key: "0x12345",
+			},
+		},
+	}, nil)
+
+	signerRef, err := im.ResolveIdentitySigner(ctx, &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			DID:       "did:firefly:org/org1",
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+			Type:      fftypes.IdentityTypeOrg,
+		},
+		Messages: fftypes.IdentityMessages{
+			Claim: msgID,
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "0x12345", signerRef.Key)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestResolveIdentitySignerFail(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+
+	msgID := fftypes.NewUUID()
+	mdi.On("GetMessageByID", ctx, msgID).Return(nil, fmt.Errorf("pop"))
+
+	_, err := im.ResolveIdentitySigner(ctx, &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			DID:       "did:firefly:org/org1",
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+			Type:      fftypes.IdentityTypeOrg,
+		},
+		Messages: fftypes.IdentityMessages{
+			Claim: msgID,
+		},
+	})
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestResolveIdentitySignerNotFound(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	mdi := im.database.(*databasemocks.Plugin)
+
+	msgID := fftypes.NewUUID()
+	mdi.On("GetMessageByID", ctx, msgID).Return(nil, nil)
+
+	_, err := im.ResolveIdentitySigner(ctx, &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			DID:       "did:firefly:org/org1",
+			Namespace: fftypes.SystemNamespace,
+			Name:      "org1",
+			Type:      fftypes.IdentityTypeOrg,
+		},
+		Messages: fftypes.IdentityMessages{
+			Claim: msgID,
+		},
+	})
+	assert.Regexp(t, "FF10366", err)
+
+	mdi.AssertExpectations(t)
 }

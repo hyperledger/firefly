@@ -24,8 +24,10 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -67,24 +69,28 @@ type DefinitionBatchActions struct {
 }
 
 type definitionHandlers struct {
-	database  database.Plugin
-	exchange  dataexchange.Plugin
-	data      data.Manager
-	broadcast broadcast.Manager
-	messaging privatemessaging.Manager
-	assets    assets.Manager
-	contracts contracts.Manager
+	database   database.Plugin
+	blockchain blockchain.Plugin
+	exchange   dataexchange.Plugin
+	data       data.Manager
+	identity   identity.Manager
+	broadcast  broadcast.Manager
+	messaging  privatemessaging.Manager
+	assets     assets.Manager
+	contracts  contracts.Manager
 }
 
-func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
+func NewDefinitionHandlers(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
 	return &definitionHandlers{
-		database:  di,
-		exchange:  dx,
-		data:      dm,
-		broadcast: bm,
-		messaging: pm,
-		assets:    am,
-		contracts: cm,
+		database:   di,
+		blockchain: bi,
+		exchange:   dx,
+		data:       dm,
+		identity:   im,
+		broadcast:  bm,
+		messaging:  pm,
+		assets:     am,
+		contracts:  cm,
 	}
 }
 
@@ -112,9 +118,9 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg
 		return dh.handleDatatypeBroadcast(ctx, msg, data, tx)
 	case fftypes.SystemTagDefineNamespace:
 		return dh.handleNamespaceBroadcast(ctx, msg, data, tx)
-	case fftypes.SystemTagDefineOrganization:
+	case fftypes.DeprecatedSystemTagDefineOrganization:
 		return dh.handleOrganizationBroadcast(ctx, msg, data)
-	case fftypes.SystemTagDefineNode:
+	case fftypes.DeprecatedSystemTagDefineNode:
 		return dh.handleNodeBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, msg, data)

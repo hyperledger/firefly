@@ -23,19 +23,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) resolveIdentitySigner(ctx context.Context, identity *fftypes.Identity) (parentSigner *fftypes.SignerRef, err error) {
-	// Find the message that registered the identity
-	msg, err := nm.database.GetMessageByID(ctx, identity.Messages.Claim)
-	if err != nil {
-		return nil, err
-	}
-	if msg == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgParentIdentityMissingClaim, identity.DID, identity.ID)
-	}
-	// Return the signing identity from that claim
-	return &msg.Header.SignerRef, nil
-}
-
 func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
 
 	// Parse the input DTO
@@ -74,7 +61,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.Identit
 	// Resolve if we need to perform a validation
 	var parentSigner *fftypes.SignerRef
 	if immediateParent != nil {
-		parentSigner, err = nm.resolveIdentitySigner(ctx, immediateParent)
+		parentSigner, err = nm.identity.ResolveIdentitySigner(ctx, immediateParent)
 		if err != nil {
 			return nil, err
 		}

@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -37,16 +36,8 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-
-	claimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: fftypes.SignerRef{
-				Key: "0x12345",
-			},
-		},
-	}
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, identity.Messages.Claim).Return(claimMsg, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
 	mockMsg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
@@ -70,7 +61,6 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 	assert.Equal(t, *mockMsg1.Header.ID, *org.Messages.Update)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 }
 
@@ -83,16 +73,8 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-
-	claimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: fftypes.SignerRef{
-				Key: "0x12345",
-			},
-		},
-	}
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, identity.Messages.Claim).Return(claimMsg, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx,
@@ -113,7 +95,6 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 }
 
@@ -126,16 +107,8 @@ func TestUpdateIdentityProfileBadProfile(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-
-	claimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: fftypes.SignerRef{
-				Key: "0x12345",
-			},
-		},
-	}
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, identity.Messages.Claim).Return(claimMsg, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
 	_, err := nm.UpdateIdentityProfile(nm.ctx, &fftypes.IdentityUpdateDTO{
 		ID: identity.ID,
@@ -147,7 +120,6 @@ func TestUpdateIdentityProfileBadProfile(t *testing.T) {
 	assert.Regexp(t, "FF10188", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestUpdateIdentityProfileNotFound(t *testing.T) {
@@ -203,19 +175,17 @@ func TestUpdateIdentityProfileClaimLookupFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, identity.Messages.Claim).Return(nil, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, fmt.Errorf("pop"))
 
 	_, err := nm.UpdateIdentityProfile(nm.ctx, &fftypes.IdentityUpdateDTO{
 		ID: identity.ID,
 		IdentityProfile: fftypes.IdentityProfile{
-			Description: string(make([]byte, 4097)),
+			Description: "Desc1",
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
 	}, true)
-	assert.Regexp(t, "FF10366", err)
+	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }

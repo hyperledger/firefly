@@ -41,8 +41,9 @@ type Manager interface {
 	ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSignerRef *fftypes.SignerRef) (err error)
 	ResolveBlockchainKey(ctx context.Context, inputKey string) (verifier *fftypes.VerifierRef, err error)
 	FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.IdentityType, namespace string, verifier *fftypes.VerifierRef) (identity *fftypes.Identity, err error)
+	ResolveIdentitySigner(ctx context.Context, identity *fftypes.Identity) (parentSigner *fftypes.SignerRef, err error)
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error)
-	CachedIdentityLookup(ctx context.Context, did string) (identity *fftypes.Identity, err error)
+	CachedIdentityLookup(ctx context.Context, did string) (identity *fftypes.Identity, retryable bool, err error)
 	CachedVerifierLookup(ctx context.Context, vType fftypes.VerifierType, ns, value string) (verifier *fftypes.Verifier, err error)
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
@@ -151,7 +152,7 @@ func (im *identityManager) resolveInputSigningIdentity(ctx context.Context, name
 					return i18n.NewError(ctx, i18n.MsgAuthorIncorrectForRootReg, namespace, msgSignerRef.Author)
 				}
 			} else {
-				identity, err := im.CachedIdentityLookup(ctx, msgSignerRef.Author)
+				identity, _, err := im.CachedIdentityLookup(ctx, msgSignerRef.Author)
 				if err != nil {
 					return err
 				}
@@ -163,12 +164,12 @@ func (im *identityManager) resolveInputSigningIdentity(ctx context.Context, name
 	case msgSignerRef.Author != "":
 		// Author must be non-empty (see above), so we want to find that identity and then
 		// use the first blockchain key that's associated with it.
-		identity, err := im.CachedIdentityLookup(ctx, msgSignerRef.Author)
+		identity, _, err := im.CachedIdentityLookup(ctx, msgSignerRef.Author)
 		if err != nil {
 			return err
 		}
 		msgSignerRef.Author = identity.DID
-		verifier, err = im.firstVerifierForIdentity(ctx, im.blockchain.VerifierType(), identity)
+		verifier, _, err = im.firstVerifierForIdentity(ctx, im.blockchain.VerifierType(), identity)
 		if err != nil {
 			return err
 		}
@@ -181,7 +182,7 @@ func (im *identityManager) resolveInputSigningIdentity(ctx context.Context, name
 
 // firstVerifierForIdentity does a lookup of the first verifier of a given type (such as a blockchain signing key) registered to an identity,
 // as a convenience to allow you to only specify the org name/DID when sending a message
-func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType fftypes.VerifierType, identity *fftypes.Identity) (*fftypes.VerifierRef, error) {
+func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType fftypes.VerifierType, identity *fftypes.Identity) (verifier *fftypes.VerifierRef, retryable bool, err error) {
 	fb := database.VerifierQueryFactory.NewFilterLimit(ctx, 1)
 	filter := fb.And(
 		fb.Eq("type", vType),
@@ -189,12 +190,12 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType f
 	)
 	verifiers, _, err := im.database.GetVerifiers(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, true /* DB Error */, err
 	}
 	if len(verifiers) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgNoVerifierForIdentity, vType, identity.DID)
+		return nil, false, i18n.NewError(ctx, i18n.MsgNoVerifierForIdentity, vType, identity.DID)
 	}
-	return &verifiers[0].VerifierRef, nil
+	return &verifiers[0].VerifierRef, false, nil
 }
 
 // ResolveNodeOwnerSigningIdentity add the node owner identity into a message
@@ -335,6 +336,19 @@ func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentit
 
 }
 
+func (im *identityManager) ResolveIdentitySigner(ctx context.Context, identity *fftypes.Identity) (parentSigner *fftypes.SignerRef, err error) {
+	// Find the message that registered the identity
+	msg, err := im.database.GetMessageByID(ctx, identity.Messages.Claim)
+	if err != nil {
+		return nil, err
+	}
+	if msg == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgParentIdentityMissingClaim, identity.DID, identity.ID)
+	}
+	// Return the signing identity from that claim
+	return &msg.Header.SignerRef, nil
+}
+
 func (im *identityManager) validateParentType(ctx context.Context, child *fftypes.Identity, parent *fftypes.Identity) error {
 
 	switch child.Type {
@@ -376,7 +390,7 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	return identity, nil
 }
 
-func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupStr string) (identity *fftypes.Identity, err error) {
+func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupStr string) (identity *fftypes.Identity, retryable bool, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("did=%s", didLookupStr)
 	defer func() {
@@ -388,38 +402,38 @@ func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupSt
 	} else {
 		if strings.HasPrefix(didLookupStr, fftypes.DIDPrefix) {
 			if !strings.HasPrefix(didLookupStr, fftypes.FireFlyDIDPrefix) {
-				return nil, i18n.NewError(ctx, i18n.MsgDIDResovlerUnknown, didLookupStr)
+				return nil, false, i18n.NewError(ctx, i18n.MsgDIDResovlerUnknown, didLookupStr)
 			}
 			// Look up by the full DID
 			if identity, err = im.database.GetIdentityByDID(ctx, didLookupStr); err != nil {
-				return nil, err
+				return nil, true /* DB Error */, err
 			}
 			if identity == nil && strings.HasPrefix(didLookupStr, fftypes.FireFlyOrgDIDPrefix) {
 				// We allow the UUID to be used to resolve DIDs as an alias to the name
 				uuid, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(didLookupStr, fftypes.FireFlyOrgDIDPrefix))
 				if err == nil {
 					if identity, err = im.database.GetIdentityByID(ctx, uuid); err != nil {
-						return nil, err
+						return nil, true /* DB Error */, err
 					}
 				}
 			}
 			if identity == nil {
-				return nil, i18n.NewError(ctx, i18n.MsgIdentityNotFoundByString, didLookupStr)
+				return nil, false, i18n.NewError(ctx, i18n.MsgIdentityNotFoundByString, didLookupStr)
 			}
 		} else {
 			// If there is just a name in there, then it could be an Org type identity (from the very original usage of the field)
 			if identity, err = im.database.GetIdentityByName(ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, didLookupStr); err != nil {
-				return nil, err
+				return nil, true /* DB Error */, err
 			}
 			if identity == nil {
-				return nil, i18n.NewError(ctx, i18n.MsgAuthorOrgNotFoundByName, didLookupStr)
+				return nil, false, i18n.NewError(ctx, i18n.MsgAuthorOrgNotFoundByName, didLookupStr)
 			}
 		}
 
 		// Cache the result
 		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
 	}
-	return identity, nil
+	return identity, false, nil
 }
 
 func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error) {

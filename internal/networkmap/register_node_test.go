@@ -22,7 +22,6 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -44,16 +43,8 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, nil)
-
-	parentClaimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: fftypes.SignerRef{
-				Key: "0x12345",
-			},
-		},
-	}
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, parentOrg.Messages.Claim).Return(parentClaimMsg, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x23456"}
+	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{
@@ -66,7 +57,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	mbm.On("BroadcastDefinition", nm.ctx,
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
-		&parentClaimMsg.Header.SignerRef,
+		signerRef,
 		fftypes.SystemTagIdentityClaim, true).Return(mockMsg, nil)
 
 	node, err := nm.RegisterNode(nm.ctx, true)
@@ -89,16 +80,8 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, nil)
-
-	parentClaimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: fftypes.SignerRef{
-				Key: "0x12345",
-			},
-		},
-	}
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, parentOrg.Messages.Claim).Return(parentClaimMsg, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x23456"}
+	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{}, fmt.Errorf("pop"))

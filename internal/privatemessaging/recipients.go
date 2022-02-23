@@ -57,8 +57,9 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 }
 
 func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
+	retryable := true
 	if nodeInput != "" {
-		node, err = pm.identity.CachedIdentityLookup(ctx, nodeInput)
+		node, retryable, err = pm.identity.CachedIdentityLookup(ctx, nodeInput)
 	} else {
 		// Find any node owned by this organization
 		var nodes []*fftypes.Identity
@@ -82,7 +83,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Identi
 			}
 		}
 	}
-	if err != nil {
+	if err != nil && retryable {
 		return nil, err
 	}
 	if node == nil {
@@ -107,7 +108,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the org
-		org, err := pm.identity.CachedIdentityLookup(ctx, rInput.Identity)
+		org, _, err := pm.identity.CachedIdentityLookup(ctx, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}

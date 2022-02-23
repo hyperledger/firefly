@@ -272,7 +272,7 @@ var (
 	MsgNoVerifierForIdentity        = ffm("FF10353", "No %s verifier registered for identity %s", 400)
 	MsgNodeMissingBlockchainKey     = ffm("FF10354", "No organization signing key configured on node", 400)
 	MsgAuthorRegistrationMismatch   = ffm("FF10355", "Verifier '%s' cannot be used for signing with author '%s'. Verifier registered to '%s'", 400)
-	MsgAuthorMissingForKey          = ffm("FF10356", "Key '%s' has not been registered by any identity, and a separate 'author' was not supplied", 400)
+	MsgAuthorMissingForKey          = ffm("FF10356", "Key '%s' has not been registered by any identity, and a separate 'author' was not supplied", 404)
 	MsgAuthorIncorrectForRootReg    = ffm("FF10357", "Author namespace '%s' and DID '%s' combination invalid for root organization registration", 400)
 	MsgKeyIdentityMissing           = ffm("FF10358", "Identity owner of key '%s' not found", 500)
 	MsgCustomIdentitySystemNS       = ffm("FF10359", "Custom identities cannot be defined in the '%s' namespace", 400)

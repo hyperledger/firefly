@@ -79,7 +79,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	localNode := newTestNode("node1", intermediateOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(intermediateOrg, nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(intermediateOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	dataID := fftypes.NewUUID()
@@ -235,7 +235,7 @@ func TestSendMessageFail(t *testing.T) {
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil)
@@ -283,7 +283,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
@@ -397,7 +397,7 @@ func TestMessagePrepare(t *testing.T) {
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()

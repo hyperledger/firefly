@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -37,16 +36,9 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, nil)
-
-	parentClaimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: fftypes.SignerRef{
-				Key: "0x23456",
-			},
-		},
-	}
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, parentIdentity.Messages.Claim).Return(parentClaimMsg, nil)
+	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&fftypes.SignerRef{
+		Key: "0x23456",
+	}, nil)
 
 	mockMsg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
@@ -78,8 +70,6 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 	assert.Equal(t, *mockMsg2.Header.ID, *org.Messages.Verification)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 }
 
@@ -92,16 +82,9 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, nil)
-
-	parentClaimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: fftypes.SignerRef{
-				Key: "0x23456",
-			},
-		},
-	}
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, parentIdentity.Messages.Claim).Return(parentClaimMsg, nil)
+	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&fftypes.SignerRef{
+		Key: "0x23456",
+	}, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
@@ -131,8 +114,6 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 }
 
@@ -145,9 +126,7 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, nil)
-
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, parentIdentity.Messages.Claim).Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(nil, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
 		Namespace: "ns1",
@@ -158,32 +137,6 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestRegisterIdentityGetParentMsgNotFound(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	parentIdentity := testOrg("parent1")
-
-	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, nil)
-
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", nm.ctx, parentIdentity.Messages.Claim).Return(nil, nil)
-
-	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
-		Namespace: "ns1",
-		Name:      "custom1",
-		Key:       "0x12345",
-		Parent:    fftypes.NewUUID(),
-	}, true)
-	assert.Regexp(t, "FF10366", err)
-
-	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestRegisterIdentityRootBroadcastFail(t *testing.T) {

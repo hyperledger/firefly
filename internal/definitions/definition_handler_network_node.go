@@ -23,28 +23,46 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+func (dh *definitionHandlers) handleNodeBroadcastIdentity(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 
-	var node fftypes.Node
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &node)
+	var claim fftypes.IdentityClaim
+	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
 	if !valid {
 		return ActionReject, nil, nil
 	}
 
-	if err := node.Validate(ctx, true); err != nil {
-		l.Warnf("Unable to process node broadcast %s - validate failed: %s", msg.Header.ID, err)
+	return dh.handleNodeBroadcast(ctx, msg, &claim)
+
+}
+
+func (dh *definitionHandlers) handleNodeBroadcastDeprected(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+	l := log.L(ctx)
+
+	var nodeOld fftypes.DeprecatedNode
+	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld)
+	if !valid {
 		return ActionReject, nil, nil
 	}
 
-	owner, err := dh.database.GetOrganizationByIdentity(ctx, node.Owner)
+	owner, err := dh.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  dh.blockchain.VerifierType(),
+		Value: nodeOld.Owner,
+	})
 	if err != nil {
 		return ActionRetry, nil, err // We only return database errors
 	}
 	if owner == nil {
-		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, node.Owner)
+		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, nodeOld.Owner)
 		return ActionReject, nil, nil
 	}
+
+	return dh.handleNodeBroadcast(ctx, msg, nodeOld.Migrate(owner.ID))
+
+}
+
+func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, identityClaim *fftypes.IdentityClaim) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+	l := log.L(ctx)
 
 	if msg.Header.Key != node.Owner {
 		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, node.Owner, msg.Header.Author)

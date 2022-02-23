@@ -47,7 +47,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", pm.ctx, "remoteorg").Return(remoteOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "remoteorg").Return(remoteOrg, false, nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
@@ -118,7 +118,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
@@ -150,7 +150,7 @@ func TestResolveMemberListLookupFail(t *testing.T) {
 	localNode := newTestNode("node1", localOrg)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(nil, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(nil, true, fmt.Errorf("pop"))
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
@@ -184,7 +184,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
@@ -250,7 +250,7 @@ func TestResolveMemberListMissingLocalMemberLookupFailed(t *testing.T) {
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, fmt.Errorf("pop")).Once()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
@@ -285,7 +285,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil).Once()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
@@ -324,7 +324,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{Hash: fftypes.NewRandB32()}}, nil, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(parentOrg, nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(childOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(childOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, parentOrg.ID).Return(parentOrg, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
@@ -352,7 +352,7 @@ func TestGetNodeFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", pm.ctx, "id-node1").Return(nil, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookup", pm.ctx, "id-node1").Return(nil, true, fmt.Errorf("pop"))
 
 	_, err := pm.resolveNode(pm.ctx, newTestOrg("org1"), "id-node1")
 	assert.Regexp(t, "pop", err)

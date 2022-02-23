@@ -251,7 +251,7 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "0x12345").Return(nil, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookup", em.ctx, "0x12345").Return(nil, true, fmt.Errorf("pop"))
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
 	assert.Empty(t, m)
@@ -275,7 +275,7 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "0x12345").Return(nil, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "0x12345").Return(nil, false, nil)
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
@@ -299,7 +299,7 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "0x12345").Return(newTestOrg("org2"), nil)
+	mim.On("CachedIdentityLookup", em.ctx, "0x12345").Return(newTestOrg("org2"), false, nil)
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
