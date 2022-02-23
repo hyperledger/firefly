@@ -1506,9 +1506,16 @@ paths:
             application/json:
               schema:
                 properties:
-                  count:
+                  buckets:
+                    items:
+                      properties:
+                        count:
+                          type: string
+                        timestamp: {}
+                      type: object
+                    type: array
+                  type:
                     type: string
-                  timestamp: {}
                 type: object
           description: Success
         default:

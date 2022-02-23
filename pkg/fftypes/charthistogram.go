@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,8 +23,16 @@ const (
 	ChartHistogramMinBuckets = 1
 )
 
-// ChartHistogram is a timestamp and count
+// ChartHistogram is a list of buckets and a type
 type ChartHistogram struct {
+	// Buckets list of histogram buckets
+	Buckets []*ChartHistogramBucket `json:"buckets"`
+	// Type type of histogram buckets
+	Type string `json:"type"`
+}
+
+// ChartHistogramBucket is a timestamp and count
+type ChartHistogramBucket struct {
 	// Timestamp of bucket in histogram
 	Timestamp *FFTime `json:"timestamp"`
 	// Count for timestamp in histogram
