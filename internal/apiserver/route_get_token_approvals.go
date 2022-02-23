@@ -33,9 +33,6 @@ var getTokenApprovals = &oapispec.Route{
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "fromOrTo", Description: i18n.MsgTBD},
-	},
 	FilterFactory:   database.TokenApprovalQueryFacory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
