@@ -44,6 +44,6 @@ func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context,
 		return ActionReject, nil
 	}
 
-	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.Migrate(owner.ID), nil)
+	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.AddMigratedParent(owner.ID), nil)
 
 }

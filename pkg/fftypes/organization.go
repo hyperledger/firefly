@@ -36,7 +36,10 @@ type DeprecatedOrganization struct {
 // Migrate creates and maintains a migrated IdentityClaim object, which
 // is used when processing an old-style organization broadcast received when
 // joining an existing network
-func (org *DeprecatedOrganization) Migrate() *IdentityClaim {
+func (org *DeprecatedOrganization) Migrated() *IdentityClaim {
+	if org.identityClaim != nil {
+		return org.identityClaim
+	}
 	org.identityClaim = &IdentityClaim{
 		Identity: &Identity{
 			IdentityBase: IdentityBase{
@@ -53,11 +56,6 @@ func (org *DeprecatedOrganization) Migrate() *IdentityClaim {
 		},
 	}
 	org.identityClaim.Identity.DID, _ = org.identityClaim.Identity.GenerateDID(context.Background())
-	return org.identityClaim
-}
-
-// Migrated returns the migrated claim - must have called Migrate first
-func (org *DeprecatedOrganization) Migrated() *IdentityClaim {
 	return org.identityClaim
 }
 

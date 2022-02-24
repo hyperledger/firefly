@@ -48,7 +48,7 @@ func TestOrgMigration(t *testing.T) {
 				},
 			},
 		},
-	}, org.Migrate())
+	}, org.Migrated())
 
 	assert.Equal(t, "7ea456fa05fc63778e7c4cb22d0498d73f184b2778c11fd2ba31b5980f8490b9", org.Topic())
 

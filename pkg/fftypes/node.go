@@ -40,7 +40,10 @@ type DeprecatedDXInfo struct {
 // Migrate creates and maintains a migrated IdentityClaim object, which
 // is used when processing an old-style nodeanization broadcast received when
 // joining an existing network
-func (node *DeprecatedNode) Migrate(parentID *UUID) *IdentityClaim {
+func (node *DeprecatedNode) Migrated() *IdentityClaim {
+	if node.identityClaim != nil {
+		return node.identityClaim
+	}
 	node.identityClaim = &IdentityClaim{
 		Identity: &Identity{
 			IdentityBase: IdentityBase{
@@ -48,7 +51,7 @@ func (node *DeprecatedNode) Migrate(parentID *UUID) *IdentityClaim {
 				Type:      IdentityTypeNode,
 				Namespace: SystemNamespace,
 				Name:      node.Name,
-				Parent:    parentID,
+				Parent:    nil, // Must be set post migrate
 			},
 			IdentityProfile: IdentityProfile{
 				Description: node.Description,
@@ -56,13 +59,14 @@ func (node *DeprecatedNode) Migrate(parentID *UUID) *IdentityClaim {
 			},
 		},
 	}
-	node.identityClaim.Identity.DID, _ = node.identityClaim.Identity.GenerateDID(context.Background())
 	return node.identityClaim
 }
 
-// Migrated returns the migrated claim - must have called Migrate first
-func (node *DeprecatedNode) Migrated() *IdentityClaim {
-	return node.identityClaim
+func (node *DeprecatedNode) AddMigratedParent(parentID *UUID) *IdentityClaim {
+	ic := node.Migrated()
+	ic.Identity.Parent = parentID
+	node.identityClaim.Identity.DID, _ = node.identityClaim.Identity.GenerateDID(context.Background())
+	return ic
 }
 
 func (node *DeprecatedNode) Topic() string {

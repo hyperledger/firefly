@@ -53,7 +53,7 @@ func TestNodeigration(t *testing.T) {
 				},
 			},
 		},
-	}, node.Migrate(parentID))
+	}, node.AddMigratedParent(parentID))
 
 	assert.Equal(t, "14c4157d50d35470b15a6576affa62adea1b191e8238f2273a099d1ef73fb335", node.Topic())
 

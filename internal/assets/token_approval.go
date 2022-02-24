@@ -136,7 +136,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) err
 	return err
 }
 
-func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) error {
+func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) (err error) {
 	if approval.Connector == "" {
 		connector, err := am.getTokenConnectorName(ctx, ns)
 		if err != nil {
@@ -151,13 +151,6 @@ func (am *assetManager) validateApproval(ctx context.Context, ns string, approva
 		}
 		approval.Pool = pool
 	}
-	if approval.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return err
-		}
-		approval.Key = org.Identity
-	}
-
-	return nil
+	approval.Key, err = am.identity.ResolveInputSigningKeyOnly(ctx, approval.Key)
+	return err
 }

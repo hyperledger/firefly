@@ -30,6 +30,6 @@ func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.
 		return ActionReject, nil
 	}
 
-	return dh.handleIdentityClaim(ctx, state, msg, orgOld.Migrate(), nil)
+	return dh.handleIdentityClaim(ctx, state, msg, orgOld.Migrated(), nil)
 
 }

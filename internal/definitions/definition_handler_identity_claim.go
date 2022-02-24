@@ -169,7 +169,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		return ActionReject, nil
 	}
 
-	if parent != nil {
+	if parent != nil && identity.Type != fftypes.IdentityTypeNode {
 		// The verification might be passed into this function, if we confirm the verification second,
 		// or we might have to hunt for it, if we confirm the verification first.
 		if verificationID == nil {
