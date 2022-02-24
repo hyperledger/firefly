@@ -1,5 +1,7 @@
+BEGIN;
+
 CREATE TABLE identities (
-  seq                   INTEGER         PRIMARY KEY AUTOINCREMENT,
+  seq                   SERIAL          PRIMARY KEY,
   id                    UUID            NOT NULL,
   did                   VARCHAR(256)    NOT NULL,
   parent                UUID,
@@ -11,7 +13,8 @@ CREATE TABLE identities (
   name                  VARCHAR(64)     NOT NULL,
   description           VARCHAR(4096)   NOT NULL,
   profile               TEXT,
-  created               BIGINT          NOT NULL
+  created               BIGINT          NOT NULL,
+  updated               BIGINT          NOT NULL
 );
 
 CREATE UNIQUE INDEX identities_id ON identities(id);
@@ -19,7 +22,7 @@ CREATE UNIQUE INDEX identities_did ON identities(did);
 CREATE UNIQUE INDEX identities_name ON identities(itype, namespace, name);
 
 CREATE TABLE verifiers (
-  seq            INTEGER         PRIMARY KEY AUTOINCREMENT,
+  seq            SERIAL          PRIMARY KEY,
   id             UUID            NOT NULL,
   identity       UUID            NOT NULL,
   vtype          VARCHAR(256)    NOT NULL,
@@ -29,7 +32,7 @@ CREATE TABLE verifiers (
 );
 
 CREATE UNIQUE INDEX verifiers_id ON verifiers(id);
-CREATE UNIQUE INDEX verifiers_value ON verifiers(vtype, value);
+CREATE UNIQUE INDEX verifiers_value ON verifiers(vtype, namespace, value);
 CREATE UNIQUE INDEX verifiers_identity ON verifiers(identity);
 
 INSERT INTO identities (
@@ -37,21 +40,25 @@ INSERT INTO identities (
     did,
     parent,
     messages_claim,
+    itype,
     namespace,
     name,
     description,
     profile,
-    created
+    created,
+    updated
   ) SELECT 
     o1.id,
     'did:firefly:org/' || o1.name,
     o2.id,
     o1.message_id,
+    'org',
     'ff_system',
     o1.name,
     o1.description,
     o1.profile,
-    o1.created    
+    o1.created,
+    o1.created
   FROM orgs as o1
   LEFT JOIN orgs o2 ON o2.identity = o1.parent;
 
@@ -60,21 +67,25 @@ INSERT INTO identities (
     did,
     parent,
     messages_claim,
+    itype,
     namespace,
     name,
     description,
     profile,
-    created
+    created,
+    updated
   ) SELECT 
     n.id,
     'did:firefly:node/' || n.name,
     o.id,
     n.message_id,
+    'node',
     'ff_system',
     n.name,
     n.description,
     n.dx_endpoint,
-    n.created    
+    n.created,
+    n.created
   FROM nodes as n
   LEFT JOIN orgs o ON o.identity = n.owner;
 
@@ -122,3 +133,5 @@ INSERT INTO verifiers (
 
 DROP TABLE orgs;
 DROP TABLE nodes;
+
+COMMIT;

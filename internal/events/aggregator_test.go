@@ -189,7 +189,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
-	assert.True(t, bs.IsPendingConfirm(msgID))
+	assert.NotNil(t, bs.GetPendingConfirm()[*msgID])
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)

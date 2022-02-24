@@ -419,7 +419,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	status := fftypes.MessageStateConfirmed
 	eventType := fftypes.EventTypeMessageConfirmed
 	if valid {
-		state.pendingConfirms[*msg.Header.ID] = true
+		state.pendingConfirms[*msg.Header.ID] = msg
 	} else {
 		status = fftypes.MessageStateRejected
 		eventType = fftypes.EventTypeMessageRejected

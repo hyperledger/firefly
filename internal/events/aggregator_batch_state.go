@@ -35,7 +35,7 @@ func newBatchState(ag *aggregator) *batchState {
 		maskedContexts:     make(map[fftypes.Bytes32]*nextPinGroupState),
 		unmaskedContexts:   make(map[fftypes.Bytes32]*contextState),
 		dispatchedMessages: make([]*dispatchedMessage, 0),
-		pendingConfirms:    make(map[fftypes.UUID]bool),
+		pendingConfirms:    make(map[fftypes.UUID]*fftypes.Message),
 
 		PreFinalize: make([]func(ctx context.Context) error, 0),
 		Finalize:    make([]func(ctx context.Context) error, 0),
@@ -94,7 +94,7 @@ type batchState struct {
 	maskedContexts     map[fftypes.Bytes32]*nextPinGroupState
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
-	pendingConfirms    map[fftypes.UUID]bool
+	pendingConfirms    map[fftypes.UUID]*fftypes.Message
 
 	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
 	// - Will execute after all batch messages have been processed
@@ -121,8 +121,8 @@ func (bs *batchState) AddFinalize(action func(ctx context.Context) error) {
 	}
 }
 
-func (bs *batchState) IsPendingConfirm(msgID *fftypes.UUID) bool {
-	return bs.pendingConfirms[*msgID]
+func (bs *batchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
+	return bs.pendingConfirms
 }
 
 func (bs *batchState) RunPreFinalize(ctx context.Context) error {

@@ -41,6 +41,7 @@ var (
 		"messages_verification",
 		"messages_update",
 		"created",
+		"updated",
 	}
 	identityFilterFieldMap = map[string]string{
 		"identity":              "identity_id",
@@ -52,6 +53,7 @@ var (
 )
 
 func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, identity *fftypes.Identity) (int64, error) {
+	identity.Updated = fftypes.Now()
 	return s.updateTx(ctx, tx,
 		sq.Update("identities").
 			Set("did", identity.DID).
@@ -64,6 +66,7 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 			Set("messages_claim", identity.Messages.Claim).
 			Set("messages_verification", identity.Messages.Verification).
 			Set("messages_update", identity.Messages.Update).
+			Set("updated", identity.Updated).
 			Where(sq.Eq{
 				"id": identity.ID,
 			}),
@@ -74,6 +77,7 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 
 func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *fftypes.Identity) (err error) {
 	identity.Created = fftypes.Now()
+	identity.Updated = identity.Created
 	_, err = s.insertTx(ctx, tx,
 		sq.Insert("identities").
 			Columns(identityColumns...).
@@ -90,6 +94,7 @@ func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, id
 				identity.Messages.Verification,
 				identity.Messages.Update,
 				identity.Created,
+				identity.Updated,
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, fftypes.ChangeEventTypeCreated, identity.Namespace, identity.ID)
@@ -156,6 +161,7 @@ func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*fftypes
 		&identity.Messages.Verification,
 		&identity.Messages.Update,
 		&identity.Created,
+		&identity.Updated,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "identities")

@@ -67,11 +67,8 @@ type DefinitionBatchState interface {
 	// Finalize may perform final, non-idempotent database operations (such as inserting Events)
 	AddFinalize(func(ctx context.Context) error)
 
-	// IsPendingConfirm are messages in the current batch that have returned ActionConfirm already
-	IsPendingConfirm(*fftypes.UUID) bool
-
-	// GetPendingConfirm returns a list of messages are that pending confirmation after already being processed in this batch
-	GetPendingConfirm() []*fftypes.Message
+	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
+	GetPendingConfirm() map[fftypes.UUID]*fftypes.Message
 }
 
 type definitionHandlers struct {

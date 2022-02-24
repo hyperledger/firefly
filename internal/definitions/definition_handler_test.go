@@ -70,17 +70,8 @@ func (bs *testDefinitionBatchState) AddFinalize(pf func(ctx context.Context) err
 	bs.finalizers = append(bs.finalizers, pf)
 }
 
-func (bs *testDefinitionBatchState) IsPendingConfirm(msgID *fftypes.UUID) bool {
-	_, found := bs.pendingConfirms[*msgID]
-	return found
-}
-
-func (bs *testDefinitionBatchState) GetPendingConfirm() []*fftypes.Message {
-	pending := make([]*fftypes.Message, 0, len(bs.pendingConfirms))
-	for _, m := range bs.pendingConfirms {
-		pending = append(pending, m)
-	}
-	return pending
+func (bs *testDefinitionBatchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
+	return bs.pendingConfirms
 }
 
 func (bs *testDefinitionBatchState) assertNoFinalizers() {

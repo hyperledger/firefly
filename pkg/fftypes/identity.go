@@ -73,6 +73,7 @@ type Identity struct {
 	IdentityProfile
 	Messages IdentityMessages `json:"messages,omitempty"`
 	Created  *FFTime          `json:"created,omitempty"`
+	Updated  *FFTime          `json:"updated,omitempty"`
 }
 
 // IdentityCreateDTO is the input structure to submit to register an identity.
@@ -119,13 +120,13 @@ type IdentityVerification struct {
 	SignerRef *Identity `json:"-"`
 }
 
-// IdentityProfileUpdate is the data payload used in message to broadcast an update to an identity profile.
+// IdentityUpdate is the data payload used in message to broadcast an update to an identity profile.
 // The broadcast must be on the same identity as the currently established identity claim message for the identity,
 // and it must contain the same identity data.
 // The profile is replaced in its entirety.
-type IdentityProfileUpdate struct {
+type IdentityUpdate struct {
 	Identity IdentityBase    `json:"identity"`
-	Profile  IdentityProfile `json:"profile,omitempty"`
+	Updates  IdentityProfile `json:"updates,omitempty"`
 
 	// IdentityRef lets us store back the message when broadcasting, but isn't part of the payload
 	IdentityRef *Identity `json:"-"`
@@ -149,11 +150,11 @@ func (iv *IdentityVerification) SetBroadcastMessage(msgID *UUID) {
 	}
 }
 
-func (iu *IdentityProfileUpdate) Topic() string {
+func (iu *IdentityUpdate) Topic() string {
 	return iu.Identity.Topic()
 }
 
-func (iu *IdentityProfileUpdate) SetBroadcastMessage(msgID *UUID) {
+func (iu *IdentityUpdate) SetBroadcastMessage(msgID *UUID) {
 	if iu.IdentityRef != nil {
 		iu.IdentityRef.Messages.Update = msgID
 	}

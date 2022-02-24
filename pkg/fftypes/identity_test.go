@@ -229,7 +229,7 @@ func TestDefinitionObjects(t *testing.T) {
 	iv.SetBroadcastMessage(verificationMsg)
 	assert.Equal(t, *verificationMsg, *o.Messages.Verification)
 
-	var iu Definition = &IdentityProfileUpdate{
+	var iu Definition = &IdentityUpdate{
 		Identity:    o.IdentityBase,
 		IdentityRef: o,
 	}

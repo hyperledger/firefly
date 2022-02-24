@@ -44,7 +44,7 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 
 	mbm.On("BroadcastDefinition", nm.ctx,
 		fftypes.SystemNamespace,
-		mock.AnythingOfType("*fftypes.IdentityProfileUpdate"),
+		mock.AnythingOfType("*fftypes.IdentityUpdate"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
@@ -79,7 +79,7 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx,
 		fftypes.SystemNamespace,
-		mock.AnythingOfType("*fftypes.IdentityProfileUpdate"),
+		mock.AnythingOfType("*fftypes.IdentityUpdate"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),

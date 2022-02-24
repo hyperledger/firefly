@@ -53,7 +53,6 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 		Messages: fftypes.IdentityMessages{
 			Claim: fftypes.NewUUID(),
 		},
-		Created: fftypes.Now(),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, fftypes.ChangeEventTypeCreated, "ns1", identityID).Return()

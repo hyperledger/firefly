@@ -106,7 +106,7 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
 
-	action, err := dh.handleDeprecatedOrganizationBroadcast(ctx, bs, msg, []*fftypes.Data{data})
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 

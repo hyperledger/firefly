@@ -25,7 +25,7 @@ import (
 )
 
 func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
-	var update fftypes.IdentityProfileUpdate
+	var update fftypes.IdentityUpdate
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update)
 	if !valid {
 		return ActionReject, nil
@@ -55,7 +55,8 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 	}
 
 	// Update the profile
-	identity.IdentityProfile = update.Profile
+	identity.IdentityProfile = update.Updates
+	identity.Messages.Update = msg.Header.ID
 	err = dh.database.UpsertIdentity(ctx, identity, database.UpsertOptimizationExisting)
 	if err != nil {
 		return ActionRetry, err

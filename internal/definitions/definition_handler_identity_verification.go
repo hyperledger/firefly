@@ -23,9 +23,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
 	var verification fftypes.IdentityVerification
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &verification)
+	valid := dh.getSystemBroadcastPayload(ctx, verifyMsg, data, &verification)
 	if !valid {
 		return ActionReject, nil
 	}
@@ -33,7 +33,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 	// See if we find the message to which it refers
 	err := verification.Identity.Validate(ctx)
 	if err != nil || verification.Identity.Parent == nil || verification.Claim.ID == nil || verification.Claim.Hash == nil {
-		log.L(ctx).Warnf("Invalid verification message %s: %v", msg.Header.ID, err)
+		log.L(ctx).Warnf("Invalid verification message %s: %v", verifyMsg.Header.ID, err)
 		return ActionReject, nil
 	}
 
@@ -43,11 +43,11 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 		return ActionRetry, err
 	}
 	if parent == nil {
-		log.L(ctx).Warnf("Invalid verification message %s - parent not found: %s", msg.Header.ID, verification.Identity.Parent)
+		log.L(ctx).Warnf("Invalid verification message %s - parent not found: %s", verifyMsg.Header.ID, verification.Identity.Parent)
 		return ActionReject, nil
 	}
-	if parent.DID != msg.Header.Author {
-		log.L(ctx).Warnf("Invalid verification message %s - parent '%s' does not match signer '%s'", msg.Header.ID, parent.DID, msg.Header.Author)
+	if parent.DID != verifyMsg.Header.Author {
+		log.L(ctx).Warnf("Invalid verification message %s - parent '%s' does not match signer '%s'", verifyMsg.Header.ID, parent.DID, verifyMsg.Header.Author)
 		return ActionReject, nil
 	}
 
@@ -59,20 +59,23 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 	if err != nil {
 		return ActionRetry, err
 	}
+	if claimMsg == nil || claimMsg.State != fftypes.MessageStateConfirmed {
+		claimMsg = state.GetPendingConfirm()[*verification.Claim.ID]
+	}
 
-	if claimMsg != nil && (claimMsg.State == fftypes.MessageStateConfirmed || state.IsPendingConfirm(claimMsg.Header.ID)) {
+	if claimMsg != nil {
 		if !claimMsg.Hash.Equals(verification.Claim.Hash) {
-			log.L(ctx).Warnf("Invalid verification message %s - hash mismatch claim=%s verification=%s", msg.Header.ID, claimMsg.Hash, verification.Claim.Hash)
+			log.L(ctx).Warnf("Invalid verification message %s - hash mismatch claim=%s verification=%s", verifyMsg.Header.ID, claimMsg.Hash, verification.Claim.Hash)
 			return ActionReject, nil
 		}
 		data, foundAll, err := dh.data.GetMessageData(ctx, claimMsg, true)
 		if err != nil {
-			return ActionRetry, nil
+			return ActionRetry, err
 		}
 		if foundAll {
 			// The verification came in after the messsage, so we need to call the idempotent
 			// handler of the claim logic again
-			return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, msg.Header.ID)
+			return dh.handleIdentityClaimBroadcast(ctx, state, claimMsg, data, verifyMsg.Header.ID)
 		}
 	}
 
