@@ -44,19 +44,19 @@ func TestContractEventWithRetries(t *testing.T) {
 			},
 		},
 	}
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		Namespace: "ns",
 		ID:        fftypes.NewUUID(),
 	}
 	var eventID *fftypes.UUID
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractSubscriptionByProtocolID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetContractSubscriptionByProtocolID", mock.Anything, "sb-1").Return(sub, nil).Times(3)
+	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(sub, nil).Times(3)
 	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		eventID = e.ID
-		return *e.Subscription == *sub.ID && e.Name == "Changed" && e.Namespace == "ns"
+		return *e.Listener == *sub.ID && e.Name == "Changed" && e.Namespace == "ns"
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -88,7 +88,7 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractSubscriptionByProtocolID", mock.Anything, "sb-1").Return(nil, nil)
+	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(nil, nil)
 
 	err := em.BlockchainEvent(ev)
 	assert.NoError(t, err)

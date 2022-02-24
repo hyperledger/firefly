@@ -99,7 +99,6 @@ var routes = []*oapispec.Route{
 	getContractInterfaceNameVersion,
 	postContractInterfaceInvoke,
 	postContractInterfaceQuery,
-	postContractInterfaceSubscribe,
 	postContractInterfaceGenerate,
 
 	postNewContractAPI,
@@ -108,12 +107,11 @@ var routes = []*oapispec.Route{
 	putContractAPI,
 	postContractAPIInvoke,
 	postContractAPIQuery,
-	postContractAPISubscribe,
 
-	postNewContractSubscription,
-	getContractSubscriptionByNameOrID,
-	getContractSubscriptions,
-	deleteContractSubscription,
+	postNewContractListener,
+	getContractListenerByNameOrID,
+	getContractListeners,
+	deleteContractListener,
 	getBlockchainEvents,
 	getBlockchainEventByID,
 }

@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	contractSubscriptionColumns = []string{
+	contractListenerColumns = []string{
 		"id",
 		"interface_id",
 		"event",
@@ -39,13 +39,13 @@ var (
 		"location",
 		"created",
 	}
-	contractSubscriptionFilterFieldMap = map[string]string{
+	contractListenerFilterFieldMap = map[string]string{
 		"interface":  "interface_id",
 		"protocolid": "protocol_id",
 	}
 )
 
-func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) (err error) {
+func (s *SQLCommon) UpsertContractListener(ctx context.Context, sub *fftypes.ContractListener) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("seq").
-			From("contractsubscriptions").
+			From("contractlisteners").
 			Where(sq.Eq{"protocol_id": sub.ProtocolID}),
 	)
 	if err != nil {
@@ -70,7 +70,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 
 	if existing {
 		if _, err = s.updateTx(ctx, tx,
-			sq.Update("contractsubscriptions").
+			sq.Update("contractlisteners").
 				Set("id", sub.ID).
 				Set("interface_id", interfaceID).
 				Set("event", sub.Event).
@@ -79,7 +79,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 				Set("location", sub.Location).
 				Where(sq.Eq{"protocol_id": sub.ProtocolID}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractSubscriptions, fftypes.ChangeEventTypeUpdated, sub.Namespace, sub.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, sub.Namespace, sub.ID)
 			},
 		); err != nil {
 			return err
@@ -87,8 +87,8 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 	} else {
 		sub.Created = fftypes.Now()
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contractsubscriptions").
-				Columns(contractSubscriptionColumns...).
+			sq.Insert("contractlisteners").
+				Columns(contractListenerColumns...).
 				Values(
 					sub.ID,
 					interfaceID,
@@ -100,7 +100,7 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 					sub.Created,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractSubscriptions, fftypes.ChangeEventTypeCreated, sub.Namespace, sub.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, sub.Namespace, sub.ID)
 			},
 		); err != nil {
 			return err
@@ -110,8 +110,8 @@ func (s *SQLCommon) UpsertContractSubscription(ctx context.Context, sub *fftypes
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) contractSubscriptionResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractSubscription, error) {
-	sub := fftypes.ContractSubscription{
+func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractListener, error) {
+	sub := fftypes.ContractListener{
 		Interface: &fftypes.FFIReference{},
 	}
 	err := row.Scan(
@@ -125,15 +125,15 @@ func (s *SQLCommon) contractSubscriptionResult(ctx context.Context, row *sql.Row
 		&sub.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractsubscriptions")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractlisteners")
 	}
 	return &sub, nil
 }
 
-func (s *SQLCommon) getContractSubscriptionPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractSubscription, error) {
+func (s *SQLCommon) getContractListenerPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractListener, error) {
 	rows, _, err := s.query(ctx,
-		sq.Select(contractSubscriptionColumns...).
-			From("contractsubscriptions").
+		sq.Select(contractListenerColumns...).
+			From("contractlisteners").
 			Where(pred),
 	)
 	if err != nil {
@@ -142,11 +142,11 @@ func (s *SQLCommon) getContractSubscriptionPred(ctx context.Context, desc string
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Contract subscription '%s' not found", desc)
+		log.L(ctx).Debugf("Contract listener '%s' not found", desc)
 		return nil, nil
 	}
 
-	sub, err := s.contractSubscriptionResult(ctx, rows)
+	sub, err := s.contractListenerResult(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -154,22 +154,22 @@ func (s *SQLCommon) getContractSubscriptionPred(ctx context.Context, desc string
 	return sub, nil
 }
 
-func (s *SQLCommon) GetContractSubscription(ctx context.Context, ns, name string) (sub *fftypes.ContractSubscription, err error) {
-	return s.getContractSubscriptionPred(ctx, fmt.Sprintf("%s:%s", ns, name), sq.Eq{"namespace": ns, "name": name})
+func (s *SQLCommon) GetContractListener(ctx context.Context, ns, name string) (sub *fftypes.ContractListener, err error) {
+	return s.getContractListenerPred(ctx, fmt.Sprintf("%s:%s", ns, name), sq.Eq{"namespace": ns, "name": name})
 }
 
-func (s *SQLCommon) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractSubscription, err error) {
-	return s.getContractSubscriptionPred(ctx, id.String(), sq.Eq{"id": id})
+func (s *SQLCommon) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractListener, err error) {
+	return s.getContractListenerPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetContractSubscriptionByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractSubscription, err error) {
-	return s.getContractSubscriptionPred(ctx, id, sq.Eq{"protocol_id": id})
+func (s *SQLCommon) GetContractListenerByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error) {
+	return s.getContractListenerPred(ctx, id, sq.Eq{"protocol_id": id})
 }
 
-func (s *SQLCommon) GetContractSubscriptions(ctx context.Context, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
+func (s *SQLCommon) GetContractListeners(ctx context.Context, filter database.Filter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(contractSubscriptionColumns...).From("contractsubscriptions"),
-		filter, contractSubscriptionFilterFieldMap, []interface{}{"sequence"})
+		sq.Select(contractListenerColumns...).From("contractlisteners"),
+		filter, contractListenerFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -180,30 +180,30 @@ func (s *SQLCommon) GetContractSubscriptions(ctx context.Context, filter databas
 	}
 	defer rows.Close()
 
-	subs := []*fftypes.ContractSubscription{}
+	subs := []*fftypes.ContractListener{}
 	for rows.Next() {
-		sub, err := s.contractSubscriptionResult(ctx, rows)
+		sub, err := s.contractListenerResult(ctx, rows)
 		if err != nil {
 			return nil, nil, err
 		}
 		subs = append(subs, sub)
 	}
 
-	return subs, s.queryRes(ctx, tx, "contractsubscriptions", fop, fi), err
+	return subs, s.queryRes(ctx, tx, "contractlisteners", fop, fi), err
 }
 
-func (s *SQLCommon) DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error) {
+func (s *SQLCommon) DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	sub, err := s.GetContractSubscriptionByID(ctx, id)
+	sub, err := s.GetContractListenerByID(ctx, id)
 	if err == nil && sub != nil {
-		err = s.deleteTx(ctx, tx, sq.Delete("contractsubscriptions").Where(sq.Eq{"id": id}),
+		err = s.deleteTx(ctx, tx, sq.Delete("contractlisteners").Where(sq.Eq{"id": id}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractSubscriptions, fftypes.ChangeEventTypeDeleted, sub.Namespace, sub.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeDeleted, sub.Namespace, sub.ID)
 			},
 		)
 		if err != nil {

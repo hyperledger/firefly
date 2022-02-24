@@ -229,7 +229,7 @@ var (
 	MsgContractInternalType         = ffm("FF10309", "Input '%v' of type '%v' is not compatible blockchain internalType of '%v'", 400)
 	MsgContractLocationInvalid      = ffm("FF10310", "Failed to validate contract location: %v", 400)
 	MsgContractParamInvalid         = ffm("FF10311", "Failed to validate contract param: %v", 400)
-	MsgContractSubscriptionExists   = ffm("FF10312", "A contract subscription already exists in the namespace: '%s' with name: '%s'", 409)
+	MsgContractListenerExists       = ffm("FF10312", "A contract subscription already exists in the namespace: '%s' with name: '%s'", 409)
 	MsgContractMethodNotSet         = ffm("FF10313", "Method not specified on invoke contract request", 400)
 	MsgContractNoMethodSignature    = ffm("FF10314", "Method signature is required if interfaceID is absent", 400)
 	MsgContractMethodResolveError   = ffm("FF10315", "Unable to resolve contract method: %s", 400)

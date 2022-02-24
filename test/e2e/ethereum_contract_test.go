@@ -194,16 +194,16 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 
 	received1, changes1 := wsReader(suite.testState.ws1)
 
-	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
+	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
 	<-received1
 	<-changes1 // only expect database change events
 
-	subs := GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 1, len(subs))
-	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
+	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	assert.Equal(suite.T(), 1, len(listeners))
+	assert.Equal(suite.T(), listener.ProtocolID, listeners[0].ProtocolID)
 
 	startTime := time.Now()
 	suite.T().Log(startTime.UTC().UnixNano())
@@ -220,11 +220,13 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 			"_value": "1",
 			"_from":  suite.testState.org1.Identity,
 		},
-		"subscription": sub.ID.String(),
+		"listener": listener.ID.String(),
 	}
 
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
+
+	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
 }
 
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
@@ -232,15 +234,15 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 
 	received1, changes1 := wsReader(suite.testState.ws1)
 
-	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
+	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
 	<-changes1 // only expect database change events
 
-	subs := GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 1, len(subs))
-	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
+	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	assert.Equal(suite.T(), 1, len(listeners))
+	assert.Equal(suite.T(), listener.ProtocolID, listeners[0].ProtocolID)
 
 	location := map[string]interface{}{
 		"address": suite.contractAddress,
@@ -266,7 +268,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 			"_value": "2",
 			"_from":  suite.testState.org1.Identity,
 		},
-		"subscription": sub.ID.String(),
+		"subscription": listener.ID.String(),
 	}
 
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
@@ -281,6 +283,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	resJSON, err := json.Marshal(res)
 	assert.NoError(suite.testState.t, err)
 	assert.Equal(suite.testState.t, `{"output":"2"}`, string(resJSON))
+	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
 }
 
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
@@ -288,15 +291,19 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	received1, changes1 := wsReader(suite.testState.ws1)
 
-	sub := CreateContractSubscription(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
+	ffiReference := &fftypes.FFIReference{
+		ID: fftypes.MustParseUUID(suite.interfaceID),
+	}
+
+	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
 	<-changes1 // only expect database change events
 
-	subs := GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 1, len(subs))
-	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
+	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	assert.Equal(suite.T(), 1, len(listeners))
+	assert.Equal(suite.T(), listener.ProtocolID, listeners[0].ProtocolID)
 
 	location := map[string]interface{}{
 		"address": suite.contractAddress,
@@ -323,7 +330,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 			"_value": "3",
 			"_from":  suite.testState.org1.Identity,
 		},
-		"subscription": sub.ID.String(),
+		"subscription": listener.ID.String(),
 	}
 
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
@@ -338,4 +345,5 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	resJSON, err := json.Marshal(res)
 	assert.NoError(suite.testState.t, err)
 	assert.Equal(suite.testState.t, `{"output":"42"}`, string(resJSON))
+	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
 }

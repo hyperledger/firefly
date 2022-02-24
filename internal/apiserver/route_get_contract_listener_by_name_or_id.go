@@ -25,25 +25,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContractAPISubscribe = &oapispec.Route{
-	Name:   "postContractAPISubscribe",
-	Path:   "namespaces/{ns}/apis/{apiName}/subscribe/{eventPath}",
-	Method: http.MethodPost,
+var getContractListenerByNameOrID = &oapispec.Route{
+	Name:   "getContractListenerByNameOrID",
+	Path:   "namespaces/{ns}/contracts/listeners/{nameOrId}",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "apiName", Description: i18n.MsgTBD},
-		{Name: "eventPath", Description: i18n.MsgTBD},
+		{Name: "nameOrId", Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
-	},
+	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
-	JSONInputMask:   []string{"Interface", "Event"},
-	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
+	JSONInputValue:  nil,
+	JSONInputMask:   nil,
+	JSONOutputValue: func() interface{} { return &fftypes.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().SubscribeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"], r.Input.(*fftypes.ContractSubscribeRequest))
+		return getOr(r.Ctx).Contracts().GetContractListenerByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrId"])
 	},
 }

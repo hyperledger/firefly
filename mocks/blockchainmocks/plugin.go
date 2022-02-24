@@ -19,11 +19,11 @@ type Plugin struct {
 }
 
 // AddSubscription provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+func (_m *Plugin) AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
 	ret := _m.Called(ctx, subscription)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractSubscriptionInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractListenerInput) error); ok {
 		r0 = rf(ctx, subscription)
 	} else {
 		r0 = ret.Error(0)
@@ -49,11 +49,11 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 }
 
 // DeleteSubscription provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+func (_m *Plugin) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error {
 	ret := _m.Called(ctx, subscription)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractSubscription) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractListener) error); ok {
 		r0 = rf(ctx, subscription)
 	} else {
 		r0 = ret.Error(0)

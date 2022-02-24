@@ -54,10 +54,10 @@ type Plugin interface {
 	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error)
 
 	// AddSubscription adds a new subscription to a user-specified contract and event
-	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
+	AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error
 
 	// DeleteSubscription deletes a previously-created subscription
-	DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error
+	DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)

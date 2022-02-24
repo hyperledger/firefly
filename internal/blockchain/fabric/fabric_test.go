@@ -1069,8 +1069,8 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
@@ -1100,8 +1100,8 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(""),
 			Event:    &fftypes.FFISerializedEvent{},
 		},
@@ -1125,8 +1125,8 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
@@ -1157,7 +1157,7 @@ func TestDeleteSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		ProtocolID: "sb-1",
 	}
 
@@ -1182,7 +1182,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		ProtocolID: "sb-1",
 	}
 

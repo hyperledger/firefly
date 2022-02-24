@@ -28,15 +28,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestContractSubscriptionE2EWithDB(t *testing.T) {
+func TestContractListenerE2EWithDB(t *testing.T) {
 	s, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
 	ctx := context.Background()
 
-	// Create a new contract subscription entry
+	// Create a new contract listener entry
 	location := fftypes.JSONObject{"path": "my-api"}
 	locationJson, _ := json.Marshal(location)
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		ID: fftypes.NewUUID(),
 		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
@@ -52,56 +52,56 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 		Location:   fftypes.JSONAnyPtrBytes(locationJson),
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractSubscriptions, fftypes.ChangeEventTypeCreated, "ns", sub.ID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractSubscriptions, fftypes.ChangeEventTypeUpdated, "ns", sub.ID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractSubscriptions, fftypes.ChangeEventTypeDeleted, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeDeleted, "ns", sub.ID).Return()
 
-	err := s.UpsertContractSubscription(ctx, sub)
+	err := s.UpsertContractListener(ctx, sub)
 	assert.NotNil(t, sub.Created)
 	assert.NoError(t, err)
 	subJson, _ := json.Marshal(&sub)
 
-	// Query back the subscription (by query filter)
-	fb := database.ContractSubscriptionQueryFactory.NewFilter(ctx)
+	// Query back the listener (by query filter)
+	fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("protocolid", sub.ProtocolID),
 	)
-	subs, res, err := s.GetContractSubscriptions(ctx, filter.Count(true))
+	subs, res, err := s.GetContractListeners(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	subReadJson, _ := json.Marshal(subs[0])
 	assert.Equal(t, string(subJson), string(subReadJson))
 
-	// Query back the subscription (by name)
-	subRead, err := s.GetContractSubscription(ctx, "ns", "sub1")
+	// Query back the listener (by name)
+	subRead, err := s.GetContractListener(ctx, "ns", "sub1")
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
-	// Query back the subscription (by ID)
-	subRead, err = s.GetContractSubscriptionByID(ctx, sub.ID)
+	// Query back the listener (by ID)
+	subRead, err = s.GetContractListenerByID(ctx, sub.ID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
-	// Query back the subscription (by protocol ID)
-	subRead, err = s.GetContractSubscriptionByProtocolID(ctx, sub.ProtocolID)
+	// Query back the listener (by protocol ID)
+	subRead, err = s.GetContractListenerByProtocolID(ctx, sub.ProtocolID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
-	// Update the subscription
+	// Update the listener
 	sub.Location = fftypes.JSONAnyPtr("{}")
 	subJson, _ = json.Marshal(&sub)
-	err = s.UpsertContractSubscription(ctx, sub)
+	err = s.UpsertContractListener(ctx, sub)
 	assert.NoError(t, err)
 
-	// Query back the subscription (by query filter)
+	// Query back the listener (by query filter)
 	filter = fb.And(
 		fb.Eq("protocolid", sub.ProtocolID),
 	)
-	subs, res, err = s.GetContractSubscriptions(ctx, filter.Count(true))
+	subs, res, err = s.GetContractListeners(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -109,127 +109,127 @@ func TestContractSubscriptionE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Test delete, and refind no return
-	err = s.DeleteContractSubscriptionByID(ctx, sub.ID)
+	err = s.DeleteContractListenerByID(ctx, sub.ID)
 	assert.NoError(t, err)
-	subs, _, err = s.GetContractSubscriptions(ctx, filter)
+	subs, _, err = s.GetContractListeners(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(subs))
 }
 
-func TestUpsertContractSubscriptionFailBegin(t *testing.T) {
+func TestUpsertContractListenerFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContractSubscriptionFailSelect(t *testing.T) {
+func TestUpsertContractListenerFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContractSubscriptionFailInsert(t *testing.T) {
+func TestUpsertContractListenerFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContractSubscriptionFailUpdate(t *testing.T) {
+func TestUpsertContractListenerFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContractSubscriptionFailCommit(t *testing.T) {
+func TestUpsertContractListenerFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractSubscription(context.Background(), &fftypes.ContractSubscription{})
+	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContractSubscriptionByIDSelectFail(t *testing.T) {
+func TestGetContractListenerByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContractSubscriptionByIDNotFound(t *testing.T) {
+func TestGetContractListenerByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
-	msg, err := s.GetContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	msg, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContractSubscriptionByIDScanFail(t *testing.T) {
+func TestGetContractListenerByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
-	_, err := s.GetContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContractSubscriptionsQueryFail(t *testing.T) {
+func TestGetContractListenersQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
-	_, _, err := s.GetContractSubscriptions(context.Background(), f)
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	_, _, err := s.GetContractListeners(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContractSubscriptionsBuildQueryFail(t *testing.T) {
+func TestGetContractListenersBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
-	_, _, err := s.GetContractSubscriptions(context.Background(), f)
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
+	_, _, err := s.GetContractListeners(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
-func TestGetContractSubscriptionsScanFail(t *testing.T) {
+func TestGetContractListenersScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
-	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
-	_, _, err := s.GetContractSubscriptions(context.Background(), f)
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	_, _, err := s.GetContractListeners(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestContractSubscriptionDeleteBeginFail(t *testing.T) {
+func TestContractListenerDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10114", err)
 }
 
-func TestContractSubscriptionDeleteFail(t *testing.T) {
+func TestContractListenerDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractSubscriptionColumns).AddRow(
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractListenerColumns).AddRow(
 		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteContractSubscriptionByID(context.Background(), fftypes.NewUUID())
+	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10118", err)
 }

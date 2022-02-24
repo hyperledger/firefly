@@ -17,8 +17,6 @@
 package apiserver
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http/httptest"
 	"testing"
 
@@ -28,19 +26,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostNewContractSubscription(t *testing.T) {
+func TestGetContractListener(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.ContractSubscriptionInput{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/mynamespace/contracts/subscriptions", &buf)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/contracts/listeners", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("AddContractSubscription", mock.Anything, "mynamespace", mock.AnythingOfType("*fftypes.ContractSubscriptionInput")).
-		Return(&fftypes.ContractSubscription{}, nil, nil)
+	mcm.On("GetContractListeners", mock.Anything, "mynamespace", mock.Anything).
+		Return([]*fftypes.ContractListener{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

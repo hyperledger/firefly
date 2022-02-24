@@ -25,22 +25,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractSubscriptionByNameOrID = &oapispec.Route{
-	Name:   "getContractSubscriptionByNameOrID",
-	Path:   "namespaces/{ns}/contracts/subscriptions/{nameOrId}",
-	Method: http.MethodGet,
+var postNewContractListener = &oapispec.Route{
+	Name:   "postNewContractListener",
+	Path:   "namespaces/{ns}/contracts/listeners",
+	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "nameOrId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  nil,
-	JSONInputMask:   nil,
-	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
+	JSONInputValue:  func() interface{} { return &fftypes.ContractListenerInput{} },
+	JSONInputMask:   []string{"Namespace", "ProtocolID"},
+	JSONOutputValue: func() interface{} { return &fftypes.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().GetContractSubscriptionByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrId"])
+		return getOr(r.Ctx).Contracts().AddContractListener(r.Ctx, r.PP["ns"], r.Input.(*fftypes.ContractListenerInput))
 	},
 }

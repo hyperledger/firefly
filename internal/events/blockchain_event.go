@@ -26,15 +26,15 @@ import (
 
 func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.TransactionRef) *fftypes.BlockchainEvent {
 	ev := &fftypes.BlockchainEvent{
-		ID:           fftypes.NewUUID(),
-		Namespace:    ns,
-		Subscription: subID,
-		Source:       event.Source,
-		ProtocolID:   event.ProtocolID,
-		Name:         event.Name,
-		Output:       event.Output,
-		Info:         event.Info,
-		Timestamp:    event.Timestamp,
+		ID:         fftypes.NewUUID(),
+		Namespace:  ns,
+		Listener:   subID,
+		Source:     event.Source,
+		ProtocolID: event.ProtocolID,
+		Name:       event.Name,
+		Output:     event.Output,
+		Info:       event.Info,
+		Timestamp:  event.Timestamp,
 	}
 	if tx != nil {
 		ev.TX = *tx
@@ -57,7 +57,7 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 	return em.retry.Do(em.ctx, "persist contract event", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// TODO: should cache this lookup for efficiency
-			sub, err := em.database.GetContractSubscriptionByProtocolID(ctx, event.Subscription)
+			sub, err := em.database.GetContractListenerByProtocolID(ctx, event.Subscription)
 			if err != nil {
 				return err
 			}

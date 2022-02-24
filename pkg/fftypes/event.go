@@ -47,8 +47,8 @@ var (
 	EventTypeContractInterfaceConfirmed EventType = ffEnum("eventtype", "contract_interface_confirmed")
 	// EventTypeContractAPIConfirmed occurs when a new contract API has been confirmed
 	EventTypeContractAPIConfirmed EventType = ffEnum("eventtype", "contract_api_confirmed")
-	// EventTypeBlockchainEvent occurs when a new event has been recorded from the blockchain
-	EventTypeBlockchainEvent EventType = ffEnum("eventtype", "blockchain_event")
+	// EventTypeBlockchainEvent occurs when a new event has been received from the blockchain
+	EventTypeBlockchainEvent EventType = ffEnum("eventtype", "blockchain_event_received")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

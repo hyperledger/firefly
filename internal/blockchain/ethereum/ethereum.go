@@ -605,7 +605,7 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &ethLocation, nil
 }
 
-func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
 	location, err := parseContractLocation(ctx, subscription.Location)
 	if err != nil {
 		return err
@@ -623,7 +623,7 @@ func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.Co
 	return nil
 }
 
-func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error {
 	return e.streams.deleteSubscription(ctx, subscription.ProtocolID)
 }
 

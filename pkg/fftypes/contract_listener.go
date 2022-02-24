@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 )
 
-type ContractSubscription struct {
+type ContractListener struct {
 	ID         *UUID               `json:"id,omitempty"`
 	Interface  *FFIReference       `json:"interface,omitempty"`
 	Namespace  string              `json:"namespace,omitempty"`
@@ -35,8 +35,8 @@ type ContractSubscription struct {
 	Event      *FFISerializedEvent `json:"event,omitempty"`
 }
 
-type ContractSubscriptionInput struct {
-	ContractSubscription
+type ContractListenerInput struct {
+	ContractListener
 	EventID *UUID `json:"eventId,omitempty"`
 }
 
