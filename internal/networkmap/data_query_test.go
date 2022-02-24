@@ -54,9 +54,17 @@ func TestGetOrganizationByIDNotFound(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).Return(nil, nil)
-	res, err := nm.GetOrganizationByID(nm.ctx, id.String())
-	assert.NoError(t, err)
-	assert.Nil(t, res)
+	_, err := nm.GetOrganizationByID(nm.ctx, id.String())
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetOrganizationByIDError(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).Return(nil, fmt.Errorf("pop"))
+	_, err := nm.GetOrganizationByID(nm.ctx, id.String())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestGetOrganizationByIDBadUUID(t *testing.T) {
@@ -93,9 +101,17 @@ func TestGetNodeByIDNotFound(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).Return(nil, nil)
-	res, err := nm.GetNodeByID(nm.ctx, id.String())
-	assert.NoError(t, err)
-	assert.Nil(t, res)
+	_, err := nm.GetNodeByID(nm.ctx, id.String())
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetNodeByIDError(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).Return(nil, fmt.Errorf("pop"))
+	_, err := nm.GetNodeByID(nm.ctx, id.String())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestGetNodeByIDBadUUID(t *testing.T) {
@@ -134,15 +150,32 @@ func TestGetIdentityByIDOk(t *testing.T) {
 	assert.Equal(t, *id, *res.ID)
 }
 
+func TestGetIdentityByIDNotFound(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).Return(nil, nil)
+	_, err := nm.GetIdentityByID(nm.ctx, "ns1", id.String())
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetIdentityByIDError(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).Return(nil, fmt.Errorf("pop"))
+	_, err := nm.GetIdentityByID(nm.ctx, "ns1", id.String())
+	assert.Regexp(t, "pop", err)
+}
+
 func TestGetIdentityByIDBadNS(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
 		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
-	res, err := nm.GetIdentityByID(nm.ctx, "ns2", id.String())
-	assert.NoError(t, err)
-	assert.Nil(t, res)
+	_, err := nm.GetIdentityByID(nm.ctx, "ns2", id.String())
+	assert.Regexp(t, "FF10109", err)
 }
 
 func TestGetIdentityByIDBadUUID(t *testing.T) {

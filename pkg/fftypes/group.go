@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -88,7 +88,7 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 		}
 		key := fmt.Sprintf("%s:%s", r.Node, r.Identity)
 		if dupCheck[key] {
-			return i18n.NewError(ctx, i18n.MsgDuplicateMember, i)
+			return i18n.NewError(ctx, i18n.MsgDuplicateMember, i, key)
 		}
 		dupCheck[key] = true
 	}

@@ -319,7 +319,11 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		}
 	}
 
-	nodes, _, err := or.networkmap.GetNodes(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
+	fb := database.IdentityQueryFactory.NewFilter(ctx)
+	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
+		fb.Eq("type", fftypes.IdentityTypeNode),
+		fb.Eq("namespace", fftypes.SystemNamespace),
+	))
 	if err != nil {
 		return err
 	}

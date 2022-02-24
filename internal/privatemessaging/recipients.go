@@ -117,7 +117,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 		if err != nil {
 			return nil, err
 		}
-		foundLocal = foundLocal || (node.Parent == localOrg.ID && node.Name == pm.localNodeName)
+		foundLocal = foundLocal || (node.Parent.Equals(localOrg.ID) && node.Name == pm.localNodeName)
 		gi.Members[i] = &fftypes.Member{
 			Identity: org.DID,
 			Node:     node.ID,

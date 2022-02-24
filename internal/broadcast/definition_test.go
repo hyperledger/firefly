@@ -49,6 +49,44 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
+func TestBroadcastDefinitionResolveKeyOnly(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	msa := bm.syncasync.(*syncasyncmocks.Bridge)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234").Return("", nil)
+	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.BroadcastDefinitionResolveKeyOnly(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
+		Key: "0x1234",
+	}, fftypes.SystemTagDefineNamespace, true)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	msa.AssertExpectations(t)
+	mim.AssertExpectations(t)
+}
+
+func TestBroadcastDefinitionResolveKeyOnlyFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234").Return("", fmt.Errorf("pop"))
+
+	_, err := bm.BroadcastDefinitionResolveKeyOnly(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
+		Key: "0x1234",
+	}, fftypes.SystemTagDefineNamespace, true)
+	assert.EqualError(t, err, "pop")
+
+	mim.AssertExpectations(t)
+}
+
 func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()

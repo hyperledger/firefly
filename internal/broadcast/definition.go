@@ -39,6 +39,16 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, 
 	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 
+func (bm *broadcastManager) BroadcastDefinitionResolveKeyOnly(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
+
+	signingIdentity.Key, err = bm.identity.ResolveInputSigningKeyOnly(ctx, signingIdentity.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
+}
+
 func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message

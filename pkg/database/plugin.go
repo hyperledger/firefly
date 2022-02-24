@@ -816,6 +816,7 @@ var IdentityQueryFactory = &queryFields{
 	"description":           &StringField{},
 	"profile":               &JSONField{},
 	"created":               &TimeField{},
+	"updated":               &TimeField{},
 }
 
 // VerifierQueryFactory filter fields for identities

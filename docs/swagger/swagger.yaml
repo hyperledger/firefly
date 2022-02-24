@@ -4305,6 +4305,11 @@ paths:
         name: type
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -4561,6 +4566,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -9153,6 +9163,11 @@ paths:
         name: type
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -9443,6 +9458,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or

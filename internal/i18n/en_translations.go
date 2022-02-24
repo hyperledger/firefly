@@ -139,7 +139,7 @@ var (
 	MsgGroupMustHaveMembers         = ffm("FF10219", "Group must have at least one member", 400)
 	MsgEmptyMemberIdentity          = ffm("FF10220", "Identity is blank in member %d")
 	MsgEmptyMemberNode              = ffm("FF10221", "Node is blank in member %d")
-	MsgDuplicateMember              = ffm("FF10222", "Member %d is a duplicate org+node combination")
+	MsgDuplicateMember              = ffm("FF10222", "Member %d is a duplicate org+node combination: %s", 400)
 	MsgNodeNotFound                 = ffm("FF10224", "Node with name or identity '%s' not found", 400)
 	MsgLocalNodeResolveFailed       = ffm("FF10225", "Unable to find local node to add to group. Check the status API to confirm the node is registered", 500)
 	MsgGroupNotFound                = ffm("FF10226", "Group '%s' not found", 404)

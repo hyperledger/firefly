@@ -85,6 +85,29 @@ func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def
 	return r0, r1
 }
 
+// BroadcastDefinitionResolveKeyOnly provides a mock function with given fields: ctx, ns, def, signingIdentity, tag, waitConfirm
+func (_m *Manager) BroadcastDefinitionResolveKeyOnly(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, def, signingIdentity, tag, waitConfirm)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, string, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, string, bool) error); ok {
+		r1 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // BroadcastMessage provides a mock function with given fields: ctx, ns, in, waitConfirm
 func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, in, waitConfirm)

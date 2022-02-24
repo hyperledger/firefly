@@ -58,7 +58,7 @@ var (
 	urlContractSubscriptions = "/namespaces/default/contracts/subscriptions"
 	urlBlockchainEvents      = "/namespaces/default/blockchainevents"
 	urlGetOrganizations      = "/network/organizations"
-	urlGetVerifiers          = "/namespaces/default/identities/%s/verifiers"
+	urlGetOrgKeys            = "/namespaces/ff_system/identities/%s/verifiers"
 )
 
 func NewResty(t *testing.T) *resty.Client {
@@ -149,7 +149,7 @@ func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*ff
 }
 
 func GetIdentityBlockchainKeys(t *testing.T, client *resty.Client, identityID *fftypes.UUID, expectedStatus int) (verifiers []*fftypes.Verifier) {
-	path := fmt.Sprintf(urlGetVerifiers, identityID)
+	path := fmt.Sprintf(urlGetOrgKeys, identityID)
 	resp, err := client.R().
 		SetQueryParam("type", fmt.Sprintf("!=%s", fftypes.VerifierTypeFFDXPeerID)).
 		SetResult(&verifiers).
@@ -317,6 +317,7 @@ func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fft
 			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 		},
 	}
+	ts.t.Logf("Sending private message to %+v", msg.Group.Members)
 	return client.R().
 		SetBody(msg).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
