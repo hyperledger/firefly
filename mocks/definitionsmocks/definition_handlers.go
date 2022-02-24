@@ -94,34 +94,25 @@ func (_m *DefinitionHandlers) GetGroupsNS(ctx context.Context, ns string, filter
 	return r0, r1, r2
 }
 
-// HandleDefinitionBroadcast provides a mock function with given fields: ctx, msg, data, tx
-func (_m *DefinitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (definitions.DefinitionMessageAction, *definitions.DefinitionBatchActions, error) {
-	ret := _m.Called(ctx, msg, data, tx)
+// HandleDefinitionBroadcast provides a mock function with given fields: ctx, state, msg, data, tx
+func (_m *DefinitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state definitions.DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (definitions.DefinitionMessageAction, error) {
+	ret := _m.Called(ctx, state, msg, data, tx)
 
 	var r0 definitions.DefinitionMessageAction
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, []*fftypes.Data, *fftypes.UUID) definitions.DefinitionMessageAction); ok {
-		r0 = rf(ctx, msg, data, tx)
+	if rf, ok := ret.Get(0).(func(context.Context, definitions.DefinitionBatchState, *fftypes.Message, []*fftypes.Data, *fftypes.UUID) definitions.DefinitionMessageAction); ok {
+		r0 = rf(ctx, state, msg, data, tx)
 	} else {
 		r0 = ret.Get(0).(definitions.DefinitionMessageAction)
 	}
 
-	var r1 *definitions.DefinitionBatchActions
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message, []*fftypes.Data, *fftypes.UUID) *definitions.DefinitionBatchActions); ok {
-		r1 = rf(ctx, msg, data, tx)
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, definitions.DefinitionBatchState, *fftypes.Message, []*fftypes.Data, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, state, msg, data, tx)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*definitions.DefinitionBatchActions)
-		}
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.Message, []*fftypes.Data, *fftypes.UUID) error); ok {
-		r2 = rf(ctx, msg, data, tx)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // ResolveInitGroup provides a mock function with given fields: ctx, msg

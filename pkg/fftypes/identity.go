@@ -229,6 +229,9 @@ func (i *IdentityBase) Equals(ctx context.Context, i2 *IdentityBase) bool {
 }
 
 func (identity *Identity) Validate(ctx context.Context) (err error) {
+	if identity == nil {
+		return i18n.NewError(ctx, i18n.MsgNilOrNullObject)
+	}
 	if err = identity.IdentityBase.Validate(ctx); err != nil {
 		return err
 	}

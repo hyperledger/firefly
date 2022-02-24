@@ -137,7 +137,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 
 			if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
 				// Poke the aggregator to do its stuff
-				em.aggregator.offchainBatches <- batch.ID
+				em.aggregator.rewindBatches <- batch.ID
 			} else if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 				// We need to confirm all these messages immediately.
 				if err := em.markUnpinnedMessagesConfirmed(ctx, batch); err != nil {
@@ -250,7 +250,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 		for bid := range batchIDs {
 			var batchID = bid // cannot use the address of the loop var
 			l.Infof("Batch '%s' contains reference to received blob. Peer='%s' Hash='%v' PayloadRef='%s'", &bid, peerID, &hash, payloadRef)
-			em.aggregator.offchainBatches <- &batchID
+			em.aggregator.rewindBatches <- &batchID
 		}
 
 		return false, nil

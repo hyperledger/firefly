@@ -87,7 +87,7 @@ func testContractAPI() *fftypes.ContractAPI {
 }
 
 func TestHandleFFIBroadcastOk(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
@@ -102,20 +102,21 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
-	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
-	err = ba.Finalize(context.Background())
+	err = bs.finalizers[0](context.Background())
 	assert.NoError(t, err)
 	mbi.AssertExpectations(t)
 }
 
 func TestPersistFFIValidateFFIFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandlers(t)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	valid, err := dh.persistFFI(context.Background(), testFFI())
@@ -125,22 +126,23 @@ func TestPersistFFIValidateFFIFail(t *testing.T) {
 }
 
 func TestHandleFFIBroadcastReject(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, _, err := dh.handleFFIBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.handleFFIBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
+	bs.assertNoFinalizers()
 }
 
 func TestPersistFFIUpsertFFIFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
@@ -152,7 +154,7 @@ func TestPersistFFIUpsertFFIFail(t *testing.T) {
 }
 
 func TestPersistFFIUpsertFFIMethodFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -165,7 +167,7 @@ func TestPersistFFIUpsertFFIMethodFail(t *testing.T) {
 }
 
 func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
@@ -179,7 +181,7 @@ func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
 }
 
 func TestHandleFFIBroadcastValidateFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 	ffi := testFFI()
 	ffi.Name = "*%^!$%^&*"
 	b, err := json.Marshal(ffi)
@@ -189,17 +191,18 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleFFIBroadcastPersistFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 	ffi := testFFI()
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
@@ -211,17 +214,18 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.Regexp(t, "pop", err)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleContractAPIBroadcastOk(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
@@ -233,20 +237,20 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
-	err = ba.Finalize(context.Background())
+	err = bs.finalizers[0](context.Background())
 	assert.NoError(t, err)
 	mbi.AssertExpectations(t)
 }
 
 func TestPersistContractAPIGetFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	_, err := dh.persistContractAPI(context.Background(), testContractAPI())
@@ -257,7 +261,7 @@ func TestPersistContractAPIGetFail(t *testing.T) {
 func TestPersistContractAPIDifferentLocation(t *testing.T) {
 	existing := testContractAPI()
 	existing.Location = fftypes.JSONAnyPtr(`{"existing": true}`)
-	dh := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(existing, nil)
 	valid, err := dh.persistContractAPI(context.Background(), testContractAPI())
@@ -267,7 +271,7 @@ func TestPersistContractAPIDifferentLocation(t *testing.T) {
 }
 
 func TestPersistContractAPIUpsertFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandlers(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -277,7 +281,7 @@ func TestPersistContractAPIUpsertFail(t *testing.T) {
 }
 
 func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 	api := testContractAPI()
 	api.Name = "*%^!$%^&*"
 	b, err := json.Marshal(api)
@@ -287,17 +291,18 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 	ffi := testFFI()
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
@@ -308,11 +313,12 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionRetry, action)
 	assert.Regexp(t, "pop", err)
+	bs.assertNoFinalizers()
 }

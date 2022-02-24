@@ -63,7 +63,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&fftypes.VerifierRef{
 		Value: "0x12345",
 	}, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
@@ -93,7 +93,7 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&fftypes.VerifierRef{
 		Value: "0x12345",
 	}, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
 	_, err := nm.RegisterNodeOrganization(nm.ctx, true)
 	assert.Regexp(t, "FF10216", err)

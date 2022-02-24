@@ -284,4 +284,5 @@ var (
 	MsgInvalidIdentityParentType    = ffm("FF10365", "Parent %s (%s) of type %s is invalid for child %s (%s) of type", 400)
 	MsgParentIdentityMissingClaim   = ffm("FF10366", "Parent %s (%s) is invalid (missing claim)", 400)
 	MsgDXInfoMissingID              = ffm("FF10367", "Data exchange endpoint info missing 'id' field", 500)
+	MsgNilOrNullObject              = ffm("FF10368", "Object is null")
 )

@@ -53,7 +53,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.Identit
 	identity.DID, _ = identity.GenerateDID(ctx)
 
 	// Verify the chain
-	immediateParent, err := nm.identity.VerifyIdentityChain(ctx, identity)
+	immediateParent, _, err := nm.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil {
 		return nil, err
 	}

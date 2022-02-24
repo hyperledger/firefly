@@ -35,7 +35,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 	parentIdentity := testOrg("parent1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, false, nil)
 	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&fftypes.SignerRef{
 		Key: "0x23456",
 	}, nil)
@@ -81,7 +81,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	parentIdentity := testOrg("parent1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, false, nil)
 	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&fftypes.SignerRef{
 		Key: "0x23456",
 	}, nil)
@@ -125,7 +125,7 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 	parentIdentity := testOrg("parent1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, false, nil)
 	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(nil, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
@@ -145,7 +145,7 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx,
@@ -173,7 +173,7 @@ func TestRegisterIdentityMissingKey(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
 	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
 		Namespace: "ns1",
@@ -190,7 +190,7 @@ func TestRegisterIdentityVerifyFail(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, fmt.Errorf("pop"))
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
 		Namespace: "ns1",

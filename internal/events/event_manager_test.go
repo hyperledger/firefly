@@ -72,6 +72,7 @@ func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func(
 	}
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
+	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
 	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mmi)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}

@@ -38,33 +38,33 @@ const (
 )
 
 type aggregator struct {
-	ctx             context.Context
-	database        database.Plugin
-	definitions     definitions.DefinitionHandlers
-	identity        identity.Manager
-	data            data.Manager
-	eventPoller     *eventPoller
-	verifierType    fftypes.VerifierType
-	newPins         chan int64
-	offchainBatches chan *fftypes.UUID
-	queuedRewinds   chan *fftypes.UUID
-	retry           *retry.Retry
-	metrics         metrics.Manager
+	ctx           context.Context
+	database      database.Plugin
+	definitions   definitions.DefinitionHandlers
+	identity      identity.Manager
+	data          data.Manager
+	eventPoller   *eventPoller
+	verifierType  fftypes.VerifierType
+	newPins       chan int64
+	rewindBatches chan *fftypes.UUID
+	queuedRewinds chan *fftypes.UUID
+	retry         *retry.Retry
+	metrics       metrics.Manager
 }
 
 func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
-		ctx:             log.WithLogField(ctx, "role", "aggregator"),
-		database:        di,
-		definitions:     sh,
-		identity:        im,
-		data:            dm,
-		verifierType:    bi.VerifierType(),
-		newPins:         make(chan int64),
-		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
-		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
-		metrics:         mm,
+		ctx:           log.WithLogField(ctx, "role", "aggregator"),
+		database:      di,
+		definitions:   sh,
+		identity:      im,
+		data:          dm,
+		verifierType:  bi.VerifierType(),
+		newPins:       make(chan int64),
+		rewindBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
+		queuedRewinds: make(chan *fftypes.UUID, batchSize),
+		metrics:       mm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
@@ -94,14 +94,14 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 }
 
 func (ag *aggregator) start() {
-	go ag.offchainListener()
+	go ag.batchRewindListener()
 	ag.eventPoller.start()
 }
 
-func (ag *aggregator) offchainListener() {
+func (ag *aggregator) batchRewindListener() {
 	for {
 		select {
-		case uuid := <-ag.offchainBatches:
+		case uuid := <-ag.rewindBatches:
 			ag.queuedRewinds <- uuid
 			ag.eventPoller.shoulderTap()
 		case <-ag.ctx.Done():
@@ -388,13 +388,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
-		msgAction, batchAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, msg, data, tx)
+		msgAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
 		if msgAction == definitions.ActionRetry {
 			return false, err
-		}
-		if batchAction != nil {
-			state.AddPreFinalize(batchAction.PreFinalize)
-			state.AddFinalize(batchAction.Finalize)
 		}
 		if msgAction == definitions.ActionWait {
 			return false, nil
@@ -413,7 +409,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 	status := fftypes.MessageStateConfirmed
 	eventType := fftypes.EventTypeMessageConfirmed
-	if !valid {
+	if valid {
+		state.pendingConfirms[*msg.Header.ID] = true
+	} else {
 		status = fftypes.MessageStateRejected
 		eventType = fftypes.EventTypeMessageRejected
 	}

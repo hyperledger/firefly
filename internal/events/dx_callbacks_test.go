@@ -329,7 +329,7 @@ func TestBLOBReceivedTriggersRewindOk(t *testing.T) {
 	err := em.BLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
 	assert.NoError(t, err)
 
-	bid := <-em.aggregator.offchainBatches
+	bid := <-em.aggregator.rewindBatches
 	assert.Equal(t, *batchID, *bid)
 
 	mdi.AssertExpectations(t)

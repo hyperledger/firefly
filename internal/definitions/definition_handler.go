@@ -37,7 +37,7 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, *DefinitionBatchActions, error)
+	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
@@ -60,12 +60,15 @@ const (
 
 // DefinitionBatchActions are actions to be taken at the end of a definition batch
 // See further notes on "batchActions" in the event aggregator
-type DefinitionBatchActions struct {
+type DefinitionBatchState interface {
 	// PreFinalize may perform a blocking action (possibly to an external connector) that should execute outside database RunAsGroup
-	PreFinalize func(ctx context.Context) error
+	AddPreFinalize(func(ctx context.Context) error)
 
 	// Finalize may perform final, non-idempotent database operations (such as inserting Events)
-	Finalize func(ctx context.Context) error
+	AddFinalize(func(ctx context.Context) error)
+
+	// IsPendingConfirm are messages in the current batch that have returned ActionConfirm already
+	IsPendingConfirm(*fftypes.UUID) bool
 }
 
 type definitionHandlers struct {
@@ -110,27 +113,33 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (msgAction DefinitionMessageAction, batchActions *DefinitionBatchActions, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (msgAction DefinitionMessageAction, err error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
 	case fftypes.SystemTagDefineDatatype:
-		return dh.handleDatatypeBroadcast(ctx, msg, data, tx)
+		return dh.handleDatatypeBroadcast(ctx, state, msg, data, tx)
 	case fftypes.SystemTagDefineNamespace:
-		return dh.handleNamespaceBroadcast(ctx, msg, data, tx)
+		return dh.handleNamespaceBroadcast(ctx, state, msg, data, tx)
 	case fftypes.DeprecatedSystemTagDefineOrganization:
-		return dh.handleOrganizationBroadcast(ctx, msg, data)
+		return dh.handleDeprecatedOrganizationBroadcast(ctx, state, msg, data)
 	case fftypes.DeprecatedSystemTagDefineNode:
-		return dh.handleNodeBroadcast(ctx, msg, data)
+		return dh.handleDeprecatedNodeBroadcast(ctx, state, msg, data)
+	case fftypes.SystemTagIdentityClaim:
+		return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, false)
+	case fftypes.SystemTagIdentityVerification:
+		return dh.handleIdentityVerificationBroadcast(ctx, state, msg, data)
+	case fftypes.SystemTagIdentityUpdate:
+		return dh.handleIdentityUpdateBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefinePool:
-		return dh.handleTokenPoolBroadcast(ctx, msg, data)
+		return dh.handleTokenPoolBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagDefineFFI:
-		return dh.handleFFIBroadcast(ctx, msg, data, tx)
+		return dh.handleFFIBroadcast(ctx, state, msg, data, tx)
 	case fftypes.SystemTagDefineContractAPI:
-		return dh.handleContractAPIBroadcast(ctx, msg, data, tx)
+		return dh.handleContractAPIBroadcast(ctx, state, msg, data, tx)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
-		return ActionReject, nil, nil
+		return ActionReject, nil
 	}
 }
 

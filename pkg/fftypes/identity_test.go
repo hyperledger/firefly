@@ -83,6 +83,8 @@ func testCustom(ns, name string) *Identity {
 func TestIdentityValidationOrgs(t *testing.T) {
 
 	ctx := context.Background()
+	assert.Regexp(t, "FF10368", (*Identity)(nil).Validate(ctx))
+
 	o := testOrg()
 	assert.NoError(t, o.Validate(ctx))
 

@@ -47,7 +47,7 @@ type Manager interface {
 	CachedVerifierLookup(ctx context.Context, vType fftypes.VerifierType, ns, value string) (verifier *fftypes.Verifier, err error)
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
-	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (immediateParent *fftypes.Identity, err error)
+	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (immediateParent *fftypes.Identity, retryable bool, err error)
 	IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) bool
 }
 
@@ -298,35 +298,36 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identi
 	return im.nodeOwningOrgIdentity, nil
 }
 
-func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentity *fftypes.Identity) (immediateParent *fftypes.Identity, err error) {
+func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentity *fftypes.Identity) (immediateParent *fftypes.Identity, retryable bool, err error) {
+
+	err = checkIdentity.Validate(ctx)
+	if err != nil {
+		return nil, false, err
+	}
 
 	loopDetect := make(map[fftypes.UUID]bool)
 	current := checkIdentity
 	for {
-		err := current.IdentityBase.Validate(ctx)
-		if err != nil {
-			return nil, err
-		}
 		loopDetect[*current.ID] = true
 		parentID := current.Parent
 		if parentID == nil {
-			return immediateParent, nil
+			return immediateParent, false, nil
 		}
 		if _, ok := loopDetect[*parentID]; ok {
-			return nil, i18n.NewError(ctx, i18n.MsgIdentityChainLoop, parentID, current.DID, current.ID)
+			return nil, false, i18n.NewError(ctx, i18n.MsgIdentityChainLoop, parentID, current.DID, current.ID)
 		}
 		parent, err := im.CachedIdentityLookupByID(ctx, parentID)
 		if err != nil {
-			return nil, err
+			return nil, true /* DB Error */, err
 		}
 		if parent == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgParentIdentityNotFound, parentID, current.DID, current.ID)
+			return nil, false, i18n.NewError(ctx, i18n.MsgParentIdentityNotFound, parentID, current.DID, current.ID)
 		}
 		if err := im.validateParentType(ctx, current, parent); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if parent.Messages.Claim == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgParentIdentityMissingClaim, parent.DID, parent.ID)
+			return nil, false, i18n.NewError(ctx, i18n.MsgParentIdentityMissingClaim, parent.DID, parent.ID)
 		}
 		current = parent
 		if immediateParent == nil {

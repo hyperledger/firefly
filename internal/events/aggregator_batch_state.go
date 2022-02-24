@@ -35,6 +35,7 @@ func newBatchState(ag *aggregator) *batchState {
 		maskedContexts:     make(map[fftypes.Bytes32]*nextPinGroupState),
 		unmaskedContexts:   make(map[fftypes.Bytes32]*contextState),
 		dispatchedMessages: make([]*dispatchedMessage, 0),
+		pendingConfirms:    make(map[fftypes.UUID]bool),
 
 		PreFinalize: make([]func(ctx context.Context) error, 0),
 		Finalize:    make([]func(ctx context.Context) error, 0),
@@ -93,6 +94,7 @@ type batchState struct {
 	maskedContexts     map[fftypes.Bytes32]*nextPinGroupState
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
+	pendingConfirms    map[fftypes.UUID]bool
 
 	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
 	// - Will execute after all batch messages have been processed
@@ -117,6 +119,10 @@ func (bs *batchState) AddFinalize(action func(ctx context.Context) error) {
 	if action != nil {
 		bs.Finalize = append(bs.Finalize, action)
 	}
+}
+
+func (bs *batchState) IsPendingConfirm(msgID *fftypes.UUID) bool {
+	return bs.pendingConfirms[*msgID]
 }
 
 func (bs *batchState) RunPreFinalize(ctx context.Context) error {
@@ -200,7 +206,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 		}
 	}
 	if nextPin == nil || nextPin.Identity != msg.Header.Author {
-		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", msg.Header.Group, topic, contextUnmasked, pin, nextPin)
+		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v author=%s", msg.Header.Group, topic, contextUnmasked, pin, nextPin, msg.Header.Author)
 		return nil, nil
 	}
 	return &nextPinState{

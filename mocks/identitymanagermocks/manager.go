@@ -291,7 +291,7 @@ func (_m *Manager) ResolveRootOrgRegistrationSigningKey(ctx context.Context, nam
 }
 
 // VerifyIdentityChain provides a mock function with given fields: ctx, _a1
-func (_m *Manager) VerifyIdentityChain(ctx context.Context, _a1 *fftypes.Identity) (*fftypes.Identity, error) {
+func (_m *Manager) VerifyIdentityChain(ctx context.Context, _a1 *fftypes.Identity) (*fftypes.Identity, bool, error) {
 	ret := _m.Called(ctx, _a1)
 
 	var r0 *fftypes.Identity
@@ -303,12 +303,19 @@ func (_m *Manager) VerifyIdentityChain(ctx context.Context, _a1 *fftypes.Identit
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Identity) error); ok {
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Identity) bool); ok {
 		r1 = rf(ctx, _a1)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(bool)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.Identity) error); ok {
+		r2 = rf(ctx, _a1)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }

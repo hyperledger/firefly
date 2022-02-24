@@ -23,26 +23,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNodeBroadcastIdentity(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
-	l := log.L(ctx)
-
-	var claim fftypes.IdentityClaim
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
-	if !valid {
-		return ActionReject, nil, nil
-	}
-
-	return dh.handleNodeBroadcast(ctx, msg, &claim)
-
-}
-
-func (dh *definitionHandlers) handleNodeBroadcastDeprected(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
 	l := log.L(ctx)
 
 	var nodeOld fftypes.DeprecatedNode
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld)
 	if !valid {
-		return ActionReject, nil, nil
+		return ActionReject, nil
 	}
 
 	owner, err := dh.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
@@ -50,48 +37,13 @@ func (dh *definitionHandlers) handleNodeBroadcastDeprected(ctx context.Context, 
 		Value: nodeOld.Owner,
 	})
 	if err != nil {
-		return ActionRetry, nil, err // We only return database errors
+		return ActionRetry, err // We only return database errors
 	}
 	if owner == nil {
 		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, nodeOld.Owner)
-		return ActionReject, nil, nil
+		return ActionReject, nil
 	}
 
-	return dh.handleNodeBroadcast(ctx, msg, nodeOld.Migrate(owner.ID))
+	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.Migrate(owner.ID), false)
 
-}
-
-func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, identityClaim *fftypes.IdentityClaim) (DefinitionMessageAction, *DefinitionBatchActions, error) {
-	l := log.L(ctx)
-
-	if msg.Header.Key != node.Owner {
-		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, node.Owner, msg.Header.Author)
-		return ActionReject, nil, nil
-	}
-
-	existing, err := dh.database.GetNode(ctx, node.Owner, node.Name)
-	if err == nil && existing == nil {
-		existing, err = dh.database.GetNodeByID(ctx, node.ID)
-	}
-	if err != nil {
-		return ActionRetry, nil, err // We only return database errors
-	}
-	if existing != nil {
-		if existing.Owner != node.Owner {
-			l.Warnf("Unable to process node broadcast %s - mismatch with existing %v", msg.Header.ID, existing.ID)
-			return ActionReject, nil, nil
-		}
-		node.ID = nil // we keep the existing ID
-	}
-
-	if err = dh.database.UpsertNode(ctx, &node, true); err != nil {
-		return ActionRetry, nil, err
-	}
-
-	return ActionConfirm, &DefinitionBatchActions{
-		PreFinalize: func(ctx context.Context) error {
-			// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-			return dh.exchange.AddPeer(ctx, node.DX)
-		},
-	}, nil
 }
