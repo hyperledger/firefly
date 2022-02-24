@@ -55,6 +55,8 @@ func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection d
 		return "operations", opFilterFieldMap, nil
 	case database.CollectionName(database.CollectionEvents):
 		return "events", eventFilterFieldMap, nil
+	case database.CollectionName(database.CollectionTokenTransfers):
+		return "tokentransfer", tokenTransferFilterFieldMap, nil
 	default:
 		return "", nil, i18n.NewError(ctx, i18n.MsgUnsupportedCollection, collection)
 	}
