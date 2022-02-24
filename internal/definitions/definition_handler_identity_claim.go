@@ -36,7 +36,7 @@ func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, 
 
 }
 
-func (dh *definitionHandlers) verifySignature(ctx context.Context, msg *fftypes.Message, identity *fftypes.Identity, parent *fftypes.Identity) (valid bool) {
+func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *fftypes.Message, identity *fftypes.Identity, parent *fftypes.Identity) (valid bool) {
 
 	author := msg.Header.Author
 	if author == "" {
@@ -103,24 +103,23 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 	}
 	for _, candidate := range candidates {
 		data, foundAll, err := dh.data.GetMessageData(ctx, msg, true)
-		if err != nil || !foundAll {
+		if err != nil {
 			log.L(ctx).Warnf("Missing data for verification '%s', for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
 			return nil, err
 		}
-		var verification fftypes.IdentityVerification
-		if !dh.getSystemBroadcastPayload(ctx, msg, data, &verification) {
-			return nil, nil
+		if foundAll {
+			var verification fftypes.IdentityVerification
+			if !dh.getSystemBroadcastPayload(ctx, msg, data, &verification) {
+				return nil, nil
+			}
+			if verification.Identity.Equals(ctx, &identity.IdentityBase) &&
+				msg.Header.ID.Equals(verification.Claim.ID) &&
+				msg.Hash.Equals(verification.Claim.Hash) {
+				log.L(ctx).Infof("Valid verification '%s' found for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
+				return candidate.Header.ID, nil
+			}
 		}
-		if !verification.Identity.Equals(ctx, &identity.IdentityBase) {
-			log.L(ctx).Warnf("Invalid verification '%s' found for identity claim '%s' - mismatched identity", candidate.Header.ID, msg.Header.ID)
-			return nil, nil
-		}
-		if msg.Header.ID.Equals(verification.Claim.ID) &&
-			msg.Hash.Equals(verification.Claim.Hash) {
-			log.L(ctx).Infof("Valid verification '%s' found for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
-			return candidate.Header.ID, nil
-		}
-		log.L(ctx).Warnf("Invalid verification '%s' found for identity claim '%s' - mismatch", candidate.Header.ID, msg.Header.ID)
+		log.L(ctx).Warnf("Skipping invalid potential verification '%s' for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
 	}
 	return nil, nil
 }
@@ -142,7 +141,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	}
 
 	// Check signature verification
-	if !dh.verifySignature(ctx, msg, identity, parent) {
+	if !dh.verifyClaimSignature(ctx, msg, identity, parent) {
 		return ActionReject, nil
 	}
 
@@ -165,7 +164,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	if err != nil {
 		return ActionRetry, err // retry database errors
 	}
-	if existingVerifier != nil && existingVerifier.Identity != identity.ID {
+	if existingVerifier != nil && !existingVerifier.Identity.Equals(identity.ID) {
 		log.L(ctx).Warnf("Unable to process identity claim %s - verifier type=%s value=%s already registered: %v", msg.Header.ID, verifier.Type, verifier.Value, existingVerifier.ID)
 		return ActionReject, nil
 	}
@@ -188,7 +187,6 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		identity.Messages.Verification = verificationID
 	}
 
-	// For idempotent reply, we only store if not already stored
 	if existingVerifier == nil {
 		if err = dh.database.UpsertVerifier(ctx, verifier, database.UpsertOptimizationNew); err != nil {
 			return ActionRetry, err
