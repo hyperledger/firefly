@@ -134,7 +134,7 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 
 func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
 	// Resolve the sending identity
-	if !s.mgr.identity.IsRootOrgBroadcast(ctx, &s.msg.Message) {
+	if s.msg.Header.Type != fftypes.MessageTypeDefinition || s.msg.Header.Tag != fftypes.SystemTagIdentityClaim {
 		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, s.msg.Header.Namespace, &s.msg.Header.SignerRef); err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 		}

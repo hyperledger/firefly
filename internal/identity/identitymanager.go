@@ -18,7 +18,6 @@ package identity
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -48,7 +47,6 @@ type Manager interface {
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
 	VerifyIdentityChain(ctx context.Context, identity *fftypes.Identity) (immediateParent *fftypes.Identity, retryable bool, err error)
-	IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) bool
 }
 
 type identityManager struct {
@@ -469,64 +467,4 @@ func (im *identityManager) CachedVerifierLookup(ctx context.Context, vType fftyp
 		im.identityCache.Set(cacheKey, verifier, im.identityCacheTTL)
 	}
 	return verifier, nil
-}
-
-func (im *identityManager) isValidRootOrgIdentityClaim(ctx context.Context, msg *fftypes.Message, data *fftypes.Data) bool {
-	var claim *fftypes.IdentityClaim
-	if data.Value != nil {
-		err := json.Unmarshal([]byte(*data.Value), &claim)
-		if err != nil {
-			return false
-		}
-	}
-	return im.isValidRootOrgCommon(ctx, msg, claim.Identity)
-}
-
-func (im *identityManager) isValidRootOrgDeprecated(ctx context.Context, msg *fftypes.Message, data *fftypes.Data) bool {
-	var org *fftypes.Identity
-	if data.Value != nil {
-		err := json.Unmarshal([]byte(*data.Value), &org)
-		if err != nil {
-			return false
-		}
-	}
-	org.DID, _ = org.GenerateDID(ctx)
-	return im.isValidRootOrgCommon(ctx, msg, org)
-}
-
-func (im *identityManager) isValidRootOrgCommon(ctx context.Context, msg *fftypes.Message, org *fftypes.Identity) bool {
-	if org == nil || org.Parent != nil {
-		return false
-	}
-	err := org.Validate(ctx)
-	if err != nil {
-		log.L(ctx).Warnf("Invalid org broadcast '%s': %s", msg.Header.ID, err)
-		return false
-	}
-	return true
-}
-
-func (im *identityManager) IsRootOrgBroadcast(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) bool {
-	// Look into message to see if it contains a data item that is a root organization definition
-	if msg.Header.Type == fftypes.MessageTypeDefinition &&
-		(msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization || msg.Header.Tag == fftypes.SystemTagIdentityClaim) {
-		messageData := data
-		if len(messageData) == 0 {
-			data, ok, err := im.data.GetMessageData(ctx, msg, true)
-			if !ok || err != nil {
-				return false
-			}
-			messageData = data
-		}
-		if len(messageData) > 0 {
-			dataItem := messageData[0]
-			if dataItem.Validator == fftypes.MessageTypeDefinition {
-				if msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization {
-					return im.isValidRootOrgDeprecated(ctx, msg, dataItem)
-				}
-				return im.isValidRootOrgIdentityClaim(ctx, msg, dataItem)
-			}
-		}
-	}
-	return false
 }

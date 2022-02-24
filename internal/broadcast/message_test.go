@@ -55,7 +55,6 @@ func TestBroadcastMessageOk(t *testing.T) {
 	}, []*fftypes.DataAndBlob{}, nil)
 	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -97,7 +96,6 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 
 	replyMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -178,7 +176,6 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -222,7 +219,6 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), ValueSize: 1000001},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -258,7 +254,6 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	}
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -278,7 +273,6 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 	ctx := context.Background()
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -308,7 +302,6 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{
@@ -367,7 +360,6 @@ func TestBroadcastPrepare(t *testing.T) {
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("IsRootOrgBroadcast", ctx, mock.Anything).Return(false)
 
 	msg := &fftypes.MessageInOut{
 		Message: fftypes.Message{
