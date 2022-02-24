@@ -31,13 +31,15 @@ type Manager interface {
 	RegisterOrganization(ctx context.Context, org *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
 	RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Identity, err error)
 	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Identity, err error)
+	RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
+	UpdateIdentity(ctx context.Context, ns string, id string, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
 
 	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Identity, error)
 	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 	GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error)
 	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
-	GetIdentityByID(ctx context.Context, id string) (*fftypes.Identity, error)
-	GetIdentities(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error)
+	GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 }
 
 type networkMap struct {

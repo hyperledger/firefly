@@ -28,18 +28,18 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestNewOrganization(t *testing.T) {
+func TestNewIdentity(t *testing.T) {
 	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
 	input := fftypes.Identity{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/network/organizations", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/identities", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterOrganization", mock.Anything, mock.AnythingOfType("*fftypes.IdentityCreateDTO"), false).
+	mnm.On("RegisterIdentity", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.IdentityCreateDTO"), false).
 		Return(&fftypes.Identity{}, nil)
 	r.ServeHTTP(res, req)
 

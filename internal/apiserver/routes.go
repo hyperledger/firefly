@@ -29,6 +29,8 @@ var routes = []*oapispec.Route{
 	postNodesSelf,
 	postNewOrganization,
 	postNewOrganizationSelf,
+	postNewIdentity,
+	patchUpdateIdentity,
 
 	postData,
 	postNewSubscription,
@@ -49,6 +51,8 @@ var routes = []*oapispec.Route{
 	getEvents,
 	getGroups,
 	getGroupByHash,
+	getIdentities,
+	getIdentityByID,
 	getMsgByID,
 	getMsgData,
 	getMsgEvents,

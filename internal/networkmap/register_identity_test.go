@@ -60,7 +60,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		}),
 		fftypes.SystemTagIdentityVerification, false).Return(mockMsg2, nil)
 
-	org, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
+	org, err := nm.RegisterIdentity(nm.ctx, fftypes.SystemNamespace, &fftypes.IdentityCreateDTO{
 		Name:   "child1",
 		Key:    "0x12345",
 		Parent: fftypes.NewUUID(),
@@ -105,11 +105,10 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 		}),
 		fftypes.SystemTagIdentityVerification, false).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
-		Namespace: "ns1",
-		Name:      "custom1",
-		Key:       "0x12345",
-		Parent:    fftypes.NewUUID(),
+	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &fftypes.IdentityCreateDTO{
+		Name:   "custom1",
+		Key:    "0x12345",
+		Parent: fftypes.NewUUID(),
 	}, true)
 	assert.Regexp(t, "pop", err)
 
@@ -128,11 +127,10 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, false, nil)
 	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
-		Namespace: "ns1",
-		Name:      "custom1",
-		Key:       "0x12345",
-		Parent:    fftypes.NewUUID(),
+	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &fftypes.IdentityCreateDTO{
+		Name:   "custom1",
+		Key:    "0x12345",
+		Parent: fftypes.NewUUID(),
 	}, true)
 	assert.Regexp(t, "pop", err)
 
@@ -156,10 +154,9 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 		}),
 		fftypes.SystemTagIdentityClaim, true).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
-		Namespace: "ns1",
-		Name:      "custom1",
-		Key:       "0x12345",
+	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &fftypes.IdentityCreateDTO{
+		Name: "custom1",
+		Key:  "0x12345",
 	}, true)
 	assert.Regexp(t, "pop", err)
 
@@ -175,9 +172,8 @@ func TestRegisterIdentityMissingKey(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
-	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
-		Namespace: "ns1",
-		Name:      "custom1",
+	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &fftypes.IdentityCreateDTO{
+		Name: "custom1",
 	}, true)
 	assert.Regexp(t, "FF10352", err)
 
@@ -192,9 +188,8 @@ func TestRegisterIdentityVerifyFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, &fftypes.IdentityCreateDTO{
-		Namespace: "ns1",
-		Name:      "custom1",
+	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &fftypes.IdentityCreateDTO{
+		Name: "custom1",
 	}, true)
 	assert.Regexp(t, "pop", err)
 

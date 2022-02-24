@@ -127,16 +127,27 @@ func TestGetIdentityByIDOk(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg}}, nil)
-	res, err := nm.GetIdentityByID(nm.ctx, id.String())
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+	res, err := nm.GetIdentityByID(nm.ctx, "ns1", id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
+}
+
+func TestGetIdentityByIDBadNS(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+	res, err := nm.GetIdentityByID(nm.ctx, "ns2", id.String())
+	assert.NoError(t, err)
+	assert.Nil(t, res)
 }
 
 func TestGetIdentityByIDBadUUID(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	_, err := nm.GetIdentityByID(nm.ctx, "bad")
+	_, err := nm.GetIdentityByID(nm.ctx, "ns1", "bad")
 	assert.Regexp(t, "FF10142", err)
 }
 
@@ -144,7 +155,7 @@ func TestGetIdentities(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
-	res, _, err := nm.GetIdentities(nm.ctx, database.IdentityQueryFactory.NewFilter(nm.ctx).And())
+	res, _, err := nm.GetIdentities(nm.ctx, "ns1", database.IdentityQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
 }

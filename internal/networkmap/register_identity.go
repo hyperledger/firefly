@@ -23,13 +23,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
+func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
 
 	// Parse the input DTO
 	identity = &fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
 			ID:        fftypes.NewUUID(),
-			Namespace: dto.Namespace,
+			Namespace: ns,
 			Name:      dto.Name,
 			Type:      dto.Type,
 			Parent:    dto.Parent,

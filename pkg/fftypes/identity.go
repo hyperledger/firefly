@@ -80,18 +80,16 @@ type Identity struct {
 // The blockchain key that will be used to establish the claim for the identity
 // needs to be provided.
 type IdentityCreateDTO struct {
-	Namespace string       `json:"namespace,omitempty"`
-	Name      string       `json:"name"`
-	Type      IdentityType `json:"type,omitempty"`
-	Parent    *UUID        `json:"parent,omitempty"`
-	Key       string       `json:"key,omitempty"`
+	Name   string       `json:"name"`
+	Type   IdentityType `json:"type,omitempty"`
+	Parent *UUID        `json:"parent,omitempty"`
+	Key    string       `json:"key,omitempty"`
 	IdentityProfile
 }
 
 // IdentityUpdateDTO is the input structure to submit to update an identityprofile.
 // The same key in the claim will be used for the update.
 type IdentityUpdateDTO struct {
-	ID *UUID `json:"id,omitempty"`
 	IdentityProfile
 }
 

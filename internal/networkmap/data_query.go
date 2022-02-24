@@ -68,14 +68,18 @@ func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) (
 	return nm.database.GetIdentities(ctx, filter)
 }
 
-func (nm *networkMap) GetIdentityByID(ctx context.Context, id string) (*fftypes.Identity, error) {
+func (nm *networkMap) GetIdentityByID(ctx context.Context, ns, id string) (*fftypes.Identity, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return nm.database.GetIdentityByID(ctx, u)
+	identity, err := nm.database.GetIdentityByID(ctx, u)
+	if err != nil || identity.Namespace != ns {
+		return nil, err
+	}
+	return identity, nil
 }
 
-func (nm *networkMap) GetIdentities(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
+func (nm *networkMap) GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
 	return nm.database.GetIdentities(ctx, filter)
 }

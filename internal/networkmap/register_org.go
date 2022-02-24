@@ -46,9 +46,6 @@ func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm 
 }
 
 func (nm *networkMap) RegisterOrganization(ctx context.Context, orgRequest *fftypes.IdentityCreateDTO, waitConfirm bool) (*fftypes.Identity, error) {
-
-	orgRequest.Namespace = fftypes.SystemNamespace
 	orgRequest.Type = fftypes.IdentityTypeOrg
-
-	return nm.RegisterIdentity(ctx, orgRequest, waitConfirm)
+	return nm.RegisterIdentity(ctx, fftypes.SystemNamespace, orgRequest, waitConfirm)
 }

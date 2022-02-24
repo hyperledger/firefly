@@ -23,14 +23,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) UpdateIdentityProfile(ctx context.Context, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
-
-	// Get the original identity
-	identity, err = nm.identity.CachedIdentityLookupByID(ctx, dto.ID)
+func (nm *networkMap) UpdateIdentity(ctx context.Context, ns, uuidStr string, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
+	id, err := fftypes.ParseUUID(ctx, uuidStr)
 	if err != nil {
 		return nil, err
 	}
-	if identity == nil {
+	return nm.updateIdentityID(ctx, ns, id, dto, waitConfirm)
+}
+
+func (nm *networkMap) updateIdentityID(ctx context.Context, ns string, id *fftypes.UUID, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
+
+	// Get the original identity
+	identity, err = nm.identity.CachedIdentityLookupByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if identity == nil || identity.Namespace != ns {
 		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
 	}
 

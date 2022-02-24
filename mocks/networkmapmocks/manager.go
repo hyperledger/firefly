@@ -16,13 +16,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// GetIdentities provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetIdentities provides a mock function with given fields: ctx, ns, filter
+func (_m *Manager) GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.Identity); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Identity); ok {
+		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Identity)
@@ -30,8 +30,8 @@ func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter)
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -39,8 +39,8 @@ func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -48,13 +48,13 @@ func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter)
 	return r0, r1, r2
 }
 
-// GetIdentityByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetIdentityByID(ctx context.Context, id string) (*fftypes.Identity, error) {
-	ret := _m.Called(ctx, id)
+// GetIdentityByID provides a mock function with given fields: ctx, ns, id
+func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Identity); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Identity)
@@ -62,8 +62,8 @@ func (_m *Manager) GetIdentityByID(ctx context.Context, id string) (*fftypes.Ide
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -181,6 +181,29 @@ func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilt
 	return r0, r1, r2
 }
 
+// RegisterIdentity provides a mock function with given fields: ctx, ns, dto, waitConfirm
+func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, ns, dto, waitConfirm)
+
+	var r0 *fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.IdentityCreateDTO, bool) *fftypes.Identity); ok {
+		r0 = rf(ctx, ns, dto, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.IdentityCreateDTO, bool) error); ok {
+		r1 = rf(ctx, ns, dto, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RegisterNode provides a mock function with given fields: ctx, waitConfirm
 func (_m *Manager) RegisterNode(ctx context.Context, waitConfirm bool) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx, waitConfirm)
@@ -243,6 +266,29 @@ func (_m *Manager) RegisterOrganization(ctx context.Context, org *fftypes.Identi
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.IdentityCreateDTO, bool) error); ok {
 		r1 = rf(ctx, org, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdateIdentity provides a mock function with given fields: ctx, ns, id, dto, waitConfirm
+func (_m *Manager) UpdateIdentity(ctx context.Context, ns string, id string, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, ns, id, dto, waitConfirm)
+
+	var r0 *fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.IdentityUpdateDTO, bool) *fftypes.Identity); ok {
+		r0 = rf(ctx, ns, id, dto, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.IdentityUpdateDTO, bool) error); ok {
+		r1 = rf(ctx, ns, id, dto, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -32,10 +32,9 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 	}
 
 	nodeRequest := &fftypes.IdentityCreateDTO{
-		Parent:    nodeOwningOrg.ID,
-		Namespace: fftypes.SystemNamespace,
-		Name:      config.GetString(config.NodeName),
-		Type:      fftypes.IdentityTypeNode,
+		Parent: nodeOwningOrg.ID,
+		Name:   config.GetString(config.NodeName),
+		Type:   fftypes.IdentityTypeNode,
 		IdentityProfile: fftypes.IdentityProfile{
 			Description: config.GetString(config.NodeDescription),
 		},
@@ -52,5 +51,5 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 	}
 	nodeRequest.Profile = dxInfo
 
-	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
+	return nm.RegisterIdentity(ctx, fftypes.SystemNamespace, nodeRequest, waitConfirm)
 }
