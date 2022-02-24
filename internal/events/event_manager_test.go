@@ -123,6 +123,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mam := &assetmocks.Manager{}
 	mm := &metricsmocks.Manager{}
+	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
 	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mm)
 	assert.Regexp(t, "FF10172", err)
 }

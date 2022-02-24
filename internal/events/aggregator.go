@@ -255,12 +255,17 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 	return err
 }
 
-func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, pin *fftypes.Pin) (valid bool, err error) {
+func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.Message, pin *fftypes.Pin) (valid bool, err error) {
 	l := log.L(ctx)
 
 	verifierRef := &fftypes.VerifierRef{
 		Type:  ag.verifierType,
 		Value: pin.Signer,
+	}
+
+	if msg.Header.Key == "" || msg.Header.Key != pin.Signer {
+		l.Errorf("Invalid message '%s'. Key '%s' does not match the signer of the pin: %s", msg.Header.ID, msg.Header.Key, pin.Signer)
+		return false, nil // This is not retryable. skip this message
 	}
 
 	// Verify that we can resolve the signing key back to the identity that is claimed in the batch.
@@ -272,8 +277,12 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.
 		return false, err
 	}
 	if resolvedAuthor == nil {
-		// Only private messages, or root org broadcasts can have an unregistered key
-		if msg.Header.Type != fftypes.MessageTypePrivate && !ag.identity.IsRootOrgBroadcast(ctx, msg, data...) {
+		if msg.Header.Type == fftypes.MessageTypeDefinition &&
+			(msg.Header.Tag == fftypes.SystemTagIdentityClaim || msg.Header.Tag == fftypes.DeprecatedSystemTagDefineNode || msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization) {
+			// We defer detailed checking of this identity to the system handler
+			return true, nil
+		} else if msg.Header.Type != fftypes.MessageTypePrivate {
+			// Only private messages, or root org broadcasts can have an unregistered key
 			l.Errorf("Invalid message '%s'. Author '%s' cound not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
 			return false, nil // This is not retryable. skip this batch
 		}
@@ -358,7 +367,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	}
 
 	// Check the pin signer is valid for the message
-	if valid, err := ag.checkOnchainConsistency(ctx, msg, data, pin); err != nil || !valid {
+	if valid, err := ag.checkOnchainConsistency(ctx, msg, pin); err != nil || !valid {
 		return false, err
 	}
 
