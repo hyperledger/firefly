@@ -44,6 +44,7 @@ func newTestDefinitionHandlers(t *testing.T) (*definitionHandlers, *testDefiniti
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
+	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
 	return NewDefinitionHandlers(mdi, mbi, mdx, mdm, mim, mbm, mpm, mam, mcm).(*definitionHandlers), newTestDefinitionBatchState(t)
 }
 
@@ -51,13 +52,13 @@ type testDefinitionBatchState struct {
 	t               *testing.T
 	preFinalizers   []func(ctx context.Context) error
 	finalizers      []func(ctx context.Context) error
-	pendingConfirms map[fftypes.UUID]bool
+	pendingConfirms map[fftypes.UUID]*fftypes.Message
 }
 
 func newTestDefinitionBatchState(t *testing.T) *testDefinitionBatchState {
 	return &testDefinitionBatchState{
 		t:               t,
-		pendingConfirms: make(map[fftypes.UUID]bool),
+		pendingConfirms: make(map[fftypes.UUID]*fftypes.Message),
 	}
 }
 
@@ -70,7 +71,16 @@ func (bs *testDefinitionBatchState) AddFinalize(pf func(ctx context.Context) err
 }
 
 func (bs *testDefinitionBatchState) IsPendingConfirm(msgID *fftypes.UUID) bool {
-	return bs.pendingConfirms[*msgID]
+	_, found := bs.pendingConfirms[*msgID]
+	return found
+}
+
+func (bs *testDefinitionBatchState) GetPendingConfirm() []*fftypes.Message {
+	pending := make([]*fftypes.Message, 0, len(bs.pendingConfirms))
+	for _, m := range bs.pendingConfirms {
+		pending = append(pending, m)
+	}
+	return pending
 }
 
 func (bs *testDefinitionBatchState) assertNoFinalizers() {

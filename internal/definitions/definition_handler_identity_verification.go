@@ -72,7 +72,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 		if foundAll {
 			// The verification came in after the messsage, so we need to call the idempotent
 			// handler of the claim logic again
-			return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, true)
+			return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, msg.Header.ID)
 		}
 	}
 

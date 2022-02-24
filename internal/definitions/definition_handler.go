@@ -69,6 +69,9 @@ type DefinitionBatchState interface {
 
 	// IsPendingConfirm are messages in the current batch that have returned ActionConfirm already
 	IsPendingConfirm(*fftypes.UUID) bool
+
+	// GetPendingConfirm returns a list of messages are that pending confirmation after already being processed in this batch
+	GetPendingConfirm() []*fftypes.Message
 }
 
 type definitionHandlers struct {
@@ -126,7 +129,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	case fftypes.DeprecatedSystemTagDefineNode:
 		return dh.handleDeprecatedNodeBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagIdentityClaim:
-		return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, false)
+		return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, nil)
 	case fftypes.SystemTagIdentityVerification:
 		return dh.handleIdentityVerificationBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagIdentityUpdate:

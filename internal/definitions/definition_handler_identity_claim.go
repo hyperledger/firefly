@@ -25,14 +25,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, preVerified bool) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, verificationID *fftypes.UUID) (DefinitionMessageAction, error) {
 	var claim fftypes.IdentityClaim
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
 	if !valid {
 		return ActionReject, nil
 	}
 
-	return dh.handleIdentityClaim(ctx, state, msg, &claim, preVerified)
+	return dh.handleIdentityClaim(ctx, state, msg, &claim, verificationID)
 
 }
 
@@ -77,45 +77,55 @@ func (dh *definitionHandlers) getClaimVerifier(msg *fftypes.Message, identity *f
 	return verifier
 }
 
-func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, msg *fftypes.Message, identity, parent *fftypes.Identity) (bool, error) {
+func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, identity, parent *fftypes.Identity) (*fftypes.UUID, error) {
 	// Query for messages on the topic for this DID, signed by the right identity
+	idTopic := identity.Topic()
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("topic", identity.Topic()),
+		fb.Eq("topic", idTopic),
 		fb.Eq("author", parent.DID),
 		fb.Eq("type", fftypes.MessageTypeDefinition),
 		fb.Eq("state", fftypes.MessageStateConfirmed),
+		fb.Eq("tag", fftypes.SystemTagIdentityVerification),
 	)
 	candidates, _, err := dh.database.GetMessages(ctx, filter)
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+	// We also need to check pending messages in the current pin batch
+	for _, pending := range state.GetPendingConfirm() {
+		if pending.Header.Topics.String() == idTopic &&
+			pending.Header.Author == parent.DID &&
+			pending.Header.Type == fftypes.MessageTypeDefinition &&
+			pending.Header.Tag == fftypes.SystemTagIdentityVerification {
+			candidates = append(candidates, pending)
+		}
 	}
 	for _, candidate := range candidates {
 		data, foundAll, err := dh.data.GetMessageData(ctx, msg, true)
 		if err != nil || !foundAll {
 			log.L(ctx).Warnf("Missing data for verification '%s', for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
-			return false, err
+			return nil, err
 		}
 		var verification fftypes.IdentityVerification
 		if !dh.getSystemBroadcastPayload(ctx, msg, data, &verification) {
-			return false, nil
+			return nil, nil
 		}
 		if !verification.Identity.Equals(ctx, &identity.IdentityBase) {
 			log.L(ctx).Warnf("Invalid verification '%s' found for identity claim '%s' - mismatched identity", candidate.Header.ID, msg.Header.ID)
-			return false, nil
+			return nil, nil
 		}
-		if msg.Header.Tag == fftypes.SystemTagIdentityVerification &&
-			msg.Header.ID.Equals(verification.Claim.ID) &&
+		if msg.Header.ID.Equals(verification.Claim.ID) &&
 			msg.Hash.Equals(verification.Claim.Hash) {
 			log.L(ctx).Infof("Valid verification '%s' found for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
-			return true, nil
+			return candidate.Header.ID, nil
 		}
 		log.L(ctx).Warnf("Invalid verification '%s' found for identity claim '%s' - mismatch", candidate.Header.ID, msg.Header.ID)
 	}
-	return false, nil
+	return nil, nil
 }
 
-func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, identityClaim *fftypes.IdentityClaim, preVerified bool) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, identityClaim *fftypes.IdentityClaim, verificationID *fftypes.UUID) (DefinitionMessageAction, error) {
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity
@@ -160,17 +170,22 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		return ActionReject, nil
 	}
 
-	if parent != nil && !preVerified {
-		// Search for a corresponding verification message on the same topic
-		verified, err := dh.confirmVerificationForClaim(ctx, msg, identity, parent)
-		if err != nil {
-			return ActionRetry, err // retry database errors
+	if parent != nil {
+		// The verification might be passed into this function, if we confirm the verification second,
+		// or we might have to hunt for it, if we confirm the verification first.
+		if verificationID == nil {
+			// Search for a corresponding verification message on the same topic
+			verificationID, err = dh.confirmVerificationForClaim(ctx, state, msg, identity, parent)
+			if err != nil {
+				return ActionRetry, err // retry database errors
+			}
 		}
-		if !verified {
+		if verificationID == nil {
 			// Ok, we still confirm the message as it's valid, and we do not want to block the context.
 			// But we do NOT go on to create the identity - we will be called back
 			return ActionConfirm, nil
 		}
+		identity.Messages.Verification = verificationID
 	}
 
 	// For idempotent reply, we only store if not already stored
@@ -179,7 +194,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 			return ActionRetry, err
 		}
 	}
-	if existingVerifier == nil {
+	if existingIdentity == nil {
 		if err = dh.database.UpsertIdentity(ctx, identity, database.UpsertOptimizationNew); err != nil {
 			return ActionRetry, err
 		}
