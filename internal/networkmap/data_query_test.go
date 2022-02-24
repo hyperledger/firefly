@@ -17,6 +17,7 @@
 package networkmap
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -157,5 +158,27 @@ func TestGetIdentities(t *testing.T) {
 	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	res, _, err := nm.GetIdentities(nm.ctx, "ns1", database.IdentityQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
+	assert.Empty(t, res)
+}
+
+func TestGetIdentityVerifiers(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
+		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*fftypes.Verifier{}, nil, nil)
+	res, _, err := nm.GetIdentityVerifiers(nm.ctx, "ns1", id.String(), database.IdentityQueryFactory.NewFilter(nm.ctx).And())
+	assert.NoError(t, err)
+	assert.Empty(t, res)
+}
+
+func TestGetIdentityVerifiersIdentityFail(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	id := fftypes.NewUUID()
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).Return(nil, fmt.Errorf("pop"))
+	res, _, err := nm.GetIdentityVerifiers(nm.ctx, "ns1", id.String(), database.IdentityQueryFactory.NewFilter(nm.ctx).And())
+	assert.Regexp(t, "pop", err)
 	assert.Empty(t, res)
 }

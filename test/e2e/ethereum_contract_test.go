@@ -170,7 +170,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 
 	suite.ethClient = NewResty(suite.T())
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
-	suite.ethIdentity = suite.testState.org1.Identity
+	suite.ethIdentity = suite.testState.org1key.Value
 
 	abiResult := uploadABI(suite.T(), suite.ethClient, abi)
 	contractResult := deployABI(suite.T(), suite.ethClient, suite.ethIdentity, abiResult.ID)
@@ -218,7 +218,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 		},
 		"output": map[string]interface{}{
 			"_value": "1",
-			"_from":  suite.testState.org1.Identity,
+			"_from":  suite.testState.org1key.Value,
 		},
 		"subscription": sub.ID.String(),
 	}
@@ -264,7 +264,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		},
 		"output": map[string]interface{}{
 			"_value": "2",
-			"_from":  suite.testState.org1.Identity,
+			"_from":  suite.testState.org1key.Value,
 		},
 		"subscription": sub.ID.String(),
 	}
@@ -321,7 +321,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		},
 		"output": map[string]interface{}{
 			"_value": "3",
-			"_from":  suite.testState.org1.Identity,
+			"_from":  suite.testState.org1key.Value,
 		},
 		"subscription": sub.ID.String(),
 	}

@@ -71,6 +71,38 @@ func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*
 	return r0, r1
 }
 
+// GetIdentityVerifiers provides a mock function with given fields: ctx, ns, id, filter
+func (_m *Manager) GetIdentityVerifiers(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, id, filter)
+
+	var r0 []*fftypes.Verifier
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.Verifier); ok {
+		r0 = rf(ctx, ns, id, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Verifier)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, id, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, id, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetNodeByID provides a mock function with given fields: ctx, id
 func (_m *Manager) GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx, id)

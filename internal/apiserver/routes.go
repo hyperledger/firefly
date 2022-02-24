@@ -53,6 +53,7 @@ var routes = []*oapispec.Route{
 	getGroupByHash,
 	getIdentities,
 	getIdentityByID,
+	getIdentityVerifiers,
 	getMsgByID,
 	getMsgData,
 	getMsgEvents,

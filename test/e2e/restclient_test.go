@@ -58,6 +58,7 @@ var (
 	urlContractSubscriptions = "/namespaces/default/contracts/subscriptions"
 	urlBlockchainEvents      = "/namespaces/default/blockchainevents"
 	urlGetOrganizations      = "/network/organizations"
+	urlGetVerifiers          = "/namespaces/default/identities/%s/verifiers"
 )
 
 func NewResty(t *testing.T) *resty.Client {
@@ -136,7 +137,7 @@ func GetBlob(t *testing.T, client *resty.Client, data *fftypes.Data, expectedSta
 	return blob
 }
 
-func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Organization) {
+func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Identity) {
 	path := urlGetOrganizations
 	resp, err := client.R().
 		SetQueryParam("sort", "created").
@@ -145,6 +146,17 @@ func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*ff
 	require.NoError(t, err)
 	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return orgs
+}
+
+func GetIdentityBlockchainKeys(t *testing.T, client *resty.Client, identityID *fftypes.UUID, expectedStatus int) (verifiers []*fftypes.Verifier) {
+	path := fmt.Sprintf(urlGetVerifiers, identityID)
+	resp, err := client.R().
+		SetQueryParam("type", fmt.Sprintf("!=%s", fftypes.VerifierTypeFFDXPeerID)).
+		SetResult(&verifiers).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return verifiers
 }
 
 func CreateSubscription(t *testing.T, client *resty.Client, input interface{}, expectedStatus int) *fftypes.Subscription {

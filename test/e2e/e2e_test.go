@@ -43,8 +43,10 @@ type testState struct {
 	client2   *resty.Client
 	ws1       *websocket.Conn
 	ws2       *websocket.Conn
-	org1      *fftypes.Organization
-	org2      *fftypes.Organization
+	org1      *fftypes.Identity
+	org1key   *fftypes.Verifier
+	org2      *fftypes.Identity
+	org2key   *fftypes.Verifier
 	done      func()
 }
 
@@ -233,6 +235,8 @@ func beforeE2ETest(t *testing.T) *testState {
 		t.Logf("Waiting for 2 orgs to appear. Currently have: node1=%d node2=%d", len(orgsC1), len(orgsC2))
 		time.Sleep(3 * time.Second)
 	}
+	ts.org1key = GetIdentityBlockchainKeys(t, ts.client1, ts.org1.ID, 200)[0]
+	ts.org2key = GetIdentityBlockchainKeys(t, ts.client2, ts.org2.ID, 200)[0]
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event|token_approval_confirmed"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)

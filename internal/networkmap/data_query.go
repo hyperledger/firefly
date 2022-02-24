@@ -81,5 +81,15 @@ func (nm *networkMap) GetIdentityByID(ctx context.Context, ns, id string) (*ffty
 }
 
 func (nm *networkMap) GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
+	filter.Condition(filter.Builder().Eq("namespace", fftypes.SystemNamespace))
 	return nm.database.GetIdentities(ctx, filter)
+}
+
+func (nm *networkMap) GetIdentityVerifiers(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error) {
+	identity, err := nm.GetIdentityByID(ctx, ns, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	filter.Condition(filter.Builder().Eq("identity", identity.ID))
+	return nm.database.GetVerifiers(ctx, filter)
 }
