@@ -70,6 +70,7 @@ type EventManager interface {
 	// Bound token callbacks
 	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error
 	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
+	TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error
 
 	// Internal events
 	sysmessaging.SystemEvents

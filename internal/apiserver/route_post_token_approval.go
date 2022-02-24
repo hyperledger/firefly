@@ -26,25 +26,24 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postNewContractAPI = &oapispec.Route{
-	Name:   "postNewContractAPI",
-	Path:   "namespaces/{ns}/apis",
+var postTokenApproval = &oapispec.Route{
+	Name:   "postTokenApproval",
+	Path:   "namespaces/{ns}/tokens/approvals",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
+		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractAPI{} },
-	JSONInputMask:   []string{"ID", "Message", "Namespace", "URLs"},
-	JSONOutputValue: func() interface{} { return &fftypes.ContractAPI{} },
-	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
+	JSONInputValue:  func() interface{} { return &fftypes.TokenApprovalInput{} },
+	JSONOutputValue: func() interface{} { return &fftypes.TokenApproval{} },
+	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Input.(*fftypes.ContractAPI), waitConfirm)
+		return getOr(r.Ctx).Assets().TokenApproval(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenApprovalInput), waitConfirm)
 	},
 }

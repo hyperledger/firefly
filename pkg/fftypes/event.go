@@ -39,6 +39,10 @@ var (
 	EventTypeTransferConfirmed EventType = ffEnum("eventtype", "token_transfer_confirmed")
 	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)
 	EventTypeTransferOpFailed EventType = ffEnum("eventtype", "token_transfer_op_failed")
+	// EventTypeApprovalConfirmed occurs when a token approval has been confirmed
+	EventTypeApprovalConfirmed EventType = ffEnum("eventtype", "token_approval_confirmed")
+	// EventTypeApprovalOpFailed occurs when a token approval submitted by this node has failed (based on feedback from connector)
+	EventTypeApprovalOpFailed EventType = ffEnum("eventtype", "token_approval_op_failed")
 	// EventTypeContractInterfaceConfirmed occurs when a new contract interface has been confirmed
 	EventTypeContractInterfaceConfirmed EventType = ffEnum("eventtype", "contract_interface_confirmed")
 	// EventTypeContractAPIConfirmed occurs when a new contract API has been confirmed

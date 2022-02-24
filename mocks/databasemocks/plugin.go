@@ -1729,6 +1729,84 @@ func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
+// GetTokenApproval provides a mock function with given fields: ctx, localID
+func (_m *Plugin) GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
+	ret := _m.Called(ctx, localID)
+
+	var r0 *fftypes.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.TokenApproval); ok {
+		r0 = rf(ctx, localID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenApproval)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, localID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, connector, protocolID
+func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenApproval, error) {
+	ret := _m.Called(ctx, connector, protocolID)
+
+	var r0 *fftypes.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenApproval); ok {
+		r0 = rf(ctx, connector, protocolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenApproval)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, connector, protocolID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenApprovals provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetTokenApprovals(ctx context.Context, filter database.Filter) ([]*fftypes.TokenApproval, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenApproval); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.TokenApproval)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetTokenBalance provides a mock function with given fields: ctx, poolID, tokenIndex, identity
 func (_m *Plugin) GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex string, identity string) (*fftypes.TokenBalance, error) {
 	ret := _m.Called(ctx, poolID, tokenIndex, identity)
@@ -2696,6 +2774,20 @@ func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscrip
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertTokenApproval provides a mock function with given fields: ctx, approval
+func (_m *Plugin) UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error {
+	ret := _m.Called(ctx, approval)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenApproval) error); ok {
+		r0 = rf(ctx, approval)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -22,44 +22,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/contractmocks"
+	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostNewContractAPI(t *testing.T) {
+func TestPostTokenApproval(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
+	mam := &assetmocks.Manager{}
+	o.On("Assets").Return(mam)
+	input := fftypes.TokenApprovalInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/apis", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/approvals", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), false).
-		Return(&fftypes.ContractAPI{}, nil)
+	mam.On("TokenApproval", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.TokenApprovalInput"), false).
+		Return(&fftypes.TokenApproval{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
-}
-
-func TestPostNewContractAPISync(t *testing.T) {
-	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/apis?confirm", &buf)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), true).
-		Return(&fftypes.ContractAPI{}, nil)
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 200, res.Result().StatusCode)
 }
