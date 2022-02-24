@@ -31,10 +31,10 @@ var getNetworkNodes = &oapispec.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.NodeQueryFactory,
+	FilterFactory:   database.IdentityQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Node{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).NetworkMap().GetNodes(r.Ctx, r.Filter))

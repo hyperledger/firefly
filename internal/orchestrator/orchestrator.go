@@ -319,13 +319,13 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		}
 	}
 
-	nodes, _, err := or.database.GetNodes(ctx, database.NodeQueryFactory.NewFilter(ctx).And())
+	nodes, _, err := or.networkmap.GetNodes(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
 	if err != nil {
 		return err
 	}
-	nodeInfo := make([]fftypes.DXInfo, len(nodes))
+	nodeInfo := make([]fftypes.JSONObject, len(nodes))
 	for i, node := range nodes {
-		nodeInfo[i] = node.DX
+		nodeInfo[i] = node.Profile
 	}
 
 	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(dxPlugin), nodeInfo, &or.bc)
@@ -472,7 +472,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets, or.contracts)
+	or.definitions = definitions.NewDefinitionHandlers(or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.broadcast, or.messaging, or.assets, or.contracts)
 
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)

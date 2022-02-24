@@ -32,7 +32,7 @@ func TestNewOrganization(t *testing.T) {
 	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
-	input := fftypes.Organization{}
+	input := fftypes.Identity{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/network/organizations", &buf)

@@ -21,11 +21,9 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestGetStatusRegistered(t *testing.T) {
@@ -39,19 +37,21 @@ func TestGetStatusRegistered(t *testing.T) {
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
 
-	mdi := or.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(&fftypes.Organization{
-		ID:       orgID,
-		Identity: "0x1111111",
-		Name:     "org1",
-	}, nil)
-	mdi.On("GetNode", or.ctx, "0x1111111", "node1").Return(&fftypes.Node{
-		ID:    nodeID,
-		Name:  "node1",
-		Owner: "0x1111111",
-	}, nil)
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
+	mim.On("GetNodeOwnerOrg", or.ctx).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:   orgID,
+			Name: "org1",
+			DID:  "did:firefly:org/org1",
+		},
+	}, nil)
+	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:     nodeID,
+			Name:   "node1",
+			Parent: orgID,
+		},
+	}, false, nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -60,7 +60,7 @@ func TestGetStatusRegistered(t *testing.T) {
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
-	assert.Equal(t, "0x1111111", status.Org.Identity)
+	assert.Equal(t, "did:firefly:org/org1", status.Org.Identity)
 
 	assert.Equal(t, *orgID, *status.Org.ID)
 	assert.Equal(t, "node1", status.Node.Name)
@@ -72,6 +72,49 @@ func TestGetStatusRegistered(t *testing.T) {
 
 }
 
+func TestGetStatusWrongNodeOwner(t *testing.T) {
+	or := newTestOrchestrator()
+
+	config.Reset()
+	config.Set(config.NamespacesDefault, "default")
+	config.Set(config.OrgName, "org1")
+	config.Set(config.NodeName, "node1")
+
+	orgID := fftypes.NewUUID()
+	nodeID := fftypes.NewUUID()
+
+	mim := or.identity.(*identitymanagermocks.Manager)
+	mim.On("GetNodeOwnerOrg", or.ctx).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:   orgID,
+			Name: "org1",
+			DID:  "did:firefly:org/org1",
+		},
+	}, nil)
+	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:     nodeID,
+			Name:   "node1",
+			Parent: fftypes.NewUUID(),
+		},
+	}, false, nil)
+
+	status, err := or.GetStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "default", status.Defaults.Namespace)
+
+	assert.Equal(t, "org1", status.Org.Name)
+	assert.True(t, status.Org.Registered)
+	assert.Equal(t, "did:firefly:org/org1", status.Org.Identity)
+
+	assert.Equal(t, *orgID, *status.Org.ID)
+	assert.Equal(t, "node1", status.Node.Name)
+	assert.False(t, status.Node.Registered)
+	assert.Nil(t, status.Node.ID)
+
+}
+
 func TestGetStatusUnregistered(t *testing.T) {
 	or := newTestOrchestrator()
 
@@ -80,10 +123,8 @@ func TestGetStatusUnregistered(t *testing.T) {
 	config.Set(config.OrgName, "org1")
 	config.Set(config.NodeName, "node1")
 
-	mdi := or.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(nil, nil)
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
+	mim.On("GetNodeOwnerOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -110,15 +151,15 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	orgID := fftypes.NewUUID()
 
-	mdi := or.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(&fftypes.Organization{
-		ID:       orgID,
-		Identity: "0x1111111",
-		Name:     "org1",
-	}, nil)
-	mdi.On("GetNode", or.ctx, "0x1111111", "node1").Return(nil, nil)
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
+	mim.On("GetNodeOwnerOrg", or.ctx).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:   orgID,
+			Name: "org1",
+			DID:  "did:firefly:org/org1",
+		},
+	}, nil)
+	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -127,30 +168,13 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
-	assert.Equal(t, "0x1111111", status.Org.Identity)
+	assert.Equal(t, "did:firefly:org/org1", status.Org.Identity)
 	assert.Equal(t, *orgID, *status.Org.ID)
 
 	assert.Equal(t, "node1", status.Node.Name)
 	assert.False(t, status.Node.Registered)
 
 	assert.Nil(t, or.GetNodeUUID(or.ctx))
-}
-
-func TestGetStatuOrgError(t *testing.T) {
-	or := newTestOrchestrator()
-
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
-
-	mdi := or.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(nil, fmt.Errorf("pop"))
-	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
-
-	_, err := or.GetStatus(or.ctx)
-	assert.EqualError(t, err, "pop")
 }
 
 func TestGetStatusNodeError(t *testing.T) {
@@ -163,15 +187,15 @@ func TestGetStatusNodeError(t *testing.T) {
 
 	orgID := fftypes.NewUUID()
 
-	mdi := or.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(&fftypes.Organization{
-		ID:       orgID,
-		Identity: "0x1111111",
-		Name:     "org1",
-	}, nil)
-	mdi.On("GetNode", or.ctx, "0x1111111", "node1").Return(nil, fmt.Errorf("pop"))
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetLocalOrgKey", mock.Anything).Return("0x1111111", nil)
+	mim.On("GetNodeOwnerOrg", or.ctx).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:   orgID,
+			Name: "org1",
+			DID:  "did:firefly:org/org1",
+		},
+	}, nil)
+	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
 
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
