@@ -1,1 +1,2 @@
 ALTER TABLE pins DROP COLUMN signer;
+ALTER TABLE events DROP COLUMN cid;

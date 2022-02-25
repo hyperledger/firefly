@@ -393,10 +393,12 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 	// Validate the message data
 	valid := true
+	var customCorrelator *fftypes.UUID
 	switch {
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
+		state.correlator = nil
 		msgAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
 		if msgAction == definitions.ActionRetry {
 			return false, err
@@ -404,6 +406,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		if msgAction == definitions.ActionWait {
 			return false, nil
 		}
+		customCorrelator = state.correlator
 		valid = msgAction == definitions.ActionConfirm
 
 	case msg.Header.Type == fftypes.MessageTypeGroupInit:
@@ -436,10 +439,15 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 		// Generate the appropriate event
 		event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, tx)
+		event.Correlator = msg.Header.CID
+		if customCorrelator != nil {
+			// Definition handlers can set a custom event correlator (such as a token pool ID)
+			event.Correlator = customCorrelator
+		}
 		if err = ag.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Emitting %s %s for message %s:%s", eventType, event.ID, msg.Header.Namespace, msg.Header.ID)
+		log.L(ctx).Infof("Emitting %s %s for message %s:%s (c=%v)", eventType, event.ID, msg.Header.Namespace, msg.Header.ID, msg.Header.CID)
 		return nil
 	})
 	if ag.metrics.IsMetricsEnabled() {

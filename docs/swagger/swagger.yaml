@@ -3902,6 +3902,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: correlator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -3975,6 +3980,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -3991,7 +3997,8 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
@@ -4036,6 +4043,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -4052,7 +4060,8 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
@@ -5164,6 +5173,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: correlator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -5237,6 +5251,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -5253,7 +5268,8 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed

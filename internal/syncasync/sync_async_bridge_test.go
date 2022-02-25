@@ -77,10 +77,11 @@ func TestRequestReplyOk(t *testing.T) {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeMessageConfirmed,
-					Reference: replyID,
-					Namespace: "ns1",
+					ID:         fftypes.NewUUID(),
+					Type:       fftypes.EventTypeMessageConfirmed,
+					Reference:  replyID,
+					Correlator: requestID,
+					Namespace:  "ns1",
 				},
 			})
 		}()
@@ -245,7 +246,7 @@ func TestEventCallbackWrongType(t *testing.T) {
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypeGroupConfirmed,
+			Type:      fftypes.EventTypeIdentityUpdated, // We use the message for this one, so no sync/async handler
 		},
 	})
 	assert.NoError(t, err)
@@ -271,7 +272,7 @@ func TestEventCallbackMsgLookupFail(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypeMessageConfirmed,
 		},
 	})
@@ -287,7 +288,9 @@ func TestEventCallbackTokenPoolLookupFail(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: tokenPoolConfirm,
+			},
 		},
 	}
 
@@ -298,7 +301,7 @@ func TestEventCallbackTokenPoolLookupFail(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypePoolConfirmed,
 		},
 	})
@@ -314,7 +317,9 @@ func TestEventCallbackTokenTransferLookupFail(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: tokenTransferConfirm,
+			},
 		},
 	}
 
@@ -325,7 +330,7 @@ func TestEventCallbackTokenTransferLookupFail(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypeTransferConfirmed,
 		},
 	})
@@ -340,7 +345,9 @@ func TestEventCallbackTokenApprovalLookupFail(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: tokenApproveConfirm,
+			},
 		},
 	}
 
@@ -351,7 +358,7 @@ func TestEventCallbackTokenApprovalLookupFail(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypeApprovalConfirmed,
 		},
 	})
@@ -367,7 +374,9 @@ func TestEventCallbackMsgNotFound(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: messageConfirm,
+			},
 		},
 	}
 
@@ -378,7 +387,7 @@ func TestEventCallbackMsgNotFound(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypeMessageConfirmed,
 		},
 	})
@@ -393,9 +402,15 @@ func TestEventCallbackRejectedMsgNotFound(t *testing.T) {
 	defer cancel()
 
 	responseID := fftypes.NewUUID()
+	correlationID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: messageConfirm,
+			},
+			*correlationID: &inflightRequest{
+				reqType: tokenPoolConfirm,
+			},
 		},
 	}
 
@@ -404,10 +419,11 @@ func TestEventCallbackRejectedMsgNotFound(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypeMessageRejected,
+			Namespace:  "ns1",
+			ID:         fftypes.NewUUID(),
+			Reference:  responseID,
+			Correlator: correlationID,
+			Type:       fftypes.EventTypeMessageRejected,
 		},
 	})
 	assert.NoError(t, err)
@@ -423,7 +439,9 @@ func TestEventCallbackTokenPoolNotFound(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: tokenPoolConfirm,
+			},
 		},
 	}
 
@@ -434,7 +452,7 @@ func TestEventCallbackTokenPoolNotFound(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypePoolConfirmed,
 		},
 	})
@@ -451,7 +469,9 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: tokenTransferConfirm,
+			},
 		},
 	}
 
@@ -462,7 +482,7 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypeTransferConfirmed,
 		},
 	})
@@ -479,7 +499,9 @@ func TestEventCallbackTokenApprovalNotFound(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: tokenApproveConfirm,
+			},
 		},
 	}
 
@@ -490,7 +512,7 @@ func TestEventCallbackTokenApprovalNotFound(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypeApprovalConfirmed,
 		},
 	})
@@ -507,7 +529,9 @@ func TestEventCallbackTokenPoolRejectedNoData(t *testing.T) {
 	responseID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: messageConfirm,
+			},
 		},
 	}
 
@@ -527,7 +551,7 @@ func TestEventCallbackTokenPoolRejectedNoData(t *testing.T) {
 		Event: fftypes.Event{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
+			Reference: responseID,
 			Type:      fftypes.EventTypeMessageRejected,
 		},
 	})
@@ -542,9 +566,15 @@ func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
 	defer cancel()
 
 	responseID := fftypes.NewUUID()
+	correlationID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*responseID: &inflightRequest{},
+			*responseID: &inflightRequest{
+				reqType: messageConfirm,
+			},
+			*correlationID: &inflightRequest{
+				reqType: tokenPoolConfirm,
+			},
 		},
 	}
 
@@ -566,10 +596,11 @@ func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypeMessageRejected,
+			Namespace:  "ns1",
+			ID:         fftypes.NewUUID(),
+			Reference:  responseID,
+			Correlator: correlationID,
+			Type:       fftypes.EventTypeMessageRejected,
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -686,10 +717,11 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeMessageRejected,
-					Reference: msg.Header.ID,
-					Namespace: "ns1",
+					ID:         fftypes.NewUUID(),
+					Type:       fftypes.EventTypeMessageRejected,
+					Reference:  msg.Header.ID,
+					Correlator: pool.Pool.ID,
+					Namespace:  "ns1",
 				},
 			})
 		}()
@@ -818,6 +850,13 @@ func TestAwaitFailedTokenTransfer(t *testing.T) {
 			"localId": requestID.String(),
 		},
 	}
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*requestID: &inflightRequest{
+				reqType: tokenTransferConfirm,
+			},
+		},
+	}
 
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
@@ -829,10 +868,11 @@ func TestAwaitFailedTokenTransfer(t *testing.T) {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeTransferOpFailed,
-					Reference: op.ID,
-					Namespace: "ns1",
+					ID:         fftypes.NewUUID(),
+					Type:       fftypes.EventTypeTransferOpFailed,
+					Reference:  op.ID,
+					Correlator: requestID,
+					Namespace:  "ns1",
 				},
 			})
 		}()
@@ -864,10 +904,11 @@ func TestAwaitFailedTokenApproval(t *testing.T) {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeApprovalOpFailed,
-					Reference: op.ID,
-					Namespace: "ns1",
+					ID:         fftypes.NewUUID(),
+					Type:       fftypes.EventTypeApprovalOpFailed,
+					Reference:  op.ID,
+					Correlator: requestID,
+					Namespace:  "ns1",
 				},
 			})
 		}()
@@ -884,7 +925,9 @@ func TestFailedTokenTransferOpError(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*requestID: &inflightRequest{},
+			*requestID: &inflightRequest{
+				reqType: tokenTransferConfirm,
+			},
 		},
 	}
 
@@ -900,10 +943,11 @@ func TestFailedTokenTransferOpError(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.EventTypeTransferOpFailed,
-			Reference: op.ID,
-			Namespace: "ns1",
+			ID:         fftypes.NewUUID(),
+			Type:       fftypes.EventTypeTransferOpFailed,
+			Reference:  op.ID,
+			Correlator: requestID,
+			Namespace:  "ns1",
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -919,7 +963,9 @@ func TestFailedTokenApprovalOpError(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*requestID: &inflightRequest{},
+			*requestID: &inflightRequest{
+				reqType: tokenApproveConfirm,
+			},
 		},
 	}
 
@@ -935,10 +981,11 @@ func TestFailedTokenApprovalOpError(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.EventTypeApprovalOpFailed,
-			Reference: op.ID,
-			Namespace: "ns1",
+			ID:         fftypes.NewUUID(),
+			Type:       fftypes.EventTypeApprovalOpFailed,
+			Reference:  op.ID,
+			Correlator: requestID,
+			Namespace:  "ns1",
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -954,7 +1001,9 @@ func TestFailedTokenApprovalOpNotFound(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*requestID: &inflightRequest{},
+			*requestID: &inflightRequest{
+				reqType: tokenApproveConfirm,
+			},
 		},
 	}
 
@@ -970,10 +1019,11 @@ func TestFailedTokenApprovalOpNotFound(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.EventTypeApprovalOpFailed,
-			Reference: op.ID,
-			Namespace: "ns1",
+			ID:         fftypes.NewUUID(),
+			Type:       fftypes.EventTypeApprovalOpFailed,
+			Reference:  op.ID,
+			Correlator: requestID,
+			Namespace:  "ns1",
 		},
 	})
 	assert.NoError(t, err)
@@ -989,7 +1039,9 @@ func TestFailedTokenApprovalIDLookupFail(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*requestID: &inflightRequest{},
+			*requestID: &inflightRequest{
+				reqType: tokenApproveConfirm,
+			},
 		},
 	}
 
@@ -1003,10 +1055,11 @@ func TestFailedTokenApprovalIDLookupFail(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.EventTypeApprovalOpFailed,
-			Reference: op.ID,
-			Namespace: "ns1",
+			ID:         fftypes.NewUUID(),
+			Type:       fftypes.EventTypeApprovalOpFailed,
+			Reference:  op.ID,
+			Correlator: requestID,
+			Namespace:  "ns1",
 		},
 	})
 	assert.NoError(t, err)
@@ -1022,7 +1075,9 @@ func TestFailedTokenTransferOpNotFound(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*requestID: &inflightRequest{},
+			*requestID: &inflightRequest{
+				reqType: tokenTransferConfirm,
+			},
 		},
 	}
 
@@ -1038,10 +1093,11 @@ func TestFailedTokenTransferOpNotFound(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.EventTypeTransferOpFailed,
-			Reference: op.ID,
-			Namespace: "ns1",
+			ID:         fftypes.NewUUID(),
+			Type:       fftypes.EventTypeTransferOpFailed,
+			Reference:  op.ID,
+			Correlator: requestID,
+			Namespace:  "ns1",
 		},
 	})
 	assert.NoError(t, err)
@@ -1057,7 +1113,9 @@ func TestFailedTokenTransferIDLookupFail(t *testing.T) {
 	requestID := fftypes.NewUUID()
 	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
 		"ns1": {
-			*requestID: &inflightRequest{},
+			*requestID: &inflightRequest{
+				reqType: tokenTransferConfirm,
+			},
 		},
 	}
 
@@ -1071,10 +1129,11 @@ func TestFailedTokenTransferIDLookupFail(t *testing.T) {
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		Event: fftypes.Event{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.EventTypeTransferOpFailed,
-			Reference: op.ID,
-			Namespace: "ns1",
+			ID:         fftypes.NewUUID(),
+			Type:       fftypes.EventTypeTransferOpFailed,
+			Reference:  op.ID,
+			Correlator: requestID,
+			Namespace:  "ns1",
 		},
 	})
 	assert.NoError(t, err)

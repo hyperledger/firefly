@@ -939,7 +939,7 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.EqualError(t, err, "pop")
 
 }
@@ -969,7 +969,7 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 
 	dispatched, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID}},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1001,7 +1001,7 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1032,7 +1032,7 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.EqualError(t, err, "pop")
 	assert.False(t, dispatched)
 
@@ -1069,7 +1069,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
 
-	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1077,7 +1077,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestDefinitionBroadcastActionReject(t *testing.T) {
+func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 	bs := newBatchState(ag)
@@ -1087,8 +1087,13 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
+	customCorrelator := fftypes.NewUUID()
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionReject, nil)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			args[1].(*batchState).SetCorrelator(customCorrelator)
+		}).
+		Return(definitions.ActionReject, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -1111,7 +1116,9 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 
 		return true
 	})).Return(nil)
-	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Correlator.Equals(customCorrelator)
+	})).Return(nil)
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -1125,7 +1132,8 @@ func TestDefinitionBroadcastActionReject(t *testing.T) {
 		},
 	}, nil, bs, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
-
+	err = bs.RunFinalize(ag.ctx)
+	assert.NoError(t, err)
 }
 
 func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
@@ -1138,9 +1146,6 @@ func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.ActionReject, nil)
-
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 
@@ -1176,7 +1181,6 @@ func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
 		},
 	}, nil, bs, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
-
 }
 
 func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
@@ -1404,7 +1408,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1431,7 +1435,7 @@ func TestDefinitionBroadcastRejectSignerLookupFail(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.Regexp(t, "pop", err)
 	assert.False(t, valid)
 
@@ -1461,7 +1465,7 @@ func TestDefinitionBroadcastRejectSignerLookupWrongOrg(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
@@ -1488,7 +1492,7 @@ func TestDefinitionBroadcastRejectBadSigner(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
@@ -1520,7 +1524,7 @@ func TestDefinitionBroadcastRejectUnregisteredSignerIdentityClaim(t *testing.T) 
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
@@ -1554,7 +1558,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, nil, nil, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 
 }

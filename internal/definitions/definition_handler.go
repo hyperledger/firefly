@@ -69,6 +69,9 @@ type DefinitionBatchState interface {
 
 	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
 	GetPendingConfirm() map[fftypes.UUID]*fftypes.Message
+
+	// SetCorrelator sets a custom event correlator, such as to the definition object that's contained in a message
+	SetCorrelator(uuid *fftypes.UUID)
 }
 
 type definitionHandlers struct {

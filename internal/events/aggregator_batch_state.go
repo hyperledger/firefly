@@ -95,6 +95,7 @@ type batchState struct {
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
 	pendingConfirms    map[fftypes.UUID]*fftypes.Message
+	correlator         *fftypes.UUID
 
 	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
 	// - Will execute after all batch messages have been processed
@@ -123,6 +124,10 @@ func (bs *batchState) AddFinalize(action func(ctx context.Context) error) {
 
 func (bs *batchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
 	return bs.pendingConfirms
+}
+
+func (bs *batchState) SetCorrelator(uuid *fftypes.UUID) {
+	bs.correlator = uuid
 }
 
 func (bs *batchState) RunPreFinalize(ctx context.Context) error {

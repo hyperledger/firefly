@@ -782,13 +782,14 @@ var SubscriptionQueryFactory = &queryFields{
 
 // EventQueryFactory filter fields for data events
 var EventQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"type":      &StringField{},
-	"namespace": &StringField{},
-	"reference": &UUIDField{},
-	"tx":        &UUIDField{},
-	"sequence":  &Int64Field{},
-	"created":   &TimeField{},
+	"id":         &UUIDField{},
+	"type":       &StringField{},
+	"namespace":  &StringField{},
+	"reference":  &UUIDField{},
+	"correlator": &UUIDField{},
+	"tx":         &UUIDField{},
+	"sequence":   &Int64Field{},
+	"created":    &TimeField{},
 }
 
 // PinQueryFactory filter fields for parked contexts

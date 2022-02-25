@@ -51,6 +51,10 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	pool := announce.Pool
 	pool.Message = msg.Header.ID
 
+	// Set an event correlator, so that if we reject then the sync-async bridge action can know
+	// from the event (without downloading and parsing the msg)
+	state.SetCorrelator(pool.ID)
+
 	if err := pool.Validate(ctx); err != nil {
 		log.L(ctx).Warnf("Token pool '%s' rejected - validate failed: %s", pool.ID, err)
 		return ActionReject, nil

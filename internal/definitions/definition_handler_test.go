@@ -53,6 +53,7 @@ type testDefinitionBatchState struct {
 	preFinalizers   []func(ctx context.Context) error
 	finalizers      []func(ctx context.Context) error
 	pendingConfirms map[fftypes.UUID]*fftypes.Message
+	correlator      *fftypes.UUID
 }
 
 func newTestDefinitionBatchState(t *testing.T) *testDefinitionBatchState {
@@ -72,6 +73,10 @@ func (bs *testDefinitionBatchState) AddFinalize(pf func(ctx context.Context) err
 
 func (bs *testDefinitionBatchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
 	return bs.pendingConfirms
+}
+
+func (bs *testDefinitionBatchState) SetCorrelator(uuid *fftypes.UUID) {
+	bs.correlator = uuid
 }
 
 func (bs *testDefinitionBatchState) assertNoFinalizers() {

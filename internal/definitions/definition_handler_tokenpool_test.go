@@ -177,6 +177,7 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
+	assert.Equal(t, pool.ID, bs.correlator)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
