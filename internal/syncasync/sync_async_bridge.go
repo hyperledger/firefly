@@ -426,6 +426,9 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 	case fftypes.EventTypeMessageRejected:
 		return sa.handleMessageRejectedEvent(event)
 
+	case fftypes.EventTypeIdentityConfirmed:
+		return sa.handleIdentityConfirmedEvent(event)
+
 	case fftypes.EventTypePoolConfirmed:
 		return sa.handlePoolConfirmedEvent(event)
 
@@ -440,9 +443,6 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 
 	case fftypes.EventTypeApprovalOpFailed:
 		return sa.handleApprovalOpFailedEvent(event)
-
-	case fftypes.EventTypeIdentityConfirmed:
-		return sa.handleIdentityConfirmedEvent(event)
 	}
 
 	return nil

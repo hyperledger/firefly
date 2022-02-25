@@ -73,9 +73,9 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		fftypes.SystemTagIdentityClaim, true).Return(mockMsg, nil)
+		fftypes.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	org, err := nm.RegisterNodeOrganization(nm.ctx, true)
+	org, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *mockMsg.Header.ID, *org.Messages.Claim)
 
@@ -95,7 +95,7 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	}, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx, true)
+	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "FF10216", err)
 
 }
@@ -111,7 +111,7 @@ func TestRegisterNodeGetOwnerBlockchainKeyFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx, true)
+	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }

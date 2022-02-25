@@ -83,12 +83,26 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 		claimSigner.Author = identity.DID
 	}
 
-	// Send the claim - we disable the check on the DID author here, as we are registerin the identity so it will not exist
-	claimMsg, err := nm.broadcast.BroadcastDefinitionResolveKeyOnly(ctx, identity.Namespace, &fftypes.IdentityClaim{
-		Identity: identity,
-	}, claimSigner, fftypes.SystemTagIdentityClaim, waitConfirm)
+	if waitConfirm {
+		return nm.syncasync.WaitForIdentity(ctx, identity.Namespace, identity.ID, func(ctx context.Context) error {
+			return nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
+		})
+	}
+	err = nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
 	if err != nil {
 		return nil, err
+	}
+	return identity, nil
+}
+
+func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *fftypes.Identity, claimSigner *fftypes.SignerRef, parentSigner *fftypes.SignerRef) error {
+
+	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
+	claimMsg, err := nm.broadcast.BroadcastDefinitionResolveKeyOnly(ctx, identity.Namespace, &fftypes.IdentityClaim{
+		Identity: identity,
+	}, claimSigner, fftypes.SystemTagIdentityClaim, false)
+	if err != nil {
+		return err
 	}
 	identity.Messages.Claim = claimMsg.Header.ID
 
@@ -100,12 +114,11 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 				Hash: claimMsg.Hash,
 			},
 			Identity: identity.IdentityBase,
-		}, parentSigner, fftypes.SystemTagIdentityVerification, false /* confirm is on the claim only */)
+		}, parentSigner, fftypes.SystemTagIdentityVerification, false)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		identity.Messages.Verification = verifyMsg.Header.ID
 	}
-
-	return identity, err
+	return nil
 }

@@ -58,9 +58,9 @@ func TestRegisterNodeOk(t *testing.T) {
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
 		signerRef,
-		fftypes.SystemTagIdentityClaim, true).Return(mockMsg, nil)
+		fftypes.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	node, err := nm.RegisterNode(nm.ctx, true)
+	node, err := nm.RegisterNode(nm.ctx, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *mockMsg.Header.ID, *node.Messages.Claim)
 
@@ -86,7 +86,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNode(nm.ctx, true)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -99,7 +99,7 @@ func TestRegisterNodeGetOwnerFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNode(nm.ctx, true)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }
