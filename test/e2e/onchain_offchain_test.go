@@ -46,8 +46,8 @@ func (suite *OnChainOffChainTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1)
-	received2, changes2 := wsReader(suite.testState.ws2)
+	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received2, changes2 := wsReader(suite.testState.ws2, true)
 
 	// Broadcast some messages, that should get batched, across two topics
 	totalMessages := 10
@@ -90,8 +90,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1)
-	received2, changes2 := wsReader(suite.testState.ws2)
+	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received2, changes2 := wsReader(suite.testState.ws2, true)
 
 	var resp *resty.Response
 	value := fftypes.JSONAnyPtr(`"Hello"`)
@@ -141,8 +141,8 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1)
-	received2, changes2 := wsReader(suite.testState.ws2)
+	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received2, changes2 := wsReader(suite.testState.ws2, true)
 
 	var resp *resty.Response
 	value := fftypes.JSONAnyPtr(`{"foo":"bar"}`)
@@ -202,8 +202,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1)
-	received2, _ := wsReader(suite.testState.ws2)
+	received1, _ := wsReader(suite.testState.ws1, false)
+	received2, _ := wsReader(suite.testState.ws2, false)
 
 	// Send 10 messages, that should get batched, across two topics
 	totalMessages := 10
@@ -247,8 +247,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1)
-	received2, _ := wsReader(suite.testState.ws2)
+	received1, _ := wsReader(suite.testState.ws1, false)
+	received2, _ := wsReader(suite.testState.ws2, false)
 
 	var resp *resty.Response
 
@@ -273,8 +273,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1)
-	received2, _ := wsReader(suite.testState.ws2)
+	received1, _ := wsReader(suite.testState.ws1, false)
+	received2, _ := wsReader(suite.testState.ws2, false)
 
 	var resp *resty.Response
 
@@ -303,8 +303,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1)
-	received2, _ := wsReader(suite.testState.ws2)
+	received1, _ := wsReader(suite.testState.ws1, false)
+	received2, _ := wsReader(suite.testState.ws2, false)
 
 	subJSON := `{
 		"transport": "webhooks",

@@ -17,6 +17,12 @@
 package e2e
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,45 +36,42 @@ func (suite *IdentityTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *IdentityTestSuite) TestCustomChildIdentities() {
-	// defer suite.testState.done()
+	defer suite.testState.done()
 
-	// received1, changes1 := wsReader(suite.testState.ws1)
-	// received2, changes2 := wsReader(suite.testState.ws2)
+	received1, _ := wsReader(suite.testState.ws1, false)
+	received2, _ := wsReader(suite.testState.ws2, false)
 
-	// // Broadcast some messages, that should get batched, across two topics
-	// totalMessages := 10
-	// topics := []string{"topicA", "topicB"}
-	// expectedData := make(map[string][]*fftypes.DataRefOrValue)
-	// for i := 0; i < 10; i++ {
-	// 	value := fftypes.JSONAnyPtr(fmt.Sprintf(`"Hello number %d"`, i))
-	// 	data := &fftypes.DataRefOrValue{
-	// 		Value: value,
-	// 	}
-	// 	topic := pickTopic(i, topics)
+	// Create some keys
+	totalIdentities := 10
+	keys := make([]string, totalIdentities)
+	for i := 0; i < totalIdentities; i++ {
+		keys[i] = CreateEthAccount(suite.T(), suite.testState.ethNode)
+	}
 
-	// 	expectedData[topic] = append(expectedData[topic], data)
+	ts := time.Now().Unix()
+	for i := 0; i < totalIdentities; i++ {
+		resp, err := ClaimCustomIdentity(suite.testState.client1,
+			keys[i],
+			fmt.Sprintf("custom_%d_%d", ts, i),
+			fmt.Sprintf("Description %d", i),
+			fftypes.JSONObject{"profile": i},
+			suite.testState.org1.ID,
+			false)
+		require.NoError(suite.T(), err)
+		assert.Equal(suite.T(), 202, resp.StatusCode())
+	}
 
-	// 	resp, err := BroadcastMessage(suite.testState.client1, topic, data, false)
-	// 	require.NoError(suite.T(), err)
-	// 	assert.Equal(suite.T(), 202, resp.StatusCode())
-	// }
+	identities := make(map[fftypes.UUID]bool)
+	for i := 0; i < totalIdentities; i++ {
+		ed := waitForIdentityConfirmed(suite.T(), received1)
+		identities[*ed.Reference] = true
+		ed = waitForIdentityConfirmed(suite.T(), received2)
+		identities[*ed.Reference] = true
+	}
+	assert.Len(suite.T(), identities, totalIdentities)
 
-	// for i := 0; i < totalMessages; i++ {
-	// 	// Wait for all thel message-confirmed events, from both participants
-	// 	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
-	// 	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
-	// 	<-changes1 // also expect database change events
-	// 	<-changes2 // also expect database change events
-	// }
-
-	// for topic, dataArray := range expectedData {
-	// 	receiver1data := validateReceivedMessages(suite.testState, suite.testState.client1, topic, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, len(dataArray))
-	// 	receiver2data := validateReceivedMessages(suite.testState, suite.testState.client2, topic, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, len(dataArray))
-	// 	// Messages should be returned in exactly reverse send order (newest first)
-	// 	for i := (len(dataArray) - 1); i >= 0; i-- {
-	// 		assert.Equal(suite.T(), dataArray[i].Value, receiver1data[i].Value)
-	// 		assert.Equal(suite.T(), dataArray[i].Value, receiver2data[i].Value)
-	// 	}
+	// for identityID := range identities {
+	// 	identity :=
 	// }
 
 }

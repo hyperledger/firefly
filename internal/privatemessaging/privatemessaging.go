@@ -142,6 +142,7 @@ func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, batch *ffty
 		return err
 	}
 
+	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", batch.ID, batch.Author, batch.Key, batch.Group)
 	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 

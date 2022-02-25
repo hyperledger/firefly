@@ -41,6 +41,7 @@ type testState struct {
 	t         *testing.T
 	client1   *resty.Client
 	client2   *resty.Client
+	ethNode   *resty.Client
 	ws1       *websocket.Conn
 	ws2       *websocket.Conn
 	org1      *fftypes.Identity
@@ -193,6 +194,14 @@ func beforeE2ETest(t *testing.T) *testState {
 	ts.client1.SetBaseURL(fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, member0WithPort))
 	ts.client2.SetBaseURL(fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, member1WithPort))
 
+	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
+	if stack.BlockchainProvider == "geth" {
+		ethNodeURL := fmt.Sprintf("%s://%s:%d", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.ExposedBlockchainPort)
+		t.Logf("Ethereum node URL: %s", ethNodeURL)
+		ts.ethNode = NewResty(t)
+		ts.ethNode.SetBaseURL(ethNodeURL)
+	}
+
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")
 		ts.client1.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
@@ -240,7 +249,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Org1: ID=%s DID=%s Key=%s", ts.org1.DID, ts.org1.ID, ts.org1key.Value)
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event|token_approval_confirmed"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event|token_approval_confirmed|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
 
 	wsUrl1 := url.URL{
@@ -277,17 +286,19 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func wsReader(conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
+func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
 	events := make(chan *fftypes.EventDelivery, 100)
-	changeEvents := make(chan *fftypes.ChangeEvent, 100)
+	var changeEvents chan *fftypes.ChangeEvent
+	if dbChanges {
+		changeEvents = make(chan *fftypes.ChangeEvent, 100)
+	}
 	go func() {
 		for {
 			_, b, err := conn.ReadMessage()
 			if err != nil {
-				fmt.Printf("Websocket %s closing, error: %s", conn.RemoteAddr(), err)
+				fmt.Printf("Websocket %s closing, error: %s\n", conn.RemoteAddr(), err)
 				return
 			}
-			fmt.Printf("Websocket %s receive: %s", conn.RemoteAddr(), b)
 			var wsa fftypes.WSClientActionBase
 			err = json.Unmarshal(b, &wsa)
 			if err != nil {
@@ -301,7 +312,11 @@ func wsReader(conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.
 					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
 				}
 				if err == nil {
-					changeEvents <- wscn.ChangeEvent
+					// Throw away DB changes if the caller doesn't want them
+					fmt.Printf("Websocket %s change event: %s/%s/%s\n", conn.RemoteAddr(), wscn.ChangeEvent.Namespace, wscn.ChangeEvent.Collection, wscn.ChangeEvent.Type)
+					if dbChanges {
+						changeEvents <- wscn.ChangeEvent
+					}
 				}
 			default:
 				var ed fftypes.EventDelivery
@@ -310,6 +325,7 @@ func wsReader(conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.
 					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
 				}
 				if err == nil {
+					fmt.Printf("Websocket %s event: %s/%s/%s -> %s (tx=%s)\n", conn.RemoteAddr(), ed.Namespace, ed.Type, ed.ID, ed.Reference, ed.Transaction)
 					events <- &ed
 				}
 			}
@@ -332,6 +348,17 @@ func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgTyp
 		ed := <-c
 		if ed.Type == fftypes.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
 			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
+			return ed
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
+}
+
+func waitForIdentityConfirmed(t *testing.T, c chan *fftypes.EventDelivery) *fftypes.EventDelivery {
+	for {
+		ed := <-c
+		if ed.Type == fftypes.EventTypeIdentityConfirmed {
+			t.Logf("Detected '%s' event for identity '%s'", ed.Type, ed.Reference)
 			return ed
 		}
 		t.Logf("Ignored event '%s'", ed.ID)

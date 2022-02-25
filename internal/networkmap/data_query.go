@@ -91,7 +91,7 @@ func (nm *networkMap) GetIdentityByID(ctx context.Context, ns, id string) (*ffty
 }
 
 func (nm *networkMap) GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
-	filter.Condition(filter.Builder().Eq("namespace", fftypes.SystemNamespace))
+	filter.Condition(filter.Builder().Eq("namespace", ns))
 	return nm.database.GetIdentities(ctx, filter)
 }
 

@@ -45,6 +45,7 @@ var (
 	urlGetEvents             = "/namespaces/default/events"
 	urlSubscriptions         = "/namespaces/default/subscriptions"
 	urlDatatypes             = "/namespaces/default/datatypes"
+	urlIdentities            = "/namespaces/default/identities"
 	urlTokenPools            = "/namespaces/default/tokens/pools"
 	urlTokenMint             = "/namespaces/default/tokens/mint"
 	urlTokenBurn             = "/namespaces/default/tokens/burn"
@@ -206,6 +207,44 @@ func BroadcastMessage(client *resty.Client, topic string, data *fftypes.DataRefO
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		Post(urlBroadcastMessage)
+}
+
+func CreateEthAccount(t *testing.T, client *resty.Client) string {
+	createPayload := map[string]interface{}{"jsonrpc": "2.0", "id": 0, "method": "personal_newAccount", "params": []interface{}{""}}
+	var resBody struct {
+		Result string `json:"result"`
+	}
+	res, err := client.R().
+		SetBody(createPayload).
+		SetResult(&resBody).
+		Post("/")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	newKey := resBody.Result
+	t.Logf("New key: %s", newKey)
+	unlockPayload := map[string]interface{}{"jsonrpc": "2.0", "id": 0, "method": "personal_unlockAccount", "params": []interface{}{newKey, "", 0}}
+	res, err = client.R().
+		SetBody(unlockPayload).
+		Post("/")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	return newKey
+}
+
+func ClaimCustomIdentity(client *resty.Client, key, name, desc string, profile fftypes.JSONObject, parent *fftypes.UUID, confirm bool) (*resty.Response, error) {
+	return client.R().
+		SetBody(fftypes.IdentityCreateDTO{
+			Name:   name,
+			Type:   fftypes.IdentityTypeCustom,
+			Parent: parent,
+			Key:    key,
+			IdentityProfile: fftypes.IdentityProfile{
+				Description: desc,
+				Profile:     profile,
+			},
+		}).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		Post(urlIdentities)
 }
 
 func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *fftypes.Data {

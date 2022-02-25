@@ -67,7 +67,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 		}
 	}
 
-	// Determin claim signer
+	// Determine claim signer
 	var claimSigner *fftypes.SignerRef
 	if dto.Type == fftypes.IdentityTypeNode {
 		// Nodes are special - as they need the claim to be signed directly by the parent

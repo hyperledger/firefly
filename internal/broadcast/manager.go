@@ -142,6 +142,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		return err
 	}
 
+	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s", batch.ID, batch.Author, batch.Key)
 	return bm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 

@@ -82,7 +82,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 	idTopic := identity.Topic()
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("topic", idTopic),
+		fb.Eq("topics", idTopic),
 		fb.Eq("author", parent.DID),
 		fb.Eq("type", fftypes.MessageTypeDefinition),
 		fb.Eq("state", fftypes.MessageStateConfirmed),
@@ -102,24 +102,26 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 		}
 	}
 	for _, candidate := range candidates {
-		data, foundAll, err := dh.data.GetMessageData(ctx, msg, true)
+		data, foundAll, err := dh.data.GetMessageData(ctx, candidate, true)
 		if err != nil {
-			log.L(ctx).Warnf("Missing data for verification '%s', for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
 			return nil, err
 		}
+		identityMatches := false
+		var verificationID *fftypes.UUID
+		var verificationHash *fftypes.Bytes32
 		if foundAll {
 			var verification fftypes.IdentityVerification
 			if !dh.getSystemBroadcastPayload(ctx, msg, data, &verification) {
 				return nil, nil
 			}
-			if verification.Identity.Equals(ctx, &identity.IdentityBase) &&
-				msg.Header.ID.Equals(verification.Claim.ID) &&
-				msg.Hash.Equals(verification.Claim.Hash) {
-				log.L(ctx).Infof("Valid verification '%s' found for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
+			identityMatches = verification.Identity.Equals(ctx, &identity.IdentityBase)
+			verificationID = verification.Claim.ID
+			verificationHash = verification.Claim.Hash
+			if identityMatches && msg.Header.ID.Equals(verificationID) && msg.Hash.Equals(verificationHash) {
 				return candidate.Header.ID, nil
 			}
 		}
-		log.L(ctx).Warnf("Skipping invalid potential verification '%s' for identity claim '%s'", candidate.Header.ID, msg.Header.ID)
+		log.L(ctx).Warnf("Skipping invalid potential verification '%s' for identity claimID='%s' claimHash=%s: foundData=%t identityMatch=%t id=%s hash=%s", candidate.Header.ID, msg.Header.ID, msg.Hash, foundAll, identityMatches, verificationID, verificationHash)
 	}
 	return nil, nil
 }
@@ -184,6 +186,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 			// But we do NOT go on to create the identity - we will be called back
 			return ActionConfirm, nil
 		}
+		log.L(ctx).Infof("Identity '%s' verified claim='%s' verification='%s'", identity.ID, msg.Header.ID, verificationID)
 		identity.Messages.Verification = verificationID
 	}
 
