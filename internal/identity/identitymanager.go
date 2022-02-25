@@ -35,7 +35,7 @@ import (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error)
-	ResolveInputSigningKeyOnly(ctx context.Context, namespace string) (signingKey string, err error)
+	ResolveInputSigningKeyOnly(ctx context.Context, namespace string, resolveViaBlockchainPlugin bool) (signingKey string, err error)
 	ResolveRootOrgRegistrationSigningKey(ctx context.Context, namespace string, msgSignerRef *fftypes.SignerRef) (err error)
 	ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSignerRef *fftypes.SignerRef) (err error)
 	ResolveBlockchainKey(ctx context.Context, inputKey string) (verifier *fftypes.VerifierRef, err error)
@@ -94,7 +94,9 @@ func (im *identityManager) ResolveRootOrgRegistrationSigningKey(ctx context.Cont
 	return im.resolveInputSigningIdentity(ctx, namespace, msgSignerRef, true)
 }
 
-func (im *identityManager) ResolveInputSigningKeyOnly(ctx context.Context, inputKey string) (signingKey string, err error) {
+// ResolveInputSigningKeyOnly is for cases where there is no "author" field alongside the "key" in the input (custom contracts, tokens),
+// or the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
+func (im *identityManager) ResolveInputSigningKeyOnly(ctx context.Context, inputKey string, resolveViaBlockchainPlugin bool) (signingKey string, err error) {
 	if inputKey == "" {
 		msgSignerRef := &fftypes.SignerRef{}
 		err = im.ResolveNodeOwnerSigningIdentity(ctx, msgSignerRef)
@@ -102,6 +104,12 @@ func (im *identityManager) ResolveInputSigningKeyOnly(ctx context.Context, input
 			return "", err
 		}
 		return msgSignerRef.Key, nil
+	}
+	// If the caller is not confident that the blockchain plugin/connector should be used to resolve,
+	// for example it might be a different blockchain (Eth vs Fabric etc.), or it has it's own
+	// verification/management of keys, it should set resolveViaBlockchainPlugin=false
+	if !resolveViaBlockchainPlugin {
+		return inputKey, nil
 	}
 	signer, err := im.ResolveBlockchainKey(ctx, inputKey)
 	if err != nil {

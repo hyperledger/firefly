@@ -224,6 +224,8 @@ var (
 	AssetManagerRetryMaxDelay = rootKey("asset.manager.retry.maxDelay")
 	// AssetManagerRetryFactor the backoff factor to use for retry of database operations
 	AssetManagerRetryFactor = rootKey("asset.manager.retry.factor")
+	// AssetManagerResolveKeysViaBlockchainPlugin whether to verify/resolve keys via the blockchain plugin (supporing facilities like key aliases), but requiring the same backing blockchain connector
+	AssetManagerResolveKeysViaBlockchainPlugin = rootKey("asset.manager.resolveKeysViaBlockchainPlugin")
 	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
 	UIEnabled = rootKey("ui.enabled")
 	// UIPath the path on which to serve the UI
@@ -290,6 +292,7 @@ func Reset() {
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(APIShutdownTimeout), "10s")
+	viper.SetDefault(string(AssetManagerResolveKeysViaBlockchainPlugin), true)
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)

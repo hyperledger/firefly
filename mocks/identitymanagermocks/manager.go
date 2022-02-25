@@ -220,20 +220,20 @@ func (_m *Manager) ResolveInputSigningIdentity(ctx context.Context, namespace st
 	return r0
 }
 
-// ResolveInputSigningKeyOnly provides a mock function with given fields: ctx, namespace
-func (_m *Manager) ResolveInputSigningKeyOnly(ctx context.Context, namespace string) (string, error) {
-	ret := _m.Called(ctx, namespace)
+// ResolveInputSigningKeyOnly provides a mock function with given fields: ctx, namespace, resolveViaBlockchainPlugin
+func (_m *Manager) ResolveInputSigningKeyOnly(ctx context.Context, namespace string, resolveViaBlockchainPlugin bool) (string, error) {
+	ret := _m.Called(ctx, namespace, resolveViaBlockchainPlugin)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, namespace)
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) string); ok {
+		r0 = rf(ctx, namespace, resolveViaBlockchainPlugin)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, namespace)
+	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
+		r1 = rf(ctx, namespace, resolveViaBlockchainPlugin)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -101,7 +101,7 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 		}
 		transfer.Pool = pool
 	}
-	if transfer.Key, err = am.identity.ResolveInputSigningKeyOnly(ctx, transfer.Key); err != nil {
+	if transfer.Key, err = am.identity.ResolveInputSigningKeyOnly(ctx, transfer.Key, am.resolveKeysViaBlockchainPlugin); err != nil {
 		return err
 	}
 	if transfer.From == "" {

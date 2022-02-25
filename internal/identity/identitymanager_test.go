@@ -529,7 +529,7 @@ func TestResolveInputSigningKeyOnlyOrgFallbackOk(t *testing.T) {
 			},
 		}, nil)
 
-	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "")
+	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "", true)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 
@@ -551,7 +551,7 @@ func TestResolveInputSigningKeyOnlyOrgFallbackErr(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
 		Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.ResolveInputSigningKeyOnly(ctx, "")
+	_, err := im.ResolveInputSigningKeyOnly(ctx, "", true)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -568,7 +568,7 @@ func TestResolveInputSigningKeyOk(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
 
-	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "key123")
+	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "key123", true)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 
@@ -584,10 +584,21 @@ func TestResolveInputSigningKeyFail(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "key123").Return("", fmt.Errorf("pop"))
 
-	_, err := im.ResolveInputSigningKeyOnly(ctx, "key123")
+	_, err := im.ResolveInputSigningKeyOnly(ctx, "key123", true)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
+}
+
+func TestResolveInputSigningKeyBypass(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	config.Set(config.OrgKey, "key123")
+	config.Set(config.OrgName, "org1")
+
+	key, err := im.ResolveInputSigningKeyOnly(ctx, "different-type-of-key", false)
+	assert.NoError(t, err)
+	assert.Equal(t, "different-type-of-key", key)
 }
 
 func TestFirstVerifierForIdentityNotFound(t *testing.T) {

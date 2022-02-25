@@ -58,7 +58,7 @@ func TestBroadcastDefinitionResolveKeyOnly(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234").Return("", nil)
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234", true).Return("", nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionResolveKeyOnly(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
@@ -77,7 +77,7 @@ func TestBroadcastDefinitionResolveKeyOnlyFail(t *testing.T) {
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234").Return("", fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234", true).Return("", fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionResolveKeyOnly(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
 		Key: "0x1234",

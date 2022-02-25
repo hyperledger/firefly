@@ -44,7 +44,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	}
 
 	var err error
-	pool.Key, err = am.identity.ResolveInputSigningKeyOnly(ctx, pool.Key)
+	pool.Key, err = am.identity.ResolveInputSigningKeyOnly(ctx, pool.Key, am.resolveKeysViaBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}

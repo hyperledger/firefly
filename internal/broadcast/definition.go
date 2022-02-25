@@ -41,7 +41,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, 
 
 func (bm *broadcastManager) BroadcastDefinitionResolveKeyOnly(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
 
-	signingIdentity.Key, err = bm.identity.ResolveInputSigningKeyOnly(ctx, signingIdentity.Key)
+	signingIdentity.Key, err = bm.identity.ResolveInputSigningKeyOnly(ctx, signingIdentity.Key, true)
 	if err != nil {
 		return nil, err
 	}
