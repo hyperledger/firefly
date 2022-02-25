@@ -57,6 +57,9 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 		assert.Equal(t, *custom1.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeIdentityConfirmed
+	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{claimData}, true, nil)
@@ -67,10 +70,12 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
+	err = bs.finalizers[0](ctx)
+	assert.NoError(t, err)
+
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
-	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityVerificationIncompleteClaimData(t *testing.T) {

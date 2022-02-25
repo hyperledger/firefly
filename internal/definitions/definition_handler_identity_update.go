@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
 	var update fftypes.IdentityUpdate
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update)
 	if !valid {
@@ -62,6 +62,10 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 		return ActionRetry, err
 	}
 
+	state.AddFinalize(func(ctx context.Context) error {
+		event := fftypes.NewEvent(fftypes.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil)
+		return dh.database.InsertEvent(ctx, event)
+	})
 	return ActionConfirm, err
 
 }

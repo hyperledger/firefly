@@ -122,6 +122,9 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 		assert.Equal(t, *node.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeIdentityConfirmed
+	})).Return(nil)
 
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", ctx, node.DX.Endpoint).Return(nil)
@@ -131,6 +134,8 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = bs.preFinalizers[0](ctx)
+	assert.NoError(t, err)
+	err = bs.finalizers[0](ctx)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)

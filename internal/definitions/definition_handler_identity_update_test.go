@@ -82,14 +82,19 @@ func TestHandleDefinitionIdentityUpdateOk(t *testing.T) {
 		assert.Equal(t, iu.Updates, identity.IdentityProfile)
 		return true
 	}), database.UpsertOptimizationExisting).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeIdentityUpdated
+	})).Return(nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
+	err = bs.finalizers[0](ctx)
+	assert.NoError(t, err)
+
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
-	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityUpdateUpsertFail(t *testing.T) {

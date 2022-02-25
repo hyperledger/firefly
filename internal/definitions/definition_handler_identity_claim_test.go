@@ -164,6 +164,9 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 		assert.Equal(t, *custom1.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeIdentityConfirmed
+	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, false, nil).Once()
@@ -175,10 +178,13 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
+	err = bs.finalizers[0](ctx)
+	assert.NoError(t, err)
+
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
-	bs.assertNoFinalizers()
+
 }
 
 func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
@@ -204,6 +210,9 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{
 		{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Tag: "skipped missing data"}},
 	}, nil, nil)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeIdentityConfirmed
+	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, false, nil).Once()
@@ -215,10 +224,12 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
+	err = bs.finalizers[0](ctx)
+	assert.NoError(t, err)
+
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
-	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {

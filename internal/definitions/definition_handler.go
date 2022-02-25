@@ -133,7 +133,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	case fftypes.SystemTagIdentityVerification:
 		return dh.handleIdentityVerificationBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagIdentityUpdate:
-		return dh.handleIdentityUpdateBroadcast(ctx, msg, data)
+		return dh.handleIdentityUpdateBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagDefineFFI:

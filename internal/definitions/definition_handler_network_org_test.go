@@ -105,14 +105,19 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 		assert.Equal(t, *org.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeIdentityConfirmed
+	})).Return(nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, []*fftypes.Data{data}, fftypes.NewUUID())
 	assert.Equal(t, ActionConfirm, action)
 	assert.NoError(t, err)
 
+	err = bs.finalizers[0](ctx)
+	assert.NoError(t, err)
+
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
-	bs.assertNoFinalizers()
 }
 
 func TestHandleDeprecatedOrgDefinitionBadData(t *testing.T) {
