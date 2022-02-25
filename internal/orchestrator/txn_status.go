@@ -157,6 +157,27 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			})
 		}
 
+	case fftypes.TransactionTypeTokenApproval:
+		if len(events) == 0 {
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, fftypes.OpStatusPending)
+		}
+		f := database.TokenApprovalQueryFacory.NewFilter(ctx)
+		switch approvals, _, err := or.database.GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
+		case err != nil:
+			return nil, err
+		case len(approvals) == 0:
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeTokenApproval))
+			updateStatus(result, fftypes.OpStatusPending)
+		default:
+			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
+				Status:    fftypes.OpStatusSucceeded,
+				Type:      fftypes.TransactionStatusTypeTokenApproval,
+				Timestamp: approvals[0].Created,
+				ID:        approvals[0].LocalID,
+			})
+		}
+
 	case fftypes.TransactionTypeContractInvoke:
 		// no blockchain events or other objects
 

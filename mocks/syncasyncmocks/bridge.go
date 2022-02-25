@@ -69,6 +69,29 @@ func (_m *Bridge) WaitForReply(ctx context.Context, ns string, id *fftypes.UUID,
 	return r0, r1
 }
 
+// WaitForTokenApproval provides a mock function with given fields: ctx, ns, id, send
+func (_m *Bridge) WaitForTokenApproval(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.TokenApproval, error) {
+	ret := _m.Called(ctx, ns, id, send)
+
+	var r0 *fftypes.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.TokenApproval); ok {
+		r0 = rf(ctx, ns, id, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenApproval)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, id, send)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // WaitForTokenPool provides a mock function with given fields: ctx, ns, id, send
 func (_m *Bridge) WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.TokenPool, error) {
 	ret := _m.Called(ctx, ns, id, send)

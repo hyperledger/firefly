@@ -49,6 +49,7 @@ var (
 	urlTokenMint             = "/namespaces/default/tokens/mint"
 	urlTokenBurn             = "/namespaces/default/tokens/burn"
 	urlTokenTransfers        = "/namespaces/default/tokens/transfers"
+	urlTokenApprovals        = "/namespaces/default/tokens/approvals"
 	urlTokenAccounts         = "/namespaces/default/tokens/accounts"
 	urlTokenBalances         = "/namespaces/default/tokens/balances"
 	urlContractInvoke        = "/namespaces/default/contracts/invoke"
@@ -446,6 +447,34 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return transfers
+}
+
+func TokenApproval(t *testing.T, client *resty.Client, approval *fftypes.TokenApprovalInput, confirm bool) *fftypes.TokenApproval {
+	var approvalOut fftypes.TokenApproval
+	path := urlTokenApprovals
+	resp, err := client.R().
+		SetBody(approval).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&approvalOut).
+		Post(path)
+	require.NoError(t, err)
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &approvalOut
+}
+
+func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (approvals []*fftypes.TokenApproval) {
+	path := urlTokenApprovals
+	resp, err := client.R().
+		SetQueryParam("pool", poolID.String()).
+		SetResult(&approvals).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return approvals
 }
 
 func GetTokenAccounts(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (accounts []*fftypes.TokenAccount) {

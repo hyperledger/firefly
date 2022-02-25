@@ -56,6 +56,10 @@ type Manager interface {
 
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
+	NewApproval(ns string, approve *fftypes.TokenApprovalInput) sysmessaging.MessageSender
+	TokenApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput, waitConfirm bool) (*fftypes.TokenApproval, error)
+	GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenApproval, *database.FilterResult, error)
+
 	Start() error
 	WaitStop()
 }
