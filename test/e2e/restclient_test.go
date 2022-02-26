@@ -46,6 +46,7 @@ var (
 	urlSubscriptions         = "/namespaces/default/subscriptions"
 	urlDatatypes             = "/namespaces/default/datatypes"
 	urlIdentities            = "/namespaces/default/identities"
+	urlIdentity              = "/namespaces/default/identities/%s"
 	urlTokenPools            = "/namespaces/default/tokens/pools"
 	urlTokenMint             = "/namespaces/default/tokens/mint"
 	urlTokenBurn             = "/namespaces/default/tokens/burn"
@@ -196,11 +197,18 @@ func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
 }
 
 func BroadcastMessage(client *resty.Client, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	return BroadcastMessageAsIdentity(client, "", topic, data, confirm)
+}
+
+func BroadcastMessageAsIdentity(client *resty.Client, did, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
 	return client.R().
 		SetBody(fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
 					Topics: fftypes.FFStringArray{topic},
+					SignerRef: fftypes.SignerRef{
+						Author: did,
+					},
 				},
 			},
 			InlineData: fftypes.InlineData{data},
@@ -245,6 +253,16 @@ func ClaimCustomIdentity(client *resty.Client, key, name, desc string, profile f
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		Post(urlIdentities)
+}
+
+func GetIdentity(t *testing.T, client *resty.Client, id *fftypes.UUID) *fftypes.Identity {
+	var identity fftypes.Identity
+	res, err := client.R().
+		SetResult(&identity).
+		Get(fmt.Sprintf(urlIdentity, id))
+	assert.NoError(t, err)
+	assert.True(t, res.IsSuccess())
+	return &identity
 }
 
 func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *fftypes.Data {

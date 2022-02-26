@@ -17,6 +17,7 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -38,6 +39,7 @@ func (suite *IdentityTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *IdentityTestSuite) TestCustomChildIdentities() {
 	defer suite.testState.done()
 
+	ctx := context.Background()
 	received1, _ := wsReader(suite.testState.ws1, false)
 	received2, _ := wsReader(suite.testState.ws2, false)
 
@@ -61,17 +63,30 @@ func (suite *IdentityTestSuite) TestCustomChildIdentities() {
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
 
-	identities := make(map[fftypes.UUID]bool)
+	identityIDs := make(map[fftypes.UUID]bool)
 	for i := 0; i < totalIdentities; i++ {
 		ed := waitForIdentityConfirmed(suite.T(), received1)
-		identities[*ed.Reference] = true
+		identityIDs[*ed.Reference] = true
 		ed = waitForIdentityConfirmed(suite.T(), received2)
-		identities[*ed.Reference] = true
+		identityIDs[*ed.Reference] = true
 	}
-	assert.Len(suite.T(), identities, totalIdentities)
+	assert.Len(suite.T(), identityIDs, totalIdentities)
 
-	// for identityID := range identities {
-	// 	identity :=
-	// }
+	identities := make(map[string]*fftypes.Identity)
+	for identityID := range identityIDs {
+		identityNode1 := GetIdentity(suite.T(), suite.testState.client1, &identityID)
+		identityNode2 := GetIdentity(suite.T(), suite.testState.client1, &identityID)
+		assert.True(suite.T(), identityNode1.IdentityBase.Equals(ctx, &identityNode2.IdentityBase))
+		identities[identityNode1.DID] = identityNode1
+	}
+
+	// Send a broadcast from each custom identity
+	for did := range identities {
+		resp, err := BroadcastMessageAsIdentity(suite.testState.client1, did, "identitytest", &fftypes.DataRefOrValue{
+			Value: fftypes.JSONAnyPtr(`{"some": "data"}`),
+		}, false)
+		require.NoError(suite.T(), err)
+		assert.Equal(suite.T(), 202, resp.StatusCode())
+	}
 
 }
