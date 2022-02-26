@@ -42,7 +42,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentities() {
 	received2, _ := wsReader(suite.testState.ws2, false)
 
 	// Create some keys
-	totalIdentities := 10
+	totalIdentities := 3
 	keys := make([]string, totalIdentities)
 	for i := 0; i < totalIdentities; i++ {
 		keys[i] = CreateEthAccount(suite.T(), suite.testState.ethNode)

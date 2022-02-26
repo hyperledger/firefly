@@ -308,13 +308,11 @@ func (w *wsClient) sendLoop(receiverDone chan struct{}) {
 			if err := w.heartbeatCheck(); err != nil {
 				l.Errorf("WS %s closing: %s", w.url, err)
 				disconnecting = true
-			} else {
-				if wsconn != nil {
-					if err := wsconn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-						l.Errorf("WS %s heartbeat send failed: %s", w.url, err)
-					}
+			} else if wsconn != nil {
+				if err := wsconn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+					l.Errorf("WS %s heartbeat send failed: %s", w.url, err)
+					disconnecting = true
 				}
-				disconnecting = true
 			}
 		case <-receiverDone:
 			l.Debugf("WS %s send loop exiting", w.url)
