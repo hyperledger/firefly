@@ -36,7 +36,7 @@ func (suite *IdentityTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
-func (suite *IdentityTestSuite) TestCustomChildIdentities() {
+func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	defer suite.testState.done()
 
 	ctx := context.Background()
@@ -82,11 +82,15 @@ func (suite *IdentityTestSuite) TestCustomChildIdentities() {
 
 	// Send a broadcast from each custom identity
 	for did := range identities {
-		resp, err := BroadcastMessageAsIdentity(suite.testState.client1, did, "identitytest", &fftypes.DataRefOrValue{
+		resp, err := BroadcastMessageAsIdentity(suite.T(), suite.testState.client1, did, "identitytest", &fftypes.DataRefOrValue{
 			Value: fftypes.JSONAnyPtr(`{"some": "data"}`),
 		}, false)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
+	}
+	for range identities {
+		waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
+		waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 	}
 
 }

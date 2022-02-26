@@ -196,12 +196,13 @@ func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func BroadcastMessage(client *resty.Client, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
-	return BroadcastMessageAsIdentity(client, "", topic, data, confirm)
+func BroadcastMessage(t *testing.T, client *resty.Client, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	return BroadcastMessageAsIdentity(t, client, "", topic, data, confirm)
 }
 
-func BroadcastMessageAsIdentity(client *resty.Client, did, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
-	return client.R().
+func BroadcastMessageAsIdentity(t *testing.T, client *resty.Client, did, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	var msg fftypes.Message
+	res, err := client.R().
 		SetBody(fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
@@ -214,7 +215,10 @@ func BroadcastMessageAsIdentity(client *resty.Client, did, topic string, data *f
 			InlineData: fftypes.InlineData{data},
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&msg).
 		Post(urlBroadcastMessage)
+	t.Logf("Sent broadcast msg: %s", msg.Header.ID)
+	return res, err
 }
 
 func CreateEthAccount(t *testing.T, client *resty.Client) string {
@@ -374,11 +378,13 @@ func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fft
 			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 		},
 	}
-	ts.t.Logf("Sending private message to %+v", msg.Group.Members)
-	return client.R().
+	res, err := client.R().
 		SetBody(msg).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&msg.Message).
 		Post(urlPrivateMessage)
+	ts.t.Logf("Sent private message %s to %+v", msg.Header.ID, msg.Group.Members)
+	return res, err
 }
 
 func RequestReply(ts *testState, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType) *fftypes.MessageInOut {

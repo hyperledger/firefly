@@ -62,7 +62,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 
 		expectedData[topic] = append(expectedData[topic], data)
 
-		resp, err := BroadcastMessage(suite.testState.client1, topic, data, false)
+		resp, err := BroadcastMessage(suite.T(), suite.testState.client1, topic, data, false)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
@@ -106,7 +106,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	}
 
 	// Should be rejected as datatype not known
-	resp, err := BroadcastMessage(suite.testState.client1, "topic1", &data, true)
+	resp, err := BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
@@ -118,7 +118,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	}
 	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
 
-	resp, err = BroadcastMessage(suite.testState.client1, "topic1", &data, true)
+	resp, err = BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
@@ -128,7 +128,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 		"name": "mywidget"
 	}`)
 
-	resp, err = BroadcastMessage(suite.testState.client1, "topic1", &data, true)
+	resp, err = BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
