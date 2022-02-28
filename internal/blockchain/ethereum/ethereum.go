@@ -615,7 +615,8 @@ func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.Co
 		return i18n.WrapError(ctx, err, i18n.MsgContractParamInvalid)
 	}
 
-	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, abi)
+	subName := fmt.Sprintf("ff-sub-%s", subscription.ID)
+	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subName, abi)
 	if err != nil {
 		return err
 	}
