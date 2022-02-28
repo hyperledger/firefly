@@ -103,3 +103,11 @@ func (nm *networkMap) GetIdentityVerifiers(ctx context.Context, ns, id string, f
 	filter.Condition(filter.Builder().Eq("identity", identity.ID))
 	return nm.database.GetVerifiers(ctx, filter)
 }
+
+func (nm *networkMap) GetDIDDocForIndentityByID(ctx context.Context, ns, id string) (*DIDDocument, error) {
+	identity, err := nm.GetIdentityByID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	return nm.generateDIDDocument(ctx, identity)
+}
