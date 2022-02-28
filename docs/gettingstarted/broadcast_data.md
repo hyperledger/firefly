@@ -33,8 +33,8 @@ nav_order: 4
 
 ## Additional info
 
-- Key Concepts: [Broadcast / shared data](/keyconcepts/broadcast.html)
-- Swagger: [POST /api/v1/namespaces/{ns}/broadcast/message](/swagger/swagger.html#/default/postBroadcastMessage)
+- Key Concepts: [Broadcast / shared data](/firefly/keyconcepts/broadcast.html)
+- Swagger: [POST /api/v1/namespaces/{ns}/broadcast/message](/firefly/swagger/swagger.html#/default/postBroadcastMessage)
 
 ## Example 1: Inline string data
 
