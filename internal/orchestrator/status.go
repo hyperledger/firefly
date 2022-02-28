@@ -46,7 +46,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStat
 
 	org, err := or.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
-		log.L(ctx).Warnf("Failed to query local ord for status: %s", err)
+		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 	}
 	status = &fftypes.NodeStatus{
 		Node: fftypes.NodeStatusNode{

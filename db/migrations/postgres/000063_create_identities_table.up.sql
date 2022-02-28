@@ -100,7 +100,7 @@ INSERT INTO verifiers (
     o.id,
     'ff_system',
     o.id,
-    'EcdsaSecp256k1VerificationKey2019',
+    'ethereum_address',
     o.identity,
     o.created    
   FROM orgs as o WHERE o.identity LIKE '0x%';
@@ -116,7 +116,7 @@ INSERT INTO verifiers (
     o.id,
     'ff_system',
     o.id,
-    'HyperledgerFabricMSPIdentity',
+    'fabric_msp_id',
     o.identity,
     o.created
   FROM orgs as o WHERE o.identity NOT LIKE '0x%';
@@ -132,7 +132,7 @@ INSERT INTO verifiers (
     n.id,
     'ff_system',
     n.id,
-    'FireFlyDataExchangePeerId',
+    'dx_peer_id',
     n.dx_peer,
     n.created
   FROM nodes as n;
