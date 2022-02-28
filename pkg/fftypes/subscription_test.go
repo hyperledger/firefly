@@ -24,7 +24,6 @@ import (
 )
 
 func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
-
 	firstEvent := SubOptsFirstEventNewest
 	readAhead := uint16(50)
 	yes := true
@@ -36,6 +35,7 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 				WithData:   &yes,
 			},
 		},
+		Filter: SubscriptionFilter{},
 	}
 	sub1.Options.TransportOptions()["my-nested-opts"] = map[string]interface{}{
 		"myopt1": 12345,
@@ -47,9 +47,14 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"firstEvent":"newest","my-nested-opts":{"myopt1":12345,"myopt2":"test"},"readAhead":50,"withData":true}`, string(b1.([]byte)))
 
+	f1, err := sub1.Filter.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, `{"message":{},"transaction":{},"blockchainevent":{}}`, string(f1.([]byte)))
+
 	// Verify it restores ok
 	sub2 := &Subscription{}
 	err = sub2.Options.Scan(b1)
+	err = sub2.Filter.Scan(f1)
 	assert.NoError(t, err)
 	b2, err := sub1.Options.Value()
 	assert.NoError(t, err)
@@ -66,14 +71,26 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	assert.Equal(t, float64(12345), sub2.Options.TransportOptions().GetObject("my-nested-opts")["myopt1"])
 	assert.Equal(t, "test", sub2.Options.TransportOptions().GetObject("my-nested-opts")["myopt2"])
 
+	// Verify it can scan nil
+	err = sub2.Filter.Scan(nil)
+	assert.NoError(t, err)
+
 	// Verify it can also scan as a string
 	err = sub2.Options.Scan(string(b1.([]byte)))
+	assert.NoError(t, err)
+
+	err = sub2.Filter.Scan(string(f1.([]byte)))
+	assert.NoError(t, err)
+
+	err = sub2.Filter.Scan(string(""))
 	assert.NoError(t, err)
 
 	// Out of luck with anything else
 	err = sub2.Options.Scan(false)
 	assert.Regexp(t, "FF10125", err)
 
+	err = sub2.Filter.Scan(false)
+	assert.Regexp(t, "FF10125", err)
 }
 
 func TestSubscriptionUnMarshalFail(t *testing.T) {

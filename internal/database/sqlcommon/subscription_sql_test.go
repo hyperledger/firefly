@@ -78,9 +78,11 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		Transport: "websockets",
 		Filter: fftypes.SubscriptionFilter{
 			Events: string(fftypes.EventTypeMessageConfirmed),
-			Topics: "topics.*",
-			Tag:    "tag.*",
-			Group:  "group.*",
+			Message: fftypes.MessageFilter{
+				Topics: "topics.*",
+				Tag:    "tag.*",
+				Group:  "group.*",
+			},
 		},
 		Options: subOpts,
 		Created: fftypes.Now(),
@@ -258,7 +260,7 @@ func TestSubscriptionUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
-		fftypes.NewUUID(), "ns1", "sub1", "websockets", "", "", "", "", `{}`, fftypes.Now(), fftypes.Now()),
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now()),
 	)
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
@@ -289,7 +291,7 @@ func TestSubscriptionUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
-		fftypes.NewUUID(), "ns1", "sub1", "websockets", "", "", "", "", `{}`, fftypes.Now(), fftypes.Now()),
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now()),
 	)
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -309,7 +311,7 @@ func TestSubscriptionDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
-		fftypes.NewUUID(), "ns1", "sub1", "websockets", "", "", "", "", `{}`, fftypes.Now(), fftypes.Now()),
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteSubscriptionByID(context.Background(), fftypes.NewUUID())

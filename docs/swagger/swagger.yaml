@@ -6133,16 +6133,29 @@ paths:
                     type: boolean
                   filter:
                     properties:
-                      author:
-                        type: string
+                      blockchainevent:
+                        properties:
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
-                      group:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6192,16 +6205,29 @@ paths:
               properties:
                 filter:
                   properties:
-                    author:
-                      type: string
+                    blockchainevent:
+                      properties:
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
-                    group:
-                      type: string
-                    tag:
-                      type: string
-                    topics:
-                      type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          type: string
+                      type: object
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -6320,16 +6346,29 @@ paths:
                     type: boolean
                   filter:
                     properties:
-                      author:
-                        type: string
+                      blockchainevent:
+                        properties:
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
-                      group:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6379,16 +6418,29 @@ paths:
               properties:
                 filter:
                   properties:
-                    author:
-                      type: string
+                    blockchainevent:
+                      properties:
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
-                    group:
-                      type: string
-                    tag:
-                      type: string
-                    topics:
-                      type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          type: string
+                      type: object
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -6507,16 +6559,29 @@ paths:
                     type: boolean
                   filter:
                     properties:
-                      author:
-                        type: string
+                      blockchainevent:
+                        properties:
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
-                      group:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6604,16 +6669,29 @@ paths:
                     type: boolean
                   filter:
                     properties:
-                      author:
-                        type: string
+                      blockchainevent:
+                        properties:
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
-                      group:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:

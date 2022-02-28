@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -178,6 +178,26 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 		return nil, err
 	}
 
+	tfb := database.TransactionQueryFactory.NewFilter(ed.ctx)
+	txFilter := tfb.And(
+		tfb.In("id", refIDs),
+		tfb.Eq("namespace", ed.namespace),
+	)
+	txs, _, err := ed.database.GetTransactions(ed.ctx, txFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	bfb := database.BlockchainEventQueryFactory.NewFilter(ed.ctx)
+	beFilter := bfb.And(
+		tfb.In("id", refIDs),
+		tfb.Eq("namespace", ed.namespace),
+	)
+	bEvents, _, err := ed.database.GetBlockchainEvents(ed.ctx, beFilter)
+	if err != nil {
+		return nil, err
+	}
+
 	enriched := make([]*fftypes.EventDelivery, len(events))
 	for i, ls := range events {
 		e := ls.(*fftypes.Event)
@@ -191,10 +211,21 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 				break
 			}
 		}
+		for _, tx := range txs {
+			if *e.Reference == *tx.ID {
+				enriched[i].Transaction = tx
+				break
+			}
+		}
+		for _, be := range bEvents {
+			if *e.Reference == *be.ID {
+				enriched[i].BlockchainEvent = be
+				break
+			}
+		}
 	}
 
 	return enriched, nil
-
 }
 
 func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*fftypes.EventDelivery {
@@ -204,11 +235,17 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		if filter.eventMatcher != nil && !filter.eventMatcher.MatchString(string(event.Type)) {
 			continue
 		}
+
 		msg := event.Message
+		tx := event.Transaction
+		be := event.BlockchainEvent
 		tag := ""
 		group := ""
 		author := ""
+		txType := ""
+		beName := ""
 		var topics []string
+
 		if msg != nil {
 			tag = msg.Header.Tag
 			topics = msg.Header.Topics
@@ -217,27 +254,51 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 				group = msg.Header.Group.String()
 			}
 		}
-		if filter.tagFilter != nil && !filter.tagFilter.MatchString(tag) {
-			continue
+
+		if tx != nil {
+			txType = tx.Type.String()
 		}
-		if filter.authorFilter != nil && !filter.authorFilter.MatchString(author) {
-			continue
+
+		if be != nil {
+			beName = be.Name
 		}
-		if filter.topicsFilter != nil {
-			topicsMatch := false
-			for _, topic := range topics {
-				if filter.topicsFilter.MatchString(topic) {
-					topicsMatch = true
-					break
+
+		if filter.messageFilter != nil {
+			if filter.messageFilter.tagFilter != nil && !filter.messageFilter.tagFilter.MatchString(tag) {
+				continue
+			}
+			if filter.messageFilter.authorFilter != nil && !filter.messageFilter.authorFilter.MatchString(author) {
+				continue
+			}
+			if filter.messageFilter.topicsFilter != nil {
+				topicsMatch := false
+				for _, topic := range topics {
+					if filter.messageFilter.topicsFilter.MatchString(topic) {
+						topicsMatch = true
+						break
+					}
+				}
+				if !topicsMatch {
+					continue
 				}
 			}
-			if !topicsMatch {
+			if filter.messageFilter.groupFilter != nil && !filter.messageFilter.groupFilter.MatchString(group) {
 				continue
 			}
 		}
-		if filter.groupFilter != nil && !filter.groupFilter.MatchString(group) {
-			continue
+
+		if filter.transactionFilter != nil {
+			if filter.transactionFilter.typeFilter != nil && !filter.transactionFilter.typeFilter.MatchString(txType) {
+				continue
+			}
 		}
+
+		if filter.blockchainFilter != nil {
+			if filter.blockchainFilter.nameFilter != nil && !filter.blockchainFilter.nameFilter.MatchString(beName) {
+				continue
+			}
+		}
+
 		matchingEvents = append(matchingEvents, event)
 	}
 	return matchingEvents

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,11 +26,26 @@ import (
 
 // SubscriptionFilter contains regular expressions to match against events. All must match for an event to be dispatched to a subscription
 type SubscriptionFilter struct {
-	Events string `json:"events,omitempty"`
+	Events          string                `json:"events,omitempty"`
+	Message         MessageFilter         `json:"message,omitempty"`
+	Transaction     TransactionFilter     `json:"transaction,omitempty"`
+	BlockchainEvent BlockchainEventFilter `json:"blockchainevent,omitempty"`
+}
+
+type MessageFilter struct {
 	Topics string `json:"topics,omitempty"`
 	Tag    string `json:"tag,omitempty"`
 	Group  string `json:"group,omitempty"`
 	Author string `json:"author,omitempty"`
+}
+
+type TransactionFilter struct {
+	Type string `json:"type,omitempty"`
+}
+
+// TODO: Add listener ID
+type BlockchainEventFilter struct {
+	Name string `json:"name,omitempty"`
 }
 
 // SubOptsFirstEvent picks the first event that should be dispatched on the subscription, and can be a string containing an exact sequence as well as one of the enum values
@@ -133,4 +148,27 @@ func (so *SubscriptionOptions) Scan(src interface{}) error {
 // Value implements sql.Valuer
 func (so SubscriptionOptions) Value() (driver.Value, error) {
 	return so.MarshalJSON()
+}
+
+func (sf SubscriptionFilter) Value() (driver.Value, error) {
+	return json.Marshal(&sf)
+}
+
+func (sf *SubscriptionFilter) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case nil:
+		return nil
+
+	case []byte:
+		return json.Unmarshal(src, &sf)
+
+	case string:
+		if src == "" {
+			return nil
+		}
+		return json.Unmarshal([]byte(src), &sf)
+
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, sf)
+	}
 }

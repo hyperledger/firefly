@@ -88,9 +88,11 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 			Name:      query.Get("name"),
 			Filter: fftypes.SubscriptionFilter{
 				Events: query.Get("filter.events"),
-				Topics: query.Get("filter.topics"),
-				Group:  query.Get("filter.group"),
-				Tag:    query.Get("filter.tag"),
+				Message: fftypes.MessageFilter{
+					Topics: query.Get("filter.topics"),
+					Group:  query.Get("filter.group"),
+					Tag:    query.Get("filter.tag"),
+				},
 			},
 			ChangeEvents: query.Get("changeevents"),
 		})

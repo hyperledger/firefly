@@ -11,8 +11,8 @@
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v0.10.4",
-    "sha": "8625bb1685738365359174ae3bafecece934e6cc6a60c15e2a364324565c7bf7"
+    "tag": "v0.10.3-20220209-6",
+    "sha": "a94776c7f89c27548149e080627fe3c55ad528835ecea0131b1c1ae96981398e"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",

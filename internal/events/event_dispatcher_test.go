@@ -196,6 +196,20 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 		{Header: fftypes.MessageHeader{ID: ref4}},
 	}, nil, nil)
 
+	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.Transaction{}, nil, nil)
+
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.BlockchainEvent{}, nil, nil)
+
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
 	go func() {
@@ -282,6 +296,20 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 		{Header: fftypes.MessageHeader{ID: ref3}},
 		{Header: fftypes.MessageHeader{ID: ref4}},
 	}, nil, nil)
+
+	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.Transaction{}, nil, nil)
+
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.BlockchainEvent{}, nil, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -407,10 +435,50 @@ func TestEnrichEventsFailGetMessages(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestFilterEventsMatch(t *testing.T) {
+func TestEnrichEventsFailGetTransactions(t *testing.T) {
 
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
+	}
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+
+	mdi := ed.database.(*databasemocks.Plugin)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	id1 := fftypes.NewUUID()
+	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
+
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichEventsFailGetBlockchainEvents(t *testing.T) {
+
+	sub := &subscription{
+		definition: &fftypes.Subscription{},
+	}
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+
+	mdi := ed.database.(*databasemocks.Plugin)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	id1 := fftypes.NewUUID()
+	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
+
+	assert.EqualError(t, err, "pop")
+}
+
+func TestFilterEventsMatch(t *testing.T) {
+
+	sub := &subscription{
+		definition:        &fftypes.Subscription{},
+		messageFilter:     &messageFilter{},
+		transactionFilter: &transactionFilter{},
+		blockchainFilter:  &blockchainFilter{},
 	}
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
@@ -419,6 +487,8 @@ func TestFilterEventsMatch(t *testing.T) {
 	id1 := fftypes.NewUUID()
 	id2 := fftypes.NewUUID()
 	id3 := fftypes.NewUUID()
+	id4 := fftypes.NewUUID()
+	id5 := fftypes.NewUUID()
 	events := ed.filterEvents([]*fftypes.EventDelivery{
 		{
 			Event: fftypes.Event{
@@ -471,12 +541,30 @@ func TestFilterEventsMatch(t *testing.T) {
 				},
 			},
 		},
+		{
+			Event: fftypes.Event{
+				ID:   id4,
+				Type: fftypes.EventTypeBlockchainEvent,
+			},
+			BlockchainEvent: &fftypes.BlockchainEvent{
+				Name: "flapflip",
+			},
+		},
+		{
+			Event: fftypes.Event{
+				ID:   id5,
+				Type: fftypes.EventTypeTransactionSubmitted,
+			},
+			Transaction: &fftypes.Transaction{
+				Type: fftypes.TransactionTypeBatchPin,
+			},
+		},
 	})
 
 	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypeMessageConfirmed))
-	ed.subscription.topicsFilter = regexp.MustCompile(".*")
-	ed.subscription.tagFilter = regexp.MustCompile(".*")
-	ed.subscription.groupFilter = regexp.MustCompile(".*")
+	ed.subscription.messageFilter.topicsFilter = regexp.MustCompile(".*")
+	ed.subscription.messageFilter.tagFilter = regexp.MustCompile(".*")
+	ed.subscription.messageFilter.groupFilter = regexp.MustCompile(".*")
 	matched := ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
 	assert.Equal(t, *id1, *matched[0].ID)
@@ -484,52 +572,263 @@ func TestFilterEventsMatch(t *testing.T) {
 	// id three has the wrong event type
 
 	ed.subscription.eventMatcher = nil
-	ed.subscription.topicsFilter = nil
-	ed.subscription.tagFilter = nil
-	ed.subscription.groupFilter = nil
+	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.messageFilter.tagFilter = nil
+	ed.subscription.messageFilter.groupFilter = nil
 	matched = ed.filterEvents(events)
-	assert.Equal(t, 3, len(matched))
+	assert.Equal(t, 5, len(matched))
 	assert.Equal(t, *id1, *matched[0].ID)
 	assert.Equal(t, *id2, *matched[1].ID)
 	assert.Equal(t, *id3, *matched[2].ID)
+	assert.Equal(t, *id4, *matched[3].ID)
+	assert.Equal(t, *id5, *matched[4].ID)
 
-	ed.subscription.topicsFilter = regexp.MustCompile("topic1")
+	ed.subscription.messageFilter.topicsFilter = regexp.MustCompile("topic1")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
 	assert.Equal(t, *id1, *matched[0].ID)
 	assert.Equal(t, *id2, *matched[1].ID)
 
-	ed.subscription.topicsFilter = nil
-	ed.subscription.tagFilter = regexp.MustCompile("tag2")
+	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.messageFilter.tagFilter = regexp.MustCompile("tag2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)
 
-	ed.subscription.topicsFilter = nil
-	ed.subscription.authorFilter = nil
-	ed.subscription.groupFilter = regexp.MustCompile(gid1.String())
+	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.messageFilter.authorFilter = nil
+	ed.subscription.messageFilter.groupFilter = regexp.MustCompile(gid1.String())
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)
 
-	ed.subscription.groupFilter = regexp.MustCompile("^$")
+	ed.subscription.messageFilter.groupFilter = regexp.MustCompile("^$")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 0, len(matched))
 
-	ed.subscription.groupFilter = nil
-	ed.subscription.topicsFilter = nil
-	ed.subscription.tagFilter = nil
-	ed.subscription.authorFilter = regexp.MustCompile("org2")
+	ed.subscription.messageFilter.groupFilter = nil
+	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.messageFilter.tagFilter = nil
+	ed.subscription.messageFilter.authorFilter = regexp.MustCompile("org2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)
 
+	ed.subscription.messageFilter = nil
+	ed.subscription.transactionFilter.typeFilter = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.TransactionTypeBatchPin))
+	matched = ed.filterEvents(events)
+	assert.Equal(t, 1, len(matched))
+	assert.Equal(t, *id5, *matched[0].ID)
+
+	ed.subscription.messageFilter = nil
+	ed.subscription.transactionFilter = nil
+	ed.subscription.blockchainFilter.nameFilter = regexp.MustCompile("flapflip")
+	matched = ed.filterEvents(events)
+	assert.Equal(t, 1, len(matched))
+	assert.Equal(t, *id4, *matched[0].ID)
+}
+
+func TestEnrichTransactionEvents(t *testing.T) {
+	log.SetLevel("debug")
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &fftypes.Subscription{
+			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			Ephemeral:       true,
+			Options:         fftypes.SubscriptionOptions{},
+		},
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+	go ed.deliverEvents()
+
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
+
+	eventDeliveries := make(chan *fftypes.EventDelivery)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock.RunFn = func(a mock.Arguments) {
+		eventDeliveries <- a.Get(2).(*fftypes.EventDelivery)
+	}
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+	ref2 := fftypes.NewUUID()
+	ev2 := fftypes.NewUUID()
+	ref3 := fftypes.NewUUID()
+	ev3 := fftypes.NewUUID()
+	ref4 := fftypes.NewUUID()
+	ev4 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+
+	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.Transaction{
+		{ID: ref1},
+		{ID: ref2},
+		{ID: ref3},
+		{ID: ref4},
+	}, nil, nil)
+
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.BlockchainEvent{}, nil, nil)
+
+	// Deliver a batch of messages
+	batch1Done := make(chan struct{})
+	go func() {
+		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
+			&fftypes.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeTransactionSubmitted}, // match
+			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeTransactionSubmitted}, // match
+			&fftypes.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeTransactionSubmitted}, // match
+			&fftypes.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeTransactionSubmitted}, // match
+		})
+		assert.NoError(t, err)
+		assert.True(t, repoll)
+		close(batch1Done)
+	}()
+
+	// Wait for the two calls to deliver the matching messages to the client (read ahead allows this)
+	event1 := <-eventDeliveries
+	assert.Equal(t, *ev1, *event1.ID)
+	assert.Equal(t, *ref1, *event1.Transaction.ID)
+	select {
+	case <-eventDeliveries:
+		assert.Fail(t, "should not have read ahead")
+	default:
+	}
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event1.ID})
+
+	event2 := <-eventDeliveries
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event2.ID})
+
+	event3 := <-eventDeliveries
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event3.ID})
+
+	event4 := <-eventDeliveries
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event4.ID})
+
+	// This should complete the batch
+	<-batch1Done
+
+	mdi.AssertExpectations(t)
+	mei.AssertExpectations(t)
+}
+
+func TestEnrichBlockchainEventEvents(t *testing.T) {
+	log.SetLevel("debug")
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &fftypes.Subscription{
+			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			Ephemeral:       true,
+			Options:         fftypes.SubscriptionOptions{},
+		},
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+	go ed.deliverEvents()
+
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
+
+	eventDeliveries := make(chan *fftypes.EventDelivery)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock.RunFn = func(a mock.Arguments) {
+		eventDeliveries <- a.Get(2).(*fftypes.EventDelivery)
+	}
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+	ref2 := fftypes.NewUUID()
+	ev2 := fftypes.NewUUID()
+	ref3 := fftypes.NewUUID()
+	ev3 := fftypes.NewUUID()
+	ref4 := fftypes.NewUUID()
+	ev4 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+
+	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.Transaction{}, nil, nil)
+
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+		fi, err := filter.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
+		return true
+	})).Return([]*fftypes.BlockchainEvent{
+		{ID: ref1},
+		{ID: ref2},
+		{ID: ref3},
+		{ID: ref4},
+	}, nil, nil)
+
+	// Deliver a batch of messages
+	batch1Done := make(chan struct{})
+	go func() {
+		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
+			&fftypes.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeBlockchainEvent}, // match
+			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeBlockchainEvent}, // match
+			&fftypes.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeBlockchainEvent}, // match
+			&fftypes.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeBlockchainEvent}, // match
+		})
+		assert.NoError(t, err)
+		assert.True(t, repoll)
+		close(batch1Done)
+	}()
+
+	// Wait for the two calls to deliver the matching messages to the client (read ahead allows this)
+	event1 := <-eventDeliveries
+	assert.Equal(t, *ev1, *event1.ID)
+	assert.Equal(t, *ref1, *event1.BlockchainEvent.ID)
+	select {
+	case <-eventDeliveries:
+		assert.Fail(t, "should not have read ahead")
+	default:
+	}
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event1.ID})
+
+	event2 := <-eventDeliveries
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event2.ID})
+
+	event3 := <-eventDeliveries
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event3.ID})
+
+	event4 := <-eventDeliveries
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event4.ID})
+
+	// This should complete the batch
+	<-batch1Done
+
+	mdi.AssertExpectations(t)
+	mei.AssertExpectations(t)
 }
 
 func TestBufferedDeliveryNoEvents(t *testing.T) {
 
 	sub := &subscription{
-		definition: &fftypes.Subscription{},
+		definition:        &fftypes.Subscription{},
+		messageFilter:     &messageFilter{},
+		transactionFilter: &transactionFilter{},
+		blockchainFilter:  &blockchainFilter{},
 	}
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
@@ -543,7 +842,10 @@ func TestBufferedDeliveryNoEvents(t *testing.T) {
 func TestBufferedDeliveryEnrichFail(t *testing.T) {
 
 	sub := &subscription{
-		definition: &fftypes.Subscription{},
+		definition:        &fftypes.Subscription{},
+		messageFilter:     &messageFilter{},
+		transactionFilter: &transactionFilter{},
+		blockchainFilter:  &blockchainFilter{},
 	}
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
@@ -560,7 +862,10 @@ func TestBufferedDeliveryEnrichFail(t *testing.T) {
 func TestBufferedDeliveryClosedContext(t *testing.T) {
 
 	sub := &subscription{
-		definition: &fftypes.Subscription{},
+		messageFilter:     &messageFilter{},
+		transactionFilter: &transactionFilter{},
+		blockchainFilter:  &blockchainFilter{},
+		definition:        &fftypes.Subscription{},
 	}
 	ed, cancel := newTestEventDispatcher(sub)
 	go ed.deliverEvents()
@@ -569,6 +874,8 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -590,6 +897,8 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -632,6 +941,8 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -670,7 +981,10 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	log.SetLevel("trace")
 
 	sub := &subscription{
-		definition: &fftypes.Subscription{},
+		definition:        &fftypes.Subscription{},
+		messageFilter:     &messageFilter{},
+		transactionFilter: &transactionFilter{},
+		blockchainFilter:  &blockchainFilter{},
 	}
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
@@ -680,6 +994,8 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -714,8 +1030,12 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 func TestBufferedFinalAckFail(t *testing.T) {
 
 	sub := &subscription{
-		definition:   &fftypes.Subscription{},
-		topicsFilter: regexp.MustCompile("never matches"),
+		definition: &fftypes.Subscription{},
+		messageFilter: &messageFilter{
+			topicsFilter: regexp.MustCompile("never matches"),
+		},
+		transactionFilter: &transactionFilter{},
+		blockchainFilter:  &blockchainFilter{},
 	}
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
@@ -724,6 +1044,8 @@ func TestBufferedFinalAckFail(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 

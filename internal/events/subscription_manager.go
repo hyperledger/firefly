@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,10 +39,24 @@ type subscription struct {
 
 	dispatcherElection chan bool
 	eventMatcher       *regexp.Regexp
-	groupFilter        *regexp.Regexp
-	tagFilter          *regexp.Regexp
-	topicsFilter       *regexp.Regexp
-	authorFilter       *regexp.Regexp
+	messageFilter      *messageFilter
+	blockchainFilter   *blockchainFilter
+	transactionFilter  *transactionFilter
+}
+
+type messageFilter struct {
+	groupFilter  *regexp.Regexp
+	tagFilter    *regexp.Regexp
+	topicsFilter *regexp.Regexp
+	authorFilter *regexp.Regexp
+}
+
+type blockchainFilter struct {
+	nameFilter *regexp.Regexp
+}
+
+type transactionFilter struct {
+	typeFilter *regexp.Regexp
 }
 
 type connection struct {
@@ -275,47 +289,84 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
-	var tagFilter *regexp.Regexp
-	if filter.Tag != "" {
-		tagFilter, err = regexp.Compile(filter.Tag)
-		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.tag", filter.Tag)
-		}
-	}
-
-	var groupFilter *regexp.Regexp
-	if filter.Group != "" {
-		groupFilter, err = regexp.Compile(filter.Group)
-		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.group", filter.Group)
-		}
-	}
-
-	var topicsFilter *regexp.Regexp
-	if filter.Topics != "" {
-		topicsFilter, err = regexp.Compile(filter.Topics)
-		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topics", filter.Topics)
-		}
-	}
-
-	var authorFilter *regexp.Regexp
-	if filter.Author != "" {
-		authorFilter, err = regexp.Compile(filter.Author)
-		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.author", filter.Author)
-		}
-	}
-
 	sub = &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
 		eventMatcher:       eventFilter,
-		groupFilter:        groupFilter,
-		tagFilter:          tagFilter,
-		topicsFilter:       topicsFilter,
-		authorFilter:       authorFilter,
 	}
+
+	if (filter.Message != fftypes.MessageFilter{}) {
+		var tagFilter *regexp.Regexp
+		if filter.Message.Tag != "" {
+			tagFilter, err = regexp.Compile(filter.Message.Tag)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.tag", filter.Message.Tag)
+			}
+		}
+
+		var groupFilter *regexp.Regexp
+		if filter.Message.Group != "" {
+			groupFilter, err = regexp.Compile(filter.Message.Group)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.group", filter.Message.Group)
+			}
+		}
+
+		var topicsFilter *regexp.Regexp
+		if filter.Message.Topics != "" {
+			topicsFilter, err = regexp.Compile(filter.Message.Topics)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.topics", filter.Message.Topics)
+			}
+		}
+
+		var authorFilter *regexp.Regexp
+		if filter.Message.Author != "" {
+			authorFilter, err = regexp.Compile(filter.Message.Author)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.author", filter.Message.Author)
+			}
+		}
+
+		msg := &messageFilter{
+			tagFilter:    tagFilter,
+			groupFilter:  groupFilter,
+			topicsFilter: topicsFilter,
+			authorFilter: authorFilter,
+		}
+		sub.messageFilter = msg
+	}
+
+	if (filter.BlockchainEvent != fftypes.BlockchainEventFilter{}) {
+		var nameFilter *regexp.Regexp
+		if filter.BlockchainEvent.Name != "" {
+			nameFilter, err = regexp.Compile(filter.BlockchainEvent.Name)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.BlockchainEvent.name", filter.BlockchainEvent.Name)
+			}
+		}
+
+		bf := &blockchainFilter{
+			nameFilter: nameFilter,
+		}
+		sub.blockchainFilter = bf
+	}
+
+	if (filter.Transaction != fftypes.TransactionFilter{}) {
+		var typeFilter *regexp.Regexp
+		if filter.Transaction.Type != "" {
+			typeFilter, err = regexp.Compile(filter.Transaction.Type)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Transaction.type", filter.Transaction.Type)
+			}
+		}
+
+		tf := &transactionFilter{
+			typeFilter: typeFilter,
+		}
+		sub.transactionFilter = tf
+	}
+
 	return sub, err
 }
 
