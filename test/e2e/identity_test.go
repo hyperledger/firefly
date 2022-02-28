@@ -105,7 +105,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	org2Key := CreateEthAccount(suite.T(), suite.testState.ethNode)
 
 	ts := time.Now().Unix()
-	ClaimCustomIdentity(suite.T(),
+	custom1 := ClaimCustomIdentity(suite.T(),
 		suite.testState.client1,
 		org1Key,
 		fmt.Sprintf("custom_%d_org1priv", ts),
@@ -123,8 +123,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		true)
 
 	resp, err := PrivateMessageWithKey(suite.testState, suite.testState.client1, org1Key, "topic1", &fftypes.DataRefOrValue{
-		Value: fftypes.JSONAnyPtr("test private custom identity"),
-	}, []string{custom2.DID}, "tag1", fftypes.TransactionTypeBatchPin, true)
+		Value: fftypes.JSONAnyPtr(`"test private custom identity"`),
+	}, []string{custom1.DID, custom2.DID}, "tag1", fftypes.TransactionTypeBatchPin, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
