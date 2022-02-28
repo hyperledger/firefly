@@ -243,8 +243,9 @@ func CreateEthAccount(t *testing.T, client *resty.Client) string {
 	return newKey
 }
 
-func ClaimCustomIdentity(client *resty.Client, key, name, desc string, profile fftypes.JSONObject, parent *fftypes.UUID, confirm bool) (*resty.Response, error) {
-	return client.R().
+func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc string, profile fftypes.JSONObject, parent *fftypes.UUID, confirm bool) *fftypes.Identity {
+	var identity fftypes.Identity
+	res, err := client.R().
 		SetBody(fftypes.IdentityCreateDTO{
 			Name:   name,
 			Type:   fftypes.IdentityTypeCustom,
@@ -256,7 +257,11 @@ func ClaimCustomIdentity(client *resty.Client, key, name, desc string, profile f
 			},
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&identity).
 		Post(urlIdentities)
+	assert.NoError(t, err)
+	assert.True(t, res.IsSuccess())
+	return &identity
 }
 
 func GetIdentity(t *testing.T, client *resty.Client, id *fftypes.UUID) *fftypes.Identity {
@@ -357,6 +362,10 @@ func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic
 }
 
 func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
+	return PrivateMessageWithKey(ts, client, "", topic, data, orgNames, tag, txType, confirm)
+}
+
+func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -370,6 +379,9 @@ func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fft
 				Tag:    tag,
 				TxType: txType,
 				Topics: fftypes.FFStringArray{topic},
+				SignerRef: fftypes.SignerRef{
+					Key: key,
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{data},

@@ -52,15 +52,14 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 
 	ts := time.Now().Unix()
 	for i := 0; i < totalIdentities; i++ {
-		resp, err := ClaimCustomIdentity(suite.testState.client1,
+		ClaimCustomIdentity(suite.T(),
+			suite.testState.client1,
 			keys[i],
 			fmt.Sprintf("custom_%d_%d", ts, i),
 			fmt.Sprintf("Description %d", i),
 			fftypes.JSONObject{"profile": i},
 			suite.testState.org1.ID,
 			false)
-		require.NoError(suite.T(), err)
-		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
 
 	identityIDs := make(map[fftypes.UUID]bool)
@@ -92,5 +91,44 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 		waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
 		waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 	}
+
+}
+
+func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
+	defer suite.testState.done()
+
+	received1, _ := wsReader(suite.testState.ws1, false)
+	received2, _ := wsReader(suite.testState.ws2, false)
+
+	// Create an identity on both sides
+	org1Key := CreateEthAccount(suite.T(), suite.testState.ethNode)
+	org2Key := CreateEthAccount(suite.T(), suite.testState.ethNode)
+
+	ts := time.Now().Unix()
+	ClaimCustomIdentity(suite.T(),
+		suite.testState.client1,
+		org1Key,
+		fmt.Sprintf("custom_%d_org1priv", ts),
+		fmt.Sprintf("Description org1priv"),
+		nil,
+		suite.testState.org1.ID,
+		true)
+	custom2 := ClaimCustomIdentity(suite.T(),
+		suite.testState.client2,
+		org2Key,
+		fmt.Sprintf("custom_%d_org2priv", ts),
+		fmt.Sprintf("Description org2priv"),
+		nil,
+		suite.testState.org1.ID,
+		true)
+
+	resp, err := PrivateMessageWithKey(suite.testState, suite.testState.client1, org1Key, "topic1", &fftypes.DataRefOrValue{
+		Value: fftypes.JSONAnyPtr("test private custom identity"),
+	}, []string{custom2.DID}, "tag1", fftypes.TransactionTypeBatchPin, true)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 200, resp.StatusCode())
+
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
 
 }
