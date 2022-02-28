@@ -496,11 +496,6 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 	if sub.Name == "" {
 		sub.Name = sub.ProtocolID
 	}
-
-	if sub.Name == "" {
-		sub.Name = sub.ProtocolID
-	}
-
 	if err = cm.database.UpsertContractSubscription(ctx, &sub.ContractSubscription); err != nil {
 		return nil, err
 	}
