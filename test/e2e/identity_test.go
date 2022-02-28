@@ -119,8 +119,12 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		fmt.Sprintf("custom_%d_org2priv", ts),
 		fmt.Sprintf("Description org2priv"),
 		nil,
-		suite.testState.org1.ID,
+		suite.testState.org2.ID,
 		true)
+	for i := 0; i < 2; i++ {
+		waitForIdentityConfirmed(suite.T(), received1)
+		waitForIdentityConfirmed(suite.T(), received2)
+	}
 
 	resp, err := PrivateMessageWithKey(suite.testState, suite.testState.client1, org1Key, "topic1", &fftypes.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`"test private custom identity"`),
@@ -128,7 +132,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
+	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
+	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
 
 }

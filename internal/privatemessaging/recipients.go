@@ -56,30 +56,32 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 	return err
 }
 
-func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
+func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
 	retryable := true
 	if nodeInput != "" {
 		node, retryable, err = pm.identity.CachedIdentityLookup(ctx, nodeInput)
 	} else {
 		// Find any node owned by this organization
-		var nodes []*fftypes.Identity
-		originalOrgName := fmt.Sprintf("%s/%s", org.Name, org.ID)
-		for org != nil && node == nil {
-			fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
-			filter := fb.And(
-				fb.Eq("parent", org.ID),
-				fb.Eq("type", fftypes.IdentityTypeNode),
-			)
-			nodes, _, err = pm.database.GetIdentities(ctx, filter)
+		inputIdentityDebugInfo := fmt.Sprintf("%s (%s)", identity.DID, identity.ID)
+		for identity != nil && node == nil {
+			var nodes []*fftypes.Identity
+			if identity.Type == fftypes.IdentityTypeOrg {
+				fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
+				filter := fb.And(
+					fb.Eq("parent", identity.ID),
+					fb.Eq("type", fftypes.IdentityTypeNode),
+				)
+				nodes, _, err = pm.database.GetIdentities(ctx, filter)
+			}
 			switch {
 			case err == nil && len(nodes) > 0:
-				// This org owns a node
+				// This is an org, and it owns a node
 				node = nodes[0]
-			case err == nil && org.Parent != nil:
-				// This org has a parent, maybe that org owns a node
-				org, err = pm.identity.CachedIdentityLookupByID(ctx, org.Parent)
+			case err == nil && identity.Parent != nil:
+				// This identity has a parent, maybe that org owns a node
+				identity, err = pm.identity.CachedIdentityLookupByID(ctx, identity.Parent)
 			default:
-				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFoundInOrg, originalOrgName)
+				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFoundInOrg, inputIdentityDebugInfo)
 			}
 		}
 	}
@@ -107,19 +109,21 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 		Members:   make(fftypes.Members, len(in.Group.Members)),
 	}
 	for i, rInput := range in.Group.Members {
-		// Resolve the org
-		org, _, err := pm.identity.CachedIdentityLookup(ctx, rInput.Identity)
+		// Resolve the identity
+		identity, _, err := pm.identity.CachedIdentityLookup(ctx, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}
 		// Resolve the node
-		node, err := pm.resolveNode(ctx, org, rInput.Node)
+		node, err := pm.resolveNode(ctx, identity, rInput.Node)
 		if err != nil {
 			return nil, err
 		}
-		foundLocal = foundLocal || (node.Parent.Equals(localOrg.ID) && node.Name == pm.localNodeName)
+		isLocal := (node.Parent.Equals(localOrg.ID) && node.Name == pm.localNodeName)
+		foundLocal = foundLocal || isLocal
+		log.L(ctx).Debugf("Resolved group identity %s node=%s to identity %s node=%s local=%t", rInput.Identity, rInput.Node, identity.DID, node.ID, isLocal)
 		gi.Members[i] = &fftypes.Member{
-			Identity: org.DID,
+			Identity: identity.DID,
 			Node:     node.ID,
 		}
 	}
