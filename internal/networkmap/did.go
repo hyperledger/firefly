@@ -43,7 +43,7 @@ type VerificationMethod struct {
 
 func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *fftypes.Identity) (doc *DIDDocument, err error) {
 
-	fb := database.IdentityQueryFactory.NewFilter(ctx)
+	fb := database.VerifierQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("identity", identity.ID),
 		fb.Eq("namespace", identity.Namespace),
