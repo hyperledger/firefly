@@ -85,12 +85,14 @@ INSERT INTO identities (
 
 INSERT INTO verifiers (
     id,
+    namespace,
     identity,
     vtype,
     value,
     created
   ) SELECT 
     o.id,
+    'ff_system',
     o.id,
     'EcdsaSecp256k1VerificationKey2019',
     o.identity,
@@ -99,12 +101,14 @@ INSERT INTO verifiers (
 
 INSERT INTO verifiers (
     id,
+    namespace,
     identity,
     vtype,
     value,
     created
   ) SELECT 
     o.id,
+    'ff_system',
     o.id,
     'HyperledgerFabricMSPIdentity',
     o.identity,
@@ -113,12 +117,14 @@ INSERT INTO verifiers (
 
 INSERT INTO verifiers (
     id,
+    namespace,
     identity,
     vtype,
     value,
     created
   ) SELECT 
     n.id,
+    'ff_system',
     n.id,
     'FireFlyDataExchangePeerId',
     n.dx_peer,
