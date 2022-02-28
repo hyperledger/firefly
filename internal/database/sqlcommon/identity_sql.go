@@ -75,10 +75,10 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 		})
 }
 
-func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *fftypes.Identity) (err error) {
+func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *fftypes.Identity, requestConflictEmptyResult bool) (err error) {
 	identity.Created = fftypes.Now()
 	identity.Updated = identity.Created
-	_, err = s.insertTx(ctx, tx,
+	_, err = s.insertTxExt(ctx, tx,
 		sq.Insert("identities").
 			Columns(identityColumns...).
 			Values(
@@ -98,7 +98,7 @@ func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, id
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, fftypes.ChangeEventTypeCreated, identity.Namespace, identity.ID)
-		})
+		}, requestConflictEmptyResult)
 	return err
 }
 
@@ -111,7 +111,7 @@ func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *fftypes.Identi
 
 	optimized := false
 	if optimization == database.UpsertOptimizationNew {
-		opErr := s.attemptIdentityInsert(ctx, tx, identity)
+		opErr := s.attemptIdentityInsert(ctx, tx, identity, true /* we want a failure here we can progress past */)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
 		rowsAffected, opErr := s.attemptIdentityUpdate(ctx, tx, identity)
@@ -137,7 +137,7 @@ func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *fftypes.Identi
 				return err
 			}
 		} else {
-			if err = s.attemptIdentityInsert(ctx, tx, identity); err != nil {
+			if err = s.attemptIdentityInsert(ctx, tx, identity, false); err != nil {
 				return err
 			}
 		}

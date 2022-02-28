@@ -56,9 +56,9 @@ func (s *SQLCommon) attemptVerifierUpdate(ctx context.Context, tx *txWrapper, ve
 		})
 }
 
-func (s *SQLCommon) attemptVerifierInsert(ctx context.Context, tx *txWrapper, verifier *fftypes.Verifier) (err error) {
+func (s *SQLCommon) attemptVerifierInsert(ctx context.Context, tx *txWrapper, verifier *fftypes.Verifier, requestConflictEmptyResult bool) (err error) {
 	verifier.Created = fftypes.Now()
-	_, err = s.insertTx(ctx, tx,
+	_, err = s.insertTxExt(ctx, tx,
 		sq.Insert("verifiers").
 			Columns(verifierColumns...).
 			Values(
@@ -71,7 +71,7 @@ func (s *SQLCommon) attemptVerifierInsert(ctx context.Context, tx *txWrapper, ve
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionVerifiers, fftypes.ChangeEventTypeCreated, verifier.Namespace, verifier.ID)
-		})
+		}, requestConflictEmptyResult)
 	return err
 }
 
@@ -84,7 +84,7 @@ func (s *SQLCommon) UpsertVerifier(ctx context.Context, verifier *fftypes.Verifi
 
 	optimized := false
 	if optimization == database.UpsertOptimizationNew {
-		opErr := s.attemptVerifierInsert(ctx, tx, verifier)
+		opErr := s.attemptVerifierInsert(ctx, tx, verifier, true /* we want a failure here we can progress past */)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
 		rowsAffected, opErr := s.attemptVerifierUpdate(ctx, tx, verifier)
@@ -110,7 +110,7 @@ func (s *SQLCommon) UpsertVerifier(ctx context.Context, verifier *fftypes.Verifi
 				return err
 			}
 		} else {
-			if err = s.attemptVerifierInsert(ctx, tx, verifier); err != nil {
+			if err = s.attemptVerifierInsert(ctx, tx, verifier, false); err != nil {
 				return err
 			}
 		}
