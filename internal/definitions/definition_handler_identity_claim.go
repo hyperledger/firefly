@@ -62,7 +62,6 @@ func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *fft
 
 func (dh *definitionHandlers) getClaimVerifier(msg *fftypes.Message, identity *fftypes.Identity) *fftypes.Verifier {
 	verifier := &fftypes.Verifier{
-		ID:        fftypes.NewUUID(),
 		Identity:  identity.ID,
 		Namespace: identity.Namespace,
 	}
@@ -74,6 +73,7 @@ func (dh *definitionHandlers) getClaimVerifier(msg *fftypes.Message, identity *f
 		verifier.VerifierRef.Type = dh.blockchain.VerifierType()
 		verifier.VerifierRef.Value = msg.Header.Key
 	}
+	verifier.Seal()
 	return verifier
 }
 
@@ -167,7 +167,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		return ActionRetry, err // retry database errors
 	}
 	if existingVerifier != nil && !existingVerifier.Identity.Equals(identity.ID) {
-		log.L(ctx).Warnf("Unable to process identity claim %s - verifier type=%s value=%s already registered: %v", msg.Header.ID, verifier.Type, verifier.Value, existingVerifier.ID)
+		log.L(ctx).Warnf("Unable to process identity claim %s - verifier type=%s value=%s already registered: %v", msg.Header.ID, verifier.Type, verifier.Value, existingVerifier.Hash)
 		return ActionReject, nil
 	}
 

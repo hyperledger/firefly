@@ -53,9 +53,9 @@ INSERT INTO orgs (
     i.created,
     v.value as identity
   FROM identities as i
-  LEFT JOIN verifiers v ON v.id = i.id
-  LEFT JOIN verifiers pv ON v.id = i.parent
-  WHERE i.did LIKE 'did:firefly:org/%' AND v.id IS NOT NULL;
+  LEFT JOIN verifiers v ON v.hash = REPLACE(i.id,'-','')
+  LEFT JOIN verifiers pv ON pv.hash = REPLACE(i.parent,'-','')
+  WHERE i.did LIKE 'did:firefly:org/%' AND v.hash IS NOT NULL;
 
 -- We only reconstitute nodes that were dropped during the original up migration.
 -- These have the UUID of the verifier set to the same UUID as the node.
@@ -78,9 +78,9 @@ INSERT INTO nodes (
     i.created,
     v.value as dx_peer
   FROM identities as i
-  LEFT JOIN verifiers v ON v.id = i.id
-  LEFT JOIN verifiers pv ON pv.id = i.parent
-  WHERE i.did LIKE 'did:firefly:node/%' AND v.id IS NOT NULL;
+  LEFT JOIN verifiers v ON v.hash = REPLACE(i.id,'-','')
+  LEFT JOIN verifiers pv ON pv.hash = REPLACE(i.parent,'-','')
+  WHERE i.did LIKE 'did:firefly:node/%' AND v.hash IS NOT NULL;
 
 DROP INDEX identities_id;
 DROP INDEX identities_did;
@@ -88,7 +88,7 @@ DROP INDEX identities_name;
 
 DROP TABLE IF EXISTS identities;
 
-DROP INDEX verifiers_id;
+DROP INDEX verifiers_hash;
 DROP INDEX verifiers_value;
 DROP INDEX verifiers_identity;
 

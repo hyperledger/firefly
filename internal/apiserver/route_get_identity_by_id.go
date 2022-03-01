@@ -27,11 +27,11 @@ import (
 
 var getIdentityByID = &oapispec.Route{
 	Name:   "getIdentityByID",
-	Path:   "namespaces/{ns}/identities/{idid}",
+	Path:   "namespaces/{ns}/identities/{iid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "idid", Example: "id", Description: i18n.MsgTBD},
+		{Name: "iid", Example: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	Description:     i18n.MsgTBD,
@@ -39,6 +39,6 @@ var getIdentityByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetIdentityByID(r.Ctx, r.PP["ns"], r.PP["idid"])
+		return getOr(r.Ctx).NetworkMap().GetIdentityByID(r.Ctx, r.PP["ns"], r.PP["iid"])
 	},
 }

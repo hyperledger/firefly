@@ -18,6 +18,7 @@ package networkmap
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -66,7 +67,7 @@ func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *fftypes
 		vm := nm.generateDIDAuthentication(ctx, identity, verifier)
 		if vm != nil {
 			doc.VerificationMethods = append(doc.VerificationMethods, vm)
-			doc.Authentication = append(doc.Authentication, verifier.ID.String())
+			doc.Authentication = append(doc.Authentication, fmt.Sprintf("#%s", verifier.Hash.String()))
 		}
 	}
 	return doc, nil
@@ -81,14 +82,14 @@ func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *f
 	case fftypes.VerifierTypeFFDXPeerID:
 		return nm.generateDXPeerIDVerifier(identity, verifier)
 	default:
-		log.L(ctx).Warnf("Unknown verifier type '%s' on verifier '%s' of DID '%s' (%s) - cannot add to DID document", verifier.Type, verifier.ID, identity.DID, identity.ID)
+		log.L(ctx).Warnf("Unknown verifier type '%s' on verifier '%s' of DID '%s' (%s) - cannot add to DID document", verifier.Type, verifier.Value, identity.DID, identity.ID)
 		return nil
 	}
 }
 
 func (nm *networkMap) generateEthAddressVerifier(identity *fftypes.Identity, verifier *fftypes.Verifier) *VerificationMethod {
 	return &VerificationMethod{
-		ID:                  verifier.ID.String(),
+		ID:                  verifier.Hash.String(),
 		Type:                "EcdsaSecp256k1VerificationKey2019",
 		Controller:          identity.DID,
 		BlockchainAccountID: verifier.Value,
@@ -97,7 +98,7 @@ func (nm *networkMap) generateEthAddressVerifier(identity *fftypes.Identity, ver
 
 func (nm *networkMap) generateMSPVerifier(identity *fftypes.Identity, verifier *fftypes.Verifier) *VerificationMethod {
 	return &VerificationMethod{
-		ID:                verifier.ID.String(),
+		ID:                verifier.Hash.String(),
 		Type:              "HyperledgerFabricMSPIdentity",
 		Controller:        identity.DID,
 		MSPIdentityString: verifier.Value,
@@ -106,7 +107,7 @@ func (nm *networkMap) generateMSPVerifier(identity *fftypes.Identity, verifier *
 
 func (nm *networkMap) generateDXPeerIDVerifier(identity *fftypes.Identity, verifier *fftypes.Verifier) *VerificationMethod {
 	return &VerificationMethod{
-		ID:                 verifier.ID.String(),
+		ID:                 verifier.Hash.String(),
 		Type:               "FireFlyDataExchangePeerIdentity",
 		Controller:         identity.DID,
 		DataExchangePeerID: verifier.Value,

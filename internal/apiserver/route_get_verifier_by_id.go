@@ -22,25 +22,23 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getIdentityVerifiers = &oapispec.Route{
-	Name:   "getIdentityVerifiers",
-	Path:   "namespaces/{ns}/identities/{iid}/verifiers",
+var getVerifierByID = &oapispec.Route{
+	Name:   "getVerifierByID",
+	Path:   "namespaces/{ns}/verifiers/{vid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "iid", Example: "id", Description: i18n.MsgTBD},
+		{Name: "vid", Example: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.VerifierQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &[]*fftypes.Verifier{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).NetworkMap().GetIdentityVerifiers(r.Ctx, r.PP["ns"], r.PP["iid"], r.Filter))
+		return getOr(r.Ctx).NetworkMap().GetVerifierByHash(r.Ctx, r.PP["ns"], r.PP["vid"])
 	},
 }

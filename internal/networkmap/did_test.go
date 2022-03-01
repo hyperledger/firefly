@@ -32,8 +32,7 @@ func TestDIDGenerationOK(t *testing.T) {
 
 	org1 := testOrg("org1")
 
-	verifierEth := &fftypes.Verifier{
-		ID:        fftypes.NewUUID(),
+	verifierEth := (&fftypes.Verifier{
 		Identity:  org1.ID,
 		Namespace: org1.Namespace,
 		VerifierRef: fftypes.VerifierRef{
@@ -41,9 +40,8 @@ func TestDIDGenerationOK(t *testing.T) {
 			Value: "0xc90d94dE1021fD17fAA2F1FC4F4D36Dff176120d",
 		},
 		Created: fftypes.Now(),
-	}
-	verifierMSP := &fftypes.Verifier{
-		ID:        fftypes.NewUUID(),
+	}).Seal()
+	verifierMSP := (&fftypes.Verifier{
 		Identity:  org1.ID,
 		Namespace: org1.Namespace,
 		VerifierRef: fftypes.VerifierRef{
@@ -51,9 +49,8 @@ func TestDIDGenerationOK(t *testing.T) {
 			Value: "mspIdForAcme::x509::CN=fabric-ca::CN=user1",
 		},
 		Created: fftypes.Now(),
-	}
-	verifierDX := &fftypes.Verifier{
-		ID:        fftypes.NewUUID(),
+	}).Seal()
+	verifierDX := (&fftypes.Verifier{
 		Identity:  org1.ID,
 		Namespace: org1.Namespace,
 		VerifierRef: fftypes.VerifierRef{
@@ -61,9 +58,8 @@ func TestDIDGenerationOK(t *testing.T) {
 			Value: "peer1",
 		},
 		Created: fftypes.Now(),
-	}
-	verifierUnknown := &fftypes.Verifier{
-		ID:        fftypes.NewUUID(),
+	}).Seal()
+	verifierUnknown := (&fftypes.Verifier{
 		Identity:  org1.ID,
 		Namespace: org1.Namespace,
 		VerifierRef: fftypes.VerifierRef{
@@ -71,7 +67,7 @@ func TestDIDGenerationOK(t *testing.T) {
 			Value: "ignore me",
 		},
 		Created: fftypes.Now(),
-	}
+	}).Seal()
 
 	mdi := nm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", nm.ctx, mock.Anything).Return(org1, nil)
@@ -92,28 +88,28 @@ func TestDIDGenerationOK(t *testing.T) {
 		ID: org1.DID,
 		VerificationMethods: []*VerificationMethod{
 			{
-				ID:                  verifierEth.ID.String(),
+				ID:                  verifierEth.Hash.String(),
 				Type:                "EcdsaSecp256k1VerificationKey2019",
 				Controller:          org1.DID,
 				BlockchainAccountID: verifierEth.Value,
 			},
 			{
-				ID:                verifierMSP.ID.String(),
+				ID:                verifierMSP.Hash.String(),
 				Type:              "HyperledgerFabricMSPIdentity",
 				Controller:        org1.DID,
 				MSPIdentityString: verifierMSP.Value,
 			},
 			{
-				ID:                 verifierDX.ID.String(),
+				ID:                 verifierDX.Hash.String(),
 				Type:               "FireFlyDataExchangePeerIdentity",
 				Controller:         org1.DID,
 				DataExchangePeerID: verifierDX.Value,
 			},
 		},
 		Authentication: []string{
-			verifierEth.ID.String(),
-			verifierMSP.ID.String(),
-			verifierDX.ID.String(),
+			fmt.Sprintf("#%s", verifierEth.Hash.String()),
+			fmt.Sprintf("#%s", verifierMSP.Hash.String()),
+			fmt.Sprintf("#%s", verifierDX.Hash.String()),
 		},
 	}, doc)
 

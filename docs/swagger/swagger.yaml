@@ -4491,7 +4491,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/identities/{idid}:
+  /namespaces/{ns}/identities/{iid}:
     get:
       description: 'TODO: Description'
       operationId: getIdentityByID
@@ -4505,7 +4505,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: idid
+        name: iid
         required: true
         schema:
           example: id
@@ -4554,7 +4554,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/identities/{idid}/did:
+  /namespaces/{ns}/identities/{iid}/did:
     get:
       description: 'TODO: Description'
       operationId: getIdentityDID
@@ -4568,7 +4568,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: idid
+        name: iid
         required: true
         schema:
           example: id
@@ -4617,7 +4617,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/identities/{idid}/verifiers:
+  /namespaces/{ns}/identities/{iid}/verifiers:
     get:
       description: 'TODO: Description'
       operationId: getIdentityVerifiers
@@ -4631,7 +4631,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: idid
+        name: iid
         required: true
         schema:
           example: id
@@ -4715,7 +4715,7 @@ paths:
                 items:
                   properties:
                     created: {}
-                    id: {}
+                    hash: {}
                     identity: {}
                     namespace:
                       type: string
@@ -9066,6 +9066,163 @@ paths:
                       type: object
                     type: array
                   status:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/verifiers:
+    get:
+      description: 'TODO: Description'
+      operationId: getVerifiers
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: identity
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: value
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created: {}
+                    hash: {}
+                    identity: {}
+                    namespace:
+                      type: string
+                    type:
+                      enum:
+                      - ethereum_address
+                      - fabric_msp_id
+                      - dx_peer_id
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/verifiers/{vid}:
+    get:
+      description: 'TODO: Description'
+      operationId: getVerifierByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: vid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  hash: {}
+                  identity: {}
+                  namespace:
+                    type: string
+                  type:
+                    enum:
+                    - ethereum_address
+                    - fabric_msp_id
+                    - dx_peer_id
+                    type: string
+                  value:
                     type: string
                 type: object
           description: Success

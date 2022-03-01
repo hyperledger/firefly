@@ -37,9 +37,7 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new verifier entry
-	verifierID := fftypes.NewUUID()
 	verifier := &fftypes.Verifier{
-		ID:        verifierID,
 		Identity:  fftypes.NewUUID(),
 		Namespace: "ns1",
 		VerifierRef: fftypes.VerifierRef{
@@ -47,15 +45,16 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 			Value: "0x12345",
 		},
 	}
+	verifier.Seal()
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionVerifiers, fftypes.ChangeEventTypeCreated, "ns1", verifierID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionVerifiers, fftypes.ChangeEventTypeUpdated, "ns2", verifierID).Return()
+	s.callbacks.On("HashCollectionNSEvent", database.CollectionVerifiers, fftypes.ChangeEventTypeCreated, "ns1", verifier.Hash).Return()
+	s.callbacks.On("HashCollectionNSEvent", database.CollectionVerifiers, fftypes.ChangeEventTypeUpdated, "ns1", verifier.Hash).Return()
 
 	err := s.UpsertVerifier(ctx, verifier, database.UpsertOptimizationNew)
 	assert.NoError(t, err)
 
 	// Check we get the exact same verifier back
-	verifierRead, err := s.GetVerifierByID(ctx, verifier.ID)
+	verifierRead, err := s.GetVerifierByHash(ctx, verifier.Hash)
 	assert.NoError(t, err)
 	assert.NotNil(t, verifierRead)
 	verifierJson, _ := json.Marshal(&verifier)
@@ -65,15 +64,15 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	// Update the verifier (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	verifierUpdated := &fftypes.Verifier{
-		ID:        verifierID,
 		Identity:  fftypes.NewUUID(),
-		Namespace: "ns2",
+		Created:   verifier.Created,
+		Namespace: "ns1",
 		VerifierRef: fftypes.VerifierRef{
 			Type:  fftypes.VerifierTypeEthAddress,
 			Value: "0x12345",
 		},
-		Created: verifier.Created,
 	}
+	verifierUpdated.Seal()
 	err = s.UpsertVerifier(context.Background(), verifierUpdated, database.UpsertOptimizationExisting)
 	assert.NoError(t, err)
 
@@ -100,7 +99,7 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	// Update
 	updateTime := fftypes.Now()
 	up := database.VerifierQueryFactory.NewUpdate(ctx).Set("created", updateTime)
-	err = s.UpdateVerifier(ctx, verifierUpdated.ID, up)
+	err = s.UpdateVerifier(ctx, verifierUpdated.Hash, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -128,7 +127,7 @@ func TestUpsertVerifierFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{Hash: fftypes.NewRandB32()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -139,7 +138,7 @@ func TestUpsertVerifierFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{Hash: fftypes.NewRandB32()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -151,7 +150,7 @@ func TestUpsertVerifierFailUpdate(t *testing.T) {
 		AddRow("id1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{Hash: fftypes.NewRandB32()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -162,15 +161,15 @@ func TestUpsertVerifierFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"verifier"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{ID: fftypes.NewUUID()}, database.UpsertOptimizationSkip)
+	err := s.UpsertVerifier(context.Background(), &fftypes.Verifier{Hash: fftypes.NewRandB32()}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetVerifierByIDSelectFail(t *testing.T) {
+func TestGetVerifierByHashSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetVerifierByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetVerifierByHash(context.Background(), fftypes.NewRandB32())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -191,19 +190,19 @@ func TestGetVerifierByVerifierSelectFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetVerifierByIDNotFound(t *testing.T) {
+func TestGetVerifierByHashNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"verifier", "verifier", "verifier"}))
-	msg, err := s.GetVerifierByID(context.Background(), fftypes.NewUUID())
+	msg, err := s.GetVerifierByHash(context.Background(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetVerifierByIDScanFail(t *testing.T) {
+func TestGetVerifierByHashScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"verifier"}).AddRow("only one"))
-	_, err := s.GetVerifierByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetVerifierByHash(context.Background(), fftypes.NewRandB32())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -237,7 +236,7 @@ func TestVerifierUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.VerifierQueryFactory.NewUpdate(context.Background()).Set("value", "anything")
-	err := s.UpdateVerifier(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateVerifier(context.Background(), fftypes.NewRandB32(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -245,7 +244,7 @@ func TestVerifierUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.VerifierQueryFactory.NewUpdate(context.Background()).Set("value", map[bool]bool{true: false})
-	err := s.UpdateVerifier(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateVerifier(context.Background(), fftypes.NewRandB32(), u)
 	assert.Regexp(t, "FF10149.*value", err)
 }
 
@@ -255,6 +254,6 @@ func TestVerifierUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.VerifierQueryFactory.NewUpdate(context.Background()).Set("value", fftypes.NewUUID())
-	err := s.UpdateVerifier(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateVerifier(context.Background(), fftypes.NewRandB32(), u)
 	assert.Regexp(t, "FF10117", err)
 }

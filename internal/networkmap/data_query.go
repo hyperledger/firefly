@@ -111,3 +111,23 @@ func (nm *networkMap) GetDIDDocForIndentityByID(ctx context.Context, ns, id stri
 	}
 	return nm.generateDIDDocument(ctx, identity)
 }
+
+func (nm *networkMap) GetVerifierByHash(ctx context.Context, ns, hash string) (*fftypes.Verifier, error) {
+	b32, err := fftypes.ParseBytes32(ctx, hash)
+	if err != nil {
+		return nil, err
+	}
+	verifier, err := nm.database.GetVerifierByHash(ctx, b32)
+	if err != nil {
+		return nil, err
+	}
+	if verifier == nil || verifier.Namespace != ns {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	return verifier, nil
+}
+
+func (nm *networkMap) GetVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error) {
+	filter.Condition(filter.Builder().Eq("namespace", ns))
+	return nm.database.GetVerifiers(ctx, filter)
+}

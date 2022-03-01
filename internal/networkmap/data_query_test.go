@@ -215,3 +215,58 @@ func TestGetIdentityVerifiersIdentityFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 	assert.Empty(t, res)
 }
+
+func TestGetVerifiers(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*fftypes.Verifier{}, nil, nil)
+	res, _, err := nm.GetVerifiers(nm.ctx, "ns1", database.VerifierQueryFactory.NewFilter(nm.ctx).And())
+	assert.NoError(t, err)
+	assert.Empty(t, res)
+}
+
+func TestGetVerifierByHashOk(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	hash := fftypes.NewRandB32()
+	nm.database.(*databasemocks.Plugin).On("GetVerifierByHash", nm.ctx, hash).
+		Return(&fftypes.Verifier{Hash: hash, Namespace: "ns1"}, nil)
+	res, err := nm.GetVerifierByHash(nm.ctx, "ns1", hash.String())
+	assert.NoError(t, err)
+	assert.Equal(t, *hash, *res.Hash)
+}
+
+func TestGetVerifierByHashNotFound(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	hash := fftypes.NewRandB32()
+	nm.database.(*databasemocks.Plugin).On("GetVerifierByHash", nm.ctx, hash).Return(nil, nil)
+	_, err := nm.GetVerifierByHash(nm.ctx, "ns1", hash.String())
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetVerifierByHashError(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	hash := fftypes.NewRandB32()
+	nm.database.(*databasemocks.Plugin).On("GetVerifierByHash", nm.ctx, hash).Return(nil, fmt.Errorf("pop"))
+	_, err := nm.GetVerifierByHash(nm.ctx, "ns1", hash.String())
+	assert.Regexp(t, "pop", err)
+}
+
+func TestGetVerifierByHashBadNS(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	hash := fftypes.NewRandB32()
+	nm.database.(*databasemocks.Plugin).On("GetVerifierByHash", nm.ctx, hash).
+		Return(&fftypes.Verifier{Hash: hash, Namespace: "ns1"}, nil)
+	_, err := nm.GetVerifierByHash(nm.ctx, "ns2", hash.String())
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetVerifierByHashBadUUID(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	_, err := nm.GetVerifierByHash(nm.ctx, "ns1", "bad")
+	assert.Regexp(t, "FF10232", err)
+}

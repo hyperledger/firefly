@@ -42,6 +42,8 @@ type Manager interface {
 	GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error)
 	GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 	GetIdentityVerifiers(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)
+	GetVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)
+	GetVerifierByHash(ctx context.Context, ns, hash string) (*fftypes.Verifier, error)
 	GetDIDDocForIndentityByID(ctx context.Context, ns, id string) (*DIDDocument, error)
 }
 

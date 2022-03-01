@@ -238,6 +238,61 @@ func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilt
 	return r0, r1, r2
 }
 
+// GetVerifierByHash provides a mock function with given fields: ctx, ns, hash
+func (_m *Manager) GetVerifierByHash(ctx context.Context, ns string, hash string) (*fftypes.Verifier, error) {
+	ret := _m.Called(ctx, ns, hash)
+
+	var r0 *fftypes.Verifier
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Verifier); ok {
+		r0 = rf(ctx, ns, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Verifier)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetVerifiers provides a mock function with given fields: ctx, ns, filter
+func (_m *Manager) GetVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.Verifier
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Verifier); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Verifier)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // RegisterIdentity provides a mock function with given fields: ctx, ns, dto, waitConfirm
 func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx, ns, dto, waitConfirm)

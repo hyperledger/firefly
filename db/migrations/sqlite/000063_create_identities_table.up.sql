@@ -21,7 +21,7 @@ CREATE UNIQUE INDEX identities_name ON identities(itype, namespace, name);
 
 CREATE TABLE verifiers (
   seq            INTEGER         PRIMARY KEY AUTOINCREMENT,
-  id             UUID            NOT NULL,
+  hash           CHAR(64)        NOT NULL,
   identity       UUID            NOT NULL,
   vtype          VARCHAR(256)    NOT NULL,
   namespace      VARCHAR(64)     NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE verifiers (
   created        BIGINT          NOT NULL
 );
 
-CREATE UNIQUE INDEX verifiers_id ON verifiers(id);
+CREATE UNIQUE INDEX verifiers_hash ON verifiers(hash);
 CREATE UNIQUE INDEX verifiers_value ON verifiers(vtype, value);
 CREATE UNIQUE INDEX verifiers_identity ON verifiers(identity);
 
@@ -84,14 +84,14 @@ INSERT INTO identities (
   LEFT JOIN orgs o ON o.identity = n.owner;
 
 INSERT INTO verifiers (
-    id,
+    hash,
     namespace,
     identity,
     vtype,
     value,
     created
   ) SELECT 
-    o.id,
+    REPLACE(o.id, '-', ''),
     'ff_system',
     o.id,
     'ethereum_address',
@@ -100,14 +100,14 @@ INSERT INTO verifiers (
   FROM orgs as o WHERE o.identity LIKE '0x%';
 
 INSERT INTO verifiers (
-    id,
+    hash,
     namespace,
     identity,
     vtype,
     value,
     created
   ) SELECT 
-    o.id,
+    REPLACE(o.id, '-', ''),
     'ff_system',
     o.id,
     'fabric_msp_id',
@@ -116,14 +116,14 @@ INSERT INTO verifiers (
   FROM orgs as o WHERE o.identity NOT LIKE '0x%';
 
 INSERT INTO verifiers (
-    id,
+    hash,
     namespace,
     identity,
     vtype,
     value,
     created
   ) SELECT 
-    n.id,
+    REPLACE(n.id, '-', ''),
     'ff_system',
     n.id,
     'dx_peer_id',

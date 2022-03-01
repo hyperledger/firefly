@@ -78,6 +78,8 @@ var routes = []*oapispec.Route{
 	getTxnBlockchainEvents,
 	getTxnStatus,
 	getTxns,
+	getVerifiers,
+	getVerifierByID,
 
 	getChartHistogram,
 

@@ -416,7 +416,7 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(&fftypes.Verifier{
-		ID: fftypes.NewUUID(),
+		Hash: fftypes.NewRandB32(),
 	}, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())

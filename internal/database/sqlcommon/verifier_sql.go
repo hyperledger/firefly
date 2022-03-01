@@ -29,7 +29,7 @@ import (
 
 var (
 	verifierColumns = []string{
-		"id",
+		"hash",
 		"identity",
 		"vtype",
 		"namespace",
@@ -49,10 +49,10 @@ func (s *SQLCommon) attemptVerifierUpdate(ctx context.Context, tx *txWrapper, ve
 			Set("namespace", verifier.Namespace).
 			Set("value", verifier.Value).
 			Where(sq.Eq{
-				"id": verifier.ID,
+				"hash": verifier.Hash,
 			}),
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionVerifiers, fftypes.ChangeEventTypeUpdated, verifier.Namespace, verifier.ID)
+			s.callbacks.HashCollectionNSEvent(database.CollectionVerifiers, fftypes.ChangeEventTypeUpdated, verifier.Namespace, verifier.Hash)
 		})
 }
 
@@ -62,7 +62,7 @@ func (s *SQLCommon) attemptVerifierInsert(ctx context.Context, tx *txWrapper, ve
 		sq.Insert("verifiers").
 			Columns(verifierColumns...).
 			Values(
-				verifier.ID,
+				verifier.Hash,
 				verifier.Identity,
 				verifier.Type,
 				verifier.Namespace,
@@ -70,7 +70,7 @@ func (s *SQLCommon) attemptVerifierInsert(ctx context.Context, tx *txWrapper, ve
 				verifier.Created,
 			),
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionVerifiers, fftypes.ChangeEventTypeCreated, verifier.Namespace, verifier.ID)
+			s.callbacks.HashCollectionNSEvent(database.CollectionVerifiers, fftypes.ChangeEventTypeCreated, verifier.Namespace, verifier.Hash)
 		}, requestConflictEmptyResult)
 	return err
 }
@@ -94,9 +94,9 @@ func (s *SQLCommon) UpsertVerifier(ctx context.Context, verifier *fftypes.Verifi
 	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
 		msgRows, _, err := s.queryTx(ctx, tx,
-			sq.Select("id").
+			sq.Select("hash").
 				From("verifiers").
-				Where(sq.Eq{"id": verifier.ID}),
+				Where(sq.Eq{"hash": verifier.Hash}),
 		)
 		if err != nil {
 			return err
@@ -122,7 +122,7 @@ func (s *SQLCommon) UpsertVerifier(ctx context.Context, verifier *fftypes.Verifi
 func (s *SQLCommon) verifierResult(ctx context.Context, row *sql.Rows) (*fftypes.Verifier, error) {
 	verifier := fftypes.Verifier{}
 	err := row.Scan(
-		&verifier.ID,
+		&verifier.Hash,
 		&verifier.Identity,
 		&verifier.Type,
 		&verifier.Namespace,
@@ -159,8 +159,8 @@ func (s *SQLCommon) GetVerifierByValue(ctx context.Context, vType fftypes.Verifi
 	return s.getVerifierPred(ctx, value, sq.Eq{"vtype": vType, "namespace": namespace, "value": value})
 }
 
-func (s *SQLCommon) GetVerifierByID(ctx context.Context, id *fftypes.UUID) (verifier *fftypes.Verifier, err error) {
-	return s.getVerifierPred(ctx, id.String(), sq.Eq{"id": id})
+func (s *SQLCommon) GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) (verifier *fftypes.Verifier, err error) {
+	return s.getVerifierPred(ctx, hash.String(), sq.Eq{"hash": hash})
 }
 
 func (s *SQLCommon) GetVerifiers(ctx context.Context, filter database.Filter) (verifiers []*fftypes.Verifier, fr *database.FilterResult, err error) {
@@ -189,7 +189,7 @@ func (s *SQLCommon) GetVerifiers(ctx context.Context, filter database.Filter) (v
 
 }
 
-func (s *SQLCommon) UpdateVerifier(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -201,7 +201,7 @@ func (s *SQLCommon) UpdateVerifier(ctx context.Context, id *fftypes.UUID, update
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"id": id})
+	query = query.Where(sq.Eq{"hash": hash})
 
 	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {

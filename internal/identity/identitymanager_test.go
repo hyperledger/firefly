@@ -76,15 +76,14 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  orgID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "fullkey123",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, orgID).
 		Return(&fftypes.Identity{
 			IdentityBase: fftypes.IdentityBase{
@@ -118,15 +117,14 @@ func TestResolveInputSigningIdentityByKeyOk(t *testing.T) {
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  idID,
 			Namespace: "ns1",
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "fullkey123",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, idID).
 		Return(&fftypes.Identity{
 			IdentityBase: fftypes.IdentityBase{
@@ -221,15 +219,14 @@ func TestResolveInputSigningIdentityByKeyDIDMismatch(t *testing.T) {
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  idID,
 			Namespace: "ns1",
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "fullkey123",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, idID).
 		Return(&fftypes.Identity{
 			IdentityBase: fftypes.IdentityBase{
@@ -408,15 +405,14 @@ func TestResolveInputSigningIdentityByOrgNameOk(t *testing.T) {
 		}, nil)
 	mdi.On("GetVerifiers", ctx, mock.Anything).
 		Return([]*fftypes.Verifier{
-			{
-				ID:        fftypes.NewUUID(),
+			(&fftypes.Verifier{
 				Identity:  idID,
 				Namespace: "ns1",
 				VerifierRef: fftypes.VerifierRef{
 					Type:  fftypes.VerifierTypeEthAddress,
 					Value: "fullkey123",
 				},
-			},
+			}).Seal(),
 		}, nil, nil)
 
 	msgIdentity := &fftypes.SignerRef{
@@ -509,15 +505,14 @@ func TestResolveInputSigningKeyOnlyOrgFallbackOk(t *testing.T) {
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  orgID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "fullkey123",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, orgID).
 		Return(&fftypes.Identity{
 			IdentityBase: fftypes.IdentityBase{
@@ -721,15 +716,14 @@ func TestGetNodeOwnerOrgMismatch(t *testing.T) {
 	orgID := fftypes.NewUUID()
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  orgID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "fullkey123",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, orgID).
 		Return(&fftypes.Identity{
 			IdentityBase: fftypes.IdentityBase{
@@ -761,15 +755,14 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 	}
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "peer1").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  id.ID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeFFDXPeerID,
 				Value: "peer1",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, id.ID).
 		Return(id, nil)
 
@@ -804,15 +797,14 @@ func TestCachedIdentityLookupByVerifierRefError(t *testing.T) {
 	}
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "peer1").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  id.ID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "peer1",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
@@ -838,15 +830,14 @@ func TestCachedIdentityLookupByVerifierRefNotFound(t *testing.T) {
 	}
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "0x12345").
-		Return(&fftypes.Verifier{
-			ID:        fftypes.NewUUID(),
+		Return((&fftypes.Verifier{
 			Identity:  id.ID,
 			Namespace: fftypes.SystemNamespace,
 			VerifierRef: fftypes.VerifierRef{
 				Type:  fftypes.VerifierTypeEthAddress,
 				Value: "peer1",
 			},
-		}, nil)
+		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, nil)
 
 	_, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, &fftypes.VerifierRef{
@@ -1239,14 +1230,13 @@ func TestCachedVerifierLookupCaching(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	verifier := &fftypes.Verifier{
-		ID:        fftypes.NewUUID(),
+	verifier := (&fftypes.Verifier{
 		Namespace: fftypes.SystemNamespace,
 		VerifierRef: fftypes.VerifierRef{
 			Value: "peer1",
 			Type:  fftypes.VerifierTypeFFDXPeerID,
 		},
-	}
+	}).Seal()
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, verifier.Type, verifier.Namespace, verifier.Value).Return(verifier, nil).Once()
 

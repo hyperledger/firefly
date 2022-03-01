@@ -269,13 +269,13 @@ type iVerifiersCollection interface {
 	UpsertVerifier(ctx context.Context, data *fftypes.Verifier, optimization UpsertOptimization) (err error)
 
 	// UpdateVerifier - Update verifier
-	UpdateVerifier(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
 
 	// GetVerifierByValue - Get a verifier by name
 	GetVerifierByValue(ctx context.Context, vType fftypes.VerifierType, namespace, value string) (org *fftypes.Verifier, err error)
 
-	// GetVerifierByID - Get a verifier by ID
-	GetVerifierByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Verifier, err error)
+	// GetVerifierByHash - Get a verifier by its hash
+	GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) (org *fftypes.Verifier, err error)
 
 	// GetVerifiers - Get verifiers
 	GetVerifiers(ctx context.Context, filter Filter) (org []*fftypes.Verifier, res *FilterResult, err error)
@@ -591,7 +591,6 @@ const (
 	CollectionContractAPIs          UUIDCollectionNS = "contractapis"
 	CollectionContractSubscriptions UUIDCollectionNS = "contractsubscriptions"
 	CollectionIdentities            UUIDCollectionNS = "identities"
-	CollectionVerifiers             UUIDCollectionNS = "verifiers"
 )
 
 // HashCollectionNS is a collection where the primary key is a hash, such that it can
@@ -600,7 +599,8 @@ const (
 type HashCollectionNS CollectionName
 
 const (
-	CollectionGroups HashCollectionNS = "groups"
+	CollectionGroups    HashCollectionNS = "groups"
+	CollectionVerifiers HashCollectionNS = "verifiers"
 )
 
 // UUIDCollection is like UUIDCollectionNS, but for objects that do not reside within a namespace
