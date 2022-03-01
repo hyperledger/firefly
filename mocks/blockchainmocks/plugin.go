@@ -178,8 +178,8 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	return r0, r1
 }
 
-// ResolveSigningKey provides a mock function with given fields: ctx, keyRef
-func (_m *Plugin) ResolveSigningKey(ctx context.Context, keyRef string) (string, error) {
+// NormalizeSigningKey provides a mock function with given fields: ctx, keyRef
+func (_m *Plugin) NormalizeSigningKey(ctx context.Context, keyRef string) (string, error) {
 	ret := _m.Called(ctx, keyRef)
 
 	var r0 string

@@ -473,7 +473,7 @@ func (f *Fabric) eventLoop() {
 	}
 }
 
-func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
+func (f *Fabric) NormalizeSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
 	// we expand the short user name into the fully qualified onchain identity:
 	// mspid::x509::{ecert DN}::{CA DN}	return signingKeyInput, nil
 	if !fullIdentityPattern.MatchString(signingKeyInput) {

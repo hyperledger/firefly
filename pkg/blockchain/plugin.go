@@ -43,9 +43,10 @@ type Plugin interface {
 	// VerifierType returns the verifier (key) type that is used by this blockchain
 	VerifierType() fftypes.VerifierType
 
-	// ResolveSigningKey verifies that the supplied identity string is valid syntax according to the protocol.
-	// Can apply transformations to the supplied signing identity (only), such as lower case
-	ResolveSigningKey(ctx context.Context, keyRef string) (string, error)
+	// NormalizeSigningKey verifies that the supplied identity string is valid syntax according to the protocol.
+	// - Can apply transformations to the supplied signing identity (only), such as lower case.
+	// - Can perform sophisicated resolution, such as resolving a Fabric shortname to a MSP ID, or using an external REST API plugin to resolve a HD wallet address
+	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error

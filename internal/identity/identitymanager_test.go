@@ -70,7 +70,7 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 	config.Set(config.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
 
 	orgID := fftypes.NewUUID()
 
@@ -111,7 +111,7 @@ func TestResolveInputSigningIdentityByKeyOk(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
 
 	idID := fftypes.NewUUID()
 
@@ -154,7 +154,7 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
 
 	idID := fftypes.NewUUID()
 
@@ -191,7 +191,7 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").Return(nil, nil)
@@ -213,7 +213,7 @@ func TestResolveInputSigningIdentityByKeyDIDMismatch(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
 
 	idID := fftypes.NewUUID()
 
@@ -255,7 +255,7 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
@@ -282,7 +282,7 @@ func TestResolveInputSigningIdentityByKeyFail(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
@@ -304,7 +304,7 @@ func TestResolveInputSigningIdentityByKeyResolveFail(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("", fmt.Errorf("pop"))
+	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("", fmt.Errorf("pop"))
 
 	msgIdentity := &fftypes.SignerRef{
 		Key: "mykey123",
@@ -428,7 +428,7 @@ func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
 	config.Set(config.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
 
 	orgID := fftypes.NewUUID()
 
@@ -469,7 +469,7 @@ func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 	config.Set(config.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
@@ -490,7 +490,7 @@ func TestResolveInputSigningKeyOk(t *testing.T) {
 	config.Set(config.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
 
 	resolvedKey, err := im.NormalizeSigningKey(ctx, "key123", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
@@ -506,7 +506,7 @@ func TestResolveInputSigningKeyFail(t *testing.T) {
 	config.Set(config.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "key123").Return("", fmt.Errorf("pop"))
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("", fmt.Errorf("pop"))
 
 	_, err := im.NormalizeSigningKey(ctx, "key123", KeyNormalizationBlockchainPlugin)
 	assert.Regexp(t, "pop", err)
@@ -575,7 +575,7 @@ func TestGetNodeOwnerBlockchainKeyDeprecatedKeyResolveFailed(t *testing.T) {
 	config.Set(config.OrgIdentityDeprecated, "0x12345")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "0x12345").Return("", fmt.Errorf("pop"))
+	mbi.On("NormalizeSigningKey", ctx, "0x12345").Return("", fmt.Errorf("pop"))
 
 	_, err := im.GetNodeOwnerBlockchainKey(ctx)
 	assert.Regexp(t, "pop", err)
@@ -598,7 +598,7 @@ func TestNormalizeKeyViaBlockchainPluginCached(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "0x12345").Return("resolved12345", nil).Once()
+	mbi.On("NormalizeSigningKey", ctx, "0x12345").Return("resolved12345", nil).Once()
 
 	v, err := im.normalizeKeyViaBlockchainPlugin(ctx, "0x12345")
 	assert.NoError(t, err)

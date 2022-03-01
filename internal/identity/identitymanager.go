@@ -251,7 +251,7 @@ func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, 
 		cached.Extend(im.identityCacheTTL)
 		return cached.Value().(*fftypes.VerifierRef), nil
 	}
-	keyString, err := im.blockchain.ResolveSigningKey(ctx, inputKey)
+	keyString, err := im.blockchain.NormalizeSigningKey(ctx, inputKey)
 	if err != nil {
 		return nil, err
 	}

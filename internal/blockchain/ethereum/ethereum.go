@@ -287,7 +287,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		return nil // move on
 	}
 
-	authorAddress, err = e.ResolveSigningKey(ctx, authorAddress)
+	authorAddress, err = e.NormalizeSigningKey(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -494,10 +494,10 @@ func validateEthAddress(ctx context.Context, key string) (string, error) {
 	return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string) (string, error) {
+func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string, error) {
 	resolved, err := validateEthAddress(ctx, key)
 	if err != nil && e.addressResolver != nil {
-		resolved, err := e.addressResolver.ResolveSigningKey(ctx, key)
+		resolved, err := e.addressResolver.NormalizeSigningKey(ctx, key)
 		if err == nil {
 			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
 		}
