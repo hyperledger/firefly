@@ -19,7 +19,6 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
@@ -364,24 +363,21 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
+	storageConfig := sharedstorageConfig
 	if or.sharedstorage == nil {
 		ssType := config.GetString(config.SharedStorageType)
-		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
-			if strings.Contains(err.Error(), i18n.Expand(ctx, i18n.MsgUnknownSharedStoragePlugin, "")) {
-				// backward compatibility for old "publicstorage" name
-				ssType = config.GetString(config.PublicStorageType)
-				if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
+		if ssType == "" {
+			// Fallback and attempt to look for a "publicstorage" (deprecated) plugin
+			ssType = config.GetString(config.PublicStorageType)
+			storageConfig = publicstorageConfig
 		}
-	}
-	if err = or.sharedstorage.Init(ctx, sharedstorageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
-		if err = or.sharedstorage.Init(ctx, publicstorageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
+		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
 			return err
 		}
+	}
+
+	if err = or.sharedstorage.Init(ctx, storageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
+		return err
 	}
 
 	if err = or.initDataExchange(ctx); err != nil {
