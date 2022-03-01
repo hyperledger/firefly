@@ -290,7 +290,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	}
 
 	l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-	dispatched, err := ag.attemptMessageDispatch(ctx, msg, state)
+	dispatched, err := ag.attemptMessageDispatch(ctx, msg, batch.Payload.TX.ID, state)
 	if err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	return nil
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, state *batchState) (bool, error) {
+func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, tx *fftypes.UUID, state *batchState) (bool, error) {
 
 	// If we don't find all the data, then we don't dispatch
 	data, foundAll, err := ag.data.GetMessageData(ctx, msg, true)
@@ -346,7 +346,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
-		msgAction, batchAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, msg, data)
+		msgAction, batchAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, msg, data, tx)
 		if msgAction == definitions.ActionRetry {
 			return false, err
 		}
@@ -386,7 +386,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		}
 
 		// Generate the appropriate event
-		event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
+		event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, tx)
 		if err = ag.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}

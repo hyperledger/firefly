@@ -55,6 +55,7 @@ const (
 	messageTokenMint     msgType = "token-mint"
 	messageTokenBurn     msgType = "token-burn"
 	messageTokenTransfer msgType = "token-transfer"
+	messageTokenApproval msgType = "token-approval"
 )
 
 type tokenData struct {
@@ -66,11 +67,21 @@ type tokenData struct {
 type createPool struct {
 	Type      fftypes.TokenType  `json:"type"`
 	RequestID string             `json:"requestId"`
-	Operator  string             `json:"operator"`
+	Signer    string             `json:"signer"`
 	Data      string             `json:"data,omitempty"`
 	Config    fftypes.JSONObject `json:"config"`
 	Name      string             `json:"name"`
 	Symbol    string             `json:"symbol"`
+}
+
+type tokenApproval struct {
+	Signer    string             `json:"signer"`
+	Operator  string             `json:"operator"`
+	Approved  bool               `json:"approved"`
+	PoolID    string             `json:"poolId"`
+	RequestID string             `json:"requestId,omitempty"`
+	Data      string             `json:"data,omitempty"`
+	Config    fftypes.JSONObject `json:"config"`
 }
 
 type activatePool struct {
@@ -85,7 +96,7 @@ type mintTokens struct {
 	To         string `json:"to"`
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
-	Operator   string `json:"operator"`
+	Signer     string `json:"signer"`
 	Data       string `json:"data,omitempty"`
 }
 
@@ -95,7 +106,7 @@ type burnTokens struct {
 	From       string `json:"from"`
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
-	Operator   string `json:"operator"`
+	Signer     string `json:"signer"`
 	Data       string `json:"data,omitempty"`
 }
 
@@ -106,7 +117,7 @@ type transferTokens struct {
 	To         string `json:"to"`
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
-	Operator   string `json:"operator"`
+	Signer     string `json:"signer"`
 	Data       string `json:"data,omitempty"`
 }
 
@@ -228,7 +239,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
 	eventProtocolID := data.GetString("id")
 	poolProtocolID := data.GetString("poolId")
-	operatorAddress := data.GetString("operator")
+	signerAddress := data.GetString("signer")
 	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
@@ -256,7 +267,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 
 	if eventProtocolID == "" ||
 		poolProtocolID == "" ||
-		operatorAddress == "" ||
+		signerAddress == "" ||
 		value == "" ||
 		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
 		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
@@ -291,7 +302,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			To:          toAddress,
 			Amount:      amount,
 			ProtocolID:  eventProtocolID,
-			Key:         operatorAddress,
+			Key:         signerAddress,
 			Message:     transferData.Message,
 			MessageHash: transferData.MessageHash,
 			TX: fftypes.TransactionRef{
@@ -312,6 +323,67 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 
 	// If there's an error dispatching the event, we must return the error and shutdown
 	return ft.callbacks.TokensTransferred(ft, transfer)
+}
+
+func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONObject) (err error) {
+	eventProtocolID := data.GetString("id")
+	signerAddress := data.GetString("signer")
+	poolProtocolID := data.GetString("poolId")
+	operatorAddress := data.GetString("operator")
+	approved := data.GetBool("approved")
+	rawOutput := data.GetObject("rawOutput") // optional
+	tx := data.GetObject("transaction")
+	txHash := tx.GetString("transactionHash") // optional
+
+	timestampStr := data.GetString("timestamp")
+	timestamp, err := fftypes.ParseTimeString(timestampStr)
+	if err != nil {
+		timestamp = fftypes.Now()
+	}
+
+	eventName := "TokenApproval"
+	if eventProtocolID == "" ||
+		poolProtocolID == "" ||
+		signerAddress == "" ||
+		operatorAddress == "" {
+		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
+		return nil // move on
+	}
+
+	// We want to process all events, even those not initiated by FireFly.
+	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
+	transferDataString := data.GetString("data")
+	var transferData tokenData
+	if err = json.Unmarshal([]byte(transferDataString), &transferData); err != nil {
+		log.L(ctx).Infof("TokenApproval event data could not be parsed - continuing anyway (%s): %+v", err, data)
+		transferData = tokenData{}
+	}
+
+	approval := &tokens.TokenApproval{
+		PoolProtocolID: poolProtocolID,
+		TokenApproval: fftypes.TokenApproval{
+			Connector:  ft.configuredName,
+			Key:        signerAddress,
+			Operator:   operatorAddress,
+			Approved:   approved,
+			ProtocolID: eventProtocolID,
+			TX: fftypes.TransactionRef{
+				ID:   transferData.TX,
+				Type: fftypes.TransactionTypeTokenApproval,
+			},
+		},
+		Event: blockchain.Event{
+			BlockchainTXID: txHash,
+			Source:         ft.Name() + ":" + ft.configuredName,
+			Name:           eventName,
+			ProtocolID:     eventProtocolID,
+			Output:         rawOutput,
+			Info:           tx,
+			Timestamp:      timestamp,
+		},
+	}
+
+	return ft.callbacks.TokensApproved(ft, approval)
 }
 
 func (ft *FFTokens) eventLoop() {
@@ -347,6 +419,8 @@ func (ft *FFTokens) eventLoop() {
 				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeBurn, msg.Data)
 			case messageTokenTransfer:
 				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeTransfer, msg.Data)
+			case messageTokenApproval:
+				err = ft.handleTokenApproval(ctx, msg.Data)
 			default:
 				l.Errorf("Message unexpected: %s", msg.Event)
 			}
@@ -378,7 +452,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 		SetBody(&createPool{
 			Type:      pool.Type,
 			RequestID: opID.String(),
-			Operator:  pool.Key,
+			Signer:    pool.Key,
 			Data:      string(data),
 			Config:    pool.Config,
 			Name:      pool.Name,
@@ -434,7 +508,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 			To:         mint.To,
 			Amount:     mint.Amount.Int().String(),
 			RequestID:  opID.String(),
-			Operator:   mint.Key,
+			Signer:     mint.Key,
 			Data:       string(data),
 		}).
 		Post("/api/v1/mint")
@@ -457,7 +531,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 			From:       burn.From,
 			Amount:     burn.Amount.Int().String(),
 			RequestID:  opID.String(),
-			Operator:   burn.Key,
+			Signer:     burn.Key,
 			Data:       string(data),
 		}).
 		Post("/api/v1/burn")
@@ -481,10 +555,31 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 			To:         transfer.To,
 			Amount:     transfer.Amount.Int().String(),
 			RequestID:  opID.String(),
-			Operator:   transfer.Key,
+			Signer:     transfer.Key,
 			Data:       string(data),
 		}).
 		Post("/api/v1/transfer")
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
+}
+
+func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, approval *fftypes.TokenApproval) error {
+	data, _ := json.Marshal(tokenData{
+		TX: approval.TX.ID,
+	})
+	res, err := ft.client.R().SetContext(ctx).
+		SetBody(&tokenApproval{
+			PoolID:    poolProtocolID,
+			Signer:    approval.Key,
+			Operator:  approval.Operator,
+			Approved:  approval.Approved,
+			RequestID: opID.String(),
+			Data:      string(data),
+			Config:    approval.Config,
+		}).
+		Post("/api/v1/approval")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}

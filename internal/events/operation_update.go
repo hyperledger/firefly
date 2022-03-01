@@ -37,7 +37,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
-		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID)
+		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction)
 		if em.metrics.IsMetricsEnabled() {
 			tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
 			if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
@@ -45,6 +45,14 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 			}
 			em.metrics.TransferConfirmed(tokenTransfer)
 		}
+		if err := em.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	// Special handling for OpTypeTokenApproval, which writes an event when it fails
+	if op.Type == fftypes.OpTypeTokenApproval && txState == fftypes.OpStatusFailed {
+		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction)
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}

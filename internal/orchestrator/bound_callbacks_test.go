@@ -42,6 +42,7 @@ func TestBoundCallbacks(t *testing.T) {
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
 	pool := &tokens.TokenPool{}
 	transfer := &tokens.TokenTransfer{}
+	approval := &tokens.TokenApproval{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
@@ -77,6 +78,10 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mei.On("TokensTransferred", mti, transfer).Return(fmt.Errorf("pop"))
 	err = bc.TokensTransferred(mti, transfer)
+	assert.EqualError(t, err, "pop")
+
+	mei.On("TokensApproved", mti, approval).Return(fmt.Errorf("pop"))
+	err = bc.TokensApproved(mti, approval)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("BlockchainEvent", mock.AnythingOfType("*blockchain.EventWithSubscription")).Return(fmt.Errorf("pop"))

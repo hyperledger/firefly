@@ -44,7 +44,7 @@ type Manager interface {
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
 	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
-	BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
+	BroadcastContractAPI(ctx context.Context, httpServerURL, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 	SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
 	SubscribeContractAPI(ctx context.Context, ns, apiName, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error)
 
@@ -323,7 +323,7 @@ func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, r
 	}
 }
 
-func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
+func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerURL, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error) {
 	api.ID = fftypes.NewUUID()
 	api.Namespace = ns
 
@@ -349,6 +349,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, ns string, 
 		return nil, err
 	}
 	api.Message = msg.Header.ID
+	cm.addContractURLs(httpServerURL, api)
 	return api, nil
 }
 
@@ -507,11 +508,6 @@ func (cm *contractManager) AddContractSubscription(ctx context.Context, ns strin
 	if sub.Name == "" {
 		sub.Name = sub.ProtocolID
 	}
-
-	if sub.Name == "" {
-		sub.Name = sub.ProtocolID
-	}
-
 	if err = cm.database.UpsertContractSubscription(ctx, &sub.ContractSubscription); err != nil {
 		return nil, err
 	}

@@ -1527,8 +1527,11 @@ func TestBroadcastContractAPI(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	api, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.NoError(t, err)
+	assert.NotNil(t, api)
+	assert.NotEmpty(t, api.URLs.OpenAPI)
+	assert.NotEmpty(t, api.URLs.UI)
 }
 
 func TestBroadcastContractAPIExisting(t *testing.T) {
@@ -1565,7 +1568,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.NoError(t, err)
 }
 
@@ -1603,7 +1606,7 @@ func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbm.On("BroadcastDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.Regexp(t, "FF10316", err)
 }
 
@@ -1632,7 +1635,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&fftypes.FFI{ID: interfaceID}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *interfaceID, *api.Interface.ID)
 }
@@ -1655,7 +1658,7 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -1671,7 +1674,7 @@ func TestBroadcastContractAPINoInterface(t *testing.T) {
 		Name:      "banana",
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.Regexp(t, "FF10303", err)
 }
 
@@ -1691,7 +1694,7 @@ func TestBroadcastContractAPIInterfaceIDFail(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(nil, fmt.Errorf("pop"))
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1711,7 +1714,7 @@ func TestBroadcastContractAPIInterfaceIDNotFound(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(nil, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.Regexp(t, "FF10303.*"+api.Interface.ID.String(), err)
 }
 
@@ -1732,7 +1735,7 @@ func TestBroadcastContractAPIInterfaceNameFail(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, fmt.Errorf("pop"))
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1753,7 +1756,7 @@ func TestBroadcastContractAPIInterfaceNameNotFound(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.Regexp(t, "FF10303.*my-ffi", err)
 }
 
@@ -1772,7 +1775,7 @@ func TestBroadcastContractAPIInterfaceNoVersion(t *testing.T) {
 		},
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	_, err := cm.BroadcastContractAPI(context.Background(), "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 	assert.Regexp(t, "FF10303.*my-ffi", err)
 }
 

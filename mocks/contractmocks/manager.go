@@ -40,13 +40,13 @@ func (_m *Manager) AddContractSubscription(ctx context.Context, ns string, sub *
 	return r0, r1
 }
 
-// BroadcastContractAPI provides a mock function with given fields: ctx, ns, api, waitConfirm
-func (_m *Manager) BroadcastContractAPI(ctx context.Context, ns string, api *fftypes.ContractAPI, waitConfirm bool) (*fftypes.ContractAPI, error) {
-	ret := _m.Called(ctx, ns, api, waitConfirm)
+// BroadcastContractAPI provides a mock function with given fields: ctx, httpServerURL, ns, api, waitConfirm
+func (_m *Manager) BroadcastContractAPI(ctx context.Context, httpServerURL string, ns string, api *fftypes.ContractAPI, waitConfirm bool) (*fftypes.ContractAPI, error) {
+	ret := _m.Called(ctx, httpServerURL, ns, api, waitConfirm)
 
 	var r0 *fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractAPI, bool) *fftypes.ContractAPI); ok {
-		r0 = rf(ctx, ns, api, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.ContractAPI, bool) *fftypes.ContractAPI); ok {
+		r0 = rf(ctx, httpServerURL, ns, api, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.ContractAPI)
@@ -54,8 +54,8 @@ func (_m *Manager) BroadcastContractAPI(ctx context.Context, ns string, api *fft
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractAPI, bool) error); ok {
-		r1 = rf(ctx, ns, api, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.ContractAPI, bool) error); ok {
+		r1 = rf(ctx, httpServerURL, ns, api, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

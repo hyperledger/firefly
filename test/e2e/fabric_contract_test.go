@@ -17,6 +17,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -47,6 +48,37 @@ var assetCreatedEvent = &fftypes.FFIEvent{
 	FFIEventDefinition: fftypes.FFIEventDefinition{
 		Name: "AssetCreated",
 	},
+}
+
+func assetManagerCreateAsset() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name: "CreateAsset",
+		Params: fftypes.FFIParams{
+			{
+				Name:   "name",
+				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
+			},
+		},
+		Returns: fftypes.FFIParams{},
+	}
+}
+
+func assetManagerGetAsset() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
+		Name: "GetAsset",
+		Params: fftypes.FFIParams{
+			{
+				Name:   "name",
+				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
+			},
+		},
+		Returns: fftypes.FFIParams{
+			{
+				Name:   "name",
+				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
+			},
+		},
+	}
 }
 
 func deployChaincode(t *testing.T, stackName string) string {
@@ -121,8 +153,23 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	assert.Equal(suite.T(), 1, len(subs))
 	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
 
-	asset := nanoid.New()
-	invokeFabContract(suite.T(), suite.fabClient, "firefly", suite.chaincodeName, "org_0", "CreateAsset", []string{asset})
+	assetName := nanoid.New()
+	location := map[string]interface{}{
+		"chaincode": suite.chaincodeName,
+		"channel":   "firefly",
+	}
+	locationBytes, _ := json.Marshal(location)
+	invokeContractRequest := &fftypes.ContractCallRequest{
+		Location: fftypes.JSONAnyPtrBytes(locationBytes),
+		Method:   assetManagerCreateAsset(),
+		Input: map[string]interface{}{
+			"name": assetName,
+		},
+	}
+
+	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
+	suite.T().Log(res)
+	assert.NoError(suite.T(), err)
 
 	<-received1
 	<-changes1 // also expect database change events
@@ -130,7 +177,20 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime, sub.ID)
 	assert.Equal(suite.T(), 1, len(events))
 	assert.Equal(suite.T(), "AssetCreated", events[0].Name)
-	assert.Equal(suite.T(), asset, events[0].Output.GetString("name"))
+	assert.Equal(suite.T(), assetName, events[0].Output.GetString("name"))
+
+	queryContractRequest := &fftypes.ContractCallRequest{
+		Location: fftypes.JSONAnyPtrBytes(locationBytes),
+		Method:   assetManagerGetAsset(),
+		Input: map[string]interface{}{
+			"name": assetName,
+		},
+	}
+
+	res, err = QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
+	suite.T().Log(res)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), assetName, res.(map[string]interface{})["name"])
 
 	DeleteContractSubscription(suite.T(), suite.testState.client1, subs[0].ID)
 	subs = GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)

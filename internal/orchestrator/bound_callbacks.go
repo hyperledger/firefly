@@ -65,3 +65,7 @@ func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *toke
 func (bc *boundCallbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
 	return bc.ei.BlockchainEvent(event)
 }
+
+func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.TokenApproval) error {
+	return bc.ei.TokensApproved(plugin, approval)
+}

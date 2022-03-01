@@ -55,6 +55,10 @@ type Manager interface {
 
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
+	NewApproval(ns string, approve *fftypes.TokenApprovalInput) sysmessaging.MessageSender
+	TokenApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput, waitConfirm bool) (*fftypes.TokenApproval, error)
+	GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenApproval, *database.FilterResult, error)
+
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
@@ -95,6 +99,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 		fftypes.OpTypeTokenCreatePool,
 		fftypes.OpTypeTokenActivatePool,
 		fftypes.OpTypeTokenTransfer,
+		fftypes.OpTypeTokenApproval,
 	})
 	return am, nil
 }

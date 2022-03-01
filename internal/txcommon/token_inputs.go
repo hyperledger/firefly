@@ -70,3 +70,20 @@ func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation) (*f
 	}
 	return &transfer, nil
 }
+
+func AddTokenApprovalInputs(op *fftypes.Operation, approval *fftypes.TokenApproval) (err error) {
+	var j []byte
+	if j, err = json.Marshal(approval); err == nil {
+		err = json.Unmarshal(j, &op.Input)
+	}
+	return err
+}
+
+func RetrieveTokenApprovalInputs(ctx context.Context, op *fftypes.Operation) (approval *fftypes.TokenApproval, err error) {
+	var approve fftypes.TokenApproval
+	s := op.Input.String()
+	if err = json.Unmarshal([]byte(s), &approve); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
+	}
+	return &approve, nil
+}

@@ -54,7 +54,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, ns string,
 		return nil, err
 	}
 
-	if err := t.database.InsertEvent(ctx, fftypes.NewEvent(fftypes.EventTypeTransactionSubmitted, tx.Namespace, tx.ID)); err != nil {
+	if err := t.database.InsertEvent(ctx, fftypes.NewEvent(fftypes.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID)); err != nil {
 		return nil, err
 	}
 

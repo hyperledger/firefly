@@ -70,7 +70,7 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFI
 	routes = append(routes, &oapispec.Route{
 		Name:             fmt.Sprintf("query_%s", method.Pathname),
 		Path:             fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
-		Method:           http.MethodGet,
+		Method:           http.MethodPost,
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
 	})

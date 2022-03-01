@@ -128,6 +128,43 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestPrepareAndRunApproval(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeTokenApproval,
+	}
+	pool := &fftypes.TokenPool{
+		Connector:  "magic-tokens",
+		ProtocolID: "F1",
+	}
+	approval := &fftypes.TokenApproval{
+		LocalID:  fftypes.NewUUID(),
+		Pool:     pool.ID,
+		Approved: true,
+	}
+	txcommon.AddTokenApprovalInputs(op, approval)
+
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mdi := am.database.(*databasemocks.Plugin)
+	mti.On("TokensApproval", context.Background(), op.ID, "F1", approval).Return(nil)
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
+
+	po, err := am.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, pool, po.Data.(approvalData).Pool)
+	assert.Equal(t, approval, po.Data.(approvalData).Approval)
+
+	complete, err := am.RunOperation(context.Background(), po)
+
+	assert.False(t, complete)
+	assert.NoError(t, err)
+
+	mti.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestPrepareOperationNotSupported(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -253,6 +290,57 @@ func TestPrepareOperationTransferNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestPrepareOperationApprovalBadInput(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type:  fftypes.OpTypeTokenApproval,
+		Input: fftypes.JSONObject{"localId": "bad"},
+	}
+
+	_, err := am.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10151", err)
+}
+
+func TestPrepareOperationApprovalError(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	poolID := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		Type:  fftypes.OpTypeTokenApproval,
+		Input: fftypes.JSONObject{"pool": poolID.String()},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, fmt.Errorf("pop"))
+
+	_, err := am.PrepareOperation(context.Background(), op)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestPrepareOperationApprovalNotFound(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	poolID := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		Type:  fftypes.OpTypeTokenApproval,
+		Input: fftypes.JSONObject{"pool": poolID.String()},
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, nil)
+
+	_, err := am.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestRunOperationNotSupported(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -321,6 +409,20 @@ func TestRunOperationTransferBadPlugin(t *testing.T) {
 	transfer := &fftypes.TokenTransfer{}
 
 	complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
+
+	assert.False(t, complete)
+	assert.Regexp(t, "FF10272", err)
+}
+
+func TestRunOperationApprovalBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{}
+	pool := &fftypes.TokenPool{}
+	approval := &fftypes.TokenApproval{}
+
+	complete, err := am.RunOperation(context.Background(), opApproval(op, pool, approval))
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10272", err)

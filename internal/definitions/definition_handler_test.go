@@ -49,7 +49,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
-	}, []*fftypes.Data{})
+	}, []*fftypes.Data{}, fftypes.NewUUID())
 	assert.Equal(t, ActionReject, action)
 	assert.NoError(t, err)
 }

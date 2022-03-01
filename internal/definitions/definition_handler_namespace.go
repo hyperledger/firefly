@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, *DefinitionBatchActions, error) {
 	l := log.L(ctx)
 
 	var ns fftypes.Namespace
@@ -57,7 +57,7 @@ func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg 
 
 	return ActionConfirm, &DefinitionBatchActions{
 		Finalize: func(ctx context.Context) error {
-			event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID, tx)
 			return dh.database.InsertEvent(ctx, event)
 		},
 	}, nil

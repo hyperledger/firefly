@@ -39,6 +39,11 @@ type transferData struct {
 	Transfer *fftypes.TokenTransfer `json:"transfer"`
 }
 
+type approvalData struct {
+	Pool     *fftypes.TokenPool     `json:"pool"`
+	Approval *fftypes.TokenApproval `json:"approval"`
+}
+
 func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	switch op.Type {
 	case fftypes.OpTypeTokenCreatePool:
@@ -73,6 +78,19 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
 		return opTransfer(op, pool, transfer), nil
+
+	case fftypes.OpTypeTokenApproval:
+		approval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
+		if err != nil {
+			return nil, err
+		}
+		pool, err := am.database.GetTokenPoolByID(ctx, approval.Pool)
+		if err != nil {
+			return nil, err
+		} else if pool == nil {
+			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		}
+		return opApproval(op, pool, approval), nil
 
 	default:
 		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
@@ -111,6 +129,13 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
 		}
 
+	case approvalData:
+		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
+		if err != nil {
+			return false, err
+		}
+		return false, plugin.TokensApproval(ctx, op.ID, data.Pool.ProtocolID, data.Approval)
+
 	default:
 		return false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
 	}
@@ -137,5 +162,13 @@ func opTransfer(op *fftypes.Operation, pool *fftypes.TokenPool, transfer *fftype
 		ID:   op.ID,
 		Type: op.Type,
 		Data: transferData{Pool: pool, Transfer: transfer},
+	}
+}
+
+func opApproval(op *fftypes.Operation, pool *fftypes.TokenPool, approval *fftypes.TokenApproval) *fftypes.PreparedOperation {
+	return &fftypes.PreparedOperation{
+		ID:   op.ID,
+		Type: op.Type,
+		Data: approvalData{Pool: pool, Approval: approval},
 	}
 }
