@@ -40,6 +40,8 @@ import (
 const broadcastDispatcherName = "pinned_broadcast"
 
 type Manager interface {
+	fftypes.Named
+
 	NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
@@ -107,11 +109,15 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 			fftypes.MessageTypeTransferBroadcast,
 		}, bm.dispatchBatch, bo)
 
-	om.RegisterHandler(bm, []fftypes.OpType{
+	om.RegisterHandler(ctx, bm, []fftypes.OpType{
 		fftypes.OpTypePublicStorageBatchBroadcast,
 	})
 
 	return bm, nil
+}
+
+func (bm *broadcastManager) Name() string {
+	return "BroadcastManager"
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {

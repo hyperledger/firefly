@@ -44,7 +44,7 @@ func newTestContractManager() *contractManager {
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
-	mom.On("RegisterHandler", mock.Anything, mock.Anything)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	mbi.On("Name").Return("mockblockchain").Maybe()
 
@@ -62,6 +62,11 @@ func newTestContractManager() *contractManager {
 func TestNewContractManagerFail(t *testing.T) {
 	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestName(t *testing.T) {
+	cm := newTestContractManager()
+	assert.Equal(t, "ContractManager", cm.Name())
 }
 
 func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
@@ -84,7 +89,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
-	mom.On("RegisterHandler", mock.Anything, mock.Anything)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	_, err := NewContractManager(context.Background(), mdb, mps, mbm, mim, mbi, mom)
 	assert.NoError(t, err)
 }

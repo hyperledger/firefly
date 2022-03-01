@@ -94,6 +94,20 @@ func (_m *Manager) GetGroupsNS(ctx context.Context, ns string, filter database.A
 	return r0, r1, r2
 }
 
+// Name provides a mock function with given fields:
+func (_m *Manager) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // NewMessage provides a mock function with given fields: ns, msg
 func (_m *Manager) NewMessage(ns string, msg *fftypes.MessageInOut) sysmessaging.MessageSender {
 	ret := _m.Called(ns, msg)

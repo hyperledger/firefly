@@ -29,6 +29,8 @@ import (
 )
 
 type Submitter interface {
+	fftypes.Named
+
 	SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error
 
 	// From operations.OperationHandler
@@ -55,10 +57,14 @@ func NewBatchPinSubmitter(ctx context.Context, di database.Plugin, im identity.M
 		metrics:    mm,
 		operations: om,
 	}
-	om.RegisterHandler(bp, []fftypes.OpType{
+	om.RegisterHandler(ctx, bp, []fftypes.OpType{
 		fftypes.OpTypeBlockchainBatchPin,
 	})
 	return bp, nil
+}
+
+func (bp *batchPinSubmitter) Name() string {
+	return "BatchPinSubmitter"
 }
 
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {

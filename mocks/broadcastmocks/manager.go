@@ -177,6 +177,20 @@ func (_m *Manager) BroadcastTokenPool(ctx context.Context, ns string, pool *ffty
 	return r0, r1
 }
 
+// Name provides a mock function with given fields:
+func (_m *Manager) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // NewBroadcast provides a mock function with given fields: ns, in
 func (_m *Manager) NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
 	ret := _m.Called(ns, in)

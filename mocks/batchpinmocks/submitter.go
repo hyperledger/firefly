@@ -14,6 +14,20 @@ type Submitter struct {
 	mock.Mock
 }
 
+// Name provides a mock function with given fields:
+func (_m *Submitter) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // PrepareOperation provides a mock function with given fields: ctx, op
 func (_m *Submitter) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	ret := _m.Called(ctx, op)

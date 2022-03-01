@@ -70,7 +70,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 			fftypes.MessageTypePrivate,
 		}, mock.Anything, mock.Anything).Return()
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
-	mom.On("RegisterHandler", mock.Anything, mock.Anything)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -99,6 +99,12 @@ func newTestPrivateMessagingWithMetrics(t *testing.T) (*privateMessaging, func()
 	mmi := pm.metrics.(*metricsmocks.Manager)
 	mmi.On("MessageSubmitted", mock.Anything).Return()
 	return pm, cancel
+}
+
+func TestName(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+	assert.Equal(t, "PrivateMessaging", pm.Name())
 }
 
 func TestDispatchBatchWithBlobs(t *testing.T) {

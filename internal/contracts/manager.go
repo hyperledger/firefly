@@ -34,6 +34,8 @@ import (
 )
 
 type Manager interface {
+	fftypes.Named
+
 	BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
 	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
@@ -93,11 +95,15 @@ func NewContractManager(ctx context.Context, di database.Plugin, ps publicstorag
 		operations:        om,
 	}
 
-	om.RegisterHandler(cm, []fftypes.OpType{
+	om.RegisterHandler(ctx, cm, []fftypes.OpType{
 		fftypes.OpTypeBlockchainInvoke,
 	})
 
 	return cm, nil
+}
+
+func (cm *contractManager) Name() string {
+	return "ContractManager"
 }
 
 func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {

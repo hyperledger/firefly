@@ -35,6 +35,8 @@ import (
 )
 
 type Manager interface {
+	fftypes.Named
+
 	CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) error
 	GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
@@ -95,13 +97,17 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 		metrics:    mm,
 		operations: om,
 	}
-	om.RegisterHandler(am, []fftypes.OpType{
+	om.RegisterHandler(ctx, am, []fftypes.OpType{
 		fftypes.OpTypeTokenCreatePool,
 		fftypes.OpTypeTokenActivatePool,
 		fftypes.OpTypeTokenTransfer,
 		fftypes.OpTypeTokenApproval,
 	})
 	return am, nil
+}
+
+func (am *assetManager) Name() string {
+	return "AssetManager"
 }
 
 func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tokens.Plugin, error) {

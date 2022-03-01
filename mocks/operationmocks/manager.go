@@ -53,9 +53,9 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) 
 	return r0, r1
 }
 
-// RegisterHandler provides a mock function with given fields: handler, ops
-func (_m *Manager) RegisterHandler(handler operations.OperationHandler, ops []fftypes.FFEnum) {
-	_m.Called(handler, ops)
+// RegisterHandler provides a mock function with given fields: ctx, handler, ops
+func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.OperationHandler, ops []fftypes.FFEnum) {
+	_m.Called(ctx, handler, ops)
 }
 
 // RetryOperation provides a mock function with given fields: ctx, ns, opID

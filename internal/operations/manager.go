@@ -27,12 +27,13 @@ import (
 )
 
 type OperationHandler interface {
+	fftypes.Named
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
 }
 
 type Manager interface {
-	RegisterHandler(handler OperationHandler, ops []fftypes.OpType)
+	RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType)
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) error
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
@@ -59,8 +60,9 @@ func NewOperationsManager(ctx context.Context, di database.Plugin, ti map[string
 	return om, nil
 }
 
-func (om *operationsManager) RegisterHandler(handler OperationHandler, ops []fftypes.OpType) {
+func (om *operationsManager) RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType) {
 	for _, opType := range ops {
+		log.L(ctx).Debugf("OpType=%s registered to handler %s", opType, handler.Name())
 		om.handlers[opType] = handler
 	}
 }
@@ -78,6 +80,8 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 	if !ok {
 		return i18n.NewError(ctx, i18n.MsgOperationNotSupported)
 	}
+	log.L(ctx).Infof("Executing %s operation %s via handler %s", op.Type, op.ID, handler.Name())
+	log.L(ctx).Tracef("Operation detail: %+v", op)
 	if complete, err := handler.RunOperation(ctx, op); err != nil {
 		om.writeOperationFailure(ctx, op.ID, err)
 		return err

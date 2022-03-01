@@ -385,6 +385,20 @@ func (_m *Manager) MintTokens(ctx context.Context, ns string, transfer *fftypes.
 	return r0, r1
 }
 
+// Name provides a mock function with given fields:
+func (_m *Manager) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // NewApproval provides a mock function with given fields: ns, approve
 func (_m *Manager) NewApproval(ns string, approve *fftypes.TokenApprovalInput) sysmessaging.MessageSender {
 	ret := _m.Called(ns, approve)

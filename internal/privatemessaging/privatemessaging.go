@@ -42,6 +42,7 @@ const pinnedPrivateDispatcherName = "pinned_private"
 const unpinnedPrivateDispatcherName = "unpinned_private"
 
 type Manager interface {
+	fftypes.Named
 	GroupManager
 
 	Start() error
@@ -135,12 +136,16 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		},
 		pm.dispatchUnpinnedBatch, bo)
 
-	om.RegisterHandler(pm, []fftypes.OpType{
+	om.RegisterHandler(ctx, pm, []fftypes.OpType{
 		fftypes.OpTypeDataExchangeBlobSend,
 		fftypes.OpTypeDataExchangeBatchSend,
 	})
 
 	return pm, nil
+}
+
+func (pm *privateMessaging) Name() string {
+	return "PrivateMessaging"
 }
 
 func (pm *privateMessaging) Start() error {

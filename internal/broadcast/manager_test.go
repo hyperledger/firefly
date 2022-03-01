@@ -66,7 +66,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 			fftypes.MessageTypeDefinition,
 			fftypes.MessageTypeTransferBroadcast,
 		}, mock.Anything, mock.Anything).Return()
-	mom.On("RegisterHandler", mock.Anything, mock.Anything)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -95,6 +95,12 @@ func newTestBroadcastWithMetrics(t *testing.T) (*broadcastManager, func()) {
 func TestInitFail(t *testing.T) {
 	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestName(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	assert.Equal(t, "BroadcastManager", bm.Name())
 }
 
 func TestBroadcastMessageGood(t *testing.T) {

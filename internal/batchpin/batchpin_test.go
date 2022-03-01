@@ -41,7 +41,7 @@ func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitt
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
 	mmi.On("IsMetricsEnabled").Return(enableMetrics)
-	mom.On("RegisterHandler", mock.Anything, mock.Anything)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	if enableMetrics {
 		mmi.On("CountBatchPin").Return()
 	}
@@ -54,6 +54,11 @@ func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitt
 func TestInitFail(t *testing.T) {
 	_, err := NewBatchPinSubmitter(context.Background(), nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestName(t *testing.T) {
+	bp := newTestBatchPinSubmitter(t, false)
+	assert.Equal(t, "BatchPinSubmitter", bp.Name())
 }
 
 func TestSubmitPinnedBatchOk(t *testing.T) {

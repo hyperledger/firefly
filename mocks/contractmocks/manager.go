@@ -380,6 +380,20 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 	return r0, r1
 }
 
+// Name provides a mock function with given fields:
+func (_m *Manager) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // PrepareOperation provides a mock function with given fields: ctx, op
 func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	ret := _m.Called(ctx, op)
