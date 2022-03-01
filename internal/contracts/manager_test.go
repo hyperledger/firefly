@@ -580,6 +580,59 @@ func TestAddContractListenerByRef(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdi := cm.database.(*databasemocks.Plugin)
 
+	interfaceID := fftypes.NewUUID()
+
+	event := &fftypes.FFIEvent{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "changed",
+			Params: fftypes.FFIParams{
+				{
+					Name:   "value",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+				},
+			},
+		},
+	}
+
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
+			Interface: &fftypes.FFIReference{
+				ID: interfaceID,
+			},
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+				},
+			},
+		},
+	}
+
+	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, sub.Event.Name).Return(event, nil)
+	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
+
+	result, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	assert.NoError(t, err)
+	assert.NotNil(t, result.ID)
+	assert.NotNil(t, result.Event)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractListenerByEventID(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	eventID := fftypes.NewUUID()
+
 	event := &fftypes.FFIEvent{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
@@ -600,11 +653,11 @@ func TestAddContractListenerByRef(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 		},
-		EventID: event.ID,
+		EventID: eventID,
 	}
 
 	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
-	mdi.On("GetFFIEventByID", context.Background(), event.ID).Return(event, nil)
+	mdi.On("GetFFIEventByID", context.Background(), sub.EventID).Return(event, nil)
 	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
 	result, err := cm.AddContractListener(context.Background(), "ns1", sub)
@@ -620,8 +673,13 @@ func TestAddContractListenerByRefLookupFail(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
+	interfaceID := fftypes.NewUUID()
+
 	sub := &fftypes.ContractListenerInput{
 		ContractListener: fftypes.ContractListener{
+			Interface: &fftypes.FFIReference{
+				ID: interfaceID,
+			},
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
@@ -629,10 +687,99 @@ func TestAddContractListenerByRefLookupFail(t *testing.T) {
 		EventID: fftypes.NewUUID(),
 	}
 
-	mdi.On("GetFFIEventByID", context.Background(), mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
 	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractListenerEventLookupByIDFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
+			Interface: &fftypes.FFIReference{
+				ID: interfaceID,
+			},
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+		},
+		EventID: fftypes.NewUUID(),
+	}
+
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEventByID", context.Background(), sub.EventID).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractListenerEventLookupByNameFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
+			Interface: &fftypes.FFIReference{
+				ID: interfaceID,
+			},
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+				},
+			},
+		},
+	}
+
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, sub.Event.Name).Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestAddContractListenerEventLookupByNameNotFound(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
+			Interface: &fftypes.FFIReference{
+				ID: interfaceID,
+			},
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+				},
+			},
+		},
+	}
+
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, sub.Event.Name).Return(nil, nil)
+
+	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	assert.Regexp(t, "FF10349", err)
 
 	mdi.AssertExpectations(t)
 }

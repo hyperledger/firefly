@@ -60,7 +60,7 @@ func TestContractEventWithRetries(t *testing.T) {
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return e.Type == fftypes.EventTypeBlockchainEvent && e.Reference != nil && e.Reference == eventID
+		return e.Type == fftypes.EventTypeBlockchainEventReceived && e.Reference != nil && e.Reference == eventID
 	})).Return(nil).Once()
 
 	err := em.BlockchainEvent(ev)

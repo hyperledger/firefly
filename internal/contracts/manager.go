@@ -44,12 +44,10 @@ type Manager interface {
 	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
 	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, httpServerURL, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
-	// SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error)
-	// SubscribeContractAPI(ctx context.Context, ns, apiName, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error)
 
 	ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error
 
-	AddContractListener(ctx context.Context, ns string, sub *fftypes.ContractListenerInput) (output *fftypes.ContractListener, err error)
+	AddContractListener(ctx context.Context, ns string, listener *fftypes.ContractListenerInput) (output *fftypes.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractListener, error)
 	GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractListener, *database.FilterResult, error)
 	DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error
@@ -438,54 +436,57 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 	return nil
 }
 
-func (cm *contractManager) AddContractListener(ctx context.Context, ns string, sub *fftypes.ContractListenerInput) (output *fftypes.ContractListener, err error) {
-	sub.ID = fftypes.NewUUID()
-	sub.Namespace = ns
+func (cm *contractManager) AddContractListener(ctx context.Context, ns string, listener *fftypes.ContractListenerInput) (output *fftypes.ContractListener, err error) {
+	listener.ID = fftypes.NewUUID()
+	listener.Namespace = ns
 
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
 
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		if sub.Name != "" {
-			if err := fftypes.ValidateFFNameField(ctx, sub.Name, "name"); err != nil {
+		if listener.Name != "" {
+			if err := fftypes.ValidateFFNameField(ctx, listener.Name, "name"); err != nil {
 				return err
 			}
-			if existing, err := cm.database.GetContractListener(ctx, ns, sub.Name); err != nil {
+			if existing, err := cm.database.GetContractListener(ctx, ns, listener.Name); err != nil {
 				return err
 			} else if existing != nil {
-				return i18n.NewError(ctx, i18n.MsgContractListenerExists, ns, sub.Name)
+				return i18n.NewError(ctx, i18n.MsgContractListenerExists, ns, listener.Name)
 			}
 		}
 
-		if sub.Interface != nil {
-			if err := cm.resolveFFIReference(ctx, ns, sub.Interface); err != nil {
+		if listener.Interface != nil {
+			if err := cm.resolveFFIReference(ctx, ns, listener.Interface); err != nil {
 				return err
 			}
 		}
 
-		if sub.Event == nil {
-			if sub.EventID == nil {
-				return i18n.NewError(ctx, i18n.MsgSubscriptionNoEvent)
+		if listener.Event == nil {
+			if listener.EventID == nil {
+				return i18n.NewError(ctx, i18n.MsgListenerNoEvent)
 			}
 
-			event, err := cm.database.GetFFIEventByID(ctx, sub.EventID)
+			event, err := cm.database.GetFFIEventByID(ctx, listener.EventID)
 			if err != nil {
 				return err
 			}
-			if event == nil || event.Namespace != sub.Namespace {
-				return i18n.NewError(ctx, i18n.MsgSubscriptionEventNotFound, sub.Namespace, sub.EventID)
+			if event == nil || event.Namespace != listener.Namespace {
+				return i18n.NewError(ctx, i18n.MsgListenerEventNotFound, listener.Namespace, listener.EventID)
 			}
-			// Copy the event definition into the subscription
-			sub.Event = &fftypes.FFISerializedEvent{
+			// Copy the event definition into the listener
+			listener.Event = &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			}
-		} else if sub.Event.Name != "" && sub.Interface != nil {
-			event, err := cm.database.GetFFIEvent(ctx, ns, sub.Interface.ID, sub.Event.Name)
+		} else if listener.Event.Name != "" && listener.Interface != nil {
+			event, err := cm.database.GetFFIEvent(ctx, ns, listener.Interface.ID, listener.Event.Name)
 			if err != nil {
 				return err
 			}
-			sub.Event = &fftypes.FFISerializedEvent{
+			if event == nil {
+				return i18n.NewError(ctx, i18n.MsgEventNotFound, listener.Event.Name)
+			}
+			listener.Event = &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			}
 		}
@@ -495,43 +496,43 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, s
 		return nil, err
 	}
 
-	if err := cm.validateFFIEvent(ctx, &sub.Event.FFIEventDefinition); err != nil {
+	if err := cm.validateFFIEvent(ctx, &listener.Event.FFIEventDefinition); err != nil {
 		return nil, err
 	}
-	if err = cm.blockchain.AddSubscription(ctx, sub); err != nil {
+	if err = cm.blockchain.AddSubscription(ctx, listener); err != nil {
 		return nil, err
 	}
-	if sub.Name == "" {
-		sub.Name = sub.ProtocolID
+	if listener.Name == "" {
+		listener.Name = listener.ProtocolID
 	}
 
-	if sub.Name == "" {
-		sub.Name = sub.ProtocolID
+	if listener.Name == "" {
+		listener.Name = listener.ProtocolID
 	}
 
-	if err = cm.database.UpsertContractListener(ctx, &sub.ContractListener); err != nil {
+	if err = cm.database.UpsertContractListener(ctx, &listener.ContractListener); err != nil {
 		return nil, err
 	}
 
-	return &sub.ContractListener, err
+	return &listener.ContractListener, err
 }
 
-func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) (sub *fftypes.ContractListener, err error) {
+func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) (listener *fftypes.ContractListener, err error) {
 	id, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
 		if err := fftypes.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
 			return nil, err
 		}
-		if sub, err = cm.database.GetContractListener(ctx, ns, nameOrID); err != nil {
+		if listener, err = cm.database.GetContractListener(ctx, ns, nameOrID); err != nil {
 			return nil, err
 		}
-	} else if sub, err = cm.database.GetContractListenerByID(ctx, id); err != nil {
+	} else if listener, err = cm.database.GetContractListenerByID(ctx, id); err != nil {
 		return nil, err
 	}
-	if sub == nil {
+	if listener == nil {
 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
-	return sub, nil
+	return listener, nil
 }
 
 func (cm *contractManager) GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
@@ -540,52 +541,16 @@ func (cm *contractManager) GetContractListeners(ctx context.Context, ns string, 
 
 func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error {
 	return cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		sub, err := cm.GetContractListenerByNameOrID(ctx, ns, nameOrID)
+		listener, err := cm.GetContractListenerByNameOrID(ctx, ns, nameOrID)
 		if err != nil {
 			return err
 		}
-		if err = cm.blockchain.DeleteSubscription(ctx, sub); err != nil {
+		if err = cm.blockchain.DeleteSubscription(ctx, listener); err != nil {
 			return err
 		}
-		return cm.database.DeleteContractListenerByID(ctx, sub.ID)
+		return cm.database.DeleteContractListenerByID(ctx, listener.ID)
 	})
 }
-
-// func (cm *contractManager) SubscribeContract(ctx context.Context, ns, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error) {
-// 	event, err := cm.database.GetFFIEvent(ctx, ns, req.Interface, eventPath)
-// 	if err != nil || event == nil {
-// 		return nil, i18n.NewError(ctx, i18n.MsgContractEventResolveError)
-// 	}
-
-// 	sub := &fftypes.ContractListenerInput{
-// 		ContractListener: fftypes.ContractListener{
-// 			Interface: &fftypes.FFIReference{
-// 				ID: req.Interface,
-// 			},
-// 			Location: req.Location,
-// 			Event: &fftypes.FFISerializedEvent{
-// 				FFIEventDefinition: event.FFIEventDefinition,
-// 			},
-// 		},
-// 	}
-// 	return cm.AddContractListener(ctx, ns, sub)
-// }
-
-// func (cm *contractManager) SubscribeContractAPI(ctx context.Context, ns, apiName, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error) {
-// 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
-// 	if err != nil {
-// 		return nil, err
-// 	} else if api == nil || api.Interface == nil {
-// 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
-// 	}
-
-// 	req.Interface = api.Interface.ID
-// 	if api.Location != nil {
-// 		req.Location = api.Location
-// 	}
-
-// 	return cm.SubscribeContract(ctx, ns, eventPath, req)
-// }
 
 func (cm *contractManager) checkParamSchema(ctx context.Context, input interface{}, param *fftypes.FFIParam) error {
 	// TODO: Cache the compiled schema?
