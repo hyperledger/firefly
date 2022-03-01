@@ -67,7 +67,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinitionResolveKeyOnly", nm.ctx,
+	mbm.On("BroadcastIdentityClaim", nm.ctx,
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {

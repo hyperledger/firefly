@@ -277,77 +277,6 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 
 }
 
-func TestResolveInputSigningIdentityForRootOrgRegOk(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(nil, nil)
-
-	msgIdentity := &fftypes.SignerRef{
-		Key:    "mykey123",
-		Author: "did:firefly:org/neworgname",
-	}
-	err := im.ResolveRootOrgRegistrationSigningKey(ctx, fftypes.SystemNamespace, msgIdentity)
-	assert.NoError(t, err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-
-}
-
-func TestResolveInputSigningIdentityForRootOrgRegBadNS(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "fullkey123").
-		Return(nil, nil)
-
-	msgIdentity := &fftypes.SignerRef{
-		Key:    "mykey123",
-		Author: "did:firefly:orgs/neworgname",
-	}
-	err := im.ResolveRootOrgRegistrationSigningKey(ctx, "ns1", msgIdentity)
-	assert.Regexp(t, "FF10357", err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-
-}
-
-func TestResolveInputSigningIdentityForRootOrgRegBadDID(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("ResolveSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
-		Return(nil, nil)
-
-	msgIdentity := &fftypes.SignerRef{
-		Key:    "mykey123",
-		Author: "did:firefly:nodes/node1",
-	}
-	err := im.ResolveRootOrgRegistrationSigningKey(ctx, fftypes.SystemNamespace, msgIdentity)
-	assert.Regexp(t, "FF10357", err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-
-}
-
 func TestResolveInputSigningIdentityByKeyFail(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
@@ -492,7 +421,7 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 
 }
 
-func TestResolveInputSigningKeyOnlyOrgFallbackOk(t *testing.T) {
+func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 	config.Set(config.OrgKey, "key123")
@@ -524,7 +453,7 @@ func TestResolveInputSigningKeyOnlyOrgFallbackOk(t *testing.T) {
 			},
 		}, nil)
 
-	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "", true)
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 
@@ -533,7 +462,7 @@ func TestResolveInputSigningKeyOnlyOrgFallbackOk(t *testing.T) {
 
 }
 
-func TestResolveInputSigningKeyOnlyOrgFallbackErr(t *testing.T) {
+func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 	config.Set(config.OrgKey, "key123")
@@ -546,7 +475,7 @@ func TestResolveInputSigningKeyOnlyOrgFallbackErr(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "fullkey123").
 		Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.ResolveInputSigningKeyOnly(ctx, "", true)
+	_, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -563,7 +492,7 @@ func TestResolveInputSigningKeyOk(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "key123").Return("fullkey123", nil)
 
-	resolvedKey, err := im.ResolveInputSigningKeyOnly(ctx, "key123", true)
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "key123", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 
@@ -579,7 +508,7 @@ func TestResolveInputSigningKeyFail(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "key123").Return("", fmt.Errorf("pop"))
 
-	_, err := im.ResolveInputSigningKeyOnly(ctx, "key123", true)
+	_, err := im.NormalizeSigningKey(ctx, "key123", KeyNormalizationBlockchainPlugin)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -591,7 +520,7 @@ func TestResolveInputSigningKeyBypass(t *testing.T) {
 	config.Set(config.OrgKey, "key123")
 	config.Set(config.OrgName, "org1")
 
-	key, err := im.ResolveInputSigningKeyOnly(ctx, "different-type-of-key", false)
+	key, err := im.NormalizeSigningKey(ctx, "different-type-of-key", KeyNormalizationNone)
 	assert.NoError(t, err)
 	assert.Equal(t, "different-type-of-key", key)
 }
@@ -655,30 +584,30 @@ func TestGetNodeOwnerBlockchainKeyDeprecatedKeyResolveFailed(t *testing.T) {
 
 }
 
-func TestResolveBlockchainKeyEmptyRequest(t *testing.T) {
+func TestNormalizeKeyViaBlockchainPluginEmptyRequest(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	_, err := im.ResolveBlockchainKey(ctx, "")
+	_, err := im.normalizeKeyViaBlockchainPlugin(ctx, "")
 	assert.Regexp(t, "FF10352", err)
 
 }
 
-func TestResolveBlockchainKeyCached(t *testing.T) {
+func TestNormalizeKeyViaBlockchainPluginCached(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "0x12345").Return("resolved12345", nil).Once()
 
-	v, err := im.ResolveBlockchainKey(ctx, "0x12345")
+	v, err := im.normalizeKeyViaBlockchainPlugin(ctx, "0x12345")
 	assert.NoError(t, err)
 	assert.Equal(t, fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "resolved12345",
 	}, *v)
 
-	v1, err := im.ResolveBlockchainKey(ctx, "0x12345")
+	v1, err := im.normalizeKeyViaBlockchainPlugin(ctx, "0x12345")
 	assert.NoError(t, err)
 	assert.Equal(t, v, v1)
 
@@ -1341,4 +1270,10 @@ func TestResolveIdentitySignerNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10366", err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestParseKeyNormalizationConfig(t *testing.T) {
+	assert.Equal(t, KeyNormalizationBlockchainPlugin, ParseKeyNormalizationConfig("blockchain_Plugin"))
+	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig("none"))
+	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig(""))
 }

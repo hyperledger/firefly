@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -39,9 +40,11 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, 
 	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastDefinitionResolveKeyOnly(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
+// BroadcastIdentityClaim is a special form of BroadcastDefinitionAsNode where the signing identity does not need to have been pre-registered
+// The blockchain "key" will be normalized, but the "author" will pass through unchecked
+func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns string, def *fftypes.IdentityClaim, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
 
-	signingIdentity.Key, err = bm.identity.ResolveInputSigningKeyOnly(ctx, signingIdentity.Key, true)
+	signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}

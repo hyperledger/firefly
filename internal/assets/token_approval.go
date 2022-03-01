@@ -151,6 +151,6 @@ func (am *assetManager) validateApproval(ctx context.Context, ns string, approva
 		}
 		approval.Pool = pool
 	}
-	approval.Key, err = am.identity.ResolveInputSigningKeyOnly(ctx, approval.Key, am.resolveKeysViaBlockchainPlugin)
+	approval.Key, err = am.identity.NormalizeSigningKey(ctx, approval.Key, am.keyNormalization)
 	return err
 }

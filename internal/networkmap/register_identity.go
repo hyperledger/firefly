@@ -98,7 +98,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *fftypes.Identity, claimSigner *fftypes.SignerRef, parentSigner *fftypes.SignerRef) error {
 
 	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
-	claimMsg, err := nm.broadcast.BroadcastDefinitionResolveKeyOnly(ctx, identity.Namespace, &fftypes.IdentityClaim{
+	claimMsg, err := nm.broadcast.BroadcastIdentityClaim(ctx, identity.Namespace, &fftypes.IdentityClaim{
 		Identity: identity,
 	}, claimSigner, fftypes.SystemTagIdentityClaim, false)
 	if err != nil {

@@ -85,12 +85,12 @@ func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def
 	return r0, r1
 }
 
-// BroadcastDefinitionResolveKeyOnly provides a mock function with given fields: ctx, ns, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastDefinitionResolveKeyOnly(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (*fftypes.Message, error) {
+// BroadcastIdentityClaim provides a mock function with given fields: ctx, ns, def, signingIdentity, tag, waitConfirm
+func (_m *Manager) BroadcastIdentityClaim(ctx context.Context, ns string, def *fftypes.IdentityClaim, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, def, signingIdentity, tag, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, string, bool) *fftypes.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.IdentityClaim, *fftypes.SignerRef, string, bool) *fftypes.Message); ok {
 		r0 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -99,7 +99,7 @@ func (_m *Manager) BroadcastDefinitionResolveKeyOnly(ctx context.Context, ns str
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Definition, *fftypes.SignerRef, string, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.IdentityClaim, *fftypes.SignerRef, string, bool) error); ok {
 		r1 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
 	} else {
 		r1 = ret.Error(1)

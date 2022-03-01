@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
@@ -49,7 +50,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
-func TestBroadcastDefinitionResolveKeyOnly(t *testing.T) {
+func TestBroadcastIdentityClaim(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
@@ -58,10 +59,12 @@ func TestBroadcastDefinitionResolveKeyOnly(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234", true).Return("", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastDefinitionResolveKeyOnly(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
+	_, err := bm.BroadcastIdentityClaim(bm.ctx, fftypes.SystemNamespace, &fftypes.IdentityClaim{
+		Identity: &fftypes.Identity{},
+	}, &fftypes.SignerRef{
 		Key: "0x1234",
 	}, fftypes.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
@@ -71,15 +74,17 @@ func TestBroadcastDefinitionResolveKeyOnly(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
-func TestBroadcastDefinitionResolveKeyOnlyFail(t *testing.T) {
+func TestBroadcastIdentityClaimFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputSigningKeyOnly", mock.Anything, "0x1234", true).Return("", fmt.Errorf("pop"))
+	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastDefinitionResolveKeyOnly(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
+	_, err := bm.BroadcastIdentityClaim(bm.ctx, fftypes.SystemNamespace, &fftypes.IdentityClaim{
+		Identity: &fftypes.Identity{},
+	}, &fftypes.SignerRef{
 		Key: "0x1234",
 	}, fftypes.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
