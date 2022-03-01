@@ -398,16 +398,15 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
-		state.correlator = nil
-		msgAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
-		if msgAction == definitions.ActionRetry {
+		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
+		if handlerResult.Action == definitions.ActionRetry {
 			return false, err
 		}
-		if msgAction == definitions.ActionWait {
+		if handlerResult.Action == definitions.ActionWait {
 			return false, nil
 		}
-		customCorrelator = state.correlator
-		valid = msgAction == definitions.ActionConfirm
+		customCorrelator = handlerResult.CustomCorrelator
+		valid = handlerResult.Action == definitions.ActionConfirm
 
 	case msg.Header.Type == fftypes.MessageTypeGroupInit:
 		// Already handled as part of resolving the context - do nothing.

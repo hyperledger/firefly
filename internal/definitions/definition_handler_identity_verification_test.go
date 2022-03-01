@@ -67,7 +67,7 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 	bs.pendingConfirms[*claimMsg.Header.ID] = claimMsg
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	err = bs.finalizers[0](ctx)
@@ -95,7 +95,7 @@ func TestHandleDefinitionIdentityVerificationIncompleteClaimData(t *testing.T) {
 	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -121,7 +121,7 @@ func TestHandleDefinitionIdentityVerificationClaimDataFail(t *testing.T) {
 	mdm.On("GetMessageData", ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -145,7 +145,7 @@ func TestHandleDefinitionIdentityVerificationClaimHashMismatchl(t *testing.T) {
 	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(claimMsg, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -166,7 +166,7 @@ func TestHandleDefinitionIdentityVerificationBeforeClaim(t *testing.T) {
 	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(nil, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -187,7 +187,7 @@ func TestHandleDefinitionIdentityVerificationClaimLookupFail(t *testing.T) {
 	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -206,7 +206,7 @@ func TestHandleDefinitionIdentityVerificationWrongSigner(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -223,7 +223,7 @@ func TestHandleDefinitionIdentityVerificationCheckParentNotFound(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(nil, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -240,7 +240,7 @@ func TestHandleDefinitionIdentityVerificationCheckParentFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -268,7 +268,7 @@ func TestHandleDefinitionIdentityVerificationInvalidPayload(t *testing.T) {
 			Tag:  fftypes.SystemTagIdentityVerification,
 		},
 	}, []*fftypes.Data{emptyObjectData}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	bs.assertNoFinalizers()
@@ -285,7 +285,7 @@ func TestHandleDefinitionIdentityVerificationInvalidData(t *testing.T) {
 			Tag:  fftypes.SystemTagIdentityVerification,
 		},
 	}, []*fftypes.Data{}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	bs.assertNoFinalizers()

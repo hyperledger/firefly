@@ -83,7 +83,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionWait, action)
+	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.preFinalizers[0](context.Background())
@@ -104,7 +104,7 @@ func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -128,7 +128,7 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionWait, action)
+	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.preFinalizers[0](context.Background())
@@ -151,7 +151,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(existing, nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -172,12 +172,11 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 	})).Return(database.IDMismatch)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
-	assert.Equal(t, pool.ID, bs.correlator)
 }
 
 func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
@@ -195,7 +194,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	})).Return(fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -219,7 +218,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionWait, action)
+	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
 	assert.NoError(t, err)
 
 	err = bs.preFinalizers[0](context.Background())
@@ -239,7 +238,7 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
@@ -255,7 +254,7 @@ func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 	}
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, nil, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }

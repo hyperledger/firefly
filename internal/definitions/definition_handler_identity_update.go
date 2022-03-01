@@ -24,34 +24,34 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
 	var update fftypes.IdentityUpdate
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update)
 	if !valid {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	// See if we find the message to which it refers
 	err := update.Identity.Validate(ctx)
 	if err != nil {
 		log.L(ctx).Warnf("Invalid identity update message %s: %v", msg.Header.ID, err)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	// Get the existing identity (must be a confirmed identity to at the point an update is issued)
 	identity, err := dh.identity.CachedIdentityLookupByID(ctx, update.Identity.ID)
 	if err != nil {
-		return ActionRetry, err
+		return HandlerResult{Action: ActionRetry}, err
 	}
 	if identity == nil {
 		log.L(ctx).Warnf("Invalid identity update message %s - not found: %s", msg.Header.ID, update.Identity.ID)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	// Check the author matches
 	if identity.DID != msg.Header.Author {
 		log.L(ctx).Warnf("Invalid identity update message %s - wrong author: %s", msg.Header.ID, msg.Header.Author)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	// Update the profile
@@ -59,13 +59,13 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 	identity.Messages.Update = msg.Header.ID
 	err = dh.database.UpsertIdentity(ctx, identity, database.UpsertOptimizationExisting)
 	if err != nil {
-		return ActionRetry, err
+		return HandlerResult{Action: ActionRetry}, err
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
 		event := fftypes.NewEvent(fftypes.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return ActionConfirm, err
+	return HandlerResult{Action: ActionConfirm}, err
 
 }

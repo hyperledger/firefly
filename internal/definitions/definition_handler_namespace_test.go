@@ -50,7 +50,7 @@ func TestHandleDefinitionBroadcastNSOk(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
 	assert.NoError(t, err)
@@ -80,7 +80,7 @@ func TestHandleDefinitionBroadcastNSEventFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
 	assert.EqualError(t, err, "pop")
@@ -109,7 +109,7 @@ func TestHandleDefinitionBroadcastNSUpsertFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -124,7 +124,7 @@ func TestHandleDefinitionBroadcastNSMissingData(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
@@ -144,7 +144,7 @@ func TestHandleDefinitionBroadcastNSBadID(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
@@ -161,7 +161,7 @@ func TestHandleDefinitionBroadcastNSBadData(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
@@ -186,7 +186,7 @@ func TestHandleDefinitionBroadcastDuplicate(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -217,7 +217,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocal(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
 	assert.NoError(t, err)
@@ -247,7 +247,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocalFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -274,7 +274,7 @@ func TestHandleDefinitionBroadcastDupCheckFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineNamespace,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)

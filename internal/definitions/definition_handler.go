@@ -37,8 +37,13 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, error)
+	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
+}
+
+type HandlerResult struct {
+	Action           DefinitionMessageAction
+	CustomCorrelator *fftypes.UUID
 }
 
 // DefinitionMessageAction is the action to be taken on an individual definition message
@@ -58,7 +63,9 @@ const (
 	ActionWait
 )
 
-// DefinitionBatchActions are actions to be taken at the end of a definition batch
+// DefinitionBatchState tracks the state between definition handlers that run in-line on the pin processing route in the
+// aggregator as part of a batch of pins. They might have complex API calls, and interdependencies, that need to be managed via this state.
+// The actions to be taken at the end of a definition batch.
 // See further notes on "batchActions" in the event aggregator
 type DefinitionBatchState interface {
 	// PreFinalize may perform a blocking action (possibly to an external connector) that should execute outside database RunAsGroup
@@ -69,9 +76,6 @@ type DefinitionBatchState interface {
 
 	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
 	GetPendingConfirm() map[fftypes.UUID]*fftypes.Message
-
-	// SetCorrelator sets a custom event correlator, such as to the definition object that's contained in a message
-	SetCorrelator(uuid *fftypes.UUID)
 }
 
 type definitionHandlers struct {
@@ -116,7 +120,7 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (msgAction DefinitionMessageAction, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
@@ -142,7 +146,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 		return dh.handleContractAPIBroadcast(ctx, state, msg, data, tx)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 }
 

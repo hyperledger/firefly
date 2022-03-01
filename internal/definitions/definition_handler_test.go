@@ -53,7 +53,6 @@ type testDefinitionBatchState struct {
 	preFinalizers   []func(ctx context.Context) error
 	finalizers      []func(ctx context.Context) error
 	pendingConfirms map[fftypes.UUID]*fftypes.Message
-	correlator      *fftypes.UUID
 }
 
 func newTestDefinitionBatchState(t *testing.T) *testDefinitionBatchState {
@@ -75,10 +74,6 @@ func (bs *testDefinitionBatchState) GetPendingConfirm() map[fftypes.UUID]*fftype
 	return bs.pendingConfirms
 }
 
-func (bs *testDefinitionBatchState) SetCorrelator(uuid *fftypes.UUID) {
-	bs.correlator = uuid
-}
-
 func (bs *testDefinitionBatchState) assertNoFinalizers() {
 	assert.Empty(bs.t, bs.preFinalizers)
 	assert.Empty(bs.t, bs.finalizers)
@@ -91,7 +86,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 			Tag: "unknown",
 		},
 	}, []*fftypes.Data{}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }

@@ -95,14 +95,14 @@ func (_m *DefinitionHandlers) GetGroupsNS(ctx context.Context, ns string, filter
 }
 
 // HandleDefinitionBroadcast provides a mock function with given fields: ctx, state, msg, data, tx
-func (_m *DefinitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state definitions.DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (definitions.DefinitionMessageAction, error) {
+func (_m *DefinitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state definitions.DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (definitions.HandlerResult, error) {
 	ret := _m.Called(ctx, state, msg, data, tx)
 
-	var r0 definitions.DefinitionMessageAction
-	if rf, ok := ret.Get(0).(func(context.Context, definitions.DefinitionBatchState, *fftypes.Message, []*fftypes.Data, *fftypes.UUID) definitions.DefinitionMessageAction); ok {
+	var r0 definitions.HandlerResult
+	if rf, ok := ret.Get(0).(func(context.Context, definitions.DefinitionBatchState, *fftypes.Message, []*fftypes.Data, *fftypes.UUID) definitions.HandlerResult); ok {
 		r0 = rf(ctx, state, msg, data, tx)
 	} else {
-		r0 = ret.Get(0).(definitions.DefinitionMessageAction)
+		r0 = ret.Get(0).(definitions.HandlerResult)
 	}
 
 	var r1 error

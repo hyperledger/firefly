@@ -108,7 +108,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
 	assert.NoError(t, err)
@@ -136,7 +136,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
@@ -196,7 +196,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
@@ -219,7 +219,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineFFI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 	bs.assertNoFinalizers()
 }
@@ -242,7 +242,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
 	assert.NoError(t, err)
@@ -296,7 +296,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
@@ -318,7 +318,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 			Tag: fftypes.SystemTagDefineContractAPI,
 		},
 	}, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 	bs.assertNoFinalizers()
 }

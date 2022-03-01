@@ -22,12 +22,12 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
 
 	var orgOld fftypes.DeprecatedOrganization
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &orgOld)
 	if !valid {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	return dh.handleIdentityClaim(ctx, state, msg, orgOld.Migrated(), nil)

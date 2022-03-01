@@ -23,13 +23,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	var nodeOld fftypes.DeprecatedNode
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld)
 	if !valid {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	owner, err := dh.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
@@ -37,11 +37,11 @@ func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context,
 		Value: nodeOld.Owner,
 	})
 	if err != nil {
-		return ActionRetry, err // We only return database errors
+		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if owner == nil {
 		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, nodeOld.Owner)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.AddMigratedParent(owner.ID), nil)

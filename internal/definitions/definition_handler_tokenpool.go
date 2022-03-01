@@ -42,10 +42,10 @@ func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *ff
 	return true, nil
 }
 
-func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
 	var announce fftypes.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	pool := announce.Pool
@@ -53,24 +53,24 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 
 	// Set an event correlator, so that if we reject then the sync-async bridge action can know
 	// from the event (without downloading and parsing the msg)
-	state.SetCorrelator(pool.ID)
+	correlator := pool.ID
 
 	if err := pool.Validate(ctx); err != nil {
 		log.L(ctx).Warnf("Token pool '%s' rejected - validate failed: %s", pool.ID, err)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, nil
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
 	if existingPool, err := dh.database.GetTokenPoolByID(ctx, pool.ID); err != nil {
-		return ActionRetry, err
+		return HandlerResult{Action: ActionRetry}, err
 	} else if existingPool != nil && existingPool.State == fftypes.TokenPoolStateConfirmed {
-		return ActionConfirm, nil
+		return HandlerResult{Action: ActionConfirm, CustomCorrelator: correlator}, nil
 	}
 
 	if valid, err := dh.persistTokenPool(ctx, &announce); err != nil {
-		return ActionRetry, err
+		return HandlerResult{Action: ActionRetry}, err
 	} else if !valid {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, nil
 	}
 
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool
@@ -82,5 +82,5 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 		}
 		return nil
 	})
-	return ActionWait, nil
+	return HandlerResult{Action: ActionWait, CustomCorrelator: correlator}, nil
 }

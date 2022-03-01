@@ -65,7 +65,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	return err == nil, err
 }
 
-func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -78,14 +78,14 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state Defi
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistFFI(ctx, &broadcast)
 			if err != nil {
-				return ActionRetry, err
+				return HandlerResult{Action: ActionRetry}, err
 			}
 		}
 	}
 
 	if !valid {
 		l.Warnf("Contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
@@ -93,10 +93,10 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state Defi
 		event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID, tx)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return ActionConfirm, nil
+	return HandlerResult{Action: ActionConfirm}, nil
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	var broadcast fftypes.ContractAPI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
@@ -109,14 +109,14 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, st
 			broadcast.Message = msg.Header.ID
 			valid, err = dh.persistContractAPI(ctx, &broadcast)
 			if err != nil {
-				return ActionRetry, err
+				return HandlerResult{Action: ActionRetry}, err
 			}
 		}
 	}
 
 	if !valid {
 		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
@@ -124,5 +124,5 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, st
 		event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID, tx)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return ActionConfirm, nil
+	return HandlerResult{Action: ActionConfirm}, nil
 }

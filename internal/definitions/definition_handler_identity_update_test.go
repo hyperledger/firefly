@@ -87,7 +87,7 @@ func TestHandleDefinitionIdentityUpdateOk(t *testing.T) {
 	})).Return(nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	err = bs.finalizers[0](ctx)
@@ -110,7 +110,7 @@ func TestHandleDefinitionIdentityUpdateUpsertFail(t *testing.T) {
 	mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -129,7 +129,7 @@ func TestHandleDefinitionIdentityInvalidIdentity(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -146,7 +146,7 @@ func TestHandleDefinitionIdentityNotFound(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(nil, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -163,7 +163,7 @@ func TestHandleDefinitionIdentityLookupFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -200,7 +200,7 @@ func TestHandleDefinitionIdentityValidateFail(t *testing.T) {
 	}
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	bs.assertNoFinalizers()
@@ -225,7 +225,7 @@ func TestHandleDefinitionIdentityMissingData(t *testing.T) {
 	}
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{}, fftypes.NewUUID())
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	bs.assertNoFinalizers()

@@ -23,41 +23,41 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	var dt fftypes.Datatype
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &dt)
 	if !valid {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	if err := dt.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	if err := dh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	existing, err := dh.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
 	if err != nil {
-		return ActionRetry, err // We only return database errors
+		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if existing != nil {
 		l.Warnf("Unable to process datatype broadcast %s (%s:%s) - duplicate of %v", msg.Header.ID, dt.Namespace, dt, existing.ID)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	if err = dh.database.UpsertDatatype(ctx, &dt, false); err != nil {
-		return ActionRetry, err
+		return HandlerResult{Action: ActionRetry}, err
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
 		event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID, tx)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return ActionConfirm, nil
+	return HandlerResult{Action: ActionConfirm}, nil
 }

@@ -130,7 +130,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	mdx.On("AddPeer", ctx, node.DX.Endpoint).Return(nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, []*fftypes.Data{data}, fftypes.NewUUID())
-	assert.Equal(t, ActionConfirm, action)
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
 	err = bs.preFinalizers[0](ctx)
@@ -149,7 +149,7 @@ func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
 	ctx := context.Background()
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, &fftypes.Message{}, []*fftypes.Data{})
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	bs.assertNoFinalizers()
@@ -168,7 +168,7 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 	}).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, []*fftypes.Data{data})
-	assert.Equal(t, ActionRetry, action)
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -189,7 +189,7 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 	}).Return(nil, nil)
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, []*fftypes.Data{data})
-	assert.Equal(t, ActionReject, action)
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)

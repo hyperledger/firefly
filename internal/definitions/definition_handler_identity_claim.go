@@ -25,11 +25,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, verificationID *fftypes.UUID) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, verificationID *fftypes.UUID) (HandlerResult, error) {
 	var claim fftypes.IdentityClaim
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
 	if !valid {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	return dh.handleIdentityClaim(ctx, state, msg, &claim, verificationID)
@@ -126,25 +126,25 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 	return nil, nil
 }
 
-func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, identityClaim *fftypes.IdentityClaim, verificationID *fftypes.UUID) (DefinitionMessageAction, error) {
+func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, identityClaim *fftypes.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity
 	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil && retryable {
-		return ActionRetry, err
+		return HandlerResult{Action: ActionRetry}, err
 	} else if err != nil {
 		// This cannot be processed as the parent does not exist (or similar).
 		// We treat this as a bad request, as nodes should not be broadcast until the parent identity is
 		// is already confirmed. (Note different processing for org/custom childs, where there's a parent
 		// verification to coordinate).
 		l.Warnf("Unable to process identity claim %s: %s", msg.Header.ID, err)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	// Check signature verification
 	if !dh.verifyClaimSignature(ctx, msg, identity, parent) {
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	existingIdentity, err := dh.database.GetIdentityByName(ctx, identity.Type, identity.Namespace, identity.Name)
@@ -152,23 +152,23 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		existingIdentity, err = dh.database.GetIdentityByID(ctx, identity.ID)
 	}
 	if err != nil {
-		return ActionRetry, err // retry database errors
+		return HandlerResult{Action: ActionRetry}, err // retry database errors
 	}
 	if existingIdentity != nil && !existingIdentity.IdentityBase.Equals(ctx, &identity.IdentityBase) {
 		// If the existing one matches - this is just idempotent replay. No action needed, just confirm
 		l.Warnf("Unable to process identity claim %s - conflict with existing: %v", msg.Header.ID, existingIdentity.ID)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	// Check uniquness of verifier
 	verifier := dh.getClaimVerifier(msg, identity)
 	existingVerifier, err := dh.database.GetVerifierByValue(ctx, verifier.Type, identity.Namespace, verifier.Value)
 	if err != nil {
-		return ActionRetry, err // retry database errors
+		return HandlerResult{Action: ActionRetry}, err // retry database errors
 	}
 	if existingVerifier != nil && !existingVerifier.Identity.Equals(identity.ID) {
 		log.L(ctx).Warnf("Unable to process identity claim %s - verifier type=%s value=%s already registered: %v", msg.Header.ID, verifier.Type, verifier.Value, existingVerifier.Hash)
-		return ActionReject, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	if parent != nil && identity.Type != fftypes.IdentityTypeNode {
@@ -178,13 +178,13 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 			// Search for a corresponding verification message on the same topic
 			verificationID, err = dh.confirmVerificationForClaim(ctx, state, msg, identity, parent)
 			if err != nil {
-				return ActionRetry, err // retry database errors
+				return HandlerResult{Action: ActionRetry}, err // retry database errors
 			}
 		}
 		if verificationID == nil {
 			// Ok, we still confirm the message as it's valid, and we do not want to block the context.
 			// But we do NOT go on to create the identity - we will be called back
-			return ActionConfirm, nil
+			return HandlerResult{Action: ActionConfirm}, nil
 		}
 		log.L(ctx).Infof("Identity '%s' verified claim='%s' verification='%s'", identity.ID, msg.Header.ID, verificationID)
 		identity.Messages.Verification = verificationID
@@ -192,12 +192,12 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 
 	if existingVerifier == nil {
 		if err = dh.database.UpsertVerifier(ctx, verifier, database.UpsertOptimizationNew); err != nil {
-			return ActionRetry, err
+			return HandlerResult{Action: ActionRetry}, err
 		}
 	}
 	if existingIdentity == nil {
 		if err = dh.database.UpsertIdentity(ctx, identity, database.UpsertOptimizationNew); err != nil {
-			return ActionRetry, err
+			return HandlerResult{Action: ActionRetry}, err
 		}
 	}
 
@@ -214,5 +214,5 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		event := fftypes.NewEvent(fftypes.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil)
 		return dh.database.InsertEvent(ctx, event)
 	})
-	return ActionConfirm, nil
+	return HandlerResult{Action: ActionConfirm}, nil
 }
