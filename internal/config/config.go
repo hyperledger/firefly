@@ -208,7 +208,7 @@ var (
 	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
 	// SharedStorageType specifies which shared storage interface plugin to use
 	SharedStorageType = rootKey("sharedstorage.type")
-	// PublicStorageType specifies which shared storage interface plugin to use
+	// PublicStorageType specifies which shared storage interface plugin to use - deprecated in favor of SharedStorageType
 	PublicStorageType = rootKey("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = rootKey("subscription.defaults.batchSize")

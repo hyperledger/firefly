@@ -48,9 +48,7 @@ type Manager interface {
 
 type dataManager struct {
 	blobStore
-
 	database          database.Plugin
-	sharedstorage     sharedstorage.Plugin
 	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
@@ -62,7 +60,6 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Pl
 	}
 	dm := &dataManager{
 		database:          di,
-		sharedstorage:     pi,
 		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
 	}
