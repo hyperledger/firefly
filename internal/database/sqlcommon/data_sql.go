@@ -79,9 +79,9 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 		})
 }
 
-func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, datatype *fftypes.DatatypeRef, blob *fftypes.BlobRef) (int64, error) {
+func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, datatype *fftypes.DatatypeRef, blob *fftypes.BlobRef, requestConflictEmptyResult bool) (int64, error) {
 	data.ValueSize = data.Value.Length()
-	return s.insertTx(ctx, tx,
+	return s.insertTxExt(ctx, tx,
 		sq.Insert("data").
 			Columns(dataColumnsWithValue...).
 			Values(
@@ -101,7 +101,7 @@ func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
-		})
+		}, requestConflictEmptyResult)
 }
 
 func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimization database.UpsertOptimization) (err error) {
@@ -127,7 +127,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 	// as only recovery paths require us to go down the un-optimized route.
 	optimized := false
 	if optimization == database.UpsertOptimizationNew {
-		_, opErr := s.attemptDataInsert(ctx, tx, data, datatype, blob)
+		_, opErr := s.attemptDataInsert(ctx, tx, data, datatype, blob, true /* we want a failure here we can progress past */)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
 		rowsAffected, opErr := s.attemptDataUpdate(ctx, tx, data, datatype, blob)
@@ -162,7 +162,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 				return err
 			}
 		} else {
-			if _, err = s.attemptDataInsert(ctx, tx, data, datatype, blob); err != nil {
+			if _, err = s.attemptDataInsert(ctx, tx, data, datatype, blob, false); err != nil {
 				return err
 			}
 		}

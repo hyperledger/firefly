@@ -84,8 +84,8 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 		})
 }
 
-func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message) (err error) {
-	message.Sequence, err = s.insertTx(ctx, tx,
+func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message, requestConflictEmptyResult bool) (err error) {
+	message.Sequence, err = s.insertTxExt(ctx, tx,
 		sq.Insert("messages").
 			Columns(msgColumns...).
 			Values(
@@ -109,7 +109,7 @@ func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, mes
 			),
 		func() {
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
-		})
+		}, requestConflictEmptyResult)
 	return err
 }
 
@@ -128,7 +128,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	optimized := false
 	recreateDatarefs := false
 	if optimization == database.UpsertOptimizationNew {
-		opErr := s.attemptMessageInsert(ctx, tx, message)
+		opErr := s.attemptMessageInsert(ctx, tx, message, true /* we want a failure here we can progress past */)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
 		rowsAffected, opErr := s.attemptMessageUpdate(ctx, tx, message)
@@ -165,7 +165,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 				return err
 			}
 		} else {
-			if err = s.attemptMessageInsert(ctx, tx, message); err != nil {
+			if err = s.attemptMessageInsert(ctx, tx, message, false); err != nil {
 				return err
 			}
 		}
@@ -201,7 +201,7 @@ func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *fftypes.Message
 		return err
 	}
 
-	if err = s.attemptMessageInsert(ctx, tx, message); err != nil {
+	if err = s.attemptMessageInsert(ctx, tx, message, false); err != nil {
 		return err
 	}
 
