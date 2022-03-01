@@ -134,6 +134,10 @@ type EthconnectMessageHeaders struct {
 	ID   string `json:"id,omitempty"`
 }
 
+type FFIGenerationInput struct {
+	ABI []ABIElementMarshaling `json:"abi,omitempty"`
+}
+
 // var batchPinEvent = "BatchPin"
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
@@ -752,12 +756,15 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 }
 
 func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
-	var abi []ABIElementMarshaling
-	err := json.Unmarshal(generationRequest.Input.Bytes(), &abi)
+	var input FFIGenerationInput
+	err := json.Unmarshal(generationRequest.Input.Bytes(), &input)
 	if err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
 	}
-	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, abi)
+	if len(input.ABI) == 0 {
+		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "ABI is empty")
+	}
+	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 	return ffi, nil
 }
 
