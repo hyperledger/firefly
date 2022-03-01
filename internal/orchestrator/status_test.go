@@ -60,7 +60,7 @@ func TestGetStatusRegistered(t *testing.T) {
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
-	assert.Equal(t, "did:firefly:org/org1", status.Org.Identity)
+	assert.Equal(t, "did:firefly:org/org1", status.Org.DID)
 
 	assert.Equal(t, *orgID, *status.Org.ID)
 	assert.Equal(t, "node1", status.Node.Name)
@@ -106,7 +106,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
-	assert.Equal(t, "did:firefly:org/org1", status.Org.Identity)
+	assert.Equal(t, "did:firefly:org/org1", status.Org.DID)
 
 	assert.Equal(t, *orgID, *status.Org.ID)
 	assert.Equal(t, "node1", status.Node.Name)
@@ -168,7 +168,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
-	assert.Equal(t, "did:firefly:org/org1", status.Org.Identity)
+	assert.Equal(t, "did:firefly:org/org1", status.Org.DID)
 	assert.Equal(t, *orgID, *status.Org.ID)
 
 	assert.Equal(t, "node1", status.Node.Name)

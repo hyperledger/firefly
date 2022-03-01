@@ -285,4 +285,5 @@ var (
 	MsgParentIdentityMissingClaim   = ffm("FF10366", "Parent %s (%s) is invalid (missing claim)", 400)
 	MsgDXInfoMissingID              = ffm("FF10367", "Data exchange endpoint info missing 'id' field", 500)
 	MsgNilOrNullObject              = ffm("FF10368", "Object is null")
+	MsgTokenApprovalFailed          = ffm("FF10369", "Token approval with ID '%s' failed. Please check the FireFly logs for more information")
 )

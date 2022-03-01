@@ -388,7 +388,7 @@ func (sa *syncAsyncBridge) handleTransferOpFailedEvent(event *fftypes.EventDeliv
 }
 
 func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *fftypes.EventDelivery) error {
-	// See if this is a failure of an inflight token transfer operation
+	// See if this is a failure of an inflight token approval operation
 	inflight := sa.getInFlight(event.Namespace, tokenApproveConfirm, event.Correlator)
 	if inflight == nil {
 		return nil
@@ -404,7 +404,7 @@ func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *fftypes.EventDeliv
 		log.L(sa.ctx).Warnf("Failed to extract token approval inputs for operation '%s': %s", op.ID, err)
 	}
 
-	go sa.resolveFailedTokenTransfer(inflight, approval.LocalID)
+	go sa.resolveFailedTokenApproval(inflight, approval.LocalID)
 
 	return nil
 }
@@ -501,6 +501,12 @@ func (sa *syncAsyncBridge) resolveConfirmedTokenApproval(inflight *inflightReque
 func (sa *syncAsyncBridge) resolveFailedTokenTransfer(inflight *inflightRequest, transferID *fftypes.UUID) {
 	err := i18n.NewError(sa.ctx, i18n.MsgTokenTransferFailed, transferID)
 	log.L(sa.ctx).Debugf("Resolving token transfer confirmation request '%s' with error '%s'", inflight.id, err)
+	inflight.response <- inflightResponse{err: err}
+}
+
+func (sa *syncAsyncBridge) resolveFailedTokenApproval(inflight *inflightRequest, transferID *fftypes.UUID) {
+	err := i18n.NewError(sa.ctx, i18n.MsgTokenApprovalFailed, transferID)
+	log.L(sa.ctx).Debugf("Resolving token approval request '%s' with error '%s'", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
 }
 

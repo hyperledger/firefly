@@ -53,7 +53,7 @@ func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *fft
 	}
 
 	valid = author == expectedSigner.DID ||
-		(expectedSigner.Type == fftypes.IdentityTypeOrg || author == fmt.Sprintf("%s%s", fftypes.FireFlyOrgDIDPrefix, expectedSigner.ID))
+		(expectedSigner.Type == fftypes.IdentityTypeOrg && author == fmt.Sprintf("%s%s", fftypes.FireFlyOrgDIDPrefix, expectedSigner.ID))
 	if !valid {
 		log.L(ctx).Warnf("Unable to process identity claim %s - signature mismatch type=%s author=%s expected=%s", msg.Header.ID, identity.Type, author, expectedSigner.DID)
 	}

@@ -1001,7 +1001,7 @@ func TestAwaitFailedTokenApproval(t *testing.T) {
 		}()
 		return nil
 	})
-	assert.Regexp(t, "FF10291", err)
+	assert.Regexp(t, "FF10369", err)
 }
 
 func TestFailedTokenTransferOpError(t *testing.T) {

@@ -9959,9 +9959,9 @@ paths:
                     type: object
                   org:
                     properties:
-                      id: {}
-                      identity:
+                      did:
                         type: string
+                      id: {}
                       name:
                         type: string
                       registered:

@@ -64,8 +64,8 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 	return string(manifestBytes), err
 }
 
-// the data came from) matches the org listed in the batch. The on-chain identity check
-// is performed by the aggregator, across broadcast and private consistently.
+// Check data exchange peer the data came from, has been registered to the org listed in the batch.
+// Note the on-chain identity check is performed separately by the aggregator (across broadcast and private consistently).
 func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string) (node *fftypes.Identity, err error) {
 	l := log.L(em.ctx)
 

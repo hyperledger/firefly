@@ -101,7 +101,7 @@ type SignerRef struct {
 }
 
 // IdentityClaim is the data payload used in a message to broadcast an intent to publish a new identity.
-// Most claims (except root orgs, where different requirements apply) require a separate IdentityValidation
+// Most claims (except root orgs, where different requirements apply) require a separate IdentityVerification
 // from the parent identity to be published (on the same topic) before the identity is considered valid
 // and is stored as a confirmed identity.
 type IdentityClaim struct {
@@ -113,9 +113,6 @@ type IdentityClaim struct {
 type IdentityVerification struct {
 	Claim    MessageRef   `json:"claim"`
 	Identity IdentityBase `json:"identity"`
-
-	// SignerRef lets us store back the message when broadcasting, but isn't part of the payload
-	SignerRef *Identity `json:"-"`
 }
 
 // IdentityUpdate is the data payload used in message to broadcast an update to an identity profile.
@@ -125,9 +122,6 @@ type IdentityVerification struct {
 type IdentityUpdate struct {
 	Identity IdentityBase    `json:"identity"`
 	Updates  IdentityProfile `json:"updates,omitempty"`
-
-	// IdentityRef lets us store back the message when broadcasting, but isn't part of the payload
-	IdentityRef *Identity `json:"-"`
 }
 
 func (ic *IdentityClaim) Topic() string {
@@ -143,9 +137,8 @@ func (iv *IdentityVerification) Topic() string {
 }
 
 func (iv *IdentityVerification) SetBroadcastMessage(msgID *UUID) {
-	if iv.SignerRef != nil {
-		iv.SignerRef.Messages.Verification = msgID
-	}
+	// nop-op here, the definition handler of the claim is the one that is responsible for updating
+	// the verification message ID on the Identity.
 }
 
 func (iu *IdentityUpdate) Topic() string {
@@ -153,9 +146,7 @@ func (iu *IdentityUpdate) Topic() string {
 }
 
 func (iu *IdentityUpdate) SetBroadcastMessage(msgID *UUID) {
-	if iu.IdentityRef != nil {
-		iu.IdentityRef.Messages.Update = msgID
-	}
+	// nop-op here, as the IdentityUpdate doesn't have a reference to the original Identity to set this.
 }
 
 func (i *IdentityBase) Topic() string {

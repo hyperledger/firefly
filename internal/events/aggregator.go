@@ -446,7 +446,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		if err = ag.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Emitting %s %s for message %s:%s (c=%v)", eventType, event.ID, msg.Header.Namespace, msg.Header.ID, msg.Header.CID)
+		log.L(ctx).Infof("Emitting %s %s for message %s:%s (correlator=%v)", eventType, event.ID, msg.Header.Namespace, msg.Header.ID, event.Correlator)
 		return nil
 	})
 	if ag.metrics.IsMetricsEnabled() {

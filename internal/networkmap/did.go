@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
+// DIDDocument - see https://www.w3.org/TR/did-core/#core-properties
 type DIDDocument struct {
 	Context             []string              `json:"@context"`
 	ID                  string                `json:"id"`

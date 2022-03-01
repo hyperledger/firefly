@@ -79,7 +79,8 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 		}
 	}
 
-	// Just confirm the verification - when the message is processed it will be
+	// Just confirm the verification - when the claim message is processed it will come back and look for
+	// this (now confirmed) verification message.
 	return HandlerResult{Action: ActionConfirm}, nil
 
 }
