@@ -53,8 +53,8 @@ INSERT INTO orgs (
     i.created,
     v.value as identity
   FROM identities as i
-  LEFT JOIN verifiers v ON v.hash = REPLACE(i.id,'-','')
-  LEFT JOIN verifiers pv ON pv.hash = REPLACE(i.parent,'-','')
+  LEFT JOIN verifiers v ON v.hash = REPLACE(i.id::text,'-','')
+  LEFT JOIN verifiers pv ON pv.hash = REPLACE(i.parent::text,'-','')
   WHERE i.did LIKE 'did:firefly:org/%' AND v.hash IS NOT NULL;
 
 -- We only reconstitute nodes that were dropped during the original up migration.
@@ -78,8 +78,8 @@ INSERT INTO nodes (
     i.created,
     v.value as dx_peer
   FROM identities as i
-  LEFT JOIN verifiers v ON v.hash = REPLACE(i.id,'-','')
-  LEFT JOIN verifiers pv ON pv.hash = REPLACE(i.parent,'-','')
+  LEFT JOIN verifiers v ON v.hash = REPLACE(i.id::text,'-','')
+  LEFT JOIN verifiers pv ON pv.hash = REPLACE(i.parent::text,'-','')
   WHERE i.did LIKE 'did:firefly:node/%' AND v.hash IS NOT NULL;
 
 DROP INDEX identities_id;

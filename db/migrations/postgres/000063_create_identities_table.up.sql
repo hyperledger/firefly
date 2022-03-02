@@ -97,7 +97,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is 32b of hex --
+    REPLACE(o.id::text, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is 32b of hex --
     'ff_system',
     o.id,
     'ethereum_address',
@@ -113,7 +113,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is 32b of hex --
+    REPLACE(o.id::text, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is 32b of hex --
     'ff_system',
     o.id,
     'fabric_msp_id',
@@ -129,7 +129,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(n.id, '-', ''),
+    REPLACE(n.id::text, '-', ''),
     'ff_system',
     n.id,
     'dx_peer_id',
