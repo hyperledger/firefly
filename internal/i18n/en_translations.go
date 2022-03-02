@@ -265,7 +265,7 @@ var (
 	MsgFFIGenerationFailed          = ffm("FF10346", "Error generating smart contract interface: %s", 400)
 	MsgFFIGenerationUnsupported     = ffm("FF10347", "Smart contract interface generation is not supported by this blockchain plugin", 400)
 	MsgBlobHashMismatch             = ffm("FF10348", "Blob hash mismatch sent=%s received=%s", 400)
-	MsgDIDResovlerUnknown           = ffm("FF10349", "DID resolver unknown for DID: %s", 400)
+	MsgDIDResolverUnknown           = ffm("FF10349", "DID resolver unknown for DID: %s", 400)
 	MsgIdentityNotOrg               = ffm("FF10350", "Identity '%s' with DID '%s' is not an organization", 400)
 	MsgIdentityNotNode              = ffm("FF10351", "Identity '%s' with DID '%s' is not a node", 400)
 	MsgBlockchainKeyNotSet          = ffm("FF10352", "No blockchain key specified", 400)

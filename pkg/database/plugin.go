@@ -822,7 +822,7 @@ var IdentityQueryFactory = &queryFields{
 
 // VerifierQueryFactory filter fields for identities
 var VerifierQueryFactory = &queryFields{
-	"id":        &UUIDField{},
+	"hash":      &Bytes32Field{},
 	"identity":  &UUIDField{},
 	"type":      &StringField{},
 	"namespace": &StringField{},

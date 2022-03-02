@@ -56,7 +56,7 @@ INSERT INTO orgs (
   WHERE i.did LIKE 'did:firefly:org/%' AND v.hash IS NOT NULL;
 
 -- We only reconstitute nodes that were dropped during the original up migration.
--- These have the UUID of the verifier set to the same UUID as the node.
+-- These have the Hash of the verifier set to the bytes from the UUID of the node (by taking the string and removing the dashes).
 INSERT INTO nodes (
     id,
     owner,

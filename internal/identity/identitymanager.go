@@ -111,7 +111,7 @@ func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey str
 	}
 	// If the caller is not confident that the blockchain plugin/connector should be used to resolve,
 	// for example it might be a different blockchain (Eth vs Fabric etc.), or it has it's own
-	// verification/management of keys, it should set resolveViaBlockchainPlugin=false
+	// verification/management of keys, it should set `assets.keyNormalization: "none"` in the config.
 	if keyNormalizationMode != KeyNormalizationBlockchainPlugin {
 		return inputKey, nil
 	}
@@ -407,7 +407,7 @@ func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupSt
 	} else {
 		if strings.HasPrefix(didLookupStr, fftypes.DIDPrefix) {
 			if !strings.HasPrefix(didLookupStr, fftypes.FireFlyDIDPrefix) {
-				return nil, false, i18n.NewError(ctx, i18n.MsgDIDResovlerUnknown, didLookupStr)
+				return nil, false, i18n.NewError(ctx, i18n.MsgDIDResolverUnknown, didLookupStr)
 			}
 			// Look up by the full DID
 			if identity, err = im.database.GetIdentityByDID(ctx, didLookupStr); err != nil {

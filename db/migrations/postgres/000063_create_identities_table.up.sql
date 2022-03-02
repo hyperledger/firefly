@@ -33,7 +33,7 @@ CREATE TABLE verifiers (
 
 CREATE UNIQUE INDEX verifiers_hash ON verifiers(hash);
 CREATE UNIQUE INDEX verifiers_value ON verifiers(vtype, namespace, value);
-CREATE UNIQUE INDEX verifiers_identity ON verifiers(identity);
+CREATE INDEX verifiers_identity ON verifiers(identity);
 
 INSERT INTO identities (
     id,
@@ -97,7 +97,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(o.id, '-', ''),
+    REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is 32b of hex --
     'ff_system',
     o.id,
     'ethereum_address',
@@ -113,7 +113,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(o.id, '-', ''),
+    REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is 32b of hex --
     'ff_system',
     o.id,
     'fabric_msp_id',

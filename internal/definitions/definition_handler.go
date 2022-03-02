@@ -66,7 +66,7 @@ const (
 // DefinitionBatchState tracks the state between definition handlers that run in-line on the pin processing route in the
 // aggregator as part of a batch of pins. They might have complex API calls, and interdependencies, that need to be managed via this state.
 // The actions to be taken at the end of a definition batch.
-// See further notes on "batchActions" in the event aggregator
+// See further notes on "batchState" in the event aggregator
 type DefinitionBatchState interface {
 	// PreFinalize may perform a blocking action (possibly to an external connector) that should execute outside database RunAsGroup
 	AddPreFinalize(func(ctx context.Context) error)
