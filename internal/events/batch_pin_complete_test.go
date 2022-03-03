@@ -134,7 +134,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		return e.Name == batch.Event.Name
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return e.Type == fftypes.EventTypeBlockchainEvent
+		return e.Type == fftypes.EventTypeBlockchainEventReceived
 	})).Return(nil).Times(2)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil).Once()

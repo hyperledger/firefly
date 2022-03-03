@@ -17,21 +17,21 @@ type Manager struct {
 	mock.Mock
 }
 
-// AddContractSubscription provides a mock function with given fields: ctx, ns, sub
-func (_m *Manager) AddContractSubscription(ctx context.Context, ns string, sub *fftypes.ContractSubscriptionInput) (*fftypes.ContractSubscription, error) {
+// AddContractListener provides a mock function with given fields: ctx, ns, sub
+func (_m *Manager) AddContractListener(ctx context.Context, ns string, sub *fftypes.ContractListenerInput) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, ns, sub)
 
-	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractSubscriptionInput) *fftypes.ContractSubscription); ok {
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractListenerInput) *fftypes.ContractListener); ok {
 		r0 = rf(ctx, ns, sub)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+			r0 = ret.Get(0).(*fftypes.ContractListener)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractSubscriptionInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractListenerInput) error); ok {
 		r1 = rf(ctx, ns, sub)
 	} else {
 		r1 = ret.Error(1)
@@ -86,8 +86,8 @@ func (_m *Manager) BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI
 	return r0, r1
 }
 
-// DeleteContractSubscriptionByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
-func (_m *Manager) DeleteContractSubscriptionByNameOrID(ctx context.Context, ns string, nameOrID string) error {
+// DeleteContractListenerByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
+func (_m *Manager) DeleteContractListenerByNameOrID(ctx context.Context, ns string, nameOrID string) error {
 	ret := _m.Called(ctx, ns, nameOrID)
 
 	var r0 error
@@ -178,16 +178,16 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns
 	return r0, r1, r2
 }
 
-// GetContractSubscriptionByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
-func (_m *Manager) GetContractSubscriptionByNameOrID(ctx context.Context, ns string, nameOrID string) (*fftypes.ContractSubscription, error) {
+// GetContractListenerByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
+func (_m *Manager) GetContractListenerByNameOrID(ctx context.Context, ns string, nameOrID string) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, ns, nameOrID)
 
-	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractSubscription); ok {
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractListener); ok {
 		r0 = rf(ctx, ns, nameOrID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+			r0 = ret.Get(0).(*fftypes.ContractListener)
 		}
 	}
 
@@ -201,16 +201,16 @@ func (_m *Manager) GetContractSubscriptionByNameOrID(ctx context.Context, ns str
 	return r0, r1
 }
 
-// GetContractSubscriptions provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetContractSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
+// GetContractListeners provides a mock function with given fields: ctx, ns, filter
+func (_m *Manager) GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractSubscription); ok {
+	var r0 []*fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractListener); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractSubscription)
+			r0 = ret.Get(0).([]*fftypes.ContractListener)
 		}
 	}
 
@@ -381,15 +381,15 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 }
 
 // SubscribeContract provides a mock function with given fields: ctx, ns, eventPath, req
-func (_m *Manager) SubscribeContract(ctx context.Context, ns string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
+func (_m *Manager) SubscribeContract(ctx context.Context, ns string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, ns, eventPath, req)
 
-	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractSubscription); ok {
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractListener); ok {
 		r0 = rf(ctx, ns, eventPath, req)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+			r0 = ret.Get(0).(*fftypes.ContractListener)
 		}
 	}
 
@@ -404,15 +404,15 @@ func (_m *Manager) SubscribeContract(ctx context.Context, ns string, eventPath s
 }
 
 // SubscribeContractAPI provides a mock function with given fields: ctx, ns, apiName, eventPath, req
-func (_m *Manager) SubscribeContractAPI(ctx context.Context, ns string, apiName string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractSubscription, error) {
+func (_m *Manager) SubscribeContractAPI(ctx context.Context, ns string, apiName string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, ns, apiName, eventPath, req)
 
-	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractSubscription); ok {
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractListener); ok {
 		r0 = rf(ctx, ns, apiName, eventPath, req)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+			r0 = ret.Get(0).(*fftypes.ContractListener)
 		}
 	}
 

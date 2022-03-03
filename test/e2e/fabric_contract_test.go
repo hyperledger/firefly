@@ -142,14 +142,14 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 
 	received1, changes1 := wsReader(suite.testState.ws1, true)
 
-	sub := CreateContractSubscription(suite.T(), suite.testState.client1, assetCreatedEvent, &fftypes.JSONObject{
+	sub := CreateContractListener(suite.T(), suite.testState.client1, assetCreatedEvent, &fftypes.JSONObject{
 		"channel":   "firefly",
 		"chaincode": suite.chaincodeName,
 	})
 
 	<-changes1 // only expect database change events
 
-	subs := GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
+	subs := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(subs))
 	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
 
@@ -192,8 +192,8 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), assetName, res.(map[string]interface{})["name"])
 
-	DeleteContractSubscription(suite.T(), suite.testState.client1, subs[0].ID)
-	subs = GetContractSubscriptions(suite.T(), suite.testState.client1, suite.testState.startTime)
+	DeleteContractListener(suite.T(), suite.testState.client1, subs[0].ID)
+	subs = GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 0, len(subs))
 
 	<-changes1 // only expect database change events

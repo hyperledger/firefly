@@ -63,8 +63,8 @@ func (_m *Plugin) DeleteConfigRecord(ctx context.Context, key string) error {
 	return r0
 }
 
-// DeleteContractSubscriptionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) DeleteContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
+// DeleteContractListenerByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, id)
 
 	var r0 error
@@ -482,16 +482,16 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 	return r0, r1, r2
 }
 
-// GetContractSubscription provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetContractSubscription(ctx context.Context, ns string, name string) (*fftypes.ContractSubscription, error) {
+// GetContractListener provides a mock function with given fields: ctx, ns, name
+func (_m *Plugin) GetContractListener(ctx context.Context, ns string, name string) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, ns, name)
 
-	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractSubscription); ok {
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractListener); ok {
 		r0 = rf(ctx, ns, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+			r0 = ret.Get(0).(*fftypes.ContractListener)
 		}
 	}
 
@@ -505,16 +505,16 @@ func (_m *Plugin) GetContractSubscription(ctx context.Context, ns string, name s
 	return r0, r1
 }
 
-// GetContractSubscriptionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractSubscription, error) {
+// GetContractListenerByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractSubscription); ok {
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractListener); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+			r0 = ret.Get(0).(*fftypes.ContractListener)
 		}
 	}
 
@@ -528,16 +528,16 @@ func (_m *Plugin) GetContractSubscriptionByID(ctx context.Context, id *fftypes.U
 	return r0, r1
 }
 
-// GetContractSubscriptionByProtocolID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractSubscriptionByProtocolID(ctx context.Context, id string) (*fftypes.ContractSubscription, error) {
+// GetContractListenerByProtocolID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetContractListenerByProtocolID(ctx context.Context, id string) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractSubscription); ok {
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractListener); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractSubscription)
+			r0 = ret.Get(0).(*fftypes.ContractListener)
 		}
 	}
 
@@ -551,16 +551,16 @@ func (_m *Plugin) GetContractSubscriptionByProtocolID(ctx context.Context, id st
 	return r0, r1
 }
 
-// GetContractSubscriptions provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetContractSubscriptions(ctx context.Context, filter database.Filter) ([]*fftypes.ContractSubscription, *database.FilterResult, error) {
+// GetContractListeners provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.ContractSubscription
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.ContractSubscription); ok {
+	var r0 []*fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.ContractListener); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractSubscription)
+			r0 = ret.Get(0).([]*fftypes.ContractListener)
 		}
 	}
 
@@ -2585,12 +2585,12 @@ func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI
 	return r0
 }
 
-// UpsertContractSubscription provides a mock function with given fields: ctx, sub
-func (_m *Plugin) UpsertContractSubscription(ctx context.Context, sub *fftypes.ContractSubscription) error {
+// UpsertContractListener provides a mock function with given fields: ctx, sub
+func (_m *Plugin) UpsertContractListener(ctx context.Context, sub *fftypes.ContractListener) error {
 	ret := _m.Called(ctx, sub)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractSubscription) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractListener) error); ok {
 		r0 = rf(ctx, sub)
 	} else {
 		r0 = ret.Error(0)

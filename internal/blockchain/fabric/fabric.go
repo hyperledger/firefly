@@ -690,7 +690,7 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &fabricLocation, nil
 }
 
-func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
 	location, err := parseContractLocation(ctx, subscription.Location)
 	if err != nil {
 		return err
@@ -703,7 +703,7 @@ func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.Cont
 	return nil
 }
 
-func (f *Fabric) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+func (f *Fabric) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error {
 	return f.streams.deleteSubscription(ctx, subscription.ProtocolID)
 }
 

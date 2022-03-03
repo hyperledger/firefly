@@ -22,24 +22,25 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postNewContractSubscription = &oapispec.Route{
-	Name:   "postNewContractSubscription",
-	Path:   "namespaces/{ns}/contracts/subscriptions",
-	Method: http.MethodPost,
+var getContractListeners = &oapispec.Route{
+	Name:   "getContractListeners",
+	Path:   "namespaces/{ns}/contracts/listeners",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.ContractListenerQueryFactory,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractSubscriptionInput{} },
-	JSONInputMask:   []string{"Namespace", "ProtocolID"},
-	JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
+	JSONInputValue:  nil,
+	JSONInputMask:   nil,
+	JSONOutputValue: func() interface{} { return []*fftypes.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().AddContractSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.ContractSubscriptionInput))
+		return filterResult(getOr(r.Ctx).Contracts().GetContractListeners(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

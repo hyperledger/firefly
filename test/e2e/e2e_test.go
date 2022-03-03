@@ -368,7 +368,7 @@ func waitForIdentityConfirmed(t *testing.T, c chan *fftypes.EventDelivery) *ffty
 func waitForContractEvent(t *testing.T, client *resty.Client, c chan *fftypes.EventDelivery, match map[string]interface{}) map[string]interface{} {
 	for {
 		eventDelivery := <-c
-		if eventDelivery.Type == fftypes.EventTypeBlockchainEvent {
+		if eventDelivery.Type == fftypes.EventTypeBlockchainEventReceived {
 			event, err := GetBlockchainEvent(t, client, eventDelivery.Event.Reference.String())
 			if err != nil {
 				t.Logf("WARN: unable to get event: %v", err.Error())

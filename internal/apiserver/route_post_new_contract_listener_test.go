@@ -19,7 +19,6 @@ package apiserver
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http/httptest"
 	"testing"
 
@@ -29,35 +28,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostContractInterfaceSubscribe(t *testing.T) {
-	interfaceID := fftypes.NewUUID()
+func TestPostNewContractListener(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.ContractSubscribeRequest{}
+	input := fftypes.ContractListenerInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/%s/subscribe/test", interfaceID), &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/mynamespace/contracts/listeners", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("SubscribeContract", mock.Anything, "ns1", "test", mock.AnythingOfType("*fftypes.ContractSubscribeRequest")).
-		Return(&fftypes.ContractSubscription{}, nil)
+	mcm.On("AddContractListener", mock.Anything, "mynamespace", mock.AnythingOfType("*fftypes.ContractListenerInput")).
+		Return(&fftypes.ContractListener{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
-}
-
-func TestPostContractInterfaceSubscribeBadID(t *testing.T) {
-	_, r := newTestAPIServer()
-	input := fftypes.ContractSubscribeRequest{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/bad/subscribe/test"), &buf)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 400, res.Result().StatusCode)
 }

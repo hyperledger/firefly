@@ -658,95 +658,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/apis/{apiName}/subscribe/{eventPath}:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractAPISubscribe
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: apiName
-        required: true
-        schema:
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: eventPath
-        required: true
-        schema:
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                location:
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created: {}
-                  event:
-                    properties:
-                      description:
-                        type: string
-                      name:
-                        type: string
-                      params:
-                        items:
-                          properties:
-                            name:
-                              type: string
-                            schema:
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  id: {}
-                  interface:
-                    properties:
-                      id: {}
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  location:
-                    type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  protocolId:
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
   /namespaces/{ns}/apis/{id}:
     put:
       description: 'TODO: Description'
@@ -1291,6 +1202,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: listener
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: name
         schema:
           type: string
@@ -1307,11 +1223,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: source
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: subscription
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1373,6 +1284,7 @@ paths:
                   info:
                     additionalProperties: {}
                     type: object
+                  listener: {}
                   name:
                     type: string
                   namespace:
@@ -1387,7 +1299,6 @@ paths:
                     type: integer
                   source:
                     type: string
-                  subscription: {}
                   timestamp: {}
                   tx:
                     properties:
@@ -1434,6 +1345,7 @@ paths:
                   info:
                     additionalProperties: {}
                     type: object
+                  listener: {}
                   name:
                     type: string
                   namespace:
@@ -1448,7 +1360,6 @@ paths:
                     type: integer
                   source:
                     type: string
-                  subscription: {}
                   timestamp: {}
                   tx:
                     properties:
@@ -2120,117 +2031,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{interfaceId}/subscribe/{eventPath}:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractInterfaceSubscribe
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: interfaceId
-        required: true
-        schema:
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: eventPath
-        required: true
-        schema:
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                event:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                  type: object
-                location:
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created: {}
-                  event:
-                    properties:
-                      description:
-                        type: string
-                      name:
-                        type: string
-                      params:
-                        items:
-                          properties:
-                            name:
-                              type: string
-                            schema:
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  id: {}
-                  interface:
-                    properties:
-                      id: {}
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  location:
-                    type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  protocolId:
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
   /namespaces/{ns}/contracts/interfaces/{name}/{version}:
     get:
       description: 'TODO: Description'
@@ -2534,84 +2334,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/query:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractQuery
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                input:
-                  additionalProperties: {}
-                  type: object
-                interface: {}
-                key:
-                  type: string
-                ledger:
-                  type: string
-                location:
-                  type: string
-                method:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                    returns:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema: {}
-          description: Success
-        default:
-          description: ""
-  /namespaces/{ns}/contracts/subscriptions:
+  /namespaces/{ns}/contracts/listeners:
     get:
       description: 'TODO: Description'
-      operationId: getContractSubscriptions
+      operationId: getContractListeners
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2732,7 +2458,7 @@ paths:
           description: ""
     post:
       description: 'TODO: Description'
-      operationId: postNewContractSubscription
+      operationId: postNewContractListener
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2833,10 +2559,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/subscriptions/{nameOrId}:
+  /namespaces/{ns}/contracts/listeners/{nameOrId}:
     delete:
       description: 'TODO: Description'
-      operationId: deleteContractSubscription
+      operationId: deleteContractListener
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2863,7 +2589,7 @@ paths:
           description: ""
     get:
       description: 'TODO: Description'
-      operationId: getContractSubscriptionByNameOrID
+      operationId: getContractListenerByNameOrID
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2926,6 +2652,80 @@ paths:
                   protocolId:
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/query:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractQuery
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                interface: {}
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
           description: Success
         default:
           description: ""
@@ -4006,7 +3806,7 @@ paths:
                     - token_approval_op_failed
                     - contract_interface_confirmed
                     - contract_api_confirmed
-                    - blockchain_event
+                    - blockchain_event_received
                     type: string
                 type: object
           description: Success
@@ -4069,7 +3869,7 @@ paths:
                     - token_approval_op_failed
                     - contract_interface_confirmed
                     - contract_api_confirmed
-                    - blockchain_event
+                    - blockchain_event_received
                     type: string
                 type: object
           description: Success
@@ -5241,7 +5041,7 @@ paths:
                     - token_approval_op_failed
                     - contract_interface_confirmed
                     - contract_api_confirmed
-                    - blockchain_event
+                    - blockchain_event_received
                     type: string
                 type: object
           description: Success
@@ -8922,6 +8722,7 @@ paths:
                     info:
                       additionalProperties: {}
                       type: object
+                    listener: {}
                     name:
                       type: string
                     namespace:
@@ -8936,7 +8737,6 @@ paths:
                       type: integer
                     source:
                       type: string
-                    subscription: {}
                     timestamp: {}
                     tx:
                       properties:

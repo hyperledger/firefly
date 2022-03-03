@@ -1238,8 +1238,8 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
@@ -1277,8 +1277,8 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
@@ -1317,8 +1317,8 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(""),
 			Event:    &fftypes.FFISerializedEvent{},
 		},
@@ -1342,8 +1342,8 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
@@ -1373,7 +1373,7 @@ func TestDeleteSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		ProtocolID: "sb-1",
 	}
 
@@ -1398,7 +1398,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		ProtocolID: "sb-1",
 	}
 
@@ -2319,7 +2319,7 @@ func TestGenerateFFI(t *testing.T) {
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
-		Input:       fftypes.JSONAnyPtr(`[]`),
+		Input:       fftypes.JSONAnyPtr(`{"abi": [{}]}`),
 	})
 	assert.NoError(t, err)
 }
@@ -2331,19 +2331,30 @@ func TestGenerateFFIInlineNamespace(t *testing.T) {
 		Version:     "v0.0.1",
 		Description: "desc",
 		Namespace:   "ns1",
-		Input:       fftypes.JSONAnyPtr(`[]`),
+		Input:       fftypes.JSONAnyPtr(`{"abi":[{}]}`),
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, ffi.Namespace, "ns1")
 }
 
-func TestGenerateFFIFail(t *testing.T) {
+func TestGenerateFFIEmptyABI(t *testing.T) {
 	e, _ := newTestEthereum()
 	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
-		Input:       fftypes.JSONAnyPtr(`{"type": "not an ABI"}`),
+		Input:       fftypes.JSONAnyPtr(`{"abi": []}`),
+	})
+	assert.Regexp(t, "FF10346", err)
+}
+
+func TestGenerateFFIBadABI(t *testing.T) {
+	e, _ := newTestEthereum()
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+		Name:        "Simple",
+		Version:     "v0.0.1",
+		Description: "desc",
+		Input:       fftypes.JSONAnyPtr(`{"abi": "not an array"}`),
 	})
 	assert.Regexp(t, "FF10346", err)
 }
