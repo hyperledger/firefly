@@ -108,7 +108,7 @@ func TestScan(t *testing.T) {
 	var h JSONAny
 	assert.Equal(t, int64(0), h.Length())
 	assert.NoError(t, h.Scan(nil))
-	assert.Equal(t, []byte(NullString), []byte(h))
+	assert.Empty(t, h)
 
 	assert.NoError(t, h.Scan(`{"some": "stuff"}`))
 	assert.Equal(t, "stuff", h.JSONObject().GetString("some"))
@@ -128,5 +128,27 @@ func TestScan(t *testing.T) {
 	assert.Nil(t, JSONAnyPtrBytes(nil).Bytes())
 	assert.NotEmpty(t, JSONAnyPtr("{}").Bytes())
 	assert.Equal(t, int64(2), JSONAnyPtr("{}").Length())
+
+}
+
+func TestValue(t *testing.T) {
+
+	var h *JSONAny
+	v, err := h.Value()
+	assert.NoError(t, err)
+	assert.Nil(t, v)
+	err = h.Scan(v)
+	assert.NoError(t, err)
+	assert.Nil(t, h)
+
+	h = JSONAnyPtr("")
+	v, err = h.Value()
+	assert.NoError(t, err)
+	assert.Nil(t, v)
+
+	h = JSONAnyPtr("{}")
+	v, err = h.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "{}", v)
 
 }

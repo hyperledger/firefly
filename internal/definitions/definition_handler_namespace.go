@@ -23,42 +23,41 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	var ns fftypes.Namespace
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
-		return ActionReject, nil, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 	if err := ns.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return ActionReject, nil, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
 	existing, err := dh.database.GetNamespace(ctx, ns.Name)
 	if err != nil {
-		return ActionRetry, nil, err // We only return database errors
+		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if existing != nil {
 		if existing.Type != fftypes.NamespaceTypeLocal {
 			l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
-			return ActionReject, nil, nil
+			return HandlerResult{Action: ActionReject}, nil
 		}
 		// Remove the local definition
 		if err = dh.database.DeleteNamespace(ctx, existing.ID); err != nil {
-			return ActionRetry, nil, err
+			return HandlerResult{Action: ActionRetry}, err
 		}
 	}
 
 	if err = dh.database.UpsertNamespace(ctx, &ns, false); err != nil {
-		return ActionRetry, nil, err
+		return HandlerResult{Action: ActionRetry}, err
 	}
 
-	return ActionConfirm, &DefinitionBatchActions{
-		Finalize: func(ctx context.Context) error {
-			event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID, tx)
-			return dh.database.InsertEvent(ctx, event)
-		},
-	}, nil
+	state.AddFinalize(func(ctx context.Context) error {
+		event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID, tx)
+		return dh.database.InsertEvent(ctx, event)
+	})
+	return HandlerResult{Action: ActionConfirm}, nil
 }

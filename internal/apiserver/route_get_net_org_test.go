@@ -35,7 +35,7 @@ func TestGetOrg(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	nmn.On("GetOrganizationByID", mock.Anything, "org12345").
-		Return(&fftypes.Organization{}, nil)
+		Return(&fftypes.Identity{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

@@ -39,12 +39,12 @@ var postNodesSelf = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
 	JSONInputMask:   nil,
 	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
-	JSONOutputValue: func() interface{} { return &fftypes.Node{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		node, _, err := getOr(r.Ctx).NetworkMap().RegisterNode(r.Ctx, waitConfirm)
+		node, err := getOr(r.Ctx).NetworkMap().RegisterNode(r.Ctx, waitConfirm)
 		return node, err
 	},
 }

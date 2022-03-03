@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,49 +17,47 @@
 package fftypes
 
 import (
-	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOrganizationValidation(t *testing.T) {
+func TestOrgMigration(t *testing.T) {
 
-	org := &Organization{
-		Name: "!name",
+	org := DeprecatedOrganization{
+		ID:          NewUUID(),
+		Name:        "org1",
+		Description: "Org 1",
+		Profile: JSONObject{
+			"test": "profile",
+		},
 	}
-	assert.Regexp(t, "FF10131.*name", org.Validate(context.Background(), false))
+	assert.Equal(t, &IdentityClaim{
+		Identity: &Identity{
+			IdentityBase: IdentityBase{
+				ID:        org.ID,
+				Type:      IdentityTypeOrg,
+				DID:       "did:firefly:org/org1",
+				Namespace: SystemNamespace,
+				Name:      "org1",
+			},
+			IdentityProfile: IdentityProfile{
+				Description: "Org 1",
+				Profile: JSONObject{
+					"test": "profile",
+				},
+			},
+		},
+	}, org.Migrated())
 
-	org = &Organization{
-		Name:        "ok",
-		Description: string(make([]byte, 4097)),
+	assert.Equal(t, "7ea456fa05fc63778e7c4cb22d0498d73f184b2778c11fd2ba31b5980f8490b9", org.Topic())
+
+	msg := &Message{
+		Header: MessageHeader{
+			ID: NewUUID(),
+		},
 	}
-	assert.Regexp(t, "FF10188.*description", org.Validate(context.Background(), false))
-
-	org = &Organization{
-		Name:        "ok",
-		Description: "ok",
-		Identity:    "ok",
-	}
-	assert.NoError(t, org.Validate(context.Background(), false))
-
-	assert.Regexp(t, "FF10203", org.Validate(context.Background(), true))
-
-	var def Definition = org
-	assert.Equal(t, "ff_organizations", def.Topic())
-	def.SetBroadcastMessage(NewUUID())
-	assert.NotNil(t, org.Message)
-}
-
-func TestGetDID(t *testing.T) {
-
-	var org *Organization
-	assert.Equal(t, "", org.GetDID())
-
-	org = &Organization{
-		ID: NewUUID(),
-	}
-	assert.Equal(t, fmt.Sprintf("did:firefly:org/%s", org.ID), org.GetDID())
+	org.SetBroadcastMessage(msg.Header.ID)
+	assert.Equal(t, msg.Header.ID, org.Migrated().Identity.Messages.Claim)
 
 }

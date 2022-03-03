@@ -32,15 +32,15 @@ func TestNewOrganization(t *testing.T) {
 	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
-	input := fftypes.Organization{}
+	input := fftypes.Identity{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/network/organizations", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterOrganization", mock.Anything, mock.AnythingOfType("*fftypes.Organization"), false).
-		Return(&fftypes.Message{}, nil)
+	mnm.On("RegisterOrganization", mock.Anything, mock.AnythingOfType("*fftypes.IdentityCreateDTO"), false).
+		Return(&fftypes.Identity{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

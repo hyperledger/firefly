@@ -87,7 +87,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
-			Identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
+			SignerRef: fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		},
 		Data: fftypes.DataRefs{
 			{ID: dataID1, Hash: dataHash},
@@ -202,7 +202,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
-			Identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
+			SignerRef: fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
 			Group:     &groupID,
 		},
 		Data: fftypes.DataRefs{

@@ -43,6 +43,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 		Batch:      fftypes.NewUUID(),
 		Index:      10,
 		Created:    fftypes.Now(),
+		Signer:     "0x12345",
 		Dispatched: false,
 	}
 

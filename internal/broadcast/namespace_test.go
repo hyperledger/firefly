@@ -67,7 +67,7 @@ func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, fftypes.SystemNamespace, mock.Anything).Return(nil)
 	mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)

@@ -23,6 +23,7 @@ import (
 )
 
 func TestEthereumE2ESuite(t *testing.T) {
+	suite.Run(t, new(IdentityTestSuite))
 	suite.Run(t, new(OnChainOffChainTestSuite))
 	suite.Run(t, new(TokensTestSuite))
 	suite.Run(t, new(EthereumContractTestSuite))

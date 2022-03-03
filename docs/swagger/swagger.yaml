@@ -3902,6 +3902,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: correlator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -3975,6 +3980,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -3991,7 +3997,8 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
@@ -4036,6 +4043,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -4052,7 +4060,8 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
@@ -4223,6 +4232,503 @@ paths:
                   namespace:
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentities
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: description
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: did
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.claim
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: parent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created: {}
+                    description:
+                      type: string
+                    did:
+                      type: string
+                    id: {}
+                    messages:
+                      properties:
+                        claim: {}
+                        update: {}
+                        verification: {}
+                      type: object
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    parent: {}
+                    profile:
+                      additionalProperties: {}
+                      type: object
+                    type:
+                      enum:
+                      - org
+                      - node
+                      - custom
+                      type: string
+                    updated: {}
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewIdentity
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  did:
+                    type: string
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  did:
+                    type: string
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities/{iid}:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentityByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: iid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  did:
+                    type: string
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities/{iid}/did:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentityDID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: iid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  '@context':
+                    items:
+                      type: string
+                    type: array
+                  authentication:
+                    items:
+                      type: string
+                    type: array
+                  id:
+                    type: string
+                  verificationMethod:
+                    items:
+                      properties:
+                        blockchainAcountId:
+                          type: string
+                        controller:
+                          type: string
+                        dataExchangePeerID:
+                          type: string
+                        id:
+                          type: string
+                        mspIdentityString:
+                          type: string
+                        type:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities/{iid}/verifiers:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentityVerifiers
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: iid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: identity
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: value
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created: {}
+                    hash: {}
+                    identity: {}
+                    namespace:
+                      type: string
+                    type:
+                      enum:
+                      - ethereum_address
+                      - fabric_msp_id
+                      - dx_peer_id
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -4631,6 +5137,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: correlator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -4704,6 +5215,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -4720,7 +5232,8 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
@@ -8558,6 +9071,163 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/verifiers:
+    get:
+      description: 'TODO: Description'
+      operationId: getVerifiers
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: identity
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: value
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created: {}
+                    hash: {}
+                    identity: {}
+                    namespace:
+                      type: string
+                    type:
+                      enum:
+                      - ethereum_address
+                      - fabric_msp_id
+                      - dx_peer_id
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/verifiers/{vid}:
+    get:
+      description: 'TODO: Description'
+      operationId: getVerifierByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: vid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  hash: {}
+                  identity: {}
+                  namespace:
+                    type: string
+                  type:
+                    enum:
+                    - ethereum_address
+                    - fabric_msp_id
+                    - dx_peer_id
+                    type: string
+                  value:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/nodes:
     get:
       description: 'TODO: Description'
@@ -8582,12 +9252,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: dx.endpoint
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: dx.peer
+        name: did
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -8597,7 +9262,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: message
+        name: messages.claim
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -8607,7 +9282,27 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: owner
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: parent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -8653,20 +9348,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8698,20 +9403,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8748,20 +9463,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         "202":
@@ -8772,20 +9497,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8814,17 +9549,37 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: did
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: identity
+        name: messages.claim
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: message
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -8835,6 +9590,16 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -8880,17 +9645,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8919,12 +9697,11 @@ paths:
               properties:
                 description:
                   type: string
-                identity:
+                key:
                   type: string
                 name:
                   type: string
-                parent:
-                  type: string
+                parent: {}
                 profile:
                   additionalProperties: {}
                   type: object
@@ -8938,17 +9715,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         "202":
@@ -8959,17 +9749,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -9001,17 +9804,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -9048,17 +9864,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         "202":
@@ -9069,17 +9898,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -9117,9 +9959,9 @@ paths:
                     type: object
                   org:
                     properties:
-                      id: {}
-                      identity:
+                      did:
                         type: string
+                      id: {}
                       name:
                         type: string
                       registered:

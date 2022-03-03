@@ -319,13 +319,17 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		}
 	}
 
-	nodes, _, err := or.database.GetNodes(ctx, database.NodeQueryFactory.NewFilter(ctx).And())
+	fb := database.IdentityQueryFactory.NewFilter(ctx)
+	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
+		fb.Eq("type", fftypes.IdentityTypeNode),
+		fb.Eq("namespace", fftypes.SystemNamespace),
+	))
 	if err != nil {
 		return err
 	}
-	nodeInfo := make([]fftypes.DXInfo, len(nodes))
+	nodeInfo := make([]fftypes.JSONObject, len(nodes))
 	for i, node := range nodes {
-		nodeInfo[i] = node.DX
+		nodeInfo[i] = node.Profile
 	}
 
 	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(dxPlugin), nodeInfo, &or.bc)
@@ -422,15 +426,15 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		or.metrics = metrics.NewMetricsManager(ctx)
 	}
 
-	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain)
+	if or.data == nil {
+		or.data, err = data.NewDataManager(ctx, or.database, or.publicstorage, or.dataexchange)
 		if err != nil {
 			return err
 		}
 	}
 
-	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database, or.publicstorage, or.dataexchange)
+	if or.identity == nil {
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data)
 		if err != nil {
 			return err
 		}
@@ -472,17 +476,17 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.definitions = definitions.NewDefinitionHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets, or.contracts)
+	or.definitions = definitions.NewDefinitionHandlers(or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.broadcast, or.messaging, or.assets, or.contracts)
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
+		or.events, err = events.NewEventManager(ctx, or, or.publicstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync)
 		if err != nil {
 			return err
 		}
