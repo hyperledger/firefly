@@ -206,7 +206,9 @@ var (
 	OrgDescription = rootKey("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
-	// PublicStorageType specifies which public storage interface plugin to use
+	// SharedStorageType specifies which shared storage interface plugin to use
+	SharedStorageType = rootKey("sharedstorage.type")
+	// PublicStorageType specifies which shared storage interface plugin to use - deprecated in favor of SharedStorageType
 	PublicStorageType = rootKey("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = rootKey("subscription.defaults.batchSize")

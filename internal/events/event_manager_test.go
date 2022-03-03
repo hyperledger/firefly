@@ -33,7 +33,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -57,7 +57,7 @@ func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func(
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
-	mpi := &publicstoragemocks.Plugin{}
+	mpi := &sharedstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
@@ -115,7 +115,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
-	mpi := &publicstoragemocks.Plugin{}
+	mpi := &sharedstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
 	mbm := &broadcastmocks.Manager{}

@@ -41,7 +41,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -79,7 +79,7 @@ type EventManager interface {
 type eventManager struct {
 	ctx                  context.Context
 	ni                   sysmessaging.LocalNodeInfo
-	publicstorage        publicstorage.Plugin
+	sharedstorage        sharedstorage.Plugin
 	database             database.Plugin
 	txHelper             txcommon.Helper
 	identity             identity.Manager
@@ -99,8 +99,8 @@ type eventManager struct {
 	metrics              metrics.Manager
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publicstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager) (EventManager, error) {
-	if ni == nil || pi == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager) (EventManager, error) {
+	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -108,7 +108,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi publ
 	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		ni:            ni,
-		publicstorage: pi,
+		sharedstorage: si,
 		database:      di,
 		txHelper:      txcommon.NewTransactionHelper(di),
 		identity:      im,

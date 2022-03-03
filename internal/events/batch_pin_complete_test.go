@@ -27,7 +27,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -106,7 +106,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	assert.NoError(t, err)
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader(batchDataBytes))
 
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
 		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
@@ -182,7 +182,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	assert.NoError(t, err)
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader(batchDataBytes))
 
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
 		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
@@ -225,7 +225,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	}
 
 	cancel() // to avoid retry
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mbi := &blockchainmocks.Plugin{}
 
@@ -250,7 +250,7 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	}
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
 
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
 	mbi := &blockchainmocks.Plugin{}
 

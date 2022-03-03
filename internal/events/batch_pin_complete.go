@@ -30,7 +30,7 @@ import (
 // block here this blockchain event remains un-acknowledged, and no further events will arrive from this
 // particular ledger.
 //
-// We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
+// We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
 func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
 	if batchPin.TransactionID == nil {
@@ -95,7 +95,7 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
 	var body io.ReadCloser
 	if err := em.retry.Do(em.ctx, "retrieve data", func(attempt int) (retry bool, err error) {
-		body, err = em.publicstorage.RetrieveData(em.ctx, batchPin.BatchPayloadRef)
+		body, err = em.sharedstorage.RetrieveData(em.ctx, batchPin.BatchPayloadRef)
 		return err != nil, err // retry indefinitely (until context closes)
 	}); err != nil {
 		return err

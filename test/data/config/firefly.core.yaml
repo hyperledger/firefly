@@ -13,7 +13,7 @@ database:
   type: ql
   ql:
     url: memory://
-publicstorage:
+sharedstorage:
   type: ipfs
   ipfs:
     api:

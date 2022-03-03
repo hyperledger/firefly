@@ -457,7 +457,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 }
 
 // resolveBlobs ensures that the blobs for all the attachments in the data array, have been received into the
-// local data exchange blob store. Either because of a private transfer, or by downloading them from the public storage
+// local data exchange blob store. Either because of a private transfer, or by downloading them from the shared storage
 func (ag *aggregator) resolveBlobs(ctx context.Context, data []*fftypes.Data) (resolved bool, err error) {
 	l := log.L(ctx)
 
@@ -484,7 +484,7 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data []*fftypes.Data) (r
 				return false, err
 			}
 			if blob != nil {
-				l.Debugf("Blob '%s' downloaded from public storage to local DX with ref '%s'", blob.Hash, blob.PayloadRef)
+				l.Debugf("Blob '%s' downloaded from shared storage to local DX with ref '%s'", blob.Hash, blob.PayloadRef)
 				continue
 			}
 		}

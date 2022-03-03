@@ -17,13 +17,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// AddContractListener provides a mock function with given fields: ctx, ns, sub
-func (_m *Manager) AddContractListener(ctx context.Context, ns string, sub *fftypes.ContractListenerInput) (*fftypes.ContractListener, error) {
-	ret := _m.Called(ctx, ns, sub)
+// AddContractListener provides a mock function with given fields: ctx, ns, listener
+func (_m *Manager) AddContractListener(ctx context.Context, ns string, listener *fftypes.ContractListenerInput) (*fftypes.ContractListener, error) {
+	ret := _m.Called(ctx, ns, listener)
 
 	var r0 *fftypes.ContractListener
 	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractListenerInput) *fftypes.ContractListener); ok {
-		r0 = rf(ctx, ns, sub)
+		r0 = rf(ctx, ns, listener)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.ContractListener)
@@ -32,7 +32,7 @@ func (_m *Manager) AddContractListener(ctx context.Context, ns string, sub *ffty
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractListenerInput) error); ok {
-		r1 = rf(ctx, ns, sub)
+		r1 = rf(ctx, ns, listener)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -373,52 +373,6 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractCallRequest) error); ok {
 		r1 = rf(ctx, ns, apiName, methodPath, req)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// SubscribeContract provides a mock function with given fields: ctx, ns, eventPath, req
-func (_m *Manager) SubscribeContract(ctx context.Context, ns string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error) {
-	ret := _m.Called(ctx, ns, eventPath, req)
-
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractListener); ok {
-		r0 = rf(ctx, ns, eventPath, req)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.ContractSubscribeRequest) error); ok {
-		r1 = rf(ctx, ns, eventPath, req)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// SubscribeContractAPI provides a mock function with given fields: ctx, ns, apiName, eventPath, req
-func (_m *Manager) SubscribeContractAPI(ctx context.Context, ns string, apiName string, eventPath string, req *fftypes.ContractSubscribeRequest) (*fftypes.ContractListener, error) {
-	ret := _m.Called(ctx, ns, apiName, eventPath, req)
-
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractSubscribeRequest) *fftypes.ContractListener); ok {
-		r0 = rf(ctx, ns, apiName, eventPath, req)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractSubscribeRequest) error); ok {
-		r1 = rf(ctx, ns, apiName, eventPath, req)
 	} else {
 		r1 = ret.Error(1)
 	}

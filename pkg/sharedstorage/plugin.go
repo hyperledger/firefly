@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package publicstorage
+package sharedstorage
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-// Plugin is the interface implemented by each Public Storage plugin
+// Plugin is the interface implemented by each Shared Storage plugin
 type Plugin interface {
 	fftypes.Named
 
@@ -38,7 +38,7 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// PublishData publishes data to the Public Storage, and returns a payload reference ID
+	// PublishData publishes data to the Shared Storage, and returns a payload reference ID
 	PublishData(ctx context.Context, data io.Reader) (payloadRef string, err error)
 
 	// RetrieveData reads data back from IPFS using the payload reference format returned from PublishData

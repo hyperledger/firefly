@@ -5099,7 +5099,7 @@ paths:
                     enum:
                     - blockchain_batch_pin
                     - blockchain_invoke
-                    - publicstorage_batch_broadcast
+                    - sharedstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
@@ -5862,7 +5862,7 @@ paths:
                     enum:
                     - blockchain_batch_pin
                     - blockchain_invoke
-                    - publicstorage_batch_broadcast
+                    - sharedstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
@@ -5927,7 +5927,7 @@ paths:
                     enum:
                     - blockchain_batch_pin
                     - blockchain_invoke
-                    - publicstorage_batch_broadcast
+                    - sharedstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
@@ -8802,7 +8802,7 @@ paths:
                       enum:
                       - blockchain_batch_pin
                       - blockchain_invoke
-                      - publicstorage_batch_broadcast
+                      - sharedstorage_batch_broadcast
                       - dataexchange_batch_send
                       - dataexchange_blob_send
                       - token_create_pool

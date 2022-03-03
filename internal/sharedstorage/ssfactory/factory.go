@@ -14,19 +14,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package psfactory
+package ssfactory
 
 import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/publicstorage/ipfs"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/internal/sharedstorage/ipfs"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
-var pluginsByName = map[string]func() publicstorage.Plugin{
-	(*ipfs.IPFS)(nil).Name(): func() publicstorage.Plugin { return &ipfs.IPFS{} },
+var pluginsByName = map[string]func() sharedstorage.Plugin{
+	(*ipfs.IPFS)(nil).Name(): func() sharedstorage.Plugin { return &ipfs.IPFS{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
@@ -35,10 +35,10 @@ func InitPrefix(prefix config.Prefix) {
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (publicstorage.Plugin, error) {
+func GetPlugin(ctx context.Context, pluginType string) (sharedstorage.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownPublicStoragePlugin, pluginType)
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownSharedStoragePlugin, pluginType)
 	}
 	return plugin(), nil
 }

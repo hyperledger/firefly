@@ -40,7 +40,7 @@ For more information see _Global sequencing_.
 ## Shared data
 
 The data included in broadcasts is **not** recorded on the blockchain. Instead
-a pluggable shared / public storage mechanism is used to contain the data itself.
+a pluggable shared storage mechanism is used to contain the data itself.
 The on-chain transaction just contains a hash of the data that is stored off-chain.
 
 This is because the data itself might be too large to be efficiently stored
