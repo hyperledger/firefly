@@ -377,8 +377,8 @@ func (sa *syncAsyncBridge) handleTransferOpFailedEvent(event *fftypes.EventDeliv
 		return err
 	}
 	// Extract the LocalID of the transfer
-	var transfer fftypes.TokenTransfer
-	if err := txcommon.RetrieveTokenTransferInputs(sa.ctx, op, &transfer); err != nil {
+	transfer, err := txcommon.RetrieveTokenTransferInputs(sa.ctx, op)
+	if err != nil || transfer.LocalID == nil {
 		log.L(sa.ctx).Warnf("Failed to extract token transfer inputs for operation '%s': %s", op.ID, err)
 	}
 
@@ -399,8 +399,8 @@ func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *fftypes.EventDeliv
 		return err
 	}
 	// Extract the LocalID of the transfer
-	var approval fftypes.TokenApproval
-	if err := txcommon.RetrieveTokenApprovalInputs(sa.ctx, op, &approval); err != nil {
+	approval, err := txcommon.RetrieveTokenApprovalInputs(sa.ctx, op)
+	if err != nil || approval.LocalID == nil {
 		log.L(sa.ctx).Warnf("Failed to extract token approval inputs for operation '%s': %s", op.ID, err)
 	}
 

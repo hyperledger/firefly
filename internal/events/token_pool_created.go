@@ -89,8 +89,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 		// Unknown pool state - should only happen on first run after database migration
 		// Activate the pool, then immediately confirm
 		// TODO: can this state eventually be removed?
-		ev := buildBlockchainEvent(existingPool.Namespace, nil, &pool.Event, &existingPool.TX)
-		if err = em.assets.ActivateTokenPool(ctx, existingPool, ev); err != nil {
+		if err = em.assets.ActivateTokenPool(ctx, existingPool, pool.Event.Info); err != nil {
 			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
 			return nil, err
 		}
@@ -106,8 +105,8 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPo
 		return nil, nil
 	}
 
-	announcePool = &fftypes.TokenPool{}
-	if err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op, announcePool); err != nil {
+	announcePool, err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
+	if err != nil || announcePool.ID == nil || announcePool.Namespace == "" || announcePool.Name == "" {
 		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
 		return nil, nil
 	}

@@ -48,7 +48,7 @@ type OpStatus string
 const (
 	// OpStatusPending indicates the operation has been submitted, but is not yet confirmed as successful or failed
 	OpStatusPending OpStatus = "Pending"
-	// OpStatusSucceeded the infrastructure runtime has returned success for the operation.
+	// OpStatusSucceeded the infrastructure runtime has returned success for the operation
 	OpStatusSucceeded OpStatus = "Succeeded"
 	// OpStatusFailed happens when an error is reported by the infrastructure runtime
 	OpStatusFailed OpStatus = "Failed"
@@ -86,4 +86,15 @@ type Operation struct {
 	Output      JSONObject `json:"output,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Updated     *FFTime    `json:"updated,omitempty"`
+	Retry       *UUID      `json:"retry,omitempty"`
+}
+
+// PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin
+// It is never stored, but it should always be possible for the owning Manager to generate a
+// PreparedOperation from an Operation. Data is defined by the Manager, but should be JSON-serializable
+// to support inspection and debugging.
+type PreparedOperation struct {
+	ID   *UUID       `json:"id"`
+	Type OpType      `json:"type" ffenum:"optype"`
+	Data interface{} `json:"data"`
 }

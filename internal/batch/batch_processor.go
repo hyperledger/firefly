@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -476,8 +477,10 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch) (contexts []*fftype
 
 func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
-	return bp.retry.Do(bp.ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
-		return true, bp.conf.dispatch(bp.ctx, batch, pins)
+	return operations.RunWithOperationCache(bp.ctx, func(ctx context.Context) error {
+		return bp.retry.Do(ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
+			return true, bp.conf.dispatch(ctx, batch, pins)
+		})
 	})
 }
 

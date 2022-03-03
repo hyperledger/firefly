@@ -274,9 +274,6 @@ func TestActivateTokenPool(t *testing.T) {
 	txInfo := map[string]interface{}{
 		"foo": "bar",
 	}
-	ev := &fftypes.BlockchainEvent{
-		Info: txInfo,
-	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -299,7 +296,7 @@ func TestActivateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, txInfo)
 	assert.False(t, complete)
 	assert.NoError(t, err)
 }
@@ -315,12 +312,11 @@ func TestActivateTokenPoolError(t *testing.T) {
 			Type: fftypes.TransactionTypeTokenPool,
 		},
 	}
-	ev := &fftypes.BlockchainEvent{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	complete, err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, nil)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10274", err)
 }
@@ -335,9 +331,6 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 	}
 	txInfo := map[string]interface{}{
 		"foo": "bar",
-	}
-	ev := &fftypes.BlockchainEvent{
-		Info: txInfo,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -370,7 +363,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.TransactionID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
 
-	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, txInfo)
 	assert.True(t, complete)
 	assert.NoError(t, err)
 }
@@ -385,9 +378,6 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 	}
 	txInfo := map[string]interface{}{
 		"foo": "bar",
-	}
-	ev := &fftypes.BlockchainEvent{
-		Info: txInfo,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -416,7 +406,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.TransactionID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
 
-	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, ev)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, txInfo)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10151", err)
 }

@@ -38,6 +38,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/networkmap"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -76,6 +77,7 @@ type Orchestrator interface {
 	Contracts() contracts.Manager
 	Metrics() metrics.Manager
 	BatchManager() batch.Manager
+	Operations() operations.Manager
 	IsPreInit() bool
 
 	// Status
@@ -160,6 +162,7 @@ type orchestrator struct {
 	contracts      contracts.Manager
 	node           *fftypes.UUID
 	metrics        metrics.Manager
+	operations     operations.Manager
 }
 
 func NewOrchestrator() Orchestrator {
@@ -282,6 +285,10 @@ func (or *orchestrator) Contracts() contracts.Manager {
 
 func (or *orchestrator) Metrics() metrics.Manager {
 	return or.metrics
+}
+
+func (or *orchestrator) Operations() operations.Manager {
+	return or.operations
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
@@ -458,30 +465,41 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
+	if or.operations == nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.database, or.tokens); err != nil {
+			return err
+		}
+	}
+
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
-	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain, or.metrics)
+
+	if or.batchpin == nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database, or.identity, or.blockchain, or.metrics, or.operations); err != nil {
+			return err
+		}
+	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics)
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics, or.operations)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchain)
+		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchain, or.operations)
 		if err != nil {
 			return err
 		}

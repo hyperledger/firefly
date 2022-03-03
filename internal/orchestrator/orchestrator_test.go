@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
+	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -38,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
@@ -68,6 +70,8 @@ type testOrchestrator struct {
 	mti *tokenmocks.Plugin
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
+	mom *operationmocks.Manager
+	mbp *batchpinmocks.Submitter
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -94,6 +98,8 @@ func newTestOrchestrator() *testOrchestrator {
 		mti: &tokenmocks.Plugin{},
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
+		mom: &operationmocks.Manager{},
+		mbp: &batchpinmocks.Submitter{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -111,6 +117,8 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
 	tor.orchestrator.metrics = tor.mmi
+	tor.orchestrator.operations = tor.mom
+	tor.orchestrator.batchpin = tor.mbp
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -524,6 +532,22 @@ func TestInitContractsComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitBatchPinComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.batchpin = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitOperationsComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.operations = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestStartBatchFail(t *testing.T) {
 	config.Reset()
 	or := newTestOrchestrator()
@@ -656,6 +680,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
+	assert.Equal(t, or.mom, or.Operations())
 }
 
 func TestInitDataExchangeGetNodesFail(t *testing.T) {

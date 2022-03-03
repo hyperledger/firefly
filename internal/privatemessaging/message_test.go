@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -685,49 +686,6 @@ func TestRequestReplySuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDispatchedUnpinnedMessageMarshalFail(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
-		assert.Equal(t, "localorg", identity.Author)
-		return true
-	})).Return(nil)
-
-	groupID := fftypes.NewRandB32()
-	node1 := newTestNode("node1", newTestOrg("localorg"))
-	node2 := newTestNode("node2", newTestOrg("remoteorg"))
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
-		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				{Node: node1.ID, Identity: "localorg"},
-				{Node: node1.ID, Identity: "remoteorg"},
-			},
-		},
-	}, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node2, nil).Once()
-
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		ID:    fftypes.NewUUID(),
-		Group: groupID,
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{Value: fftypes.JSONAnyPtr("!Bad JSON")},
-			},
-		},
-	}, []*fftypes.Bytes32{})
-	assert.Regexp(t, "FF10137", err)
-
-	mdi.AssertExpectations(t)
-
-}
-
 func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -749,6 +707,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mom := pm.operations.(*operationmocks.Manager)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
@@ -761,7 +720,11 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
 	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
 
-	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
+	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(batchSendData)
+		return op.Type == fftypes.OpTypeDataExchangeBatchSend && *data.Node.ID == *node2.ID
+	})).Return(nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
 		ID:    fftypes.NewUUID(),
@@ -787,6 +750,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+	mom.AssertExpectations(t)
 
 }
 
@@ -851,17 +815,14 @@ func TestSendDataTransferFail(t *testing.T) {
 	nodes := []*fftypes.Identity{node2}
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
-		assert.Equal(t, "localorg", identity.Author)
-		return true
-	})).Return(nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
-
-	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(fmt.Errorf("pop"))
+	mom := pm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
+	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+		data := op.Data.(batchSendData)
+		return op.Type == fftypes.OpTypeDataExchangeBatchSend && *data.Node.ID == *node2.ID
+	})).Return(fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{
@@ -884,7 +845,8 @@ func TestSendDataTransferFail(t *testing.T) {
 	}, nodes)
 	assert.Regexp(t, "pop", err)
 
-	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mom.AssertExpectations(t)
 
 }
 
@@ -905,8 +867,8 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 	})).Return(nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mom := pm.operations.(*operationmocks.Manager)
+	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{

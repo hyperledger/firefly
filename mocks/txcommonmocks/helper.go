@@ -71,13 +71,3 @@ func (_m *Helper) SubmitNewTransaction(ctx context.Context, ns string, txType ff
 
 	return r0, r1
 }
-
-// WriteOperationFailure provides a mock function with given fields: ctx, opID, err
-func (_m *Helper) WriteOperationFailure(ctx context.Context, opID *fftypes.UUID, err error) {
-	_m.Called(ctx, opID, err)
-}
-
-// WriteOperationSuccess provides a mock function with given fields: ctx, opID, output
-func (_m *Helper) WriteOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject) {
-	_m.Called(ctx, opID, output)
-}
