@@ -36,7 +36,7 @@ We focus on WebSockets in this getting started guide.
 
 ## Additional info
 
-- Key Concepts: [Multi-party process flow](/keyconcepts/multiparty_process_flow.html)
+- Key Concepts: [Multi-party process flow](/firefly/keyconcepts/multiparty_process_flow.html)
 - Reference: _coming soon_
 
 ## WebSockets Example 1: Ephemeral subscription with auto-commit

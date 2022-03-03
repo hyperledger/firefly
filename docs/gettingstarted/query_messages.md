@@ -28,8 +28,8 @@ This builds on the APIs to query and filter messages, described below
 
 ## Additional info
 
-- Reference: [API Query Syntax](/reference/api_query_syntax.html)
-- Swagger: [GET /api/v1/namespaces/{ns}/messages](/swagger/swagger.html#/default/getMsgs)
+- Reference: [API Query Syntax](/firefly/reference/api_query_syntax.html)
+- Swagger: [GET /api/v1/namespaces/{ns}/messages](/firefly/swagger/swagger.html#/default/getMsgs)
 
 ### Example 1: Query confirmed messages
 

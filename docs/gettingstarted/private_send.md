@@ -48,8 +48,8 @@ nav_order: 4
 
 ## Additional info
 
-- Key Concepts: [Private data exchange](/keyconcepts/data_exchange.html)
-- Swagger: [POST /api/v1/namespaces/{ns}/send/message](/swagger/swagger.html#/default/postSendMessage)
+- Key Concepts: [Private data exchange](/firefly/keyconcepts/data_exchange.html)
+- Swagger: [POST /api/v1/namespaces/{ns}/send/message](/firefly/swagger/swagger.html#/default/postSendMessage)
 
 ## Example 1: Pinned private send of in-line string data
 
@@ -225,7 +225,7 @@ and pipe it into a multi-part form post to FireFly.
 ```sh
 curl -sLo - https://github.com/hyperledger/firefly/raw/main/docs/firefly_logo.png \
  | curl --form autometa=true --form file=@- \
-   http://localhost:5000/api/v1/api/v1/namespaces/default/data
+   http://localhost:5000/api/v1/namespaces/default/data
 ```
 
 ### Example data response from BLOB upload
@@ -267,6 +267,13 @@ Just include a reference to the `id` returned from the upload.
     {
       "id": "97eb750f-0d0b-4c1d-9e37-1e92d1a22bb8"
     }
-  ]
+  ],
+  "group":{
+      "members": [
+        {
+          "identity":"org_1"
+        }
+      ]
+    }
 }
 ```

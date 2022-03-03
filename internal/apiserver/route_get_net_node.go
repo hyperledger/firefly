@@ -35,7 +35,7 @@ var getNetworkNode = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.Node{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = getOr(r.Ctx).NetworkMap().GetNodeByID(r.Ctx, r.PP["nid"])

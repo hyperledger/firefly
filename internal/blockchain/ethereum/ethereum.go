@@ -145,6 +145,10 @@ func (e *Ethereum) Name() string {
 	return "ethereum"
 }
 
+func (e *Ethereum) VerifierType() fftypes.VerifierType {
+	return fftypes.VerifierTypeEthAddress
+}
+
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
@@ -216,7 +220,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	if e.initInfo.stream, err = e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
-	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
+	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.initInfo.stream.ID, e.topic)
 	if e.initInfo.sub, err = e.streams.ensureSubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
 		return err
 	}
@@ -287,7 +291,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		return nil // move on
 	}
 
-	authorAddress, err = e.ResolveSigningKey(ctx, authorAddress)
+	authorAddress, err = e.NormalizeSigningKey(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -341,7 +345,10 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, authorAddress)
+	return e.callbacks.BatchPinComplete(batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: authorAddress,
+	})
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -491,10 +498,10 @@ func validateEthAddress(ctx context.Context, key string) (string, error) {
 	return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string) (string, error) {
+func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string, error) {
 	resolved, err := validateEthAddress(ctx, key)
 	if err != nil && e.addressResolver != nil {
-		resolved, err := e.addressResolver.ResolveSigningKey(ctx, key)
+		resolved, err := e.addressResolver.NormalizeSigningKey(ctx, key)
 		if err == nil {
 			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
 		}
@@ -619,7 +626,8 @@ func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.Co
 		return i18n.WrapError(ctx, err, i18n.MsgContractParamInvalid)
 	}
 
-	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, abi)
+	subName := fmt.Sprintf("ff-sub-%s", subscription.ID)
+	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subName, abi)
 	if err != nil {
 		return err
 	}

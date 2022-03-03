@@ -44,6 +44,8 @@ type Bridge interface {
 	WaitForReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.MessageInOut, error)
 	// WaitForMessage waits for a message with the supplied ID
 	WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Message, error)
+	// WaitForIdentity waits for an identity with the supplied ID
+	WaitForIdentity(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Identity, error)
 	// WaitForTokenPool waits for a token pool with the supplied ID
 	WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error)
 	// WaitForTokenTransfer waits for a token transfer with the supplied ID
@@ -59,6 +61,7 @@ type requestType int
 const (
 	messageConfirm requestType = iota
 	messageReply
+	identityConfirm
 	tokenPoolConfirm
 	tokenTransferConfirm
 	tokenApproveConfirm
@@ -128,6 +131,9 @@ func (sa *syncAsyncBridge) addInFlight(ns string, id *fftypes.UUID, reqType requ
 }
 
 func (sa *syncAsyncBridge) getInFlight(ns string, reqType requestType, id *fftypes.UUID) *inflightRequest {
+	if id == nil {
+		return nil
+	}
 	inflightNS := sa.inflight[ns]
 	if inflightNS != nil && id != nil {
 		inflight := inflightNS[*id]
@@ -163,6 +169,17 @@ func (sa *syncAsyncBridge) getMessageFromEvent(event *fftypes.EventDelivery) (ms
 		log.L(sa.ctx).Errorf("Unable to resolve message '%s' for %s event '%s'", event.Reference, event.Type, event.ID)
 	}
 	return msg, nil
+}
+
+func (sa *syncAsyncBridge) getIdentityFromEvent(event *fftypes.EventDelivery) (identity *fftypes.Identity, err error) {
+	if identity, err = sa.database.GetIdentityByID(sa.ctx, event.Reference); err != nil {
+		return nil, err
+	}
+	if identity == nil {
+		// This should not happen (but we need to move on)
+		log.L(sa.ctx).Errorf("Unable to resolve identity '%s' for %s event '%s'", event.Reference, event.Type, event.ID)
+	}
+	return identity, nil
 }
 
 func (sa *syncAsyncBridge) getPoolFromEvent(event *fftypes.EventDelivery) (pool *fftypes.TokenPool, err error) {
@@ -225,18 +242,23 @@ func (sa *syncAsyncBridge) getOperationFromEvent(event *fftypes.EventDelivery) (
 }
 
 func (sa *syncAsyncBridge) handleMessageConfirmedEvent(event *fftypes.EventDelivery) error {
+
+	// See if the CID marks this as a reply to an inflight message
+	inflight := sa.getInFlight(event.Namespace, messageConfirm, event.Reference)
+	inflightReply := sa.getInFlight(event.Namespace, messageReply, event.Correlator)
+
+	if inflightReply == nil && inflight == nil {
+		return nil
+	}
+
 	msg, err := sa.getMessageFromEvent(event)
 	if err != nil || msg == nil {
 		return err
 	}
-	// See if the CID marks this as a reply to an inflight message
-	inflightReply := sa.getInFlight(event.Namespace, messageReply, msg.Header.CID)
+
 	if inflightReply != nil {
 		go sa.resolveReply(inflightReply, msg)
 	}
-
-	// See if this is a confirmation of the delivery of an inflight message
-	inflight := sa.getInFlight(event.Namespace, messageConfirm, msg.Header.ID)
 	if inflight != nil {
 		go sa.resolveConfirmed(inflight, msg)
 	}
@@ -245,74 +267,111 @@ func (sa *syncAsyncBridge) handleMessageConfirmedEvent(event *fftypes.EventDeliv
 }
 
 func (sa *syncAsyncBridge) handleMessageRejectedEvent(event *fftypes.EventDelivery) error {
+
+	// See if this is a rejection of an inflight message
+	inflight := sa.getInFlight(event.Namespace, messageConfirm, event.Reference)
+	inflightPool := sa.getInFlight(event.Namespace, tokenPoolConfirm, event.Correlator)
+
+	if inflight == nil && inflightPool == nil {
+		return nil
+	}
+
 	msg, err := sa.getMessageFromEvent(event)
 	if err != nil || msg == nil {
 		return err
 	}
-	// See if this is a rejection of an inflight message
-	inflight := sa.getInFlight(event.Namespace, messageConfirm, msg.Header.ID)
 	if inflight != nil {
 		go sa.resolveRejected(inflight, msg.Header.ID)
 	}
+
 	// See if this is a rejection of an inflight token pool
-	if msg.Header.Type == fftypes.MessageTypeDefinition && msg.Header.Tag == string(fftypes.SystemTagDefinePool) {
+	if inflightPool != nil {
 		if pool, err := sa.getPoolFromMessage(msg); err != nil {
 			return err
 		} else if pool != nil {
-			inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, pool.ID)
-			if inflight != nil {
-				go sa.resolveRejectedTokenPool(inflight, pool.ID)
-			}
+			go sa.resolveRejectedTokenPool(inflightPool, pool.ID)
 		}
 	}
 
 	return nil
 }
 
+func (sa *syncAsyncBridge) handleIdentityConfirmedEvent(event *fftypes.EventDelivery) error {
+	// See if the CID marks this as a reply to an inflight identity
+	inflightReply := sa.getInFlight(event.Namespace, identityConfirm, event.Reference)
+	if inflightReply == nil {
+		return nil
+	}
+
+	identity, err := sa.getIdentityFromEvent(event)
+	if err != nil || identity == nil {
+		return err
+	}
+
+	go sa.resolveIdentity(inflightReply, identity)
+
+	return nil
+}
+
 func (sa *syncAsyncBridge) handlePoolConfirmedEvent(event *fftypes.EventDelivery) error {
+	// See if this is a confirmation of an inflight token pool
+	inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, event.Reference)
+	if inflight == nil {
+		return nil
+	}
+
 	pool, err := sa.getPoolFromEvent(event)
 	if err != nil || pool == nil {
 		return err
 	}
-	// See if this is a confirmation of an inflight token pool
-	inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, pool.ID)
-	if inflight != nil {
-		go sa.resolveConfirmedTokenPool(inflight, pool)
-	}
+
+	go sa.resolveConfirmedTokenPool(inflight, pool)
 
 	return nil
 }
 
 func (sa *syncAsyncBridge) handleTransferConfirmedEvent(event *fftypes.EventDelivery) error {
+	// See if this is a confirmation of an inflight token transfer
+	inflight := sa.getInFlight(event.Namespace, tokenTransferConfirm, event.Reference)
+	if inflight == nil {
+		return nil
+	}
+
 	transfer, err := sa.getTransferFromEvent(event)
 	if err != nil || transfer == nil {
 		return err
 	}
-	// See if this is a confirmation of an inflight token transfer
-	inflight := sa.getInFlight(event.Namespace, tokenTransferConfirm, transfer.LocalID)
-	if inflight != nil {
-		go sa.resolveConfirmedTokenTransfer(inflight, transfer)
-	}
+
+	go sa.resolveConfirmedTokenTransfer(inflight, transfer)
 
 	return nil
 }
 
 func (sa *syncAsyncBridge) handleApprovalConfirmedEvent(event *fftypes.EventDelivery) error {
+
+	// See if this is a confirmation of an inflight token approval
+	inflight := sa.getInFlight(event.Namespace, tokenApproveConfirm, event.Reference)
+	if inflight == nil {
+		return nil
+	}
+
 	approval, err := sa.getApprovalFromEvent(event)
 	if err != nil || approval == nil {
 		return err
 	}
 
-	// See if this is a confirmation of an inflight token approval
-	inflight := sa.getInFlight(event.Namespace, tokenApproveConfirm, approval.LocalID)
-	if inflight != nil {
-		go sa.resolveConfirmedTokenApproval(inflight, approval)
-	}
+	go sa.resolveConfirmedTokenApproval(inflight, approval)
 
 	return nil
 }
 
 func (sa *syncAsyncBridge) handleTransferOpFailedEvent(event *fftypes.EventDelivery) error {
+	// See if this is a failure of an inflight token transfer operation
+	inflight := sa.getInFlight(event.Namespace, tokenTransferConfirm, event.Correlator)
+	if inflight == nil {
+		return nil
+	}
+
 	op, err := sa.getOperationFromEvent(event)
 	if err != nil || op == nil {
 		return err
@@ -322,16 +381,19 @@ func (sa *syncAsyncBridge) handleTransferOpFailedEvent(event *fftypes.EventDeliv
 	if err := txcommon.RetrieveTokenTransferInputs(sa.ctx, op, &transfer); err != nil {
 		log.L(sa.ctx).Warnf("Failed to extract token transfer inputs for operation '%s': %s", op.ID, err)
 	}
-	// See if this is a failure of an inflight token transfer operation
-	inflight := sa.getInFlight(event.Namespace, tokenTransferConfirm, transfer.LocalID)
-	if inflight != nil {
-		go sa.resolveFailedTokenTransfer(inflight, transfer.LocalID)
-	}
+
+	go sa.resolveFailedTokenTransfer(inflight, transfer.LocalID)
 
 	return nil
 }
 
 func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *fftypes.EventDelivery) error {
+	// See if this is a failure of an inflight token approval operation
+	inflight := sa.getInFlight(event.Namespace, tokenApproveConfirm, event.Correlator)
+	if inflight == nil {
+		return nil
+	}
+
 	op, err := sa.getOperationFromEvent(event)
 	if err != nil || op == nil {
 		return err
@@ -341,11 +403,8 @@ func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *fftypes.EventDeliv
 	if err := txcommon.RetrieveTokenApprovalInputs(sa.ctx, op, &approval); err != nil {
 		log.L(sa.ctx).Warnf("Failed to extract token approval inputs for operation '%s': %s", op.ID, err)
 	}
-	// See if this is a failure of an inflight token transfer operation
-	inflight := sa.getInFlight(event.Namespace, tokenApproveConfirm, approval.LocalID)
-	if inflight != nil {
-		go sa.resolveFailedTokenTransfer(inflight, approval.LocalID)
-	}
+
+	go sa.resolveFailedTokenApproval(inflight, approval.LocalID)
 
 	return nil
 }
@@ -366,6 +425,9 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 
 	case fftypes.EventTypeMessageRejected:
 		return sa.handleMessageRejectedEvent(event)
+
+	case fftypes.EventTypeIdentityConfirmed:
+		return sa.handleIdentityConfirmedEvent(event)
 
 	case fftypes.EventTypePoolConfirmed:
 		return sa.handlePoolConfirmedEvent(event)
@@ -410,6 +472,11 @@ func (sa *syncAsyncBridge) resolveRejected(inflight *inflightRequest, msgID *fft
 	inflight.response <- inflightResponse{err: err}
 }
 
+func (sa *syncAsyncBridge) resolveIdentity(inflight *inflightRequest, identity *fftypes.Identity) {
+	log.L(sa.ctx).Debugf("Resolving identity creation '%s' with ID '%s'", inflight.id, identity.ID)
+	inflight.response <- inflightResponse{id: identity.ID, data: identity}
+}
+
 func (sa *syncAsyncBridge) resolveConfirmedTokenPool(inflight *inflightRequest, pool *fftypes.TokenPool) {
 	log.L(sa.ctx).Debugf("Resolving token pool confirmation request '%s' with ID '%s'", inflight.id, pool.ID)
 	inflight.response <- inflightResponse{id: pool.ID, data: pool}
@@ -434,6 +501,12 @@ func (sa *syncAsyncBridge) resolveConfirmedTokenApproval(inflight *inflightReque
 func (sa *syncAsyncBridge) resolveFailedTokenTransfer(inflight *inflightRequest, transferID *fftypes.UUID) {
 	err := i18n.NewError(sa.ctx, i18n.MsgTokenTransferFailed, transferID)
 	log.L(sa.ctx).Debugf("Resolving token transfer confirmation request '%s' with error '%s'", inflight.id, err)
+	inflight.response <- inflightResponse{err: err}
+}
+
+func (sa *syncAsyncBridge) resolveFailedTokenApproval(inflight *inflightRequest, transferID *fftypes.UUID) {
+	err := i18n.NewError(sa.ctx, i18n.MsgTokenApprovalFailed, transferID)
+	log.L(sa.ctx).Debugf("Resolving token approval request '%s' with error '%s'", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
 }
 
@@ -481,6 +554,14 @@ func (sa *syncAsyncBridge) WaitForMessage(ctx context.Context, ns string, id *ff
 		return nil, err
 	}
 	return reply.(*fftypes.Message), err
+}
+
+func (sa *syncAsyncBridge) WaitForIdentity(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Identity, error) {
+	reply, err := sa.sendAndWait(ctx, ns, id, identityConfirm, send)
+	if err != nil {
+		return nil, err
+	}
+	return reply.(*fftypes.Identity), err
 }
 
 func (sa *syncAsyncBridge) WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error) {

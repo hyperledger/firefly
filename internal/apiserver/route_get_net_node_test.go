@@ -35,7 +35,7 @@ func TestGetNode(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	nmn.On("GetNodeByID", mock.Anything, "node12345").
-		Return(&fftypes.Node{}, nil)
+		Return(&fftypes.Identity{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

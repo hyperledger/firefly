@@ -17,6 +17,7 @@
 package privatemessaging
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -32,15 +33,54 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func newTestOrg(name string) *fftypes.Identity {
+	identity := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeOrg,
+			Namespace: fftypes.SystemNamespace,
+			Name:      name,
+			Parent:    nil,
+		},
+	}
+	identity.DID, _ = identity.GenerateDID(context.Background())
+	return identity
+}
+
+func newTestNode(name string, owner *fftypes.Identity) *fftypes.Identity {
+	identity := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeNode,
+			Namespace: fftypes.SystemNamespace,
+			Name:      name,
+			Parent:    owner.ID,
+		},
+		IdentityProfile: fftypes.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id":  fmt.Sprintf("%s-peer", name),
+				"url": fmt.Sprintf("https://%s.example.com", name),
+			},
+		},
+	}
+	identity.DID, _ = identity.GenerateDID(context.Background())
+	return identity
+}
+
 func TestSendConfirmMessageE2EOk(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessagingWithMetrics(t)
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
-	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
+	rootOrg := newTestOrg("rootorg")
+	intermediateOrg := newTestOrg("localorg")
+	intermediateOrg.Parent = rootOrg.ID
+	localNode := newTestNode("node1", intermediateOrg)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(intermediateOrg, nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(intermediateOrg, false, nil)
+	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
@@ -49,18 +89,8 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
-		ID: fftypes.NewUUID(),
-	}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
-	}, nil, nil).Once()
-	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{
-		ID: fftypes.NewUUID(),
-	}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Name: "node1", Owner: "org1"},
-	}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil).Once()
@@ -92,6 +122,9 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, retMsg, msg)
 
+	mim.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestSendUnpinnedMessageE2EOk(t *testing.T) {
@@ -100,8 +133,8 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[2].(*fftypes.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -149,7 +182,7 @@ func TestSendMessageBadGroup(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -169,7 +202,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -193,21 +226,19 @@ func TestSendMessageFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
-	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+	localOrg := newTestOrg("localorg")
+	localNode := newTestNode("node1", localOrg)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[2].(*fftypes.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
-		ID: fftypes.NewUUID(),
-	}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
-	}, nil, nil)
+	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil)
@@ -243,22 +274,19 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
-	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+	localOrg := newTestOrg("localorg")
+	localNode := newTestNode("node1", localOrg)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[2].(*fftypes.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-
-	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
-		ID: fftypes.NewUUID(),
-	}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
-	}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil).Once()
@@ -295,8 +323,8 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[2].(*fftypes.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -360,22 +388,19 @@ func TestMessagePrepare(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
-	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[1].(*fftypes.Identity)
+	localOrg := newTestOrg("localorg")
+	localNode := newTestNode("node1", localOrg)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[2].(*fftypes.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
+	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-
-	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
-		ID: fftypes.NewUUID(),
-	}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
-	}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil).Once()
@@ -423,7 +448,7 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 			Messages: []*fftypes.Message{
 				{
 					Header: fftypes.MessageHeader{
-						Identity: fftypes.Identity{
+						SignerRef: fftypes.SignerRef{
 							Author: "org1",
 						},
 						TxType: fftypes.TransactionTypeUnpinned,
@@ -445,7 +470,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
 		assert.Empty(t, identity.Author)
 		return true
 	})).Return(nil)
@@ -491,7 +516,7 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -518,7 +543,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 
@@ -557,7 +582,7 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 
@@ -625,7 +650,7 @@ func TestRequestReplySuccess(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
 	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
@@ -651,7 +676,7 @@ func TestRequestReplySuccess(t *testing.T) {
 			Header: fftypes.MessageHeader{
 				Tag:   "mytag",
 				Group: groupID,
-				Identity: fftypes.Identity{
+				SignerRef: fftypes.SignerRef{
 					Author: "org1",
 				},
 			},
@@ -666,31 +691,27 @@ func TestDispatchedUnpinnedMessageMarshalFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
 
 	groupID := fftypes.NewRandB32()
-	nodeID1 := fftypes.NewUUID()
-	nodeID2 := fftypes.NewUUID()
+	node1 := newTestNode("node1", newTestOrg("localorg"))
+	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
-				{Node: nodeID1, Identity: "localorg"},
-				{Node: nodeID2, Identity: "remoteorg"},
+				{Node: node1.ID, Identity: "localorg"},
+				{Node: node1.ID, Identity: "remoteorg"},
 			},
 		},
 	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID1).Return(&fftypes.Node{
-		ID: nodeID1, Name: "node1", Owner: "localorg", DX: fftypes.DXInfo{Peer: "peer1-local"},
-	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
-		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
-	}, nil).Once()
+	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node2, nil).Once()
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
 		ID:    fftypes.NewUUID(),
@@ -712,36 +733,34 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	localOrg := newTestOrg("localorg")
+	groupID := fftypes.NewRandB32()
+	node1 := newTestNode("node1", localOrg)
+	node2 := newTestNode("node2", newTestOrg("remoteorg"))
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(nil)
-
-	groupID := fftypes.NewRandB32()
-	nodeID1 := fftypes.NewUUID()
-	nodeID2 := fftypes.NewUUID()
+	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
-				{Node: nodeID1, Identity: "localorg"},
-				{Node: nodeID2, Identity: "remoteorg"},
+				{Node: node1.ID, Identity: "localorg"},
+				{Node: node2.ID, Identity: "remoteorg"},
 			},
 		},
 	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID1).Return(&fftypes.Node{
-		ID: nodeID1, Name: "node1", Owner: "localorg", DX: fftypes.DXInfo{Peer: "peer1-local"},
-	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
-		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
-	}, nil).Once()
+	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
+
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
@@ -757,7 +776,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						Tag:   "mytag",
 						Group: groupID,
-						Identity: fftypes.Identity{
+						SignerRef: fftypes.SignerRef{
 							Author: "org1",
 						},
 					},
@@ -776,22 +795,20 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	localOrg := newTestOrg("localorg")
+	groupID := fftypes.NewRandB32()
+	node2 := newTestNode("node2", newTestOrg("remoteorg"))
+	nodes := []*fftypes.Identity{node2}
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
-
-	groupID := fftypes.NewRandB32()
-	nodeID2 := fftypes.NewUUID()
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
-
-	nodes := []*fftypes.Node{{
-		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
-	}}
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{
@@ -803,7 +820,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 						Header: fftypes.MessageHeader{
 							Tag:   "mytag",
 							Group: groupID,
-							Identity: fftypes.Identity{
+							SignerRef: fftypes.SignerRef{
 								Author: "org1",
 							},
 						},
@@ -828,25 +845,23 @@ func TestSendDataTransferFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	localOrg := newTestOrg("localorg")
+	groupID := fftypes.NewRandB32()
+	node2 := newTestNode("node2", newTestOrg("remoteorg"))
+	nodes := []*fftypes.Identity{node2}
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(fmt.Errorf("pop"))
-
-	groupID := fftypes.NewRandB32()
-	nodeID2 := fftypes.NewUUID()
-
-	nodes := []*fftypes.Node{{
-		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
-	}}
+	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{
@@ -858,7 +873,7 @@ func TestSendDataTransferFail(t *testing.T) {
 						Header: fftypes.MessageHeader{
 							Tag:   "mytag",
 							Group: groupID,
-							Identity: fftypes.Identity{
+							SignerRef: fftypes.SignerRef{
 								Author: "org1",
 							},
 						},
@@ -878,22 +893,20 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	localOrg := newTestOrg("localorg")
+	groupID := fftypes.NewRandB32()
+	node2 := newTestNode("node2", newTestOrg("remoteorg"))
+	nodes := []*fftypes.Identity{node2}
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetLocalOrgKey", pm.ctx).Return("localorg", nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
-
-	groupID := fftypes.NewRandB32()
-	nodeID2 := fftypes.NewUUID()
-
-	nodes := []*fftypes.Node{{
-		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
-	}}
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{
@@ -905,7 +918,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 						Header: fftypes.MessageHeader{
 							Tag:   "mytag",
 							Group: groupID,
-							Identity: fftypes.Identity{
+							SignerRef: fftypes.SignerRef{
 								Author: "org1",
 							},
 						},
@@ -915,61 +928,5 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		},
 	}, nodes)
 	assert.Regexp(t, "pop", err)
-
-}
-
-func TestDispatchedUnpinnedMessageGetOrgFail(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
-		assert.Equal(t, "localorg", identity.Author)
-		return true
-	})).Return(nil)
-	mim.On("GetLocalOrgKey", pm.ctx).Return("", fmt.Errorf("pop"))
-
-	groupID := fftypes.NewRandB32()
-	nodeID1 := fftypes.NewUUID()
-	nodeID2 := fftypes.NewUUID()
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
-		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				{Node: nodeID1, Identity: "localorg"},
-				{Node: nodeID2, Identity: "remoteorg"},
-			},
-		},
-	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID1).Return(&fftypes.Node{
-		ID: nodeID1, Name: "node1", Owner: "localorg", DX: fftypes.DXInfo{Peer: "peer1-local"},
-	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
-		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
-	}, nil).Once()
-
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		ID:    fftypes.NewUUID(),
-		Group: groupID,
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{
-					Header: fftypes.MessageHeader{
-						Tag:   "mytag",
-						Group: groupID,
-						Identity: fftypes.Identity{
-							Author: "org1",
-						},
-					},
-				},
-			},
-		},
-	}, []*fftypes.Bytes32{})
-	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
 
 }

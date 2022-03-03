@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,38 +17,52 @@
 package fftypes
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNodeValidation(t *testing.T) {
+func TestNodeigration(t *testing.T) {
 
-	n := &Node{
-		Name: "!name",
+	node := DeprecatedNode{
+		ID:          NewUUID(),
+		Name:        "node1",
+		Description: "Node 1",
+		DX: DeprecatedDXInfo{
+			Peer: "ignored",
+			Endpoint: JSONObject{
+				"id": "peer1",
+			},
+		},
 	}
-	assert.Regexp(t, "FF10131.*name", n.Validate(context.Background(), false))
+	parentID := NewUUID()
+	assert.Equal(t, &IdentityClaim{
+		Identity: &Identity{
+			IdentityBase: IdentityBase{
+				ID:        node.ID,
+				Type:      IdentityTypeNode,
+				DID:       "did:firefly:node/node1",
+				Namespace: SystemNamespace,
+				Name:      "node1",
+				Parent:    parentID,
+			},
+			IdentityProfile: IdentityProfile{
+				Description: "Node 1",
+				Profile: JSONObject{
+					"id": "peer1",
+				},
+			},
+		},
+	}, node.AddMigratedParent(parentID))
 
-	n = &Node{
-		Name:        "ok",
-		Description: string(make([]byte, 4097)),
+	assert.Equal(t, "14c4157d50d35470b15a6576affa62adea1b191e8238f2273a099d1ef73fb335", node.Topic())
+
+	msg := &Message{
+		Header: MessageHeader{
+			ID: NewUUID(),
+		},
 	}
-	assert.Regexp(t, "FF10188.*description", n.Validate(context.Background(), false))
+	node.SetBroadcastMessage(msg.Header.ID)
+	assert.Equal(t, msg.Header.ID, node.Migrated().Identity.Messages.Claim)
 
-	n = &Node{
-		Name:        "ok",
-		Description: "ok",
-	}
-	assert.Regexp(t, "FF10211", n.Validate(context.Background(), false))
-
-	n.Owner = "0x12345"
-	assert.NoError(t, n.Validate(context.Background(), false))
-
-	assert.Regexp(t, "FF10203", n.Validate(context.Background(), true))
-
-	var def Definition = n
-	assert.Equal(t, "ff_organizations", def.Topic())
-	def.SetBroadcastMessage(NewUUID())
-	assert.NotNil(t, n.Message)
 }

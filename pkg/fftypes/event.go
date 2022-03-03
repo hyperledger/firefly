@@ -31,8 +31,10 @@ var (
 	EventTypeNamespaceConfirmed EventType = ffEnum("eventtype", "namespace_confirmed")
 	// EventTypeDatatypeConfirmed occurs when a new datatype is ready for use (on the namespace of the datatype)
 	EventTypeDatatypeConfirmed EventType = ffEnum("eventtype", "datatype_confirmed")
-	// EventTypeGroupConfirmed occurs when a new group is ready to use (on the namespace of the group, on all group participants)
-	EventTypeGroupConfirmed EventType = ffEnum("eventtype", "group_confirmed")
+	// EventTypeIdentityConfirmed occurs when a new identity has been confirmed, as as result of a signed claim broadcast, and any associated claim verification
+	EventTypeIdentityConfirmed EventType = ffEnum("eventtype", "identity_confirmed")
+	// EventTypeIdentityUpdated occurs when an existing identity is update by the owner of that identity
+	EventTypeIdentityUpdated EventType = ffEnum("eventtype", "identity_updated")
 	// EventTypePoolConfirmed occurs when a new token pool is ready for use
 	EventTypePoolConfirmed EventType = ffEnum("eventtype", "token_pool_confirmed")
 	// EventTypeTransferConfirmed occurs when a token transfer has been confirmed
@@ -58,6 +60,7 @@ type Event struct {
 	Type        EventType `json:"type" ffenum:"eventtype"`
 	Namespace   string    `json:"namespace"`
 	Reference   *UUID     `json:"reference"`
+	Correlator  *UUID     `json:"correlator,omitempty"`
 	Transaction *UUID     `json:"tx,omitempty"`
 	Created     *FFTime   `json:"created"`
 }

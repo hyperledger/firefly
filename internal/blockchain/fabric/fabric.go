@@ -149,6 +149,10 @@ func (f *Fabric) Name() string {
 	return "fabric"
 }
 
+func (f *Fabric) VerifierType() fftypes.VerifierType {
+	return fftypes.VerifierTypeMSPIdentity
+}
+
 func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	fabconnectConf := prefix.SubPrefix(FabconnectConfigKey)
@@ -321,7 +325,10 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, signer)
+	return f.callbacks.BatchPinComplete(batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: signer,
+	})
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -466,7 +473,7 @@ func (f *Fabric) eventLoop() {
 	}
 }
 
-func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
+func (f *Fabric) NormalizeSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
 	// we expand the short user name into the fully qualified onchain identity:
 	// mspid::x509::{ecert DN}::{CA DN}	return signingKeyInput, nil
 	if !fullIdentityPattern.MatchString(signingKeyInput) {

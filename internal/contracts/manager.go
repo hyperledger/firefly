@@ -175,7 +175,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {
-	req.Key, err = cm.identity.ResolveSigningKey(ctx, req.Key)
+	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}
@@ -505,11 +505,6 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 	if listener.Name == "" {
 		listener.Name = listener.ProtocolID
 	}
-
-	if listener.Name == "" {
-		listener.Name = listener.ProtocolID
-	}
-
 	if err = cm.database.UpsertContractListener(ctx, &listener.ContractListener); err != nil {
 		return nil, err
 	}

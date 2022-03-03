@@ -18,7 +18,6 @@ package broadcast
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
@@ -135,8 +134,8 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 
 func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
 	// Resolve the sending identity
-	if !s.isRootOrgBroadcast(ctx) {
-		if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.Identity); err != nil {
+	if s.msg.Header.Type != fftypes.MessageTypeDefinition || s.msg.Header.Tag != fftypes.SystemTagIdentityClaim {
+		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, s.msg.Header.Namespace, &s.msg.Header.SignerRef); err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 		}
 	}
@@ -171,29 +170,4 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
 
 	return err
-}
-
-func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
-	// Look into message to see if it contains a data item that is a root organization definition
-	if s.msg.Header.Type == fftypes.MessageTypeDefinition {
-		messageData, ok, err := s.mgr.data.GetMessageData(ctx, &s.msg.Message, true)
-		if ok && err == nil {
-			if len(messageData) > 0 {
-				dataItem := messageData[0]
-				if dataItem.Validator == fftypes.MessageTypeDefinition {
-					var org *fftypes.Organization
-					if dataItem.Value != nil {
-						err := json.Unmarshal([]byte(*dataItem.Value), &org)
-						if err != nil {
-							return false
-						}
-					}
-					if org != nil && org.Name != "" && org.ID != nil && org.Parent == "" {
-						return true
-					}
-				}
-			}
-		}
-	}
-	return false
 }

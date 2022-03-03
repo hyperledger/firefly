@@ -22,7 +22,6 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -39,169 +38,68 @@ func TestRegisterNodeOk(t *testing.T) {
 	config.Set(config.OrgName, "org1")
 	config.Set(config.NodeDescription, "Node 1")
 
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
-		Identity:    "0x23456",
-		Description: "owning organization",
-	}, nil)
+	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
+	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, false, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x23456"}
+	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
-		Peer:     "peer1",
-		Endpoint: fftypes.JSONObject{"endpoint": "details"},
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{
+		"id":       "peer1",
+		"endpoint": "details",
 	}, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinitionAsNode", nm.ctx, fftypes.SystemNamespace, mock.Anything, fftypes.SystemTagDefineNode, true).Return(mockMsg, nil)
+	mbm.On("BroadcastIdentityClaim", nm.ctx,
+		fftypes.SystemNamespace,
+		mock.AnythingOfType("*fftypes.IdentityClaim"),
+		signerRef,
+		fftypes.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	node, msg, err := nm.RegisterNode(nm.ctx, true)
+	node, err := nm.RegisterNode(nm.ctx, false)
 	assert.NoError(t, err)
-	assert.Equal(t, mockMsg, msg)
-	assert.Equal(t, *mockMsg.Header.ID, *node.Message)
+	assert.Equal(t, *mockMsg.Header.ID, *node.Messages.Claim)
 
 }
 
-func TestRegisterNodeBadParentID(t *testing.T) {
+func TestRegisterNodePeerInfoFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
 	config.Set(config.OrgKey, "0x23456")
+	config.Set(config.OrgName, "org1")
 	config.Set(config.NodeDescription, "Node 1")
-	config.Set(config.NodeName, "node1")
 
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
-		Identity:    "0x23456",
-		Description: "owning organization",
-	}, nil)
+	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("", fmt.Errorf("pop"))
+	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, false, nil)
+	signerRef := &fftypes.SignerRef{Key: "0x23456"}
+	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
 
-	_, _, err := nm.RegisterNode(nm.ctx, false)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }
 
-func TestRegisterNodeMissingNodeName(t *testing.T) {
+func TestRegisterNodeGetOwnerFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(config.OrgKey, "0x23456")
-	config.Set(config.NodeDescription, "Node 1")
-
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
-		Identity:    "0x23456",
-		Description: "owning organization",
-	}, nil)
-
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
+	mim.On("GetNodeOwnerOrg", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	_, _, err := nm.RegisterNode(nm.ctx, false)
-	assert.Regexp(t, "FF10216", err)
-
-}
-func TestRegisterNodeBadNodeID(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	config.Set(config.NodeDescription, "Node 1")
-	config.Set(config.NodeName, "node1")
-
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
-		Identity:    "0x23456",
-		Description: "owning organization",
-	}, nil)
-
-	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKey", nm.ctx, "").Return("", nil)
-
-	_, _, err := nm.RegisterNode(nm.ctx, false)
-	assert.Regexp(t, "FF10216", err)
-
-}
-
-func TestRegisterNodeParentNotFound(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	config.Set(config.OrgKey, "0x23456")
-	config.Set(config.NodeDescription, "Node 1")
-	config.Set(config.NodeName, "node1")
-
-	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(nil, nil)
-
-	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
-
-	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
-		Peer:     "peer1",
-		Endpoint: fftypes.JSONObject{"endpoint": "details"},
-	}, nil)
-
-	_, _, err := nm.RegisterNode(nm.ctx, false)
-	assert.Regexp(t, "FF10214", err)
-
-}
-
-func TestRegisterNodeParentBadNode(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	config.Set(config.OrgKey, "0x23456")
-	config.Set(config.NodeDescription, string(make([]byte, 4097)))
-	config.Set(config.NodeName, "node1")
-
-	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
-
-	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
-		Peer:     "peer1",
-		Endpoint: fftypes.JSONObject{"endpoint": "details"},
-	}, nil)
-
-	_, _, err := nm.RegisterNode(nm.ctx, false)
-	assert.Regexp(t, "FF10188", err)
-
-}
-
-func TestRegisterNodeParentDXEndpointFail(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	config.Set(config.OrgKey, "0x23456")
-	config.Set(config.NodeDescription, string(make([]byte, 4097)))
-	config.Set(config.NodeName, "node1")
-
-	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.DXInfo{
-		Peer:     "",
-		Endpoint: nil,
-	}, fmt.Errorf("pop"))
-
-	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKey", nm.ctx, "0x23456").Return("0x23456", nil)
-
-	_, _, err := nm.RegisterNode(nm.ctx, false)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }

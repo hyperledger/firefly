@@ -38,13 +38,15 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
 		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction)
-		if em.metrics.IsMetricsEnabled() {
-			var tokenTransfer fftypes.TokenTransfer
-			err = txcommon.RetrieveTokenTransferInputs(ctx, op, &tokenTransfer)
-			if err != nil {
-				log.L(em.ctx).Warnf("Could not determine token transfer type: %s", err)
+		var tokenTransfer fftypes.TokenTransfer
+		err = txcommon.RetrieveTokenTransferInputs(ctx, op, &tokenTransfer)
+		if err != nil {
+			log.L(em.ctx).Warnf("Could not determine token transfer: %s", err)
+		} else {
+			event.Correlator = tokenTransfer.LocalID
+			if em.metrics.IsMetricsEnabled() {
+				em.metrics.TransferConfirmed(&tokenTransfer)
 			}
-			em.metrics.TransferConfirmed(&tokenTransfer)
 		}
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
@@ -54,6 +56,13 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 	// Special handling for OpTypeTokenApproval, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenApproval && txState == fftypes.OpStatusFailed {
 		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction)
+		var tokenApproval fftypes.TokenApproval
+		err = txcommon.RetrieveTokenApprovalInputs(ctx, op, &tokenApproval)
+		if err != nil {
+			log.L(em.ctx).Warnf("Could not determine token retrieval: %s", err)
+		} else {
+			event.Correlator = tokenApproval.LocalID
+		}
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}

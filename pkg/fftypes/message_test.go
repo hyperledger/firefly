@@ -209,7 +209,7 @@ func TestSealKnownMessage(t *testing.T) {
 			CID:    cid,
 			Type:   MessageTypePrivate,
 			TxType: TransactionTypeBatchPin,
-			Identity: Identity{
+			SignerRef: SignerRef{
 				Author: "0x12345",
 			},
 			Namespace: "ns1",

@@ -29,6 +29,8 @@ var routes = []*oapispec.Route{
 	postNodesSelf,
 	postNewOrganization,
 	postNewOrganizationSelf,
+	postNewIdentity,
+	patchUpdateIdentity,
 
 	postData,
 	postNewSubscription,
@@ -49,6 +51,10 @@ var routes = []*oapispec.Route{
 	getEvents,
 	getGroups,
 	getGroupByHash,
+	getIdentities,
+	getIdentityByID,
+	getIdentityDID,
+	getIdentityVerifiers,
 	getMsgByID,
 	getMsgData,
 	getMsgEvents,
@@ -72,6 +78,8 @@ var routes = []*oapispec.Route{
 	getTxnBlockchainEvents,
 	getTxnStatus,
 	getTxns,
+	getVerifiers,
+	getVerifierByID,
 
 	getChartHistogram,
 

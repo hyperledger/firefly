@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build swagger
 // +build swagger
 
 package apiserver
@@ -34,7 +35,7 @@ import (
 
 func TestDownloadSwaggerYAML(t *testing.T) {
 	as := &apiServer{}
-	handler := as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:12345")))
+	handler := as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:5000")))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 

@@ -173,6 +173,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())
+	assert.Equal(t, fftypes.VerifierTypeMSPIdentity, e.VerifierType())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
@@ -483,7 +484,7 @@ func TestResolveFullIDSigner(t *testing.T) {
 	defer cancel()
 
 	id := "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server"
-	signKey, err := e.ResolveSigningKey(context.Background(), id)
+	signKey, err := e.NormalizeSigningKey(context.Background(), id)
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", signKey)
 
@@ -503,7 +504,7 @@ func TestResolveSigner(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	resolved, err := e.ResolveSigningKey(context.Background(), "signer001")
+	resolved, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", resolved)
 }
@@ -518,7 +519,7 @@ func TestResolveSignerFailedFabricCARequest(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(503, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s()")
 }
 
@@ -536,7 +537,7 @@ func TestResolveSignerBadECertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
@@ -554,7 +555,7 @@ func TestResolveSignerBadCACertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
@@ -601,7 +602,12 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server").Return(nil)
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -615,7 +621,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[1].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[1].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -645,7 +651,12 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(nil)
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -659,7 +670,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[0].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -689,7 +700,12 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)

@@ -142,7 +142,7 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 
 func (s *messageSender) resolve(ctx context.Context) error {
 	// Resolve the sending identity
-	if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.Identity); err != nil {
+	if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, s.msg.Header.Namespace, &s.msg.Header.SignerRef); err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 

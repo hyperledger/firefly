@@ -170,7 +170,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 
 	suite.ethClient = NewResty(suite.T())
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
-	suite.ethIdentity = suite.testState.org1.Identity
+	suite.ethIdentity = suite.testState.org1key.Value
 
 	abiResult := uploadABI(suite.T(), suite.ethClient, abi)
 	contractResult := deployABI(suite.T(), suite.ethClient, suite.ethIdentity, abiResult.ID)
@@ -192,7 +192,7 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1)
+	received1, changes1 := wsReader(suite.testState.ws1, true)
 
 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
@@ -218,7 +218,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 		},
 		"output": map[string]interface{}{
 			"_value": "1",
-			"_from":  suite.testState.org1.Identity,
+			"_from":  suite.testState.org1key.Value,
 		},
 		"listener": listener.ID.String(),
 	}
@@ -232,7 +232,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1)
+	received1, changes1 := wsReader(suite.testState.ws1, true)
 
 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
@@ -266,7 +266,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		},
 		"output": map[string]interface{}{
 			"_value": "2",
-			"_from":  suite.testState.org1.Identity,
+			"_from":  suite.testState.org1key.Value,
 		},
 		"subscription": listener.ID.String(),
 	}
@@ -289,7 +289,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1)
+	received1, changes1 := wsReader(suite.testState.ws1, true)
 
 	ffiReference := &fftypes.FFIReference{
 		ID: fftypes.MustParseUUID(suite.interfaceID),
@@ -328,7 +328,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		},
 		"output": map[string]interface{}{
 			"_value": "3",
-			"_from":  suite.testState.org1.Identity,
+			"_from":  suite.testState.org1key.Value,
 		},
 		"subscription": listener.ID.String(),
 	}
