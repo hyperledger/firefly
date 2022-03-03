@@ -38,6 +38,7 @@ INSERT INTO identities (
     did,
     parent,
     messages_claim,
+    itype,
     namespace,
     name,
     description,
@@ -49,6 +50,7 @@ INSERT INTO identities (
     'did:firefly:org/' || o1.name,
     o2.id,
     o1.message_id,
+    'org',
     'ff_system',
     o1.name,
     o1.description,
@@ -63,6 +65,7 @@ INSERT INTO identities (
     did,
     parent,
     messages_claim,
+    itype,
     namespace,
     name,
     description,
@@ -74,6 +77,7 @@ INSERT INTO identities (
     'did:firefly:node/' || n.name,
     o.id,
     n.message_id,
+    'node',
     'ff_system',
     n.name,
     n.description,
@@ -91,7 +95,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(hex(o.id), '-', '') || REPLACE(hex(o.id), '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
+    REPLACE(o.id, '-', '') || REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
     'ff_system',
     o.id,
     'ethereum_address',
@@ -107,7 +111,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(hex(o.id), '-', '') || REPLACE(hex(o.id), '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
+    REPLACE(o.id, '-', '') || REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
     'ff_system',
     o.id,
     'fabric_msp_id',
@@ -123,7 +127,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(hex(n.id), '-', '') || REPLACE(hex(n.id), '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
+    REPLACE(n.id, '-', '') || REPLACE(n.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
     'ff_system',
     n.id,
     'dx_peer_id',
