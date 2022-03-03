@@ -52,6 +52,21 @@ type Data struct {
 	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
 }
 
+// BatchMessage is the fields in a data record that are immutable, assured to be consistent on all partied,
+// and cannot change after the data is sealed.
+// This is what is transferred and hashed in a batch payload between nodes.
+func (d *Data) BatchMessage() *Data {
+	return &Data{
+		ID:        d.ID,
+		Validator: d.Validator,
+		Namespace: d.Namespace,
+		Hash:      d.Hash,
+		Datatype:  d.Datatype,
+		Value:     d.Value,
+		Blob:      d.Blob,
+	}
+}
+
 type DataAndBlob struct {
 	Data *Data
 	Blob *Blob

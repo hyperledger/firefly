@@ -102,6 +102,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
@@ -216,6 +217,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)

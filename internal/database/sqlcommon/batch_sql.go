@@ -54,7 +54,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err error) {
+func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersisted) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -140,8 +140,8 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Batch, error) {
-	var batch fftypes.Batch
+func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.BatchPersisted, error) {
+	var batch fftypes.BatchPersisted
 	err := row.Scan(
 		&batch.ID,
 		&batch.Type,
@@ -164,7 +164,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 	return &batch, nil
 }
 
-func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.BatchPersisted, err error) {
 
 	rows, _, err := s.query(ctx,
 		sq.Select(batchColumns...).
@@ -189,7 +189,7 @@ func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message
 	return batch, nil
 }
 
-func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.Batch, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.BatchPersisted, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -202,7 +202,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (mes
 	}
 	defer rows.Close()
 
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 	for rows.Next() {
 		batch, err := s.batchResult(ctx, rows)
 		if err != nil {

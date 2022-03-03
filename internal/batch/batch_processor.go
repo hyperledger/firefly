@@ -434,8 +434,14 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 
 func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
 	// Calculate the sequence hashes
+	pinsAssigned := false
 	contextsOrPins := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
 	for _, msg := range batch.Payload.Messages {
+		if len(msg.Pins) > 0 {
+			// We have already allocated pins to this message, we cannot re-allocate.
+			log.L(ctx).Debugf("Message %s already has %d pins allocated", msg.Header.ID, len(msg.Pins))
+			continue
+		}
 		for _, topic := range msg.Header.Topics {
 			contextOrPin, err := bp.maskContext(ctx, msg, topic)
 			if err != nil {
@@ -444,6 +450,19 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch
 			contextsOrPins = append(contextsOrPins, contextOrPin)
 			if msg.Header.Group != nil {
 				msg.Pins = append(msg.Pins, contextOrPin.String())
+				pinsAssigned = true
+			}
+		}
+		if pinsAssigned {
+			// It's important we update the message pins at this phase, as we have "spent" a nonce
+			// on this topic from the database. So this message has grabbed a slot in our queue.
+			// If we fail the dispatch, and redo the batch sealing process, we must not allocate
+			// a second nonce to it (and as such modifiy the batch payload).
+			err := bp.database.UpdateMessage(ctx, msg.Header.ID,
+				database.MessageQueryFactory.NewUpdate(ctx).Set("pins", msg.Pins),
+			)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}

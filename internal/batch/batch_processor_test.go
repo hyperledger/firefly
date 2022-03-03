@@ -331,3 +331,81 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 }
+
+func TestMaskContextsDuplicate(t *testing.T) {
+	log.SetLevel("debug")
+	config.Reset()
+
+	dispatched := make(chan *fftypes.Batch)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		dispatched <- b
+		return nil
+	})
+
+	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+	batch := &fftypes.Batch{
+		Payload: fftypes.BatchPayload{
+			Messages: []*fftypes.Message{
+				{
+					Header: fftypes.MessageHeader{
+						ID:     fftypes.NewUUID(),
+						Type:   fftypes.MessageTypePrivate,
+						Group:  fftypes.NewRandB32(),
+						Topics: fftypes.FFStringArray{"topic1"},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := bp.maskContexts(bp.ctx, batch)
+	assert.NoError(t, err)
+
+	// 2nd time no DB ops
+	_, err = bp.maskContexts(bp.ctx, batch)
+	assert.NoError(t, err)
+
+	bp.cancelCtx()
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+}
+
+func TestMaskContextsUpdataMessageFail(t *testing.T) {
+	log.SetLevel("debug")
+	config.Reset()
+
+	dispatched := make(chan *fftypes.Batch)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		dispatched <- b
+		return nil
+	})
+
+	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+
+	batch := &fftypes.Batch{
+		Payload: fftypes.BatchPayload{
+			Messages: []*fftypes.Message{
+				{
+					Header: fftypes.MessageHeader{
+						ID:     fftypes.NewUUID(),
+						Type:   fftypes.MessageTypePrivate,
+						Group:  fftypes.NewRandB32(),
+						Topics: fftypes.FFStringArray{"topic1"},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := bp.maskContexts(bp.ctx, batch)
+	assert.Regexp(t, "pop", err)
+
+	bp.cancelCtx()
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+}

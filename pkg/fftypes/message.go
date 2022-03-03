@@ -95,6 +95,18 @@ type Message struct {
 	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
 }
 
+// BatchMessage returns a copy of the fields in a message that are immutable, assured to be consistent on all partied,
+// and cannot change after the batch containing the message is sealed.
+// This is what is transferred and hashed in a batch payload between nodes.
+func (m *Message) BatchMessage() *Message {
+	return &Message{
+		Header: m.Header,
+		Hash:   m.Hash,
+		Data:   m.Data,
+		Pins:   m.Pins,
+	}
+}
+
 // MessageInOut allows API users to submit values in-line in the payload submitted, which
 // will be broken out and stored separately during the call.
 type MessageInOut struct {

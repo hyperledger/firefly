@@ -25,21 +25,55 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 )
 
-type Batch struct {
+// BatchHeader is the common fields between the serialized batch, and the batch manifest
+type BatchHeader struct {
 	ID        *UUID       `json:"id"`
 	Namespace string      `json:"namespace"`
 	Type      MessageType `json:"type"`
 	Node      *UUID       `json:"node,omitempty"`
 	SignerRef
-	Group      *Bytes32     `jdon:"group,omitempty"`
-	Hash       *Bytes32     `json:"hash"`
-	Created    *FFTime      `json:"created"`
-	Confirmed  *FFTime      `json:"confirmed"`
-	Payload    BatchPayload `json:"payload"`
-	PayloadRef string       `json:"payloadRef,omitempty"`
-	Blobs      []*Bytes32   `json:"blobs,omitempty"` // only used in-flight
+	Group *Bytes32 `jdon:"group,omitempty"`
+	Hash  *Bytes32 `json:"hash"`
 }
 
+// BatchManifest is all we need to persist to be able to reconstitute
+// an identical batch. It can be generated from a received batch to
+// confirm you have received an identical batch to that sent
+type BatchManifest struct {
+	BatchHeader
+	TX       TransactionRef `json:"tx"`
+	Messages []MessageRef   `json:"messages"`
+	Data     []DataRef      `json:"data"`
+}
+
+// Batch is the full payload object used in-flight.
+type Batch struct {
+	BatchHeader
+	Payload    BatchPayload `json:"payload"`
+	PayloadRef string       `json:"payloadRef,omitempty"`
+	Blobs      []*Bytes32   `json:"blobs,omitempty"`
+}
+
+// BatchPersisted is the structure written to the database
+type BatchPersisted struct {
+	BatchManifest
+	Created   *FFTime `json:"created"`
+	Confirmed *FFTime `json:"confirmed"`
+}
+
+func (mf *BatchManifest) String() string {
+	b, _ := json.Marshal(&mf)
+	return string(b)
+}
+
+// BatchPayload contains the full JSON of the messages and data, but
+// importantly only the immutable parts of the messages/data.
+// In v0.13 and earlier, we used the whole of this payload object to
+// form the hash of the in-flight batch. Subsequent to that we only
+// calculate the hash of the manifest, as that contains the hashes
+// of all the messages and data (thus minimizing the overhead of
+// calculating the hash).
+// - See Message.BatchMessage() and Data.BatchData()
 type BatchPayload struct {
 	TX       TransactionRef `json:"tx"`
 	Messages []*Message     `json:"messages"`
@@ -78,11 +112,11 @@ func (ma *BatchPayload) Scan(src interface{}) error {
 
 }
 
-func (b *Batch) Manifest() *Manifest {
+func (b *Batch) Manifest() *BatchManifest {
 	if b == nil {
 		return nil
 	}
-	tm := &Manifest{
+	tm := &BatchManifest{
 		Messages: make([]MessageRef, len(b.Payload.Messages)),
 		Data:     make([]DataRef, len(b.Payload.Data)),
 	}
