@@ -123,7 +123,8 @@ func TestRegisterEphemeralSubscriptions(t *testing.T) {
 	assert.NoError(t, err)
 	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = be.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{}, &fftypes.SubscriptionOptions{})
+	// check with filter
+	err = be.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{Message: fftypes.MessageFilter{Author: "flapflip"}}, &fftypes.SubscriptionOptions{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(sm.connections["conn1"].dispatchers))

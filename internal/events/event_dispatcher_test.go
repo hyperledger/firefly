@@ -544,7 +544,7 @@ func TestFilterEventsMatch(t *testing.T) {
 		{
 			Event: fftypes.Event{
 				ID:   id4,
-				Type: fftypes.EventTypeBlockchainEvent,
+				Type: fftypes.EventTypeBlockchainEventReceived,
 			},
 			BlockchainEvent: &fftypes.BlockchainEvent{
 				Name: "flapflip",
@@ -785,10 +785,10 @@ func TestEnrichBlockchainEventEvents(t *testing.T) {
 	batch1Done := make(chan struct{})
 	go func() {
 		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
-			&fftypes.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeBlockchainEvent}, // match
-			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeBlockchainEvent}, // match
-			&fftypes.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeBlockchainEvent}, // match
-			&fftypes.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeBlockchainEvent}, // match
+			&fftypes.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeBlockchainEventReceived}, // match
+			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeBlockchainEventReceived}, // match
+			&fftypes.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeBlockchainEventReceived}, // match
+			&fftypes.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeBlockchainEventReceived}, // match
 		})
 		assert.NoError(t, err)
 		assert.True(t, repoll)
