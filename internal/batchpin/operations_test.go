@@ -35,7 +35,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	}
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Key: "0x123",
 		},
 	}
@@ -68,7 +68,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 	po, err := bp.PrepareOperation(context.Background(), &fftypes.Operation{})
 
 	assert.Nil(t, po)
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10371", err)
 }
 
 func TestPrepareOperationBatchPinBadBatch(t *testing.T) {
@@ -104,7 +104,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	complete, err := bp.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10371", err)
 }
 
 func TestPrepareOperationBatchPinError(t *testing.T) {

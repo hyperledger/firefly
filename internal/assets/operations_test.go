@@ -172,7 +172,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 	po, err := am.PrepareOperation(context.Background(), &fftypes.Operation{})
 
 	assert.Nil(t, po)
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10371", err)
 }
 
 func TestPrepareOperationCreatePoolBadInput(t *testing.T) {
@@ -348,7 +348,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	complete, err := am.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10371", err)
 }
 
 func TestRunOperationCreatePoolBadPlugin(t *testing.T) {

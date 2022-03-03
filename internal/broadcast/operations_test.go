@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -32,14 +32,14 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypePublicStorageBatchBroadcast,
+		Type: fftypes.OpTypeSharedStorageBatchBroadcast,
 	}
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
 	}
 	addBatchBroadcastInputs(op, batch.ID)
 
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(batch, nil)
 	mps.On("PublishData", context.Background(), mock.Anything).Return("123", nil)
@@ -71,7 +71,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 
 	_, err := bm.PrepareOperation(context.Background(), &fftypes.Operation{})
 
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10371", err)
 }
 
 func TestPrepareOperationBatchBroadcastBadInput(t *testing.T) {
@@ -79,7 +79,7 @@ func TestPrepareOperationBatchBroadcastBadInput(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypePublicStorageBatchBroadcast,
+		Type:  fftypes.OpTypeSharedStorageBatchBroadcast,
 		Input: fftypes.JSONObject{"id": "bad"},
 	}
 
@@ -93,7 +93,7 @@ func TestPrepareOperationBatchBroadcastError(t *testing.T) {
 
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypePublicStorageBatchBroadcast,
+		Type:  fftypes.OpTypeSharedStorageBatchBroadcast,
 		Input: fftypes.JSONObject{"id": batchID.String()},
 	}
 
@@ -110,7 +110,7 @@ func TestPrepareOperationBatchBroadcastNotFound(t *testing.T) {
 
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypePublicStorageBatchBroadcast,
+		Type:  fftypes.OpTypeSharedStorageBatchBroadcast,
 		Input: fftypes.JSONObject{"id": batchID.String()},
 	}
 
@@ -128,7 +128,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	complete, err := bm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10349", err)
+	assert.Regexp(t, "FF10371", err)
 }
 
 func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {
@@ -159,7 +159,7 @@ func TestRunOperationBatchBroadcastPublishFail(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mps.On("PublishData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
 	complete, err := bm.RunOperation(context.Background(), opBatchBroadcast(op, batch))
@@ -179,7 +179,7 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mps.On("PublishData", context.Background(), mock.Anything).Return("123", nil)
 	mdi.On("UpdateBatch", context.Background(), batch.ID, mock.MatchedBy(func(update database.Update) bool {

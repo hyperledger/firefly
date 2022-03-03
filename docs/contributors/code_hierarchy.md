@@ -61,7 +61,7 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
   │       │
   │       │   ┌───────────────┐  - Broadcast of data to all parties in the network
   │       ├───┤ broadcast [Bm]│    * Implements dispatcher for batch component
-  │       │   │ manager       |    * Integrates with public storage interface [Ps] plugin
+  │       │   │ manager       |    * Integrates with shared storage interface [Ps] plugin
   │       │   └───────────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │
   │       │   ┌───────────────┐  - Send private data to individual parties in the network
@@ -96,7 +96,7 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
   │       │          │
   │       │   ┌──────┴────────┐  - Handles incoming external data
   │       │   │           [Ag]│    * Integrates with data exchange [Dx] plugin
-  │       │   │ aggregator    │    * Integrates with public storage interface [Ps] plugin
+  │       │   │ aggregator    │    * Integrates with shared storage interface [Ps] plugin
   │       │   │               │    * Integrates with blockchain interface [Bi] plugin
   │       │   │               │  - Ensures valid events are dispatched only once all data is available
   │       │   └──────┬────────┘    * Context aware, to prevent block-the-world scenarios
@@ -145,7 +145,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └───────────────┘   └───────────────┘   └────────────────┘   └────────────────┘
   │
   │           ┌───────────────┐  - P2P Content Addresssed Filesystem
-  ├───────────┤ public    [Pi]│    * Payload upload / download
+  ├───────────┤ shared    [Si]│    * Payload upload / download
   │           │ storage       │    * Payload reference management
   │           │ interface     │
   │           └─────┬─────────┘

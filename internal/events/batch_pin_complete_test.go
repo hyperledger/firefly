@@ -27,7 +27,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -37,12 +37,12 @@ import (
 )
 
 func sampleBatch(t *testing.T, txType fftypes.TransactionType, data ...*fftypes.Data) *fftypes.Batch {
-	identity := fftypes.Identity{Author: "signingOrg", Key: "0x12345"}
+	identity := fftypes.SignerRef{Author: "signingOrg", Key: "0x12345"}
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Identity: identity,
-			ID:       fftypes.NewUUID(),
-			TxType:   txType,
+			SignerRef: identity,
+			ID:        fftypes.NewUUID(),
+			TxType:    txType,
 		},
 	}
 	for _, d := range data {
@@ -50,9 +50,9 @@ func sampleBatch(t *testing.T, txType fftypes.TransactionType, data ...*fftypes.
 		assert.NoError(t, err)
 	}
 	batch := &fftypes.Batch{
-		Identity: identity,
-		ID:       fftypes.NewUUID(),
-		Node:     fftypes.NewUUID(),
+		SignerRef: identity,
+		ID:        fftypes.NewUUID(),
+		Node:      fftypes.NewUUID(),
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   fftypes.NewUUID(),
@@ -86,9 +86,9 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	batchData := &fftypes.Batch{
 		ID:        batch.BatchID,
 		Namespace: "ns1",
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
-			Key:    "0x12345",
+			Key:    "0x22222",
 		},
 		PayloadRef: batch.BatchPayloadRef,
 		Payload: fftypes.BatchPayload{
@@ -106,7 +106,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	assert.NoError(t, err)
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader(batchDataBytes))
 
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
 		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
@@ -134,16 +134,19 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		return e.Name == batch.Event.Name
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return e.Type == fftypes.EventTypeBlockchainEvent
+		return e.Type == fftypes.EventTypeBlockchainEventReceived
 	})).Return(nil).Times(2)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil).Once()
 	mbi := &blockchainmocks.Plugin{}
 
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
+	mim.On("NormalizeSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
 
-	err = em.BatchPinComplete(mbi, batch, "0x12345")
+	err = em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -179,7 +182,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	assert.NoError(t, err)
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader(batchDataBytes))
 
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
 		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
 		Return(batchReadCloser, nil)
@@ -192,7 +195,10 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err = em.BatchPinComplete(mbi, batch, "0xffffeeee")
+	err = em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
 	assert.NoError(t, err)
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
@@ -219,11 +225,14 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	}
 
 	cancel() // to avoid retry
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0xffffeeee")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
 	mpi.AssertExpectations(t)
 	assert.Regexp(t, "FF10158", err)
 }
@@ -241,11 +250,14 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	}
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
 
-	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0xffffeeee")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
 }
 
@@ -256,7 +268,10 @@ func TestBatchPinCompleteNoTX(t *testing.T) {
 	batch := &blockchain.BatchPin{}
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
 	assert.NoError(t, err)
 }
 
@@ -273,7 +288,10 @@ func TestBatchPinCompleteBadNamespace(t *testing.T) {
 	}
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, "0x12345")
+	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
 	assert.NoError(t, err)
 }
 
@@ -291,7 +309,7 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -304,9 +322,9 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 		Hash: batchHash,
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
+	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash)
 	assert.NoError(t, err) // retryable
 	assert.False(t, valid)
 }
@@ -317,7 +335,7 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -330,9 +348,9 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 		Hash: batchHash,
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author2", nil)
+	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("author2", nil)
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
+	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash)
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -342,7 +360,7 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -355,9 +373,9 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author1", nil)
+	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("author1", nil)
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32(), "0x12345")
+	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32())
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -367,7 +385,7 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -394,7 +412,7 @@ func TestPersistBatchBadHash(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -417,7 +435,7 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -443,7 +461,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -474,7 +492,7 @@ func TestPersistBatchGoodDataUpsertOptimizeExistingFail(t *testing.T) {
 	batch := &fftypes.Batch{
 		ID:   fftypes.NewUUID(),
 		Node: testNodeID,
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -507,7 +525,7 @@ func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
 	batch := &fftypes.Batch{
 		ID:   fftypes.NewUUID(),
 		Node: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "author1",
 			Key:    "0x12345",
 		},
@@ -710,6 +728,9 @@ func TestPersistContextsFail(t *testing.T) {
 		Contexts: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 		},
+	}, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
 	}, false)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)

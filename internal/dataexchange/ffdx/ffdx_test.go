@@ -56,7 +56,7 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	utConfPrefix.Set(DataExchangeManifestEnabled, manifestEnabled)
 
 	h = &FFDX{initialized: true}
-	nodes := make([]fftypes.DXInfo, 0)
+	nodes := make([]fftypes.JSONObject, 0)
 	h.InitPrefix(utConfPrefix)
 
 	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
@@ -72,7 +72,7 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 func TestInitBadURL(t *testing.T) {
 	config.Reset()
 	h := &FFDX{}
-	nodes := make([]fftypes.DXInfo, 0)
+	nodes := make([]fftypes.JSONObject, 0)
 	h.InitPrefix(utConfPrefix)
 	utConfPrefix.Set(restclient.HTTPConfigURL, "::::////")
 	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
@@ -82,7 +82,7 @@ func TestInitBadURL(t *testing.T) {
 func TestInitMissingURL(t *testing.T) {
 	config.Reset()
 	h := &FFDX{}
-	nodes := make([]fftypes.DXInfo, 0)
+	nodes := make([]fftypes.JSONObject, 0)
 	h.InitPrefix(utConfPrefix)
 	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
@@ -101,12 +101,26 @@ func TestGetEndpointInfo(t *testing.T) {
 
 	peer, err := h.GetEndpointInfo(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, "peer1", peer.Peer)
+	assert.Equal(t, "peer1", peer.GetString("id"))
 	assert.Equal(t, fftypes.JSONObject{
 		"id":       "peer1",
 		"endpoint": "https://peer1.example.com",
 		"cert":     "cert data...",
-	}, peer.Endpoint)
+	}, peer)
+}
+
+func TestGetEndpointMissingID(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
+			"endpoint": "https://peer1.example.com",
+			"cert":     "cert data...",
+		}))
+
+	_, err := h.GetEndpointInfo(context.Background())
+	assert.Regexp(t, "FF10367", err)
 }
 
 func TestGetEndpointInfoError(t *testing.T) {
@@ -127,13 +141,10 @@ func TestAddPeer(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), fftypes.DXInfo{
-		Peer: "peer1",
-		Endpoint: fftypes.JSONObject{
-			"id":       "peer1",
-			"endpoint": "https://peer1.example.com",
-			"cert":     "cert...",
-		},
+	err := h.AddPeer(context.Background(), fftypes.JSONObject{
+		"id":       "peer1",
+		"endpoint": "https://peer1.example.com",
+		"cert":     "cert...",
 	})
 	assert.NoError(t, err)
 }
@@ -145,9 +156,8 @@ func TestAddPeerError(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), fftypes.DXInfo{
-		Peer:     "peer1",
-		Endpoint: fftypes.JSONObject{},
+	err := h.AddPeer(context.Background(), fftypes.JSONObject{
+		"id": "peer1",
 	})
 	assert.Regexp(t, "FF10229", err)
 }
@@ -562,7 +572,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 	u.Scheme = "http"
 	httpURL := u.String()
 	h := &FFDX{}
-	nodes := []fftypes.DXInfo{{}}
+	nodes := []fftypes.JSONObject{{}}
 
 	config.Reset()
 	h.InitPrefix(utConfPrefix)
@@ -573,7 +583,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 	count := 0
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
 		func(req *http.Request) (*http.Response, error) {
-			var reqNodes []fftypes.DXInfo
+			var reqNodes []fftypes.JSONObject
 			err := json.NewDecoder(req.Body).Decode(&reqNodes)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(reqNodes))
@@ -614,7 +624,7 @@ func TestDXUninitialized(t *testing.T) {
 	_, err := h.GetEndpointInfo(context.Background())
 	assert.Regexp(t, "FF10342", err)
 
-	err = h.AddPeer(context.Background(), fftypes.DXInfo{})
+	err = h.AddPeer(context.Background(), fftypes.JSONObject{})
 	assert.Regexp(t, "FF10342", err)
 
 	err = h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")

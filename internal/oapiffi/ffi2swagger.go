@@ -46,9 +46,6 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 	for _, method := range ffi.Methods {
 		routes = og.addMethod(routes, method, hasLocation)
 	}
-	for _, event := range ffi.Events {
-		routes = og.addEvent(routes, event, hasLocation)
-	}
 
 	return oapispec.SwaggerGen(ctx, routes, &oapispec.SwaggerGenConfig{
 		Title:       ffi.Name,
@@ -75,25 +72,6 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFI
 		JSONOutputCodes:  []int{http.StatusOK},
 	})
 	return routes
-}
-
-func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEvent, hasLocation bool) []*oapispec.Route {
-	// If the API has a location specified, there are no fields left to specify in the request body.
-	// Instead of masking them all (which causes Swagger UI some issues), explicitly set the schema to an empty object.
-	var schema func(ctx context.Context) string
-	if hasLocation {
-		schema = func(ctx context.Context) string { return `{"type": "object"}` }
-	}
-	return append(routes, &oapispec.Route{
-		Name:            fmt.Sprintf("subscribe_%s", event.Pathname),
-		Path:            fmt.Sprintf("subscribe/%s", event.Pathname), // must match a route defined in apiserver routes!
-		Method:          http.MethodPost,
-		JSONInputValue:  func() interface{} { return &fftypes.ContractSubscribeRequest{} },
-		JSONInputMask:   []string{"Interface", "Event"},
-		JSONInputSchema: schema,
-		JSONOutputValue: func() interface{} { return &fftypes.ContractSubscription{} },
-		JSONOutputCodes: []int{http.StatusOK},
-	})
 }
 
 /**

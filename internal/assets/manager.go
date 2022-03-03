@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
@@ -67,17 +68,18 @@ type Manager interface {
 }
 
 type assetManager struct {
-	ctx        context.Context
-	database   database.Plugin
-	txHelper   txcommon.Helper
-	identity   identity.Manager
-	data       data.Manager
-	syncasync  syncasync.Bridge
-	broadcast  broadcast.Manager
-	messaging  privatemessaging.Manager
-	tokens     map[string]tokens.Plugin
-	metrics    metrics.Manager
-	operations operations.Manager
+	ctx              context.Context
+	database         database.Plugin
+	txHelper         txcommon.Helper
+	identity         identity.Manager
+	data             data.Manager
+	syncasync        syncasync.Bridge
+	broadcast        broadcast.Manager
+	messaging        privatemessaging.Manager
+	tokens           map[string]tokens.Plugin
+	metrics          metrics.Manager
+	operations       operations.Manager
+	keyNormalization int
 }
 
 func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager, om operations.Manager) (Manager, error) {
@@ -85,17 +87,18 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
-		ctx:        ctx,
-		database:   di,
-		txHelper:   txcommon.NewTransactionHelper(di),
-		identity:   im,
-		data:       dm,
-		syncasync:  sa,
-		broadcast:  bm,
-		messaging:  pm,
-		tokens:     ti,
-		metrics:    mm,
-		operations: om,
+		ctx:              ctx,
+		database:         di,
+		txHelper:         txcommon.NewTransactionHelper(di),
+		identity:         im,
+		data:             dm,
+		syncasync:        sa,
+		broadcast:        bm,
+		messaging:        pm,
+		tokens:           ti,
+		keyNormalization: identity.ParseKeyNormalizationConfig(config.GetString(config.AssetManagerKeyNormalization)),
+		metrics:          mm,
+		operations:       om,
 	}
 	om.RegisterHandler(ctx, am, []fftypes.OpType{
 		fftypes.OpTypeTokenCreatePool,

@@ -39,11 +39,12 @@ func TestEventE2EWithDB(t *testing.T) {
 	// Create a new event entry
 	eventID := fftypes.NewUUID()
 	event := &fftypes.Event{
-		ID:        eventID,
-		Namespace: "ns1",
-		Type:      fftypes.EventTypeMessageConfirmed,
-		Reference: fftypes.NewUUID(),
-		Created:   fftypes.Now(),
+		ID:         eventID,
+		Namespace:  "ns1",
+		Type:       fftypes.EventTypeMessageConfirmed,
+		Reference:  fftypes.NewUUID(),
+		Correlator: fftypes.NewUUID(),
+		Created:    fftypes.Now(),
 	}
 
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, fftypes.ChangeEventTypeCreated, "ns1", eventID, mock.Anything).Return()

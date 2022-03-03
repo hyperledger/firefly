@@ -206,7 +206,9 @@ var (
 	OrgDescription = rootKey("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
-	// PublicStorageType specifies which public storage interface plugin to use
+	// SharedStorageType specifies which shared storage interface plugin to use
+	SharedStorageType = rootKey("sharedstorage.type")
+	// PublicStorageType specifies which shared storage interface plugin to use - deprecated in favor of SharedStorageType
 	PublicStorageType = rootKey("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = rootKey("subscription.defaults.batchSize")
@@ -218,6 +220,8 @@ var (
 	SubscriptionsRetryMaxDelay = rootKey("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = rootKey("subscription.retry.factor")
+	// AssetManagerKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
+	AssetManagerKeyNormalization = rootKey("asset.manager.keyNormalization")
 	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
 	UIEnabled = rootKey("ui.enabled")
 	// UIPath the path on which to serve the UI
@@ -284,6 +288,7 @@ func Reset() {
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(APIShutdownTimeout), "10s")
+	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)

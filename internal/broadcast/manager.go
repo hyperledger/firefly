@@ -34,7 +34,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
 const broadcastDispatcherName = "pinned_broadcast"
@@ -46,9 +46,9 @@ type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
-	BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
-	BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
-	BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
+	BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag string, waitConfirm bool) (msg *fftypes.Message, err error)
+	BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error)
+	BroadcastIdentityClaim(ctx context.Context, ns string, def *fftypes.IdentityClaim, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error)
 	Start() error
 	WaitStop()
@@ -65,7 +65,7 @@ type broadcastManager struct {
 	data                  data.Manager
 	blockchain            blockchain.Plugin
 	exchange              dataexchange.Plugin
-	publicstorage         publicstorage.Plugin
+	sharedstorage         sharedstorage.Plugin
 	batch                 batch.Manager
 	syncasync             syncasync.Bridge
 	batchpin              batchpin.Submitter
@@ -74,8 +74,8 @@ type broadcastManager struct {
 	operations            operations.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
-	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil || mm == nil || om == nil {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
+	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
@@ -85,7 +85,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		data:                  dm,
 		blockchain:            bi,
 		exchange:              dx,
-		publicstorage:         pi,
+		sharedstorage:         si,
 		batch:                 ba,
 		syncasync:             sa,
 		batchpin:              bp,
@@ -110,7 +110,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		}, bm.dispatchBatch, bo)
 
 	om.RegisterHandler(ctx, bm, []fftypes.OpType{
-		fftypes.OpTypePublicStorageBatchBroadcast,
+		fftypes.OpTypeSharedStorageBatchBroadcast,
 	})
 
 	return bm, nil
@@ -121,11 +121,12 @@ func (bm *broadcastManager) Name() string {
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
+	// The completed SharedStorage upload
 	op := fftypes.NewOperation(
-		bm.publicstorage,
+		bm.sharedstorage,
 		batch.Namespace,
 		batch.Payload.TX.ID,
-		fftypes.OpTypePublicStorageBatchBroadcast)
+		fftypes.OpTypeSharedStorageBatchBroadcast)
 	addBatchBroadcastInputs(op, batch.ID)
 	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
@@ -133,6 +134,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	if err := bm.operations.RunOperation(ctx, opBatchBroadcast(op, batch)); err != nil {
 		return err
 	}
+	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s", batch.ID, batch.Author, batch.Key)
 	return bm.batchpin.SubmitPinnedBatch(ctx, batch, pins)
 }
 
@@ -145,16 +147,16 @@ func (bm *broadcastManager) publishBlobs(ctx context.Context, dataToPublish []*f
 		}
 		defer reader.Close()
 
-		// ... to the public storage
-		publicRef, err := bm.publicstorage.PublishData(ctx, reader)
+		// ... to the shared storage
+		sharedRef, err := bm.sharedstorage.PublishData(ctx, reader)
 		if err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage: '%s'", d.Blob.Hash, d.Data.ID, publicRef)
+		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.Data.ID, sharedRef)
 
-		// Update the data in the database, with the public reference.
+		// Update the data in the database, with the shared reference.
 		// We do this independently for each piece of data
-		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", publicRef)
+		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", sharedRef)
 		err = bm.database.UpdateData(ctx, d.Data.ID, update)
 		if err != nil {
 			return err

@@ -26,8 +26,8 @@ var (
 	OpTypeBlockchainBatchPin OpType = ffEnum("optype", "blockchain_batch_pin")
 	// OpTypeBlockchainInvoke is a smart contract invoke
 	OpTypeBlockchainInvoke OpType = ffEnum("optype", "blockchain_invoke")
-	// OpTypePublicStorageBatchBroadcast is a public storage operation to store broadcast data
-	OpTypePublicStorageBatchBroadcast OpType = ffEnum("optype", "publicstorage_batch_broadcast")
+	// OpTypeSharedStorageBatchBroadcast is a shared storage operation to store broadcast data
+	OpTypeSharedStorageBatchBroadcast OpType = ffEnum("optype", "sharedstorage_batch_broadcast")
 	// OpTypeDataExchangeBatchSend is a private send
 	OpTypeDataExchangeBatchSend OpType = ffEnum("optype", "dataexchange_batch_send")
 	// OpTypeDataExchangeBlobSend is a private send

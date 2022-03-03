@@ -157,6 +157,8 @@ func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, batch *ffty
 	if err != nil {
 		return err
 	}
+
+	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", batch.ID, batch.Author, batch.Key, batch.Group)
 	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 
@@ -184,10 +186,10 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, batch *ffty
 	return pm.sendData(ctx, tw, nodes)
 }
 
-func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.Data, txid *fftypes.UUID, node *fftypes.Node) error {
+func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.Data, txid *fftypes.UUID, node *fftypes.Identity) error {
 	// Send all the blobs associated with this batch
 	for _, d := range data {
-		// We only need to send a blob if there is one, and it's not been uploaded to the public storage
+		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage
 		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
 			blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
 			if err != nil {
@@ -213,12 +215,12 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 	return nil
 }
 
-func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportWrapper, nodes []*fftypes.Node) (err error) {
+func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportWrapper, nodes []*fftypes.Identity) (err error) {
 	l := log.L(ctx)
 	batch := tw.Batch
 
-	// TODO: move to using DIDs consistently as the way to reference the node/organization (i.e. node.Owner becomes a DID)
-	localOrgSigingKey, err := pm.identity.GetLocalOrgKey(ctx)
+	// Lookup the local org
+	localOrg, err := pm.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
 		return err
 	}
@@ -226,7 +228,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 
-		if node.Owner == localOrgSigingKey {
+		if node.Parent.Equals(localOrg.ID) {
 			l.Debugf("Skipping send of batch for local node %s:%s for group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 			continue
 		}

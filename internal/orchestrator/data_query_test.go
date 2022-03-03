@@ -586,7 +586,7 @@ func TestGetBlockchainEvents(t *testing.T) {
 
 	or.mdi.On("GetBlockchainEvents", context.Background(), mock.Anything).Return(nil, nil, nil)
 
-	f := database.ContractSubscriptionQueryFactory.NewFilter(context.Background())
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
 	_, _, err := or.GetBlockchainEvents(context.Background(), "ns", f.And())
 	assert.NoError(t, err)
 }

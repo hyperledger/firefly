@@ -34,7 +34,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -48,7 +48,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
-	mpi := &publicstoragemocks.Plugin{}
+	mpi := &sharedstoragemocks.Plugin{}
 	mba := &batchmocks.Manager{}
 	mdx := &dataexchangemocks.Plugin{}
 	msa := &syncasyncmocks.Bridge{}
@@ -57,7 +57,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	mom := &operationmocks.Manager{}
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mbi.On("Name").Return("ut_blockchain").Maybe()
-	mpi.On("Name").Return("ut_publicstorage").Maybe()
+	mpi.On("Name").Return("ut_sharedstorage").Maybe()
 	mba.On("RegisterDispatcher",
 		broadcastDispatcherName,
 		fftypes.TransactionTypeBatchPin,
@@ -169,7 +169,7 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
-		return op.Type == fftypes.OpTypePublicStorageBatchBroadcast && data.Batch == batch
+		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch == batch
 	})).Return(fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
@@ -193,7 +193,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
-		return op.Type == fftypes.OpTypePublicStorageBatchBroadcast && data.Batch == batch
+		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch == batch
 	})).Return(nil)
 
 	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
@@ -208,7 +208,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	batch := &fftypes.Batch{Identity: fftypes.Identity{Author: "wrong", Key: "wrong"}}
+	batch := &fftypes.Batch{SignerRef: fftypes.SignerRef{Author: "wrong", Key: "wrong"}}
 
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
@@ -217,7 +217,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
-		return op.Type == fftypes.OpTypePublicStorageBatchBroadcast && data.Batch == batch
+		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch == batch
 	})).Return(nil)
 
 	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
@@ -233,7 +233,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
@@ -274,7 +274,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()

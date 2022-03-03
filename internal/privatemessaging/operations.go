@@ -25,12 +25,12 @@ import (
 )
 
 type transferBlobData struct {
-	Node *fftypes.Node `json:"node"`
-	Blob *fftypes.Blob `json:"blob"`
+	Node *fftypes.Identity `json:"node"`
+	Blob *fftypes.Blob     `json:"blob"`
 }
 
 type batchSendData struct {
-	Node      *fftypes.Node             `json:"node"`
+	Node      *fftypes.Identity         `json:"node"`
 	Transport *fftypes.TransportWrapper `json:"transport"`
 }
 
@@ -79,7 +79,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		if err != nil {
 			return nil, err
 		}
-		node, err := pm.database.GetNodeByID(ctx, nodeID)
+		node, err := pm.database.GetIdentityByID(ctx, nodeID)
 		if err != nil {
 			return nil, err
 		} else if node == nil {
@@ -98,7 +98,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		if err != nil {
 			return nil, err
 		}
-		node, err := pm.database.GetNodeByID(ctx, nodeID)
+		node, err := pm.database.GetIdentityByID(ctx, nodeID)
 		if err != nil {
 			return nil, err
 		} else if node == nil {
@@ -127,21 +127,21 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 func (pm *privateMessaging) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
-		return false, pm.exchange.TransferBLOB(ctx, op.ID, data.Node.DX.Peer, data.Blob.PayloadRef)
+		return false, pm.exchange.TransferBLOB(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
 
 	case batchSendData:
 		payload, err := json.Marshal(data.Transport)
 		if err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 		}
-		return false, pm.exchange.SendMessage(ctx, op.ID, data.Node.DX.Peer, payload)
+		return false, pm.exchange.SendMessage(ctx, op.ID, data.Node.Profile.GetString("id"), payload)
 
 	default:
 		return false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
 	}
 }
 
-func opTransferBlob(op *fftypes.Operation, node *fftypes.Node, blob *fftypes.Blob) *fftypes.PreparedOperation {
+func opTransferBlob(op *fftypes.Operation, node *fftypes.Identity, blob *fftypes.Blob) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
 		ID:   op.ID,
 		Type: op.Type,
@@ -149,7 +149,7 @@ func opTransferBlob(op *fftypes.Operation, node *fftypes.Node, blob *fftypes.Blo
 	}
 }
 
-func opBatchSend(op *fftypes.Operation, node *fftypes.Node, transport *fftypes.TransportWrapper) *fftypes.PreparedOperation {
+func opBatchSend(op *fftypes.Operation, node *fftypes.Identity, transport *fftypes.TransportWrapper) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
 		ID:   op.ID,
 		Type: op.Type,

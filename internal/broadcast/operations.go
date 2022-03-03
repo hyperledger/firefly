@@ -42,7 +42,7 @@ func retrieveBatchBroadcastInputs(ctx context.Context, op *fftypes.Operation) (b
 
 func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypePublicStorageBatchBroadcast:
+	case fftypes.OpTypeSharedStorageBatchBroadcast:
 		id, err := retrieveBatchBroadcastInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -70,7 +70,7 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *fftypes.Prepar
 		}
 
 		// Write it to IPFS to get a payload reference
-		payloadRef, err := bm.publicstorage.PublishData(ctx, bytes.NewReader(payload))
+		payloadRef, err := bm.sharedstorage.PublishData(ctx, bytes.NewReader(payload))
 		if err != nil {
 			return false, err
 		}

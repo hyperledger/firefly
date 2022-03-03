@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,20 +22,29 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type Manager interface {
-	RegisterOrganization(ctx context.Context, org *fftypes.Organization, waitConfirm bool) (msg *fftypes.Message, err error)
-	RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Node, msg *fftypes.Message, err error)
-	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Organization, msg *fftypes.Message, err error)
+	RegisterOrganization(ctx context.Context, org *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
+	RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Identity, err error)
+	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Identity, err error)
+	RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
+	UpdateIdentity(ctx context.Context, ns string, id string, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
 
-	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Organization, error)
-	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, *database.FilterResult, error)
-	GetNodeByID(ctx context.Context, id string) (*fftypes.Node, error)
-	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, *database.FilterResult, error)
+	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Identity, error)
+	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error)
+	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error)
+	GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetIdentityVerifiers(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)
+	GetVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)
+	GetVerifierByHash(ctx context.Context, ns, hash string) (*fftypes.Verifier, error)
+	GetDIDDocForIndentityByID(ctx context.Context, ns, id string) (*DIDDocument, error)
 }
 
 type networkMap struct {
@@ -44,9 +53,10 @@ type networkMap struct {
 	broadcast broadcast.Manager
 	exchange  dataexchange.Plugin
 	identity  identity.Manager
+	syncasync syncasync.Bridge
 }
 
-func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager) (Manager, error) {
+func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || bm == nil || dx == nil || im == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -57,6 +67,7 @@ func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		broadcast: bm,
 		exchange:  dx,
 		identity:  im,
+		syncasync: sa,
 	}
 	return nm, nil
 }

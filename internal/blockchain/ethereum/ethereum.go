@@ -134,11 +134,19 @@ type EthconnectMessageHeaders struct {
 	ID   string `json:"id,omitempty"`
 }
 
+type FFIGenerationInput struct {
+	ABI []ABIElementMarshaling `json:"abi,omitempty"`
+}
+
 // var batchPinEvent = "BatchPin"
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
 func (e *Ethereum) Name() string {
 	return "ethereum"
+}
+
+func (e *Ethereum) VerifierType() fftypes.VerifierType {
+	return fftypes.VerifierTypeEthAddress
 }
 
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
@@ -283,7 +291,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		return nil // move on
 	}
 
-	authorAddress, err = e.ResolveSigningKey(ctx, authorAddress)
+	authorAddress, err = e.NormalizeSigningKey(ctx, authorAddress)
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -337,7 +345,10 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, authorAddress)
+	return e.callbacks.BatchPinComplete(batch, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: authorAddress,
+	})
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -487,10 +498,10 @@ func validateEthAddress(ctx context.Context, key string) (string, error) {
 	return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
 }
 
-func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string) (string, error) {
+func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string, error) {
 	resolved, err := validateEthAddress(ctx, key)
 	if err != nil && e.addressResolver != nil {
-		resolved, err := e.addressResolver.ResolveSigningKey(ctx, key)
+		resolved, err := e.addressResolver.NormalizeSigningKey(ctx, key)
 		if err == nil {
 			log.L(ctx).Infof("Key '%s' resolved to '%s'", key, resolved)
 		}
@@ -605,7 +616,7 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &ethLocation, nil
 }
 
-func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error {
+func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
 	location, err := parseContractLocation(ctx, subscription.Location)
 	if err != nil {
 		return err
@@ -624,7 +635,7 @@ func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.Co
 	return nil
 }
 
-func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error {
+func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error {
 	return e.streams.deleteSubscription(ctx, subscription.ProtocolID)
 }
 
@@ -753,12 +764,15 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 }
 
 func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
-	var abi []ABIElementMarshaling
-	err := json.Unmarshal(generationRequest.Input.Bytes(), &abi)
+	var input FFIGenerationInput
+	err := json.Unmarshal(generationRequest.Input.Bytes(), &input)
 	if err != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
 	}
-	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, abi)
+	if len(input.ABI) == 0 {
+		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "ABI is empty")
+	}
+	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 	return ffi, nil
 }
 

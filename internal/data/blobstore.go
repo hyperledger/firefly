@@ -28,12 +28,12 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
 type blobStore struct {
 	dm            *dataManager
-	publicstorage publicstorage.Plugin
+	sharedstorage sharedstorage.Plugin
 	database      database.Plugin
 	exchange      dataexchange.Plugin
 }
@@ -145,12 +145,12 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 
 func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error) {
 
-	reader, err := bs.publicstorage.RetrieveData(ctx, data.Blob.Public)
+	reader, err := bs.sharedstorage.RetrieveData(ctx, data.Blob.Public)
 	if err != nil {
 		return nil, err
 	}
 	if reader == nil {
-		log.L(ctx).Infof("Blob '%s' not found in public storage", data.Blob.Public)
+		log.L(ctx).Infof("Blob '%s' not found in shared storage", data.Blob.Public)
 		return nil, nil
 	}
 	defer reader.Close()
@@ -159,7 +159,7 @@ func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (bl
 	if err != nil {
 		return nil, err
 	}
-	log.L(ctx).Infof("Transferred blob '%s' (%s) from public storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.Blob.Public, payloadRef)
+	log.L(ctx).Infof("Transferred blob '%s' (%s) from shared storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.Blob.Public, payloadRef)
 
 	blob = &fftypes.Blob{
 		Hash:       hash,

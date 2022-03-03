@@ -45,7 +45,7 @@ type batchProcessorConf struct {
 	dispatcherName string
 	txType         fftypes.TransactionType
 	namespace      string
-	identity       fftypes.Identity
+	identity       fftypes.SignerRef
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
 }
@@ -374,7 +374,7 @@ func (bp *batchProcessor) buildFlushBatch(id *fftypes.UUID, newWork []*batchWork
 	batch := &fftypes.Batch{
 		ID:        id,
 		Namespace: bp.conf.namespace,
-		Identity:  bp.conf.identity,
+		SignerRef: bp.conf.identity,
 		Group:     bp.conf.group,
 		Payload:   fftypes.BatchPayload{},
 		Created:   fftypes.Now(),
@@ -520,6 +520,7 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 				for _, msg := range batch.Payload.Messages {
 					// Emit a confirmation event locally immediately
 					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
+					event.Correlator = msg.Header.CID
 					if err := bp.database.InsertEvent(ctx, event); err != nil {
 						return err
 					}

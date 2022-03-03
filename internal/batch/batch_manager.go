@@ -112,7 +112,7 @@ type dispatcher struct {
 	options    DispatcherOptions
 }
 
-func (bm *batchManager) getProcessorKey(namespace string, identity *fftypes.Identity, groupID *fftypes.Bytes32) string {
+func (bm *batchManager) getProcessorKey(namespace string, identity *fftypes.SignerRef, groupID *fftypes.Bytes32) string {
 	return fmt.Sprintf("%s|%s|%v", namespace, identity.Author, groupID)
 }
 
@@ -141,7 +141,7 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.Identity) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.SignerRef) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
@@ -297,7 +297,7 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 
 func (bm *batchManager) dispatchMessage(msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(bm.ctx)
-	processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.Identity)
+	processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
 	if err != nil {
 		return err
 	}
