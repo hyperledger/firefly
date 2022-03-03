@@ -100,7 +100,7 @@ func TestJSONObjectScan(t *testing.T) {
 
 	sv, err = ((JSONObject)(nil)).Value()
 	assert.NoError(t, err)
-	assert.Equal(t, NullString, sv)
+	assert.Nil(t, sv)
 
 	var badData JSONObject = map[string]interface{}{"bad": map[bool]bool{false: true}}
 	_, err = badData.Value()

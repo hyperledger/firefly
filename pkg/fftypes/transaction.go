@@ -31,6 +31,8 @@ var (
 	TransactionTypeTokenTransfer TransactionType = ffEnum("txtype", "token_transfer")
 	// TransactionTypeContractInvoke is a smart contract invoke
 	TransactionTypeContractInvoke OpType = ffEnum("txtype", "contract_invoke")
+	// TransactionTypeTokenTransfer represents a token approval
+	TransactionTypeTokenApproval TransactionType = ffEnum("txtype", "token_approval")
 )
 
 // TransactionRef refers to a transaction, in other types
@@ -57,6 +59,7 @@ var (
 	TransactionStatusTypeBatch           TransactionStatusType = "Batch"
 	TransactionStatusTypeTokenPool       TransactionStatusType = "TokenPool"
 	TransactionStatusTypeTokenTransfer   TransactionStatusType = "TokenTransfer"
+	TransactionStatusTypeTokenApproval   TransactionStatusType = "TokenApproval"
 )
 
 type TransactionStatusDetails struct {

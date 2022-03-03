@@ -33,3 +33,8 @@ func TestWrapError(t *testing.T) {
 	err := WrapError(context.Background(), fmt.Errorf("some error"), MsgConfigFailed)
 	assert.Error(t, err)
 }
+
+func TestWrapNilError(t *testing.T) {
+	err := WrapError(context.Background(), nil, MsgConfigFailed)
+	assert.Error(t, err)
+}

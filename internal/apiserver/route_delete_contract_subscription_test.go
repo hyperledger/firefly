@@ -26,16 +26,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestDeleteContractSubscriptionByID(t *testing.T) {
+func TestDeleteContractListenerByID(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
 	id := fftypes.NewUUID()
-	req := httptest.NewRequest("DELETE", "/api/v1/namespaces/mynamespace/contracts/subscriptions/"+id.String(), nil)
+	req := httptest.NewRequest("DELETE", "/api/v1/namespaces/mynamespace/contracts/listeners/"+id.String(), nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("DeleteContractSubscriptionByNameOrID", mock.Anything, "mynamespace", id.String()).
+	mcm.On("DeleteContractListenerByNameOrID", mock.Anything, "mynamespace", id.String()).
 		Return(nil, nil)
 	r.ServeHTTP(res, req)
 

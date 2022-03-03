@@ -59,7 +59,7 @@ type EventManager interface {
 
 	// Bound blockchain callbacks
 	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
-	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string) error
+	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
 
 	// Bound dataexchange callbacks
@@ -70,6 +70,7 @@ type EventManager interface {
 	// Bound token callbacks
 	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error
 	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
+	TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error
 
 	// Internal events
 	sysmessaging.SystemEvents
@@ -98,8 +99,8 @@ type eventManager struct {
 	metrics              metrics.Manager
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi sharedstorage.Plugin, di database.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager) (EventManager, error) {
-	if ni == nil || pi == nil || di == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager) (EventManager, error) {
+	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -107,7 +108,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi shar
 	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		ni:            ni,
-		sharedstorage: pi,
+		sharedstorage: si,
 		database:      di,
 		txHelper:      txcommon.NewTransactionHelper(di),
 		identity:      im,
@@ -125,7 +126,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, pi shar
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,
 		newPinNotifier:       newPinNotifier,
-		aggregator:           newAggregator(ctx, di, dh, dm, newPinNotifier, mm),
+		aggregator:           newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
 		metrics:              mm,
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)

@@ -40,9 +40,13 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// ResolveSigningKey verifies that the supplied identity string is valid syntax according to the protocol.
-	// Can apply transformations to the supplied signing identity (only), such as lower case
-	ResolveSigningKey(ctx context.Context, signingKey string) (string, error)
+	// VerifierType returns the verifier (key) type that is used by this blockchain
+	VerifierType() fftypes.VerifierType
+
+	// NormalizeSigningKey verifies that the supplied identity string is valid syntax according to the protocol.
+	// - Can apply transformations to the supplied signing identity (only), such as lower case.
+	// - Can perform sophisicated resolution, such as resolving a Fabric shortname to a MSP ID, or using an external REST API plugin to resolve a HD wallet address
+	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
@@ -54,10 +58,10 @@ type Plugin interface {
 	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error)
 
 	// AddSubscription adds a new subscription to a user-specified contract and event
-	AddSubscription(ctx context.Context, subscription *fftypes.ContractSubscriptionInput) error
+	AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error
 
 	// DeleteSubscription deletes a previously-created subscription
-	DeleteSubscription(ctx context.Context, subscription *fftypes.ContractSubscription) error
+	DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
@@ -85,7 +89,7 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	BatchPinComplete(batch *BatchPin, signingIdentity string) error
+	BatchPinComplete(batch *BatchPin, signingKey *fftypes.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error

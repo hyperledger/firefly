@@ -190,7 +190,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mdi.On("InsertOperation", mock.Anything, mock.Anything).Return(nil)
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "wrong", Key: "wrong"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{SignerRef: fftypes.SignerRef{Author: "wrong", Key: "wrong"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.EqualError(t, err, "pop")
 }
 
@@ -203,7 +203,7 @@ func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
-	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "org1", Key: "0x12345"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{SignerRef: fftypes.SignerRef{Author: "org1", Key: "0x12345"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -220,7 +220,7 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 	mbi.On("Name").Return("unittest")
 
 	batch := &fftypes.Batch{
-		Identity: fftypes.Identity{Author: "org1", Key: "0x12345"},
+		SignerRef: fftypes.SignerRef{Author: "org1", Key: "0x12345"},
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
@@ -249,7 +249,7 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 
 	msgID := fftypes.NewUUID()
 	batch := &fftypes.Batch{
-		Identity: fftypes.Identity{Author: "org1", Key: "0x12345"},
+		SignerRef: fftypes.SignerRef{Author: "org1", Key: "0x12345"},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,

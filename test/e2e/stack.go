@@ -22,8 +22,10 @@ import (
 )
 
 type Stack struct {
-	Name    string    `json:"name,omitempty"`
-	Members []*Member `json:"members,omitempty"`
+	Name                  string    `json:"name,omitempty"`
+	ExposedBlockchainPort int       `json:"exposedGethPort,omitempty"`
+	BlockchainProvider    string    `json:"blockchainProvider"`
+	Members               []*Member `json:"members,omitempty"`
 }
 
 type Member struct {

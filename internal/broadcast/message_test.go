@@ -19,8 +19,6 @@ package broadcast
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -56,12 +54,12 @@ func TestBroadcastMessageOk(t *testing.T) {
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				SignerRef: fftypes.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -75,109 +73,6 @@ func TestBroadcastMessageOk(t *testing.T) {
 	assert.NotNil(t, msg.Data[0].ID)
 	assert.NotNil(t, msg.Data[0].Hash)
 	assert.Equal(t, "ns1", msg.Header.Namespace)
-
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-}
-
-func TestBroadcastRootOrg(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
-
-	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-
-	org := fftypes.Organization{
-		ID:     fftypes.NewUUID(),
-		Name:   "org1",
-		Parent: "", // root
-	}
-	orgBytes, err := json.Marshal(&org)
-	assert.NoError(t, err)
-
-	data := &fftypes.Data{
-		ID:        fftypes.NewUUID(),
-		Value:     fftypes.JSONAnyPtrBytes(orgBytes),
-		Validator: fftypes.MessageTypeDefinition,
-	}
-
-	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-	}, []*fftypes.DataAndBlob{}, nil)
-	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
-
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   fftypes.NewUUID(),
-				Type: fftypes.MessageTypeDefinition,
-				Identity: fftypes.Identity{
-					Author: "did:firefly:org/12345",
-					Key:    "0x12345",
-				},
-			},
-			Data: fftypes.DataRefs{
-				{
-					ID:   data.ID,
-					Hash: data.Hash,
-				},
-			},
-		},
-	}, false)
-	assert.NoError(t, err)
-	assert.NotNil(t, msg.Data[0].ID)
-	assert.NotNil(t, msg.Data[0].Hash)
-	assert.Equal(t, "ns1", msg.Header.Namespace)
-
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-}
-
-func TestBroadcastRootOrgBadData(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
-
-	ctx := context.Background()
-	data := &fftypes.Data{
-		ID:        fftypes.NewUUID(),
-		Value:     fftypes.JSONAnyPtr("not an org"),
-		Validator: fftypes.MessageTypeDefinition,
-	}
-
-	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(errors.New("not registered"))
-
-	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   fftypes.NewUUID(),
-				Type: fftypes.MessageTypeDefinition,
-				Identity: fftypes.Identity{
-					Author: "did:firefly:org/12345",
-					Key:    "0x12345",
-				},
-			},
-			Data: fftypes.DataRefs{
-				{
-					ID:   data.ID,
-					Hash: data.Hash,
-				},
-			},
-		},
-	}, false)
-	assert.Error(t, err, "not registered")
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -200,7 +95,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	replyMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -219,7 +114,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				SignerRef: fftypes.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -280,12 +175,12 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				SignerRef: fftypes.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -323,12 +218,12 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), ValueSize: 1000001},
 	}, []*fftypes.DataAndBlob{}, nil)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				SignerRef: fftypes.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -358,7 +253,7 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -377,7 +272,7 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 
 	ctx := context.Background()
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -406,7 +301,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{
@@ -428,7 +323,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				SignerRef: fftypes.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
@@ -464,12 +359,12 @@ func TestBroadcastPrepare(t *testing.T) {
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
-	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	msg := &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Identity: fftypes.Identity{
+				SignerRef: fftypes.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},

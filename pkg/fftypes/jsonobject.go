@@ -185,6 +185,9 @@ func (jd JSONObject) GetStringArrayOk(key string) ([]string, bool) {
 
 // Value implements sql.Valuer
 func (jd JSONObject) Value() (driver.Value, error) {
+	if jd == nil {
+		return nil, nil
+	}
 	b, err := json.Marshal(&jd)
 	if err != nil {
 		return nil, err

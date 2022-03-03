@@ -133,8 +133,9 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream string, abi ABIElementMarshaling) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName string, abi ABIElementMarshaling) (*subscription, error) {
 	sub := subscription{
+		Name:      subName,
 		Stream:    stream,
 		FromBlock: "0",
 		Address:   location.Address,
@@ -189,7 +190,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, st
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, abi); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, abi); err != nil {
 			return nil, err
 		}
 	}

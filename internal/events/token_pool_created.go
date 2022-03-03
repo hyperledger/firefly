@@ -165,7 +165,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		// Initiate a rewind if a batch was potentially completed by the arrival of this transaction
 		if batchID != nil {
 			log.L(em.ctx).Infof("Batch '%s' contains reference to received pool '%s'", batchID, pool.ProtocolID)
-			em.aggregator.offchainBatches <- batchID
+			em.aggregator.rewindBatches <- batchID
 		}
 
 		// Announce the details of the new token pool with the blockchain event details

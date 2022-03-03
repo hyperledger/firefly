@@ -152,6 +152,20 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
+// TokensApproval provides a mock function with given fields: ctx, opID, poolProtocolID, approval
+func (_m *Plugin) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, approval *fftypes.TokenApproval) error {
+	ret := _m.Called(ctx, opID, poolProtocolID, approval)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.TokenApproval) error); ok {
+		r0 = rf(ctx, opID, poolProtocolID, approval)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TransferTokens provides a mock function with given fields: ctx, opID, poolProtocolID, transfer
 func (_m *Plugin) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error {
 	ret := _m.Called(ctx, opID, poolProtocolID, transfer)

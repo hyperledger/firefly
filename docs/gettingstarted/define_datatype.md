@@ -31,8 +31,8 @@ of datatypes, as is used to broadcast the data itself.
 
 ## Additional info
 
-- Key Concepts: [Broadcast / shared data](/keyconcepts/broadcast.html)
-- Swagger: [POST /api/v1/namespaces/{ns}/broadcast/datatype](/swagger/swagger.html#/default/postBroadcastDatatype)
+- Key Concepts: [Broadcast / shared data](/firefly/keyconcepts/broadcast.html)
+- Swagger: [POST /api/v1/namespaces/{ns}/broadcast/datatype](/firefly/swagger/swagger.html#/default/postBroadcastDatatype)
 
 ### Example 1: Broadcast new datatype
 

@@ -43,12 +43,10 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 		pool.Connector = connector
 	}
 
-	if pool.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		pool.Key = org.Identity
+	var err error
+	pool.Key, err = am.identity.NormalizeSigningKey(ctx, pool.Key, am.keyNormalization)
+	if err != nil {
+		return nil, err
 	}
 	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
 }

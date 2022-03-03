@@ -35,14 +35,14 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 
 	// Create a new contract event entry
 	event := &fftypes.BlockchainEvent{
-		ID:           fftypes.NewUUID(),
-		Namespace:    "ns",
-		Subscription: fftypes.NewUUID(),
-		Name:         "Changed",
-		ProtocolID:   "tx1",
-		Output:       fftypes.JSONObject{"value": 1},
-		Info:         fftypes.JSONObject{"blockNumber": 1},
-		Timestamp:    fftypes.Now(),
+		ID:         fftypes.NewUUID(),
+		Namespace:  "ns",
+		Listener:   fftypes.NewUUID(),
+		Name:       "Changed",
+		ProtocolID: "tx1",
+		Output:     fftypes.JSONObject{"value": 1},
+		Info:       fftypes.JSONObject{"blockNumber": 1},
+		Timestamp:  fftypes.Now(),
 	}
 
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, "ns", event.ID, int64(1)).Return()
@@ -56,7 +56,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 	fb := database.BlockchainEventQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("name", "Changed"),
-		fb.Eq("subscription", event.Subscription),
+		fb.Eq("listener", event.Listener),
 	)
 	events, res, err := s.GetBlockchainEvents(ctx, filter.Count(true))
 	assert.NoError(t, err)

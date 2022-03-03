@@ -32,7 +32,7 @@ import (
 //
 // We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string) error {
+func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
 	if batchPin.TransactionID == nil {
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
@@ -42,19 +42,19 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 		return nil // move on
 	}
 
-	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingIdentity)
+	log.L(em.ctx).Infof("-> BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
 	defer func() {
-		log.L(em.ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingIdentity)
+		log.L(em.ctx).Infof("<- BatchPinComplete batch=%s txn=%s signingIdentity=%s", batchPin.BatchID, batchPin.Event.ProtocolID, signingKey.Value)
 	}()
 	log.L(em.ctx).Tracef("BatchPinComplete batch=%s info: %+v", batchPin.BatchID, batchPin.Event.Info)
 
 	if batchPin.BatchPayloadRef != "" {
-		return em.handleBroadcastPinComplete(batchPin, signingIdentity)
+		return em.handleBroadcastPinComplete(batchPin, signingKey)
 	}
-	return em.handlePrivatePinComplete(batchPin)
+	return em.handlePrivatePinComplete(batchPin, signingKey)
 }
 
-func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin) error {
+func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
 	// Here we simple record all the pins as parked, and emit an event for the aggregator
 	// to check whether the messages in the batch have been written.
 	return em.retry.Do(em.ctx, "persist private batch pins", func(attempt int) (bool, error) {
@@ -63,7 +63,7 @@ func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin) 
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			err := em.persistBatchTransaction(ctx, batchPin)
 			if err == nil {
-				err = em.persistContexts(ctx, batchPin, true)
+				err = em.persistContexts(ctx, batchPin, signingKey, true)
 			}
 			return err
 		})
@@ -76,13 +76,14 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 	return err
 }
 
-func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchain.BatchPin, private bool) error {
+func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef, private bool) error {
 	for idx, hash := range batchPin.Contexts {
 		if err := em.database.UpsertPin(ctx, &fftypes.Pin{
 			Masked:  private,
 			Hash:    hash,
 			Batch:   batchPin.BatchID,
 			Index:   int64(idx),
+			Signer:  signingKey.Value, // We don't store the type as we can infer that from the blockchain
 			Created: fftypes.Now(),
 		}); err != nil {
 			return err
@@ -91,7 +92,7 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 	return nil
 }
 
-func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, signingIdentity string) error {
+func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
 	var body io.ReadCloser
 	if err := em.retry.Do(em.ctx, "retrieve data", func(attempt int) (retry bool, err error) {
 		body, err = em.sharedstorage.RetrieveData(em.ctx, batchPin.BatchPayloadRef)
@@ -127,9 +128,9 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 
 			// Note that in the case of a bad batch broadcast, we don't store the pin. Because we know we
 			// are never going to be able to process it (we retrieved it successfully, it's just invalid).
-			valid, err := em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash, signingIdentity)
+			valid, err := em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash)
 			if valid && err == nil {
-				err = em.persistContexts(ctx, batchPin, false)
+				err = em.persistContexts(ctx, batchPin, signingKey, false)
 			}
 			return err
 		})

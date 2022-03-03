@@ -38,8 +38,8 @@ func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftyp
 	return bc.ei.OperationUpdate(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string) error {
-	return bc.ei.BatchPinComplete(bc.bi, batch, signingIdentity)
+func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
+	return bc.ei.BatchPinComplete(bc.bi, batch, signingKey)
 }
 
 func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
@@ -64,4 +64,8 @@ func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *toke
 
 func (bc *boundCallbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
 	return bc.ei.BlockchainEvent(event)
+}
+
+func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.TokenApproval) error {
+	return bc.ei.TokensApproved(plugin, approval)
 }

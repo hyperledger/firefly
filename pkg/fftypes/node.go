@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,51 +16,63 @@
 
 package fftypes
 
-import (
-	"context"
+import "context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-)
+// DeprecatedNode is the data structure we used to use prior to FIR-9.
+// Now we use the common Identity structure throughout
+type DeprecatedNode struct {
+	ID          *UUID            `json:"id"`
+	Message     *UUID            `json:"message,omitempty"`
+	Owner       string           `json:"owner,omitempty"`
+	Name        string           `json:"name,omitempty"`
+	Description string           `json:"description,omitempty"`
+	DX          DeprecatedDXInfo `json:"dx"`
+	Created     *FFTime          `json:"created,omitempty"`
 
-// Node is a FireFly node within the network
-type Node struct {
-	ID          *UUID   `json:"id"`
-	Message     *UUID   `json:"message,omitempty"`
-	Owner       string  `json:"owner,omitempty"`
-	Name        string  `json:"name,omitempty"`
-	Description string  `json:"description,omitempty"`
-	DX          DXInfo  `json:"dx"`
-	Created     *FFTime `json:"created,omitempty"`
+	identityClaim *IdentityClaim
 }
 
-// DXInfo is the data exchange information
-type DXInfo struct {
+type DeprecatedDXInfo struct {
 	Peer     string     `json:"peer,omitempty"`
 	Endpoint JSONObject `json:"endpoint,omitempty"`
 }
 
-func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameFieldNoUUID(ctx, n.Name, "name"); err != nil {
-		return err
+// Migrate creates and maintains a migrated IdentityClaim object, which
+// is used when processing an old-style nodeanization broadcast received when
+// joining an existing network
+func (node *DeprecatedNode) Migrated() *IdentityClaim {
+	if node.identityClaim != nil {
+		return node.identityClaim
 	}
-	if err = ValidateLength(ctx, n.Description, "description", 4096); err != nil {
-		return err
+	node.identityClaim = &IdentityClaim{
+		Identity: &Identity{
+			IdentityBase: IdentityBase{
+				ID:        node.ID,
+				Type:      IdentityTypeNode,
+				Namespace: SystemNamespace,
+				Name:      node.Name,
+				Parent:    nil, // Must be set post migrate
+			},
+			IdentityProfile: IdentityProfile{
+				Description: node.Description,
+				Profile:     node.DX.Endpoint,
+			},
+		},
 	}
-	if n.Owner == "" {
-		return i18n.NewError(ctx, i18n.MsgOwnerMissing)
-	}
-	if existing {
-		if n.ID == nil {
-			return i18n.NewError(ctx, i18n.MsgNilID)
-		}
-	}
-	return nil
+	return node.identityClaim
 }
 
-func (n *Node) Topic() string {
-	return OrgTopic
+func (node *DeprecatedNode) AddMigratedParent(parentID *UUID) *IdentityClaim {
+	ic := node.Migrated()
+	ic.Identity.Parent = parentID
+	node.identityClaim.Identity.DID, _ = node.identityClaim.Identity.GenerateDID(context.Background())
+	return ic
 }
 
-func (n *Node) SetBroadcastMessage(msgID *UUID) {
-	n.Message = msgID
+func (node *DeprecatedNode) Topic() string {
+	return node.Migrated().Topic()
+}
+
+func (node *DeprecatedNode) SetBroadcastMessage(msgID *UUID) {
+	node.Migrated().SetBroadcastMessage(msgID)
 }

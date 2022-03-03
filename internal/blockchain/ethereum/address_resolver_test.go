@@ -66,11 +66,11 @@ func TestAddressResolverInEthereumOKCached(t *testing.T) {
 		addressResolver: ar,
 	}
 
-	resolved, err := e.ResolveSigningKey(ctx, "testkeystring")
+	resolved, err := e.NormalizeSigningKey(ctx, "testkeystring")
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr), resolved)
 
-	resolved, err = e.ResolveSigningKey(ctx, "testkeystring") // cached
+	resolved, err = e.NormalizeSigningKey(ctx, "testkeystring") // cached
 	assert.NoError(t, err)
 	assert.Equal(t, strings.ToLower(addr), resolved)
 }
@@ -101,7 +101,7 @@ func TestAddressResolverPOSTOk(t *testing.T) {
 	ar, err := newAddressResolver(ctx, prefix)
 	assert.NoError(t, err)
 
-	resolved, err := ar.ResolveSigningKey(ctx, "testkeystring")
+	resolved, err := ar.NormalizeSigningKey(ctx, "testkeystring")
 	assert.NoError(t, err)
 
 	assert.Equal(t, strings.ToLower(addr), resolved)
@@ -128,7 +128,7 @@ func TestAddressResolverPOSTBadKey(t *testing.T) {
 	ar, err := newAddressResolver(ctx, prefix)
 	assert.NoError(t, err)
 
-	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
+	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
 	assert.Regexp(t, "FF10341", err)
 
 }
@@ -151,7 +151,7 @@ func TestAddressResolverPOSTResponse(t *testing.T) {
 	ar, err := newAddressResolver(ctx, prefix)
 	assert.NoError(t, err)
 
-	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
+	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
 	assert.Regexp(t, "FF10341", err)
 
 }
@@ -172,7 +172,7 @@ func TestAddressResolverFailureResponse(t *testing.T) {
 	ar, err := newAddressResolver(ctx, prefix)
 	assert.NoError(t, err)
 
-	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
+	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
 	assert.Regexp(t, "FF10340", err)
 
 }
@@ -193,7 +193,7 @@ func TestAddressResolverErrorResponse(t *testing.T) {
 	ar, err := newAddressResolver(ctx, prefix)
 	assert.NoError(t, err)
 
-	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
+	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
 	assert.Regexp(t, "FF10339", err)
 
 }
@@ -223,7 +223,7 @@ func TestAddressResolverErrorURLTemplate(t *testing.T) {
 	ar, err := newAddressResolver(ctx, prefix)
 	assert.NoError(t, err)
 
-	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
+	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
 	assert.Regexp(t, "FF10338.*urlTemplate", err)
 
 }
@@ -240,7 +240,7 @@ func TestAddressResolverErrorBodyTemplate(t *testing.T) {
 	ar, err := newAddressResolver(ctx, prefix)
 	assert.NoError(t, err)
 
-	_, err = ar.ResolveSigningKey(ctx, "testkeystring")
+	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
 	assert.Regexp(t, "FF10338.*bodyTemplate", err)
 
 }

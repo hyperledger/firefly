@@ -38,6 +38,8 @@ var (
 	OpTypeTokenActivatePool OpType = ffEnum("optype", "token_activate_pool")
 	// OpTypeTokenTransfer is a token transfer
 	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
+	// OpTypeTokenApproval is a token approval
+	OpTypeTokenApproval OpType = ffEnum("optype", "token_approval")
 )
 
 // OpStatus is the current status of an operation

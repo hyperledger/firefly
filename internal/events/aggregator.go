@@ -24,9 +24,11 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -36,29 +38,33 @@ const (
 )
 
 type aggregator struct {
-	ctx             context.Context
-	database        database.Plugin
-	definitions     definitions.DefinitionHandlers
-	data            data.Manager
-	eventPoller     *eventPoller
-	newPins         chan int64
-	offchainBatches chan *fftypes.UUID
-	queuedRewinds   chan *fftypes.UUID
-	retry           *retry.Retry
-	metrics         metrics.Manager
+	ctx           context.Context
+	database      database.Plugin
+	definitions   definitions.DefinitionHandlers
+	identity      identity.Manager
+	data          data.Manager
+	eventPoller   *eventPoller
+	verifierType  fftypes.VerifierType
+	newPins       chan int64
+	rewindBatches chan *fftypes.UUID
+	queuedRewinds chan *fftypes.UUID
+	retry         *retry.Retry
+	metrics       metrics.Manager
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, sh definitions.DefinitionHandlers, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
-		ctx:             log.WithLogField(ctx, "role", "aggregator"),
-		database:        di,
-		definitions:     sh,
-		data:            dm,
-		newPins:         make(chan int64),
-		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
-		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
-		metrics:         mm,
+		ctx:           log.WithLogField(ctx, "role", "aggregator"),
+		database:      di,
+		definitions:   sh,
+		identity:      im,
+		data:          dm,
+		verifierType:  bi.VerifierType(),
+		newPins:       make(chan int64),
+		rewindBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
+		queuedRewinds: make(chan *fftypes.UUID, batchSize),
+		metrics:       mm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
@@ -88,14 +94,14 @@ func newAggregator(ctx context.Context, di database.Plugin, sh definitions.Defin
 }
 
 func (ag *aggregator) start() {
-	go ag.offchainListener()
+	go ag.batchRewindListener()
 	ag.eventPoller.start()
 }
 
-func (ag *aggregator) offchainListener() {
+func (ag *aggregator) batchRewindListener() {
 	for {
 		select {
-		case uuid := <-ag.offchainBatches:
+		case uuid := <-ag.rewindBatches:
 			ag.queuedRewinds <- uuid
 			ag.eventPoller.shoulderTap()
 		case <-ag.ctx.Done():
@@ -249,6 +255,46 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 	return err
 }
 
+func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.Message, pin *fftypes.Pin) (valid bool, err error) {
+	l := log.L(ctx)
+
+	verifierRef := &fftypes.VerifierRef{
+		Type:  ag.verifierType,
+		Value: pin.Signer,
+	}
+
+	if msg.Header.Key == "" || msg.Header.Key != pin.Signer {
+		l.Errorf("Invalid message '%s'. Key '%s' does not match the signer of the pin: %s", msg.Header.ID, msg.Header.Key, pin.Signer)
+		return false, nil // This is not retryable. skip this message
+	}
+
+	// Verify that we can resolve the signing key back to the identity that is claimed in the batch.
+	resolvedAuthor, err := ag.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{
+		fftypes.IdentityTypeOrg,
+		fftypes.IdentityTypeCustom,
+	}, msg.Header.Namespace, verifierRef)
+	if err != nil {
+		return false, err
+	}
+	if resolvedAuthor == nil {
+		if msg.Header.Type == fftypes.MessageTypeDefinition &&
+			(msg.Header.Tag == fftypes.SystemTagIdentityClaim || msg.Header.Tag == fftypes.DeprecatedSystemTagDefineNode || msg.Header.Tag == fftypes.DeprecatedSystemTagDefineOrganization) {
+			// We defer detailed checking of this identity to the system handler
+			return true, nil
+		} else if msg.Header.Type != fftypes.MessageTypePrivate {
+			// Only private messages, or root org broadcasts can have an unregistered key
+			l.Errorf("Invalid message '%s'. Author '%s' cound not be resolved: %s", msg.Header.ID, msg.Header.Author, err)
+			return false, nil // This is not retryable. skip this batch
+		}
+	} else if msg.Header.Author == "" || resolvedAuthor.DID != msg.Header.Author {
+		l.Errorf("Invalid message '%s'. Author '%s' does not match identity registered to %s: %s (%s)", msg.Header.ID, msg.Header.Author, verifierRef.Value, resolvedAuthor.DID, resolvedAuthor.ID)
+		return false, nil // This is not retryable. skip this batch
+
+	}
+
+	return true, nil
+}
+
 func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, pin *fftypes.Pin, msgBaseIndex int64, msg *fftypes.Message, state *batchState) (err error) {
 	l := log.L(ctx)
 
@@ -290,7 +336,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	}
 
 	l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-	dispatched, err := ag.attemptMessageDispatch(ctx, msg, batch.Payload.TX.ID, state)
+	dispatched, err := ag.attemptMessageDispatch(ctx, msg, batch.Payload.TX.ID, state, pin)
 	if err != nil {
 		return err
 	}
@@ -312,11 +358,16 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	return nil
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, tx *fftypes.UUID, state *batchState) (bool, error) {
+func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, tx *fftypes.UUID, state *batchState, pin *fftypes.Pin) (bool, error) {
 
 	// If we don't find all the data, then we don't dispatch
 	data, foundAll, err := ag.data.GetMessageData(ctx, msg, true)
 	if err != nil || !foundAll {
+		return false, err
+	}
+
+	// Check the pin signer is valid for the message
+	if valid, err := ag.checkOnchainConsistency(ctx, msg, pin); err != nil || !valid {
 		return false, err
 	}
 
@@ -342,22 +393,20 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 	// Validate the message data
 	valid := true
+	var customCorrelator *fftypes.UUID
 	switch {
 	case msg.Header.Type == fftypes.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
-		msgAction, batchAction, err := ag.definitions.HandleDefinitionBroadcast(ctx, msg, data, tx)
-		if msgAction == definitions.ActionRetry {
+		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
+		if handlerResult.Action == definitions.ActionRetry {
 			return false, err
 		}
-		if batchAction != nil {
-			state.AddPreFinalize(batchAction.PreFinalize)
-			state.AddFinalize(batchAction.Finalize)
-		}
-		if msgAction == definitions.ActionWait {
+		if handlerResult.Action == definitions.ActionWait {
 			return false, nil
 		}
-		valid = msgAction == definitions.ActionConfirm
+		customCorrelator = handlerResult.CustomCorrelator
+		valid = handlerResult.Action == definitions.ActionConfirm
 
 	case msg.Header.Type == fftypes.MessageTypeGroupInit:
 		// Already handled as part of resolving the context - do nothing.
@@ -371,7 +420,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 	status := fftypes.MessageStateConfirmed
 	eventType := fftypes.EventTypeMessageConfirmed
-	if !valid {
+	if valid {
+		state.pendingConfirms[*msg.Header.ID] = msg
+	} else {
 		status = fftypes.MessageStateRejected
 		eventType = fftypes.EventTypeMessageRejected
 	}
@@ -387,10 +438,15 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 		// Generate the appropriate event
 		event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, tx)
+		event.Correlator = msg.Header.CID
+		if customCorrelator != nil {
+			// Definition handlers can set a custom event correlator (such as a token pool ID)
+			event.Correlator = customCorrelator
+		}
 		if err = ag.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Emitting %s %s for message %s:%s", eventType, event.ID, msg.Header.Namespace, msg.Header.ID)
+		log.L(ctx).Infof("Emitting %s %s for message %s:%s (correlator=%v)", eventType, event.ID, msg.Header.Namespace, msg.Header.ID, event.Correlator)
 		return nil
 	})
 	if ag.metrics.IsMetricsEnabled() {
