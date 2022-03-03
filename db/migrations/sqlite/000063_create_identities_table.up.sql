@@ -95,7 +95,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(hex(o.id), '-', '') || REPLACE(hex(o.id), '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
+    REPLACE(o.id, '-', '') || REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
     'ff_system',
     o.id,
     'ethereum_address',
@@ -111,7 +111,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(hex(o.id), '-', '') || REPLACE(hex(o.id), '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
+    REPLACE(o.id, '-', '') || REPLACE(o.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
     'ff_system',
     o.id,
     'fabric_msp_id',
@@ -127,7 +127,7 @@ INSERT INTO verifiers (
     value,
     created
   ) SELECT 
-    REPLACE(hex(n.id), '-', '') || REPLACE(hex(n.id), '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
+    REPLACE(n.id, '-', '') || REPLACE(n.id, '-', ''), -- to avoid the need for hashing in the migration, use the convenient fact the UUID is known hex - have to write it twice to fill the 32B --
     'ff_system',
     n.id,
     'dx_peer_id',
