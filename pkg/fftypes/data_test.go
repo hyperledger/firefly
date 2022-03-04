@@ -206,3 +206,23 @@ func TestHashDataNull(t *testing.T) {
 	assert.Equal(t, expectedHash.String(), hash.String())
 
 }
+
+func TestDataImmutable(t *testing.T) {
+	data := &Data{
+		ID:        NewUUID(),
+		Validator: ValidatorTypeJSON,
+		Namespace: "ns1",
+		Hash:      NewRandB32(),
+		Created:   Now(),
+	}
+	assert.True(t, data.Hash.Equals(data.BatchData(true).Hash))
+
+	data.Blob = &BlobRef{
+		Hash:   NewRandB32(),
+		Size:   12345,
+		Name:   "name.txt",
+		Public: "sharedStorageRef",
+	}
+	assert.Equal(t, data.Blob, data.BatchData(true).Blob)
+	assert.Empty(t, data.BatchData(false).Blob.Public)
+}

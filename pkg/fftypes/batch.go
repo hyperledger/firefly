@@ -17,12 +17,8 @@
 package fftypes
 
 import (
-	"context"
 	"crypto/sha256"
-	"database/sql/driver"
 	"encoding/json"
-
-	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 // BatchHeader is the common fields between the serialized batch, and the batch manifest
@@ -38,12 +34,11 @@ type BatchHeader struct {
 
 // BatchManifest is all we need to persist to be able to reconstitute
 // an identical batch. It can be generated from a received batch to
-// confirm you have received an identical batch to that sent
+// confirm you have received an identical batch to that sent.
 type BatchManifest struct {
-	BatchHeader
-	TX       TransactionRef `json:"tx"`
-	Messages []MessageRef   `json:"messages"`
-	Data     []DataRef      `json:"data"`
+	ID       *UUID        `json:"id"`
+	Messages []MessageRef `json:"messages"`
+	Data     []DataRef    `json:"data"`
 }
 
 // Batch is the full payload object used in-flight.
@@ -56,14 +51,12 @@ type Batch struct {
 
 // BatchPersisted is the structure written to the database
 type BatchPersisted struct {
-	BatchManifest
-	Created   *FFTime `json:"created"`
-	Confirmed *FFTime `json:"confirmed"`
-}
-
-func (mf *BatchManifest) String() string {
-	b, _ := json.Marshal(&mf)
-	return string(b)
+	BatchHeader
+	Manifest   string         `json:"manifest"` // not automatically parsed
+	TX         TransactionRef `json:"tx"`
+	PayloadRef string         `json:"payloadRef,omitempty"`
+	Created    *FFTime        `json:"created"`
+	Confirmed  *FFTime        `json:"confirmed"`
 }
 
 // BatchPayload contains the full JSON of the messages and data, but
@@ -80,9 +73,17 @@ type BatchPayload struct {
 	Data     []*Data        `json:"data"`
 }
 
-// Value implements sql.Valuer
-func (ma BatchPayload) Value() (driver.Value, error) {
-	return json.Marshal(&ma)
+func (bm *BatchManifest) String() string {
+	if bm == nil {
+		return ""
+	}
+	b, _ := json.Marshal(&bm)
+	return string(b)
+}
+
+func (bm *BatchManifest) Hash() *Bytes32 {
+	var b32 Bytes32 = sha256.Sum256([]byte(bm.String()))
+	return &b32
 }
 
 func (ma *BatchPayload) Hash() *Bytes32 {
@@ -91,32 +92,12 @@ func (ma *BatchPayload) Hash() *Bytes32 {
 	return &b32
 }
 
-// Scan implements sql.Scanner
-func (ma *BatchPayload) Scan(src interface{}) error {
-	switch src := src.(type) {
-	case nil:
-		return nil
-
-	case []byte:
-		return json.Unmarshal(src, &ma)
-
-	case string:
-		if src == "" {
-			return nil
-		}
-		return json.Unmarshal([]byte(src), &ma)
-
-	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, ma)
-	}
-
-}
-
 func (b *Batch) Manifest() *BatchManifest {
 	if b == nil {
 		return nil
 	}
 	tm := &BatchManifest{
+		ID:       b.ID,
 		Messages: make([]MessageRef, len(b.Payload.Messages)),
 		Data:     make([]DataRef, len(b.Payload.Data)),
 	}

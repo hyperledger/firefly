@@ -239,7 +239,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 			batch.Payload.TX.ID,
 			fftypes.OpTypeDataExchangeBatchSend)
 		op.Input = fftypes.JSONObject{
-			"manifest": tw.Batch.Manifest().String(),
+			"batch": tw.Batch.ID,
 		}
 		if err = pm.database.InsertOperation(ctx, op); err != nil {
 			return err

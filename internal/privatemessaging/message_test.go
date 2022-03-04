@@ -442,8 +442,10 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		ID:    fftypes.NewUUID(),
-		Group: groupID,
+		BatchHeader: fftypes.BatchHeader{
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+		},
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{
@@ -714,8 +716,10 @@ func TestDispatchedUnpinnedMessageMarshalFail(t *testing.T) {
 	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node2, nil).Once()
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		ID:    fftypes.NewUUID(),
-		Group: groupID,
+		BatchHeader: fftypes.BatchHeader{
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+		},
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
 				{Value: fftypes.JSONAnyPtr("!Bad JSON")},
@@ -764,8 +768,10 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		ID:    fftypes.NewUUID(),
-		Group: groupID,
+		BatchHeader: fftypes.BatchHeader{
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   fftypes.NewUUID(),
@@ -812,8 +818,10 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{
-			ID:    fftypes.NewUUID(),
-			Group: groupID,
+			BatchHeader: fftypes.BatchHeader{
+				ID:    fftypes.NewUUID(),
+				Group: groupID,
+			},
 			Payload: fftypes.BatchPayload{
 				Messages: []*fftypes.Message{
 					{
@@ -865,8 +873,10 @@ func TestSendDataTransferFail(t *testing.T) {
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{
-			ID:    fftypes.NewUUID(),
-			Group: groupID,
+			BatchHeader: fftypes.BatchHeader{
+				ID:    fftypes.NewUUID(),
+				Group: groupID,
+			},
 			Payload: fftypes.BatchPayload{
 				Messages: []*fftypes.Message{
 					{
@@ -910,8 +920,10 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{
-			ID:    fftypes.NewUUID(),
-			Group: groupID,
+			BatchHeader: fftypes.BatchHeader{
+				ID:    fftypes.NewUUID(),
+				Group: groupID,
+			},
 			Payload: fftypes.BatchPayload{
 				Messages: []*fftypes.Message{
 					{

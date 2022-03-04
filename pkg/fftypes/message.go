@@ -95,15 +95,15 @@ type Message struct {
 	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
 }
 
-// BatchMessage returns a copy of the fields in a message that are immutable, assured to be consistent on all partied,
-// and cannot change after the batch containing the message is sealed.
+// BatchMessage is the fields in a message record that are assured to be consistent on all parties.
 // This is what is transferred and hashed in a batch payload between nodes.
 func (m *Message) BatchMessage() *Message {
 	return &Message{
 		Header: m.Header,
 		Hash:   m.Hash,
 		Data:   m.Data,
-		Pins:   m.Pins,
+		// The pins are immutable once assigned by the sender, which happens before the batch is sealed
+		Pins: m.Pins,
 	}
 }
 

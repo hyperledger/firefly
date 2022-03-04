@@ -37,7 +37,7 @@ var (
 		"group_hash",
 		"created",
 		"hash",
-		"payload",
+		"manifest",
 		"payload_ref",
 		"confirmed",
 		"tx_type",
@@ -95,7 +95,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 				Set("group_hash", batch.Group).
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
-				Set("payload", batch.Payload).
+				Set("manifest", batch.BatchManifest).
 				Set("payload_ref", batch.PayloadRef).
 				Set("confirmed", batch.Confirmed).
 				Set("tx_type", batch.Payload.TX.Type).

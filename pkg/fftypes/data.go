@@ -52,10 +52,27 @@ type Data struct {
 	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
 }
 
-// BatchMessage is the fields in a data record that are immutable, assured to be consistent on all partied,
-// and cannot change after the data is sealed.
+func (br *BlobRef) BatchBlobRef(broadcast bool) *BlobRef {
+	if br == nil {
+		return nil
+	}
+	// For broadcast data the blob reference contains the "public" (shared storage) reference, which
+	// must have been allocated to this data item before sealing the batch.
+	if broadcast {
+		return br
+	}
+	// For private we omit the "public" ref in all cases, to avoid an potential for the batch pay to change due
+	// to the same data being allocated by the same data being sent in a broadcast batch (thus assigining a public ref).
+	return &BlobRef{
+		Hash: br.Hash,
+		Size: br.Size,
+		Name: br.Name,
+	}
+}
+
+// BatchData is the fields in a data record that are assured to be consistent on all parties.
 // This is what is transferred and hashed in a batch payload between nodes.
-func (d *Data) BatchMessage() *Data {
+func (d *Data) BatchData(broadcast bool) *Data {
 	return &Data{
 		ID:        d.ID,
 		Validator: d.Validator,
@@ -63,7 +80,7 @@ func (d *Data) BatchMessage() *Data {
 		Hash:      d.Hash,
 		Datatype:  d.Datatype,
 		Value:     d.Value,
-		Blob:      d.Blob,
+		Blob:      d.Blob.BatchBlobRef(broadcast),
 	}
 }
 

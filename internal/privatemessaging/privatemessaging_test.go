@@ -155,12 +155,15 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		ID: batchID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+		BatchHeader: fftypes.BatchHeader{
+			ID: batchID,
+			SignerRef: fftypes.SignerRef{
+				Author: "org1",
+			},
+			Group:     groupID,
+			Namespace: "ns1",
+			Hash:      batchHash,
 		},
-		Group:     groupID,
-		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: txID,
@@ -169,7 +172,6 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 				{ID: dataID1, Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
-		Hash: batchHash,
 	}, []*fftypes.Bytes32{pin1, pin2})
 	assert.NoError(t, err)
 
@@ -191,7 +193,9 @@ func TestDispatchBatchBadData(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{}, nil)
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
+		BatchHeader: fftypes.BatchHeader{
+			Group: groupID,
+		},
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
 				{Value: fftypes.JSONAnyPtr(`{!json}`)},
@@ -223,8 +227,10 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		SignerRef: fftypes.SignerRef{
-			Author: "badauthor",
+		BatchHeader: fftypes.BatchHeader{
+			SignerRef: fftypes.SignerRef{
+				Author: "badauthor",
+			},
 		},
 	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
@@ -258,9 +264,11 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "badauthor",
+		BatchHeader: fftypes.BatchHeader{
+			Group: groupID,
+			SignerRef: fftypes.SignerRef{
+				Author: "badauthor",
+			},
 		},
 	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
@@ -277,8 +285,10 @@ func TestSendImmediateFail(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+		BatchHeader: fftypes.BatchHeader{
+			SignerRef: fftypes.SignerRef{
+				Author: "org1",
+			},
 		},
 	}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
@@ -314,9 +324,11 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	mdi.On("InsertOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+		BatchHeader: fftypes.BatchHeader{
+			Group: groupID,
+			SignerRef: fftypes.SignerRef{
+				Author: "org1",
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -366,9 +378,11 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "node2-peer", "/blob/1").Return(fmt.Errorf("pop")).Once()
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+		BatchHeader: fftypes.BatchHeader{
+			Group: groupID,
+			SignerRef: fftypes.SignerRef{
+				Author: "org1",
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
@@ -423,9 +437,11 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+		BatchHeader: fftypes.BatchHeader{
+			Group: groupID,
+			SignerRef: fftypes.SignerRef{
+				Author: "org1",
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
