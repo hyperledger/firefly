@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -32,7 +33,7 @@ type Plugin interface {
 
 	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
+	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks, metrics metrics.Manager) error
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
@@ -170,6 +171,12 @@ type Event struct {
 	// We capture the blockchain TXID as in the case
 	// of a FireFly transaction we want to reflect that blockchain TX back onto the FireFly TX object
 	BlockchainTXID string
+
+	// Location is the blockchain location of the contract that emitted the event
+	Location string
+
+	// Signature is the event signature, including the event name and output types
+	Signature string
 }
 
 type EventWithSubscription struct {

@@ -341,6 +341,10 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
+	if or.metrics == nil {
+		or.metrics = metrics.NewMetricsManager(ctx)
+	}
+
 	if err = or.initDatabaseCheckPreinit(ctx); err != nil {
 		return err
 	} else if or.preInitMode {
@@ -363,7 +367,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	if err = or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bc); err != nil {
+	if err = or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bc, or.metrics); err != nil {
 		return err
 	}
 
@@ -433,9 +437,6 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
-	if or.metrics == nil {
-		or.metrics = metrics.NewMetricsManager(ctx)
-	}
 
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.database, or.sharedstorage, or.dataexchange)

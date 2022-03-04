@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/internal/config/wsconfig"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -60,6 +61,7 @@ type Fabric struct {
 	idCache map[string]*fabIdentity
 	wsconn  wsclient.WSClient
 	closed  chan struct{}
+	metrics metrics.Manager
 }
 
 type eventStreamWebsocket struct {
@@ -153,13 +155,13 @@ func (f *Fabric) VerifierType() fftypes.VerifierType {
 	return fftypes.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
-
+func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
 	fabconnectConf := prefix.SubPrefix(FabconnectConfigKey)
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
 	f.callbacks = callbacks
 	f.idCache = make(map[string]*fabIdentity)
+	f.metrics = metrics
 
 	if fabconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.fabconnect")

@@ -1285,6 +1285,8 @@ paths:
                     additionalProperties: {}
                     type: object
                   listener: {}
+                  location:
+                    type: string
                   name:
                     type: string
                   namespace:
@@ -1297,6 +1299,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  signature:
+                    type: string
                   source:
                     type: string
                   timestamp: {}
@@ -1346,6 +1350,8 @@ paths:
                     additionalProperties: {}
                     type: object
                   listener: {}
+                  location:
+                    type: string
                   name:
                     type: string
                   namespace:
@@ -1358,6 +1364,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  signature:
+                    type: string
                   source:
                     type: string
                   timestamp: {}
@@ -8723,6 +8731,8 @@ paths:
                       additionalProperties: {}
                       type: object
                     listener: {}
+                    location:
+                      type: string
                     name:
                       type: string
                     namespace:
@@ -8735,6 +8745,8 @@ paths:
                     sequence:
                       format: int64
                       type: integer
+                    signature:
+                      type: string
                     source:
                       type: string
                     timestamp: {}

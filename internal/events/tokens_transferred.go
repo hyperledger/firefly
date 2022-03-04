@@ -143,6 +143,10 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 				}
 			}
 
+			if em.metrics.IsMetricsEnabled() && transfer.Event.Location != "" && transfer.Event.Signature != "" {
+				em.metrics.BlockchainEvent(transfer.Event.Location, transfer.Event.Signature)
+			}
+
 			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, transfer.Namespace, transfer.LocalID, transfer.TX.ID)
 			return em.database.InsertEvent(ctx, event)
 		})

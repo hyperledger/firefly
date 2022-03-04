@@ -193,6 +193,8 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	rawOutput := data.GetObject("rawOutput") // optional
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash") // optional
+	location := data.GetString("location")
+	signature := data.GetString("signature")
 
 	timestampStr := data.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
@@ -229,6 +231,8 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 			Output:         rawOutput,
 			Info:           tx,
 			Timestamp:      timestamp,
+			Location:       location,
+			Signature:      signature,
 		},
 	}
 
@@ -248,6 +252,8 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	rawOutput := data.GetObject("rawOutput")   // optional
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash") // optional
+	location := data.GetString("location")
+	signature := data.GetString("signature")
 
 	timestampStr := data.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
@@ -318,6 +324,8 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			Output:         rawOutput,
 			Info:           tx,
 			Timestamp:      timestamp,
+			Location:       location,
+			Signature:      signature,
 		},
 	}
 
@@ -334,6 +342,8 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	rawOutput := data.GetObject("rawOutput") // optional
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash") // optional
+	location := data.GetString("location")
+	signature := data.GetString("signature")
 
 	timestampStr := data.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
@@ -380,6 +390,8 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 			Output:         rawOutput,
 			Info:           tx,
 			Timestamp:      timestamp,
+			Location:       location,
+			Signature:      signature,
 		},
 	}
 

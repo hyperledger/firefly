@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/config/wsconfig"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -62,6 +63,7 @@ type Ethereum struct {
 	wsconn          wsclient.WSClient
 	closed          chan struct{}
 	addressResolver *addressResolver
+	metrics         metrics.Manager
 }
 
 type eventStreamWebsocket struct {
@@ -138,7 +140,6 @@ type FFIGenerationInput struct {
 	ABI []ABIElementMarshaling `json:"abi,omitempty"`
 }
 
-// var batchPinEvent = "BatchPin"
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
 func (e *Ethereum) Name() string {
@@ -149,13 +150,13 @@ func (e *Ethereum) VerifierType() fftypes.VerifierType {
 	return fftypes.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
-
+func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
+	e.metrics = metrics
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -341,6 +342,8 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 			Output:         dataJSON,
 			Info:           msgJSON,
 			Timestamp:      timestamp,
+			Location:       e.buildEventLocationString(msgJSON),
+			Signature:      msgJSON.GetString("signature"),
 		},
 	}
 
@@ -378,6 +381,8 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 			Output:         dataJSON,
 			Info:           msgJSON,
 			Timestamp:      timestamp,
+			Location:       e.buildEventLocationString(msgJSON),
+			Signature:      msgJSON.GetString("signature"),
 		},
 	}
 
@@ -407,6 +412,10 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
 	return e.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
+}
+
+func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
+	return fmt.Sprintf("address=%s", msgJSON.GetString("address"))
 }
 
 func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -511,6 +520,9 @@ func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string,
 }
 
 func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}) (*resty.Response, error) {
+	if e.metrics.IsMetricsEnabled() {
+		e.metrics.BlockchainTransaction(address, abi.Name)
+	}
 	body := EthconnectMessageRequest{
 		Headers: EthconnectMessageHeaders{
 			Type: "SendTransaction",
@@ -528,6 +540,9 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 }
 
 func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}) (*resty.Response, error) {
+	if e.metrics.IsMetricsEnabled() {
+		e.metrics.BlockchainQuery(address, abi.Name)
+	}
 	body := EthconnectMessageRequest{
 		Headers: EthconnectMessageHeaders{
 			Type: "Query",

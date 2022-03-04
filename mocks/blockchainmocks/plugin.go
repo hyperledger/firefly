@@ -10,6 +10,8 @@ import (
 
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
+	metrics "github.com/hyperledger/firefly/internal/metrics"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -108,13 +110,13 @@ func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVal
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, prefix, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) error {
-	ret := _m.Called(ctx, prefix, callbacks)
+// Init provides a mock function with given fields: ctx, prefix, callbacks, _a3
+func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, _a3 metrics.Manager) error {
+	ret := _m.Called(ctx, prefix, callbacks, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, blockchain.Callbacks) error); ok {
-		r0 = rf(ctx, prefix, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, blockchain.Callbacks, metrics.Manager) error); ok {
+		r0 = rf(ctx, prefix, callbacks, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}

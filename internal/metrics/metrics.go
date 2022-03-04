@@ -33,6 +33,9 @@ type Manager interface {
 	MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum)
 	TransferSubmitted(transfer *fftypes.TokenTransfer)
 	TransferConfirmed(transfer *fftypes.TokenTransfer)
+	BlockchainTransaction(location, methodName string)
+	BlockchainQuery(location, methodName string)
+	BlockchainEvent(location, signature string)
 	AddTime(id string)
 	GetTime(id string) time.Time
 	DeleteTime(id string)
@@ -127,6 +130,18 @@ func (mm *metricsManager) TransferConfirmed(transfer *fftypes.TokenTransfer) {
 		BurnHistogram.Observe(timeElapsed)
 		BurnConfirmedCounter.Inc()
 	}
+}
+
+func (mm *metricsManager) BlockchainTransaction(location, methodName string) {
+	BlockchainTransactionsCounter.WithLabelValues(location, methodName).Inc()
+}
+
+func (mm *metricsManager) BlockchainQuery(location, methodName string) {
+	BlockchainQueriesCounter.WithLabelValues(location, methodName).Inc()
+}
+
+func (mm *metricsManager) BlockchainEvent(location, signature string) {
+	BlockchainEventsCounter.WithLabelValues(location, signature).Inc()
 }
 
 func (mm *metricsManager) AddTime(id string) {

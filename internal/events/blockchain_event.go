@@ -35,6 +35,8 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 		Output:     event.Output,
 		Info:       event.Info,
 		Timestamp:  event.Timestamp,
+		Location:   event.Location,
+		Signature:  event.Signature,
 	}
 	if tx != nil {
 		ev.TX = *tx
@@ -43,6 +45,9 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 }
 
 func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+	if em.metrics.IsMetricsEnabled() && chainEvent.Location != "" && chainEvent.Signature != "" {
+		em.metrics.BlockchainEvent(chainEvent.Location, chainEvent.Signature)
+	}
 	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
