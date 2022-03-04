@@ -1417,16 +1417,18 @@ paths:
             application/json:
               schema:
                 properties:
-                  buckets:
+                  count:
+                    type: string
+                  timestamp: {}
+                  types:
                     items:
                       properties:
                         count:
                           type: string
-                        timestamp: {}
+                        type:
+                          type: string
                       type: object
                     type: array
-                  type:
-                    type: string
                 type: object
           description: Success
         default:

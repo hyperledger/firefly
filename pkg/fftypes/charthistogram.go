@@ -23,20 +23,22 @@ const (
 	ChartHistogramMinBuckets = 1
 )
 
-// ChartHistogram is a list of buckets and a type
+// ChartHistogram is a list of buckets with types
 type ChartHistogram struct {
-	// Buckets list of histogram buckets
-	Buckets []*ChartHistogramBucket `json:"buckets"`
-	// Type type of histogram buckets
-	Type string `json:"type"`
+	// Count for entire timestamp in histogram
+	Count string `json:"count"`
+	// Timestamp of bucket
+	Timestamp *FFTime `json:"timestamp"`
+	// Types list of histogram types and their count
+	Types []*ChartHistogramType `json:"types"`
 }
 
-// ChartHistogramBucket is a timestamp and count
-type ChartHistogramBucket struct {
-	// Timestamp of bucket in histogram
-	Timestamp *FFTime `json:"timestamp"`
-	// Count for timestamp in histogram
+// ChartHistogramType is a type and count
+type ChartHistogramType struct {
+	// Count for type in histogram bucket
 	Count string `json:"count"`
+	// Type of bucket in histogram
+	Type string `json:"type"`
 }
 
 // ChartHistogramInterval specifies lower and upper timestamps for histogram bucket

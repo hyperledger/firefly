@@ -20,6 +20,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -27,8 +28,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (s *SQLCommon) getCaseQueries(ns string, dataType string, intervals []fftypes.ChartHistogramInterval, typeColName string) (caseQueries []sq.CaseBuilder) {
-	for _, interval := range intervals {
+func (s *SQLCommon) getCaseQueries(ns string, dataTypes []string, interval fftypes.ChartHistogramInterval, typeColName string) (caseQueries []sq.CaseBuilder) {
+	for _, dataType := range dataTypes {
 		caseQueries = append(caseQueries, sq.Case().
 			When(
 				sq.And{
@@ -56,7 +57,7 @@ func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection d
 	case database.CollectionName(database.CollectionEvents):
 		return "events", eventFilterFieldMap, nil
 	case database.CollectionName(database.CollectionTokenTransfers):
-		return "tokentransfer", tokenTransferFilterFieldMap, nil
+		return "tokentransfers", tokenTransferFilterFieldMap, nil
 	default:
 		return "", nil, i18n.NewError(ctx, i18n.MsgUnsupportedCollection, collection)
 	}
@@ -85,7 +86,7 @@ func (s *SQLCommon) getDistinctTypesFromTable(ctx context.Context, tableName str
 	return dataTypes, nil
 }
 
-func (s *SQLCommon) histogramResult(ctx context.Context, rows *sql.Rows, cols []*fftypes.ChartHistogramBucket, tableName string) ([]*fftypes.ChartHistogramBucket, error) {
+func (s *SQLCommon) histogramResult(ctx context.Context, rows *sql.Rows, cols []*fftypes.ChartHistogramType, tableName string) ([]*fftypes.ChartHistogramType, error) {
 	results := []interface{}{}
 
 	for i := range cols {
@@ -99,6 +100,18 @@ func (s *SQLCommon) histogramResult(ctx context.Context, rows *sql.Rows, cols []
 	return cols, nil
 }
 
+func (s *SQLCommon) getBucketTotal(typeBuckets []*fftypes.ChartHistogramType) (string, error) {
+	total := 0
+	for _, typeBucket := range typeBuckets {
+		typeBucketInt, err := strconv.Atoi(typeBucket.Count)
+		if err != nil {
+			return "", err
+		}
+		total += typeBucketInt
+	}
+	return strconv.Itoa(total), nil
+}
+
 func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogramList []*fftypes.ChartHistogram, err error) {
 	tableName, fieldMap, err := s.getTableNameFromCollection(ctx, collection)
 	if err != nil {
@@ -110,15 +123,15 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 		return nil, err
 	}
 
-	for _, dataType := range dataTypes {
+	for _, interval := range intervals {
 		qb := sq.Select()
-		histogram := make([]*fftypes.ChartHistogramBucket, 0)
-		for i, caseQuery := range s.getCaseQueries(ns, dataType, intervals, fieldMap["type"]) {
-			query, args, _ := caseQuery.ToSql()
+		histogramTypes := make([]*fftypes.ChartHistogramType, 0)
 
-			histogram = append(histogram, &fftypes.ChartHistogramBucket{
-				Count:     "",
-				Timestamp: intervals[i].StartTime,
+		for i, caseQuery := range s.getCaseQueries(ns, dataTypes, interval, fieldMap["type"]) {
+			query, args, _ := caseQuery.ToSql()
+			histogramTypes = append(histogramTypes, &fftypes.ChartHistogramType{
+				Count: "",
+				Type:  dataTypes[i],
 			})
 
 			qb = qb.Column(sq.Alias(sq.Expr("SUM("+query+")", args...), fmt.Sprintf("case_%d", i)))
@@ -131,20 +144,27 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 		defer rows.Close()
 
 		if rows.Next() {
-			hist, err := s.histogramResult(ctx, rows, histogram, tableName)
+			hist, err := s.histogramResult(ctx, rows, histogramTypes, tableName)
 			rows.Close()
 			if err != nil {
 				return nil, err
 			}
 
+			total, err := s.getBucketTotal(hist)
+			if err != nil {
+				return nil, err
+			}
+
 			histogramList = append(histogramList, &fftypes.ChartHistogram{
-				Buckets: hist,
-				Type:    dataType,
+				Count:     total,
+				Timestamp: interval.StartTime,
+				Types:     hist,
 			})
 		} else {
 			histogramList = append(histogramList, &fftypes.ChartHistogram{
-				Buckets: make([]*fftypes.ChartHistogramBucket, 0),
-				Type:    dataType,
+				Count:     "0",
+				Timestamp: interval.StartTime,
+				Types:     make([]*fftypes.ChartHistogramType, 0),
 			})
 		}
 	}
