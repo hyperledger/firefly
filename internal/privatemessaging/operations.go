@@ -110,11 +110,15 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		} else if group == nil {
 			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
-		batch, err := pm.database.GetBatchByID(ctx, batchID)
+		bp, err := pm.database.GetBatchByID(ctx, batchID)
 		if err != nil {
 			return nil, err
-		} else if batch == nil {
+		} else if bp == nil {
 			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		}
+		batch, err := pm.data.HydrateBatch(ctx, bp)
+		if err != nil {
+			return nil, err
 		}
 		transport := &fftypes.TransportWrapper{Group: group, Batch: batch}
 		return opBatchSend(op, node, transport), nil

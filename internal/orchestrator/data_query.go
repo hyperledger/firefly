@@ -100,7 +100,7 @@ func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, ns, id strin
 	return or.fetchMessageData(ctx, msg)
 }
 
-func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
+func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.BatchPersisted, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
 		return nil, err
@@ -209,7 +209,7 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 		if batch == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgBatchNotFound, msg.BatchID)
 		}
-		txID = batch.Payload.TX.ID
+		txID = batch.TX.ID
 		if txID == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgBatchTXNotSet, msg.BatchID)
 		}
@@ -253,7 +253,7 @@ func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, fil
 	return or.database.GetEvents(ctx, filter)
 }
 
-func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, *database.FilterResult, error) {
+func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BatchPersisted, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetBatches(ctx, filter)
 }

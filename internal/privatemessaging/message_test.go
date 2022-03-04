@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -442,10 +443,12 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
 
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
-			ID:    fftypes.NewUUID(),
-			Group: groupID,
+	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				ID:    fftypes.NewUUID(),
+				Group: groupID,
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
@@ -460,7 +463,7 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 				},
 			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -688,51 +691,6 @@ func TestRequestReplySuccess(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDispatchedUnpinnedMessageMarshalFail(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *fftypes.SignerRef) bool {
-		assert.Equal(t, "localorg", identity.Author)
-		return true
-	})).Return(nil)
-
-	groupID := fftypes.NewRandB32()
-	node1 := newTestNode("node1", newTestOrg("localorg"))
-	node2 := newTestNode("node2", newTestOrg("remoteorg"))
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
-		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				{Node: node1.ID, Identity: "localorg"},
-				{Node: node1.ID, Identity: "remoteorg"},
-			},
-		},
-	}, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node2, nil).Once()
-
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
-			ID:    fftypes.NewUUID(),
-			Group: groupID,
-		},
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{Value: fftypes.JSONAnyPtr("!Bad JSON")},
-			},
-		},
-	}, []*fftypes.Bytes32{})
-	assert.Regexp(t, "FF10137", err)
-
-	mdi.AssertExpectations(t)
-
-}
-
 func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -773,10 +731,12 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 		return op.Type == fftypes.OpTypeDataExchangeBatchSend && *data.Node.ID == *node2.ID
 	})).Return(nil)
 
-	err := pm.dispatchUnpinnedBatch(pm.ctx, &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
-			ID:    fftypes.NewUUID(),
-			Group: groupID,
+	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				ID:    fftypes.NewUUID(),
+				Group: groupID,
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -795,7 +755,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 				},
 			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -848,7 +808,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 				},
 			},
 		},
-	}, nodes)
+	}, nodes, "manifest-data")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -895,7 +855,7 @@ func TestSendDataTransferFail(t *testing.T) {
 				},
 			},
 		},
-	}, nodes)
+	}, nodes, "manifest-data")
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -943,7 +903,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 				},
 			},
 		},
-	}, nodes)
+	}, nodes, "manifest-data")
 	assert.Regexp(t, "pop", err)
 
 }

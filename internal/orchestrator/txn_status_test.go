@@ -60,10 +60,12 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	batches := []*fftypes.Batch{
+	batches := []*fftypes.BatchPersisted{
 		{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.MessageTypeBroadcast,
+			BatchHeader: fftypes.BatchHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.BatchTypeBroadcast,
+			},
 			Confirmed: fftypes.UnixTime(2),
 		},
 	}

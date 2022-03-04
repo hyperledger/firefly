@@ -215,7 +215,7 @@ func TestDataImmutable(t *testing.T) {
 		Hash:      NewRandB32(),
 		Created:   Now(),
 	}
-	assert.True(t, data.Hash.Equals(data.BatchData(true).Hash))
+	assert.True(t, data.Hash.Equals(data.BatchData(BatchTypeBroadcast).Hash))
 
 	data.Blob = &BlobRef{
 		Hash:   NewRandB32(),
@@ -223,6 +223,6 @@ func TestDataImmutable(t *testing.T) {
 		Name:   "name.txt",
 		Public: "sharedStorageRef",
 	}
-	assert.Equal(t, data.Blob, data.BatchData(true).Blob)
-	assert.Empty(t, data.BatchData(false).Blob.Public)
+	assert.Equal(t, data.Blob, data.BatchData(BatchTypeBroadcast).Blob)
+	assert.Empty(t, data.BatchData(BatchTypePrivate).Blob.Public)
 }

@@ -687,6 +687,7 @@ func TestHydrateBatchOK(t *testing.T) {
 	dataHash := fftypes.NewRandB32()
 	bp := &fftypes.BatchPersisted{
 		BatchHeader: fftypes.BatchHeader{
+			Type:      fftypes.BatchTypeBroadcast,
 			ID:        batchID,
 			Namespace: "ns1",
 		},
@@ -710,7 +711,7 @@ func TestHydrateBatchOK(t *testing.T) {
 		Created: fftypes.Now(),
 	}, nil)
 
-	batch, err := dm.HydrateBatch(ctx, bp, true)
+	batch, err := dm.HydrateBatch(ctx, bp)
 	assert.NoError(t, err)
 	assert.Equal(t, bp.BatchHeader, batch.BatchHeader)
 	assert.Equal(t, bp.TX, batch.Payload.TX)
@@ -736,6 +737,7 @@ func TestHydrateBatchDataFail(t *testing.T) {
 	dataHash := fftypes.NewRandB32()
 	bp := &fftypes.BatchPersisted{
 		BatchHeader: fftypes.BatchHeader{
+			Type:      fftypes.BatchTypeBroadcast,
 			ID:        batchID,
 			Namespace: "ns1",
 		},
@@ -755,7 +757,7 @@ func TestHydrateBatchDataFail(t *testing.T) {
 	}, nil)
 	mdi.On("GetDataByID", ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
 
-	_, err := dm.HydrateBatch(ctx, bp, true)
+	_, err := dm.HydrateBatch(ctx, bp)
 	assert.Regexp(t, "FF10372.*pop", err)
 
 	mdi.AssertExpectations(t)
@@ -772,6 +774,7 @@ func TestHydrateBatchMsgNotFound(t *testing.T) {
 	dataHash := fftypes.NewRandB32()
 	bp := &fftypes.BatchPersisted{
 		BatchHeader: fftypes.BatchHeader{
+			Type:      fftypes.BatchTypeBroadcast,
 			ID:        batchID,
 			Namespace: "ns1",
 		},
@@ -786,7 +789,7 @@ func TestHydrateBatchMsgNotFound(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetMessageByID", ctx, msgID).Return(nil, nil)
 
-	_, err := dm.HydrateBatch(ctx, bp, true)
+	_, err := dm.HydrateBatch(ctx, bp)
 	assert.Regexp(t, "FF10372", err)
 
 	mdi.AssertExpectations(t)
@@ -800,6 +803,6 @@ func TestHydrateBatchMsgBadManifest(t *testing.T) {
 		Manifest: `!json`,
 	}
 
-	_, err := dm.HydrateBatch(ctx, bp, true)
+	_, err := dm.HydrateBatch(ctx, bp)
 	assert.Regexp(t, "FF10151", err)
 }

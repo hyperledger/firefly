@@ -53,7 +53,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 		} else if bp == nil {
 			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
-		batch, err := bm.data.HydrateBatch(ctx, bp, true)
+		batch, err := bm.data.HydrateBatch(ctx, bp)
 		if err != nil {
 			return nil, err
 		}

@@ -21,11 +21,22 @@ import (
 	"encoding/json"
 )
 
+// BatchType is the type of a batch
+type BatchType = FFEnum
+
+var (
+	// BatchTypeBroadcast is a batch that is broadcast via the shared data interface
+	BatchTypeBroadcast BatchType = ffEnum("batchtype", "broadcast")
+	// BatchTypePrivate is a batch that is sent privately to a group
+	BatchTypePrivate BatchType = ffEnum("batchtype", "private")
+)
+
 // BatchHeader is the common fields between the serialized batch, and the batch manifest
 type BatchHeader struct {
-	ID        *UUID  `json:"id"`
-	Namespace string `json:"namespace"`
-	Node      *UUID  `json:"node,omitempty"`
+	ID        *UUID     `json:"id"`
+	Type      BatchType `json:"type" ffenum:"batchtype"`
+	Namespace string    `json:"namespace"`
+	Node      *UUID     `json:"node,omitempty"`
 	SignerRef
 	Group *Bytes32 `jdon:"group,omitempty"`
 	Hash  *Bytes32 `json:"hash"`

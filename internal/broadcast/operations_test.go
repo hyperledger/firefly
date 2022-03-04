@@ -48,7 +48,7 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
-	mdm.On("HydrateBatch", context.Background(), bp, true).Return(batch, nil)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
 	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
 	mps.On("PublishData", context.Background(), mock.Anything).Return("123", nil)
 	mdi.On("UpdateBatch", context.Background(), bp.ID, mock.MatchedBy(func(update database.Update) bool {
@@ -91,7 +91,7 @@ func TestPrepareAndRunBatchBroadcastHydrateFail(t *testing.T) {
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
-	mdm.On("HydrateBatch", context.Background(), bp, true).Return(nil, fmt.Errorf("pop"))
+	mdm.On("HydrateBatch", context.Background(), bp).Return(nil, fmt.Errorf("pop"))
 	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)

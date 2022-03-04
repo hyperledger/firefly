@@ -45,7 +45,7 @@ type Manager interface {
 	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
 	CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error)
 	DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error)
-	HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted, requiresSharedDataPayloadRefs bool) (*fftypes.Batch, error)
+	HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error)
 }
 
 type dataManager struct {
@@ -349,7 +349,7 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData 
 }
 
 // HydrateBatch fetches the full messages for a persited batch, ready for transmission
-func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted, requiresSharedDataPayloadRefs bool) (*fftypes.Batch, error) {
+func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
 
 	var manifest fftypes.BatchManifest
 	err := json.Unmarshal([]byte(persistedBatch.Manifest), &manifest)
@@ -381,7 +381,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 			return nil, i18n.WrapError(ctx, err, i18n.MsgFailedToRetrieve, "data", dr.ID)
 		}
 		// BatchData removes any fields that could change after the batch was first assembled on the sender
-		batch.Payload.Data[i] = d.BatchData(requiresSharedDataPayloadRefs)
+		batch.Payload.Data[i] = d.BatchData(persistedBatch.Type)
 	}
 
 	return batch, nil

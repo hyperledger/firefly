@@ -390,6 +390,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 		Persisted: fftypes.BatchPersisted{
 			BatchHeader: fftypes.BatchHeader{
 				ID:        id,
+				Type:      bp.conf.DispatcherOptions.BatchType,
 				Namespace: bp.conf.namespace,
 				SignerRef: bp.conf.identity,
 				Group:     bp.conf.group,
@@ -403,7 +404,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 			state.Payload.Messages = append(state.Payload.Messages, w.msg.BatchMessage())
 		}
 		for _, d := range w.data {
-			state.Payload.Data = append(state.Payload.Data, d.BatchData(bp.conf.RequiresSharedDataPayloadRefs))
+			state.Payload.Data = append(state.Payload.Data, d.BatchData(state.Persisted.Type))
 		}
 	}
 	state.Manifest = state.Payload.Manifest(id)

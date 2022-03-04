@@ -99,11 +99,11 @@ type batchManager struct {
 type DispatchHandler func(context.Context, *DispatchState) error
 
 type DispatcherOptions struct {
-	RequiresSharedDataPayloadRefs bool
-	BatchMaxSize                  uint
-	BatchMaxBytes                 int64
-	BatchTimeout                  time.Duration
-	DisposeTimeout                time.Duration
+	BatchType      fftypes.BatchType
+	BatchMaxSize   uint
+	BatchMaxBytes  int64
+	BatchTimeout   time.Duration
+	DisposeTimeout time.Duration
 }
 
 type dispatcher struct {

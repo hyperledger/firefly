@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -91,16 +92,23 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	group := &fftypes.Group{
 		Hash: fftypes.NewRandB32(),
 	}
+	bp := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
+		BatchHeader: bp.BatchHeader,
 	}
 	addBatchSendInputs(op, node.ID, group.Hash, batch.ID, "manifest-info")
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
 	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), group.Hash).Return(group, nil)
-	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(batch, nil)
+	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(bp, nil)
 	mdx.On("SendMessage", context.Background(), op.ID, "peer1", mock.Anything).Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
@@ -116,6 +124,52 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeDataExchangeBatchSend,
+		ID:   fftypes.NewUUID(),
+	}
+	node := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+		IdentityProfile: fftypes.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id": "peer1",
+			},
+		},
+	}
+	group := &fftypes.Group{
+		Hash: fftypes.NewRandB32(),
+	}
+	bp := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	batch := &fftypes.Batch{
+		BatchHeader: bp.BatchHeader,
+	}
+	addBatchSendInputs(op, node.ID, group.Hash, batch.ID, "manifest-info")
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
+	mdi.On("GetGroupByHash", context.Background(), group.Hash).Return(group, nil)
+	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(bp, nil)
+
+	_, err := pm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestPrepareOperationNotSupported(t *testing.T) {
