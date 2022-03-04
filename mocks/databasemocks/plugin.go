@@ -2473,6 +2473,20 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database
 	return r0
 }
 
+// UpdateOperation provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdatePins provides a mock function with given fields: ctx, filter, update
 func (_m *Plugin) UpdatePins(ctx context.Context, filter database.Filter, update database.Update) error {
 	ret := _m.Called(ctx, filter, update)

@@ -193,7 +193,7 @@ func TestOperationUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -201,7 +201,7 @@ func TestOperationUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -211,6 +211,6 @@ func TestOperationUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

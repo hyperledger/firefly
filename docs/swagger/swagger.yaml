@@ -5092,6 +5092,7 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
@@ -5783,6 +5784,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: retry
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: status
         schema:
           type: string
@@ -5855,6 +5861,7 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
@@ -5920,6 +5927,78 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
+                  status:
+                    type: string
+                  tx: {}
+                  type:
+                    enum:
+                    - blockchain_batch_pin
+                    - blockchain_invoke
+                    - sharedstorage_batch_broadcast
+                    - dataexchange_batch_send
+                    - dataexchange_blob_send
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/operations/{opid}/retry:
+    post:
+      description: 'TODO: Description'
+      operationId: postOpRetry
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: opid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  error:
+                    type: string
+                  id: {}
+                  input:
+                    additionalProperties: {}
+                    type: object
+                  namespace:
+                    type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
+                  plugin:
+                    type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
@@ -8795,6 +8874,7 @@ paths:
                       type: object
                     plugin:
                       type: string
+                    retry: {}
                     status:
                       type: string
                     tx: {}

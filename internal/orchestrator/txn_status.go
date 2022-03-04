@@ -38,6 +38,29 @@ func pendingPlaceholder(t fftypes.TransactionStatusType) *fftypes.TransactionSta
 	}
 }
 
+func txOperationStatus(op *fftypes.Operation) *fftypes.TransactionStatusDetails {
+	return &fftypes.TransactionStatusDetails{
+		Status:    op.Status,
+		Type:      fftypes.TransactionStatusTypeOperation,
+		SubType:   op.Type.String(),
+		Timestamp: op.Updated,
+		ID:        op.ID,
+		Error:     op.Error,
+		Info:      op.Output,
+	}
+}
+
+func txBlockchainEventStatus(event *fftypes.BlockchainEvent) *fftypes.TransactionStatusDetails {
+	return &fftypes.TransactionStatusDetails{
+		Status:    fftypes.OpStatusSucceeded,
+		Type:      fftypes.TransactionStatusTypeBlockchainEvent,
+		SubType:   event.Name,
+		Timestamp: event.Timestamp,
+		ID:        event.ID,
+		Info:      event.Info,
+	}
+}
+
 func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*fftypes.TransactionStatus, error) {
 	result := &fftypes.TransactionStatus{
 		Status:  fftypes.OpStatusSucceeded,
@@ -56,16 +79,10 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		return nil, err
 	}
 	for _, op := range ops {
-		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-			Status:    op.Status,
-			Type:      fftypes.TransactionStatusTypeOperation,
-			SubType:   op.Type.String(),
-			Timestamp: op.Updated,
-			ID:        op.ID,
-			Error:     op.Error,
-			Info:      op.Output,
-		})
-		updateStatus(result, op.Status)
+		result.Details = append(result.Details, txOperationStatus(op))
+		if op.Retry == nil {
+			updateStatus(result, op.Status)
+		}
 	}
 
 	events, _, err := or.GetTransactionBlockchainEvents(ctx, ns, id)
@@ -73,14 +90,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		return nil, err
 	}
 	for _, event := range events {
-		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-			Status:    fftypes.OpStatusSucceeded,
-			Type:      fftypes.TransactionStatusTypeBlockchainEvent,
-			SubType:   event.Name,
-			Timestamp: event.Timestamp,
-			ID:        event.ID,
-			Info:      event.Info,
-		})
+		result.Details = append(result.Details, txBlockchainEventStatus(event))
 	}
 
 	switch tx.Type {

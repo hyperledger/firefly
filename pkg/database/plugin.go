@@ -199,6 +199,9 @@ type iOperationCollection interface {
 	// ResolveOperation - Resolve operation upon completion
 	ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
 
+	// UpdateOperation - Update an operation
+	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
 
@@ -764,6 +767,7 @@ var OperationQueryFactory = &queryFields{
 	"output":    &JSONField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},
+	"retry":     &UUIDField{},
 }
 
 // SubscriptionQueryFactory filter fields for data subscriptions

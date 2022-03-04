@@ -26,8 +26,6 @@ import (
 
 func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
 	pool := announce.Pool
-
-	// Create the pool in pending state
 	pool.State = fftypes.TokenPoolStatePending
 	err = dh.database.UpsertTokenPool(ctx, pool)
 	if err != nil {
@@ -38,7 +36,6 @@ func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *ff
 		log.L(ctx).Errorf("Failed to insert token pool '%s': %s", pool.ID, err)
 		return false, err // retryable
 	}
-
 	return true, nil
 }
 
@@ -67,6 +64,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 		return HandlerResult{Action: ActionConfirm, CustomCorrelator: correlator}, nil
 	}
 
+	// Create the pool in pending state
 	if valid, err := dh.persistTokenPool(ctx, &announce); err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	} else if !valid {
@@ -76,7 +74,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool
 	// This will ultimately trigger a pool creation event and a rewind
 	state.AddPreFinalize(func(ctx context.Context) error {
-		if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event); err != nil {
+		if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event.Info); err != nil {
 			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
 			return err
 		}

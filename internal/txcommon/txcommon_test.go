@@ -375,34 +375,3 @@ func TestAddBlockchainTXUnchanged(t *testing.T) {
 	mdi.AssertExpectations(t)
 
 }
-
-func TestWriteOperationSuccess(t *testing.T) {
-
-	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
-	ctx := context.Background()
-
-	opID := fftypes.NewUUID()
-	output := fftypes.JSONObject{"some": "info"}
-	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusSucceeded, "", output).Return(fmt.Errorf("pop"))
-
-	txHelper.WriteOperationSuccess(ctx, opID, output)
-
-	mdi.AssertExpectations(t)
-
-}
-
-func TestWriteOperationFailure(t *testing.T) {
-
-	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
-	ctx := context.Background()
-
-	opID := fftypes.NewUUID()
-	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("pop"))
-
-	txHelper.WriteOperationFailure(ctx, opID, fmt.Errorf("pop"))
-
-	mdi.AssertExpectations(t)
-
-}

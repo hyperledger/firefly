@@ -154,6 +154,7 @@ func TestOperationUpdateTransferFail(t *testing.T) {
 		Transaction: fftypes.NewUUID(),
 		Input: fftypes.JSONObject{
 			"localId": localID.String(),
+			"type":    "transfer",
 		},
 	}
 	info := fftypes.JSONObject{"some": "info"}

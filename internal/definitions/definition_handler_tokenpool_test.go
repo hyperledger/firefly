@@ -44,8 +44,10 @@ func newPoolAnnouncement() *fftypes.TokenPoolAnnouncement {
 		},
 	}
 	return &fftypes.TokenPoolAnnouncement{
-		Pool:  pool,
-		Event: &fftypes.BlockchainEvent{},
+		Pool: pool,
+		Event: &fftypes.BlockchainEvent{
+			Info: fftypes.JSONObject{"some": "info"},
+		},
 	}
 }
 
@@ -80,7 +82,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), announce.Event.Info).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
@@ -125,7 +127,7 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(nil)
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), announce.Event.Info).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
@@ -215,7 +217,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), mock.AnythingOfType("*fftypes.BlockchainEvent")).Return(fmt.Errorf("pop"))
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool"), announce.Event.Info).Return(fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
