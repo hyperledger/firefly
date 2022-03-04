@@ -39,24 +39,26 @@ func TestBatch2EWithDB(t *testing.T) {
 	batchID := fftypes.NewUUID()
 	msgID1 := fftypes.NewUUID()
 	batch := &fftypes.BatchPersisted{
-		ID:   batchID,
-		Type: fftypes.MessageTypeBroadcast,
-		SignerRef: fftypes.SignerRef{
-			Key:    "0x12345",
-			Author: "did:firefly:org/abcd",
-		},
-		Namespace: "ns1",
-		Hash:      fftypes.NewRandB32(),
-		Created:   fftypes.Now(),
-		Node:      fftypes.NewUUID(),
-		Payload: fftypes.BatchPersistedPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{ID: msgID1}},
+		BatchHeader: fftypes.BatchHeader{
+			ID:   batchID,
+			Type: fftypes.MessageTypeBroadcast,
+			SignerRef: fftypes.SignerRef{
+				Key:    "0x12345",
+				Author: "did:firefly:org/abcd",
 			},
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeUnpinned,
-			},
+			Namespace: "ns1",
+			Hash:      fftypes.NewRandB32(),
+			Node:      fftypes.NewUUID(),
 		},
+		Created: fftypes.Now(),
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeUnpinned,
+		},
+		Manifest: (&fftypes.BatchManifest{
+			Messages: []fftypes.MessageRef{
+				{ID: msgID1},
+			},
+		}).String(),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBatches, fftypes.ChangeEventTypeCreated, "ns1", batchID, mock.Anything).Return()
@@ -79,26 +81,28 @@ func TestBatch2EWithDB(t *testing.T) {
 	msgID2 := fftypes.NewUUID()
 	payloadRef := ""
 	batchUpdated := &fftypes.BatchPersisted{
-		ID:   batchID,
-		Type: fftypes.MessageTypeBroadcast,
-		SignerRef: fftypes.SignerRef{
-			Key:    "0x12345",
-			Author: "did:firefly:org/abcd",
-		},
-		Namespace: "ns1",
-		Hash:      fftypes.NewRandB32(),
-		Created:   fftypes.Now(),
-		Node:      fftypes.NewUUID(),
-		Payload: fftypes.BatchPersistedPayload{
-			TX: fftypes.TransactionRef{
-				ID:   txid,
-				Type: fftypes.TransactionTypeBatchPin,
+		BatchHeader: fftypes.BatchHeader{
+			ID:   batchID,
+			Type: fftypes.MessageTypeBroadcast,
+			SignerRef: fftypes.SignerRef{
+				Key:    "0x12345",
+				Author: "did:firefly:org/abcd",
 			},
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{ID: msgID1}},
-				{Header: fftypes.MessageHeader{ID: msgID2}},
-			},
+			Namespace: "ns1",
+			Hash:      fftypes.NewRandB32(),
+			Node:      fftypes.NewUUID(),
 		},
+		Created: fftypes.Now(),
+		TX: fftypes.TransactionRef{
+			ID:   txid,
+			Type: fftypes.TransactionTypeBatchPin,
+		},
+		Manifest: (&fftypes.BatchManifest{
+			Messages: []fftypes.MessageRef{
+				{ID: msgID1},
+				{ID: msgID2},
+			},
+		}).String(),
 		PayloadRef: payloadRef,
 		Confirmed:  fftypes.Now(),
 	}
@@ -175,7 +179,7 @@ func TestUpsertBatchFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	batchID := fftypes.NewUUID()
-	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{ID: batchID})
+	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{BatchHeader: fftypes.BatchHeader{ID: batchID}})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -187,7 +191,7 @@ func TestUpsertBatchFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	batchID := fftypes.NewUUID()
-	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{ID: batchID})
+	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{BatchHeader: fftypes.BatchHeader{ID: batchID}})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -200,7 +204,7 @@ func TestUpsertBatchFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow(hash))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{ID: batchID, Hash: hash})
+	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{BatchHeader: fftypes.BatchHeader{ID: batchID, Hash: hash}})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -212,7 +216,7 @@ func TestUpsertBatchFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{ID: batchID})
+	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{BatchHeader: fftypes.BatchHeader{ID: batchID}})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

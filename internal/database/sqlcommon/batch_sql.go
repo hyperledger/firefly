@@ -95,11 +95,11 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 				Set("group_hash", batch.Group).
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
-				Set("manifest", batch.BatchManifest).
+				Set("manifest", batch.Manifest).
 				Set("payload_ref", batch.PayloadRef).
 				Set("confirmed", batch.Confirmed).
-				Set("tx_type", batch.Payload.TX.Type).
-				Set("tx_id", batch.Payload.TX.ID).
+				Set("tx_type", batch.TX.Type).
+				Set("tx_id", batch.TX.ID).
 				Set("node_id", batch.Node).
 				Where(sq.Eq{"id": batch.ID}),
 			func() {
@@ -122,11 +122,11 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 					batch.Group,
 					batch.Created,
 					batch.Hash,
-					batch.Payload,
+					batch.Manifest,
 					batch.PayloadRef,
 					batch.Confirmed,
-					batch.Payload.TX.Type,
-					batch.Payload.TX.ID,
+					batch.TX.Type,
+					batch.TX.ID,
 					batch.Node,
 				),
 			func() {
@@ -151,11 +151,11 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 		&batch.Group,
 		&batch.Created,
 		&batch.Hash,
-		&batch.Payload,
+		&batch.Manifest,
 		&batch.PayloadRef,
 		&batch.Confirmed,
-		&batch.Payload.TX.Type,
-		&batch.Payload.TX.ID,
+		&batch.TX.Type,
+		&batch.TX.ID,
 		&batch.Node,
 	)
 	if err != nil {

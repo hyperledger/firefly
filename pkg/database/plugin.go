@@ -118,16 +118,16 @@ type iDataCollection interface {
 
 type iBatchCollection interface {
 	// UpsertBatch - Upsert a batch - the hash cannot change
-	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
+	UpsertBatch(ctx context.Context, data *fftypes.BatchPersisted) (err error)
 
 	// UpdateBatch - Update data
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetBatchByID - Get a batch by ID
-	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
+	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.BatchPersisted, err error)
 
 	// GetBatches - Get batches
-	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, res *FilterResult, err error)
+	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.BatchPersisted, res *FilterResult, err error)
 }
 
 type iTransactionCollection interface {
