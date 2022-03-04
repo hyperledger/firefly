@@ -49,6 +49,7 @@ var (
 		"created",
 	}
 	tokenTransferFilterFieldMap = map[string]string{
+		"type":            "type",
 		"localid":         "local_id",
 		"pool":            "pool_id",
 		"tokenindex":      "token_index",

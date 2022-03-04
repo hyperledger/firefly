@@ -1420,6 +1420,15 @@ paths:
                   count:
                     type: string
                   timestamp: {}
+                  types:
+                    items:
+                      properties:
+                        count:
+                          type: string
+                        type:
+                          type: string
+                      type: object
+                    type: array
                 type: object
           description: Success
         default:
