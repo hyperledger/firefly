@@ -43,7 +43,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
-	handler := func(ctx context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	handler := func(ctx context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
@@ -158,7 +158,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	waitForDispatch := make(chan *fftypes.Batch)
 	var groupID fftypes.Bytes32
 	_ = groupID.UnmarshalText([]byte("44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b"))
-	handler := func(ctx context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	handler := func(ctx context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
@@ -352,9 +352,12 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		return nil
-	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
+		func(c context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+			return nil
+		},
+		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
+	)
 
 	dataID := fftypes.NewUUID()
 	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
@@ -402,10 +405,12 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		cancelCtx()
-		return fmt.Errorf("fizzle")
-	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
+		func(c context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+			cancelCtx()
+			return fmt.Errorf("fizzle")
+		}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
+	)
 
 	dataID := fftypes.NewUUID()
 	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
@@ -438,9 +443,12 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		return nil
-	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
+		func(c context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+			return nil
+		},
+		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
+	)
 
 	dataID := fftypes.NewUUID()
 	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{

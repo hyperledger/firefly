@@ -162,15 +162,15 @@ func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) 
 }
 
 // GetBatchByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Batch, error) {
+func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BatchPersisted, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Batch); ok {
+	var r0 *fftypes.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BatchPersisted); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Batch)
+			r0 = ret.Get(0).(*fftypes.BatchPersisted)
 		}
 	}
 
@@ -185,15 +185,15 @@ func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 }
 
 // GetBatches provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*fftypes.Batch, *database.FilterResult, error) {
+func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*fftypes.BatchPersisted, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Batch); ok {
+	var r0 []*fftypes.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.BatchPersisted); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Batch)
+			r0 = ret.Get(0).([]*fftypes.BatchPersisted)
 		}
 	}
 
@@ -2558,11 +2558,11 @@ func (_m *Plugin) UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, upd
 }
 
 // UpsertBatch provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch) error {
+func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.BatchPersisted) error {
 	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)

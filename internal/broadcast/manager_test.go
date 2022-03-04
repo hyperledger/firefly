@@ -183,7 +183,9 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
@@ -208,7 +210,11 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	batch := &fftypes.Batch{SignerRef: fftypes.SignerRef{Author: "wrong", Key: "wrong"}}
+	batch := &fftypes.Batch{
+		BatchHeader: fftypes.BatchHeader{
+			SignerRef: fftypes.SignerRef{Author: "wrong", Key: "wrong"},
+		},
+	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)

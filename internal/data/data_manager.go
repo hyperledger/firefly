@@ -18,6 +18,7 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -44,6 +45,7 @@ type Manager interface {
 	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
 	CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error)
 	DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error)
+	HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error)
 }
 
 type dataManager struct {
@@ -344,4 +346,43 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData 
 		}
 	}
 	return refs, dataToPublish, nil
+}
+
+// HydrateBatch fetches the full messages for a persited batch, ready for transmission
+func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
+
+	var manifest fftypes.BatchManifest
+	err := json.Unmarshal([]byte(persistedBatch.Manifest), &manifest)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("batch %s manifest", persistedBatch.ID))
+	}
+
+	batch := &fftypes.Batch{
+		BatchHeader: persistedBatch.BatchHeader,
+		PayloadRef:  persistedBatch.PayloadRef,
+		Payload: fftypes.BatchPayload{
+			TX:       persistedBatch.TX,
+			Messages: make([]*fftypes.Message, len(manifest.Messages)),
+			Data:     make([]*fftypes.Data, len(manifest.Data)),
+		},
+	}
+
+	for i, mr := range manifest.Messages {
+		m, err := dm.database.GetMessageByID(ctx, mr.ID)
+		if err != nil || m == nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgFailedToRetrieve, "message", mr.ID)
+		}
+		// BatchMessage removes any fields that could change after the batch was first assembled on the sender
+		batch.Payload.Messages[i] = m.BatchMessage()
+	}
+	for i, dr := range manifest.Data {
+		d, err := dm.database.GetDataByID(ctx, dr.ID, true)
+		if err != nil || d == nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgFailedToRetrieve, "data", dr.ID)
+		}
+		// BatchData removes any fields that could change after the batch was first assembled on the sender
+		batch.Payload.Data[i] = d.BatchData(batch.Type)
+	}
+
+	return batch, nil
 }

@@ -23,10 +23,9 @@ import (
 
 // BatchHeader is the common fields between the serialized batch, and the batch manifest
 type BatchHeader struct {
-	ID        *UUID       `json:"id"`
-	Namespace string      `json:"namespace"`
-	Type      MessageType `json:"type"`
-	Node      *UUID       `json:"node,omitempty"`
+	ID        *UUID  `json:"id"`
+	Namespace string `json:"namespace"`
+	Node      *UUID  `json:"node,omitempty"`
 	SignerRef
 	Group *Bytes32 `jdon:"group,omitempty"`
 	Hash  *Bytes32 `json:"hash"`
@@ -46,7 +45,6 @@ type Batch struct {
 	BatchHeader
 	Payload    BatchPayload `json:"payload"`
 	PayloadRef string       `json:"payloadRef,omitempty"`
-	Blobs      []*Bytes32   `json:"blobs,omitempty"`
 }
 
 // BatchPersisted is the structure written to the database

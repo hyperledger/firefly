@@ -116,6 +116,29 @@ func (_m *Manager) GetMessageData(ctx context.Context, msg *fftypes.Message, wit
 	return r0, r1, r2
 }
 
+// HydrateBatch provides a mock function with given fields: ctx, persistedBatch
+func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
+	ret := _m.Called(ctx, persistedBatch)
+
+	var r0 *fftypes.Batch
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted) *fftypes.Batch); ok {
+		r0 = rf(ctx, persistedBatch)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Batch)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.BatchPersisted) error); ok {
+		r1 = rf(ctx, persistedBatch)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ResolveInlineDataBroadcast provides a mock function with given fields: ctx, ns, inData
 func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error) {
 	ret := _m.Called(ctx, ns, inData)

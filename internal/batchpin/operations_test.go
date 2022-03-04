@@ -33,10 +33,12 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 		Type: fftypes.OpTypeBlockchainBatchPin,
 		ID:   fftypes.NewUUID(),
 	}
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Key: "0x123",
+	batch := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Key: "0x123",
+			},
 		},
 	}
 	contexts := []*fftypes.Bytes32{

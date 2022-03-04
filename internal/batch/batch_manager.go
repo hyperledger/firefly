@@ -96,13 +96,14 @@ type batchManager struct {
 	startupOffsetRetryAttempts int
 }
 
-type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error
+type DispatchHandler func(context.Context, *BatchFlushState) error
 
 type DispatcherOptions struct {
-	BatchMaxSize   uint
-	BatchMaxBytes  int64
-	BatchTimeout   time.Duration
-	DisposeTimeout time.Duration
+	RequiresSharedDataPayloadRefs bool
+	BatchMaxSize                  uint
+	BatchMaxBytes                 int64
+	BatchTimeout                  time.Duration
+	DisposeTimeout                time.Duration
 }
 
 type dispatcher struct {

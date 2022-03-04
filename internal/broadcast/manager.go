@@ -95,10 +95,11 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 	}
 
 	bo := batch.DispatcherOptions{
-		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
-		BatchMaxBytes:  bm.maxBatchPayloadLength,
-		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
-		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
+		RequiresSharedDataPayloadRefs: true,
+		BatchMaxSize:                  config.GetUint(config.BroadcastBatchSize),
+		BatchMaxBytes:                 bm.maxBatchPayloadLength,
+		BatchTimeout:                  config.GetDuration(config.BroadcastBatchTimeout),
+		DisposeTimeout:                config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
 
 	ba.RegisterDispatcher(broadcastDispatcherName,

@@ -288,4 +288,5 @@ var (
 	MsgTokenApprovalFailed          = ffm("FF10369", "Token approval with ID '%s' failed. Please check the FireFly logs for more information")
 	MsgEventNotFound                = ffm("FF10370", "Event with name '%s' not found", 400)
 	MsgOperationNotSupported        = ffm("FF10371", "Operation not supported", 400)
+	MsgFailedToRetrieve             = ffm("FF10372", "Failed to retrieve %s %s", 500)
 )

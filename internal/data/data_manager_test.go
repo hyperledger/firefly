@@ -675,3 +675,134 @@ func TestVerifyNamespaceExistsOk(t *testing.T) {
 	err := dm.VerifyNamespaceExists(ctx, "ns1")
 	assert.NoError(t, err)
 }
+
+func TestHydrateBatchOK(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	batchID := fftypes.NewUUID()
+	msgID := fftypes.NewUUID()
+	msgHash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+	bp := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			Type:      fftypes.MessageTypeBroadcast,
+			ID:        batchID,
+			Namespace: "ns1",
+		},
+		Manifest: fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
+			batchID, msgID, msgHash, dataID, dataHash,
+		),
+		TX: fftypes.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageByID", ctx, msgID).Return(&fftypes.Message{
+		Header:    fftypes.MessageHeader{ID: msgID},
+		Hash:      msgHash,
+		Confirmed: fftypes.Now(),
+	}, nil)
+	mdi.On("GetDataByID", ctx, dataID, true).Return(&fftypes.Data{
+		ID:      dataID,
+		Hash:    dataHash,
+		Created: fftypes.Now(),
+	}, nil)
+
+	batch, err := dm.HydrateBatch(ctx, bp)
+	assert.NoError(t, err)
+	assert.Equal(t, bp.BatchHeader, batch.BatchHeader)
+	assert.Equal(t, bp.TX, batch.Payload.TX)
+	assert.Equal(t, msgID, batch.Payload.Messages[0].Header.ID)
+	assert.Equal(t, msgHash, batch.Payload.Messages[0].Hash)
+	assert.Nil(t, batch.Payload.Messages[0].Confirmed)
+	assert.Equal(t, dataID, batch.Payload.Data[0].ID)
+	assert.Equal(t, dataHash, batch.Payload.Data[0].Hash)
+	assert.Equal(t, dataHash, batch.Payload.Data[0].Hash)
+	assert.Nil(t, batch.Payload.Data[0].Created)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestHydrateBatchDataFail(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	batchID := fftypes.NewUUID()
+	msgID := fftypes.NewUUID()
+	msgHash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+	bp := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			Type:      fftypes.MessageTypeBroadcast,
+			ID:        batchID,
+			Namespace: "ns1",
+		},
+		Manifest: fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
+			batchID, msgID, msgHash, dataID, dataHash,
+		),
+		TX: fftypes.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageByID", ctx, msgID).Return(&fftypes.Message{
+		Header:    fftypes.MessageHeader{ID: msgID},
+		Hash:      msgHash,
+		Confirmed: fftypes.Now(),
+	}, nil)
+	mdi.On("GetDataByID", ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
+
+	_, err := dm.HydrateBatch(ctx, bp)
+	assert.Regexp(t, "FF10372.*pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestHydrateBatchMsgNotFound(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	batchID := fftypes.NewUUID()
+	msgID := fftypes.NewUUID()
+	msgHash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+	bp := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			Type:      fftypes.MessageTypeBroadcast,
+			ID:        batchID,
+			Namespace: "ns1",
+		},
+		Manifest: fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
+			batchID, msgID, msgHash, dataID, dataHash,
+		),
+		TX: fftypes.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageByID", ctx, msgID).Return(nil, nil)
+
+	_, err := dm.HydrateBatch(ctx, bp)
+	assert.Regexp(t, "FF10372", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestHydrateBatchMsgBadManifest(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	bp := &fftypes.BatchPersisted{
+		Manifest: `!json`,
+	}
+
+	_, err := dm.HydrateBatch(ctx, bp)
+	assert.Regexp(t, "FF10151", err)
+}

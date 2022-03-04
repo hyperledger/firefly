@@ -73,11 +73,11 @@ func (_m *Submitter) RunOperation(ctx context.Context, op *fftypes.PreparedOpera
 }
 
 // SubmitPinnedBatch provides a mock function with given fields: ctx, batch, contexts
-func (_m *Submitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
+func (_m *Submitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) error {
 	ret := _m.Called(ctx, batch, contexts)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted, []*fftypes.Bytes32) error); ok {
 		r0 = rf(ctx, batch, contexts)
 	} else {
 		r0 = ret.Error(0)

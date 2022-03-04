@@ -47,11 +47,15 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 		if err != nil {
 			return nil, err
 		}
-		batch, err := bm.database.GetBatchByID(ctx, id)
+		bp, err := bm.database.GetBatchByID(ctx, id)
 		if err != nil {
 			return nil, err
-		} else if batch == nil {
+		} else if bp == nil {
 			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		}
+		batch, err := bm.data.HydrateBatch(ctx, bp)
+		if err != nil {
+			return nil, err
 		}
 		return opBatchBroadcast(op, batch), nil
 

@@ -69,16 +69,16 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	mmi := bp.metrics.(*metricsmocks.Manager)
 	mom := bp.operations.(*operationmocks.Manager)
 
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "id1",
-			Key:    "0x12345",
-		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID: fftypes.NewUUID(),
+	batch := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
 			},
+		},
+		TX: fftypes.TransactionRef{
+			ID: fftypes.NewUUID(),
 		},
 	}
 	contexts := []*fftypes.Bytes32{}
@@ -86,7 +86,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
-		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
+		assert.Equal(t, *batch.TX.ID, *op.Transaction)
 		return true
 	})).Return(nil)
 	mmi.On("IsMetricsEnabled").Return(false)
@@ -111,16 +111,16 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mmi := bp.metrics.(*metricsmocks.Manager)
 	mom := bp.operations.(*operationmocks.Manager)
 
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "id1",
-			Key:    "0x12345",
-		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID: fftypes.NewUUID(),
+	batch := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
 			},
+		},
+		TX: fftypes.TransactionRef{
+			ID: fftypes.NewUUID(),
 		},
 	}
 	contexts := []*fftypes.Bytes32{}
@@ -128,7 +128,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
-		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
+		assert.Equal(t, *batch.TX.ID, *op.Transaction)
 		return true
 	})).Return(nil)
 	mmi.On("IsMetricsEnabled").Return(true)
@@ -152,16 +152,16 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	mom := bp.operations.(*operationmocks.Manager)
 	mmi := bp.metrics.(*metricsmocks.Manager)
 
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "id1",
-			Key:    "0x12345",
-		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID: fftypes.NewUUID(),
+	batch := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
 			},
+		},
+		TX: fftypes.TransactionRef{
+			ID: fftypes.NewUUID(),
 		},
 	}
 	contexts := []*fftypes.Bytes32{}
