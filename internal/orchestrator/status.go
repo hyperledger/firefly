@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/log"
@@ -43,34 +44,35 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 
 func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStatus, err error) {
 
-	orgKey, _ := or.identity.GetLocalOrgKey(ctx)
+	org, err := or.identity.GetNodeOwnerOrg(ctx)
+	if err != nil {
+		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
+	}
 	status = &fftypes.NodeStatus{
 		Node: fftypes.NodeStatusNode{
 			Name: config.GetString(config.NodeName),
 		},
 		Org: fftypes.NodeStatusOrg{
-			Name:     config.GetString(config.OrgName),
-			Identity: orgKey,
+			Name: config.GetString(config.OrgName),
 		},
 		Defaults: fftypes.NodeStatusDefaults{
 			Namespace: config.GetString(config.NamespacesDefault),
 		},
 	}
 
-	org, err := or.database.GetOrganizationByName(ctx, status.Org.Name)
-	if err != nil {
-		return nil, err
-	}
 	if org != nil {
 		status.Org.Registered = true
 		status.Org.ID = org.ID
-		status.Org.Identity = org.Identity
+		status.Org.DID = org.DID
 
-		node, err := or.database.GetNode(ctx, org.Identity, status.Node.Name)
+		node, _, err := or.identity.CachedIdentityLookup(ctx, fmt.Sprintf("%s%s", fftypes.FireFlyNodeDIDPrefix, status.Node.Name))
 		if err != nil {
 			return nil, err
 		}
-
+		if node != nil && !node.Parent.Equals(org.ID) {
+			log.L(ctx).Errorf("Specified node name is in use by another org: %s", err)
+			node = nil
+		}
 		if node != nil {
 			status.Node.Registered = true
 			status.Node.ID = node.ID

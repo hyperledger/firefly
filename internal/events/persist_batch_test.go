@@ -22,28 +22,20 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
+func TestPersistBatchFromBroadcast(t *testing.T) {
 
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKeyIdentity", em.ctx, mock.Anything).Return("", nil)
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf(("pop")))
 
-	org := fftypes.Organization{
-		ID:     fftypes.NewUUID(),
-		Name:   "org1",
-		Parent: "", // root
-	}
+	org := newTestOrg("org1")
 	orgBytes, err := json.Marshal(&org)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
@@ -54,7 +46,7 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
+		SignerRef: fftypes.SignerRef{
 			Author: "did:firefly:org/12345",
 			Key:    "0x12345",
 		},
@@ -68,7 +60,7 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						ID:   fftypes.NewUUID(),
 						Type: fftypes.MessageTypeDefinition,
-						Identity: fftypes.Identity{
+						SignerRef: fftypes.SignerRef{
 							Author: "did:firefly:org/12345",
 							Key:    "0x12345",
 						},
@@ -88,83 +80,24 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 	}
 	batch.Hash = batch.Payload.Hash()
 
-	_, err = em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash, "0x12345")
+	_, err = em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash)
 	assert.EqualError(t, err, "pop") // Confirms we got to upserting the batch
 
 }
 
-func TestPersistBatchFromBroadcastRootOrgBadData(t *testing.T) {
+func TestPersistBatchFromBroadcastBadHash(t *testing.T) {
 
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKeyIdentity", em.ctx, mock.Anything).Return("", nil)
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf(("pop")))
 
-	data := &fftypes.Data{
-		ID:        fftypes.NewUUID(),
-		Value:     fftypes.JSONAnyPtr("!badness"),
-		Validator: fftypes.MessageTypeDefinition,
-	}
+	batch := &fftypes.Batch{}
+	batch.Hash = fftypes.NewRandB32()
 
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
-			Key: "0x12345",
-		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID:   fftypes.NewUUID(),
-				Type: fftypes.TransactionTypeBatchPin,
-			},
-			Messages: []*fftypes.Message{
-				{
-					Header: fftypes.MessageHeader{
-						ID:   fftypes.NewUUID(),
-						Type: fftypes.MessageTypeDefinition,
-						Identity: fftypes.Identity{
-							Key: "0x12345",
-						},
-					},
-					Data: fftypes.DataRefs{
-						{
-							ID:   data.ID,
-							Hash: data.Hash,
-						},
-					},
-				},
-			},
-			Data: []*fftypes.Data{
-				data,
-			},
-		},
-	}
-	batch.Hash = batch.Payload.Hash()
-
-	valid, err := em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash, "0x12345")
+	ok, err := em.persistBatchFromBroadcast(em.ctx, batch, fftypes.NewRandB32())
 	assert.NoError(t, err)
-	assert.False(t, valid)
-
-}
-
-func TestPersistBatchFromBroadcastNoRootOrgBadIdentity(t *testing.T) {
-
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveSigningKeyIdentity", em.ctx, mock.Anything).Return("", nil)
-
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		Identity: fftypes.Identity{
-			Key: "0x12345",
-		},
-	}
-	batch.Hash = batch.Payload.Hash()
-
-	valid, err := em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash, "0x12345")
-	assert.NoError(t, err)
-	assert.False(t, valid)
+	assert.False(t, ok)
 
 }

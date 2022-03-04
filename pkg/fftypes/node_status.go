@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,7 +34,7 @@ type NodeStatusNode struct {
 type NodeStatusOrg struct {
 	Name       string `json:"name"`
 	Registered bool   `json:"registered"`
-	Identity   string `json:"identity,omitempty"`
+	DID        string `json:"did,omitempty"`
 	ID         *UUID  `json:"id,omitempty"`
 }
 

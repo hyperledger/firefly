@@ -39,12 +39,12 @@ var postNewOrganizationSelf = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
 	JSONInputMask:   nil,
 	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
-	JSONOutputValue: func() interface{} { return &fftypes.Organization{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, _, err := getOr(r.Ctx).NetworkMap().RegisterNodeOrganization(r.Ctx, waitConfirm)
+		org, err := getOr(r.Ctx).NetworkMap().RegisterNodeOrganization(r.Ctx, waitConfirm)
 		return org, err
 	},
 }

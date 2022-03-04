@@ -46,8 +46,8 @@ func TestBoundCallbacks(t *testing.T) {
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
-	mei.On("BatchPinComplete", mbi, batch, "0x12345").Return(fmt.Errorf("pop"))
-	err := bc.BatchPinComplete(batch, "0x12345")
+	mei.On("BatchPinComplete", mbi, batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err := bc.BatchPinComplete(batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
 	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))

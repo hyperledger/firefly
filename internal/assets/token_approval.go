@@ -127,16 +127,10 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) err
 		return err
 	}
 
-	err = plugin.TokensApproval(ctx, op.ID, pool.ProtocolID, &s.approval.TokenApproval)
-	// if transaction fails,  mark op as failed in DB
-	if err != nil {
-		s.mgr.txHelper.WriteOperationFailure(ctx, op.ID, err)
-	}
-
-	return err
+	return s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
 }
 
-func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) error {
+func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) (err error) {
 	if approval.Connector == "" {
 		connector, err := am.getTokenConnectorName(ctx, ns)
 		if err != nil {
@@ -151,13 +145,6 @@ func (am *assetManager) validateApproval(ctx context.Context, ns string, approva
 		}
 		approval.Pool = pool
 	}
-	if approval.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return err
-		}
-		approval.Key = org.Identity
-	}
-
-	return nil
+	approval.Key, err = am.identity.NormalizeSigningKey(ctx, approval.Key, am.keyNormalization)
+	return err
 }

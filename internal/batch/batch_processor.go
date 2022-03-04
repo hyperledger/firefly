@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -44,7 +45,7 @@ type batchProcessorConf struct {
 	dispatcherName string
 	txType         fftypes.TransactionType
 	namespace      string
-	identity       fftypes.Identity
+	identity       fftypes.SignerRef
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
 }
@@ -373,7 +374,7 @@ func (bp *batchProcessor) buildFlushBatch(id *fftypes.UUID, newWork []*batchWork
 	batch := &fftypes.Batch{
 		ID:        id,
 		Namespace: bp.conf.namespace,
-		Identity:  bp.conf.identity,
+		SignerRef: bp.conf.identity,
 		Group:     bp.conf.group,
 		Payload:   fftypes.BatchPayload{},
 		Created:   fftypes.Now(),
@@ -476,8 +477,10 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch) (contexts []*fftype
 
 func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
-	return bp.retry.Do(bp.ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
-		return true, bp.conf.dispatch(bp.ctx, batch, pins)
+	return operations.RunWithOperationCache(bp.ctx, func(ctx context.Context) error {
+		return bp.retry.Do(ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
+			return true, bp.conf.dispatch(ctx, batch, pins)
+		})
 	})
 }
 
@@ -517,6 +520,7 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 				for _, msg := range batch.Payload.Messages {
 					// Emit a confirmation event locally immediately
 					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
+					event.Correlator = msg.Header.CID
 					if err := bp.database.InsertEvent(ctx, event); err != nil {
 						return err
 					}

@@ -40,8 +40,10 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 		return err
 	}
 	if len(operations) > 0 {
-		if err = txcommon.RetrieveTokenTransferInputs(ctx, operations[0], transfer); err != nil {
+		if origTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, operations[0]); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
+		} else if origTransfer != nil {
+			transfer.LocalID = origTransfer.LocalID
 		}
 	}
 
@@ -152,7 +154,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 	// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
 	if err == nil && batchID != nil {
 		log.L(em.ctx).Infof("Batch '%s' contains reference to received transfer. Transfer='%s' Message='%s'", batchID, transfer.ProtocolID, transfer.Message)
-		em.aggregator.offchainBatches <- batchID
+		em.aggregator.rewindBatches <- batchID
 	}
 
 	return err

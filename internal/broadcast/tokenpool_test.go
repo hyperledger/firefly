@@ -96,7 +96,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
@@ -127,7 +127,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)

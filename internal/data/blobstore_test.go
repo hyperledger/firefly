@@ -29,7 +29,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -255,7 +255,7 @@ func TestCopyBlobPStoDXOk(t *testing.T) {
 	payload := []byte(`some data`)
 	var hash fftypes.Bytes32 = sha256.Sum256(payload)
 
-	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
@@ -290,7 +290,7 @@ func TestCopyBlobPStoDXHashMismatch(t *testing.T) {
 	payload := []byte(`some data`)
 	var hash fftypes.Bytes32 = sha256.Sum256(payload)
 
-	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
@@ -323,7 +323,7 @@ func TestCopyBlobPStoPublicHashMismatch(t *testing.T) {
 	payload := []byte(`some data`)
 	var correctHash fftypes.Bytes32 = sha256.Sum256(payload)
 
-	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
@@ -356,7 +356,7 @@ func TestCopyBlobPStoDXInsertFail(t *testing.T) {
 	payload := []byte(`some data`)
 	var hash fftypes.Bytes32 = sha256.Sum256(payload)
 
-	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
@@ -389,7 +389,7 @@ func TestCopyBlobPStoUploadFail(t *testing.T) {
 	payload := []byte(`some data`)
 	var hash fftypes.Bytes32 = sha256.Sum256(payload)
 
-	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
@@ -419,7 +419,7 @@ func TestCopyBlobPStoDownloadFail(t *testing.T) {
 	payload := []byte(`some data`)
 	var hash fftypes.Bytes32 = sha256.Sum256(payload)
 
-	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", ctx, "public-ref").Return(nil, fmt.Errorf("pop"))
 
 	_, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
@@ -442,7 +442,7 @@ func TestCopyBlobPStoDownloadNotFound(t *testing.T) {
 	payload := []byte(`some data`)
 	var hash fftypes.Bytes32 = sha256.Sum256(payload)
 
-	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mpi.On("RetrieveData", ctx, "public-ref").Return(nil, nil)
 
 	blob, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{

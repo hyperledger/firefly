@@ -33,13 +33,15 @@ var (
 		"etype",
 		"namespace",
 		"ref",
+		"cid",
 		"tx_id",
 		"created",
 	}
 	eventFilterFieldMap = map[string]string{
-		"type":      "etype",
-		"reference": "ref",
-		"tx":        "tx_id",
+		"type":       "etype",
+		"reference":  "ref",
+		"correlator": "cid",
+		"tx":         "tx_id",
 	}
 )
 
@@ -83,6 +85,7 @@ func (s *SQLCommon) insertEventPreCommit(ctx context.Context, tx *txWrapper, eve
 				string(event.Type),
 				event.Namespace,
 				event.Reference,
+				event.Correlator,
 				event.Transaction,
 				event.Created,
 			),
@@ -100,6 +103,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 		&event.Type,
 		&event.Namespace,
 		&event.Reference,
+		&event.Correlator,
 		&event.Transaction,
 		&event.Created,
 		// Must be added to the list of columns in all selects

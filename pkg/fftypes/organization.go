@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,20 +16,11 @@
 
 package fftypes
 
-import (
-	"context"
-	"fmt"
+import "context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-)
-
-const (
-	FireflyOrgDIDPrefix = "did:firefly:org/"
-	OrgTopic            = "ff_organizations"
-)
-
-// Organization is a top-level identity in the network
-type Organization struct {
+// DeprecatedOrganization is the data structure we used to use prior to FIR-9.
+// Now we use the common Identity structure throughout
+type DeprecatedOrganization struct {
 	ID          *UUID      `json:"id"`
 	Message     *UUID      `json:"message,omitempty"`
 	Parent      string     `json:"parent,omitempty"`
@@ -38,34 +29,40 @@ type Organization struct {
 	Description string     `json:"description,omitempty"`
 	Profile     JSONObject `json:"profile,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
+
+	identityClaim *IdentityClaim
 }
 
-func (org *Organization) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameFieldNoUUID(ctx, org.Name, "name"); err != nil {
-		return err
+// Migrate creates and maintains a migrated IdentityClaim object, which
+// is used when processing an old-style organization broadcast received when
+// joining an existing network
+func (org *DeprecatedOrganization) Migrated() *IdentityClaim {
+	if org.identityClaim != nil {
+		return org.identityClaim
 	}
-	if err = ValidateLength(ctx, org.Description, "description", 4096); err != nil {
-		return err
+	org.identityClaim = &IdentityClaim{
+		Identity: &Identity{
+			IdentityBase: IdentityBase{
+				ID:        org.ID,
+				Type:      IdentityTypeOrg,
+				Namespace: SystemNamespace,
+				Name:      org.Name,
+				Parent:    nil, // No support for child identity migration (see FIR-9 for details)
+			},
+			IdentityProfile: IdentityProfile{
+				Description: org.Description,
+				Profile:     org.Profile,
+			},
+		},
 	}
-	if existing {
-		if org.ID == nil {
-			return i18n.NewError(ctx, i18n.MsgNilID)
-		}
-	}
-	return nil
+	org.identityClaim.Identity.DID, _ = org.identityClaim.Identity.GenerateDID(context.Background())
+	return org.identityClaim
 }
 
-func (org *Organization) Topic() string {
-	return OrgTopic
+func (org *DeprecatedOrganization) Topic() string {
+	return org.Migrated().Topic()
 }
 
-func (org *Organization) SetBroadcastMessage(msgID *UUID) {
-	org.Message = msgID
-}
-
-func (org *Organization) GetDID() string {
-	if org == nil {
-		return ""
-	}
-	return fmt.Sprintf("%s%s", FireflyOrgDIDPrefix, org.ID)
+func (org *DeprecatedOrganization) SetBroadcastMessage(msgID *UUID) {
+	org.Migrated().SetBroadcastMessage(msgID)
 }

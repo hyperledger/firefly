@@ -17,6 +17,7 @@
 package events
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -43,23 +45,56 @@ func sampleBatchTransfer(t *testing.T, txType fftypes.TransactionType, data ...*
 	return batch, b
 }
 
+func newTestOrg(name string) *fftypes.Identity {
+	identity := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeOrg,
+			Namespace: fftypes.SystemNamespace,
+			Name:      name,
+			Parent:    nil,
+		},
+	}
+	identity.DID, _ = identity.GenerateDID(context.Background())
+	return identity
+}
+
+func newTestNode(name string, owner *fftypes.Identity) *fftypes.Identity {
+	identity := &fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.IdentityTypeNode,
+			Namespace: fftypes.SystemNamespace,
+			Name:      name,
+			Parent:    owner.ID,
+		},
+		IdentityProfile: fftypes.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"id":  fmt.Sprintf("%s-peer", name),
+				"url": fmt.Sprintf("https://%s.example.com", name),
+			},
+		},
+	}
+	identity.DID, _ = identity.GenerateDID(context.Background())
+	return identity
+}
+
 func TestPinnedReceiveOK(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "parentOrg"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345", Parent: "parentOrg",
-	}, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
-		Identity: "parentOrg",
-	}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil, nil)
 	m, err := em.MessageReceived(mdx, "peer1", b)
@@ -76,23 +111,22 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeTokenPool)
 
-	mdi := em.database.(*databasemocks.Plugin)
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "parentOrg"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345", Parent: "parentOrg",
-	}, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
-		Identity: "parentOrg",
-	}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
 
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestMessageReceivePersistBatchError(t *testing.T) {
@@ -101,17 +135,16 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "parentOrg"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345", Parent: "parentOrg",
-	}, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
-		Identity: "parentOrg",
-	}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -119,6 +152,7 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestMessageReceivedBadData(t *testing.T) {
@@ -193,68 +227,15 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 		Batch: batch,
 	})
 
-	mdi := em.database.(*databasemocks.Plugin)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(nil, fmt.Errorf("pop"))
+
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
-}
-
-func TestMessageReceiveNodeNotFound(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	batch := &fftypes.Batch{}
-	b, _ := json.Marshal(&fftypes.TransportWrapper{
-		Batch: batch,
-	})
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, nil)
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.Empty(t, m)
-}
-
-func TestMessageReceiveAuthorLookupError(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	cancel() // to stop retry
-
-	batch := &fftypes.Batch{}
-	b, _ := json.Marshal(&fftypes.TransportWrapper{
-		Batch: batch,
-	})
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "org1"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
-}
-
-func TestMessageReceiveAuthorNotFound(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	batch := &fftypes.Batch{}
-	b, _ := json.Marshal(&fftypes.TransportWrapper{
-		Batch: batch,
-	})
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "org1"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, nil)
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
 	assert.Empty(t, m)
 }
 
@@ -264,15 +245,16 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "parentOrg"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345", Parent: "parentOrg",
-	}, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, fmt.Errorf("pop"))
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(nil, true, fmt.Errorf("pop"))
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
 	assert.Empty(t, m)
@@ -287,15 +269,16 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "parentOrg"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345", Parent: "parentOrg",
-	}, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(nil, false, nil)
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
@@ -312,15 +295,14 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "another"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345", Parent: "parentOrg",
-	}, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
-		Identity: "parentOrg",
-	}, nil)
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(newTestOrg("org2"), false, nil)
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
@@ -350,7 +332,7 @@ func TestBLOBReceivedTriggersRewindOk(t *testing.T) {
 	err := em.BLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
 	assert.NoError(t, err)
 
-	bid := <-em.aggregator.offchainBatches
+	bid := <-em.aggregator.rewindBatches
 	assert.Equal(t, *batchID, *bid)
 
 	mdi.AssertExpectations(t)
@@ -590,44 +572,94 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
+	org1 := newTestOrg("org1")
+	org2 := newTestOrg("org2")
+	org2.Parent = org1.ID
+	node1 := newTestNode("node1", org1)
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
 
-	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org2, false, nil)
+	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, fmt.Errorf("pop"))
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
 	assert.Empty(t, m)
 
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
+}
+
+func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // to avoid infinite retry
+
+	org1 := newTestOrg("org1")
+	org2 := newTestOrg("org2")
+	org2.Parent = org1.ID
+	node1 := newTestNode("node1", org1)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
+
+	mdx := &dataexchangemocks.Plugin{}
+
+	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org2, false, nil)
+	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, nil)
+
+	m, err := em.MessageReceived(mdx, "peer1", b)
+	assert.NoError(t, err)
+	assert.Empty(t, m)
+
+	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
+	org1 := newTestOrg("org1")
+	org2 := newTestOrg("org2")
+	org3 := newTestOrg("org3")
+	org2.Parent = org1.ID
+	node1 := newTestNode("node1", org1)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
 
-	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org2, false, nil)
+	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(org3, nil)
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
 
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
@@ -642,12 +674,14 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "0x12345"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345",
-	}, nil)
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
@@ -675,12 +709,14 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "0x12345"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345",
-	}, nil)
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
@@ -705,15 +741,17 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
+
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
-
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "0x12345"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345",
-	}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
@@ -740,15 +778,17 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
+
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
-
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "0x12345"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345",
-	}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
@@ -775,15 +815,17 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 
+	org1 := newTestOrg("org1")
+	node1 := newTestNode("node1", org1)
+
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
-
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "0x12345"},
-	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
-		Identity: "0x12345",
-	}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: "peer1",
+	}).Return(node1, nil)
+	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
