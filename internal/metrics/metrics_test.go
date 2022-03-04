@@ -23,6 +23,8 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -172,6 +174,39 @@ func TestTransferConfirmedMintBurn(t *testing.T) {
 	mm.timeMap[tokenLocalID.String()] = time.Now()
 	mm.TransferConfirmed(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 0)
+}
+
+func TestBlockchainTransaction(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.timeMap[tokenLocalID.String()] = time.Now()
+	mm.BlockchainTransaction("location", "methodName")
+	m, err := BlockchainTransactionsCounter.GetMetricWith(prometheus.Labels{LocationLabelName: "location", MethodNameLabelName: "methodName"})
+	assert.NoError(t, err)
+	v := testutil.ToFloat64(m)
+	assert.Equal(t, float64(1), v)
+}
+
+func TestBlockchainQuery(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.timeMap[tokenLocalID.String()] = time.Now()
+	mm.BlockchainQuery("location", "methodName")
+	m, err := BlockchainQueriesCounter.GetMetricWith(prometheus.Labels{LocationLabelName: "location", MethodNameLabelName: "methodName"})
+	assert.NoError(t, err)
+	v := testutil.ToFloat64(m)
+	assert.Equal(t, float64(1), v)
+}
+
+func TestBlockchainEvents(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.timeMap[tokenLocalID.String()] = time.Now()
+	mm.BlockchainEvent("location", "signature")
+	m, err := BlockchainEventsCounter.GetMetricWith(prometheus.Labels{LocationLabelName: "location", SignatureLabelName: "signature"})
+	assert.NoError(t, err)
+	v := testutil.ToFloat64(m)
+	assert.Equal(t, float64(1), v)
 }
 
 func TestIsMetricsEnabledTrue(t *testing.T) {
