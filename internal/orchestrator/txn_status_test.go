@@ -598,6 +598,70 @@ func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 	or.mdi.AssertExpectations(t)
 }
 
+func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: fftypes.TransactionTypeTokenTransfer,
+	}
+	op1ID := fftypes.NewUUID()
+	op2ID := fftypes.NewUUID()
+	ops := []*fftypes.Operation{
+		{
+			Status: fftypes.OpStatusFailed,
+			ID:     op1ID,
+			Type:   fftypes.OpTypeTokenTransfer,
+			Retry:  op2ID,
+		},
+		{
+			Status: fftypes.OpStatusPending,
+			ID:     op2ID,
+			Type:   fftypes.OpTypeTokenTransfer,
+		},
+	}
+	events := []*fftypes.BlockchainEvent{}
+	transfers := []*fftypes.TokenTransfer{}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(transfers, nil, nil)
+
+	status, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.NoError(t, err)
+
+	expectedStatus := compactJSON(`{
+		"status": "Pending",
+		"details": [
+			{
+				"type": "Operation",
+				"subtype": "token_transfer",
+				"status": "Failed",
+				"id": "` + op1ID.String() + `"
+			},
+			{
+				"type": "Operation",
+				"subtype": "token_transfer",
+				"status": "Pending",
+				"id": "` + op2ID.String() + `"
+			},
+			{
+				"type": "BlockchainEvent",
+				"status": "Pending"
+			},
+			{
+				"type": "TokenTransfer",
+				"status": "Pending"
+			}
+		]
+	}`)
+	statusJSON, _ := json.Marshal(status)
+	assert.Equal(t, expectedStatus, string(statusJSON))
+
+	or.mdi.AssertExpectations(t)
+}
+
 func TestGetTransactionStatusTokenApprovalPending(t *testing.T) {
 	or := newTestOrchestrator()
 
