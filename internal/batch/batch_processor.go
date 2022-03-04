@@ -90,11 +90,11 @@ type batchProcessor struct {
 	conf               *batchProcessorConf
 }
 
-type BatchFlushState struct {
-	manifest  fftypes.BatchManifest
-	persisted fftypes.BatchPersisted
-	payload   fftypes.BatchPayload
-	pins      []*fftypes.Bytes32
+type DispatchState struct {
+	Manifest  *fftypes.BatchManifest
+	Persisted fftypes.BatchPersisted
+	Payload   fftypes.BatchPayload
+	Pins      []*fftypes.Bytes32
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -242,7 +242,7 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	return id, flushAssembly, byteSize
 }
 
-func (bp *batchProcessor) endFlush(batch *fftypes.Batch, byteSize int64) {
+func (bp *batchProcessor) endFlush(state *DispatchState, byteSize int64) {
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
 	fs := &bp.flushStatus
@@ -258,10 +258,10 @@ func (bp *batchProcessor) endFlush(batch *fftypes.Batch, byteSize int64) {
 	fs.totalBytesFlushed += byteSize
 	fs.AverageBatchBytes = (fs.totalBytesFlushed / fs.TotalBatches)
 
-	fs.totalMessagesFlushed += int64(len(batch.Payload.Messages))
+	fs.totalMessagesFlushed += int64(len(state.Payload.Messages))
 	fs.AverageBatchMessages = math.Round((float64(fs.totalMessagesFlushed)/float64(fs.TotalBatches))*100) / 100
 
-	fs.totalDataFlushed += int64(len(batch.Payload.Data))
+	fs.totalDataFlushed += int64(len(state.Payload.Data))
 	fs.AverageBatchData = math.Round((float64(fs.totalDataFlushed)/float64(fs.TotalBatches))*100) / 100
 }
 
@@ -357,17 +357,25 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	id, flushWork, byteSize := bp.startFlush(overflow)
 	state := bp.initFlushState(id, flushWork)
 
+	// Sealing phase: assigns persisted pins to messages, and finalizes the manifest
 	err := bp.sealBatch(state)
 	if err != nil {
 		return err
 	}
 
-	err = bp.dispatchBatch(state, pins)
+	// Dispatch phase: the heavy lifting work - calling plugins to do the hard work of the batch.
+	//   Must manage its own database updates if it performs them, and any that result in updates
+	//   to the payload must be reflected back on the payload objects.
+	//   For example updates to the Blob.Public of a Data entry must be written do the DB,
+	//   and updated in Payload.Data[] array.
+	err = bp.dispatchBatch(state)
 	if err != nil {
 		return err
 	}
 
-	err = bp.markMessagesDispatched(state)
+	// Dispatched phase: Writes back the changes to the DB, so that these messages will not be
+	//   are all tagged as part of this batch, and won't be included in any future batches.
+	err = bp.markPayloadDispatched(state)
 	if err != nil {
 		return err
 	}
@@ -376,10 +384,10 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	return nil
 }
 
-func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWork) *BatchFlushState {
+func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWork) *DispatchState {
 	log.L(bp.ctx).Debugf("Flushing batch %s", id)
-	state := &BatchFlushState{
-		metadata: fftypes.BatchPersisted{
+	state := &DispatchState{
+		Persisted: fftypes.BatchPersisted{
 			BatchHeader: fftypes.BatchHeader{
 				ID:        id,
 				Namespace: bp.conf.namespace,
@@ -389,28 +397,16 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 			},
 			Created: fftypes.Now(),
 		},
-		manifest: fftypes.BatchManifest{
-			ID: id,
-		},
 	}
 	for _, w := range flushWork {
 		if w.msg != nil {
-			w.msg.BatchID = state.metadata.ID
-			w.msg.State = "" // state should always be set by receivers when loading the batch
-			state.payload.Messages = append(state.payload.Messages, w.msg.BatchMessage())
-			state.manifest.Messages = append(state.manifest.Messages, fftypes.MessageRef{
-				ID:   w.msg.Header.ID,
-				Hash: w.msg.Hash,
-			})
+			state.Payload.Messages = append(state.Payload.Messages, w.msg.BatchMessage())
 		}
 		for _, d := range w.data {
-			state.payload.Data = append(state.payload.Data, d.BatchData(bp.conf.RequiresSharedDataPayloadRefs))
-			state.manifest.Data = append(state.manifest.Data, fftypes.DataRef{
-				ID:   d.ID,
-				Hash: d.Hash,
-			})
+			state.Payload.Data = append(state.Payload.Data, d.BatchData(bp.conf.RequiresSharedDataPayloadRefs))
 		}
 	}
+	state.Manifest = state.Payload.Manifest(id)
 	return state
 }
 
@@ -456,11 +452,11 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	return fftypes.HashResult(hashBuilder), err
 }
 
-func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
+func (bp *batchProcessor) maskContexts(ctx context.Context, payload *fftypes.BatchPayload) ([]*fftypes.Bytes32, error) {
 	// Calculate the sequence hashes
 	pinsAssigned := false
-	contextsOrPins := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
-	for _, msg := range batch.Payload.Messages {
+	contextsOrPins := make([]*fftypes.Bytes32, 0, len(payload.Messages))
+	for _, msg := range payload.Messages {
 		if len(msg.Pins) > 0 {
 			// We have already allocated pins to this message, we cannot re-allocate.
 			log.L(ctx).Debugf("Message %s already has %d pins allocated", msg.Header.ID, len(msg.Pins))
@@ -493,38 +489,37 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch
 	return contextsOrPins, nil
 }
 
-func (bp *batchProcessor) sealBatch(state *BatchFlushState) (err error) {
+func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 
 			if bp.conf.txType == fftypes.TransactionTypeBatchPin {
 				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
-				if state.pins, err = bp.maskContexts(ctx, state); err != nil {
+				if state.Pins, err = bp.maskContexts(ctx, &state.Payload); err != nil {
 					return err
 				}
 			}
 
-			state.metadata.TX.Type = bp.conf.txType
-			if state.metadata.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, state.metadata.Namespace, bp.conf.txType); err != nil {
+			state.Persisted.TX.Type = bp.conf.txType
+			if state.Persisted.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, state.Persisted.Namespace, bp.conf.txType); err != nil {
 				return err
 			}
 
 			// The hash of the batch, is the hash of the manifest to minimize the compute cost.
 			// Note in v0.13 and before, it was the hash of the payload - so the inbound route has a fallback to accepting the full payload hash
-			state.metadata.Manifest =
+			state.Persisted.Manifest = state.Manifest.String()
+			state.Persisted.Hash = state.Manifest.Hash()
 
-				mani
-
-			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
+			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", state.Persisted.ID, state.Persisted.Hash)
 
 			// At this point the manifest of the batch is finalized. We write it to the database
-			return bp.database.UpsertBatch(ctx, batchPersisted)
+			return bp.database.UpsertBatch(ctx, &state.Persisted)
 		})
 	})
 	return err
 }
 
-func (bp *batchProcessor) dispatchBatch(state *BatchFlushState) error {
+func (bp *batchProcessor) dispatchBatch(state *DispatchState) error {
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
 	return operations.RunWithOperationCache(bp.ctx, func(ctx context.Context) error {
 		return bp.retry.Do(ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
@@ -533,12 +528,12 @@ func (bp *batchProcessor) dispatchBatch(state *BatchFlushState) error {
 	})
 }
 
-func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
+func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 	return bp.retry.Do(bp.ctx, "mark dispatched messages", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 			// Update all the messages in the batch with the batch ID
-			msgIDs := make([]driver.Value, len(batch.Payload.Messages))
-			for i, msg := range batch.Payload.Messages {
+			msgIDs := make([]driver.Value, len(state.Payload.Messages))
+			for i, msg := range state.Payload.Messages {
 				msgIDs[i] = msg.Header.ID
 			}
 			fb := database.MessageQueryFactory.NewFilter(ctx)
@@ -547,28 +542,28 @@ func (bp *batchProcessor) markMessagesDispatched(batch *fftypes.Batch) error {
 				fb.Eq("state", fftypes.MessageStateReady), // In the outside chance the next state transition happens first (which supersedes this)
 			)
 
-			var update database.Update
+			var allMsgsUpdate database.Update
 			if bp.conf.txType == fftypes.TransactionTypeBatchPin {
 				// Sent state waiting for confirm
-				update = database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", batch.ID).                // Mark the batch they are in
+				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
+					Set("batch", state.Persisted.ID).      // Mark the batch they are in
 					Set("state", fftypes.MessageStateSent) // Set them sent, so they won't be picked up and re-sent after restart/rewind
 			} else {
 				// Immediate confirmation if no batch pinning
-				update = database.MessageQueryFactory.NewUpdate(ctx).
-					Set("batch", batch.ID).
+				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
+					Set("batch", state.Persisted.ID).
 					Set("state", fftypes.MessageStateConfirmed).
 					Set("confirmed", fftypes.Now())
 			}
 
-			if err = bp.database.UpdateMessages(ctx, filter, update); err != nil {
+			if err = bp.database.UpdateMessages(ctx, filter, allMsgsUpdate); err != nil {
 				return err
 			}
 
 			if bp.conf.txType == fftypes.TransactionTypeUnpinned {
-				for _, msg := range batch.Payload.Messages {
+				for _, msg := range state.Payload.Messages {
 					// Emit a confirmation event locally immediately
-					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
+					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, state.Persisted.Namespace, msg.Header.ID, state.Persisted.TX.ID)
 					event.Correlator = msg.Header.CID
 					if err := bp.database.InsertEvent(ctx, event); err != nil {
 						return err

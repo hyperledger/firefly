@@ -66,9 +66,9 @@ func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 
@@ -104,9 +104,9 @@ func TestBatchSizeOverflow(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 	bp.conf.BatchMaxBytes = batchSizeEstimateBase + (&fftypes.Message{}).EstimateSize(false) + 100
@@ -119,11 +119,11 @@ func TestBatchSizeOverflow(t *testing.T) {
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
 
 	// Dispatch the work
+	msgIDs := []*fftypes.UUID{fftypes.NewUUID(), fftypes.NewUUID()}
 	go func() {
 		for i := 0; i < 2; i++ {
-			msgid := fftypes.NewUUID()
 			bp.newWork <- &batchWork{
-				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
+				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgIDs[i]}, Sequence: int64(1000 + i)},
 			}
 		}
 	}()
@@ -134,26 +134,26 @@ func TestBatchSizeOverflow(t *testing.T) {
 
 	// Check we got all messages across two batches
 	assert.Equal(t, 1, len(batch1.Payload.Messages))
-	assert.Equal(t, int64(1000), batch1.Payload.Messages[0].Sequence)
+	assert.Equal(t, msgIDs[0], batch1.Payload.Messages[0].Header.ID)
 	assert.Equal(t, 1, len(batch2.Payload.Messages))
-	assert.Equal(t, int64(1001), batch2.Payload.Messages[0].Sequence)
+	assert.Equal(t, msgIDs[1], batch2.Payload.Messages[0].Header.ID)
 
 	bp.cancelCtx()
 	<-bp.done
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return fmt.Errorf("pop")
 	})
 	bp.cancelCtx()
-	bp.dispatchBatch(&fftypes.Batch{}, []*fftypes.Bytes32{})
+	bp.dispatchBatch(&DispatchState{})
 	<-bp.done
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
@@ -187,7 +187,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 }
 
 func TestCalcPinsFail(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.cancelCtx()
@@ -196,8 +196,12 @@ func TestCalcPinsFail(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 
 	gid := fftypes.NewRandB32()
-	_, err := bp.persistBatch(&fftypes.Batch{
-		Group: gid,
+	err := bp.sealBatch(&DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: gid,
+			},
+		},
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
@@ -215,7 +219,7 @@ func TestCalcPinsFail(t *testing.T) {
 }
 
 func TestAddWorkInRecentlyFlushed(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.flushedSequences = []int64{100, 500, 400, 900, 200, 700}
@@ -229,7 +233,7 @@ func TestAddWorkInRecentlyFlushed(t *testing.T) {
 }
 
 func TestAddWorkInSortDeDup(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.assemblyQueue = []*batchWork{
@@ -254,7 +258,7 @@ func TestAddWorkInSortDeDup(t *testing.T) {
 }
 
 func TestStartFlushOverflow(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	batchID := fftypes.NewUUID()
@@ -283,7 +287,7 @@ func TestStartFlushOverflow(t *testing.T) {
 }
 
 func TestStartQuiesceNonBlocking(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.startQuiesce()
@@ -294,9 +298,9 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 	bp.conf.txType = fftypes.TransactionTypeUnpinned
@@ -336,35 +340,33 @@ func TestMaskContextsDuplicate(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
-	batch := &fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{
-					Header: fftypes.MessageHeader{
-						ID:     fftypes.NewUUID(),
-						Type:   fftypes.MessageTypePrivate,
-						Group:  fftypes.NewRandB32(),
-						Topics: fftypes.FFStringArray{"topic1"},
-					},
+	payload := &fftypes.BatchPayload{
+		Messages: []*fftypes.Message{
+			{
+				Header: fftypes.MessageHeader{
+					ID:     fftypes.NewUUID(),
+					Type:   fftypes.MessageTypePrivate,
+					Group:  fftypes.NewRandB32(),
+					Topics: fftypes.FFStringArray{"topic1"},
 				},
 			},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, batch)
+	_, err := bp.maskContexts(bp.ctx, payload)
 	assert.NoError(t, err)
 
 	// 2nd time no DB ops
-	_, err = bp.maskContexts(bp.ctx, batch)
+	_, err = bp.maskContexts(bp.ctx, payload)
 	assert.NoError(t, err)
 
 	bp.cancelCtx()
@@ -377,31 +379,29 @@ func TestMaskContextsUpdataMessageFail(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
-	batch := &fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{
-					Header: fftypes.MessageHeader{
-						ID:     fftypes.NewUUID(),
-						Type:   fftypes.MessageTypePrivate,
-						Group:  fftypes.NewRandB32(),
-						Topics: fftypes.FFStringArray{"topic1"},
-					},
+	payload := &fftypes.BatchPayload{
+		Messages: []*fftypes.Message{
+			{
+				Header: fftypes.MessageHeader{
+					ID:     fftypes.NewUUID(),
+					Type:   fftypes.MessageTypePrivate,
+					Group:  fftypes.NewRandB32(),
+					Topics: fftypes.FFStringArray{"topic1"},
 				},
 			},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, batch)
+	_, err := bp.maskContexts(bp.ctx, payload)
 	assert.Regexp(t, "pop", err)
 
 	bp.cancelCtx()

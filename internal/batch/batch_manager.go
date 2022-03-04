@@ -96,7 +96,7 @@ type batchManager struct {
 	startupOffsetRetryAttempts int
 }
 
-type DispatchHandler func(context.Context, *BatchFlushState) error
+type DispatchHandler func(context.Context, *DispatchState) error
 
 type DispatcherOptions struct {
 	RequiresSharedDataPayloadRefs bool

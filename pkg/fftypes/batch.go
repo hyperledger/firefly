@@ -72,9 +72,6 @@ type BatchPayload struct {
 }
 
 func (bm *BatchManifest) String() string {
-	if bm == nil {
-		return ""
-	}
 	b, _ := json.Marshal(&bm)
 	return string(b)
 }
@@ -90,22 +87,25 @@ func (ma *BatchPayload) Hash() *Bytes32 {
 	return &b32
 }
 
-func (b *Batch) Manifest() *BatchManifest {
-	if b == nil {
-		return nil
-	}
+func (ma *BatchPayload) Manifest(id *UUID) *BatchManifest {
 	tm := &BatchManifest{
-		ID:       b.ID,
-		Messages: make([]MessageRef, len(b.Payload.Messages)),
-		Data:     make([]DataRef, len(b.Payload.Data)),
+		ID:       id,
+		Messages: make([]MessageRef, len(ma.Messages)),
+		Data:     make([]DataRef, len(ma.Data)),
 	}
-	for i, m := range b.Payload.Messages {
+	for i, m := range ma.Messages {
 		tm.Messages[i].ID = m.Header.ID
 		tm.Messages[i].Hash = m.Hash
 	}
-	for i, d := range b.Payload.Data {
+	for i, d := range ma.Data {
 		tm.Data[i].ID = d.ID
 		tm.Data[i].Hash = d.Hash
 	}
 	return tm
+}
+func (b *Batch) Manifest() *BatchManifest {
+	if b == nil {
+		return nil
+	}
+	return b.Payload.Manifest(b.ID)
 }

@@ -121,22 +121,26 @@ func (bm *broadcastManager) Name() string {
 	return "BroadcastManager"
 }
 
-func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
+func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.DispatchState) error {
 	// The completed SharedStorage upload
 	op := fftypes.NewOperation(
 		bm.sharedstorage,
-		batch.Namespace,
-		batch.Payload.TX.ID,
+		state.Persisted.Namespace,
+		state.Persisted.TX.ID,
 		fftypes.OpTypeSharedStorageBatchBroadcast)
-	addBatchBroadcastInputs(op, batch.ID)
+	addBatchBroadcastInputs(op, state.Persisted.ID)
 	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
+	}
+	batch := &fftypes.Batch{
+		BatchHeader: state.Persisted.BatchHeader,
+		Payload:     state.Payload,
 	}
 	if err := bm.operations.RunOperation(ctx, opBatchBroadcast(op, batch)); err != nil {
 		return err
 	}
 	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s", batch.ID, batch.Author, batch.Key)
-	return bm.batchpin.SubmitPinnedBatch(ctx, batch, pins)
+	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
 }
 
 func (bm *broadcastManager) publishBlobs(ctx context.Context, dataToPublish []*fftypes.DataAndBlob) error {

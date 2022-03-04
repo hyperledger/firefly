@@ -116,13 +116,13 @@ func (_m *Manager) GetMessageData(ctx context.Context, msg *fftypes.Message, wit
 	return r0, r1, r2
 }
 
-// HydrateBatch provides a mock function with given fields: ctx, persistedBatch
-func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
-	ret := _m.Called(ctx, persistedBatch)
+// HydrateBatch provides a mock function with given fields: ctx, persistedBatch, requiresSharedDataPayloadRefs
+func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted, requiresSharedDataPayloadRefs bool) (*fftypes.Batch, error) {
+	ret := _m.Called(ctx, persistedBatch, requiresSharedDataPayloadRefs)
 
 	var r0 *fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted) *fftypes.Batch); ok {
-		r0 = rf(ctx, persistedBatch)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted, bool) *fftypes.Batch); ok {
+		r0 = rf(ctx, persistedBatch, requiresSharedDataPayloadRefs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Batch)
@@ -130,8 +130,8 @@ func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.Bat
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.BatchPersisted) error); ok {
-		r1 = rf(ctx, persistedBatch)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.BatchPersisted, bool) error); ok {
+		r1 = rf(ctx, persistedBatch, requiresSharedDataPayloadRefs)
 	} else {
 		r1 = ret.Error(1)
 	}

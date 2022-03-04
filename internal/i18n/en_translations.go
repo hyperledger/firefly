@@ -289,4 +289,5 @@ var (
 	MsgEventNotFound                = ffm("FF10370", "Event with name '%s' not found", 400)
 	MsgOperationNotSupported        = ffm("FF10371", "Operation not supported", 400)
 	MsgFailedToRetrieve             = ffm("FF10372", "Failed to retrieve %s %s", 500)
+	MsgBlobMissingPublic            = ffm("FF10373", "Blob for data %s missing public payload reference while flushing batch", 500)
 )

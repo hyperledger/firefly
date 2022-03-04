@@ -44,8 +44,6 @@ func TestSQLSerializedManifest(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "", ((*BatchManifest)(nil)).String())
-
 	mfString := batch.Manifest().String()
 	var mf *BatchManifest
 	err := json.Unmarshal([]byte(mfString), &mf)

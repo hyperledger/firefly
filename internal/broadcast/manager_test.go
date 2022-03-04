@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
@@ -148,12 +149,14 @@ func TestDispatchBatchInsertOpFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	batch := &fftypes.Batch{}
+	state := &batch.DispatchState{
+		Pins: []*fftypes.Bytes32{fftypes.NewRandB32()},
+	}
 
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
 
 	mom.AssertExpectations(t)
@@ -163,16 +166,23 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	batch := &fftypes.Batch{}
+	state := &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				ID: fftypes.NewUUID(),
+			},
+		},
+		Pins: []*fftypes.Bytes32{fftypes.NewRandB32()},
+	}
 
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
-		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch == batch
+		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch.ID.Equals(state.Persisted.ID)
 	})).Return(fmt.Errorf("pop"))
 
-	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
 
 	mom.AssertExpectations(t)
@@ -182,10 +192,13 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
-			ID: fftypes.NewUUID(),
+	state := &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				ID: fftypes.NewUUID(),
+			},
 		},
+		Pins: []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
@@ -195,10 +208,10 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
-		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch == batch
+		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch.ID.Equals(state.Persisted.ID)
 	})).Return(nil)
 
-	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.dispatchBatch(context.Background(), state)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -210,10 +223,14 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
-			SignerRef: fftypes.SignerRef{Author: "wrong", Key: "wrong"},
+	state := &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				ID:        fftypes.NewUUID(),
+				SignerRef: fftypes.SignerRef{Author: "wrong", Key: "wrong"},
+			},
 		},
+		Pins: []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
@@ -223,10 +240,10 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchBroadcastData)
-		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch == batch
+		return op.Type == fftypes.OpTypeSharedStorageBatchBroadcast && data.Batch.ID.Equals(state.Persisted.ID)
 	})).Return(nil)
 
-	err := bm.dispatchBatch(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)

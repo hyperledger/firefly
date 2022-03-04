@@ -42,20 +42,20 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	readyForDispatch := make(chan bool)
-	waitForDispatch := make(chan *fftypes.Batch)
-	handler := func(ctx context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	waitForDispatch := make(chan *DispatchState)
+	handler := func(ctx context.Context, state *DispatchState) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
 		}
-		assert.Len(t, s, 2)
+		assert.Len(t, state.Pins, 2)
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
 			"746f70696331",
 		/*|  topic1   | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[0].String())
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
@@ -63,9 +63,9 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		/*|   topic2  | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[1].String())
 
-		waitForDispatch <- b
+		waitForDispatch <- state
 		return nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -155,15 +155,15 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	readyForDispatch := make(chan bool)
-	waitForDispatch := make(chan *fftypes.Batch)
+	waitForDispatch := make(chan *DispatchState)
 	var groupID fftypes.Bytes32
 	_ = groupID.UnmarshalText([]byte("44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b"))
-	handler := func(ctx context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	handler := func(ctx context.Context, state *DispatchState) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
 		}
-		assert.Len(t, s, 2)
+		assert.Len(t, state.Pins, 2)
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
 			"746f70696331" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "0000000000003039",
@@ -171,7 +171,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[0].String())
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
@@ -180,8 +180,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
-		waitForDispatch <- b
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[1].String())
+		waitForDispatch <- state
 		return nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -353,7 +353,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
 	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
-		func(c context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		func(c context.Context, state *DispatchState) error {
 			return nil
 		},
 		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
@@ -406,7 +406,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
 	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
-		func(c context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		func(c context.Context, state *DispatchState) error {
 			cancelCtx()
 			return fmt.Errorf("fizzle")
 		}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
@@ -444,7 +444,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
 	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
-		func(c context.Context, bp *fftypes.BatchPersisted, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		func(c context.Context, state *DispatchState) error {
 			return nil
 		},
 		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
