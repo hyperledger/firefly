@@ -43,6 +43,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
@@ -72,6 +73,7 @@ type testOrchestrator struct {
 	mmi *metricsmocks.Manager
 	mom *operationmocks.Manager
 	mbp *batchpinmocks.Submitter
+	mth *txcommonmocks.Helper
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -100,6 +102,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mmi: &metricsmocks.Manager{},
 		mom: &operationmocks.Manager{},
 		mbp: &batchpinmocks.Submitter{},
+		mth: &txcommonmocks.Helper{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -119,6 +122,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
+	tor.orchestrator.txHelper = tor.mth
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
