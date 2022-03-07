@@ -145,6 +145,7 @@ func TestBroadcastOk(t *testing.T) {
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{

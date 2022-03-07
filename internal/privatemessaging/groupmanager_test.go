@@ -86,7 +86,7 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil)
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return([]*fftypes.Data{}, false, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -109,7 +109,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return([]*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`!json`)},
 	}, true, nil)
 
@@ -134,7 +134,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return([]*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`{}`)},
 	}, true, nil)
 
@@ -172,7 +172,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return([]*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 
@@ -210,7 +210,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return([]*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -250,7 +250,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return([]*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)

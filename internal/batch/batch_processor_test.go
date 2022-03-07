@@ -38,7 +38,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 	bp := newBatchProcessor(context.Background(), mni, mdi, &batchProcessorConf{
 		namespace: "ns1",
 		txType:    fftypes.TransactionTypeBatchPin,
-		identity:  fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
+		signer:    fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		dispatch:  dispatch,
 		DispatcherOptions: DispatcherOptions{
 			BatchMaxSize:   10,

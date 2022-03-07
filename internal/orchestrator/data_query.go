@@ -84,7 +84,7 @@ func (or *orchestrator) fetchMessageData(ctx context.Context, msg *fftypes.Messa
 		Message: *msg,
 	}
 	// Lookup the full data
-	data, _, err := or.data.GetMessageData(ctx, msg, true)
+	data, _, err := or.data.GetMessageDataCached(ctx, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*f
 	if err != nil || msg == nil {
 		return nil, err
 	}
-	data, _, err := or.data.GetMessageData(ctx, msg, true)
+	data, _, err := or.data.GetMessageDataCached(ctx, msg)
 	return data, err
 }
 

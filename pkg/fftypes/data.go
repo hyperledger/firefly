@@ -111,6 +111,20 @@ func (d DataRefs) Hash() *Bytes32 {
 	return &b32
 }
 
+type DataArray []*Data
+
+func (da DataArray) Refs() DataRefs {
+	dr := make(DataRefs, len(da))
+	for i, d := range da {
+		dr[i] = &DataRef{
+			ID:        d.ID,
+			Hash:      d.Hash,
+			ValueSize: d.ValueSize,
+		}
+	}
+	return dr
+}
+
 func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
 	switch validator {
 	case ValidatorTypeJSON, ValidatorTypeNone, ValidatorTypeSystemDefinition:

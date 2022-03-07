@@ -109,7 +109,10 @@ func TestBroadcastMessageGood(t *testing.T) {
 	defer cancel()
 
 	msg := &fftypes.MessageInOut{}
-	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, &msg.Message, database.UpsertOptimizationNew).Return(nil)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertMessage", mock.Anything, &msg.Message, database.UpsertOptimizationNew).Return(nil)
+	mdm := bm.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
 	broadcast := broadcastSender{
 		mgr: bm,
@@ -120,6 +123,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 
 	bm.Start()
 	bm.WaitStop()
+	mdi.AssertExpectations(t)
 }
 
 func TestBroadcastMessageBad(t *testing.T) {

@@ -86,9 +86,10 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil).Once()
@@ -144,9 +145,10 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertMessage", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil).Once()
@@ -248,7 +250,7 @@ func TestSendMessageFail(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
@@ -309,7 +311,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 		},
 	}
 
-	err := message.resolve(pm.ctx)
+	_, err := message.resolve(pm.ctx)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -334,7 +336,7 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Hash: fftypes.NewRandB32(), ValueSize: 100001},
 	}, nil)
 
@@ -408,7 +410,7 @@ func TestMessagePrepare(t *testing.T) {
 	}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, nil)
 
@@ -484,7 +486,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
@@ -667,9 +669,10 @@ func TestRequestReplySuccess(t *testing.T) {
 		Return(nil, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
 	groupID := fftypes.NewRandB32()
 

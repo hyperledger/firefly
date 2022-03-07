@@ -142,7 +142,7 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.SignerRef) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, signer *fftypes.SignerRef) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
@@ -151,7 +151,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, dispatcherKey)
 	}
-	name := bm.getProcessorKey(namespace, identity, group)
+	name := bm.getProcessorKey(namespace, signer, group)
 	processor, ok := dispatcher.processors[name]
 	if !ok {
 		processor = newBatchProcessor(
@@ -164,7 +164,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 				txType:            txType,
 				dispatcherName:    dispatcher.name,
 				namespace:         namespace,
-				identity:          *identity,
+				signer:            *signer,
 				group:             group,
 				dispatch:          dispatcher.handler,
 			},
@@ -176,10 +176,14 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	return processor, nil
 }
 
-func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftypes.Data, err error) {
+func (bm *batchManager) assembleMessageData(processor *batchProcessor, msg *fftypes.Message) (retData []*fftypes.Data, err error) {
+	var cro []data.CacheReadOption
+	if processor.conf.DispatcherOptions.BatchType == fftypes.BatchTypeBroadcast {
+		cro = append(cro, data.CRORequirePublicBlobRefs)
+	}
 	var foundAll = false
 	err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble message %s data", msg.Header.ID), func(attempt int) (retry bool, err error) {
-		data, foundAll, err = bm.data.GetMessageData(bm.ctx, msg, true)
+		retData, foundAll, err = bm.data.GetMessageDataCached(bm.ctx, msg, cro...)
 		// continual retry for persistence error (distinct from not-found)
 		return true, err
 	})
@@ -189,7 +193,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 	if !foundAll {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, msg.Header.ID)
 	}
-	return data, nil
+	return retData, nil
 }
 
 func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
@@ -225,17 +229,19 @@ func (bm *batchManager) messageSequencer() {
 
 		if len(msgs) > 0 {
 			for _, msg := range msgs {
-				data, err := bm.assembleMessageData(msg)
+				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
+				if err != nil {
+					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
+					continue
+				}
+
+				data, err := bm.assembleMessageData(processor, msg)
 				if err != nil {
 					l.Errorf("Failed to retrieve message data for %s: %s", msg.Header.ID, err)
 					continue
 				}
 
-				err = bm.dispatchMessage(msg, data...)
-				if err != nil {
-					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
-					continue
-				}
+				bm.dispatchMessage(processor, msg, data...)
 			}
 
 			// Next time round only read after the messages we just processed (unless we get a tap to rewind)
@@ -296,19 +302,14 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 	}
 }
 
-func (bm *batchManager) dispatchMessage(msg *fftypes.Message, data ...*fftypes.Data) error {
+func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.Message, data ...*fftypes.Data) {
 	l := log.L(bm.ctx)
-	processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
-	if err != nil {
-		return err
-	}
 	l.Debugf("Dispatching message %s to %s batch processor %s", msg.Header.ID, msg.Header.Type, processor.conf.name)
 	work := &batchWork{
 		msg:  msg,
 		data: data,
 	}
 	processor.newWork <- work
-	return nil
 }
 
 func (bm *batchManager) reapQuiescing() {

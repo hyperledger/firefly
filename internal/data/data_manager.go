@@ -39,8 +39,8 @@ type Manager interface {
 	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data []*fftypes.Data, foundAllData bool, err error)
 	GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data []*fftypes.Data, foundAll bool, err error)
 	UpdateMessageCache(msg *fftypes.Message, data []*fftypes.Data)
-	ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, error)
-	ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error)
+	ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, error)
+	ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, []*fftypes.DataAndBlob, error)
 	VerifyNamespaceExists(ctx context.Context, ns string) error
 
 	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
@@ -73,8 +73,7 @@ func (mce *messageCacheEntry) Size() int64 {
 type CacheReadOption int
 
 const (
-	CRONone = iota
-	CRORequirePublicBlobRefs
+	CRORequirePublicBlobRefs CacheReadOption = iota
 )
 
 func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
@@ -161,7 +160,7 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, ns string, v
 
 // GetMessageWithData performs a cached lookup of a message with all of the associated data.
 // - Use this in performance sensitive code, but note mutable fields like the status of the
-//   message are NOT returned as they cannot be relied upon (due to the caching).
+//   message CANNOT be relied upon (due to the caching).
 func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data []*fftypes.Data, foundAllData bool, err error) {
 	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
 		return mce.msg, mce.data, true, nil
@@ -233,7 +232,7 @@ func (dm *dataManager) getMessageData(ctx context.Context, msg *fftypes.Message)
 	data = make([]*fftypes.Data, 0, len(msg.Data))
 	foundAll = true
 	for i, dataRef := range msg.Data {
-		d, err := dm.resolveRef(ctx, msg.Header.Namespace, dataRef, true)
+		d, err := dm.resolveRef(ctx, msg.Header.Namespace, dataRef)
 		if err != nil {
 			return nil, false, err
 		}
@@ -267,12 +266,12 @@ func (dm *dataManager) ValidateAll(ctx context.Context, data []*fftypes.Data) (v
 	return true, nil
 }
 
-func (dm *dataManager) resolveRef(ctx context.Context, ns string, dataRef *fftypes.DataRef, withValue bool) (*fftypes.Data, error) {
+func (dm *dataManager) resolveRef(ctx context.Context, ns string, dataRef *fftypes.DataRef) (*fftypes.Data, error) {
 	if dataRef == nil || dataRef.ID == nil {
 		log.L(ctx).Warnf("data is nil")
 		return nil, nil
 	}
-	d, err := dm.database.GetDataByID(ctx, dataRef.ID, withValue)
+	d, err := dm.database.GetDataByID(ctx, dataRef.ID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -359,18 +358,14 @@ func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validato
 	return data, blob, nil
 }
 
-func (dm *dataManager) validateAndStoreInlined(ctx context.Context, ns string, value *fftypes.DataRefOrValue) (*fftypes.Data, *fftypes.Blob, *fftypes.DataRef, error) {
+func (dm *dataManager) validateAndStoreInlined(ctx context.Context, ns string, value *fftypes.DataRefOrValue) (*fftypes.Data, *fftypes.Blob, error) {
 	data, blob, err := dm.validateAndStore(ctx, ns, value.Validator, value.Datatype, value.Value, value.Blob)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// Return a ref to the newly saved data
-	return data, blob, &fftypes.DataRef{
-		ID:        data.ID,
-		Hash:      data.Hash,
-		ValueSize: data.ValueSize,
-	}, nil
+	return data, blob, nil
 }
 
 func (dm *dataManager) UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error) {
@@ -378,49 +373,45 @@ func (dm *dataManager) UploadJSON(ctx context.Context, ns string, inData *fftype
 	return data, err
 }
 
-func (dm *dataManager) ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (refs fftypes.DataRefs, err error) {
-	refs, _, err = dm.resolveInlineData(ctx, ns, inData, false)
-	return refs, err
+func (dm *dataManager) ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, error) {
+	data, _, err := dm.resolveInlineData(ctx, ns, inData, false)
+	return data, err
 }
 
 // ResolveInlineDataBroadcast ensures the data object are stored, and returns a list of any data that does not currently
 // have a shared storage reference, and hence must be published to sharedstorage before a broadcast message can be sent.
 // We deliberately do NOT perform those publishes inside of this action, as we expect to be in a RunAsGroup (trnasaction)
 // at this point, and hence expensive things like a multi-megabyte upload should be decoupled by our caller.
-func (dm *dataManager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {
+func (dm *dataManager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (data fftypes.DataArray, dataToPublish []*fftypes.DataAndBlob, err error) {
 	return dm.resolveInlineData(ctx, ns, inData, true)
 }
 
-func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData fftypes.InlineData, broadcast bool) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {
+func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData fftypes.InlineData, broadcast bool) (data fftypes.DataArray, dataToPublish []*fftypes.DataAndBlob, err error) {
 
-	refs = make(fftypes.DataRefs, len(inData))
+	data = make(fftypes.DataArray, len(inData))
 	if broadcast {
 		dataToPublish = make([]*fftypes.DataAndBlob, 0, len(inData))
 	}
 	for i, dataOrValue := range inData {
-		var data *fftypes.Data
+		var d *fftypes.Data
 		var blob *fftypes.Blob
 		switch {
 		case dataOrValue.ID != nil:
 			// If an ID is supplied, then it must be a reference to existing data
-			data, err = dm.resolveRef(ctx, ns, &dataOrValue.DataRef, false /* do not need the value */)
+			d, err = dm.resolveRef(ctx, ns, &dataOrValue.DataRef)
 			if err != nil {
 				return nil, nil, err
 			}
-			if data == nil {
+			if d == nil {
 				return nil, nil, i18n.NewError(ctx, i18n.MsgDataReferenceUnresolvable, i)
 			}
-			refs[i] = &fftypes.DataRef{
-				ID:        data.ID,
-				Hash:      data.Hash,
-				ValueSize: data.ValueSize,
-			}
-			if blob, err = dm.resolveBlob(ctx, data.Blob); err != nil {
+			data[i] = d
+			if blob, err = dm.resolveBlob(ctx, d.Blob); err != nil {
 				return nil, nil, err
 			}
 		case dataOrValue.Value != nil || dataOrValue.Blob != nil:
 			// We've got a Value, so we can validate + store it
-			if data, blob, refs[i], err = dm.validateAndStoreInlined(ctx, ns, dataOrValue); err != nil {
+			if data[i], blob, err = dm.validateAndStoreInlined(ctx, ns, dataOrValue); err != nil {
 				return nil, nil, err
 			}
 		default:
@@ -430,14 +421,14 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData 
 
 		// If the data is being resolved for public broadcast, and there is a blob attachment, that blob
 		// needs to be published by our calller
-		if broadcast && blob != nil && data.Blob.Public == "" {
+		if broadcast && blob != nil && d.Blob.Public == "" {
 			dataToPublish = append(dataToPublish, &fftypes.DataAndBlob{
-				Data: data,
+				Data: d,
 				Blob: blob,
 			})
 		}
 	}
-	return refs, dataToPublish, nil
+	return data, dataToPublish, nil
 }
 
 // HydrateBatch fetches the full messages for a persited batch, ready for transmission

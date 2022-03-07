@@ -452,7 +452,7 @@ func (sa *syncAsyncBridge) resolveReply(inflight *inflightRequest, msg *fftypes.
 	log.L(sa.ctx).Debugf("Resolving reply request '%s' with message '%s'", inflight.id, msg.Header.ID)
 
 	response := &fftypes.MessageInOut{Message: *msg}
-	data, _, err := sa.data.GetMessageData(sa.ctx, msg, true)
+	data, _, err := sa.data.GetMessageDataCached(sa.ctx, msg)
 	if err != nil {
 		log.L(sa.ctx).Errorf("Failed to read response data for message '%s' on request '%s': %s", msg.Header.ID, inflight.id, err)
 		return

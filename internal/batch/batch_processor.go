@@ -45,7 +45,7 @@ type batchProcessorConf struct {
 	dispatcherName string
 	txType         fftypes.TransactionType
 	namespace      string
-	identity       fftypes.SignerRef
+	signer         fftypes.SignerRef
 	group          *fftypes.Bytes32
 	dispatch       DispatchHandler
 }
@@ -392,7 +392,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 				ID:        id,
 				Type:      bp.conf.DispatcherOptions.BatchType,
 				Namespace: bp.conf.namespace,
-				SignerRef: bp.conf.identity,
+				SignerRef: bp.conf.signer,
 				Group:     bp.conf.group,
 				Node:      bp.ni.GetNodeUUID(bp.ctx),
 			},
