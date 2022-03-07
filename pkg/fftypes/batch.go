@@ -87,11 +87,6 @@ func (bm *BatchManifest) String() string {
 	return string(b)
 }
 
-func (bm *BatchManifest) Hash() *Bytes32 {
-	var b32 Bytes32 = sha256.Sum256([]byte(bm.String()))
-	return &b32
-}
-
 func (ma *BatchPayload) Hash() *Bytes32 {
 	b, _ := json.Marshal(&ma)
 	var b32 Bytes32 = sha256.Sum256(b)

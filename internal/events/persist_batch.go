@@ -31,18 +31,19 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 		return false, nil // This is not retryable. skip this batch
 	}
 
-	return em.persistBatch(ctx, batch)
+	_, valid, err = em.persistBatch(ctx, batch)
+	return valid, err
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) (valid bool, err error) {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) (persistedBatch *fftypes.BatchPersisted, valid bool, err error) {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
 	if batch.ID == nil || batch.Payload.TX.ID == nil {
 		l.Errorf("Invalid batch '%s'. Missing ID or transaction ID (%v)", batch.ID, batch.Payload.TX.ID)
-		return false, nil // This is not retryable. skip this batch
+		return nil, false, nil // This is not retryable. skip this batch
 	}
 
 	switch batch.Payload.TX.Type {
@@ -50,28 +51,43 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	case fftypes.TransactionTypeUnpinned:
 	default:
 		l.Errorf("Invalid batch '%s'. Invalid transaction type: %s", batch.ID, batch.Payload.TX.Type)
-		return false, nil // This is not retryable. skip this batch
+		return nil, false, nil // This is not retryable. skip this batch
 	}
 
-	// Verify the hash calculation
-	hash := batch.Payload.Hash()
-	if batch.Hash == nil || *batch.Hash != *hash {
-		l.Errorf("Invalid batch '%s'. Hash does not match payload. Found=%s Expected=%s", batch.ID, hash, batch.Hash)
-		return false, nil // This is not retryable. skip this batch
+	// Re-generate the manifest
+	manifest := batch.Manifest()
+	manifestString := manifest.String()
+	manifestHash := fftypes.HashString(manifestString)
+
+	// Verify the hash calculation.
+	if !manifestHash.Equals(batch.Hash) {
+		// To cope with existing batches written by v0.13 and older environments, we have to do a more expensive
+		// hashing of the whole payload before we reject.
+		payloadHash := batch.Payload.Hash()
+		if payloadHash.Equals(batch.Hash) {
+			l.Infof("Persisting migrated batch '%s'. Hash is a payload hash: %s", batch.ID, batch.Hash)
+		} else {
+			l.Errorf("Invalid batch '%s'. Hash does not match payload. Found=%s Expected=%s", batch.ID, manifestHash, batch.Hash)
+			return nil, false, nil // This is not retryable. skip this batch
+		}
 	}
 
 	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
-	batch.Confirmed = now
+	persistedBatch = &fftypes.BatchPersisted{
+		BatchHeader: batch.BatchHeader,
+		Manifest:    manifestString,
+		Confirmed:   now,
+	}
 
-	// Upsert the batch itself, ensuring the hash does not change
-	err = em.database.UpsertBatch(ctx, batch)
+	// Upsert the batch
+	err = em.database.UpsertBatch(ctx, persistedBatch)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
-			return false, nil // This is not retryable. skip this batch
+			return nil, false, nil // This is not retryable. skip this batch
 		}
 		l.Errorf("Failed to insert batch '%s': %s", batch.ID, err)
-		return false, err // a persistence failure here is considered retryable (so returned)
+		return nil, false, err // a persistence failure here is considered retryable (so returned)
 	}
 
 	optimization := em.getOptimization(ctx, batch)
@@ -79,18 +95,18 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	// Insert the data entries
 	for i, data := range batch.Payload.Data {
 		if err = em.persistBatchData(ctx, batch, i, data, optimization); err != nil {
-			return false, err
+			return nil, false, err
 		}
 	}
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
 		if valid, err = em.persistBatchMessage(ctx, batch, i, msg, optimization); !valid || err != nil {
-			return valid, err
+			return nil, valid, err
 		}
 	}
 
-	return true, nil
+	return persistedBatch, true, nil
 }
 
 func (em *eventManager) getOptimization(ctx context.Context, batch *fftypes.Batch) database.UpsertOptimization {

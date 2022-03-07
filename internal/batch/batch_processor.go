@@ -509,7 +509,7 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 			// The hash of the batch, is the hash of the manifest to minimize the compute cost.
 			// Note in v0.13 and before, it was the hash of the payload - so the inbound route has a fallback to accepting the full payload hash
 			state.Persisted.Manifest = state.Manifest.String()
-			state.Persisted.Hash = state.Manifest.Hash()
+			state.Persisted.Hash = fftypes.HashString(state.Persisted.Manifest)
 
 			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", state.Persisted.ID, state.Persisted.Hash)
 

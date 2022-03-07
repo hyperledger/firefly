@@ -160,10 +160,10 @@ func TestGetMessageDataDBError(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, fmt.Errorf("pop"))
-	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
+	data, foundAll, err := dm.GetMessageDataCached(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
-	}, true)
+	})
 	assert.Nil(t, data)
 	assert.False(t, foundAll)
 	assert.EqualError(t, err, "pop")
@@ -176,10 +176,10 @@ func TestGetMessageDataNilEntry(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
-	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
+	data, foundAll, err := dm.GetMessageDataCached(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{nil},
-	}, true)
+	})
 	assert.Empty(t, data)
 	assert.False(t, foundAll)
 	assert.NoError(t, err)
@@ -192,10 +192,10 @@ func TestGetMessageDataNotFound(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
-	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
+	data, foundAll, err := dm.GetMessageDataCached(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
-	}, true)
+	})
 	assert.Empty(t, data)
 	assert.False(t, foundAll)
 	assert.NoError(t, err)
@@ -212,10 +212,10 @@ func TestGetMessageDataHashMismatch(t *testing.T) {
 		ID:   dataID,
 		Hash: fftypes.NewRandB32(),
 	}, nil)
-	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
+	data, foundAll, err := dm.GetMessageDataCached(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: dataID, Hash: fftypes.NewRandB32()}},
-	}, true)
+	})
 	assert.Empty(t, data)
 	assert.False(t, foundAll)
 	assert.NoError(t, err)
@@ -229,19 +229,29 @@ func TestGetMessageDataOk(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	dataID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
+	}
+
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&fftypes.Data{
 		ID:   dataID,
 		Hash: hash,
-	}, nil)
-	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
-		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
-	}, true)
+	}, nil).Once()
+	data, foundAll, err := dm.GetMessageDataCached(ctx, msg)
 	assert.NotEmpty(t, data)
 	assert.Equal(t, *dataID, *data[0].ID)
 	assert.True(t, foundAll)
 	assert.NoError(t, err)
 
+	// Check cache kicks in for second call
+	data, foundAll, err = dm.GetMessageDataCached(ctx, msg)
+	assert.NotEmpty(t, data)
+	assert.Equal(t, *dataID, *data[0].ID)
+	assert.True(t, foundAll)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
 }
 
 func TestCheckDatatypeVerifiesTheSchema(t *testing.T) {
@@ -805,4 +815,116 @@ func TestHydrateBatchMsgBadManifest(t *testing.T) {
 
 	_, err := dm.HydrateBatch(ctx, bp)
 	assert.Regexp(t, "FF10151", err)
+}
+
+func TestGetMessageWithDataOk(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
+	}
+
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil).Once()
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&fftypes.Data{
+		ID:   dataID,
+		Hash: hash,
+	}, nil).Once()
+	msgRet, data, foundAll, err := dm.GetMessageWithDataCached(ctx, msg.Header.ID)
+	assert.Equal(t, msg, msgRet)
+	assert.NotEmpty(t, data)
+	assert.Equal(t, *dataID, *data[0].ID)
+	assert.True(t, foundAll)
+	assert.NoError(t, err)
+
+	// Check cache kicks in for second call
+	msgRet, data, foundAll, err = dm.GetMessageWithDataCached(ctx, msg.Header.ID)
+	assert.Equal(t, msg, msgRet)
+	assert.NotEmpty(t, data)
+	assert.Equal(t, *dataID, *data[0].ID)
+	assert.True(t, foundAll)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetMessageWithDataCRORequirePublicBlobRefs(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
+	}
+
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil).Twice()
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&fftypes.Data{
+		ID:   dataID,
+		Hash: hash,
+		Blob: &fftypes.BlobRef{
+			Hash: fftypes.NewRandB32(),
+		},
+	}, nil).Twice()
+	msgRet, data, foundAll, err := dm.GetMessageWithDataCached(ctx, msg.Header.ID)
+	assert.Equal(t, msg, msgRet)
+	assert.NotEmpty(t, data)
+	assert.Equal(t, *dataID, *data[0].ID)
+	assert.True(t, foundAll)
+	assert.NoError(t, err)
+
+	// Check cache does not kick in as we have missing blob ref
+	msgRet, data, foundAll, err = dm.GetMessageWithDataCached(ctx, msg.Header.ID, CRORequirePublicBlobRefs)
+	assert.Equal(t, msg, msgRet)
+	assert.NotEmpty(t, data)
+	assert.Equal(t, *dataID, *data[0].ID)
+	assert.True(t, foundAll)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetMessageWithDataReadDataFail(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
+	}
+
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, fmt.Errorf("pop"))
+	_, _, _, err := dm.GetMessageWithDataCached(ctx, msg.Header.ID)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetMessageWithDataReadMessageFail(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
+	}
+
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, fmt.Errorf("pop"))
+	_, _, _, err := dm.GetMessageWithDataCached(ctx, msg.Header.ID)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
 }

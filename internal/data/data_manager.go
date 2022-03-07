@@ -36,7 +36,9 @@ import (
 type Manager interface {
 	CheckDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) error
 	ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error)
-	GetMessageData(ctx context.Context, msg *fftypes.Message, withValue bool) (data []*fftypes.Data, foundAll bool, err error)
+	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data []*fftypes.Data, foundAllData bool, err error)
+	GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data []*fftypes.Data, foundAll bool, err error)
+	UpdateMessageCache(msg *fftypes.Message, data []*fftypes.Data)
 	ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, error)
 	ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error)
 	VerifyNamespaceExists(ctx context.Context, ns string) error
@@ -54,7 +56,26 @@ type dataManager struct {
 	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
+	messageCache      *ccache.Cache
+	messageCacheTTL   time.Duration
 }
+
+type messageCacheEntry struct {
+	msg  *fftypes.Message
+	data []*fftypes.Data
+	size int64
+}
+
+func (mce *messageCacheEntry) Size() int64 {
+	return mce.size
+}
+
+type CacheReadOption int
+
+const (
+	CRONone = iota
+	CRORequirePublicBlobRefs
+)
 
 func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
 	if di == nil || pi == nil || dx == nil {
@@ -75,6 +96,11 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Pl
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
 			MaxSize(config.GetByteSize(config.ValidatorCacheSize)),
+	)
+	dm.messageCache = ccache.New(
+		// We use a LRU cache with a size-aware max
+		ccache.Configure().
+			MaxSize(config.GetByteSize(config.MessageCacheTTL)),
 	)
 	return dm, nil
 }
@@ -133,15 +159,81 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, ns string, v
 	return v, err
 }
 
-// GetMessageData looks for all the data attached to the message.
+// GetMessageWithData performs a cached lookup of a message with all of the associated data.
+// - Use this in performance sensitive code, but note mutable fields like the status of the
+//   message are NOT returned as they cannot be relied upon (due to the caching).
+func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data []*fftypes.Data, foundAllData bool, err error) {
+	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
+		return mce.msg, mce.data, true, nil
+	}
+	msg, err = dm.database.GetMessageByID(ctx, msgID)
+	if err != nil || msg == nil {
+		return nil, nil, false, err
+	}
+	data, foundAllData, err = dm.dataLookupAndCache(ctx, msg)
+	return msg, data, foundAllData, err
+}
+
+// GetMessageData looks for all the data attached to the message, including caching.
 // It only returns persistence errors.
 // For all cases where the data is not found (or the hashes mismatch)
-func (dm *dataManager) GetMessageData(ctx context.Context, msg *fftypes.Message, withValue bool) (data []*fftypes.Data, foundAll bool, err error) {
+func (dm *dataManager) GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data []*fftypes.Data, foundAll bool, err error) {
+	if mce := dm.queryMessageCache(ctx, msg.Header.ID, options...); mce != nil {
+		return mce.data, true, nil
+	}
+	return dm.dataLookupAndCache(ctx, msg)
+}
+
+// cachedMessageAndDataLookup is the common function that can lookup and cache a message with its data
+func (dm *dataManager) dataLookupAndCache(ctx context.Context, msg *fftypes.Message) (data []*fftypes.Data, foundAllData bool, err error) {
+	data, foundAllData, err = dm.getMessageData(ctx, msg)
+	if err != nil {
+		return nil, false, err
+	}
+	if !foundAllData {
+		return data, false, err
+	}
+	dm.UpdateMessageCache(msg, data)
+	return data, true, nil
+}
+
+func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) *messageCacheEntry {
+	cached := dm.messageCache.Get(id.String())
+	if cached == nil {
+		return nil
+	}
+	mce := cached.Value().(*messageCacheEntry)
+	for _, opt := range options {
+		if opt == CRORequirePublicBlobRefs {
+			for idx, d := range mce.data {
+				if d.Blob != nil && d.Blob.Public == "" {
+					log.L(ctx).Debugf("Cache entry for data %d (%s) in message %s is missing public blob ref", idx, d.ID, mce.msg.Header.ID)
+					return nil
+				}
+			}
+		}
+	}
+	log.L(ctx).Debugf("Returning msg %s from cache", id)
+	return mce
+}
+
+// UpdateMessageCache pushes an entry to the message cache. It is exposed out of the package, so that
+// code which generates (or augments) message/data can populate the cache.
+func (dm *dataManager) UpdateMessageCache(msg *fftypes.Message, data []*fftypes.Data) {
+	cacheEntry := &messageCacheEntry{
+		msg:  msg,
+		data: data,
+		size: msg.EstimateSize(true),
+	}
+	dm.messageCache.Set(msg.Header.ID.String(), cacheEntry, dm.messageCacheTTL)
+}
+
+func (dm *dataManager) getMessageData(ctx context.Context, msg *fftypes.Message) (data []*fftypes.Data, foundAll bool, err error) {
 	// Load all the data - must all be present for us to send
 	data = make([]*fftypes.Data, 0, len(msg.Data))
 	foundAll = true
 	for i, dataRef := range msg.Data {
-		d, err := dm.resolveRef(ctx, msg.Header.Namespace, dataRef, withValue)
+		d, err := dm.resolveRef(ctx, msg.Header.Namespace, dataRef, true)
 		if err != nil {
 			return nil, false, err
 		}

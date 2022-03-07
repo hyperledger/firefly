@@ -45,10 +45,12 @@ func TestPersistBatchFromBroadcast(t *testing.T) {
 	}
 
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "did:firefly:org/12345",
-			Key:    "0x12345",
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
