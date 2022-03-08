@@ -52,7 +52,8 @@ type messageFilter struct {
 }
 
 type blockchainFilter struct {
-	nameFilter *regexp.Regexp
+	nameFilter     *regexp.Regexp
+	listenerFilter *regexp.Regexp
 }
 
 type transactionFilter struct {
@@ -346,8 +347,17 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 			}
 		}
 
+		var listenerFilter *regexp.Regexp
+		if filter.BlockchainEvent.Listener != "" {
+			listenerFilter, err = regexp.Compile(filter.BlockchainEvent.Listener)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.BlockchainEvent.listener", filter.BlockchainEvent.Listener)
+			}
+		}
+
 		bf := &blockchainFilter{
-			nameFilter: nameFilter,
+			nameFilter:     nameFilter,
+			listenerFilter: listenerFilter,
 		}
 		sub.blockchainFilter = bf
 	}

@@ -244,6 +244,7 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		author := ""
 		txType := ""
 		beName := ""
+		beListener := ""
 		var topics []string
 
 		if msg != nil {
@@ -261,6 +262,7 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 
 		if be != nil {
 			beName = be.Name
+			beListener = be.Listener.String()
 		}
 
 		if filter.messageFilter != nil {
@@ -295,6 +297,9 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 
 		if filter.blockchainFilter != nil {
 			if filter.blockchainFilter.nameFilter != nil && !filter.blockchainFilter.nameFilter.MatchString(beName) {
+				continue
+			}
+			if filter.blockchainFilter.listenerFilter != nil && !filter.blockchainFilter.listenerFilter.MatchString(beListener) {
 				continue
 			}
 		}

@@ -489,6 +489,8 @@ func TestFilterEventsMatch(t *testing.T) {
 	id3 := fftypes.NewUUID()
 	id4 := fftypes.NewUUID()
 	id5 := fftypes.NewUUID()
+	id6 := fftypes.NewUUID()
+	lid := fftypes.NewUUID()
 	events := ed.filterEvents([]*fftypes.EventDelivery{
 		{
 			Event: fftypes.Event{
@@ -559,6 +561,15 @@ func TestFilterEventsMatch(t *testing.T) {
 				Type: fftypes.TransactionTypeBatchPin,
 			},
 		},
+		{
+			Event: fftypes.Event{
+				ID:   id6,
+				Type: fftypes.EventTypeBlockchainEventReceived,
+			},
+			BlockchainEvent: &fftypes.BlockchainEvent{
+				Listener: lid,
+			},
+		},
 	})
 
 	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypeMessageConfirmed))
@@ -576,7 +587,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	ed.subscription.messageFilter.tagFilter = nil
 	ed.subscription.messageFilter.groupFilter = nil
 	matched = ed.filterEvents(events)
-	assert.Equal(t, 5, len(matched))
+	assert.Equal(t, 6, len(matched))
 	assert.Equal(t, *id1, *matched[0].ID)
 	assert.Equal(t, *id2, *matched[1].ID)
 	assert.Equal(t, *id3, *matched[2].ID)
@@ -626,6 +637,14 @@ func TestFilterEventsMatch(t *testing.T) {
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id4, *matched[0].ID)
+
+	ed.subscription.messageFilter = nil
+	ed.subscription.transactionFilter = nil
+	ed.subscription.blockchainFilter.nameFilter = nil
+	ed.subscription.blockchainFilter.listenerFilter = regexp.MustCompile(lid.String())
+	matched = ed.filterEvents(events)
+	assert.Equal(t, 1, len(matched))
+	assert.Equal(t, *id6, *matched[0].ID)
 }
 
 func TestEnrichTransactionEvents(t *testing.T) {

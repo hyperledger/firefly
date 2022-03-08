@@ -6135,6 +6135,8 @@ paths:
                     properties:
                       blockchainevent:
                         properties:
+                          listener:
+                            type: string
                           name:
                             type: string
                         type: object
@@ -6207,6 +6209,8 @@ paths:
                   properties:
                     blockchainevent:
                       properties:
+                        listener:
+                          type: string
                         name:
                           type: string
                       type: object
@@ -6348,6 +6352,8 @@ paths:
                     properties:
                       blockchainevent:
                         properties:
+                          listener:
+                            type: string
                           name:
                             type: string
                         type: object
@@ -6420,6 +6426,8 @@ paths:
                   properties:
                     blockchainevent:
                       properties:
+                        listener:
+                          type: string
                         name:
                           type: string
                       type: object
@@ -6561,6 +6569,8 @@ paths:
                     properties:
                       blockchainevent:
                         properties:
+                          listener:
+                            type: string
                           name:
                             type: string
                         type: object
@@ -6671,6 +6681,8 @@ paths:
                     properties:
                       blockchainevent:
                         properties:
+                          listener:
+                            type: string
                           name:
                             type: string
                         type: object

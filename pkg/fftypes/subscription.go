@@ -43,9 +43,9 @@ type TransactionFilter struct {
 	Type string `json:"type,omitempty"`
 }
 
-// TODO: Add listener ID
 type BlockchainEventFilter struct {
-	Name string `json:"name,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Listener string `json:"listener,omitempty"`
 }
 
 // SubOptsFirstEvent picks the first event that should be dispatched on the subscription, and can be a string containing an exact sequence as well as one of the enum values

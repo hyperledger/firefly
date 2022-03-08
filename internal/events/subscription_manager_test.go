@@ -376,6 +376,22 @@ func TestCreateSubscriptionBadBlockchainEventNameFilter(t *testing.T) {
 	assert.Regexp(t, "FF10171.*name", err)
 }
 
+func TestCreateSubscriptionBadBlockchainEventListenerFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			BlockchainEvent: fftypes.BlockchainEventFilter{
+				Listener: "[[[[! badness",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*listener", err)
+}
+
 func TestCreateSubscriptionSuccessMessageFilter(t *testing.T) {
 	mei := &eventsmocks.PluginAll{}
 	sm, cancel := newTestSubManager(t, mei)
