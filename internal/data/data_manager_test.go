@@ -73,7 +73,7 @@ func TestValidateE2E(t *testing.T) {
 		Version:   "0.0.1",
 	}
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(dt, nil)
-	isValid, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
+	isValid, err := dm.ValidateAll(ctx, fftypes.DataArray{data})
 	assert.Regexp(t, "FF10198", err)
 	assert.False(t, isValid)
 
@@ -86,7 +86,7 @@ func TestValidateE2E(t *testing.T) {
 	err = v.Validate(ctx, data)
 	assert.NoError(t, err)
 
-	isValid, err = dm.ValidateAll(ctx, []*fftypes.Data{data})
+	isValid, err = dm.ValidateAll(ctx, fftypes.DataArray{data})
 	assert.NoError(t, err)
 	assert.True(t, isValid)
 
@@ -149,7 +149,7 @@ func TestValidateBadHash(t *testing.T) {
 		Namespace: "0.0.1",
 	}
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(dt, nil).Once()
-	_, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
+	_, err := dm.ValidateAll(ctx, fftypes.DataArray{data})
 	assert.Regexp(t, "FF10201", err)
 
 }
@@ -616,7 +616,7 @@ func TestValidateAllLookupError(t *testing.T) {
 		Value: fftypes.JSONAnyPtr(`anything`),
 	}
 	data.Seal(ctx, nil)
-	_, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
+	_, err := dm.ValidateAll(ctx, fftypes.DataArray{data})
 	assert.Regexp(t, "pop", err)
 
 }
@@ -646,7 +646,7 @@ func TestValidateAllStoredValidatorInvalid(t *testing.T) {
 			Version: "0.0.1",
 		},
 	}
-	isValid, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
+	isValid, err := dm.ValidateAll(ctx, fftypes.DataArray{data})
 	assert.False(t, isValid)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)

@@ -83,7 +83,7 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType fftypes.MessageType, txtype fftypes.TransactionType, count int) (data []*fftypes.Data) {
+func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType fftypes.MessageType, txtype fftypes.TransactionType, count int) (data fftypes.DataArray) {
 	var group *fftypes.Bytes32
 	messages := GetMessages(ts.t, client, ts.startTime, msgType, topic, 200)
 	for i, message := range messages {

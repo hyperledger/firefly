@@ -191,7 +191,7 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batc
 	return pm.sendData(ctx, tw, nodes, state.Persisted.Manifest)
 }
 
-func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.Data, txid *fftypes.UUID, node *fftypes.Identity) error {
+func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.DataArray, txid *fftypes.UUID, node *fftypes.Identity) error {
 	// Send all the blobs associated with this batch
 	for _, d := range data {
 		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage

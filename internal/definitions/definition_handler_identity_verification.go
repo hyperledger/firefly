@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
 	var verification fftypes.IdentityVerification
 	valid := dh.getSystemBroadcastPayload(ctx, verifyMsg, data, &verification)
 	if !valid {

@@ -101,7 +101,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 				ID:   batch.TransactionID,
 			},
 			Messages: []*fftypes.Message{},
-			Data:     []*fftypes.Data{},
+			Data:     fftypes.DataArray{},
 		},
 	}
 	batchData.Hash = batchData.Payload.Hash()
@@ -181,7 +181,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 				ID:   batch.TransactionID,
 			},
 			Messages: []*fftypes.Message{},
-			Data:     []*fftypes.Data{},
+			Data:     fftypes.DataArray{},
 		},
 	}
 	batchDataBytes, err := json.Marshal(&batchData)
@@ -496,7 +496,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Messages: []*fftypes.Message{nil},
-			Data:     []*fftypes.Data{nil},
+			Data:     fftypes.DataArray{nil},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
@@ -529,7 +529,7 @@ func TestPersistBatchGoodDataUpsertOptimizeExistingFail(t *testing.T) {
 				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},
@@ -565,7 +565,7 @@ func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
 				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
 			},
 		},

@@ -37,7 +37,7 @@ var getData = &oapispec.Route{
 	FilterFactory:   database.DataQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Data{} },
+	JSONOutputValue: func() interface{} { return fftypes.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetData(r.Ctx, r.PP["ns"], r.Filter))

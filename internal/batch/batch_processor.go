@@ -36,7 +36,7 @@ import (
 
 type batchWork struct {
 	msg  *fftypes.Message
-	data []*fftypes.Data
+	data fftypes.DataArray
 }
 
 type batchProcessorConf struct {

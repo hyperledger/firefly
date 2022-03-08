@@ -141,7 +141,7 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 	return s.sendInternal(ctx, method)
 }
 
-func (s *messageSender) resolve(ctx context.Context) ([]*fftypes.Data, error) {
+func (s *messageSender) resolve(ctx context.Context) (fftypes.DataArray, error) {
 	// Resolve the sending identity
 	if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, s.msg.Header.Namespace, &s.msg.Header.SignerRef); err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)

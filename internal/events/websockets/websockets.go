@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -78,7 +78,7 @@ func (ws *WebSockets) ValidateOptions(options *fftypes.SubscriptionOptions) erro
 	return nil
 }
 
-func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
 	ws.connMux.Lock()
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()

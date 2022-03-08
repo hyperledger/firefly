@@ -193,7 +193,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 			TX: fftypes.TransactionRef{
 				ID: txID,
 			},
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: dataID1, Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
@@ -408,7 +408,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 			},
 		},
 		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
@@ -482,7 +482,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 			},
 		},
 		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
@@ -502,7 +502,7 @@ func TestTransferBlobsNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, nil)
 
-	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
 	assert.Regexp(t, "FF10239", err)
@@ -522,7 +522,7 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "peer1", "blob/1").Return(nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
 	assert.Regexp(t, "pop", err)

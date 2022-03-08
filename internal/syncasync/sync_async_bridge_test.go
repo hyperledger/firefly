@@ -69,7 +69,7 @@ func TestRequestReplyOk(t *testing.T) {
 	}
 
 	mdm := sa.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
@@ -117,7 +117,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	}
 
 	mdm := sa.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
@@ -163,7 +163,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	}
 
 	mdm := sa.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 

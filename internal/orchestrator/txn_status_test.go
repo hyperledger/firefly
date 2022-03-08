@@ -128,7 +128,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -180,7 +180,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)

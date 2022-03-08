@@ -110,7 +110,7 @@ type iDataCollection interface {
 	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error)
 
 	// GetData - Get data
-	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, res *FilterResult, err error)
+	GetData(ctx context.Context, filter Filter) (message fftypes.DataArray, res *FilterResult, err error)
 
 	// GetDataRefs - Get data references only (no data)
 	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, res *FilterResult, err error)

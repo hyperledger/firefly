@@ -98,7 +98,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		ID:   dataID1,
 		Hash: dataHash,
 	}
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{data}, true, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -215,7 +215,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		ID:   dataID1,
 		Hash: dataHash,
 	}
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{data}, true, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
@@ -272,7 +272,7 @@ func TestDispatchUnknownType(t *testing.T) {
 
 	msg := &fftypes.Message{}
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, true, nil)
 
 	err := bm.Start()
 	assert.NoError(t, err)
@@ -343,7 +343,7 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 		}).
 		Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything, data.CRORequirePublicBlobRefs).Return([]*fftypes.Data{}, false, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything, data.CRORequirePublicBlobRefs).Return(fftypes.DataArray{}, false, nil)
 
 	bm.(*batchManager).messageSequencer()
 
@@ -380,7 +380,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 				{ID: dataID},
 			}},
 	}, nil, nil)
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{{ID: dataID}}, true, nil)
 	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -433,7 +433,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 				{ID: dataID},
 			}},
 	}, nil, nil)
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{{ID: dataID}}, true, nil)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	bm.(*batchManager).messageSequencer()
@@ -471,7 +471,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 				{ID: dataID},
 			}},
 	}, nil, nil)
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{{ID: dataID}}, true, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {

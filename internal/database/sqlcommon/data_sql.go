@@ -237,7 +237,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	return data, nil
 }
 
-func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message fftypes.DataArray, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -250,7 +250,7 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 	}
 	defer rows.Close()
 
-	data := []*fftypes.Data{}
+	data := fftypes.DataArray{}
 	for rows.Next() {
 		d, err := s.dataResult(ctx, rows, true)
 		if err != nil {

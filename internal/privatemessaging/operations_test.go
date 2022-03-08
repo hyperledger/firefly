@@ -520,7 +520,7 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 		Group: &fftypes.Group{},
 		Batch: &fftypes.Batch{
 			Payload: fftypes.BatchPayload{
-				Data: []*fftypes.Data{
+				Data: fftypes.DataArray{
 					{Value: fftypes.JSONAnyPtr(`!json`)},
 				},
 			},

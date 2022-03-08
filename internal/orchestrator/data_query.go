@@ -183,7 +183,7 @@ func (or *orchestrator) GetMessagesWithData(ctx context.Context, ns string, filt
 	return msgsData, fr, err
 }
 
-func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error) {
+func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) (fftypes.DataArray, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil || msg == nil {
 		return nil, err
@@ -258,7 +258,7 @@ func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	return or.database.GetBatches(ctx, filter)
 }
 
-func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error) {
+func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) (fftypes.DataArray, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetData(ctx, filter)
 }

@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, verificationID *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
 	var claim fftypes.IdentityClaim
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
 	if !valid {

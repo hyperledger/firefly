@@ -85,7 +85,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
-	}, []*fftypes.Data{}, fftypes.NewUUID())
+	}, fftypes.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -97,7 +97,7 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
-	}, []*fftypes.Data{}, nil)
+	}, fftypes.DataArray{}, nil)
 	assert.False(t, valid)
 }
 
@@ -107,7 +107,7 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
-	}, []*fftypes.Data{}, nil)
+	}, fftypes.DataArray{}, nil)
 	assert.False(t, valid)
 }
 

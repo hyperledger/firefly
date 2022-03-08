@@ -903,121 +903,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success
@@ -1056,121 +964,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success

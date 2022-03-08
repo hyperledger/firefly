@@ -175,7 +175,7 @@ func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {
 	op := &fftypes.Operation{}
 	batch := &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{Value: fftypes.JSONAnyPtr(`!json`)},
 			},
 		},

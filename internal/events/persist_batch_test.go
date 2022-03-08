@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -75,15 +76,101 @@ func TestPersistBatchFromBroadcast(t *testing.T) {
 					},
 				},
 			},
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				data,
 			},
 		},
 	}
-	batch.Hash = batch.Payload.Hash()
+	batch.Hash = fftypes.HashString(batch.Manifest().String())
 
 	_, err = em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash)
 	assert.EqualError(t, err, "pop") // Confirms we got to upserting the batch
+
+}
+
+func TestPersistBatchFromBroadcastNoCacheDataNotInBatch(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
+
+	batch := &fftypes.Batch{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.TransactionTypeBatchPin,
+			},
+			Messages: []*fftypes.Message{
+				{
+					Header: fftypes.MessageHeader{
+						ID:   fftypes.NewUUID(),
+						Type: fftypes.MessageTypeDefinition,
+						SignerRef: fftypes.SignerRef{
+							Author: "did:firefly:org/12345",
+							Key:    "0x12345",
+						},
+						TxType: fftypes.TransactionTypeBatchPin,
+					},
+					Data: fftypes.DataRefs{
+						{
+							ID:   fftypes.NewUUID(),
+							Hash: fftypes.NewRandB32(),
+						},
+					},
+				},
+			},
+			Data: nil,
+		},
+	}
+	batch.Payload.Messages[0].Seal(em.ctx)
+	batch.Hash = fftypes.HashString(batch.Manifest().String())
+
+	valid, err := em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash)
+	assert.True(t, valid)
+	assert.NoError(t, err)
+
+}
+
+func TestPersistBatchNilMessageEntryop(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
+
+	batch := &fftypes.Batch{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "did:firefly:org/12345",
+				Key:    "0x12345",
+			},
+		},
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.TransactionTypeBatchPin,
+			},
+			Messages: []*fftypes.Message{nil},
+			Data:     nil,
+		},
+	}
+	batch.Hash = fftypes.HashString(batch.Manifest().String())
+
+	valid, err := em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash)
+	assert.False(t, valid)
+	assert.NoError(t, err)
 
 }
 

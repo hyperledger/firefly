@@ -37,7 +37,7 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error)
+	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
@@ -120,7 +120,7 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
@@ -150,7 +150,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	}
 }
 
-func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
+func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data fftypes.DataArray, res fftypes.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))

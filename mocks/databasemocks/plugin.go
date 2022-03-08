@@ -584,15 +584,15 @@ func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filt
 }
 
 // GetData provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftypes.Data, *database.FilterResult, error) {
+func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) (fftypes.DataArray, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Data); ok {
+	var r0 fftypes.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) fftypes.DataArray); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Data)
+			r0 = ret.Get(0).(fftypes.DataArray)
 		}
 	}
 

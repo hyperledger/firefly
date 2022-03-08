@@ -804,7 +804,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 						},
 					},
 				},
-				Data: []*fftypes.Data{
+				Data: fftypes.DataArray{
 					{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr("{}"), Blob: &fftypes.BlobRef{
 						Hash: fftypes.NewRandB32(),
 					}},

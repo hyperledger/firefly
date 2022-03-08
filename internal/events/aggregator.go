@@ -209,17 +209,20 @@ func (ag *aggregator) extractBatchMessagePin(manifest *fftypes.BatchManifest, re
 
 func (ag *aggregator) migrateManifest(ctx context.Context, persistedBatch *fftypes.BatchPersisted) *fftypes.BatchManifest {
 	// In version v0.13.x and earlier, we stored the full batch
-	var fullBatch fftypes.Batch
-	err := json.Unmarshal([]byte(persistedBatch.Manifest), &fullBatch)
+	var fullPayload fftypes.BatchPayload
+	err := json.Unmarshal([]byte(persistedBatch.Manifest), &fullPayload)
 	if err != nil {
 		log.L(ctx).Errorf("Invalid migration persisted batch: %s", err)
 		return nil
 	}
-	if len(fullBatch.Payload.Messages) == 0 {
+	if len(fullPayload.Messages) == 0 {
 		log.L(ctx).Errorf("Invalid migration persisted batch: no payload")
 		return nil
 	}
-	return fullBatch.Manifest()
+	return (&fftypes.Batch{
+		BatchHeader: persistedBatch.BatchHeader,
+		Payload:     fullPayload,
+	}).Manifest()
 }
 
 func (ag *aggregator) extractManifest(ctx context.Context, batch *fftypes.BatchPersisted) *fftypes.BatchManifest {
@@ -276,10 +279,6 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 		}
 
 		l.Debugf("Aggregating pin %.10d batch=%s msg=%s pinIndex=%d msgBaseIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, msgEntry.ID, pin.Index, msgBaseIndex, pin.Hash, pin.Masked)
-		if msgEntry.ID == nil {
-			l.Errorf("null message entry %d in batch '%s'", pin.Index, batch.ID)
-			continue
-		}
 		if dupMsgCheck[*msgEntry.ID] {
 			continue
 		}
@@ -505,7 +504,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 
 // resolveBlobs ensures that the blobs for all the attachments in the data array, have been received into the
 // local data exchange blob store. Either because of a private transfer, or by downloading them from the shared storage
-func (ag *aggregator) resolveBlobs(ctx context.Context, data []*fftypes.Data) (resolved bool, err error) {
+func (ag *aggregator) resolveBlobs(ctx context.Context, data fftypes.DataArray) (resolved bool, err error) {
 	l := log.L(ctx)
 
 	for _, d := range data {
