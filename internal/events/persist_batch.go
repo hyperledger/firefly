@@ -39,7 +39,6 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
 func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) (persistedBatch *fftypes.BatchPersisted, valid bool, err error) {
 	l := log.L(ctx)
-	now := fftypes.Now()
 
 	if batch.ID == nil || batch.Payload.TX.ID == nil {
 		l.Errorf("Invalid batch '%s'. Missing ID or transaction ID (%v)", batch.ID, batch.Payload.TX.ID)
@@ -54,29 +53,20 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		return nil, false, nil // This is not retryable. skip this batch
 	}
 
-	// Re-generate the manifest
-	manifest := batch.Manifest()
-	manifestString := manifest.String()
-	manifestHash := fftypes.HashString(manifestString)
+	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
+	persistedBatch, _ = batch.Confirmed()
+	manifestHash := fftypes.HashString(persistedBatch.Manifest)
 
 	// Verify the hash calculation.
 	if !manifestHash.Equals(batch.Hash) {
 		// To cope with existing batches written by v0.13 and older environments, we have to do a more expensive
 		// hashing of the whole payload before we reject.
-		payloadHash := batch.Payload.Hash()
-		if payloadHash.Equals(batch.Hash) {
+		if batch.Payload.Hash().Equals(batch.Hash) {
 			l.Infof("Persisting migrated batch '%s'. Hash is a payload hash: %s", batch.ID, batch.Hash)
 		} else {
 			l.Errorf("Invalid batch '%s'. Hash does not match payload. Found=%s Expected=%s", batch.ID, manifestHash, batch.Hash)
 			return nil, false, nil // This is not retryable. skip this batch
 		}
-	}
-
-	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
-	persistedBatch = &fftypes.BatchPersisted{
-		BatchHeader: batch.BatchHeader,
-		Manifest:    manifestString,
-		Confirmed:   now,
 	}
 
 	// Upsert the batch
@@ -90,23 +80,48 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		return nil, false, err // a persistence failure here is considered retryable (so returned)
 	}
 
+	valid, err = em.persistBatchContent(ctx, batch)
+	if err != nil || !valid {
+		return nil, valid, err
+	}
+	return persistedBatch, valid, err
+}
+
+func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.Batch) (valid bool, err error) {
+
 	optimization := em.getOptimization(ctx, batch)
 
 	// Insert the data entries
+	dataByID := make(map[fftypes.UUID]*fftypes.Data)
 	for i, data := range batch.Payload.Data {
-		if err = em.persistBatchData(ctx, batch, i, data, optimization); err != nil {
-			return nil, false, err
+		if valid, err = em.persistBatchData(ctx, batch, i, data, optimization); !valid || err != nil {
+			return valid, err
 		}
+		dataByID[*data.ID] = data
 	}
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
 		if valid, err = em.persistBatchMessage(ctx, batch, i, msg, optimization); !valid || err != nil {
-			return nil, valid, err
+			return valid, err
+		}
+		dataInBatch := true
+		msgData := make(fftypes.DataArray, len(msg.Data))
+		for di, dataRef := range msg.Data {
+			msgData[di] = dataByID[*dataRef.ID]
+			if msgData[di] == nil || !msgData[di].Hash.Equals(dataRef.Hash) {
+				log.L(ctx).Errorf("Message '%s' in batch '%s' - data not in-line in batch id='%s' hash='%s'", msg.Header.ID, batch.ID, dataRef.ID, dataRef.Hash)
+				dataInBatch = false
+				break
+			}
+		}
+		if dataInBatch {
+			// We can push the complete message into the cache straight away
+			em.data.UpdateMessageCache(msg, msgData)
 		}
 	}
 
-	return persistedBatch, true, nil
+	return true, nil
 }
 
 func (em *eventManager) getOptimization(ctx context.Context, batch *fftypes.Batch) database.UpsertOptimization {
@@ -122,9 +137,8 @@ func (em *eventManager) getOptimization(ctx context.Context, batch *fftypes.Batc
 	return database.UpsertOptimizationNew
 }
 
-func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data, optimization database.UpsertOptimization) error {
-	_, err := em.persistReceivedData(ctx, i, data, "batch", batch.ID, optimization)
-	return err
+func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data, optimization database.UpsertOptimization) (bool, error) {
+	return em.persistReceivedData(ctx, i, data, "batch", batch.ID, optimization)
 }
 
 func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context*/, i int, data *fftypes.Data, mType string, mID *fftypes.UUID, optimization database.UpsertOptimization) (bool, error) {

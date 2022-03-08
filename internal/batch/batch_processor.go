@@ -394,9 +394,9 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 				Namespace: bp.conf.namespace,
 				SignerRef: bp.conf.signer,
 				Group:     bp.conf.group,
+				Created:   fftypes.Now(),
 				Node:      bp.ni.GetNodeUUID(bp.ctx),
 			},
-			Created: fftypes.Now(),
 		},
 	}
 	for _, w := range flushWork {

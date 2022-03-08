@@ -44,7 +44,13 @@ func TestSQLSerializedManifest(t *testing.T) {
 		},
 	}
 
-	mfString := batch.Manifest().String()
+	bp, manifest := batch.Confirmed()
+	mfString := manifest.String()
+	assert.Equal(t, batch.BatchHeader, bp.BatchHeader)
+	assert.Equal(t, batch.Payload.TX, bp.TX)
+	assert.Equal(t, mfString, bp.Manifest)
+	assert.NotNil(t, bp.Confirmed)
+
 	var mf *BatchManifest
 	err := json.Unmarshal([]byte(mfString), &mf)
 	assert.NoError(t, err)

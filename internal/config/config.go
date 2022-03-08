@@ -357,7 +357,7 @@ func Reset() {
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")
-	viper.SetDefault(string(MessageCacheSize), "10Mb")
+	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(IdentityManagerCacheLimit), 100 /* items */)
 	viper.SetDefault(string(IdentityManagerCacheTTL), "1h")

@@ -169,8 +169,8 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, false, nil).Once()
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{verifyData}, false, nil).Once()
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
@@ -215,8 +215,8 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, false, nil).Once()
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{verifyData}, false, nil).Once()
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
@@ -250,7 +250,7 @@ func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 	mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
@@ -280,7 +280,7 @@ func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
@@ -310,7 +310,7 @@ func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
@@ -341,7 +341,7 @@ func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 	mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 

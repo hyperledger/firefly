@@ -102,7 +102,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 		}
 	}
 	for _, candidate := range candidates {
-		data, foundAll, err := dh.data.GetMessageData(ctx, candidate, true)
+		data, foundAll, err := dh.data.GetMessageDataCached(ctx, candidate)
 		if err != nil {
 			return nil, err
 		}

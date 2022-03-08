@@ -49,14 +49,14 @@ func TestBatch2EWithDB(t *testing.T) {
 			Namespace: "ns1",
 			Hash:      fftypes.NewRandB32(),
 			Node:      fftypes.NewUUID(),
+			Created:   fftypes.Now(),
 		},
-		Created: fftypes.Now(),
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeUnpinned,
 		},
 		Manifest: (&fftypes.BatchManifest{
-			Messages: []fftypes.MessageRef{
-				{ID: msgID1},
+			Messages: []*fftypes.MessageManifestEntry{
+				{MessageRef: fftypes.MessageRef{ID: msgID1}},
 			},
 		}).String(),
 	}
@@ -91,16 +91,16 @@ func TestBatch2EWithDB(t *testing.T) {
 			Namespace: "ns1",
 			Hash:      fftypes.NewRandB32(),
 			Node:      fftypes.NewUUID(),
+			Created:   fftypes.Now(),
 		},
-		Created: fftypes.Now(),
 		TX: fftypes.TransactionRef{
 			ID:   txid,
 			Type: fftypes.TransactionTypeBatchPin,
 		},
 		Manifest: (&fftypes.BatchManifest{
-			Messages: []fftypes.MessageRef{
-				{ID: msgID1},
-				{ID: msgID2},
+			Messages: []*fftypes.MessageManifestEntry{
+				{MessageRef: fftypes.MessageRef{ID: msgID1}},
+				{MessageRef: fftypes.MessageRef{ID: msgID2}},
 			},
 		}).String(),
 		PayloadRef: payloadRef,

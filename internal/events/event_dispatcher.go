@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -159,6 +159,10 @@ func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter
 }
 
 func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*fftypes.EventDelivery, error) {
+
+	// TODO: Update this to use the message cache, only for event types that have message references.
+	//       Do this after Alex's changes to enrichment are merged
+
 	// We need all the messages that match event references
 	refIDs := make([]driver.Value, len(events))
 	for i, ls := range events {
@@ -382,7 +386,7 @@ func (ed *eventDispatcher) deliverEvents() {
 			var data []*fftypes.Data
 			var err error
 			if withData && event.Message != nil {
-				data, _, err = ed.data.GetMessageData(ed.ctx, event.Message, true)
+				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
 			}
 			if err == nil {
 				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)

@@ -25,6 +25,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -97,12 +98,16 @@ func TestPinnedReceiveOK(t *testing.T) {
 	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil, nil)
+	mdm := em.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
+
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.NotNil(t, m)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
@@ -757,6 +762,8 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
+	mdm := em.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
@@ -764,6 +771,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
@@ -793,6 +801,8 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdm := em.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -800,6 +810,7 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
@@ -831,6 +842,8 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mdm := em.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -838,6 +851,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {

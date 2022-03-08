@@ -62,7 +62,7 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{claimData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{claimData}, true, nil)
 
 	bs.pendingConfirms[*claimMsg.Header.ID] = claimMsg
 
@@ -92,7 +92,7 @@ func TestHandleDefinitionIdentityVerificationIncompleteClaimData(t *testing.T) {
 	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(claimMsg, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return([]*fftypes.Data{}, false, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
@@ -118,7 +118,7 @@ func TestHandleDefinitionIdentityVerificationClaimDataFail(t *testing.T) {
 	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(claimMsg, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, []*fftypes.Data{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)

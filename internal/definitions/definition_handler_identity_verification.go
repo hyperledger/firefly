@@ -68,7 +68,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 			log.L(ctx).Warnf("Invalid verification message %s - hash mismatch claim=%s verification=%s", verifyMsg.Header.ID, claimMsg.Hash, verification.Claim.Hash)
 			return HandlerResult{Action: ActionReject}, nil
 		}
-		data, foundAll, err := dh.data.GetMessageData(ctx, claimMsg, true)
+		data, foundAll, err := dh.data.GetMessageDataCached(ctx, claimMsg)
 		if err != nil {
 			return HandlerResult{Action: ActionRetry}, err
 		}

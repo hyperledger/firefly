@@ -31,6 +31,11 @@ var (
 	BatchTypePrivate BatchType = ffEnum("batchtype", "private")
 )
 
+const (
+	ManifestVersionUnset uint = 0
+	ManifestVersion1     uint = 1
+)
+
 // BatchHeader is the common fields between the serialized batch, and the batch manifest
 type BatchHeader struct {
 	ID        *UUID     `json:"id"`
@@ -38,17 +43,25 @@ type BatchHeader struct {
 	Namespace string    `json:"namespace"`
 	Node      *UUID     `json:"node,omitempty"`
 	SignerRef
-	Group *Bytes32 `jdon:"group,omitempty"`
-	Hash  *Bytes32 `json:"hash"`
+	Group   *Bytes32 `jdon:"group,omitempty"`
+	Created *FFTime  `json:"created"`
+	Hash    *Bytes32 `json:"hash"`
+}
+
+type MessageManifestEntry struct {
+	MessageRef
+	Topics int `json:"topics"` // We only need the count, to be able to match up the pins
 }
 
 // BatchManifest is all we need to persist to be able to reconstitute
 // an identical batch. It can be generated from a received batch to
 // confirm you have received an identical batch to that sent.
 type BatchManifest struct {
-	ID       *UUID        `json:"id"`
-	Messages []MessageRef `json:"messages"`
-	Data     []DataRef    `json:"data"`
+	Version  uint                    `json:"version"`
+	ID       *UUID                   `json:"id"`
+	TX       TransactionRef          `json:"tx"`
+	Messages []*MessageManifestEntry `json:"messages"`
+	Data     DataRefs                `json:"data"`
 }
 
 // Batch is the full payload object used in-flight.
@@ -64,7 +77,6 @@ type BatchPersisted struct {
 	Manifest   string         `json:"manifest"` // not automatically parsed
 	TX         TransactionRef `json:"tx"`
 	PayloadRef string         `json:"payloadRef,omitempty"`
-	Created    *FFTime        `json:"created"`
 	Confirmed  *FFTime        `json:"confirmed"`
 }
 
@@ -95,23 +107,49 @@ func (ma *BatchPayload) Hash() *Bytes32 {
 
 func (ma *BatchPayload) Manifest(id *UUID) *BatchManifest {
 	tm := &BatchManifest{
+		Version:  ManifestVersion1,
 		ID:       id,
-		Messages: make([]MessageRef, len(ma.Messages)),
-		Data:     make([]DataRef, len(ma.Data)),
+		TX:       ma.TX,
+		Messages: make([]*MessageManifestEntry, 0, len(ma.Messages)),
+		Data:     make(DataRefs, 0, len(ma.Data)),
 	}
-	for i, m := range ma.Messages {
-		tm.Messages[i].ID = m.Header.ID
-		tm.Messages[i].Hash = m.Hash
+	for _, m := range ma.Messages {
+		if m != nil && m.Header.ID != nil {
+			tm.Messages = append(tm.Messages, &MessageManifestEntry{
+				MessageRef: MessageRef{
+					ID:   m.Header.ID,
+					Hash: m.Hash,
+				},
+				Topics: len(m.Header.Topics),
+			})
+		}
 	}
-	for i, d := range ma.Data {
-		tm.Data[i].ID = d.ID
-		tm.Data[i].Hash = d.Hash
+	for _, d := range ma.Data {
+		if d != nil && d.ID != nil {
+			tm.Data = append(tm.Data, &DataRef{
+				ID:   d.ID,
+				Hash: d.Hash,
+			})
+		}
 	}
 	return tm
 }
+
 func (b *Batch) Manifest() *BatchManifest {
 	if b == nil {
 		return nil
 	}
 	return b.Payload.Manifest(b.ID)
+}
+
+// Confirmed generates a newly confirmed persisted batch, including (re-)generating the manifest
+func (b *Batch) Confirmed() (*BatchPersisted, *BatchManifest) {
+	manifest := b.Manifest()
+	manifestString := manifest.String()
+	return &BatchPersisted{
+		BatchHeader: b.BatchHeader,
+		TX:          b.Payload.TX,
+		Manifest:    manifestString,
+		Confirmed:   Now(),
+	}, manifest
 }

@@ -35,10 +35,10 @@ import (
 
 type Manager interface {
 	CheckDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) error
-	ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error)
-	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data []*fftypes.Data, foundAllData bool, err error)
-	GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data []*fftypes.Data, foundAll bool, err error)
-	UpdateMessageCache(msg *fftypes.Message, data []*fftypes.Data)
+	ValidateAll(ctx context.Context, data fftypes.DataArray) (valid bool, err error)
+	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data fftypes.DataArray, foundAllData bool, err error)
+	GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data fftypes.DataArray, foundAll bool, err error)
+	UpdateMessageCache(msg *fftypes.Message, data fftypes.DataArray)
 	ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, error)
 	ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, []*fftypes.DataAndBlob, error)
 	VerifyNamespaceExists(ctx context.Context, ns string) error
@@ -161,7 +161,7 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, ns string, v
 // GetMessageWithData performs a cached lookup of a message with all of the associated data.
 // - Use this in performance sensitive code, but note mutable fields like the status of the
 //   message CANNOT be relied upon (due to the caching).
-func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data []*fftypes.Data, foundAllData bool, err error) {
+func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data fftypes.DataArray, foundAllData bool, err error) {
 	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
 		return mce.msg, mce.data, true, nil
 	}
@@ -176,7 +176,7 @@ func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *ffty
 // GetMessageData looks for all the data attached to the message, including caching.
 // It only returns persistence errors.
 // For all cases where the data is not found (or the hashes mismatch)
-func (dm *dataManager) GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data []*fftypes.Data, foundAll bool, err error) {
+func (dm *dataManager) GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data fftypes.DataArray, foundAll bool, err error) {
 	if mce := dm.queryMessageCache(ctx, msg.Header.ID, options...); mce != nil {
 		return mce.data, true, nil
 	}
@@ -184,7 +184,7 @@ func (dm *dataManager) GetMessageDataCached(ctx context.Context, msg *fftypes.Me
 }
 
 // cachedMessageAndDataLookup is the common function that can lookup and cache a message with its data
-func (dm *dataManager) dataLookupAndCache(ctx context.Context, msg *fftypes.Message) (data []*fftypes.Data, foundAllData bool, err error) {
+func (dm *dataManager) dataLookupAndCache(ctx context.Context, msg *fftypes.Message) (data fftypes.DataArray, foundAllData bool, err error) {
 	data, foundAllData, err = dm.getMessageData(ctx, msg)
 	if err != nil {
 		return nil, false, err
@@ -218,7 +218,7 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 
 // UpdateMessageCache pushes an entry to the message cache. It is exposed out of the package, so that
 // code which generates (or augments) message/data can populate the cache.
-func (dm *dataManager) UpdateMessageCache(msg *fftypes.Message, data []*fftypes.Data) {
+func (dm *dataManager) UpdateMessageCache(msg *fftypes.Message, data fftypes.DataArray) {
 	cacheEntry := &messageCacheEntry{
 		msg:  msg,
 		data: data,
@@ -227,9 +227,9 @@ func (dm *dataManager) UpdateMessageCache(msg *fftypes.Message, data []*fftypes.
 	dm.messageCache.Set(msg.Header.ID.String(), cacheEntry, dm.messageCacheTTL)
 }
 
-func (dm *dataManager) getMessageData(ctx context.Context, msg *fftypes.Message) (data []*fftypes.Data, foundAll bool, err error) {
+func (dm *dataManager) getMessageData(ctx context.Context, msg *fftypes.Message) (data fftypes.DataArray, foundAll bool, err error) {
 	// Load all the data - must all be present for us to send
-	data = make([]*fftypes.Data, 0, len(msg.Data))
+	data = make(fftypes.DataArray, 0, len(msg.Data))
 	foundAll = true
 	for i, dataRef := range msg.Data {
 		d, err := dm.resolveRef(ctx, msg.Header.Namespace, dataRef)
@@ -246,7 +246,7 @@ func (dm *dataManager) getMessageData(ctx context.Context, msg *fftypes.Message)
 	return data, foundAll, nil
 }
 
-func (dm *dataManager) ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error) {
+func (dm *dataManager) ValidateAll(ctx context.Context, data fftypes.DataArray) (valid bool, err error) {
 	for _, d := range data {
 		if d.Datatype != nil && d.Validator != fftypes.ValidatorTypeNone {
 			v, err := dm.getValidatorForDatatype(ctx, d.Namespace, d.Validator, d.Datatype)
@@ -446,7 +446,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 		Payload: fftypes.BatchPayload{
 			TX:       persistedBatch.TX,
 			Messages: make([]*fftypes.Message, len(manifest.Messages)),
-			Data:     make([]*fftypes.Data, len(manifest.Data)),
+			Data:     make(fftypes.DataArray, len(manifest.Data)),
 		},
 	}
 
