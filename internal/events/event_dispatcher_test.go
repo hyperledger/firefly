@@ -184,31 +184,18 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 		offsetUpdates <- v.(int64)
 	}
 	// Setup enrichment
-	mdi.On("GetMessages", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.Message{
-		{Header: fftypes.MessageHeader{ID: ref1}},
-		{Header: fftypes.MessageHeader{ID: ref2}},
-		{Header: fftypes.MessageHeader{ID: ref3}},
-		{Header: fftypes.MessageHeader{ID: ref4}},
-	}, nil, nil)
-
-	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.Transaction{}, nil, nil)
-
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.BlockchainEvent{}, nil, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref1).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref1},
+	}, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref2).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref2},
+	}, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref3).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref3},
+	}, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref4).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref4},
+	}, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -290,26 +277,18 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	ev4 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{
-		{Header: fftypes.MessageHeader{ID: ref1}},
-		{Header: fftypes.MessageHeader{ID: ref2}},
-		{Header: fftypes.MessageHeader{ID: ref3}},
-		{Header: fftypes.MessageHeader{ID: ref4}},
-	}, nil, nil)
-
-	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.Transaction{}, nil, nil)
-
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.BlockchainEvent{}, nil, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref1).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref1},
+	}, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref2).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref2},
+	}, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref3).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref3},
+	}, nil)
+	mdi.On("GetMessageByID", mock.Anything, ref4).Return(&fftypes.Message{
+		Header: fftypes.MessageHeader{ID: ref4},
+	}, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -427,10 +406,10 @@ func TestEnrichEventsFailGetMessages(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
-	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
+	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1, Type: fftypes.EventTypeMessageConfirmed}})
 
 	assert.EqualError(t, err, "pop")
 }
@@ -444,11 +423,10 @@ func TestEnrichEventsFailGetTransactions(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
-	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
+	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1, Type: fftypes.EventTypeTransactionSubmitted}})
 
 	assert.EqualError(t, err, "pop")
 }
@@ -462,12 +440,10 @@ func TestEnrichEventsFailGetBlockchainEvents(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
-	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
+	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1, Type: fftypes.EventTypeBlockchainEventReceived}})
 
 	assert.EqualError(t, err, "pop")
 }
@@ -493,81 +469,93 @@ func TestFilterEventsMatch(t *testing.T) {
 	lid := fftypes.NewUUID()
 	events := ed.filterEvents([]*fftypes.EventDelivery{
 		{
-			Event: fftypes.Event{
-				ID:   id1,
-				Type: fftypes.EventTypeMessageConfirmed,
-			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{"topic1"},
-					Tag:    "tag1",
-					Group:  nil,
-					SignerRef: fftypes.SignerRef{
-						Author: "signingOrg",
-						Key:    "0x12345",
+			EnrichedEvent: fftypes.EnrichedEvent{
+				Event: fftypes.Event{
+					ID:   id1,
+					Type: fftypes.EventTypeMessageConfirmed,
+				},
+				Message: &fftypes.Message{
+					Header: fftypes.MessageHeader{
+						Topics: fftypes.FFStringArray{"topic1"},
+						Tag:    "tag1",
+						Group:  nil,
+						SignerRef: fftypes.SignerRef{
+							Author: "signingOrg",
+							Key:    "0x12345",
+						},
 					},
 				},
 			},
 		},
 		{
-			Event: fftypes.Event{
-				ID:   id2,
-				Type: fftypes.EventTypeMessageConfirmed,
-			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{"topic1"},
-					Tag:    "tag2",
-					Group:  gid1,
-					SignerRef: fftypes.SignerRef{
-						Author: "org2",
-						Key:    "0x23456",
+			EnrichedEvent: fftypes.EnrichedEvent{
+				Event: fftypes.Event{
+					ID:   id2,
+					Type: fftypes.EventTypeMessageConfirmed,
+				},
+				Message: &fftypes.Message{
+					Header: fftypes.MessageHeader{
+						Topics: fftypes.FFStringArray{"topic1"},
+						Tag:    "tag2",
+						Group:  gid1,
+						SignerRef: fftypes.SignerRef{
+							Author: "org2",
+							Key:    "0x23456",
+						},
 					},
 				},
 			},
 		},
 		{
-			Event: fftypes.Event{
-				ID:   id3,
-				Type: fftypes.EventTypeMessageRejected,
-			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{"topic2"},
-					Tag:    "tag1",
-					Group:  nil,
-					SignerRef: fftypes.SignerRef{
-						Author: "signingOrg",
-						Key:    "0x12345",
+			EnrichedEvent: fftypes.EnrichedEvent{
+				Event: fftypes.Event{
+					ID:   id3,
+					Type: fftypes.EventTypeMessageRejected,
+				},
+				Message: &fftypes.Message{
+					Header: fftypes.MessageHeader{
+						Topics: fftypes.FFStringArray{"topic2"},
+						Tag:    "tag1",
+						Group:  nil,
+						SignerRef: fftypes.SignerRef{
+							Author: "signingOrg",
+							Key:    "0x12345",
+						},
 					},
 				},
 			},
 		},
 		{
-			Event: fftypes.Event{
-				ID:   id4,
-				Type: fftypes.EventTypeBlockchainEventReceived,
-			},
-			BlockchainEvent: &fftypes.BlockchainEvent{
-				Name: "flapflip",
-			},
-		},
-		{
-			Event: fftypes.Event{
-				ID:   id5,
-				Type: fftypes.EventTypeTransactionSubmitted,
-			},
-			Transaction: &fftypes.Transaction{
-				Type: fftypes.TransactionTypeBatchPin,
+			EnrichedEvent: fftypes.EnrichedEvent{
+				Event: fftypes.Event{
+					ID:   id4,
+					Type: fftypes.EventTypeBlockchainEventReceived,
+				},
+				BlockchainEvent: &fftypes.BlockchainEvent{
+					Name: "flapflip",
+				},
 			},
 		},
 		{
-			Event: fftypes.Event{
-				ID:   id6,
-				Type: fftypes.EventTypeBlockchainEventReceived,
+			EnrichedEvent: fftypes.EnrichedEvent{
+				Event: fftypes.Event{
+					ID:   id5,
+					Type: fftypes.EventTypeTransactionSubmitted,
+				},
+				Transaction: &fftypes.Transaction{
+					Type: fftypes.TransactionTypeBatchPin,
+				},
 			},
-			BlockchainEvent: &fftypes.BlockchainEvent{
-				Listener: lid,
+		},
+		{
+			EnrichedEvent: fftypes.EnrichedEvent{
+				Event: fftypes.Event{
+					ID:   id6,
+					Type: fftypes.EventTypeBlockchainEventReceived,
+				},
+				BlockchainEvent: &fftypes.BlockchainEvent{
+					Listener: lid,
+				},
 			},
 		},
 	})
@@ -682,26 +670,18 @@ func TestEnrichTransactionEvents(t *testing.T) {
 	ev4 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
-
-	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.Transaction{
-		{ID: ref1},
-		{ID: ref2},
-		{ID: ref3},
-		{ID: ref4},
-	}, nil, nil)
-
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.BlockchainEvent{}, nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(&fftypes.Transaction{
+		ID: ref1,
+	}, nil)
+	mdi.On("GetTransactionByID", mock.Anything, ref2).Return(&fftypes.Transaction{
+		ID: ref2,
+	}, nil)
+	mdi.On("GetTransactionByID", mock.Anything, ref3).Return(&fftypes.Transaction{
+		ID: ref3,
+	}, nil)
+	mdi.On("GetTransactionByID", mock.Anything, ref4).Return(&fftypes.Transaction{
+		ID: ref4,
+	}, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -779,26 +759,18 @@ func TestEnrichBlockchainEventEvents(t *testing.T) {
 	ev4 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
-
-	mdi.On("GetTransactions", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.Transaction{}, nil, nil)
-
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return([]*fftypes.BlockchainEvent{
-		{ID: ref1},
-		{ID: ref2},
-		{ID: ref3},
-		{ID: ref4},
-	}, nil, nil)
+	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(&fftypes.BlockchainEvent{
+		ID: ref1,
+	}, nil)
+	mdi.On("GetBlockchainEventByID", mock.Anything, ref2).Return(&fftypes.BlockchainEvent{
+		ID: ref2,
+	}, nil)
+	mdi.On("GetBlockchainEventByID", mock.Anything, ref3).Return(&fftypes.BlockchainEvent{
+		ID: ref3,
+	}, nil)
+	mdi.On("GetBlockchainEventByID", mock.Anything, ref4).Return(&fftypes.BlockchainEvent{
+		ID: ref4,
+	}, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -870,9 +842,9 @@ func TestBufferedDeliveryEnrichFail(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
+	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageConfirmed}})
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 
@@ -892,9 +864,6 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -915,9 +884,6 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -959,9 +925,6 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1012,9 +975,6 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1062,9 +1022,6 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	ed.readAhead = 50
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1160,15 +1117,17 @@ func TestDeliverEventsWithDataFail(t *testing.T) {
 
 	id1 := fftypes.NewUUID()
 	ed.eventDelivery <- &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: id1,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: id1,
 			},
-			Data: fftypes.DataRefs{
-				{ID: fftypes.NewUUID()},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: fftypes.NewUUID(),
+				},
+				Data: fftypes.DataRefs{
+					{ID: fftypes.NewUUID()},
+				},
 			},
 		},
 	}

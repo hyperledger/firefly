@@ -18,7 +18,6 @@ package events
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"sync"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -63,6 +63,7 @@ type eventDispatcher struct {
 	subscription  *subscription
 	cel           *changeEventListener
 	changeEvents  chan *fftypes.ChangeEvent
+	txHelper      txcommon.Helper
 }
 
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
@@ -93,6 +94,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		cel:           cel,
+		txHelper:      txcommon.NewTransactionHelper(di),
 	}
 
 	pollerConf := &eventPollerConf{
@@ -159,72 +161,18 @@ func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter
 }
 
 func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*fftypes.EventDelivery, error) {
-	// We need all the messages that match event references
-	refIDs := make([]driver.Value, len(events))
-	for i, ls := range events {
-		e := ls.(*fftypes.Event)
-		if e.Reference != nil {
-			refIDs[i] = *e.Reference
-		}
-	}
-
-	mfb := database.MessageQueryFactory.NewFilter(ed.ctx)
-	msgFilter := mfb.And(
-		mfb.In("id", refIDs),
-		mfb.Eq("namespace", ed.namespace),
-	)
-	msgs, _, err := ed.database.GetMessages(ed.ctx, msgFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	tfb := database.TransactionQueryFactory.NewFilter(ed.ctx)
-	txFilter := tfb.And(
-		tfb.In("id", refIDs),
-		tfb.Eq("namespace", ed.namespace),
-	)
-	txs, _, err := ed.database.GetTransactions(ed.ctx, txFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	bfb := database.BlockchainEventQueryFactory.NewFilter(ed.ctx)
-	beFilter := bfb.And(
-		tfb.In("id", refIDs),
-		tfb.Eq("namespace", ed.namespace),
-	)
-	bEvents, _, err := ed.database.GetBlockchainEvents(ed.ctx, beFilter)
-	if err != nil {
-		return nil, err
-	}
-
 	enriched := make([]*fftypes.EventDelivery, len(events))
 	for i, ls := range events {
 		e := ls.(*fftypes.Event)
+		enrichedEvent, err := ed.txHelper.EnrichEvent(ed.ctx, e)
+		if err != nil {
+			return nil, err
+		}
 		enriched[i] = &fftypes.EventDelivery{
-			Event:        *e,
-			Subscription: ed.subscription.definition.SubscriptionRef,
-		}
-		for _, msg := range msgs {
-			if *e.Reference == *msg.Header.ID {
-				enriched[i].Message = msg
-				break
-			}
-		}
-		for _, tx := range txs {
-			if *e.Reference == *tx.ID {
-				enriched[i].Transaction = tx
-				break
-			}
-		}
-		for _, be := range bEvents {
-			if *e.Reference == *be.ID {
-				enriched[i].BlockchainEvent = be
-				break
-			}
+			EnrichedEvent: *enrichedEvent,
+			Subscription:  ed.subscription.definition.SubscriptionRef,
 		}
 	}
-
 	return enriched, nil
 }
 

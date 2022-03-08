@@ -28,6 +28,29 @@ func (_m *Helper) AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockch
 	return r0
 }
 
+// EnrichEvent provides a mock function with given fields: ctx, event
+func (_m *Helper) EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error) {
+	ret := _m.Called(ctx, event)
+
+	var r0 *fftypes.EnrichedEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) *fftypes.EnrichedEvent); ok {
+		r0 = rf(ctx, event)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.EnrichedEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Event) error); ok {
+		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PersistTransaction provides a mock function with given fields: ctx, ns, id, txType, blockchainTXID
 func (_m *Helper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.FFEnum, blockchainTXID string) (bool, error) {
 	ret := _m.Called(ctx, ns, id, txType, blockchainTXID)
