@@ -1,0 +1,55 @@
+{
+  "contracts": {
+    "simple_storage.sol:SimpleStorage": {
+      "abi": [
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "from",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            }
+          ],
+          "name": "Changed",
+          "type": "event"
+        },
+        {
+          "inputs": [],
+          "name": "get",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "newValue",
+              "type": "uint256"
+            }
+          ],
+          "name": "set",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ],
+      "bin": "608060405234801561001057600080fd5b5061019e806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806360fe47b11461003b5780636d4ce63c14610057575b600080fd5b61005560048036038101906100509190610111565b610075565b005b61005f6100cd565b60405161006c919061014d565b60405180910390f35b806000819055503373ffffffffffffffffffffffffffffffffffffffff167fb52dda022b6c1a1f40905a85f257f689aa5d69d850e49cf939d688fbe5af5946826040516100c2919061014d565b60405180910390a250565b60008054905090565b600080fd5b6000819050919050565b6100ee816100db565b81146100f957600080fd5b50565b60008135905061010b816100e5565b92915050565b600060208284031215610127576101266100d6565b5b6000610135848285016100fc565b91505092915050565b610147816100db565b82525050565b6000602082019050610162600083018461013e565b9291505056fea2646970667358221220e6cbd7725b98b234d07bc1823b60ac065b567c6645d15c8f8f6986e5fa5317c664736f6c634300080b0033"
+    }
+  },
+  "version": "0.8.11+commit.d7f03943.Darwin.appleclang"
+}
