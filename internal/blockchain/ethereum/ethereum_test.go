@@ -238,7 +238,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "BatchPin_30783132333435e3" /* this is the subname for our combo of instance path and BatchPin */},
+			{ID: "sub12345", Stream: "es12345", Name: "BatchPin_30783132333435e3" /* this is the subname for our combo of instance path and BatchPin */},
 		}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
 		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
