@@ -55,7 +55,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 
 	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
 	persistedBatch, _ = batch.Confirmed()
-	manifestHash := fftypes.HashString(persistedBatch.Manifest)
+	manifestHash := fftypes.HashString(persistedBatch.Manifest.String())
 
 	// Verify the hash calculation.
 	if !manifestHash.Equals(batch.Hash) {
@@ -110,7 +110,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 		for di, dataRef := range msg.Data {
 			msgData[di] = dataByID[*dataRef.ID]
 			if msgData[di] == nil || !msgData[di].Hash.Equals(dataRef.Hash) {
-				log.L(ctx).Errorf("Message '%s' in batch '%s' - data not in-line in batch id='%s' hash='%s'", msg.Header.ID, batch.ID, dataRef.ID, dataRef.Hash)
+				log.L(ctx).Debugf("Message '%s' in batch '%s' - data not in-line in batch id='%s' hash='%s'", msg.Header.ID, batch.ID, dataRef.ID, dataRef.Hash)
 				dataInBatch = false
 				break
 			}
@@ -175,9 +175,12 @@ func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context
 }
 
 func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message, optimization database.UpsertOptimization) (bool, error) {
-	if msg != nil && (msg.Header.Author != batch.Author || msg.Header.Key != batch.Key) {
-		log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
-		return false, nil // skip entry
+	if msg != nil {
+		if msg.Header.Author != batch.Author || msg.Header.Key != batch.Key {
+			log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
+			return false, nil // skip entry
+		}
+		msg.BatchID = batch.ID
 	}
 
 	return em.persistReceivedMessage(ctx, i, msg, "batch", batch.ID, optimization)

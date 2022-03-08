@@ -307,3 +307,7 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, 
 	)
 	return or.database.GetBlockchainEvents(ctx, filter)
 }
+
+func (or *orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error) {
+	return or.database.GetPins(ctx, filter)
+}

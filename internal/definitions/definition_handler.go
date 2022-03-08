@@ -63,6 +63,21 @@ const (
 	ActionWait
 )
 
+func (dma DefinitionMessageAction) String() string {
+	switch dma {
+	case ActionReject:
+		return "reject"
+	case ActionConfirm:
+		return "confirm"
+	case ActionRetry:
+		return "retry"
+	case ActionWait:
+		return "wait"
+	default:
+		return "unknown"
+	}
+}
+
 // DefinitionBatchState tracks the state between definition handlers that run in-line on the pin processing route in the
 // aggregator as part of a batch of pins. They might have complex API calls, and interdependencies, that need to be managed via this state.
 // The actions to be taken at the end of a definition batch.
@@ -122,7 +137,7 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 
 func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
-	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
+	l.Infof("Processing system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
 	case fftypes.SystemTagDefineDatatype:
 		return dh.handleDatatypeBroadcast(ctx, state, msg, data, tx)

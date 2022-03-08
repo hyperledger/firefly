@@ -960,6 +960,38 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter dat
 	return r0, r1, r2
 }
 
+// GetPins provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Pin
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.Pin); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Pin)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetStatus provides a mock function with given fields: ctx
 func (_m *Orchestrator) GetStatus(ctx context.Context) (*fftypes.NodeStatus, error) {
 	ret := _m.Called(ctx)

@@ -54,11 +54,11 @@ func TestBatch2EWithDB(t *testing.T) {
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeUnpinned,
 		},
-		Manifest: (&fftypes.BatchManifest{
+		Manifest: fftypes.JSONAnyPtr((&fftypes.BatchManifest{
 			Messages: []*fftypes.MessageManifestEntry{
 				{MessageRef: fftypes.MessageRef{ID: msgID1}},
 			},
-		}).String(),
+		}).String()),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBatches, fftypes.ChangeEventTypeCreated, "ns1", batchID, mock.Anything).Return()
@@ -97,12 +97,12 @@ func TestBatch2EWithDB(t *testing.T) {
 			ID:   txid,
 			Type: fftypes.TransactionTypeBatchPin,
 		},
-		Manifest: (&fftypes.BatchManifest{
+		Manifest: fftypes.JSONAnyPtr((&fftypes.BatchManifest{
 			Messages: []*fftypes.MessageManifestEntry{
 				{MessageRef: fftypes.MessageRef{ID: msgID1}},
 				{MessageRef: fftypes.MessageRef{ID: msgID2}},
 			},
-		}).String(),
+		}).String()),
 		PayloadRef: payloadRef,
 		Confirmed:  fftypes.Now(),
 	}

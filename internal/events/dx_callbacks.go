@@ -140,7 +140,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 					return err
 				}
 			}
-			manifest = persistedBatch.Manifest
+			manifest = persistedBatch.Manifest.String()
 			return nil
 		})
 	})

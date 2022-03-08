@@ -183,7 +183,6 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 		return err
 	}
 	s.mgr.data.UpdateMessageCache(&s.msg.Message, s.data)
-	s.data = nil // no need to keep hold of this
 	log.L(ctx).Infof("Sent private message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
 
 	return nil

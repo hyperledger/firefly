@@ -158,6 +158,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 			bm.ctx, // Background context, not the call context
 			bm.ni,
 			bm.database,
+			bm.data,
 			&batchProcessorConf{
 				DispatcherOptions: dispatcher.options,
 				name:              name,
@@ -241,7 +242,7 @@ func (bm *batchManager) messageSequencer() {
 					continue
 				}
 
-				bm.dispatchMessage(processor, msg, data...)
+				bm.dispatchMessage(processor, msg, data)
 			}
 
 			// Next time round only read after the messages we just processed (unless we get a tap to rewind)
@@ -302,7 +303,7 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 	}
 }
 
-func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.Message, data ...*fftypes.Data) {
+func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.Message, data fftypes.DataArray) {
 	l := log.L(bm.ctx)
 	l.Debugf("Dispatching message %s to %s batch processor %s", msg.Header.ID, msg.Header.Type, processor.conf.name)
 	work := &batchWork{

@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -206,7 +207,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		return *np.Hash == *member2NonceOne && np.Nonce == 1
 	})).Return(nil).Once()
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -329,7 +330,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 		{Context: contextUnmasked, Identity: member2org.DID, Hash: member2Nonce500, Nonce: 500, Sequence: 424},
 	}, nil, nil).Once()
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -512,7 +513,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	bp := &fftypes.BatchPersisted{
 		TX:          batch.Payload.TX,
 		BatchHeader: batch.BatchHeader,
-		Manifest:    string(payloadBinary),
+		Manifest:    fftypes.JSONAnyPtr(string(payloadBinary)),
 	}
 
 	// Get the batch
@@ -593,7 +594,7 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 	bp := &fftypes.BatchPersisted{
 		TX:          batch.Payload.TX,
 		BatchHeader: batch.BatchHeader,
-		Manifest:    string(payloadBinary),
+		Manifest:    fftypes.JSONAnyPtr(string(payloadBinary)),
 	}
 
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
@@ -657,7 +658,7 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 	bp := &fftypes.BatchPersisted{
 		TX:          batch.Payload.TX,
 		BatchHeader: batch.BatchHeader,
-		Manifest:    "{}",
+		Manifest:    fftypes.JSONAnyPtr("{}"),
 	}
 
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
@@ -893,7 +894,7 @@ func TestProcessMsgFailData(t *testing.T) {
 	defer cancel()
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(nil, nil, false, fmt.Errorf("pop"))
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(nil, nil, false, fmt.Errorf("pop"))
 
 	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{}, nil)
 	assert.Regexp(t, "pop", err)
@@ -906,7 +907,7 @@ func TestProcessMsgFailMissingData(t *testing.T) {
 	defer cancel()
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(&fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}, nil, false, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(&fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}, nil, false, nil)
 
 	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{}, nil)
 	assert.NoError(t, err)
@@ -919,7 +920,7 @@ func TestProcessMsgFailMissingGroup(t *testing.T) {
 	defer cancel()
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(&fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(&fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}, nil, true, nil)
 
 	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{}, nil)
 	assert.NoError(t, err)
@@ -942,7 +943,7 @@ func TestProcessMsgFailBadPin(t *testing.T) {
 	}
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(msg, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
 
 	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{
 		MessageRef: fftypes.MessageRef{
@@ -974,7 +975,7 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 	}
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(msg, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
 
 	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{
 		MessageRef: fftypes.MessageRef{
@@ -1060,7 +1061,7 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
 		{Context: fftypes.NewRandB32(), Hash: pin, Identity: org1.DID},
 	}, nil, nil)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(msg, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
@@ -1601,8 +1602,8 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID).Return(msg1, fftypes.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID).Return(msg2, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, fftypes.DataArray{}, true, nil).Once()
 
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	member1NonceOne := initNPG.calcPinHash("org1", 1)
@@ -1643,8 +1644,8 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID).Return(msg1, fftypes.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID).Return(msg2, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, fftypes.DataArray{}, true, nil).Once()
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
@@ -2157,7 +2158,7 @@ func TestExtractManifestFail(t *testing.T) {
 	defer cancel()
 
 	manifest := ag.extractManifest(ag.ctx, &fftypes.BatchPersisted{
-		Manifest: "!wrong",
+		Manifest: fftypes.JSONAnyPtr("!wrong"),
 	})
 
 	assert.Nil(t, manifest)
@@ -2168,7 +2169,7 @@ func TestExtractManifestBadVersion(t *testing.T) {
 	defer cancel()
 
 	manifest := ag.extractManifest(ag.ctx, &fftypes.BatchPersisted{
-		Manifest: `{"version":999}`,
+		Manifest: fftypes.JSONAnyPtr(`{"version":999}`),
 	})
 
 	assert.Nil(t, manifest)
@@ -2179,7 +2180,7 @@ func TestMigrateManifestFail(t *testing.T) {
 	defer cancel()
 
 	manifest := ag.migrateManifest(ag.ctx, &fftypes.BatchPersisted{
-		Manifest: "!wrong",
+		Manifest: fftypes.JSONAnyPtr("!wrong"),
 	})
 
 	assert.Nil(t, manifest)

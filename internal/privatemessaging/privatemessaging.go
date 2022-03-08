@@ -188,7 +188,7 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batc
 		tw.Group = group
 	}
 
-	return pm.sendData(ctx, tw, nodes, state.Persisted.Manifest)
+	return pm.sendData(ctx, tw, nodes, state.Persisted.Manifest.String())
 }
 
 func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.DataArray, txid *fftypes.UUID, node *fftypes.Identity) error {

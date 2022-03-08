@@ -18,6 +18,7 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -128,4 +129,12 @@ func TestPrivateMessagingPassthroughs(t *testing.T) {
 
 	mpm.AssertExpectations(t)
 
+}
+
+func TestActionEnum(t *testing.T) {
+	assert.Equal(t, "confirm", fmt.Sprintf("%s", ActionConfirm))
+	assert.Equal(t, "reject", fmt.Sprintf("%s", ActionReject))
+	assert.Equal(t, "retry", fmt.Sprintf("%s", ActionRetry))
+	assert.Equal(t, "wait", fmt.Sprintf("%s", ActionWait))
+	assert.Equal(t, "unknown", fmt.Sprintf("%s", DefinitionMessageAction(999)))
 }

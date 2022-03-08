@@ -18,7 +18,6 @@ package data
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -39,6 +38,7 @@ type Manager interface {
 	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data fftypes.DataArray, foundAllData bool, err error)
 	GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data fftypes.DataArray, foundAll bool, err error)
 	UpdateMessageCache(msg *fftypes.Message, data fftypes.DataArray)
+	UpdateMessageIfCached(ctx context.Context, msg *fftypes.Message)
 	ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, error)
 	ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, []*fftypes.DataAndBlob, error)
 	VerifyNamespaceExists(ctx context.Context, ns string) error
@@ -74,6 +74,8 @@ type CacheReadOption int
 
 const (
 	CRORequirePublicBlobRefs CacheReadOption = iota
+	CRORequirePins
+	CRORequireBatchID
 )
 
 func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
@@ -203,12 +205,23 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 	}
 	mce := cached.Value().(*messageCacheEntry)
 	for _, opt := range options {
-		if opt == CRORequirePublicBlobRefs {
+		switch opt {
+		case CRORequirePublicBlobRefs:
 			for idx, d := range mce.data {
 				if d.Blob != nil && d.Blob.Public == "" {
 					log.L(ctx).Debugf("Cache entry for data %d (%s) in message %s is missing public blob ref", idx, d.ID, mce.msg.Header.ID)
 					return nil
 				}
+			}
+		case CRORequirePins:
+			if len(mce.msg.Header.Topics) != len(mce.msg.Pins) {
+				log.L(ctx).Debugf("Cache entry for message %s is missing pins", mce.msg.Header.ID)
+				return nil
+			}
+		case CRORequireBatchID:
+			if mce.msg.BatchID == nil {
+				log.L(ctx).Debugf("Cache entry for message %s is missing batch ID", mce.msg.Header.ID)
+				return nil
 			}
 		}
 	}
@@ -225,6 +238,16 @@ func (dm *dataManager) UpdateMessageCache(msg *fftypes.Message, data fftypes.Dat
 		size: msg.EstimateSize(true),
 	}
 	dm.messageCache.Set(msg.Header.ID.String(), cacheEntry, dm.messageCacheTTL)
+}
+
+// UpdateMessageIfCached is used in order to notify the fields of a message that are not initially filled in, have been filled in.
+// It does not guarantee the cache is up to date, and the CacheReadOptions should be used to check you have the updated data.
+// But calling this should reduce the possiblity of the CROs missing
+func (dm *dataManager) UpdateMessageIfCached(ctx context.Context, msg *fftypes.Message) {
+	mce := dm.queryMessageCache(ctx, msg.Header.ID)
+	if mce != nil {
+		dm.UpdateMessageCache(msg, mce.data)
+	}
 }
 
 func (dm *dataManager) getMessageData(ctx context.Context, msg *fftypes.Message) (data fftypes.DataArray, foundAll bool, err error) {
@@ -405,19 +428,19 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData 
 			if d == nil {
 				return nil, nil, i18n.NewError(ctx, i18n.MsgDataReferenceUnresolvable, i)
 			}
-			data[i] = d
 			if blob, err = dm.resolveBlob(ctx, d.Blob); err != nil {
 				return nil, nil, err
 			}
 		case dataOrValue.Value != nil || dataOrValue.Blob != nil:
 			// We've got a Value, so we can validate + store it
-			if data[i], blob, err = dm.validateAndStoreInlined(ctx, ns, dataOrValue); err != nil {
+			if d, blob, err = dm.validateAndStoreInlined(ctx, ns, dataOrValue); err != nil {
 				return nil, nil, err
 			}
 		default:
 			// We have nothing - this must be a mistake
 			return nil, nil, i18n.NewError(ctx, i18n.MsgDataMissing, i)
 		}
+		data[i] = d
 
 		// If the data is being resolved for public broadcast, and there is a blob attachment, that blob
 		// needs to be published by our calller
@@ -435,7 +458,7 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData 
 func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
 
 	var manifest fftypes.BatchManifest
-	err := json.Unmarshal([]byte(persistedBatch.Manifest), &manifest)
+	err := persistedBatch.Manifest.Unmarshal(ctx, &manifest)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("batch %s manifest", persistedBatch.ID))
 	}

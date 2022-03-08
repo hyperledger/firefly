@@ -599,3 +599,13 @@ func TestGetTransactionBlockchainEventsBadID(t *testing.T) {
 	_, _, err := or.GetTransactionBlockchainEvents(context.Background(), "ns1", "")
 	assert.Regexp(t, "FF10142", err)
 }
+
+func TestGetPins(t *testing.T) {
+	or := newTestOrchestrator()
+	u := fftypes.NewUUID()
+	or.mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	fb := database.PinQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("hash", u))
+	_, _, err := or.GetPins(context.Background(), f)
+	assert.NoError(t, err)
+}

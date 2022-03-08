@@ -139,7 +139,8 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	if err := bm.operations.RunOperation(ctx, opBatchBroadcast(op, batch)); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s", batch.ID, batch.Author, batch.Key)
+	state.Persisted.PayloadRef = batch.PayloadRef
+	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payload=%s", batch.ID, batch.Author, batch.Key, state.Persisted.PayloadRef)
 	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
 }
 

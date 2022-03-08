@@ -170,8 +170,7 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 		return err
 	}
 	s.mgr.data.UpdateMessageCache(&s.msg.Message, s.data)
-	s.data = nil // no need to keep hold of this
-	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
+	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d datacount=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence, len(s.data))
 
 	return err
 }

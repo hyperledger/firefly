@@ -701,9 +701,9 @@ func TestHydrateBatchOK(t *testing.T) {
 			ID:        batchID,
 			Namespace: "ns1",
 		},
-		Manifest: fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
+		Manifest: fftypes.JSONAnyPtr(fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
 			batchID, msgID, msgHash, dataID, dataHash,
-		),
+		)),
 		TX: fftypes.TransactionRef{
 			ID: fftypes.NewUUID(),
 		},
@@ -731,7 +731,7 @@ func TestHydrateBatchOK(t *testing.T) {
 	assert.Equal(t, dataID, batch.Payload.Data[0].ID)
 	assert.Equal(t, dataHash, batch.Payload.Data[0].Hash)
 	assert.Equal(t, dataHash, batch.Payload.Data[0].Hash)
-	assert.Nil(t, batch.Payload.Data[0].Created)
+	assert.NotNil(t, batch.Payload.Data[0].Created)
 
 	mdi.AssertExpectations(t)
 }
@@ -751,9 +751,9 @@ func TestHydrateBatchDataFail(t *testing.T) {
 			ID:        batchID,
 			Namespace: "ns1",
 		},
-		Manifest: fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
+		Manifest: fftypes.JSONAnyPtr(fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
 			batchID, msgID, msgHash, dataID, dataHash,
-		),
+		)),
 		TX: fftypes.TransactionRef{
 			ID: fftypes.NewUUID(),
 		},
@@ -788,9 +788,9 @@ func TestHydrateBatchMsgNotFound(t *testing.T) {
 			ID:        batchID,
 			Namespace: "ns1",
 		},
-		Manifest: fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
+		Manifest: fftypes.JSONAnyPtr(fmt.Sprintf(`{"id":"%s","messages":[{"id":"%s","hash":"%s"}],"data":[{"id":"%s","hash":"%s"}]}`,
 			batchID, msgID, msgHash, dataID, dataHash,
-		),
+		)),
 		TX: fftypes.TransactionRef{
 			ID: fftypes.NewUUID(),
 		},
@@ -810,7 +810,7 @@ func TestHydrateBatchMsgBadManifest(t *testing.T) {
 	defer cancel()
 
 	bp := &fftypes.BatchPersisted{
-		Manifest: `!json`,
+		Manifest: fftypes.JSONAnyPtr(`!json`),
 	}
 
 	_, err := dm.HydrateBatch(ctx, bp)
@@ -927,4 +927,70 @@ func TestGetMessageWithDataReadMessageFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestUpdateMessageCacheCRORequirePins(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	data := fftypes.DataArray{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+	}
+	msgNoPins := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Topics: fftypes.FFStringArray{"topic1"},
+		},
+		Data: data.Refs(),
+	}
+	msgWithPins := &fftypes.Message{
+		Header: msgNoPins.Header,
+		Data:   data.Refs(),
+		Pins:   fftypes.FFStringArray{"pin1"},
+	}
+
+	dm.UpdateMessageCache(msgNoPins, data)
+
+	mce := dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequirePins)
+	assert.Nil(t, mce)
+
+	dm.UpdateMessageIfCached(ctx, msgWithPins)
+	for mce == nil {
+		mce = dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequirePins)
+	}
+
+}
+
+func TestUpdateMessageCacheCRORequireBatchID(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	data := fftypes.DataArray{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+	}
+	msgNoPins := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Topics: fftypes.FFStringArray{"topic1"},
+		},
+		Data: data.Refs(),
+	}
+	msgWithBatch := &fftypes.Message{
+		Header:  msgNoPins.Header,
+		Data:    data.Refs(),
+		BatchID: fftypes.NewUUID(),
+	}
+
+	dm.UpdateMessageCache(msgNoPins, data)
+
+	mce := dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequireBatchID)
+	assert.Nil(t, mce)
+
+	dm.UpdateMessageIfCached(ctx, msgWithBatch)
+	for mce == nil {
+		mce = dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequireBatchID)
+	}
+
 }

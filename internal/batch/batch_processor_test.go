@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -34,8 +35,9 @@ import (
 func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *batchProcessor) {
 	mdi := &databasemocks.Plugin{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
+	mdm := &datamocks.Manager{}
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
-	bp := newBatchProcessor(context.Background(), mni, mdi, &batchProcessorConf{
+	bp := newBatchProcessor(context.Background(), mni, mdi, mdm, &batchProcessorConf{
 		namespace: "ns1",
 		txType:    fftypes.TransactionTypeBatchPin,
 		signer:    fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
@@ -75,10 +77,12 @@ func TestUnfilledBatch(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	// Dispatch the work
 	go func() {
@@ -98,6 +102,10 @@ func TestUnfilledBatch(t *testing.T) {
 
 	bp.cancelCtx()
 	<-bp.done
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestBatchSizeOverflow(t *testing.T) {
@@ -113,10 +121,12 @@ func TestBatchSizeOverflow(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	// Dispatch the work
 	msgIDs := []*fftypes.UUID{fftypes.NewUUID(), fftypes.NewUUID()}
@@ -140,6 +150,10 @@ func TestBatchSizeOverflow(t *testing.T) {
 
 	bp.cancelCtx()
 	<-bp.done
+
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
@@ -314,6 +328,9 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeUnpinned).Return(fftypes.NewUUID(), nil)
 
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
 	// Dispatch the work
 	go func() {
 		for i := 0; i < 5; i++ {
@@ -334,6 +351,8 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	<-bp.done
 
 	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestMaskContextsDuplicate(t *testing.T) {

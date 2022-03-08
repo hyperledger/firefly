@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/retry"
@@ -74,6 +75,7 @@ type FlushStatus struct {
 type batchProcessor struct {
 	ctx                context.Context
 	ni                 sysmessaging.LocalNodeInfo
+	data               data.Manager
 	database           database.Plugin
 	txHelper           txcommon.Helper
 	cancelCtx          func()
@@ -99,7 +101,7 @@ type DispatchState struct {
 
 const batchSizeEstimateBase = int64(512)
 
-func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, conf *batchProcessorConf, baseRetryConf *retry.Retry) *batchProcessor {
+func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, conf *batchProcessorConf, baseRetryConf *retry.Retry) *batchProcessor {
 	pCtx := log.WithLogField(log.WithLogField(ctx, "d", conf.dispatcherName), "p", conf.name)
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
@@ -107,6 +109,7 @@ func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di da
 		cancelCtx: cancelCtx,
 		ni:        ni,
 		database:  di,
+		data:      dm,
 		txHelper:  txcommon.NewTransactionHelper(di),
 		newWork:   make(chan *batchWork, conf.BatchMaxSize),
 		quescing:  make(chan bool, 1),
@@ -401,9 +404,11 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 	}
 	for _, w := range flushWork {
 		if w.msg != nil {
+			w.msg.BatchID = id
 			state.Payload.Messages = append(state.Payload.Messages, w.msg.BatchMessage())
 		}
 		for _, d := range w.data {
+			log.L(bp.ctx).Debugf("Adding data '%s' to batch for message '%s'", d.ID, w.msg.Header.ID)
 			state.Payload.Data = append(state.Payload.Data, d.BatchData(state.Persisted.Type))
 		}
 	}
@@ -505,11 +510,14 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 			if state.Persisted.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, state.Persisted.Namespace, bp.conf.txType); err != nil {
 				return err
 			}
+			state.Payload.TX = state.Persisted.TX
+			state.Manifest.TX = state.Persisted.TX
 
 			// The hash of the batch, is the hash of the manifest to minimize the compute cost.
 			// Note in v0.13 and before, it was the hash of the payload - so the inbound route has a fallback to accepting the full payload hash
-			state.Persisted.Manifest = state.Manifest.String()
-			state.Persisted.Hash = fftypes.HashString(state.Persisted.Manifest)
+			manifestString := state.Manifest.String()
+			state.Persisted.Manifest = fftypes.JSONAnyPtr(manifestString)
+			state.Persisted.Hash = fftypes.HashString(manifestString)
 
 			log.L(ctx).Debugf("Batch %s sealed. Hash=%s", state.Persisted.ID, state.Persisted.Hash)
 
@@ -536,6 +544,9 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 			msgIDs := make([]driver.Value, len(state.Payload.Messages))
 			for i, msg := range state.Payload.Messages {
 				msgIDs[i] = msg.Header.ID
+				// We don't want to have to read the DB again if we want to query for the batch ID, or pins,
+				// so ensure the copy in our cache gets updated.
+				bp.data.UpdateMessageIfCached(ctx, msg)
 			}
 			fb := database.MessageQueryFactory.NewFilter(ctx)
 			filter := fb.And(

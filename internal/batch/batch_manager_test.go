@@ -99,6 +99,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		Hash: dataHash,
 	}
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{data}, true, nil)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -216,6 +217,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		Hash: dataHash,
 	}
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{data}, true, nil)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
@@ -381,6 +383,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 			}},
 	}, nil, nil)
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{{ID: dataID}}, true, nil)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -444,6 +447,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
+
 func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}

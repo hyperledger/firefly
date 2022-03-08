@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql/driver"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
@@ -210,7 +209,7 @@ func (ag *aggregator) extractBatchMessagePin(manifest *fftypes.BatchManifest, re
 func (ag *aggregator) migrateManifest(ctx context.Context, persistedBatch *fftypes.BatchPersisted) *fftypes.BatchManifest {
 	// In version v0.13.x and earlier, we stored the full batch
 	var fullPayload fftypes.BatchPayload
-	err := json.Unmarshal([]byte(persistedBatch.Manifest), &fullPayload)
+	err := persistedBatch.Manifest.Unmarshal(ctx, &fullPayload)
 	if err != nil {
 		log.L(ctx).Errorf("Invalid migration persisted batch: %s", err)
 		return nil
@@ -228,7 +227,7 @@ func (ag *aggregator) migrateManifest(ctx context.Context, persistedBatch *fftyp
 func (ag *aggregator) extractManifest(ctx context.Context, batch *fftypes.BatchPersisted) *fftypes.BatchManifest {
 
 	var manifest fftypes.BatchManifest
-	err := json.Unmarshal([]byte(batch.Manifest), &manifest)
+	err := batch.Manifest.Unmarshal(ctx, &manifest)
 	if err != nil {
 		log.L(ctx).Errorf("Invalid manifest: %s", err)
 		return nil
@@ -338,7 +337,11 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.
 func (ag *aggregator) processMessage(ctx context.Context, manifest *fftypes.BatchManifest, pin *fftypes.Pin, msgBaseIndex int64, msgEntry *fftypes.MessageManifestEntry, state *batchState) (err error) {
 	l := log.L(ctx)
 
-	msg, data, dataAvailable, err := ag.data.GetMessageWithDataCached(ctx, msgEntry.ID)
+	var cros []data.CacheReadOption
+	if pin.Masked {
+		cros = []data.CacheReadOption{data.CRORequirePins}
+	}
+	msg, data, dataAvailable, err := ag.data.GetMessageWithDataCached(ctx, msgEntry.ID, cros...)
 	if err != nil {
 		return err
 	}
@@ -445,6 +448,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
 		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
+		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
 		if handlerResult.Action == definitions.ActionRetry {
 			return false, err
 		}

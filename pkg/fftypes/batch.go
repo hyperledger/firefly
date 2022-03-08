@@ -74,7 +74,7 @@ type Batch struct {
 // BatchPersisted is the structure written to the database
 type BatchPersisted struct {
 	BatchHeader
-	Manifest   string         `json:"manifest"` // not automatically parsed
+	Manifest   *JSONAny       `json:"manifest"`
 	TX         TransactionRef `json:"tx"`
 	PayloadRef string         `json:"payloadRef,omitempty"`
 	Confirmed  *FFTime        `json:"confirmed"`
@@ -149,7 +149,7 @@ func (b *Batch) Confirmed() (*BatchPersisted, *BatchManifest) {
 	return &BatchPersisted{
 		BatchHeader: b.BatchHeader,
 		TX:          b.Payload.TX,
-		Manifest:    manifestString,
+		Manifest:    JSONAnyPtr(manifestString),
 		Confirmed:   Now(),
 	}, manifest
 }
