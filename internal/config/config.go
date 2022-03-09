@@ -188,6 +188,12 @@ var (
 	MessageCacheSize = rootKey("message.cache.size")
 	// MessageCacheTTL
 	MessageCacheTTL = rootKey("message.cache.ttl")
+	// MessageWriterCount
+	MessageWriterCount = rootKey("message.writer.count")
+	// MessageWriterBatchTimeout
+	MessageWriterBatchTimeout = rootKey("message.writer.batchTimeout")
+	// MessageWriterBatchMaxInserts
+	MessageWriterBatchMaxInserts = rootKey("message.writer.batchMaxInserts")
 	// MetricsEnabled determines whether metrics will be instrumented and if the metrics server will be enabled or not
 	MetricsEnabled = rootKey("metrics.enabled")
 	// MetricsPath determines what path to serve the Prometheus metrics from
@@ -338,6 +344,11 @@ func Reset() {
 	viper.SetDefault(string(LogFilesize), "100m")
 	viper.SetDefault(string(LogMaxAge), "24h")
 	viper.SetDefault(string(LogMaxBackups), 2)
+	viper.SetDefault(string(MessageCacheSize), "50Mb")
+	viper.SetDefault(string(MessageCacheTTL), "5m")
+	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
+	viper.SetDefault(string(MessageWriterBatchTimeout), "100ms")
+	viper.SetDefault(string(MessageWriterCount), 1)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
@@ -357,8 +368,6 @@ func Reset() {
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")
-	viper.SetDefault(string(MessageCacheSize), "50Mb")
-	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(IdentityManagerCacheLimit), 100 /* items */)
 	viper.SetDefault(string(IdentityManagerCacheTTL), "1h")
 

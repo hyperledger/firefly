@@ -290,4 +290,6 @@ var (
 	MsgOperationNotSupported        = ffm("FF10371", "Operation not supported", 400)
 	MsgFailedToRetrieve             = ffm("FF10372", "Failed to retrieve %s %s", 500)
 	MsgBlobMissingPublic            = ffm("FF10373", "Blob for data %s missing public payload reference while flushing batch", 500)
+	MsgDBMultiRowConfigError        = ffm("FF10374", "Database invalid configuration - using multi-row insert on DB plugin that does not support query syntax for input")
+	MsgDBNoSequence                 = ffm("FF10375", "Failed to retrieve sequence for insert row %d", 500)
 )

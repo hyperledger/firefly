@@ -321,3 +321,26 @@ func TestDoubleLock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, mdb.ExpectationsWereMet())
 }
+
+func TestInsertTxRowsBadConfig(t *testing.T) {
+	s, mdb := newMockProvider().init()
+	mdb.ExpectBegin()
+	ctx, tx, _, err := s.beginOrUseTx(context.Background())
+	assert.NoError(t, err)
+	s.fakePSQLInsert = false
+	sb := sq.Insert("table").Columns("col1").Values(("val1"))
+	err = s.insertTxRows(ctx, tx, sb, nil, []int64{1, 2}, false)
+	assert.Regexp(t, "FF10374", err)
+}
+
+func TestInsertTxRowsIncompleteReturn(t *testing.T) {
+	s, mdb := newMockProvider().init()
+	mdb.ExpectBegin()
+	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).AddRow(int64(1001)))
+	ctx, tx, _, err := s.beginOrUseTx(context.Background())
+	assert.NoError(t, err)
+	s.fakePSQLInsert = true
+	sb := sq.Insert("table").Columns("col1").Values(("val1"))
+	err = s.insertTxRows(ctx, tx, sb, nil, []int64{1, 2}, false)
+	assert.Regexp(t, "FF10116", err)
+}

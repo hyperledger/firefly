@@ -222,6 +222,61 @@ func TestUpsertDataFailCommit(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestInsertDataArrayBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertDataArrayMultiRowOK(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	data1 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	data2 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", data1.ID)
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", data2.ID)
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectCommit()
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{data1, data2})
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertDataArrayMultiRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+	data1 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{data1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertDataArraySingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	data1 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{data1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
 func TestGetDataByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	dataID := fftypes.NewUUID()
