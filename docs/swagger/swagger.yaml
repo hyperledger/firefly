@@ -6144,14 +6144,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6203,14 +6226,37 @@ paths:
                   properties:
                     author:
                       type: string
+                    blockchainevent:
+                      properties:
+                        listener:
+                          type: string
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
                     group:
                       type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          type: string
+                      type: object
                     tag:
                       type: string
                     topics:
                       type: string
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -6331,14 +6377,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6390,14 +6459,37 @@ paths:
                   properties:
                     author:
                       type: string
+                    blockchainevent:
+                      properties:
+                        listener:
+                          type: string
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
                     group:
                       type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          type: string
+                      type: object
                     tag:
                       type: string
                     topics:
                       type: string
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -6518,14 +6610,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6615,14 +6730,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:

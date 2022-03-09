@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -39,10 +39,25 @@ type subscription struct {
 
 	dispatcherElection chan bool
 	eventMatcher       *regexp.Regexp
-	groupFilter        *regexp.Regexp
-	tagFilter          *regexp.Regexp
-	topicsFilter       *regexp.Regexp
-	authorFilter       *regexp.Regexp
+	messageFilter      *messageFilter
+	blockchainFilter   *blockchainFilter
+	transactionFilter  *transactionFilter
+}
+
+type messageFilter struct {
+	groupFilter  *regexp.Regexp
+	tagFilter    *regexp.Regexp
+	topicsFilter *regexp.Regexp
+	authorFilter *regexp.Regexp
+}
+
+type blockchainFilter struct {
+	nameFilter     *regexp.Regexp
+	listenerFilter *regexp.Regexp
+}
+
+type transactionFilter struct {
+	typeFilter *regexp.Regexp
 }
 
 type connection struct {
@@ -276,34 +291,69 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 	}
 
 	var tagFilter *regexp.Regexp
-	if filter.Tag != "" {
-		tagFilter, err = regexp.Compile(filter.Tag)
+	if filter.DeprecatedTag != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'tag' key - please change to 'message.tag' instead")
+		tagFilter, err = regexp.Compile(filter.DeprecatedTag)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.tag", filter.Tag)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.tag", filter.DeprecatedTag)
+		}
+	}
+
+	if filter.Message.Tag != "" {
+		tagFilter, err = regexp.Compile(filter.Message.Tag)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.tag", filter.Message.Tag)
 		}
 	}
 
 	var groupFilter *regexp.Regexp
-	if filter.Group != "" {
-		groupFilter, err = regexp.Compile(filter.Group)
+	if filter.DeprecatedGroup != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'group' key - please change to 'message.group' instead")
+		// set to group filter, will be overwritten by non-deprecated key if both are present
+		groupFilter, err = regexp.Compile(filter.DeprecatedGroup)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.group", filter.Group)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.group", filter.DeprecatedGroup)
+		}
+	}
+
+	if filter.Message.Group != "" {
+		groupFilter, err = regexp.Compile(filter.Message.Group)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.group", filter.Message.Group)
 		}
 	}
 
 	var topicsFilter *regexp.Regexp
-	if filter.Topics != "" {
-		topicsFilter, err = regexp.Compile(filter.Topics)
+	if filter.DeprecatedTopics != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'topics' key - please change to 'message.topics' instead")
+		// set to topics filter, will be overwritten by non-deprecated key if both are present
+		topicsFilter, err = regexp.Compile(filter.DeprecatedTopics)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topics", filter.Topics)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topics", filter.DeprecatedTopics)
+		}
+	}
+
+	if filter.Message.Topics != "" {
+		topicsFilter, err = regexp.Compile(filter.Message.Topics)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.topics", filter.Message.Topics)
 		}
 	}
 
 	var authorFilter *regexp.Regexp
-	if filter.Author != "" {
-		authorFilter, err = regexp.Compile(filter.Author)
+	if filter.DeprecatedAuthor != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'author' key - please change to 'message.author' instead")
+		// set to author filter, will be overwritten by non-deprecated key if both are present
+		authorFilter, err = regexp.Compile(filter.DeprecatedAuthor)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.author", filter.Author)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.author", filter.DeprecatedAuthor)
+		}
+	}
+
+	if filter.Message.Author != "" {
+		authorFilter, err = regexp.Compile(filter.Message.Author)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.author", filter.Message.Author)
 		}
 	}
 
@@ -311,11 +361,53 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
 		eventMatcher:       eventFilter,
-		groupFilter:        groupFilter,
-		tagFilter:          tagFilter,
-		topicsFilter:       topicsFilter,
-		authorFilter:       authorFilter,
+		messageFilter: &messageFilter{
+			tagFilter:    tagFilter,
+			groupFilter:  groupFilter,
+			topicsFilter: topicsFilter,
+			authorFilter: authorFilter,
+		},
 	}
+
+	if (filter.BlockchainEvent != fftypes.BlockchainEventFilter{}) {
+		var nameFilter *regexp.Regexp
+		if filter.BlockchainEvent.Name != "" {
+			nameFilter, err = regexp.Compile(filter.BlockchainEvent.Name)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.blockchain.name", filter.BlockchainEvent.Name)
+			}
+		}
+
+		var listenerFilter *regexp.Regexp
+		if filter.BlockchainEvent.Listener != "" {
+			listenerFilter, err = regexp.Compile(filter.BlockchainEvent.Listener)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.blockchain.listener", filter.BlockchainEvent.Listener)
+			}
+		}
+
+		bf := &blockchainFilter{
+			nameFilter:     nameFilter,
+			listenerFilter: listenerFilter,
+		}
+		sub.blockchainFilter = bf
+	}
+
+	if (filter.Transaction != fftypes.TransactionFilter{}) {
+		var typeFilter *regexp.Regexp
+		if filter.Transaction.Type != "" {
+			typeFilter, err = regexp.Compile(filter.Transaction.Type)
+			if err != nil {
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.transaction.type", filter.Transaction.Type)
+			}
+		}
+
+		tf := &transactionFilter{
+			typeFilter: typeFilter,
+		}
+		sub.transactionFilter = tf
+	}
+
 	return sub, err
 }
 

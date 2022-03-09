@@ -29,6 +29,7 @@ type Helper interface {
 	SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.TransactionType) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error
+	EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error)
 }
 
 type transactionHelper struct {

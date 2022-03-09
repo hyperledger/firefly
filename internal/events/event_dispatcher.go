@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,7 +18,6 @@ package events
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"sync"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -63,6 +63,7 @@ type eventDispatcher struct {
 	subscription  *subscription
 	cel           *changeEventListener
 	changeEvents  chan *fftypes.ChangeEvent
+	txHelper      txcommon.Helper
 }
 
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
@@ -93,6 +94,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		cel:           cel,
+		txHelper:      txcommon.NewTransactionHelper(di),
 	}
 
 	pollerConf := &eventPollerConf{
@@ -159,42 +161,19 @@ func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter
 }
 
 func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*fftypes.EventDelivery, error) {
-	// We need all the messages that match event references
-	refIDs := make([]driver.Value, len(events))
-	for i, ls := range events {
-		e := ls.(*fftypes.Event)
-		if e.Reference != nil {
-			refIDs[i] = *e.Reference
-		}
-	}
-
-	mfb := database.MessageQueryFactory.NewFilter(ed.ctx)
-	msgFilter := mfb.And(
-		mfb.In("id", refIDs),
-		mfb.Eq("namespace", ed.namespace),
-	)
-	msgs, _, err := ed.database.GetMessages(ed.ctx, msgFilter)
-	if err != nil {
-		return nil, err
-	}
-
 	enriched := make([]*fftypes.EventDelivery, len(events))
 	for i, ls := range events {
 		e := ls.(*fftypes.Event)
-		enriched[i] = &fftypes.EventDelivery{
-			Event:        *e,
-			Subscription: ed.subscription.definition.SubscriptionRef,
+		enrichedEvent, err := ed.txHelper.EnrichEvent(ed.ctx, e)
+		if err != nil {
+			return nil, err
 		}
-		for _, msg := range msgs {
-			if *e.Reference == *msg.Header.ID {
-				enriched[i].Message = msg
-				break
-			}
+		enriched[i] = &fftypes.EventDelivery{
+			EnrichedEvent: *enrichedEvent,
+			Subscription:  ed.subscription.definition.SubscriptionRef,
 		}
 	}
-
 	return enriched, nil
-
 }
 
 func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*fftypes.EventDelivery {
@@ -204,11 +183,18 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		if filter.eventMatcher != nil && !filter.eventMatcher.MatchString(string(event.Type)) {
 			continue
 		}
+
 		msg := event.Message
+		tx := event.Transaction
+		be := event.BlockchainEvent
 		tag := ""
 		group := ""
 		author := ""
+		txType := ""
+		beName := ""
+		beListener := ""
 		var topics []string
+
 		if msg != nil {
 			tag = msg.Header.Tag
 			topics = msg.Header.Topics
@@ -217,27 +203,55 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 				group = msg.Header.Group.String()
 			}
 		}
-		if filter.tagFilter != nil && !filter.tagFilter.MatchString(tag) {
-			continue
+
+		if tx != nil {
+			txType = tx.Type.String()
 		}
-		if filter.authorFilter != nil && !filter.authorFilter.MatchString(author) {
-			continue
+
+		if be != nil {
+			beName = be.Name
+			beListener = be.Listener.String()
 		}
-		if filter.topicsFilter != nil {
-			topicsMatch := false
-			for _, topic := range topics {
-				if filter.topicsFilter.MatchString(topic) {
-					topicsMatch = true
-					break
+
+		if filter.messageFilter != nil {
+			if filter.messageFilter.tagFilter != nil && !filter.messageFilter.tagFilter.MatchString(tag) {
+				continue
+			}
+			if filter.messageFilter.authorFilter != nil && !filter.messageFilter.authorFilter.MatchString(author) {
+				continue
+			}
+			if filter.messageFilter.topicsFilter != nil {
+				topicsMatch := false
+				for _, topic := range topics {
+					if filter.messageFilter.topicsFilter.MatchString(topic) {
+						topicsMatch = true
+						break
+					}
+				}
+				if !topicsMatch {
+					continue
 				}
 			}
-			if !topicsMatch {
+			if filter.messageFilter.groupFilter != nil && !filter.messageFilter.groupFilter.MatchString(group) {
 				continue
 			}
 		}
-		if filter.groupFilter != nil && !filter.groupFilter.MatchString(group) {
-			continue
+
+		if filter.transactionFilter != nil {
+			if filter.transactionFilter.typeFilter != nil && !filter.transactionFilter.typeFilter.MatchString(txType) {
+				continue
+			}
 		}
+
+		if filter.blockchainFilter != nil {
+			if filter.blockchainFilter.nameFilter != nil && !filter.blockchainFilter.nameFilter.MatchString(beName) {
+				continue
+			}
+			if filter.blockchainFilter.listenerFilter != nil && !filter.blockchainFilter.listenerFilter.MatchString(beListener) {
+				continue
+			}
+		}
+
 		matchingEvents = append(matchingEvents, event)
 	}
 	return matchingEvents

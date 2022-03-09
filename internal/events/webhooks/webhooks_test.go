@@ -170,21 +170,23 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		"replytx": "in_replytx",
 	}
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:    msgID,
+					Group: groupHash,
+					Type:  fftypes.MessageTypePrivate,
+				},
+				Data: fftypes.DataRefs{
+					{ID: dataID},
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:    msgID,
-				Group: groupHash,
-				Type:  fftypes.MessageTypePrivate,
-			},
-			Data: fftypes.DataRefs{
-				{ID: dataID},
-			},
 		},
 	}
 	data := &fftypes.Data{
@@ -275,21 +277,23 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 		"replytx": "in_replytx",
 	}
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:    msgID,
+					Group: groupHash,
+					Type:  fftypes.MessageTypePrivate,
+				},
+				Data: fftypes.DataRefs{
+					{ID: dataID},
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:    msgID,
-				Group: groupHash,
-				Type:  fftypes.MessageTypePrivate,
-			},
-			Data: fftypes.DataRefs{
-				{ID: dataID},
-			},
 		},
 	}
 	data := &fftypes.Data{
@@ -352,21 +356,23 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:    msgID,
+					Group: groupHash,
+					Type:  fftypes.MessageTypePrivate,
+				},
+				Data: fftypes.DataRefs{
+					{ID: dataID},
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:    msgID,
-				Group: groupHash,
-				Type:  fftypes.MessageTypePrivate,
-			},
-			Data: fftypes.DataRefs{
-				{ID: dataID},
-			},
 		},
 	}
 	data := &fftypes.Data{
@@ -411,17 +417,19 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:   msgID,
+					Type: fftypes.MessageTypeBroadcast,
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   msgID,
-				Type: fftypes.MessageTypeBroadcast,
-			},
 		},
 	}
 
@@ -458,17 +466,19 @@ func TestRequestReplyBadJSON(t *testing.T) {
 	to["reply"] = true
 	to["json"] = true
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:   msgID,
+					Type: fftypes.MessageTypeBroadcast,
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   msgID,
-				Type: fftypes.MessageTypeBroadcast,
-			},
 		},
 	}
 
@@ -516,17 +526,19 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:   msgID,
+					Type: fftypes.MessageTypeBroadcast,
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   msgID,
-				Type: fftypes.MessageTypeBroadcast,
-			},
 		},
 	}
 
@@ -564,17 +576,19 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:   msgID,
+					Type: fftypes.MessageTypeBroadcast,
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   msgID,
-				Type: fftypes.MessageTypeBroadcast,
-			},
 		},
 	}
 
@@ -610,17 +624,19 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 	sub.Options.TransportOptions()["reply"] = true
 	sub.Options.TransportOptions()["fastack"] = true
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:   msgID,
+					Type: fftypes.MessageTypeBroadcast,
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   msgID,
-				Type: fftypes.MessageTypeBroadcast,
-			},
 		},
 	}
 
@@ -662,8 +678,10 @@ func TestDeliveryRequestNilMessage(t *testing.T) {
 	}
 	sub.Options.TransportOptions()["reply"] = true
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
@@ -688,18 +706,20 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 	}
 	sub.Options.TransportOptions()["reply"] = true
 	event := &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID: fftypes.NewUUID(),
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID: fftypes.NewUUID(),
+			},
+			Message: &fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:   fftypes.NewUUID(),
+					Type: fftypes.MessageTypeBroadcast,
+					CID:  fftypes.NewUUID(),
+				},
+			},
 		},
 		Subscription: fftypes.SubscriptionRef{
 			ID: sub.ID,
-		},
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:   fftypes.NewUUID(),
-				Type: fftypes.MessageTypeBroadcast,
-				CID:  fftypes.NewUUID(),
-			},
 		},
 	}
 
