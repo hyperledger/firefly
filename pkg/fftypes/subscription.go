@@ -20,16 +20,44 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding/json"
+	"net/url"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 // SubscriptionFilter contains regular expressions to match against events. All must match for an event to be dispatched to a subscription
 type SubscriptionFilter struct {
-	Events          string                `json:"events,omitempty"`
-	Message         MessageFilter         `json:"message,omitempty"`
-	Transaction     TransactionFilter     `json:"transaction,omitempty"`
-	BlockchainEvent BlockchainEventFilter `json:"blockchainevent,omitempty"`
+	Events           string                `json:"events,omitempty"`
+	Message          MessageFilter         `json:"message,omitempty"`
+	Transaction      TransactionFilter     `json:"transaction,omitempty"`
+	BlockchainEvent  BlockchainEventFilter `json:"blockchainevent,omitempty"`
+	DeprecatedTopics string                `json:"topics,omitempty"`
+	DeprecatedTag    string                `json:"tag,omitempty"`
+	DeprecatedGroup  string                `json:"group,omitempty"`
+	DeprecatedAuthor string                `json:"author,omitempty"`
+}
+
+func NewSubscriptionFilterFromQuery(query url.Values) SubscriptionFilter {
+	return SubscriptionFilter{
+		Events: query.Get("filter.events"),
+		Message: MessageFilter{
+			Topics: query.Get("filter.message.topics"),
+			Group:  query.Get("filter.message.group"),
+			Tag:    query.Get("filter.message.tag"),
+			Author: query.Get("filter.message.author"),
+		},
+		BlockchainEvent: BlockchainEventFilter{
+			Name:     query.Get("filter.blockchain.name"),
+			Listener: query.Get("filter.blockchain.listener"),
+		},
+		Transaction: TransactionFilter{
+			Type: query.Get("filter.transaction.type"),
+		},
+		DeprecatedTopics: query.Get("filter.topics"),
+		DeprecatedTag:    query.Get("filter.tag"),
+		DeprecatedGroup:  query.Get("filter.group"),
+		DeprecatedAuthor: query.Get("filter.author"),
+	}
 }
 
 type MessageFilter struct {

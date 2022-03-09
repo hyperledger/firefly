@@ -6133,6 +6133,8 @@ paths:
                     type: boolean
                   filter:
                     properties:
+                      author:
+                        type: string
                       blockchainevent:
                         properties:
                           listener:
@@ -6141,6 +6143,8 @@ paths:
                             type: string
                         type: object
                       events:
+                        type: string
+                      group:
                         type: string
                       message:
                         properties:
@@ -6153,6 +6157,10 @@ paths:
                           topics:
                             type: string
                         type: object
+                      tag:
+                        type: string
+                      topics:
+                        type: string
                       transaction:
                         properties:
                           type:
@@ -6207,6 +6215,8 @@ paths:
               properties:
                 filter:
                   properties:
+                    author:
+                      type: string
                     blockchainevent:
                       properties:
                         listener:
@@ -6215,6 +6225,8 @@ paths:
                           type: string
                       type: object
                     events:
+                      type: string
+                    group:
                       type: string
                     message:
                       properties:
@@ -6227,6 +6239,10 @@ paths:
                         topics:
                           type: string
                       type: object
+                    tag:
+                      type: string
+                    topics:
+                      type: string
                     transaction:
                       properties:
                         type:
@@ -6350,6 +6366,8 @@ paths:
                     type: boolean
                   filter:
                     properties:
+                      author:
+                        type: string
                       blockchainevent:
                         properties:
                           listener:
@@ -6358,6 +6376,8 @@ paths:
                             type: string
                         type: object
                       events:
+                        type: string
+                      group:
                         type: string
                       message:
                         properties:
@@ -6370,6 +6390,10 @@ paths:
                           topics:
                             type: string
                         type: object
+                      tag:
+                        type: string
+                      topics:
+                        type: string
                       transaction:
                         properties:
                           type:
@@ -6424,6 +6448,8 @@ paths:
               properties:
                 filter:
                   properties:
+                    author:
+                      type: string
                     blockchainevent:
                       properties:
                         listener:
@@ -6432,6 +6458,8 @@ paths:
                           type: string
                       type: object
                     events:
+                      type: string
+                    group:
                       type: string
                     message:
                       properties:
@@ -6444,6 +6472,10 @@ paths:
                         topics:
                           type: string
                       type: object
+                    tag:
+                      type: string
+                    topics:
+                      type: string
                     transaction:
                       properties:
                         type:
@@ -6567,6 +6599,8 @@ paths:
                     type: boolean
                   filter:
                     properties:
+                      author:
+                        type: string
                       blockchainevent:
                         properties:
                           listener:
@@ -6575,6 +6609,8 @@ paths:
                             type: string
                         type: object
                       events:
+                        type: string
+                      group:
                         type: string
                       message:
                         properties:
@@ -6587,6 +6623,10 @@ paths:
                           topics:
                             type: string
                         type: object
+                      tag:
+                        type: string
+                      topics:
+                        type: string
                       transaction:
                         properties:
                           type:
@@ -6679,6 +6719,8 @@ paths:
                     type: boolean
                   filter:
                     properties:
+                      author:
+                        type: string
                       blockchainevent:
                         properties:
                           listener:
@@ -6687,6 +6729,8 @@ paths:
                             type: string
                         type: object
                       events:
+                        type: string
+                      group:
                         type: string
                       message:
                         properties:
@@ -6699,6 +6743,10 @@ paths:
                           topics:
                             type: string
                         type: object
+                      tag:
+                        type: string
+                      topics:
+                        type: string
                       transaction:
                         properties:
                           type:

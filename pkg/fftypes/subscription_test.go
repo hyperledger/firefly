@@ -18,6 +18,7 @@ package fftypes
 
 import (
 	"encoding/json"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -104,5 +105,24 @@ func TestSubscriptionUnMarshalFail(t *testing.T) {
 
 	err = json.Unmarshal([]byte(`{"readAhead": "!a number"}`), &SubscriptionOptions{})
 	assert.Regexp(t, "readAhead", err)
+}
+
+func TestNewSubscriptionFilterFromQuery(t *testing.T) {
+	query, _ := url.ParseQuery("filter.events=message_confirmed&filter.message.topics=topic1&filter.blockchain.name=flapflip&filter.transaction.type=test&filter.group=deprecated")
+	expectedFilter := SubscriptionFilter{
+		Events: "message_confirmed",
+		Message: MessageFilter{
+			Topics: "topic1",
+		},
+		BlockchainEvent: BlockchainEventFilter{
+			Name: "flapflip",
+		},
+		Transaction: TransactionFilter{
+			Type: "test",
+		},
+		DeprecatedGroup: "deprecated",
+	}
+	filter := NewSubscriptionFilterFromQuery(query)
+	assert.Equal(t, expectedFilter, filter)
 
 }

@@ -376,6 +376,62 @@ func TestCreateSubscriptionBadBlockchainEventNameFilter(t *testing.T) {
 	assert.Regexp(t, "FF10171.*name", err)
 }
 
+func TestCreateSubscriptionBadDeprecatedGroupFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedGroup: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*group", err)
+}
+
+func TestCreateSubscriptionBadDeprecatedTagFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedTag: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*tag", err)
+}
+
+func TestCreateSubscriptionBadDeprecatedAuthorFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedAuthor: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*author", err)
+}
+
+func TestCreateSubscriptionBadDeprecatedTopicsFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedTopics: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*topics", err)
+}
+
 func TestCreateSubscriptionBadBlockchainEventListenerFilter(t *testing.T) {
 	mei := &eventsmocks.PluginAll{}
 	sm, cancel := newTestSubManager(t, mei)
@@ -438,6 +494,24 @@ func TestCreateSubscriptionSuccessBlockchainEvent(t *testing.T) {
 		Transport: "ut",
 	})
 	assert.NoError(t, err)
+}
+
+func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedTopics: "test",
+			DeprecatedTag:    "flap",
+			DeprecatedAuthor: "flip",
+			DeprecatedGroup:  "flapflip",
+		},
+		Transport: "ut",
+	})
+	assert.NoError(t, err)
+
 }
 
 func TestDispatchDeliveryResponseOK(t *testing.T) {

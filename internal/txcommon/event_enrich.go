@@ -34,9 +34,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Even
 			return nil, err
 		}
 		e.Transaction = tx
-	case fftypes.EventTypeMessageRejected:
-		fallthrough
-	case fftypes.EventTypeMessageConfirmed:
+	case fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageRejected:
 		msg, err := t.database.GetMessageByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err

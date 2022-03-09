@@ -290,52 +290,83 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
+	var tagFilter *regexp.Regexp
+	if filter.DeprecatedTag != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'tag' key - please change to 'message.tag' instead")
+		tagFilter, err = regexp.Compile(filter.DeprecatedTag)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.tag", filter.DeprecatedTag)
+		}
+	}
+
+	if filter.Message.Tag != "" {
+		tagFilter, err = regexp.Compile(filter.Message.Tag)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.tag", filter.Message.Tag)
+		}
+	}
+
+	var groupFilter *regexp.Regexp
+	if filter.DeprecatedGroup != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'group' key - please change to 'message.group' instead")
+		// set to group filter, will be overwritten by non-deprecated key if both are present
+		groupFilter, err = regexp.Compile(filter.DeprecatedGroup)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.group", filter.DeprecatedGroup)
+		}
+	}
+
+	if filter.Message.Group != "" {
+		groupFilter, err = regexp.Compile(filter.Message.Group)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.group", filter.Message.Group)
+		}
+	}
+
+	var topicsFilter *regexp.Regexp
+	if filter.DeprecatedTopics != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'topics' key - please change to 'message.topics' instead")
+		// set to topics filter, will be overwritten by non-deprecated key if both are present
+		topicsFilter, err = regexp.Compile(filter.DeprecatedTopics)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topics", filter.DeprecatedTopics)
+		}
+	}
+
+	if filter.Message.Topics != "" {
+		topicsFilter, err = regexp.Compile(filter.Message.Topics)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.topics", filter.Message.Topics)
+		}
+	}
+
+	var authorFilter *regexp.Regexp
+	if filter.DeprecatedAuthor != "" {
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'author' key - please change to 'message.author' instead")
+		// set to author filter, will be overwritten by non-deprecated key if both are present
+		authorFilter, err = regexp.Compile(filter.DeprecatedAuthor)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.author", filter.DeprecatedAuthor)
+		}
+	}
+
+	if filter.Message.Author != "" {
+		authorFilter, err = regexp.Compile(filter.Message.Author)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.author", filter.Message.Author)
+		}
+	}
+
 	sub = &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
 		eventMatcher:       eventFilter,
-	}
-
-	if (filter.Message != fftypes.MessageFilter{}) {
-		var tagFilter *regexp.Regexp
-		if filter.Message.Tag != "" {
-			tagFilter, err = regexp.Compile(filter.Message.Tag)
-			if err != nil {
-				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.tag", filter.Message.Tag)
-			}
-		}
-
-		var groupFilter *regexp.Regexp
-		if filter.Message.Group != "" {
-			groupFilter, err = regexp.Compile(filter.Message.Group)
-			if err != nil {
-				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.group", filter.Message.Group)
-			}
-		}
-
-		var topicsFilter *regexp.Regexp
-		if filter.Message.Topics != "" {
-			topicsFilter, err = regexp.Compile(filter.Message.Topics)
-			if err != nil {
-				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.topics", filter.Message.Topics)
-			}
-		}
-
-		var authorFilter *regexp.Regexp
-		if filter.Message.Author != "" {
-			authorFilter, err = regexp.Compile(filter.Message.Author)
-			if err != nil {
-				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.author", filter.Message.Author)
-			}
-		}
-
-		msg := &messageFilter{
+		messageFilter: &messageFilter{
 			tagFilter:    tagFilter,
 			groupFilter:  groupFilter,
 			topicsFilter: topicsFilter,
 			authorFilter: authorFilter,
-		}
-		sub.messageFilter = msg
+		},
 	}
 
 	if (filter.BlockchainEvent != fftypes.BlockchainEventFilter{}) {
