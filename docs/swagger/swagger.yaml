@@ -3702,6 +3702,12 @@ paths:
         schema:
           example: default
           type: string
+      - description: 'TODO: Description'
+        in: query
+        name: fetchreferences
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header

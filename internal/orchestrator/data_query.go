@@ -307,3 +307,21 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, 
 	)
 	return or.database.GetBlockchainEvents(ctx, filter)
 }
+
+func (or *orchestrator) GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.EnrichedEvent, *database.FilterResult, error) {
+	filter = or.scopeNS(ns, filter)
+	events, fr, err := or.database.GetEvents(ctx, filter)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	enriched := make([]*fftypes.EnrichedEvent, len(events))
+	for i, event := range events {
+		enrichedEvent, err := or.txHelper.EnrichEvent(or.ctx, event)
+		if err != nil {
+			return nil, nil, err
+		}
+		enriched[i] = enrichedEvent
+	}
+	return enriched, fr, err
+}
