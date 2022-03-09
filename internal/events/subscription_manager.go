@@ -302,7 +302,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 	if filter.Message.Tag != "" {
 		tagFilter, err = regexp.Compile(filter.Message.Tag)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.tag", filter.Message.Tag)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.tag", filter.Message.Tag)
 		}
 	}
 
@@ -319,7 +319,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 	if filter.Message.Group != "" {
 		groupFilter, err = regexp.Compile(filter.Message.Group)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.group", filter.Message.Group)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.group", filter.Message.Group)
 		}
 	}
 
@@ -336,7 +336,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 	if filter.Message.Topics != "" {
 		topicsFilter, err = regexp.Compile(filter.Message.Topics)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.topics", filter.Message.Topics)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.topics", filter.Message.Topics)
 		}
 	}
 
@@ -353,7 +353,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 	if filter.Message.Author != "" {
 		authorFilter, err = regexp.Compile(filter.Message.Author)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Message.author", filter.Message.Author)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.author", filter.Message.Author)
 		}
 	}
 
@@ -374,7 +374,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		if filter.BlockchainEvent.Name != "" {
 			nameFilter, err = regexp.Compile(filter.BlockchainEvent.Name)
 			if err != nil {
-				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.BlockchainEvent.name", filter.BlockchainEvent.Name)
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.blockchain.name", filter.BlockchainEvent.Name)
 			}
 		}
 
@@ -382,7 +382,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		if filter.BlockchainEvent.Listener != "" {
 			listenerFilter, err = regexp.Compile(filter.BlockchainEvent.Listener)
 			if err != nil {
-				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.BlockchainEvent.listener", filter.BlockchainEvent.Listener)
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.blockchain.listener", filter.BlockchainEvent.Listener)
 			}
 		}
 
@@ -398,7 +398,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		if filter.Transaction.Type != "" {
 			typeFilter, err = regexp.Compile(filter.Transaction.Type)
 			if err != nil {
-				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.Transaction.type", filter.Transaction.Type)
+				return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.transaction.type", filter.Transaction.Type)
 			}
 		}
 
