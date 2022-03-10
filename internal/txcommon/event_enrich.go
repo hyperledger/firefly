@@ -29,13 +29,13 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Even
 
 	switch event.Type {
 	case fftypes.EventTypeTransactionSubmitted:
-		tx, err := t.database.GetTransactionByID(ctx, event.Reference)
+		tx, err := t.GetTransactionByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Transaction = tx
 	case fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageRejected:
-		msg, err := t.database.GetMessageByID(ctx, event.Reference)
+		msg, _, _, err := t.data.GetMessageWithDataCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}

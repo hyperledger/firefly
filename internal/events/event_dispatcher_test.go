@@ -159,6 +159,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	go ed.deliverEvents()
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
+	mdm := ed.data.(*datamocks.Manager)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -186,18 +187,18 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 		offsetUpdates <- v.(int64)
 	}
 	// Setup enrichment
-	mdi.On("GetMessageByID", mock.Anything, ref1).Return(&fftypes.Message{
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref1},
-	}, nil)
-	mdi.On("GetMessageByID", mock.Anything, ref2).Return(&fftypes.Message{
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref2).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref2},
-	}, nil)
-	mdi.On("GetMessageByID", mock.Anything, ref3).Return(&fftypes.Message{
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref3).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref3},
-	}, nil)
-	mdi.On("GetMessageByID", mock.Anything, ref4).Return(&fftypes.Message{
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref4).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref4},
-	}, nil)
+	}, nil, true, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -242,6 +243,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mei.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
@@ -260,6 +262,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
+	mdm := ed.data.(*datamocks.Manager)
 	mei := ed.transport.(*eventsmocks.PluginAll)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
@@ -279,18 +282,18 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	ev4 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetMessageByID", mock.Anything, ref1).Return(&fftypes.Message{
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref1},
-	}, nil)
-	mdi.On("GetMessageByID", mock.Anything, ref2).Return(&fftypes.Message{
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref2).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref2},
-	}, nil)
-	mdi.On("GetMessageByID", mock.Anything, ref3).Return(&fftypes.Message{
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref3).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref3},
-	}, nil)
-	mdi.On("GetMessageByID", mock.Anything, ref4).Return(&fftypes.Message{
+	}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref4).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref4},
-	}, nil)
+	}, nil, true, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -331,6 +334,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mei.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestEventDispatcherChangeEvents(t *testing.T) {
@@ -407,8 +411,8 @@ func TestEnrichEventsFailGetMessages(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
-	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdm := ed.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
 	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1, Type: fftypes.EventTypeMessageConfirmed}})
@@ -843,8 +847,8 @@ func TestBufferedDeliveryEnrichFail(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
-	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdm := ed.data.(*datamocks.Manager)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, fmt.Errorf("pop"))
 
 	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageConfirmed}})
 	assert.False(t, repoll)
