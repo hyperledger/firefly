@@ -256,14 +256,18 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return err
 		}
 
-		if s.transfer.Message != nil {
-			s.transfer.Message.State = fftypes.MessageStateStaged
-			err = s.msgSender.Send(ctx)
-		}
 		return err
 	})
 	if err != nil {
 		return err
+	}
+
+	// Write the transfer message outside of any DB transaction, as it will use the background message writer.
+	if s.transfer.Message != nil {
+		s.transfer.Message.State = fftypes.MessageStateStaged
+		if err = s.msgSender.Send(ctx); err != nil {
+			return err
+		}
 	}
 
 	return s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))

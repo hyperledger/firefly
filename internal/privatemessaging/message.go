@@ -115,31 +115,16 @@ func (s *messageSender) setDefaults() {
 }
 
 func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) error {
-	sent := false
 
-	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin)
-	err := s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		if !s.resolved {
-			if err = s.resolve(ctx); err != nil {
-				return err
-			}
-			msgSizeEstimate := s.msg.Message.EstimateSize(true)
-			if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
-				return i18n.NewError(ctx, i18n.MsgTooLargePrivate, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
-			}
-			s.resolved = true
+	if !s.resolved {
+		if err := s.resolve(ctx); err != nil {
+			return err
 		}
-
-		// If we aren't waiting for blockchain confirmation, insert the local message immediately within the same DB transaction.
-		if method != methodSendAndWait {
-			err = s.sendInternal(ctx, method)
-			sent = true
+		msgSizeEstimate := s.msg.Message.EstimateSize(true)
+		if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
+			return i18n.NewError(ctx, i18n.MsgTooLargePrivate, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
 		}
-		return err
-	})
-
-	if err != nil || sent {
-		return err
+		s.resolved = true
 	}
 
 	return s.sendInternal(ctx, method)

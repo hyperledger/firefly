@@ -819,6 +819,64 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
+func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From:   "A",
+			To:     "B",
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool: "pool1",
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: msgID,
+				},
+				Hash: hash,
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+	}
+	pool := &fftypes.TokenPool{
+		State: fftypes.TokenPoolStateConfirmed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mth := am.txHelper.(*txcommonmocks.Helper)
+	mom := am.operations.(*operationmocks.Manager)
+	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
+	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Prepare", context.Background()).Return(nil)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
+	assert.Regexp(t, "pop", err)
+	assert.Equal(t, *msgID, *transfer.TokenTransfer.Message)
+	assert.Equal(t, *hash, *transfer.TokenTransfer.MessageHash)
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mms.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
 func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()

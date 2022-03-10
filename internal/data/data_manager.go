@@ -520,6 +520,10 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 	return batch, nil
 }
 
+// WriteNewMessage dispatches the writing of the message and assocated data, then blocks until the background
+// worker (or foreground if no DB concurrency) has written. The caller MUST NOT call this inside of a
+// DB RunAsGroup - because if a large number of routines enter the same function they could starve the background
+// worker of the spare connection required to execute (and thus deadlock).
 func (dm *dataManager) WriteNewMessage(ctx context.Context, newMsg *NewMessage) error {
 	err := dm.messageWriter.WriteNewMessage(ctx, newMsg)
 	if err != nil {
