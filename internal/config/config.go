@@ -348,7 +348,7 @@ func Reset() {
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
 	viper.SetDefault(string(MessageWriterBatchTimeout), "100ms")
-	viper.SetDefault(string(MessageWriterCount), 1)
+	viper.SetDefault(string(MessageWriterCount), 3)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)

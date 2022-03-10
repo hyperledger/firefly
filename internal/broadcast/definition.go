@@ -82,10 +82,14 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 					Tag:       tag,
 					TxType:    fftypes.TransactionTypeBatchPin,
 				},
+				Data: fftypes.DataRefs{
+					{ID: d.ID, Hash: d.Hash, ValueSize: d.ValueSize},
+				},
 			},
 		},
 		ResolvedData: data.Resolved{
 			NewData: fftypes.DataArray{d},
+			AllData: fftypes.DataArray{d},
 		},
 	}
 

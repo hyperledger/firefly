@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func newTestMessageWriter(t *testing.T) *messageWriter {
@@ -81,6 +82,10 @@ func TestWriteNewMessageSyncFallback(t *testing.T) {
 	data1 := &fftypes.Data{ID: fftypes.NewUUID()}
 
 	mdi := mw.database.(*databasemocks.Plugin)
+	mdi.On("RunAsGroup", customCtx, mock.Anything).Run(func(args mock.Arguments) {
+		err := args[1].(func(context.Context) error)(customCtx)
+		assert.NoError(t, err)
+	}).Return(nil)
 	mdi.On("InsertMessages", customCtx, []*fftypes.Message{&msg1.Message}).Return(nil)
 	mdi.On("InsertDataArray", customCtx, fftypes.DataArray{data1}).Return(nil)
 

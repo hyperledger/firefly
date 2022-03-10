@@ -33,6 +33,7 @@ import (
 
 func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	config.Reset()
+	config.Set(config.MessageWriterCount, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(&database.Capabilities{
@@ -119,7 +120,6 @@ func TestValidateE2E(t *testing.T) {
 
 func TestWriteNewMessageE2E(t *testing.T) {
 
-	config.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 

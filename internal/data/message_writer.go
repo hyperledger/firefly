@@ -111,7 +111,9 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 		return <-nmi.result
 	}
 	// Otherwise do it in-line on this context
-	return mw.writeMessages(ctx, []*fftypes.Message{&newMsg.Message.Message}, newMsg.ResolvedData.NewData)
+	return mw.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		return mw.writeMessages(ctx, []*fftypes.Message{&newMsg.Message.Message}, newMsg.ResolvedData.NewData)
+	})
 }
 
 // WriteData writes a piece of data independently of a message
@@ -185,13 +187,13 @@ func (mw *messageWriter) writerLoop(index int) {
 }
 
 func (mw *messageWriter) writeMessages(ctx context.Context, msgs []*fftypes.Message, data fftypes.DataArray) error {
-	if len(msgs) > 0 {
-		if err := mw.database.InsertMessages(ctx, msgs); err != nil {
+	if len(data) > 0 {
+		if err := mw.database.InsertDataArray(ctx, data); err != nil {
 			return err
 		}
 	}
-	if len(data) > 0 {
-		if err := mw.database.InsertDataArray(ctx, data); err != nil {
+	if len(msgs) > 0 {
+		if err := mw.database.InsertMessages(ctx, msgs); err != nil {
 			return err
 		}
 	}

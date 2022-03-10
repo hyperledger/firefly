@@ -194,12 +194,25 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	if s.features.MultiRowInsert {
-		query := sq.Insert("messages").Columns(msgColumns...)
+		msgQuery := sq.Insert("messages").Columns(msgColumns...)
+		dataRefQuery := sq.Insert("messages_data").Columns(
+			"message_id",
+			"data_id",
+			"data_hash",
+			"data_idx",
+		)
+		dataRefCount := 0
 		for _, message := range messages {
-			query = s.setMessageInsertValues(query, message)
+			msgQuery = s.setMessageInsertValues(msgQuery, message)
+			for idx, dataRef := range message.Data {
+				dataRefQuery = dataRefQuery.Values(message.Header.ID, dataRef.ID, dataRef.Hash, idx)
+				dataRefCount++
+			}
 		}
 		sequences := make([]int64, len(messages))
-		err := s.insertTxRows(ctx, tx, query, func() {
+
+		// Use a single multi-row insert for the messages
+		err := s.insertTxRows(ctx, tx, msgQuery, func() {
 			for i, message := range messages {
 				message.Sequence = sequences[i]
 				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
@@ -208,10 +221,23 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 		if err != nil {
 			return err
 		}
+
+		// Use a single multi-row insert for the data refs
+		if dataRefCount > 0 {
+			dataRefSeqs := make([]int64, dataRefCount)
+			err = s.insertTxRows(ctx, tx, dataRefQuery, nil, dataRefSeqs, false)
+			if err != nil {
+				return err
+			}
+		}
 	} else {
 		// Fall back to individual inserts grouped in a TX
 		for _, message := range messages {
 			err := s.attemptMessageInsert(ctx, tx, message, false)
+			if err != nil {
+				return err
+			}
+			err = s.updateMessageDataRefs(ctx, tx, message, false)
 			if err != nil {
 				return err
 			}
