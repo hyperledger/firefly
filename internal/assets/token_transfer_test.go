@@ -800,9 +800,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
-	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.State == fftypes.MessageStateStaged
-	}), database.UpsertOptimizationNew).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
@@ -900,9 +898,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mpm.On("NewMessage", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
-	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.State == fftypes.MessageStateStaged
-	}), database.UpsertOptimizationNew).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
@@ -1047,9 +1043,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
-	mdi.On("UpsertMessage", context.Background(), mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.State == fftypes.MessageStateStaged
-	}), database.UpsertOptimizationNew).Return(nil)
+	mms.On("Send", context.Background()).Return(nil)
 	msa.On("WaitForMessage", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
