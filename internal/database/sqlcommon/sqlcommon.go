@@ -69,6 +69,14 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.P
 	connLimit := prefix.GetInt(SQLConfMaxConnections)
 	if connLimit > 0 {
 		s.db.SetMaxOpenConns(connLimit)
+		s.db.SetConnMaxIdleTime(prefix.GetDuration(SQLConfMaxConnIdleTime))
+		maxIdleConns := prefix.GetInt(SQLConfMaxIdleConns)
+		if maxIdleConns <= 0 {
+			// By default we rely on the idle time, rather than a maximum number of conns to leave open
+			maxIdleConns = connLimit
+		}
+		s.db.SetMaxIdleConns(maxIdleConns)
+		s.db.SetConnMaxLifetime(prefix.GetDuration(SQLConfMaxConnLifetime))
 	}
 	if connLimit > 1 {
 		capabilities.Concurrency = true

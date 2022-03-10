@@ -177,7 +177,7 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batc
 	}
 
 	// Retrieve the group
-	group, nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group)
+	group, nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group, false /* fail if not found */)
 	if err != nil {
 		return err
 	}

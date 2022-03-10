@@ -178,13 +178,12 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	}
 	newCandidate.Seal()
 
-	filter := database.GroupQueryFactory.NewFilterLimit(ctx, 1).Eq("hash", newCandidate.Hash)
-	groups, _, err := pm.database.GetGroups(ctx, filter)
+	group, _, err = pm.getGroupNodes(ctx, newCandidate.Hash, true)
 	if err != nil {
 		return nil, false, err
 	}
-	if len(groups) > 0 {
-		return groups[0], false, nil
+	if group != nil {
+		return group, false, nil
 	}
 	return newCandidate, true, nil
 }
