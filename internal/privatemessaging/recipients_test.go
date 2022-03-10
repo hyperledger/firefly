@@ -43,7 +43,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{remoteNode}, nil, nil).Once()
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(nil, nil).Once()
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
@@ -114,9 +114,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{Hash: fftypes.NewRandB32()},
-	}, nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&fftypes.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
@@ -182,7 +180,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localNode, nil)
@@ -321,7 +319,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil).Once()
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{Hash: fftypes.NewRandB32()}}, nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&fftypes.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(parentOrg, nil)
 	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(childOrg, false, nil)

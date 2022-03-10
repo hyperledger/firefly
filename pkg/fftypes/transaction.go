@@ -18,6 +18,8 @@ package fftypes
 
 type TransactionType = FFEnum
 
+const transactionBaseSizeEstimate = int64(256)
+
 var (
 	// TransactionTypeNone deprecated - replaced by TransactionTypeUnpinned
 	TransactionTypeNone TransactionType = ffEnum("txtype", "none")
@@ -75,4 +77,8 @@ type TransactionStatusDetails struct {
 type TransactionStatus struct {
 	Status  OpStatus                    `json:"status"`
 	Details []*TransactionStatusDetails `json:"details"`
+}
+
+func (tx *Transaction) Size() int64 {
+	return transactionBaseSizeEstimate // currently a static size assessment for caching
 }

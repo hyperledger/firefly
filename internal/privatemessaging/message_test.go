@@ -91,9 +91,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil).Once()
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{Hash: fftypes.NewRandB32()},
-	}, nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&fftypes.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	retMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -234,9 +232,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{Hash: fftypes.NewRandB32()},
-	}, nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&fftypes.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
@@ -353,9 +349,7 @@ func TestMessagePrepare(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{Hash: fftypes.NewRandB32()},
-	}, nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&fftypes.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(nil)
