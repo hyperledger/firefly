@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -29,7 +30,8 @@ import (
 
 func TestEnrichMessageConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -54,7 +56,8 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 
 func TestEnrichMessageFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -76,7 +79,8 @@ func TestEnrichMessageFail(t *testing.T) {
 
 func TestEnrichMessageRejected(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -101,7 +105,8 @@ func TestEnrichMessageRejected(t *testing.T) {
 
 func TestEnrichTxSubmitted(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -126,7 +131,8 @@ func TestEnrichTxSubmitted(t *testing.T) {
 
 func TestEnrichTxFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -148,7 +154,8 @@ func TestEnrichTxFail(t *testing.T) {
 
 func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -173,7 +180,8 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 
 func TestEnrichBlockchainEventFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs

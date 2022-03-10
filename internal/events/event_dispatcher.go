@@ -66,7 +66,7 @@ type eventDispatcher struct {
 	txHelper      txcommon.Helper
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := config.GetUint(config.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
@@ -94,7 +94,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		cel:           cel,
-		txHelper:      txcommon.NewTransactionHelper(di),
+		txHelper:      txHelper,
 	}
 
 	pollerConf := &eventPollerConf{

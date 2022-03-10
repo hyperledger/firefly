@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
@@ -36,6 +37,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 	mdi := &databasemocks.Plugin{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mdm := &datamocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
 	bp := newBatchProcessor(context.Background(), mni, mdi, mdm, &batchProcessorConf{
 		namespace: "ns1",
@@ -51,7 +53,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 	}, &retry.Retry{
 		InitialDelay: 1 * time.Microsecond,
 		MaximumDelay: 1 * time.Microsecond,
-	})
+	}, txHelper)
 	bp.txHelper = &txcommonmocks.Helper{}
 	return mdi, bp
 }

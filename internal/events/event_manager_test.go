@@ -23,6 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
@@ -66,6 +67,7 @@ func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func(
 	mam := &assetmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mmi := &metricsmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	if metrics {
 		mmi.On("TransferConfirmed", mock.Anything)
@@ -73,7 +75,7 @@ func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func(
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mmi)
+	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mmi, txHelper)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
@@ -104,7 +106,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -123,8 +125,9 @@ func TestStartStopBadTransports(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mam := &assetmocks.Manager{}
 	mm := &metricsmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
-	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mm)
+	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mm, txHelper)
 	assert.Regexp(t, "FF10172", err)
 }
 

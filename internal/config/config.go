@@ -230,6 +230,10 @@ var (
 	SubscriptionsRetryMaxDelay = rootKey("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = rootKey("subscription.retry.factor")
+	// TransactionCacheSize
+	TransactionCacheSize = rootKey("transaction.cache.size")
+	// TransactionCacheTTL
+	TransactionCacheTTL = rootKey("transaction.cache.ttl")
 	// AssetManagerKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
 	AssetManagerKeyNormalization = rootKey("asset.manager.keyNormalization")
 	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
@@ -365,6 +369,8 @@ func Reset() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(TransactionCacheSize), "1Mb")
+	viper.SetDefault(string(TransactionCacheTTL), "5m")
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")

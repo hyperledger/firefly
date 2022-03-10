@@ -28,11 +28,12 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager) (Manager, error) {
+func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -44,6 +45,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		ni:                         ni,
 		database:                   di,
 		data:                       dm,
+		txHelper:                   txHelper,
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
@@ -85,6 +87,7 @@ type batchManager struct {
 	ni                         sysmessaging.LocalNodeInfo
 	database                   database.Plugin
 	data                       data.Manager
+	txHelper                   txcommon.Helper
 	dispatcherMux              sync.Mutex
 	dispatchers                map[string]*dispatcher
 	newMessages                chan int64
@@ -170,6 +173,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 				dispatch:          dispatcher.handler,
 			},
 			bm.retry,
+			bm.txHelper,
 		)
 		dispatcher.processors[name] = processor
 	}
