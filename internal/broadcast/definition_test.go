@@ -21,10 +21,8 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,18 +32,15 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	mdi := bm.database.(*databasemocks.Plugin)
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, "ff_system", mock.Anything).Return(nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
 	msa.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -54,11 +49,9 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	mdi := bm.database.(*databasemocks.Plugin)
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
@@ -69,7 +62,6 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 	}, fftypes.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
 	msa.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -96,33 +88,18 @@ func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	mdi := bm.database.(*databasemocks.Plugin)
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	ns := "customNamespace"
 
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, ns, mock.Anything).Return(nil)
 	msa.On("WaitForMessage", bm.ctx, ns, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, ns, &fftypes.Datatype{}, fftypes.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
 	msa.AssertExpectations(t)
 	mim.AssertExpectations(t)
-}
-
-func TestBroadcastDefinitionAsNodeUpsertFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
-	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, fftypes.SystemNamespace, mock.Anything).Return(nil)
-	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
-	assert.Regexp(t, "pop", err)
 }
 
 func TestBroadcastDefinitionBadIdentity(t *testing.T) {

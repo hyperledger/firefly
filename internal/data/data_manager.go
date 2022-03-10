@@ -473,6 +473,7 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, newMessage *NewMes
 			})
 		}
 	}
+	newMessage.Message.Data = r.AllData.Refs()
 	return nil
 }
 
@@ -516,7 +517,12 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 }
 
 func (dm *dataManager) WriteNewMessage(ctx context.Context, newMsg *NewMessage) error {
-	return dm.messageWriter.WriteNewMessage(ctx, newMsg)
+	err := dm.messageWriter.WriteNewMessage(ctx, newMsg)
+	if err != nil {
+		return err
+	}
+	dm.UpdateMessageCache(newMsg.Message, newMsg.ResolvedData.AllData)
+	return nil
 }
 
 func (dm *dataManager) Close() {

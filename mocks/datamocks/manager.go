@@ -198,59 +198,32 @@ func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.Bat
 	return r0, r1
 }
 
-// ResolveInlineDataBroadcast provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, []*fftypes.DataAndBlob, error) {
-	ret := _m.Called(ctx, ns, inData)
+// ResolveInlineDataBroadcast provides a mock function with given fields: ctx, msg
+func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, msg *data.NewMessage) error {
+	ret := _m.Called(ctx, msg)
 
-	var r0 fftypes.DataArray
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataArray); ok {
-		r0 = rf(ctx, ns, inData)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *data.NewMessage) error); ok {
+		r0 = rf(ctx, msg)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataArray)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 []*fftypes.DataAndBlob
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InlineData) []*fftypes.DataAndBlob); ok {
-		r1 = rf(ctx, ns, inData)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]*fftypes.DataAndBlob)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, fftypes.InlineData) error); ok {
-		r2 = rf(ctx, ns, inData)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0
 }
 
-// ResolveInlineDataPrivate provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, error) {
-	ret := _m.Called(ctx, ns, inData)
+// ResolveInlineDataPrivate provides a mock function with given fields: ctx, msg
+func (_m *Manager) ResolveInlineDataPrivate(ctx context.Context, msg *data.NewMessage) error {
+	ret := _m.Called(ctx, msg)
 
-	var r0 fftypes.DataArray
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataArray); ok {
-		r0 = rf(ctx, ns, inData)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *data.NewMessage) error); ok {
+		r0 = rf(ctx, msg)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataArray)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InlineData) error); ok {
-		r1 = rf(ctx, ns, inData)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // UpdateMessageCache provides a mock function with given fields: msg, _a1
@@ -337,6 +310,20 @@ func (_m *Manager) VerifyNamespaceExists(ctx context.Context, ns string) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, ns)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WriteNewMessage provides a mock function with given fields: ctx, newMsg
+func (_m *Manager) WriteNewMessage(ctx context.Context, newMsg *data.NewMessage) error {
+	ret := _m.Called(ctx, newMsg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *data.NewMessage) error); ok {
+		r0 = rf(ctx, newMsg)
 	} else {
 		r0 = ret.Error(0)
 	}

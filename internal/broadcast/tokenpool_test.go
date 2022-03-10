@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -81,7 +80,6 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
@@ -98,13 +96,11 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -112,7 +108,6 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 func TestBroadcastTokenPoolOk(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
@@ -129,14 +124,11 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
 
-	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }

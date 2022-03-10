@@ -395,6 +395,7 @@ func TestResolveInlineDataEmpty(t *testing.T) {
 	err := dm.ResolveInlineDataPrivate(ctx, newMsg)
 	assert.NoError(t, err)
 	assert.Empty(t, newMsg.ResolvedData.AllData)
+	assert.Empty(t, newMsg.Message.Data)
 
 }
 
@@ -414,6 +415,7 @@ func TestResolveInlineDataRefIDOnlyOK(t *testing.T) {
 	err := dm.ResolveInlineDataPrivate(ctx, newMsg)
 	assert.NoError(t, err)
 	assert.Len(t, newMsg.ResolvedData.AllData, 1)
+	assert.Len(t, newMsg.Message.Data, 1)
 	assert.Equal(t, dataID, newMsg.ResolvedData.AllData[0].ID)
 	assert.Equal(t, dataHash, newMsg.ResolvedData.AllData[0].Hash)
 	assert.Empty(t, newMsg.ResolvedData.NewData)
@@ -444,6 +446,7 @@ func TestResolveInlineDataBroadcastDataToPublish(t *testing.T) {
 	err := dm.ResolveInlineDataBroadcast(ctx, newMsg)
 	assert.NoError(t, err)
 	assert.Len(t, newMsg.ResolvedData.AllData, 1)
+	assert.Len(t, newMsg.Message.Data, 1)
 	assert.Empty(t, newMsg.ResolvedData.NewData)
 	assert.Len(t, newMsg.ResolvedData.DataToPublish, 1)
 	assert.Equal(t, dataID, newMsg.ResolvedData.AllData[0].ID)
@@ -538,6 +541,7 @@ func TestResolveInlineDataValueNoValidatorOK(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, newMsg.ResolvedData.AllData, 1)
 	assert.Len(t, newMsg.ResolvedData.NewData, 1)
+	assert.Len(t, newMsg.Message.Data, 1)
 	assert.NotNil(t, newMsg.ResolvedData.AllData[0].ID)
 	assert.NotNil(t, newMsg.ResolvedData.AllData[0].Hash)
 }
