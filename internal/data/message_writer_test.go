@@ -54,7 +54,9 @@ func TestNewMessageWriterNoConcurrency(t *testing.T) {
 func TestWriteNewMessageClosed(t *testing.T) {
 	mw := newTestMessageWriter(t)
 	mw.close()
-	err := mw.WriteNewMessage(mw.ctx, &NewMessage{})
+	err := mw.WriteNewMessage(mw.ctx, &NewMessage{
+		Message: &fftypes.MessageInOut{},
+	})
 	assert.Regexp(t, "FF10158", err)
 }
 
@@ -69,15 +71,17 @@ func TestWriteNewMessageSyncFallback(t *testing.T) {
 	mw := newTestMessageWriterNoConcrrency(t)
 	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
 
-	msg1 := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID: fftypes.NewUUID(),
+	msg1 := &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID: fftypes.NewUUID(),
+			},
 		},
 	}
 	data1 := &fftypes.Data{ID: fftypes.NewUUID()}
 
 	mdi := mw.database.(*databasemocks.Plugin)
-	mdi.On("InsertMessages", customCtx, []*fftypes.Message{msg1}).Return(nil)
+	mdi.On("InsertMessages", customCtx, []*fftypes.Message{&msg1.Message}).Return(nil)
 	mdi.On("InsertDataArray", customCtx, fftypes.DataArray{data1}).Return(nil)
 
 	err := mw.WriteNewMessage(customCtx, &NewMessage{

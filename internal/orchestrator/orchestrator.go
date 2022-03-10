@@ -250,7 +250,7 @@ func (or *orchestrator) WaitStop() {
 		or.broadcast = nil
 	}
 	if or.data != nil {
-		or.data.Close()
+		or.data.WaitStop()
 		or.data = nil
 	}
 	or.started = false

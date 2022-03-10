@@ -592,6 +592,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mbm.On("WaitStop").Return(nil)
 	or.mam.On("WaitStop").Return(nil)
 	or.mti.On("WaitStop").Return(nil)
+	or.mdm.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()

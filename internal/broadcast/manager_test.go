@@ -111,12 +111,14 @@ func TestBroadcastMessageGood(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
 	newMsg := &data.NewMessage{
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID: fftypes.NewUUID(),
-			},
-			Data: fftypes.DataRefs{
-				{ID: dataID, Hash: dataHash},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: fftypes.NewUUID(),
+				},
+				Data: fftypes.DataRefs{
+					{ID: dataID, Hash: dataHash},
+				},
 			},
 		},
 		ResolvedData: data.Resolved{
@@ -147,12 +149,14 @@ func TestBroadcastMessageBad(t *testing.T) {
 	defer cancel()
 
 	newMsg := &data.NewMessage{
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID: fftypes.NewUUID(),
-			},
-			Data: fftypes.DataRefs{
-				{ID: fftypes.NewUUID(), Hash: nil},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID: fftypes.NewUUID(),
+				},
+				Data: fftypes.DataRefs{
+					{ID: fftypes.NewUUID(), Hash: nil},
+				},
 			},
 		},
 	}

@@ -49,7 +49,7 @@ type Manager interface {
 	CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error)
 	DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error)
 	HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error)
-	Close()
+	WaitStop()
 }
 
 type dataManager struct {
@@ -429,10 +429,14 @@ func (dm *dataManager) ResolveInlineDataBroadcast(ctx context.Context, newMessag
 
 func (dm *dataManager) resolveInlineData(ctx context.Context, newMessage *NewMessage, broadcast bool) (err error) {
 
+	if newMessage.Message == nil {
+		return i18n.NewError(ctx, i18n.MsgNilOrNullObject)
+	}
+
 	r := &newMessage.ResolvedData
-	inData := newMessage.InData
+	inData := newMessage.Message.InlineData
 	msg := newMessage.Message
-	r.AllData = make(fftypes.DataArray, len(newMessage.InData))
+	r.AllData = make(fftypes.DataArray, len(newMessage.Message.InlineData))
 	if broadcast {
 		r.DataToPublish = make([]*fftypes.DataAndBlob, 0, len(inData))
 	}
@@ -521,10 +525,10 @@ func (dm *dataManager) WriteNewMessage(ctx context.Context, newMsg *NewMessage) 
 	if err != nil {
 		return err
 	}
-	dm.UpdateMessageCache(newMsg.Message, newMsg.ResolvedData.AllData)
+	dm.UpdateMessageCache(&newMsg.Message.Message, newMsg.ResolvedData.AllData)
 	return nil
 }
 
-func (dm *dataManager) Close() {
+func (dm *dataManager) WaitStop() {
 	dm.messageWriter.close()
 }

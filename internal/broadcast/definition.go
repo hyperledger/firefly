@@ -72,14 +72,16 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 
 	// Create a broadcast message referring to the data
 	newMsg := &data.NewMessage{
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Namespace: ns,
-				Type:      fftypes.MessageTypeDefinition,
-				SignerRef: *signingIdentity,
-				Topics:    fftypes.FFStringArray{def.Topic()},
-				Tag:       tag,
-				TxType:    fftypes.TransactionTypeBatchPin,
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Namespace: ns,
+					Type:      fftypes.MessageTypeDefinition,
+					SignerRef: *signingIdentity,
+					Topics:    fftypes.FFStringArray{def.Topic()},
+					Tag:       tag,
+					TxType:    fftypes.TransactionTypeBatchPin,
+				},
 			},
 		},
 		ResolvedData: data.Resolved{
@@ -100,5 +102,5 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 	} else {
 		err = sender.Send(ctx)
 	}
-	return newMsg.Message, err
+	return &newMsg.Message.Message, err
 }

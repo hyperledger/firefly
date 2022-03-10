@@ -32,11 +32,6 @@ func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *fftyp
 	return r0
 }
 
-// Close provides a mock function with given fields:
-func (_m *Manager) Close() {
-	_m.Called()
-}
-
 // CopyBlobPStoDX provides a mock function with given fields: ctx, _a1
 func (_m *Manager) CopyBlobPStoDX(ctx context.Context, _a1 *fftypes.Data) (*fftypes.Blob, error) {
 	ret := _m.Called(ctx, _a1)
@@ -315,6 +310,11 @@ func (_m *Manager) VerifyNamespaceExists(ctx context.Context, ns string) error {
 	}
 
 	return r0
+}
+
+// WaitStop provides a mock function with given fields:
+func (_m *Manager) WaitStop() {
+	_m.Called()
 }
 
 // WriteNewMessage provides a mock function with given fields: ctx, newMsg

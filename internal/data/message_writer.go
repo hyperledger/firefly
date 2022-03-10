@@ -27,8 +27,7 @@ import (
 )
 
 type NewMessage struct {
-	Message      *fftypes.Message
-	InData       fftypes.InlineData
+	Message      *fftypes.MessageInOut
 	ResolvedData Resolved
 }
 
@@ -96,8 +95,11 @@ func newMessageWriter(ctx context.Context, di database.Plugin, conf *messageWrit
 func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage) error {
 	if mw.conf.workerCount > 0 {
 		// Dispatch to background worker
+		if newMsg.Message == nil {
+			return i18n.NewError(ctx, i18n.MsgNilOrNullObject)
+		}
 		nmi := &writeRequest{
-			newMessage: newMsg.Message,
+			newMessage: &newMsg.Message.Message,
 			newData:    newMsg.ResolvedData.NewData,
 			result:     make(chan error),
 		}
@@ -109,7 +111,7 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 		return <-nmi.result
 	}
 	// Otherwise do it in-line on this context
-	return mw.writeMessages(ctx, []*fftypes.Message{newMsg.Message}, newMsg.ResolvedData.NewData)
+	return mw.writeMessages(ctx, []*fftypes.Message{&newMsg.Message.Message}, newMsg.ResolvedData.NewData)
 }
 
 // WriteData writes a piece of data independently of a message

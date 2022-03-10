@@ -44,7 +44,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	assert.NoError(t, err)
 	return dm.(*dataManager), ctx, func() {
 		cancel()
-		dm.Close()
+		dm.WaitStop()
 	}
 }
 
@@ -52,14 +52,16 @@ func testNewMessage() (*fftypes.UUID, *fftypes.Bytes32, *NewMessage) {
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
 	return dataID, dataHash, &NewMessage{
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:        fftypes.NewUUID(),
-				Namespace: "ns1",
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:        fftypes.NewUUID(),
+					Namespace: "ns1",
+				},
 			},
-		},
-		InData: fftypes.InlineData{
-			{DataRef: fftypes.DataRef{ID: dataID, Hash: dataHash}},
+			InlineData: fftypes.InlineData{
+				{DataRef: fftypes.DataRef{ID: dataID, Hash: dataHash}},
+			},
 		},
 	}
 }
@@ -150,7 +152,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 	mdi.On("GetDataByID", mock.Anything, data1.ID, true).Return(data1, nil).Once()
 
 	_, _, newMsg1 := testNewMessage()
-	newMsg1.InData = fftypes.InlineData{
+	newMsg1.Message.InlineData = fftypes.InlineData{
 		{DataRef: fftypes.DataRef{
 			ID:   data1.ID,
 			Hash: data1.Hash,
@@ -159,7 +161,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 		{Value: fftypes.JSONAnyPtr(`"message 1 - data C"`)},
 	}
 	_, _, newMsg2 := testNewMessage()
-	newMsg2.InData = fftypes.InlineData{
+	newMsg2.Message.InlineData = fftypes.InlineData{
 		{Value: fftypes.JSONAnyPtr(`"message 2 - data B"`)},
 		{Value: fftypes.JSONAnyPtr(`"message 2 - data C"`)},
 	}
@@ -207,6 +209,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 }
+
 func TestInitBadDeps(t *testing.T) {
 	_, err := NewDataManager(context.Background(), nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
@@ -383,13 +386,15 @@ func TestResolveInlineDataEmpty(t *testing.T) {
 	defer cancel()
 
 	newMsg := &NewMessage{
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
-				ID:        fftypes.NewUUID(),
-				Namespace: "ns1",
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					ID:        fftypes.NewUUID(),
+					Namespace: "ns1",
+				},
 			},
+			InlineData: fftypes.InlineData{},
 		},
-		InData: fftypes.InlineData{},
 	}
 
 	err := dm.ResolveInlineDataPrivate(ctx, newMsg)
@@ -512,6 +517,14 @@ func TestResolveInlineDataRefBadHash(t *testing.T) {
 	assert.Regexp(t, "FF10204", err)
 }
 
+func TestResolveInlineDataNilMsg(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	err := dm.ResolveInlineDataPrivate(ctx, &NewMessage{})
+	assert.Regexp(t, "FF10368", err)
+}
+
 func TestResolveInlineDataRefLookkupFail(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
@@ -533,7 +546,7 @@ func TestResolveInlineDataValueNoValidatorOK(t *testing.T) {
 	mdi.On("UpsertData", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	_, _, newMsg := testNewMessage()
-	newMsg.InData = fftypes.InlineData{
+	newMsg.Message.InlineData = fftypes.InlineData{
 		{Value: fftypes.JSONAnyPtr(`{"some":"json"}`)},
 	}
 
@@ -569,7 +582,7 @@ func TestResolveInlineDataValueWithValidation(t *testing.T) {
 	}, nil)
 
 	_, _, newMsg := testNewMessage()
-	newMsg.InData = fftypes.InlineData{
+	newMsg.Message.InlineData = fftypes.InlineData{
 		{
 			Datatype: &fftypes.DatatypeRef{
 				Name:    "customer",
@@ -586,7 +599,7 @@ func TestResolveInlineDataValueWithValidation(t *testing.T) {
 	assert.NotNil(t, newMsg.ResolvedData.AllData[0].ID)
 	assert.NotNil(t, newMsg.ResolvedData.AllData[0].Hash)
 
-	newMsg.InData = fftypes.InlineData{
+	newMsg.Message.InlineData = fftypes.InlineData{
 		{
 			Datatype: &fftypes.DatatypeRef{
 				Name:    "customer",
@@ -604,7 +617,7 @@ func TestResolveInlineDataNoRefOrValue(t *testing.T) {
 	defer cancel()
 
 	_, _, newMsg := testNewMessage()
-	newMsg.InData = fftypes.InlineData{
+	newMsg.Message.InlineData = fftypes.InlineData{
 		{ /* missing */ },
 	}
 
@@ -1117,4 +1130,13 @@ func TestUpdateMessageCacheCRORequireBatchID(t *testing.T) {
 		mce = dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequireBatchID)
 	}
 
+}
+
+func TestWriteNewMessageFailNil(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	err := dm.WriteNewMessage(ctx, &NewMessage{})
+	assert.Regexp(t, "FF10368", err)
 }

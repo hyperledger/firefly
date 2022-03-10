@@ -31,8 +31,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 		mgr:       bm,
 		namespace: ns,
 		msg: &data.NewMessage{
-			Message: &in.Message,
-			InData:  in.InlineData,
+			Message: in,
 		},
 	}
 	broadcast.setDefaults()
@@ -137,7 +136,7 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	if method == methodSendAndWait {
 		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.msg.Message.Header.ID, s.Send)
 		if out != nil {
-			*s.msg.Message = *out
+			s.msg.Message.Message = *out
 		}
 		return err
 	}
