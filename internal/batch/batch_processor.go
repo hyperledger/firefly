@@ -101,7 +101,7 @@ type DispatchState struct {
 
 const batchSizeEstimateBase = int64(512)
 
-func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, conf *batchProcessorConf, baseRetryConf *retry.Retry) *batchProcessor {
+func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, conf *batchProcessorConf, baseRetryConf *retry.Retry, txHelper txcommon.Helper) *batchProcessor {
 	pCtx := log.WithLogField(log.WithLogField(ctx, "d", conf.dispatcherName), "p", conf.name)
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
@@ -110,7 +110,7 @@ func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di da
 		ni:        ni,
 		database:  di,
 		data:      dm,
-		txHelper:  txcommon.NewTransactionHelper(di),
+		txHelper:  txHelper,
 		newWork:   make(chan *batchWork, conf.BatchMaxSize),
 		quescing:  make(chan bool, 1),
 		done:      make(chan struct{}),

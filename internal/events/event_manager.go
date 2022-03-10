@@ -99,7 +99,7 @@ type eventManager struct {
 	metrics              metrics.Manager
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -110,7 +110,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 		ni:            ni,
 		sharedstorage: si,
 		database:      di,
-		txHelper:      txcommon.NewTransactionHelper(di),
+		txHelper:      txHelper,
 		identity:      im,
 		definitions:   dh,
 		data:          dm,
@@ -133,7 +133,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 	em.internalEvents = ie.(*system.Events)
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh, txHelper); err != nil {
 		return nil, err
 	}
 

@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
@@ -70,7 +71,7 @@ type contractManager struct {
 	operations        operations.Manager
 }
 
-func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager) (Manager, error) {
+func NewContractManager(ctx context.Context, di database.Plugin, dm data.Manager, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || bm == nil || im == nil || bi == nil || om == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -81,7 +82,7 @@ func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Ma
 
 	cm := &contractManager{
 		database:          di,
-		txHelper:          txcommon.NewTransactionHelper(di),
+		txHelper:          txHelper,
 		broadcast:         bm,
 		identity:          im,
 		blockchain:        bi,

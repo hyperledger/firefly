@@ -23,9 +23,11 @@ import (
 
 	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
@@ -37,29 +39,31 @@ import (
 )
 
 func newTestContractManager() *contractManager {
-	mdb := &databasemocks.Plugin{}
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	mbi.On("Name").Return("mockblockchain").Maybe()
 
-	rag := mdb.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	cm, _ := NewContractManager(context.Background(), mdb, mbm, mim, mbi, mom)
+	cm, _ := NewContractManager(context.Background(), mdi, mdm, mbm, mim, mbi, mom, txHelper)
 	cm.(*contractManager).txHelper = &txcommonmocks.Helper{}
 	return cm.(*contractManager)
 }
 
 func TestNewContractManagerFail(t *testing.T) {
-	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil)
+	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -69,25 +73,29 @@ func TestName(t *testing.T) {
 }
 
 func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	_, err := NewContractManager(context.Background(), mdb, mbm, mim, mbi, mom)
+	_, err := NewContractManager(context.Background(), mdi, mdm, mbm, mim, mbi, mom, txHelper)
 	assert.Regexp(t, "pop", err)
 }
 
 func TestNewContractManagerFFISchemaLoader(t *testing.T) {
-	mdb := &databasemocks.Plugin{}
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	_, err := NewContractManager(context.Background(), mdb, mbm, mim, mbi, mom)
+	_, err := NewContractManager(context.Background(), mdi, mdm, mbm, mim, mbi, mom, txHelper)
 	assert.NoError(t, err)
 }
 
