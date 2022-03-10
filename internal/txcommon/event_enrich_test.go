@@ -39,9 +39,9 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetMessageByID", mock.Anything, ref1).Return(&fftypes.Message{
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref1},
-	}, nil)
+	}, nil, true, nil)
 
 	event := &fftypes.Event{
 		ID:        ev1,
@@ -65,7 +65,7 @@ func TestEnrichMessageFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetMessageByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(nil, nil, false, fmt.Errorf("pop"))
 
 	event := &fftypes.Event{
 		ID:        ev1,
@@ -88,9 +88,9 @@ func TestEnrichMessageRejected(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetMessageByID", mock.Anything, ref1).Return(&fftypes.Message{
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref1},
-	}, nil)
+	}, nil, true, nil)
 
 	event := &fftypes.Event{
 		ID:        ev1,
