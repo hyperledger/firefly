@@ -347,10 +347,14 @@ func (bm *batchManager) getProcessors() []*batchProcessor {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
+	exists := make(map[*batchProcessor]bool)
 	var processors []*batchProcessor
 	for _, d := range bm.dispatchers {
 		for _, p := range d.processors {
-			processors = append(processors, p)
+			if !exists[p] {
+				processors = append(processors, p)
+				exists[p] = true
+			}
 		}
 	}
 	return processors
