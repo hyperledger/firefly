@@ -86,6 +86,13 @@ if [ "$CREATE_STACK" == "true" ]; then
 
   $CLI start -b $STACK_NAME
   checkOk $?
+
+  if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
+      prefix='contract address: '
+      output=$($CLI deploy $STACK_NAME ../data/simplestorage/simple_storage.json | grep address)
+      CONTRACT_ADDRESS=${output#"$prefix"}
+      export CONTRACT_ADDRESS
+  fi
 fi
 
 $CLI info $STACK_NAME
