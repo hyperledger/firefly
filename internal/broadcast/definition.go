@@ -87,10 +87,8 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 				},
 			},
 		},
-		ResolvedData: data.Resolved{
-			NewData: fftypes.DataArray{d},
-			AllData: fftypes.DataArray{d},
-		},
+		NewData: fftypes.DataArray{d},
+		AllData: fftypes.DataArray{d},
 	}
 
 	// Broadcast the message

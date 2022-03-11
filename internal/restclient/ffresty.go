@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/sirupsen/logrus"
 )
 
 type retryCtxKey struct{}
@@ -52,7 +53,12 @@ func OnAfterResponse(c *resty.Client, resp *resty.Response) {
 	rctx := resp.Request.Context()
 	rc := rctx.Value(retryCtxKey{}).(*retryCtx)
 	elapsed := float64(time.Since(rc.start)) / float64(time.Millisecond)
-	log.L(rctx).Infof("<== %s %s [%d] (%.2fms)", resp.Request.Method, resp.Request.URL, resp.StatusCode(), elapsed)
+	level := logrus.DebugLevel
+	status := resp.StatusCode()
+	if status >= 300 {
+		level = logrus.ErrorLevel
+	}
+	log.L(rctx).Logf(level, "<== %s %s [%d] (%.2fms)", resp.Request.Method, resp.Request.URL, status, elapsed)
 }
 
 // New creates a new Resty client, using static configuration (from the config file)
@@ -117,7 +123,7 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 			rctx = log.WithLogger(rctx, l)
 			req.SetContext(rctx)
 		}
-		log.L(rctx).Infof("==> %s %s%s", req.Method, url, req.URL)
+		log.L(rctx).Debugf("==> %s %s%s", req.Method, url, req.URL)
 		return nil
 	})
 
