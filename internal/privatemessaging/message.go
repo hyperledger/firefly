@@ -67,7 +67,6 @@ func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fft
 type messageSender struct {
 	mgr       *privateMessaging
 	namespace string
-	group     *fftypes.InputGroup
 	msg       *data.NewMessage
 	resolved  bool
 }
