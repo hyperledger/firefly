@@ -289,7 +289,17 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
 			switch op.Type {
 			case fftypes.OpTypeDataExchangeBatchSend:
-				expectedManifest := op.Input.GetString("manifest")
+				batchID, _ := fftypes.ParseUUID(em.ctx, op.Input.GetString("batch"))
+				expectedManifest := ""
+				if batchID != nil {
+					batch, err := em.database.GetBatchByID(em.ctx, batchID)
+					if err != nil {
+						return true, err
+					}
+					if batch != nil {
+						expectedManifest = batch.Manifest.String()
+					}
+				}
 				if update.Manifest != expectedManifest {
 					// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
 					mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)

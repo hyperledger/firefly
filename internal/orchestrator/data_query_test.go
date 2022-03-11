@@ -567,6 +567,95 @@ func TestGetEvents(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetEventsWithReferencesFail(t *testing.T) {
+	or := newTestOrchestrator()
+	u := fftypes.NewUUID()
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	fb := database.EventQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := or.GetEventsWithReferences(context.Background(), "ns1", f)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetEventsWithReferences(t *testing.T) {
+	or := newTestOrchestrator()
+	u := fftypes.NewUUID()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+	ref2 := fftypes.NewUUID()
+	ev2 := fftypes.NewUUID()
+	ref3 := fftypes.NewUUID()
+	ev3 := fftypes.NewUUID()
+
+	blockchainEvent := &fftypes.Event{
+		ID:        ev1,
+		Sequence:  10000001,
+		Reference: ref1,
+		Type:      fftypes.EventTypeBlockchainEventReceived,
+	}
+
+	txEvent := &fftypes.Event{
+		ID:        ev2,
+		Sequence:  10000002,
+		Reference: ref2,
+		Type:      fftypes.EventTypeTransactionSubmitted,
+	}
+
+	msgEvent := &fftypes.Event{
+		ID:        ev3,
+		Sequence:  10000003,
+		Reference: ref3,
+		Type:      fftypes.EventTypeMessageConfirmed,
+	}
+
+	or.mth.On("EnrichEvent", mock.Anything, blockchainEvent).Return(&fftypes.EnrichedEvent{
+		Event: *blockchainEvent,
+		BlockchainEvent: &fftypes.BlockchainEvent{
+			ID: ref1,
+		},
+	}, nil)
+
+	or.mth.On("EnrichEvent", mock.Anything, txEvent).Return(&fftypes.EnrichedEvent{
+		Event: *txEvent,
+		Transaction: &fftypes.Transaction{
+			ID: ref2,
+		},
+	}, nil)
+
+	or.mth.On("EnrichEvent", mock.Anything, msgEvent).Return(&fftypes.EnrichedEvent{
+		Event: *msgEvent,
+		Message: &fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID: ref3,
+			},
+		},
+	}, nil)
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{
+		blockchainEvent,
+		txEvent,
+		msgEvent,
+	}, nil, nil)
+	fb := database.EventQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := or.GetEventsWithReferences(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetEventsWithReferencesEnrichFail(t *testing.T) {
+	or := newTestOrchestrator()
+	u := fftypes.NewUUID()
+
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{{ID: fftypes.NewUUID()}}, nil, nil)
+	or.mth.On("EnrichEvent", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	fb := database.EventQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := or.GetEventsWithReferences(context.Background(), "ns1", f)
+	assert.EqualError(t, err, "pop")
+}
+
 func TestGetBlockchainEventByID(t *testing.T) {
 	or := newTestOrchestrator()
 

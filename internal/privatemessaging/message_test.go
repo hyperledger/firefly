@@ -811,7 +811,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 				},
 			},
 		},
-	}, nodes, "manifest-data")
+	}, nodes)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -858,7 +858,7 @@ func TestSendDataTransferFail(t *testing.T) {
 				},
 			},
 		},
-	}, nodes, "manifest-data")
+	}, nodes)
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
@@ -906,7 +906,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 				},
 			},
 		},
-	}, nodes, "manifest-data")
+	}, nodes)
 	assert.Regexp(t, "pop", err)
 
 }

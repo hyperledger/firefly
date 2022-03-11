@@ -100,7 +100,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	batch := &fftypes.Batch{
 		BatchHeader: bp.BatchHeader,
 	}
-	addBatchSendInputs(op, node.ID, group.Hash, batch.ID, "manifest-info")
+	addBatchSendInputs(op, node.ID, group.Hash, batch.ID)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
@@ -156,7 +156,7 @@ func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
 	batch := &fftypes.Batch{
 		BatchHeader: bp.BatchHeader,
 	}
-	addBatchSendInputs(op, node.ID, group.Hash, batch.ID, "manifest-info")
+	addBatchSendInputs(op, node.ID, group.Hash, batch.ID)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdm := pm.data.(*datamocks.Manager)

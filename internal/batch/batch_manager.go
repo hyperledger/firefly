@@ -177,9 +177,9 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	return processor, nil
 }
 
-func (bm *batchManager) assembleMessageData(processor *batchProcessor, msg *fftypes.Message) (retData fftypes.DataArray, err error) {
+func (bm *batchManager) assembleMessageData(batchType fftypes.BatchType, msg *fftypes.Message) (retData fftypes.DataArray, err error) {
 	var cro []data.CacheReadOption
-	if processor.conf.DispatcherOptions.BatchType == fftypes.BatchTypeBroadcast {
+	if batchType == fftypes.BatchTypeBroadcast {
 		cro = append(cro, data.CRORequirePublicBlobRefs)
 	}
 	var foundAll = false
@@ -236,7 +236,7 @@ func (bm *batchManager) messageSequencer() {
 					continue
 				}
 
-				data, err := bm.assembleMessageData(processor, msg)
+				data, err := bm.assembleMessageData(processor.conf.DispatcherOptions.BatchType, msg)
 				if err != nil {
 					l.Errorf("Failed to retrieve message data for %s: %s", msg.Header.ID, err)
 					continue

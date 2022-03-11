@@ -149,11 +149,20 @@ in the event.
   "transport": "websockets",
   "name": "app1",
   "filter": {
-    "author": ".*",
+    "blockchainevent": {
+      "listener": ".*",
+      "name": ".*"
+    },
     "events": ".*",
-    "group": ".*",
-    "tag": ".*",
-    "topics": ".*"
+    "message": {
+      "author": ".*",
+      "group": ".*",
+      "tag": ".*",
+      "topics": ".*"
+    },
+    "transaction": {
+      "type": ".*"
+    }
   },
   "options": {
     "firstEvent": "newest",

@@ -527,9 +527,8 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
 	bm.Close()
-	_, bp := newTestBatchProcessor(func(c context.Context, ds *DispatchState) error { return nil })
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, false, nil)
-	_, err := bm.(*batchManager).assembleMessageData(bp, &fftypes.Message{
+	_, err := bm.(*batchManager).assembleMessageData(fftypes.BatchTypePrivate, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
@@ -545,8 +544,7 @@ func TestGetMessageDataFail(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 	bm.Close()
-	_, bp := newTestBatchProcessor(func(c context.Context, ds *DispatchState) error { return nil })
-	_, _ = bm.(*batchManager).assembleMessageData(bp, &fftypes.Message{
+	_, _ = bm.(*batchManager).assembleMessageData(fftypes.BatchTypePrivate, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
@@ -564,9 +562,7 @@ func TestGetMessageNotFound(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything, data.CRORequirePublicBlobRefs).Return(nil, false, nil)
 	bm.Close()
-	_, bp := newTestBatchProcessor(func(c context.Context, ds *DispatchState) error { return nil })
-	bp.conf.DispatcherOptions.BatchType = fftypes.BatchTypeBroadcast
-	_, err := bm.(*batchManager).assembleMessageData(bp, &fftypes.Message{
+	_, err := bm.(*batchManager).assembleMessageData(fftypes.BatchTypeBroadcast, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},

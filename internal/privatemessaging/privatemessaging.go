@@ -188,7 +188,7 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batc
 		tw.Group = group
 	}
 
-	return pm.sendData(ctx, tw, nodes, state.Persisted.Manifest.String())
+	return pm.sendData(ctx, tw, nodes)
 }
 
 func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.DataArray, txid *fftypes.UUID, node *fftypes.Identity) error {
@@ -220,7 +220,7 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.Data
 	return nil
 }
 
-func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportWrapper, nodes []*fftypes.Identity, manifest string) (err error) {
+func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportWrapper, nodes []*fftypes.Identity) (err error) {
 	l := log.L(ctx)
 	batch := tw.Batch
 
@@ -250,14 +250,11 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 			batch.Namespace,
 			batch.Payload.TX.ID,
 			fftypes.OpTypeDataExchangeBatchSend)
-		op.Input = fftypes.JSONObject{
-			"batch": tw.Batch.ID,
-		}
 		var groupHash *fftypes.Bytes32
 		if tw.Group != nil {
 			groupHash = tw.Group.Hash
 		}
-		addBatchSendInputs(op, node.ID, groupHash, batch.ID, manifest)
+		addBatchSendInputs(op, node.ID, groupHash, batch.ID)
 		if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 			return err
 		}

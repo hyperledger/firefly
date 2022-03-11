@@ -70,11 +70,21 @@ func (mce *messageCacheEntry) Size() int64 {
 	return mce.size
 }
 
+// Messages have fields that are mutable, in two categories
+//
+// 1) Can change multiple times like state - you cannot rely on the cache for these
+// 2) Can go from being un-set, to being set, and once set are immutable.
+// For (2) the cache provides a set of CacheReadOption modifiers that makes it safe to query the cache,
+// even if the cache we slow to update asynchronously (active/active cluster being the ultimate example here,
+// but from code inspection this is possible in the current cache).
 type CacheReadOption int
 
 const (
+	// If you use CRORequirePublicBlobRefs then the cache will return a miss, if all data blobs do not have a `public` reference string
 	CRORequirePublicBlobRefs CacheReadOption = iota
+	// If you use CRORequirePins then the cache will return a miss, if the number of pins does not match the number of topics in the message.
 	CRORequirePins
+	// If you use CRORequestBatchID then the cache will return a miss, if there is no BatchID set.
 	CRORequireBatchID
 )
 
@@ -86,6 +96,7 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Pl
 		database:          di,
 		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
+		messageCacheTTL:   config.GetDuration(config.MessageCacheTTL),
 	}
 	dm.blobStore = blobStore{
 		dm:            dm,
@@ -101,7 +112,7 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Pl
 	dm.messageCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.MessageCacheTTL)),
+			MaxSize(config.GetByteSize(config.MessageCacheSize)),
 	)
 	return dm, nil
 }
@@ -226,6 +237,7 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 		}
 	}
 	log.L(ctx).Debugf("Returning msg %s from cache", id)
+	cached.Extend(dm.messageCacheTTL)
 	return mce
 }
 
@@ -454,7 +466,7 @@ func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData 
 	return data, dataToPublish, nil
 }
 
-// HydrateBatch fetches the full messages for a persited batch, ready for transmission
+// HydrateBatch fetches the full messages for a persisted batch, ready for transmission
 func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
 
 	var manifest fftypes.BatchManifest

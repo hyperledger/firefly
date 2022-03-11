@@ -43,6 +43,7 @@ import (
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -118,6 +119,7 @@ type Orchestrator interface {
 	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
+	GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.EnrichedEvent, *database.FilterResult, error)
 	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
 	GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error)
 	GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error)
@@ -164,6 +166,7 @@ type orchestrator struct {
 	node           *fftypes.UUID
 	metrics        metrics.Manager
 	operations     operations.Manager
+	txHelper       txcommon.Helper
 }
 
 func NewOrchestrator() Orchestrator {
@@ -194,6 +197,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	if err == nil {
 		err = or.initNamespaces(ctx)
 	}
+	or.txHelper = txcommon.NewTransactionHelper(or.database)
 	// Bind together the blockchain interface callbacks, with the events manager
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events

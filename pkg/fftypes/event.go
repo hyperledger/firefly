@@ -65,12 +65,19 @@ type Event struct {
 	Created     *FFTime   `json:"created"`
 }
 
+// EnrichedEvent adds the referred object to an event
+type EnrichedEvent struct {
+	Event
+	Message         *Message         `json:"message,omitempty"`
+	Transaction     *Transaction     `json:"transaction,omitempty"`
+	BlockchainEvent *BlockchainEvent `json:"blockchainevent,omitempty"`
+}
+
 // EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to
 // be dispatched to an application.
 type EventDelivery struct {
-	Event
+	EnrichedEvent
 	Subscription SubscriptionRef `json:"subscription"`
-	Message      *Message        `json:"message,omitempty"`
 }
 
 // EventDeliveryResponse is the payload an application sends back, to confirm it has accepted (or rejected) the event and as such

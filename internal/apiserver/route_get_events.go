@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -33,13 +34,18 @@ var getEvents = &oapispec.Route{
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams:     nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchreferences", Example: "true", Description: i18n.MsgTBD, IsBool: true},
+	},
 	FilterFactory:   database.EventQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		if strings.EqualFold(r.QP["fetchreferences"], "true") {
+			return filterResult(getOr(r.Ctx).GetEventsWithReferences(r.Ctx, r.PP["ns"], r.Filter))
+		}
 		return filterResult(getOr(r.Ctx).GetEvents(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

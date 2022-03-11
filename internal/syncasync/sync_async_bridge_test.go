@@ -76,12 +76,14 @@ func TestRequestReplyOk(t *testing.T) {
 	reply, err := sa.WaitForReply(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:         fftypes.NewUUID(),
-					Type:       fftypes.EventTypeMessageConfirmed,
-					Reference:  replyID,
-					Correlator: requestID,
-					Namespace:  "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:         fftypes.NewUUID(),
+						Type:       fftypes.EventTypeMessageConfirmed,
+						Reference:  replyID,
+						Correlator: requestID,
+						Namespace:  "ns1",
+					},
 				},
 			})
 		}()
@@ -124,11 +126,13 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	reply, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeMessageConfirmed,
-					Reference: requestID,
-					Namespace: "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypeMessageConfirmed,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
 				},
 			})
 		}()
@@ -170,11 +174,13 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	_, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeMessageRejected,
-					Reference: requestID,
-					Namespace: "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypeMessageRejected,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
 				},
 			})
 		}()
@@ -221,11 +227,13 @@ func TestEventCallbackNotInflight(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypeMessageConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: fftypes.NewUUID(),
+				Type:      fftypes.EventTypeMessageConfirmed,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -243,11 +251,13 @@ func TestEventCallbackNotInflight(t *testing.T) {
 		fftypes.EventTypeIdentityConfirmed,
 	} {
 		err := sa.eventCallback(&fftypes.EventDelivery{
-			Event: fftypes.Event{
-				Namespace: "ns1",
-				ID:        fftypes.NewUUID(),
-				Reference: fftypes.NewUUID(),
-				Type:      eventType,
+			EnrichedEvent: fftypes.EnrichedEvent{
+				Event: fftypes.Event{
+					Namespace: "ns1",
+					ID:        fftypes.NewUUID(),
+					Reference: fftypes.NewUUID(),
+					Type:      eventType,
+				},
 			},
 		})
 		assert.NoError(t, err)
@@ -268,11 +278,13 @@ func TestEventCallbackWrongType(t *testing.T) {
 	}
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypeIdentityUpdated, // We use the message for this one, so no sync/async handler
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: fftypes.NewUUID(),
+				Type:      fftypes.EventTypeIdentityUpdated, // We use the message for this one, so no sync/async handler
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -297,11 +309,13 @@ func TestEventCallbackMsgLookupFail(t *testing.T) {
 	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeMessageConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeMessageConfirmed,
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -326,11 +340,13 @@ func TestEventCallbackTokenPoolLookupFail(t *testing.T) {
 	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypePoolConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypePoolConfirmed,
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -355,11 +371,13 @@ func TestEventCallbackIdentityLookupFail(t *testing.T) {
 	mdi.On("GetIdentityByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeIdentityConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeIdentityConfirmed,
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -384,11 +402,13 @@ func TestEventCallbackIdentityLookupNotFound(t *testing.T) {
 	mdi.On("GetIdentityByID", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeIdentityConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeIdentityConfirmed,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -413,11 +433,13 @@ func TestEventCallbackTokenTransferLookupFail(t *testing.T) {
 	mdi.On("GetTokenTransfer", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeTransferConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeTransferConfirmed,
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -441,11 +463,13 @@ func TestEventCallbackTokenApprovalLookupFail(t *testing.T) {
 	mdi.On("GetTokenApproval", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeApprovalConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeApprovalConfirmed,
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -470,11 +494,13 @@ func TestEventCallbackMsgNotFound(t *testing.T) {
 	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeMessageConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeMessageConfirmed,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -504,12 +530,14 @@ func TestEventCallbackRejectedMsgNotFound(t *testing.T) {
 	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace:  "ns1",
-			ID:         fftypes.NewUUID(),
-			Reference:  responseID,
-			Correlator: correlationID,
-			Type:       fftypes.EventTypeMessageRejected,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace:  "ns1",
+				ID:         fftypes.NewUUID(),
+				Reference:  responseID,
+				Correlator: correlationID,
+				Type:       fftypes.EventTypeMessageRejected,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -535,11 +563,13 @@ func TestEventCallbackTokenPoolNotFound(t *testing.T) {
 	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypePoolConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypePoolConfirmed,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -565,11 +595,13 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 	mdi.On("GetTokenTransfer", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeTransferConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeTransferConfirmed,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -595,11 +627,13 @@ func TestEventCallbackTokenApprovalNotFound(t *testing.T) {
 	mdi.On("GetTokenApproval", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			Reference: responseID,
-			Type:      fftypes.EventTypeApprovalConfirmed,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+				ID:        fftypes.NewUUID(),
+				Reference: responseID,
+				Type:      fftypes.EventTypeApprovalConfirmed,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -634,12 +668,14 @@ func TestEventCallbackTokenPoolRejectedNoData(t *testing.T) {
 	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(msg, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace:  "ns1",
-			ID:         fftypes.NewUUID(),
-			Reference:  fftypes.NewUUID(),
-			Correlator: responseID,
-			Type:       fftypes.EventTypeMessageRejected,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace:  "ns1",
+				ID:         fftypes.NewUUID(),
+				Reference:  fftypes.NewUUID(),
+				Correlator: responseID,
+				Type:       fftypes.EventTypeMessageRejected,
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -682,12 +718,14 @@ func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
 	mdi.On("GetDataByID", sa.ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace:  "ns1",
-			ID:         fftypes.NewUUID(),
-			Reference:  responseID,
-			Correlator: correlationID,
-			Type:       fftypes.EventTypeMessageRejected,
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace:  "ns1",
+				ID:         fftypes.NewUUID(),
+				Reference:  responseID,
+				Correlator: correlationID,
+				Type:       fftypes.EventTypeMessageRejected,
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -738,11 +776,13 @@ func TestAwaitTokenPoolConfirmation(t *testing.T) {
 	reply, err := sa.WaitForTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypePoolConfirmed,
-					Reference: requestID,
-					Namespace: "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypePoolConfirmed,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
 				},
 			})
 		}()
@@ -803,12 +843,14 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", pool.Pool.ID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:         fftypes.NewUUID(),
-					Type:       fftypes.EventTypeMessageRejected,
-					Reference:  msg.Header.ID,
-					Correlator: pool.Pool.ID,
-					Namespace:  "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:         fftypes.NewUUID(),
+						Type:       fftypes.EventTypeMessageRejected,
+						Reference:  msg.Header.ID,
+						Correlator: pool.Pool.ID,
+						Namespace:  "ns1",
+					},
 				},
 			})
 		}()
@@ -842,11 +884,13 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	reply, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeTransferConfirmed,
-					Reference: requestID,
-					Namespace: "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypeTransferConfirmed,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
 				},
 			})
 		}()
@@ -882,11 +926,13 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 	reply, err := sa.WaitForTokenApproval(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeApprovalConfirmed,
-					Reference: requestID,
-					Namespace: "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypeApprovalConfirmed,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
 				},
 			})
 		}()
@@ -954,12 +1000,14 @@ func TestAwaitFailedTokenTransfer(t *testing.T) {
 	_, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:         fftypes.NewUUID(),
-					Type:       fftypes.EventTypeTransferOpFailed,
-					Reference:  op.ID,
-					Correlator: requestID,
-					Namespace:  "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:         fftypes.NewUUID(),
+						Type:       fftypes.EventTypeTransferOpFailed,
+						Reference:  op.ID,
+						Correlator: requestID,
+						Namespace:  "ns1",
+					},
 				},
 			})
 		}()
@@ -990,12 +1038,14 @@ func TestAwaitFailedTokenApproval(t *testing.T) {
 	_, err := sa.WaitForTokenApproval(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:         fftypes.NewUUID(),
-					Type:       fftypes.EventTypeApprovalOpFailed,
-					Reference:  op.ID,
-					Correlator: requestID,
-					Namespace:  "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:         fftypes.NewUUID(),
+						Type:       fftypes.EventTypeApprovalOpFailed,
+						Reference:  op.ID,
+						Correlator: requestID,
+						Namespace:  "ns1",
+					},
 				},
 			})
 		}()
@@ -1029,12 +1079,14 @@ func TestFailedTokenTransferOpError(t *testing.T) {
 	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID:         fftypes.NewUUID(),
-			Type:       fftypes.EventTypeTransferOpFailed,
-			Reference:  op.ID,
-			Correlator: requestID,
-			Namespace:  "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:         fftypes.NewUUID(),
+				Type:       fftypes.EventTypeTransferOpFailed,
+				Reference:  op.ID,
+				Correlator: requestID,
+				Namespace:  "ns1",
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -1067,12 +1119,14 @@ func TestFailedTokenApprovalOpError(t *testing.T) {
 	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID:         fftypes.NewUUID(),
-			Type:       fftypes.EventTypeApprovalOpFailed,
-			Reference:  op.ID,
-			Correlator: requestID,
-			Namespace:  "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:         fftypes.NewUUID(),
+				Type:       fftypes.EventTypeApprovalOpFailed,
+				Reference:  op.ID,
+				Correlator: requestID,
+				Namespace:  "ns1",
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -1105,12 +1159,14 @@ func TestFailedTokenApprovalOpNotFound(t *testing.T) {
 	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID:         fftypes.NewUUID(),
-			Type:       fftypes.EventTypeApprovalOpFailed,
-			Reference:  op.ID,
-			Correlator: requestID,
-			Namespace:  "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:         fftypes.NewUUID(),
+				Type:       fftypes.EventTypeApprovalOpFailed,
+				Reference:  op.ID,
+				Correlator: requestID,
+				Namespace:  "ns1",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -1141,12 +1197,14 @@ func TestFailedTokenApprovalIDLookupFail(t *testing.T) {
 	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID:         fftypes.NewUUID(),
-			Type:       fftypes.EventTypeApprovalOpFailed,
-			Reference:  op.ID,
-			Correlator: requestID,
-			Namespace:  "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:         fftypes.NewUUID(),
+				Type:       fftypes.EventTypeApprovalOpFailed,
+				Reference:  op.ID,
+				Correlator: requestID,
+				Namespace:  "ns1",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -1179,12 +1237,14 @@ func TestFailedTokenTransferOpNotFound(t *testing.T) {
 	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID:         fftypes.NewUUID(),
-			Type:       fftypes.EventTypeTransferOpFailed,
-			Reference:  op.ID,
-			Correlator: requestID,
-			Namespace:  "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:         fftypes.NewUUID(),
+				Type:       fftypes.EventTypeTransferOpFailed,
+				Reference:  op.ID,
+				Correlator: requestID,
+				Namespace:  "ns1",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -1215,12 +1275,14 @@ func TestFailedTokenTransferIDLookupFail(t *testing.T) {
 	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
-		Event: fftypes.Event{
-			ID:         fftypes.NewUUID(),
-			Type:       fftypes.EventTypeTransferOpFailed,
-			Reference:  op.ID,
-			Correlator: requestID,
-			Namespace:  "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:         fftypes.NewUUID(),
+				Type:       fftypes.EventTypeTransferOpFailed,
+				Reference:  op.ID,
+				Correlator: requestID,
+				Namespace:  "ns1",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -1256,11 +1318,13 @@ func TestAwaitIdentityConfirmed(t *testing.T) {
 	retIdentity, err := sa.WaitForIdentity(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
-				Event: fftypes.Event{
-					ID:        fftypes.NewUUID(),
-					Type:      fftypes.EventTypeIdentityConfirmed,
-					Reference: requestID,
-					Namespace: "ns1",
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypeIdentityConfirmed,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
 				},
 			})
 		}()

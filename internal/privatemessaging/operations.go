@@ -49,16 +49,15 @@ func retrieveTransferBlobInputs(ctx context.Context, op *fftypes.Operation) (nod
 	return nodeID, blobHash, err
 }
 
-func addBatchSendInputs(op *fftypes.Operation, nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID, manifest string) {
+func addBatchSendInputs(op *fftypes.Operation, nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID) {
 	op.Input = fftypes.JSONObject{
-		"node":     nodeID.String(),
-		"group":    groupHash.String(),
-		"batch":    batchID.String(),
-		"manifest": manifest,
+		"node":  nodeID.String(),
+		"group": groupHash.String(),
+		"batch": batchID.String(),
 	}
 }
 
-func retrieveBatchSendInputs(ctx context.Context, op *fftypes.Operation) (nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID, manifest string, err error) {
+func retrieveBatchSendInputs(ctx context.Context, op *fftypes.Operation) (nodeID *fftypes.UUID, groupHash *fftypes.Bytes32, batchID *fftypes.UUID, err error) {
 	nodeID, err = fftypes.ParseUUID(ctx, op.Input.GetString("node"))
 	if err == nil {
 		groupHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("group"))
@@ -66,10 +65,7 @@ func retrieveBatchSendInputs(ctx context.Context, op *fftypes.Operation) (nodeID
 	if err == nil {
 		batchID, err = fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 	}
-	if err == nil {
-		manifest = op.Input.GetString("manifest")
-	}
-	return nodeID, groupHash, batchID, manifest, err
+	return nodeID, groupHash, batchID, err
 }
 
 func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
@@ -94,7 +90,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		return opTransferBlob(op, node, blob), nil
 
 	case fftypes.OpTypeDataExchangeBatchSend:
-		nodeID, groupHash, batchID, _, err := retrieveBatchSendInputs(ctx, op)
+		nodeID, groupHash, batchID, err := retrieveBatchSendInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}

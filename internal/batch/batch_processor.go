@@ -358,6 +358,8 @@ func (bp *batchProcessor) assemblyLoop() {
 
 func (bp *batchProcessor) flush(overflow bool) error {
 	id, flushWork, byteSize := bp.startFlush(overflow)
+
+	log.L(bp.ctx).Debugf("Flushing batch %s", id)
 	state := bp.initFlushState(id, flushWork)
 
 	// Sealing phase: assigns persisted pins to messages, and finalizes the manifest
@@ -365,6 +367,7 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	if err != nil {
 		return err
 	}
+	log.L(bp.ctx).Debugf("Sealed batch %s", id)
 
 	// Dispatch phase: the heavy lifting work - calling plugins to do the hard work of the batch.
 	//   Must manage its own database updates if it performs them, and any that result in updates
@@ -375,20 +378,21 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	if err != nil {
 		return err
 	}
+	log.L(bp.ctx).Debugf("Dispatched batch %s", id)
 
-	// Dispatched phase: Writes back the changes to the DB, so that these messages will not be
+	// Finalization phase: Writes back the changes to the DB, so that these messages will not be
 	//   are all tagged as part of this batch, and won't be included in any future batches.
 	err = bp.markPayloadDispatched(state)
 	if err != nil {
 		return err
 	}
+	log.L(bp.ctx).Debugf("Finalized batch %s", id)
 
 	bp.endFlush(state, byteSize)
 	return nil
 }
 
 func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWork) *DispatchState {
-	log.L(bp.ctx).Debugf("Flushing batch %s", id)
 	state := &DispatchState{
 		Persisted: fftypes.BatchPersisted{
 			BatchHeader: fftypes.BatchHeader{
