@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
 	var verification fftypes.IdentityVerification
 	valid := dh.getSystemBroadcastPayload(ctx, verifyMsg, data, &verification)
 	if !valid {
@@ -68,7 +68,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 			log.L(ctx).Warnf("Invalid verification message %s - hash mismatch claim=%s verification=%s", verifyMsg.Header.ID, claimMsg.Hash, verification.Claim.Hash)
 			return HandlerResult{Action: ActionReject}, nil
 		}
-		data, foundAll, err := dh.data.GetMessageData(ctx, claimMsg, true)
+		data, foundAll, err := dh.data.GetMessageDataCached(ctx, claimMsg)
 		if err != nil {
 			return HandlerResult{Action: ActionRetry}, err
 		}

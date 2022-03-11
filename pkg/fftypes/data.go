@@ -52,6 +52,43 @@ type Data struct {
 	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
 }
 
+func (br *BlobRef) BatchBlobRef(batchType BatchType) *BlobRef {
+	if br == nil {
+		return nil
+	}
+	switch batchType {
+	case BatchTypePrivate:
+		// For private we omit the "public" ref in all cases, to avoid an potential for the batch pay to change due
+		// to the same data being allocated by the same data being sent in a broadcast batch (thus assigining a public ref).
+		return &BlobRef{
+			Hash: br.Hash,
+			Size: br.Size,
+			Name: br.Name,
+		}
+	default:
+		// For broadcast data the blob reference contains the "public" (shared storage) reference, which
+		// must have been allocated to this data item before sealing the batch.
+		return br
+	}
+}
+
+// BatchData is the fields in a data record that are assured to be consistent on all parties.
+// This is what is transferred and hashed in a batch payload between nodes.
+func (d *Data) BatchData(batchType BatchType) *Data {
+	return &Data{
+		ID:        d.ID,
+		Validator: d.Validator,
+		Namespace: d.Namespace,
+		Hash:      d.Hash,
+		Created:   d.Created,
+		Datatype:  d.Datatype,
+		Value:     d.Value,
+		Blob:      d.Blob.BatchBlobRef(batchType),
+
+		ValueSize: d.ValueSize,
+	}
+}
+
 type DataAndBlob struct {
 	Data *Data
 	Blob *Blob
@@ -75,6 +112,20 @@ func (d DataRefs) Hash() *Bytes32 {
 	b, _ := json.Marshal(&d)
 	var b32 Bytes32 = sha256.Sum256(b)
 	return &b32
+}
+
+type DataArray []*Data
+
+func (da DataArray) Refs() DataRefs {
+	dr := make(DataRefs, len(da))
+	for i, d := range da {
+		dr[i] = &DataRef{
+			ID:        d.ID,
+			Hash:      d.Hash,
+			ValueSize: d.ValueSize,
+		}
+	}
+	return dr
 }
 
 func CheckValidatorType(ctx context.Context, validator ValidatorType) error {

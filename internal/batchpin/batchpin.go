@@ -31,7 +31,7 @@ import (
 type Submitter interface {
 	fftypes.Named
 
-	SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error
+	SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) error
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
@@ -67,12 +67,12 @@ func (bp *batchPinSubmitter) Name() string {
 	return "BatchPinSubmitter"
 }
 
-func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
+func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) error {
 	// The pending blockchain transaction
 	op := fftypes.NewOperation(
 		bp.blockchain,
 		batch.Namespace,
-		batch.Payload.TX.ID,
+		batch.TX.ID,
 		fftypes.OpTypeBlockchainBatchPin)
 	addBatchPinInputs(op, batch.ID, contexts)
 	if err := bp.operations.AddOrReuseOperation(ctx, op); err != nil {

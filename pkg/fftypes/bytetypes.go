@@ -19,6 +19,7 @@ package fftypes
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/hex"
 	"hash"
@@ -41,6 +42,12 @@ func HashResult(hash hash.Hash) *Bytes32 {
 	var b32 Bytes32
 	copy(b32[:], sum)
 	return &b32
+}
+
+func HashString(s string) *Bytes32 {
+	hash := sha256.New()
+	hash.Write([]byte(s))
+	return HashResult(hash)
 }
 
 func (b32 Bytes32) MarshalText() ([]byte, error) {

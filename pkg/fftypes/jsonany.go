@@ -71,6 +71,13 @@ func (h JSONAny) MarshalJSON() ([]byte, error) {
 	return []byte(h), nil
 }
 
+func (h *JSONAny) Unmarshal(ctx context.Context, v interface{}) error {
+	if h == nil {
+		return i18n.NewError(ctx, i18n.MsgNilOrNullObject)
+	}
+	return json.Unmarshal([]byte(*h), v)
+}
+
 func (h *JSONAny) Hash() *Bytes32 {
 	if h == nil {
 		return nil

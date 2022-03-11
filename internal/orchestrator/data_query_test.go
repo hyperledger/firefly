@@ -121,7 +121,7 @@ func TestGetMessageByIDWithDataOk(t *testing.T) {
 		},
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.MatchedBy(func(u *fftypes.UUID) bool { return u.Equals(msgID) })).Return(msg, nil)
-	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.JSONAnyPtr("{}")},
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.JSONAnyPtr("{}")},
 	}, true, nil)
@@ -158,7 +158,7 @@ func TestGetMessageByIDWithDataFail(t *testing.T) {
 		},
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	_, err := or.GetMessageByIDWithData(context.Background(), "ns1", msgID.String())
 	assert.EqualError(t, err, "pop")
@@ -195,7 +195,7 @@ func TestGetMessagesWithDataOk(t *testing.T) {
 	}
 	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
-	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, true, nil)
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetMessagesWithData(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -213,7 +213,7 @@ func TestGetMessagesWithDataFail(t *testing.T) {
 	}
 	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
-	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, true, fmt.Errorf("pop"))
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, true, fmt.Errorf("pop"))
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetMessagesWithData(context.Background(), "ns1", f)
 	assert.EqualError(t, err, "pop")
@@ -247,12 +247,10 @@ func TestGetMessageTransactionOk(t *testing.T) {
 			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   txID,
-			},
+	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.BatchPersisted{
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeBatchPin,
+			ID:   txID,
 		},
 	}, nil)
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&fftypes.Transaction{
@@ -275,12 +273,10 @@ func TestGetMessageTransactionOperations(t *testing.T) {
 			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   txID,
-			},
+	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.BatchPersisted{
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeBatchPin,
+			ID:   txID,
 		},
 	}, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
@@ -309,7 +305,7 @@ func TestGetMessageTransactionNoBatchTX(t *testing.T) {
 			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.Batch{}, nil)
+	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.BatchPersisted{}, nil)
 	_, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
 	assert.Regexp(t, "FF10210", err)
 }
@@ -384,7 +380,7 @@ func TestGetMessageData(t *testing.T) {
 		},
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	or.mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, true, nil)
 	_, err := or.GetMessageData(context.Background(), "ns1", fftypes.NewUUID().String())
 	assert.NoError(t, err)
 }
@@ -449,7 +445,7 @@ func TestGetBatchByIDBadID(t *testing.T) {
 func TestGetBatches(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return([]*fftypes.Batch{}, nil, nil)
+	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return([]*fftypes.BatchPersisted{}, nil, nil)
 	fb := database.BatchQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetBatches(context.Background(), "ns1", f)
@@ -473,7 +469,7 @@ func TestGetDataByIDBadID(t *testing.T) {
 func TestGetData(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetData", mock.Anything, mock.Anything).Return([]*fftypes.Data{}, nil, nil)
+	or.mdi.On("GetData", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, nil, nil)
 	fb := database.DataQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetData(context.Background(), "ns1", f)
@@ -691,4 +687,14 @@ func TestGetTransactionBlockchainEventsBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, _, err := or.GetTransactionBlockchainEvents(context.Background(), "ns1", "")
 	assert.Regexp(t, "FF10142", err)
+}
+
+func TestGetPins(t *testing.T) {
+	or := newTestOrchestrator()
+	u := fftypes.NewUUID()
+	or.mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	fb := database.PinQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("hash", u))
+	_, _, err := or.GetPins(context.Background(), f)
+	assert.NoError(t, err)
 }

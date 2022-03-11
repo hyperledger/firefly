@@ -98,6 +98,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 		namespace: ns,
 		msg:       in,
 		resolved:  true,
+		data:      fftypes.DataArray{data},
 	}
 	sender.setDefaults()
 	if waitConfirm {

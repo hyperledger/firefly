@@ -31,18 +31,18 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 		return false, nil // This is not retryable. skip this batch
 	}
 
-	return em.persistBatch(ctx, batch)
+	_, valid, err = em.persistBatch(ctx, batch)
+	return valid, err
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) (valid bool, err error) {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) (persistedBatch *fftypes.BatchPersisted, valid bool, err error) {
 	l := log.L(ctx)
-	now := fftypes.Now()
 
 	if batch.ID == nil || batch.Payload.TX.ID == nil {
 		l.Errorf("Invalid batch '%s'. Missing ID or transaction ID (%v)", batch.ID, batch.Payload.TX.ID)
-		return false, nil // This is not retryable. skip this batch
+		return nil, false, nil // This is not retryable. skip this batch
 	}
 
 	switch batch.Payload.TX.Type {
@@ -50,43 +50,74 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	case fftypes.TransactionTypeUnpinned:
 	default:
 		l.Errorf("Invalid batch '%s'. Invalid transaction type: %s", batch.ID, batch.Payload.TX.Type)
-		return false, nil // This is not retryable. skip this batch
-	}
-
-	// Verify the hash calculation
-	hash := batch.Payload.Hash()
-	if batch.Hash == nil || *batch.Hash != *hash {
-		l.Errorf("Invalid batch '%s'. Hash does not match payload. Found=%s Expected=%s", batch.ID, hash, batch.Hash)
-		return false, nil // This is not retryable. skip this batch
+		return nil, false, nil // This is not retryable. skip this batch
 	}
 
 	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
-	batch.Confirmed = now
+	persistedBatch, _ = batch.Confirmed()
+	manifestHash := fftypes.HashString(persistedBatch.Manifest.String())
 
-	// Upsert the batch itself, ensuring the hash does not change
-	err = em.database.UpsertBatch(ctx, batch)
+	// Verify the hash calculation.
+	if !manifestHash.Equals(batch.Hash) {
+		// To cope with existing batches written by v0.13 and older environments, we have to do a more expensive
+		// hashing of the whole payload before we reject.
+		if batch.Payload.Hash().Equals(batch.Hash) {
+			l.Infof("Persisting migrated batch '%s'. Hash is a payload hash: %s", batch.ID, batch.Hash)
+		} else {
+			l.Errorf("Invalid batch '%s'. Hash does not match payload. Found=%s Expected=%s", batch.ID, manifestHash, batch.Hash)
+			return nil, false, nil // This is not retryable. skip this batch
+		}
+	}
+
+	// Upsert the batch
+	err = em.database.UpsertBatch(ctx, persistedBatch)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
-			return false, nil // This is not retryable. skip this batch
+			return nil, false, nil // This is not retryable. skip this batch
 		}
 		l.Errorf("Failed to insert batch '%s': %s", batch.ID, err)
-		return false, err // a persistence failure here is considered retryable (so returned)
+		return nil, false, err // a persistence failure here is considered retryable (so returned)
 	}
+
+	valid, err = em.persistBatchContent(ctx, batch)
+	if err != nil || !valid {
+		return nil, valid, err
+	}
+	return persistedBatch, valid, err
+}
+
+func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.Batch) (valid bool, err error) {
 
 	optimization := em.getOptimization(ctx, batch)
 
 	// Insert the data entries
+	dataByID := make(map[fftypes.UUID]*fftypes.Data)
 	for i, data := range batch.Payload.Data {
-		if err = em.persistBatchData(ctx, batch, i, data, optimization); err != nil {
-			return false, err
+		if valid, err = em.persistBatchData(ctx, batch, i, data, optimization); !valid || err != nil {
+			return valid, err
 		}
+		dataByID[*data.ID] = data
 	}
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
 		if valid, err = em.persistBatchMessage(ctx, batch, i, msg, optimization); !valid || err != nil {
 			return valid, err
+		}
+		dataInBatch := true
+		msgData := make(fftypes.DataArray, len(msg.Data))
+		for di, dataRef := range msg.Data {
+			msgData[di] = dataByID[*dataRef.ID]
+			if msgData[di] == nil || !msgData[di].Hash.Equals(dataRef.Hash) {
+				log.L(ctx).Debugf("Message '%s' in batch '%s' - data not in-line in batch id='%s' hash='%s'", msg.Header.ID, batch.ID, dataRef.ID, dataRef.Hash)
+				dataInBatch = false
+				break
+			}
+		}
+		if dataInBatch {
+			// We can push the complete message into the cache straight away
+			em.data.UpdateMessageCache(msg, msgData)
 		}
 	}
 
@@ -106,9 +137,8 @@ func (em *eventManager) getOptimization(ctx context.Context, batch *fftypes.Batc
 	return database.UpsertOptimizationNew
 }
 
-func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data, optimization database.UpsertOptimization) error {
-	_, err := em.persistReceivedData(ctx, i, data, "batch", batch.ID, optimization)
-	return err
+func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data, optimization database.UpsertOptimization) (bool, error) {
+	return em.persistReceivedData(ctx, i, data, "batch", batch.ID, optimization)
 }
 
 func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context*/, i int, data *fftypes.Data, mType string, mID *fftypes.UUID, optimization database.UpsertOptimization) (bool, error) {
@@ -145,9 +175,12 @@ func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context
 }
 
 func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message, optimization database.UpsertOptimization) (bool, error) {
-	if msg != nil && (msg.Header.Author != batch.Author || msg.Header.Key != batch.Key) {
-		log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
-		return false, nil // skip entry
+	if msg != nil {
+		if msg.Header.Author != batch.Author || msg.Header.Key != batch.Key {
+			log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
+			return false, nil // skip entry
+		}
+		msg.BatchID = batch.ID
 	}
 
 	return em.persistReceivedMessage(ctx, i, msg, "batch", batch.ID, optimization)

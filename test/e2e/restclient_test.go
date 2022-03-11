@@ -104,7 +104,7 @@ func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgTyp
 	return msgs
 }
 
-func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data []*fftypes.Data) {
+func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data fftypes.DataArray) {
 	path := urlGetData
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -115,7 +115,7 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	return data
 }
 
-func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data []*fftypes.Data) {
+func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data fftypes.DataArray) {
 	path := urlGetMessages
 	path += "/" + msgID.String() + "/data"
 	resp, err := client.R().

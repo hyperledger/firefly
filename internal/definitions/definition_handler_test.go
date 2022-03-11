@@ -18,6 +18,7 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -85,7 +86,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
-	}, []*fftypes.Data{}, fftypes.NewUUID())
+	}, fftypes.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -97,7 +98,7 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
-	}, []*fftypes.Data{}, nil)
+	}, fftypes.DataArray{}, nil)
 	assert.False(t, valid)
 }
 
@@ -107,7 +108,7 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
 		},
-	}, []*fftypes.Data{}, nil)
+	}, fftypes.DataArray{}, nil)
 	assert.False(t, valid)
 }
 
@@ -128,4 +129,12 @@ func TestPrivateMessagingPassthroughs(t *testing.T) {
 
 	mpm.AssertExpectations(t)
 
+}
+
+func TestActionEnum(t *testing.T) {
+	assert.Equal(t, "confirm", fmt.Sprintf("%s", ActionConfirm))
+	assert.Equal(t, "reject", fmt.Sprintf("%s", ActionReject))
+	assert.Equal(t, "retry", fmt.Sprintf("%s", ActionRetry))
+	assert.Equal(t, "wait", fmt.Sprintf("%s", ActionWait))
+	assert.Equal(t, "unknown", fmt.Sprintf("%s", DefinitionMessageAction(999)))
 }

@@ -36,11 +36,11 @@ func (_m *Plugin) Capabilities() *events.Capabilities {
 }
 
 // DeliveryRequest provides a mock function with given fields: connID, sub, event, data
-func (_m *Plugin) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+func (_m *Plugin) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
 	ret := _m.Called(connID, sub, event, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *fftypes.Subscription, *fftypes.EventDelivery, []*fftypes.Data) error); ok {
+	if rf, ok := ret.Get(0).(func(string, *fftypes.Subscription, *fftypes.EventDelivery, fftypes.DataArray) error); ok {
 		r0 = rf(connID, sub, event, data)
 	} else {
 		r0 = ret.Error(0)

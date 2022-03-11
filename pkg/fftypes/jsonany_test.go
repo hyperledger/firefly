@@ -17,6 +17,7 @@
 package fftypes
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -151,4 +152,19 @@ func TestValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "{}", v)
 
+}
+
+func TestUnmarshal(t *testing.T) {
+
+	var h *JSONAny
+	var myObj struct {
+		Key1 string `json:"key1"`
+	}
+	err := h.Unmarshal(context.Background(), &myObj)
+	assert.Regexp(t, "FF10368", err)
+
+	h = JSONAnyPtr(`{"key1":"value1"}`)
+	err = h.Unmarshal(context.Background(), &myObj)
+	assert.NoError(t, err)
+	assert.Equal(t, "value1", myObj.Key1)
 }

@@ -184,6 +184,10 @@ var (
 	LogMaxAge = rootKey("log.maxAge")
 	// LogCompress sets whether to compress backups
 	LogCompress = rootKey("log.compress")
+	// MessageCacheSize
+	MessageCacheSize = rootKey("message.cache.size")
+	// MessageCacheTTL
+	MessageCacheTTL = rootKey("message.cache.ttl")
 	// MetricsEnabled determines whether metrics will be instrumented and if the metrics server will be enabled or not
 	MetricsEnabled = rootKey("metrics.enabled")
 	// MetricsPath determines what path to serve the Prometheus metrics from
@@ -353,6 +357,8 @@ func Reset() {
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")
+	viper.SetDefault(string(MessageCacheSize), "50Mb")
+	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(IdentityManagerCacheLimit), 100 /* items */)
 	viper.SetDefault(string(IdentityManagerCacheTTL), "1h")
 

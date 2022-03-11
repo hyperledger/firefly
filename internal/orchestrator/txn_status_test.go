@@ -60,10 +60,12 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	batches := []*fftypes.Batch{
+	batches := []*fftypes.BatchPersisted{
 		{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.MessageTypeBroadcast,
+			BatchHeader: fftypes.BatchHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.BatchTypeBroadcast,
+			},
 			Confirmed: fftypes.UnixTime(2),
 		},
 	}
@@ -126,7 +128,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -178,7 +180,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)

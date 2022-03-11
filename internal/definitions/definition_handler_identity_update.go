@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
 	var update fftypes.IdentityUpdate
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update)
 	if !valid {

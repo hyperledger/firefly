@@ -5,6 +5,7 @@ package datamocks
 import (
 	context "context"
 
+	data "github.com/hyperledger/firefly/internal/data"
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	io "io"
@@ -86,29 +87,36 @@ func (_m *Manager) DownloadBLOB(ctx context.Context, ns string, dataID string) (
 	return r0, r1, r2
 }
 
-// GetMessageData provides a mock function with given fields: ctx, msg, withValue
-func (_m *Manager) GetMessageData(ctx context.Context, msg *fftypes.Message, withValue bool) ([]*fftypes.Data, bool, error) {
-	ret := _m.Called(ctx, msg, withValue)
+// GetMessageDataCached provides a mock function with given fields: ctx, msg, options
+func (_m *Manager) GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...data.CacheReadOption) (fftypes.DataArray, bool, error) {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, msg)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
-	var r0 []*fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, bool) []*fftypes.Data); ok {
-		r0 = rf(ctx, msg, withValue)
+	var r0 fftypes.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, ...data.CacheReadOption) fftypes.DataArray); ok {
+		r0 = rf(ctx, msg, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Data)
+			r0 = ret.Get(0).(fftypes.DataArray)
 		}
 	}
 
 	var r1 bool
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message, bool) bool); ok {
-		r1 = rf(ctx, msg, withValue)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message, ...data.CacheReadOption) bool); ok {
+		r1 = rf(ctx, msg, options...)
 	} else {
 		r1 = ret.Get(1).(bool)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.Message, bool) error); ok {
-		r2 = rf(ctx, msg, withValue)
+	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.Message, ...data.CacheReadOption) error); ok {
+		r2 = rf(ctx, msg, options...)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -116,16 +124,85 @@ func (_m *Manager) GetMessageData(ctx context.Context, msg *fftypes.Message, wit
 	return r0, r1, r2
 }
 
+// GetMessageWithDataCached provides a mock function with given fields: ctx, msgID, options
+func (_m *Manager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...data.CacheReadOption) (*fftypes.Message, fftypes.DataArray, bool, error) {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, msgID)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) *fftypes.Message); ok {
+		r0 = rf(ctx, msgID, options...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 fftypes.DataArray
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) fftypes.DataArray); ok {
+		r1 = rf(ctx, msgID, options...)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(fftypes.DataArray)
+		}
+	}
+
+	var r2 bool
+	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) bool); ok {
+		r2 = rf(ctx, msgID, options...)
+	} else {
+		r2 = ret.Get(2).(bool)
+	}
+
+	var r3 error
+	if rf, ok := ret.Get(3).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) error); ok {
+		r3 = rf(ctx, msgID, options...)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
+}
+
+// HydrateBatch provides a mock function with given fields: ctx, persistedBatch
+func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
+	ret := _m.Called(ctx, persistedBatch)
+
+	var r0 *fftypes.Batch
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted) *fftypes.Batch); ok {
+		r0 = rf(ctx, persistedBatch)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Batch)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.BatchPersisted) error); ok {
+		r1 = rf(ctx, persistedBatch)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ResolveInlineDataBroadcast provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error) {
+func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, []*fftypes.DataAndBlob, error) {
 	ret := _m.Called(ctx, ns, inData)
 
-	var r0 fftypes.DataRefs
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataRefs); ok {
+	var r0 fftypes.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataArray); ok {
 		r0 = rf(ctx, ns, inData)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataRefs)
+			r0 = ret.Get(0).(fftypes.DataArray)
 		}
 	}
 
@@ -149,15 +226,15 @@ func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, ns string, in
 }
 
 // ResolveInlineDataPrivate provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, error) {
+func (_m *Manager) ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataArray, error) {
 	ret := _m.Called(ctx, ns, inData)
 
-	var r0 fftypes.DataRefs
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataRefs); ok {
+	var r0 fftypes.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataArray); ok {
 		r0 = rf(ctx, ns, inData)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataRefs)
+			r0 = ret.Get(0).(fftypes.DataArray)
 		}
 	}
 
@@ -169,6 +246,16 @@ func (_m *Manager) ResolveInlineDataPrivate(ctx context.Context, ns string, inDa
 	}
 
 	return r0, r1
+}
+
+// UpdateMessageCache provides a mock function with given fields: msg, _a1
+func (_m *Manager) UpdateMessageCache(msg *fftypes.Message, _a1 fftypes.DataArray) {
+	_m.Called(msg, _a1)
+}
+
+// UpdateMessageIfCached provides a mock function with given fields: ctx, msg
+func (_m *Manager) UpdateMessageIfCached(ctx context.Context, msg *fftypes.Message) {
+	_m.Called(ctx, msg)
 }
 
 // UploadBLOB provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
@@ -218,18 +305,18 @@ func (_m *Manager) UploadJSON(ctx context.Context, ns string, inData *fftypes.Da
 }
 
 // ValidateAll provides a mock function with given fields: ctx, _a1
-func (_m *Manager) ValidateAll(ctx context.Context, _a1 []*fftypes.Data) (bool, error) {
+func (_m *Manager) ValidateAll(ctx context.Context, _a1 fftypes.DataArray) (bool, error) {
 	ret := _m.Called(ctx, _a1)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Data) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.DataArray) bool); ok {
 		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.Data) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.DataArray) error); ok {
 		r1 = rf(ctx, _a1)
 	} else {
 		r1 = ret.Error(1)

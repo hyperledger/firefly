@@ -57,7 +57,7 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data}, fftypes.NewUUID())
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
@@ -95,7 +95,7 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data}, fftypes.NewUUID())
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
@@ -126,7 +126,7 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data}, fftypes.NewUUID())
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -156,7 +156,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data}, fftypes.NewUUID())
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -181,7 +181,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{}, fftypes.NewUUID())
+	}, fftypes.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -214,7 +214,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data}, fftypes.NewUUID())
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
@@ -250,7 +250,7 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data}, fftypes.NewUUID())
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
@@ -285,7 +285,7 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data}, fftypes.NewUUID())
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

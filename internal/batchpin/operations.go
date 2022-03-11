@@ -25,8 +25,8 @@ import (
 )
 
 type batchPinData struct {
-	Batch    *fftypes.Batch     `json:"batch"`
-	Contexts []*fftypes.Bytes32 `json:"contexts"`
+	Batch    *fftypes.BatchPersisted `json:"batch"`
+	Contexts []*fftypes.Bytes32      `json:"contexts"`
 }
 
 func addBatchPinInputs(op *fftypes.Operation, batchID *fftypes.UUID, contexts []*fftypes.Bytes32) {
@@ -82,7 +82,7 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 		batch := data.Batch
 		return false, bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
 			Namespace:       batch.Namespace,
-			TransactionID:   batch.Payload.TX.ID,
+			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,
 			BatchHash:       batch.Hash,
 			BatchPayloadRef: batch.PayloadRef,
@@ -94,7 +94,7 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 	}
 }
 
-func opBatchPin(op *fftypes.Operation, batch *fftypes.Batch, contexts []*fftypes.Bytes32) *fftypes.PreparedOperation {
+func opBatchPin(op *fftypes.Operation, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
 		ID:   op.ID,
 		Type: op.Type,

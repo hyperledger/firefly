@@ -19,28 +19,24 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getBatchByID = &oapispec.Route{
-	Name:   "getBatchByID",
-	Path:   "namespaces/{ns}/batches/{batchid}",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "batchid", Description: i18n.MsgTBD},
-	},
+var getStatusPins = &oapispec.Route{
+	Name:            "getStatusPins",
+	Path:            "status/pins",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.PinQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.BatchPersisted{} },
+	JSONOutputValue: func() interface{} { return []fftypes.Pin{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetBatchByID(r.Ctx, r.PP["ns"], r.PP["batchid"])
-		return output, err
+		return filterResult(getOr(r.Ctx).GetPins(r.Ctx, r.Filter))
 	},
 }

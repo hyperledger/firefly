@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
@@ -176,23 +177,28 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		ID: batchID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				ID: batchID,
+				SignerRef: fftypes.SignerRef{
+					Author: "org1",
+				},
+				Group:     groupID,
+				Namespace: "ns1",
+				Hash:      batchHash,
+			},
 		},
-		Group:     groupID,
-		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: txID,
 			},
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: dataID1, Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
-		Hash: batchHash,
-	}, []*fftypes.Bytes32{pin1, pin2})
+		Pins: []*fftypes.Bytes32{pin1, pin2},
+	})
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -214,7 +220,7 @@ func TestDispatchErrorFindingGroup(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -228,11 +234,15 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		SignerRef: fftypes.SignerRef{
-			Author: "badauthor",
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				SignerRef: fftypes.SignerRef{
+					Author: "badauthor",
+				},
+			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -263,12 +273,16 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "badauthor",
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: groupID,
+				SignerRef: fftypes.SignerRef{
+					Author: "badauthor",
+				},
+			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -282,11 +296,15 @@ func TestSendImmediateFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				SignerRef: fftypes.SignerRef{
+					Author: "org1",
+				},
+			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -320,17 +338,21 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: groupID,
+				SignerRef: fftypes.SignerRef{
+					Author: "org1",
+				},
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
 			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -376,17 +398,21 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 		return op.Type == fftypes.OpTypeDataExchangeBlobSend && *data.Node.ID == *node2.ID
 	})).Return(fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: groupID,
+				SignerRef: fftypes.SignerRef{
+					Author: "org1",
+				},
+			},
 		},
 		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -446,17 +472,21 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.dispatchPinnedBatch(pm.ctx, &fftypes.Batch{
-		Group: groupID,
-		SignerRef: fftypes.SignerRef{
-			Author: "org1",
+	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: groupID,
+				SignerRef: fftypes.SignerRef{
+					Author: "org1",
+				},
+			},
 		},
 		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
-	}, []*fftypes.Bytes32{})
+	})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -472,7 +502,7 @@ func TestTransferBlobsNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, nil)
 
-	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
 	assert.Regexp(t, "FF10239", err)
@@ -492,7 +522,7 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "peer1", "blob/1").Return(nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
 	assert.Regexp(t, "pop", err)

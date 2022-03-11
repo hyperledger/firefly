@@ -17,51 +17,48 @@
 package fftypes
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSQLSerializedMessageArray(t *testing.T) {
+func TestSQLSerializedManifest(t *testing.T) {
 
 	msgID1 := NewUUID()
 	msgID2 := NewUUID()
-	batchPayload := BatchPayload{
-		Messages: []*Message{
-			{Header: MessageHeader{ID: msgID1}},
-			{Header: MessageHeader{ID: msgID2}},
+	batch := Batch{
+		BatchHeader: BatchHeader{
+			ID: NewUUID(),
+		},
+		Payload: BatchPayload{
+			TX: TransactionRef{
+				ID: NewUUID(),
+			},
+			Messages: []*Message{
+				{Header: MessageHeader{ID: msgID1}},
+				{Header: MessageHeader{ID: msgID2}},
+			},
 		},
 	}
 
-	b, err := batchPayload.Value()
-	assert.NoError(t, err)
-	assert.IsType(t, []byte{}, b)
+	bp, manifest := batch.Confirmed()
+	mfString := manifest.String()
+	assert.Equal(t, batch.BatchHeader, bp.BatchHeader)
+	assert.Equal(t, batch.Payload.TX, bp.TX)
+	assert.Equal(t, mfString, bp.Manifest.String())
+	assert.NotNil(t, bp.Confirmed)
 
-	var batchPayloadRead BatchPayload
-	err = batchPayloadRead.Scan(b)
+	var mf *BatchManifest
+	err := json.Unmarshal([]byte(mfString), &mf)
 	assert.NoError(t, err)
+	assert.Equal(t, msgID1, mf.Messages[0].ID)
+	assert.Equal(t, msgID2, mf.Messages[1].ID)
+	mfHash := sha256.Sum256([]byte(mfString))
+	assert.Equal(t, HashString(batch.Manifest().String()).String(), hex.EncodeToString(mfHash[:]))
 
-	j1, err := json.Marshal(&batchPayload)
-	assert.NoError(t, err)
-	j2, err := json.Marshal(&batchPayloadRead)
-	assert.NoError(t, err)
-	assert.Equal(t, string(j1), string(j2))
-
-	err = batchPayloadRead.Scan("")
-	assert.NoError(t, err)
-
-	err = batchPayloadRead.Scan("{}")
-	assert.NoError(t, err)
-
-	err = batchPayloadRead.Scan(nil)
-	assert.NoError(t, err)
-
-	var wrongType int
-	err = batchPayloadRead.Scan(&wrongType)
-	assert.Error(t, err)
-
-	hash := batchPayload.Hash()
-	assert.NotNil(t, hash)
+	assert.NotEqual(t, batch.Payload.Hash().String(), hex.EncodeToString(mfHash[:]))
 
 }

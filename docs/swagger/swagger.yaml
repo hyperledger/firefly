@@ -903,121 +903,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success
@@ -1056,121 +964,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success
@@ -10059,6 +9875,112 @@ paths:
                           type: object
                       type: object
                     type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+  /status/pins:
+    get:
+      description: 'TODO: Description'
+      operationId: getStatusPins
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: batch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: dispatched
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: index
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: masked
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  created: {}
+                  dispatched:
+                    type: boolean
+                  hash: {}
+                  index:
+                    format: int64
+                    type: integer
+                  masked:
+                    type: boolean
+                  sequence:
+                    format: int64
+                    type: integer
+                  signer:
+                    type: string
                 type: object
           description: Success
         default:

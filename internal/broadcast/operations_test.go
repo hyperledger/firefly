@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -34,16 +35,23 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	op := &fftypes.Operation{
 		Type: fftypes.OpTypeSharedStorageBatchBroadcast,
 	}
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
+	bp := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
 	}
-	addBatchBroadcastInputs(op, batch.ID)
+	batch := &fftypes.Batch{
+		BatchHeader: bp.BatchHeader,
+	}
+	addBatchBroadcastInputs(op, bp.ID)
 
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(batch, nil)
+	mdm := bm.data.(*datamocks.Manager)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
+	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
 	mps.On("PublishData", context.Background(), mock.Anything).Return("123", nil)
-	mdi.On("UpdateBatch", context.Background(), batch.ID, mock.MatchedBy(func(update database.Update) bool {
+	mdi.On("UpdateBatch", context.Background(), bp.ID, mock.MatchedBy(func(update database.Update) bool {
 		info, _ := update.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "payloadref", info.SetOperations[0].Field)
@@ -54,7 +62,7 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 
 	po, err := bm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
-	assert.Equal(t, batch, po.Data.(batchBroadcastData).Batch)
+	assert.Equal(t, bp.ID, po.Data.(batchBroadcastData).Batch.ID)
 
 	complete, err := bm.RunOperation(context.Background(), opBatchBroadcast(op, batch))
 
@@ -63,6 +71,35 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 
 	mps.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestPrepareAndRunBatchBroadcastHydrateFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeSharedStorageBatchBroadcast,
+	}
+	bp := &fftypes.BatchPersisted{
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	addBatchBroadcastInputs(op, bp.ID)
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mdm.On("HydrateBatch", context.Background(), bp).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "pop", err)
+
+	mps.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestPrepareOperationNotSupported(t *testing.T) {
@@ -138,7 +175,7 @@ func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {
 	op := &fftypes.Operation{}
 	batch := &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
+			Data: fftypes.DataArray{
 				{Value: fftypes.JSONAnyPtr(`!json`)},
 			},
 		},
@@ -156,7 +193,9 @@ func TestRunOperationBatchBroadcastPublishFail(t *testing.T) {
 
 	op := &fftypes.Operation{}
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
@@ -176,7 +215,9 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 
 	op := &fftypes.Operation{}
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
 	}
 
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)

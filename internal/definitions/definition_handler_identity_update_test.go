@@ -86,7 +86,7 @@ func TestHandleDefinitionIdentityUpdateOk(t *testing.T) {
 		return event.Type == fftypes.EventTypeIdentityUpdated
 	})).Return(nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -109,7 +109,7 @@ func TestHandleDefinitionIdentityUpdateUpsertFail(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -128,7 +128,7 @@ func TestHandleDefinitionIdentityInvalidIdentity(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -145,7 +145,7 @@ func TestHandleDefinitionIdentityNotFound(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(nil, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -162,7 +162,7 @@ func TestHandleDefinitionIdentityLookupFail(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(nil, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -199,7 +199,7 @@ func TestHandleDefinitionIdentityValidateFail(t *testing.T) {
 		},
 	}
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{updateData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -224,7 +224,7 @@ func TestHandleDefinitionIdentityMissingData(t *testing.T) {
 		},
 	}
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, []*fftypes.Data{}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, fftypes.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

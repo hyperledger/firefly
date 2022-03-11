@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,7 +48,7 @@ type Plugin interface {
 
 	// DeliveryRequest requests delivery of work on a connection, which must later be responded to
 	// Data will only be supplied as non-nil if the subscription is set to include data
-	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error
+	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error
 }
 
 // ChangeEventListener is an optional interface for delivering database change events, only supported for ephemeral connections

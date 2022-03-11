@@ -66,6 +66,7 @@ type messageSender struct {
 	mgr       *privateMessaging
 	namespace string
 	msg       *fftypes.MessageInOut
+	data      []*fftypes.Data
 	resolved  bool
 }
 
@@ -115,7 +116,7 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin)
 	err := s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		if !s.resolved {
-			if err := s.resolve(ctx); err != nil {
+			if s.data, err = s.resolve(ctx); err != nil {
 				return err
 			}
 			msgSizeEstimate := s.msg.EstimateSize(true)
@@ -140,21 +141,22 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 	return s.sendInternal(ctx, method)
 }
 
-func (s *messageSender) resolve(ctx context.Context) error {
+func (s *messageSender) resolve(ctx context.Context) (fftypes.DataArray, error) {
 	// Resolve the sending identity
 	if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, s.msg.Header.Namespace, &s.msg.Header.SignerRef); err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 
 	// Resolve the member list into a group
 	if err := s.mgr.resolveRecipientList(ctx, s.msg); err != nil {
-		return err
+		return nil, err
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	dataRefs, err := s.mgr.data.ResolveInlineDataPrivate(ctx, s.namespace, s.msg.InlineData)
-	s.msg.Message.Data = dataRefs
-	return err
+	data, err := s.mgr.data.ResolveInlineDataPrivate(ctx, s.namespace, s.msg.InlineData)
+	s.msg.Message.Data = data.Refs()
+	s.data = data
+	return data, err
 }
 
 func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) error {
@@ -180,6 +182,7 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
+	s.mgr.data.UpdateMessageCache(&s.msg.Message, s.data)
 	log.L(ctx).Infof("Sent private message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
 
 	return nil

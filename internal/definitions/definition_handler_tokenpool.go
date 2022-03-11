@@ -39,7 +39,7 @@ func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *ff
 	return true, nil
 }
 
-func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data) (HandlerResult, error) {
+func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
 	var announce fftypes.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
 		return HandlerResult{Action: ActionReject}, nil

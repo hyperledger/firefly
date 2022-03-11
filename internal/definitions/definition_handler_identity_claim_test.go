@@ -169,12 +169,12 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, false, nil).Once()
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, false, nil).Once()
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -215,12 +215,12 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, false, nil).Once()
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, false, nil).Once()
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -250,11 +250,11 @@ func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 	mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -280,11 +280,11 @@ func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -310,11 +310,11 @@ func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -341,11 +341,11 @@ func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 	mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ctx, mock.Anything, true).Return([]*fftypes.Data{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -370,7 +370,7 @@ func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testi
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
 	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action) // Just wait for the verification to come in later
 	assert.NoError(t, err)
 
@@ -394,7 +394,7 @@ func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
 	mdi.On("GetMessages", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -419,7 +419,7 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -442,7 +442,7 @@ func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -467,7 +467,7 @@ func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 		},
 	}, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -489,7 +489,7 @@ func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -508,7 +508,7 @@ func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -526,7 +526,7 @@ func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -544,7 +544,7 @@ func TestHandleDefinitionIdentityVerifyChainFail(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, true, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -562,7 +562,7 @@ func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, false, fmt.Errorf("wrong"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -577,7 +577,7 @@ func TestHandleDefinitionIdentityClaimBadData(t *testing.T) {
 	_, org1, claimMsg, _, _, _ := testCustomClaimAndVerification(t)
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, []*fftypes.Data{}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

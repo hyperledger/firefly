@@ -84,7 +84,7 @@ func (or *orchestrator) fetchMessageData(ctx context.Context, msg *fftypes.Messa
 		Message: *msg,
 	}
 	// Lookup the full data
-	data, _, err := or.data.GetMessageData(ctx, msg, true)
+	data, _, err := or.data.GetMessageDataCached(ctx, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, ns, id strin
 	return or.fetchMessageData(ctx, msg)
 }
 
-func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
+func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.BatchPersisted, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
 		return nil, err
@@ -183,12 +183,12 @@ func (or *orchestrator) GetMessagesWithData(ctx context.Context, ns string, filt
 	return msgsData, fr, err
 }
 
-func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error) {
+func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) (fftypes.DataArray, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil || msg == nil {
 		return nil, err
 	}
-	data, _, err := or.data.GetMessageData(ctx, msg, true)
+	data, _, err := or.data.GetMessageDataCached(ctx, msg)
 	return data, err
 }
 
@@ -209,7 +209,7 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 		if batch == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgBatchNotFound, msg.BatchID)
 		}
-		txID = batch.Payload.TX.ID
+		txID = batch.TX.ID
 		if txID == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgBatchTXNotSet, msg.BatchID)
 		}
@@ -253,12 +253,12 @@ func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, fil
 	return or.database.GetEvents(ctx, filter)
 }
 
-func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, *database.FilterResult, error) {
+func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BatchPersisted, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetBatches(ctx, filter)
 }
 
-func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error) {
+func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) (fftypes.DataArray, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetData(ctx, filter)
 }
@@ -306,6 +306,10 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, 
 		fb.Eq("namespace", ns),
 	)
 	return or.database.GetBlockchainEvents(ctx, filter)
+}
+
+func (or *orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error) {
+	return or.database.GetPins(ctx, filter)
 }
 
 func (or *orchestrator) GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.EnrichedEvent, *database.FilterResult, error) {

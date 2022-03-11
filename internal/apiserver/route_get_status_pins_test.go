@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2021 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,17 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package apiserver
 
-import "encoding/json"
+import (
+	"net/http/httptest"
+	"testing"
 
-// Manifest is a list of references to messages and data
-type Manifest struct {
-	Messages []MessageRef `json:"messages"`
-	Data     []DataRef    `json:"data"`
-}
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
 
-func (mf *Manifest) String() string {
-	b, _ := json.Marshal(&mf)
-	return string(b)
+func TestGetStatusPins(t *testing.T) {
+	o, r := newTestAPIServer()
+	req := httptest.NewRequest("GET", "/api/v1/status/pins", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetPins", mock.Anything, mock.Anything).
+		Return([]*fftypes.Pin{}, nil, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

@@ -56,12 +56,8 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 		}
 	}
 
-	mf, err := em.privateBatchReceived(peerID, wrapper.Batch)
-	manifestBytes := []byte{}
-	if err == nil && mf != nil {
-		manifestBytes, err = json.Marshal(&mf)
-	}
-	return string(manifestBytes), err
+	manifestString, err := em.privateBatchReceived(peerID, wrapper.Batch)
+	return manifestString, err
 }
 
 // Check data exchange peer the data came from, has been registered to the org listed in the batch.
@@ -113,7 +109,7 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerI
 	return node, nil
 }
 
-func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest *fftypes.Manifest, err error) {
+func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest string, err error) {
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
@@ -129,7 +125,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 				return nil
 			}
 
-			valid, err := em.persistBatch(ctx, batch)
+			persistedBatch, valid, err := em.persistBatch(ctx, batch)
 			if err != nil || !valid {
 				l.Errorf("Batch received from org=%s node=%s processing failed valid=%t: %s", node.Parent, node.Name, valid, err)
 				return err // retry - persistBatch only returns retryable errors
@@ -144,7 +140,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 					return err
 				}
 			}
-			manifest = batch.Manifest()
+			manifest = persistedBatch.Manifest.String()
 			return nil
 		})
 	})
@@ -293,7 +289,17 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
 			switch op.Type {
 			case fftypes.OpTypeDataExchangeBatchSend:
-				expectedManifest := op.Input.GetString("manifest")
+				batchID, _ := fftypes.ParseUUID(em.ctx, op.Input.GetString("batch"))
+				expectedManifest := ""
+				if batchID != nil {
+					batch, err := em.database.GetBatchByID(em.ctx, batchID)
+					if err != nil {
+						return true, err
+					}
+					if batch != nil {
+						expectedManifest = batch.Manifest.String()
+					}
+				}
 				if update.Manifest != expectedManifest {
 					// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
 					mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)

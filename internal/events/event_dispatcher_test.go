@@ -1113,7 +1113,7 @@ func TestDeliverEventsWithDataFail(t *testing.T) {
 	defer cancel()
 
 	mdm := ed.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ed.ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+	mdm.On("GetMessageDataCached", ed.ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
 	ed.eventDelivery <- &fftypes.EventDelivery{

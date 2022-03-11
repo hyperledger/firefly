@@ -51,7 +51,7 @@ func newPoolAnnouncement() *fftypes.TokenPoolAnnouncement {
 	}
 }
 
-func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftypes.Message, []*fftypes.Data, error) {
+func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftypes.Message, fftypes.DataArray, error) {
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:  fftypes.NewUUID(),
@@ -62,7 +62,7 @@ func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftyp
 	if err != nil {
 		return nil, nil, err
 	}
-	data := []*fftypes.Data{{
+	data := fftypes.DataArray{{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}}
 	return msg, data, nil

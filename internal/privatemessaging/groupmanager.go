@@ -206,7 +206,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
 	if msg.Header.Tag == fftypes.SystemTagDefineGroup {
 		// Store the new group
-		data, foundAll, err := gm.data.GetMessageData(ctx, msg, true)
+		data, foundAll, err := gm.data.GetMessageDataCached(ctx, msg)
 		if err != nil || !foundAll || len(data) == 0 {
 			log.L(ctx).Warnf("Group %s definition in message %s invalid: missing data", msg.Header.Group, msg.Header.ID)
 			return nil, err

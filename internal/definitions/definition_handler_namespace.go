@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	var ns fftypes.Namespace

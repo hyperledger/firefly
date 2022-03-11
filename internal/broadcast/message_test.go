@@ -50,9 +50,10 @@ func TestBroadcastMessageOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
@@ -92,9 +93,10 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	replyMsg := &fftypes.Message{
@@ -150,7 +152,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{
 		{
@@ -166,6 +168,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 			},
 		},
 	}, nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 	mdx.On("DownloadBLOB", ctx, "blob/1").Return(ioutil.NopCloser(bytes.NewReader([]byte(`some data`))), nil)
 	mps.On("PublishData", ctx, mock.MatchedBy(func(reader io.ReadCloser) bool {
 		b, err := ioutil.ReadAll(reader)
@@ -215,7 +218,7 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), ValueSize: 1000001},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
@@ -302,7 +305,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{
 		{
@@ -356,7 +359,7 @@ func TestBroadcastPrepare(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)

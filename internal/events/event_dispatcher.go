@@ -396,7 +396,7 @@ func (ed *eventDispatcher) deliverEvents() {
 			var data []*fftypes.Data
 			var err error
 			if withData && event.Message != nil {
-				data, _, err = ed.data.GetMessageData(ed.ctx, event.Message, true)
+				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
 			}
 			if err == nil {
 				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)

@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -133,7 +134,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				if existingPool.State == fftypes.TokenPoolStateConfirmed {
 					return nil // already confirmed
 				}
-				if msg, err := em.database.GetMessageByID(ctx, existingPool.Message); err != nil {
+				if msg, _, _, err := em.data.GetMessageWithDataCached(ctx, existingPool.Message, data.CRORequireBatchID); err != nil {
 					return err
 				} else if msg != nil {
 					batchID = msg.BatchID // trigger rewind after completion of database transaction

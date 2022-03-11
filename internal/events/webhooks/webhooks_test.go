@@ -218,7 +218,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -325,7 +325,7 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -382,7 +382,7 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 		}`),
 	}
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{data})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -441,7 +441,7 @@ func TestRequestReplyEmptyData(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -489,7 +489,7 @@ func TestRequestReplyBadJSON(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{})
 	assert.NoError(t, err)
 }
 func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
@@ -552,7 +552,7 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -602,7 +602,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -654,7 +654,7 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 		close(waiter)
 	}
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})

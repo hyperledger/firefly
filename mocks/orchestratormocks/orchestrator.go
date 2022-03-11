@@ -207,15 +207,15 @@ func (_m *Orchestrator) Events() events.EventManager {
 }
 
 // GetBatchByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) (*fftypes.Batch, error) {
+func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) (*fftypes.BatchPersisted, error) {
 	ret := _m.Called(ctx, ns, id)
 
-	var r0 *fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Batch); ok {
+	var r0 *fftypes.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.BatchPersisted); ok {
 		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Batch)
+			r0 = ret.Get(0).(*fftypes.BatchPersisted)
 		}
 	}
 
@@ -230,15 +230,15 @@ func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) 
 }
 
 // GetBatches provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, *database.FilterResult, error) {
+func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BatchPersisted, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Batch); ok {
+	var r0 []*fftypes.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.BatchPersisted); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Batch)
+			r0 = ret.Get(0).([]*fftypes.BatchPersisted)
 		}
 	}
 
@@ -411,15 +411,15 @@ func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.An
 }
 
 // GetData provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error) {
+func (_m *Orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) (fftypes.DataArray, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Data); ok {
+	var r0 fftypes.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) fftypes.DataArray); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Data)
+			r0 = ret.Get(0).(fftypes.DataArray)
 		}
 	}
 
@@ -677,15 +677,15 @@ func (_m *Orchestrator) GetMessageByIDWithData(ctx context.Context, ns string, i
 }
 
 // GetMessageData provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetMessageData(ctx context.Context, ns string, id string) ([]*fftypes.Data, error) {
+func (_m *Orchestrator) GetMessageData(ctx context.Context, ns string, id string) (fftypes.DataArray, error) {
 	ret := _m.Called(ctx, ns, id)
 
-	var r0 []*fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*fftypes.Data); ok {
+	var r0 fftypes.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) fftypes.DataArray); ok {
 		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Data)
+			r0 = ret.Get(0).(fftypes.DataArray)
 		}
 	}
 
@@ -985,6 +985,38 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter dat
 	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
 		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetPins provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Pin
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.Pin); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Pin)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

@@ -32,7 +32,7 @@ func TestGetBatchByID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetBatchByID", mock.Anything, "mynamespace", "abcd12345").
-		Return(&fftypes.Batch{}, nil)
+		Return(&fftypes.BatchPersisted{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

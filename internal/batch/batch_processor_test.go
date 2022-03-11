@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -34,11 +35,12 @@ import (
 func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *batchProcessor) {
 	mdi := &databasemocks.Plugin{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
+	mdm := &datamocks.Manager{}
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
-	bp := newBatchProcessor(context.Background(), mni, mdi, &batchProcessorConf{
+	bp := newBatchProcessor(context.Background(), mni, mdi, mdm, &batchProcessorConf{
 		namespace: "ns1",
 		txType:    fftypes.TransactionTypeBatchPin,
-		identity:  fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
+		signer:    fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		dispatch:  dispatch,
 		DispatcherOptions: DispatcherOptions{
 			BatchMaxSize:   10,
@@ -66,19 +68,21 @@ func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	// Dispatch the work
 	go func() {
@@ -98,32 +102,38 @@ func TestUnfilledBatch(t *testing.T) {
 
 	bp.cancelCtx()
 	<-bp.done
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestBatchSizeOverflow(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 	bp.conf.BatchMaxBytes = batchSizeEstimateBase + (&fftypes.Message{}).EstimateSize(false) + 100
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
 
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
 	// Dispatch the work
+	msgIDs := []*fftypes.UUID{fftypes.NewUUID(), fftypes.NewUUID()}
 	go func() {
 		for i := 0; i < 2; i++ {
-			msgid := fftypes.NewUUID()
 			bp.newWork <- &batchWork{
-				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
+				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgIDs[i]}, Sequence: int64(1000 + i)},
 			}
 		}
 	}()
@@ -134,26 +144,30 @@ func TestBatchSizeOverflow(t *testing.T) {
 
 	// Check we got all messages across two batches
 	assert.Equal(t, 1, len(batch1.Payload.Messages))
-	assert.Equal(t, int64(1000), batch1.Payload.Messages[0].Sequence)
+	assert.Equal(t, msgIDs[0], batch1.Payload.Messages[0].Header.ID)
 	assert.Equal(t, 1, len(batch2.Payload.Messages))
-	assert.Equal(t, int64(1001), batch2.Payload.Messages[0].Sequence)
+	assert.Equal(t, msgIDs[1], batch2.Payload.Messages[0].Header.ID)
 
 	bp.cancelCtx()
 	<-bp.done
+
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return fmt.Errorf("pop")
 	})
 	bp.cancelCtx()
-	bp.dispatchBatch(&fftypes.Batch{}, []*fftypes.Bytes32{})
+	bp.dispatchBatch(&DispatchState{})
 	<-bp.done
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
@@ -187,7 +201,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 }
 
 func TestCalcPinsFail(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.cancelCtx()
@@ -196,8 +210,12 @@ func TestCalcPinsFail(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 
 	gid := fftypes.NewRandB32()
-	_, err := bp.persistBatch(&fftypes.Batch{
-		Group: gid,
+	err := bp.sealBatch(&DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: gid,
+			},
+		},
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
@@ -215,7 +233,7 @@ func TestCalcPinsFail(t *testing.T) {
 }
 
 func TestAddWorkInRecentlyFlushed(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.flushedSequences = []int64{100, 500, 400, 900, 200, 700}
@@ -229,7 +247,7 @@ func TestAddWorkInRecentlyFlushed(t *testing.T) {
 }
 
 func TestAddWorkInSortDeDup(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.assemblyQueue = []*batchWork{
@@ -254,7 +272,7 @@ func TestAddWorkInSortDeDup(t *testing.T) {
 }
 
 func TestStartFlushOverflow(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	batchID := fftypes.NewUUID()
@@ -283,7 +301,7 @@ func TestStartFlushOverflow(t *testing.T) {
 }
 
 func TestStartQuiesceNonBlocking(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	bp.startQuiesce()
@@ -294,9 +312,9 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dispatched := make(chan *fftypes.Batch)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		dispatched <- b
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
 		return nil
 	})
 	bp.conf.txType = fftypes.TransactionTypeUnpinned
@@ -309,6 +327,9 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 
 	mth := bp.txHelper.(*txcommonmocks.Helper)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeUnpinned).Return(fftypes.NewUUID(), nil)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	// Dispatch the work
 	go func() {
@@ -325,6 +346,82 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 
 	// Check we got all the messages in a single batch
 	assert.Equal(t, 5, len(batch.Payload.Messages))
+
+	bp.cancelCtx()
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	mth.AssertExpectations(t)
+}
+
+func TestMaskContextsDuplicate(t *testing.T) {
+	log.SetLevel("debug")
+	config.Reset()
+
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
+		return nil
+	})
+
+	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+
+	payload := &fftypes.BatchPayload{
+		Messages: []*fftypes.Message{
+			{
+				Header: fftypes.MessageHeader{
+					ID:     fftypes.NewUUID(),
+					Type:   fftypes.MessageTypePrivate,
+					Group:  fftypes.NewRandB32(),
+					Topics: fftypes.FFStringArray{"topic1"},
+				},
+			},
+		},
+	}
+
+	_, err := bp.maskContexts(bp.ctx, payload)
+	assert.NoError(t, err)
+
+	// 2nd time no DB ops
+	_, err = bp.maskContexts(bp.ctx, payload)
+	assert.NoError(t, err)
+
+	bp.cancelCtx()
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+}
+
+func TestMaskContextsUpdataMessageFail(t *testing.T) {
+	log.SetLevel("debug")
+	config.Reset()
+
+	dispatched := make(chan *DispatchState)
+	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+		dispatched <- state
+		return nil
+	})
+
+	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+
+	payload := &fftypes.BatchPayload{
+		Messages: []*fftypes.Message{
+			{
+				Header: fftypes.MessageHeader{
+					ID:     fftypes.NewUUID(),
+					Type:   fftypes.MessageTypePrivate,
+					Group:  fftypes.NewRandB32(),
+					Topics: fftypes.FFStringArray{"topic1"},
+				},
+			},
+		},
+	}
+
+	_, err := bp.maskContexts(bp.ctx, payload)
+	assert.Regexp(t, "pop", err)
 
 	bp.cancelCtx()
 	<-bp.done

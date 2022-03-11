@@ -32,7 +32,7 @@ func TestGetMessageData(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessageData", mock.Anything, "mynamespace", "uuid1").
-		Return([]*fftypes.Data{}, nil)
+		Return(fftypes.DataArray{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

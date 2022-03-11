@@ -69,7 +69,7 @@ func TestRequestReplyOk(t *testing.T) {
 	}
 
 	mdm := sa.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
@@ -119,7 +119,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	}
 
 	mdm := sa.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
@@ -167,7 +167,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	}
 
 	mdm := sa.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
@@ -739,7 +739,7 @@ func TestEventCallbackMsgDataLookupFail(t *testing.T) {
 	defer cancel()
 
 	mdm := sa.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+	mdm.On("GetMessageDataCached", sa.ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	sa.resolveReply(&inflightRequest{}, &fftypes.Message{
 		Header: fftypes.MessageHeader{

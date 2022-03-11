@@ -53,6 +53,7 @@ type broadcastSender struct {
 	mgr       *broadcastManager
 	namespace string
 	msg       *fftypes.MessageInOut
+	data      []*fftypes.Data
 	resolved  bool
 }
 
@@ -141,8 +142,9 @@ func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, 
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	dataRefs, dataToPublish, err := s.mgr.data.ResolveInlineDataBroadcast(ctx, s.namespace, s.msg.InlineData)
-	s.msg.Message.Data = dataRefs
+	data, dataToPublish, err := s.mgr.data.ResolveInlineDataBroadcast(ctx, s.namespace, s.msg.InlineData)
+	s.data = data
+	s.msg.Message.Data = data.Refs()
 	return dataToPublish, err
 }
 
@@ -167,7 +169,8 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence)
+	s.mgr.data.UpdateMessageCache(&s.msg.Message, s.data)
+	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d datacount=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence, len(s.data))
 
 	return err
 }

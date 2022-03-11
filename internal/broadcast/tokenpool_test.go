@@ -129,6 +129,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
