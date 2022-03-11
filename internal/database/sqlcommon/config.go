@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -31,6 +31,12 @@ const (
 	SQLConfDatasourceURL = "url"
 	// SQLConfMaxConnections maximum connections to the database
 	SQLConfMaxConnections = "maxConns"
+	// SQLConfMaxConnIdleTime maximum connections to the database
+	SQLConfMaxConnIdleTime = "maxConnIdleTime"
+	// SQLConfMaxIdleConns maximum connections to the database
+	SQLConfMaxIdleConns = "maxIdleConns"
+	// SQLConfMaxConnLifetime maximum connections to the database
+	SQLConfMaxConnLifetime = "maxConnLifetime"
 )
 
 const (
@@ -41,5 +47,8 @@ func (s *SQLCommon) InitPrefix(provider Provider, prefix config.Prefix) {
 	prefix.AddKnownKey(SQLConfMigrationsAuto, false)
 	prefix.AddKnownKey(SQLConfDatasourceURL)
 	prefix.AddKnownKey(SQLConfMigrationsDirectory, fmt.Sprintf(defaultMigrationsDirectoryTemplate, provider.MigrationsDir()))
-	prefix.AddKnownKey(SQLConfMaxConnections) // some providers may set a default
+	prefix.AddKnownKey(SQLConfMaxConnections) // some providers set a default
+	prefix.AddKnownKey(SQLConfMaxConnIdleTime, "1m")
+	prefix.AddKnownKey(SQLConfMaxIdleConns) // defaults to the max connections
+	prefix.AddKnownKey(SQLConfMaxConnLifetime)
 }

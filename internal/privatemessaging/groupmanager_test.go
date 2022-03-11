@@ -416,13 +416,13 @@ func TestGetGroupNodesCache(t *testing.T) {
 		},
 	}, nil).Once()
 
-	g, nodes, err := pm.getGroupNodes(pm.ctx, group.Hash)
+	g, nodes, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *node1, *nodes[0].ID)
 	assert.Equal(t, *group.Hash, *g.Hash)
 
 	// Note this validates the cache as we only mocked the calls once
-	g, nodes, err = pm.getGroupNodes(pm.ctx, group.Hash)
+	g, nodes, err = pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *node1, *nodes[0].ID)
 	assert.Equal(t, *group.Hash, *g.Hash)
@@ -436,7 +436,7 @@ func TestGetGroupNodesGetGroupFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, _, err := pm.getGroupNodes(pm.ctx, groupID)
+	_, _, err := pm.getGroupNodes(pm.ctx, groupID, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -448,7 +448,7 @@ func TestGetGroupNodesGetGroupNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
 
-	_, _, err := pm.getGroupNodes(pm.ctx, groupID)
+	_, _, err := pm.getGroupNodes(pm.ctx, groupID, false)
 	assert.Regexp(t, "FF10226", err)
 }
 
@@ -470,7 +470,7 @@ func TestGetGroupNodesNodeLookupFail(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
 	mdi.On("GetIdentityByID", pm.ctx, node1).Return(nil, fmt.Errorf("pop")).Once()
 
-	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash)
+	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -491,7 +491,7 @@ func TestGetGroupNodesNodeLookupNotFound(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
 	mdi.On("GetIdentityByID", pm.ctx, node1).Return(nil, nil).Once()
 
-	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash)
+	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.Regexp(t, "FF10224", err)
 }
 
