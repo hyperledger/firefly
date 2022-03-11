@@ -50,7 +50,8 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
-		dispatchers:                make(map[string]*dispatcher),
+		dispatcherMap:              make(map[string]*dispatcher),
+		allDispatchers:             make([]*dispatcher, 0),
 		newMessages:                make(chan int64, 1),
 		done:                       make(chan struct{}),
 		retry: &retry.Retry{
@@ -89,7 +90,8 @@ type batchManager struct {
 	data                       data.Manager
 	txHelper                   txcommon.Helper
 	dispatcherMux              sync.Mutex
-	dispatchers                map[string]*dispatcher
+	dispatcherMap              map[string]*dispatcher
+	allDispatchers             []*dispatcher
 	newMessages                chan int64
 	done                       chan struct{}
 	retry                      *retry.Retry
@@ -125,14 +127,18 @@ func (bm *batchManager) getDispatcherKey(txType fftypes.TransactionType, msgType
 }
 
 func (bm *batchManager) RegisterDispatcher(name string, txType fftypes.TransactionType, msgTypes []fftypes.MessageType, handler DispatchHandler, options DispatcherOptions) {
+	bm.dispatcherMux.Lock()
+	defer bm.dispatcherMux.Unlock()
+
 	dispatcher := &dispatcher{
 		name:       name,
 		handler:    handler,
 		options:    options,
 		processors: make(map[string]*batchProcessor),
 	}
+	bm.allDispatchers = append(bm.allDispatchers, dispatcher)
 	for _, msgType := range msgTypes {
-		bm.dispatchers[bm.getDispatcherKey(txType, msgType)] = dispatcher
+		bm.dispatcherMap[bm.getDispatcherKey(txType, msgType)] = dispatcher
 	}
 }
 
@@ -150,7 +156,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	defer bm.dispatcherMux.Unlock()
 
 	dispatcherKey := bm.getDispatcherKey(txType, msgType)
-	dispatcher, ok := bm.dispatchers[dispatcherKey]
+	dispatcher, ok := bm.dispatcherMap[dispatcherKey]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, dispatcherKey)
 	}
@@ -320,7 +326,7 @@ func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.
 func (bm *batchManager) reapQuiescing() {
 	bm.dispatcherMux.Lock()
 	var reaped []*batchProcessor
-	for _, d := range bm.dispatchers {
+	for _, d := range bm.allDispatchers {
 		for k, p := range d.processors {
 			select {
 			case <-p.quescing:
@@ -347,14 +353,10 @@ func (bm *batchManager) getProcessors() []*batchProcessor {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
-	exists := make(map[*batchProcessor]bool)
 	var processors []*batchProcessor
-	for _, d := range bm.dispatchers {
+	for _, d := range bm.allDispatchers {
 		for _, p := range d.processors {
-			if !exists[p] {
-				processors = append(processors, p)
-				exists[p] = true
-			}
+			processors = append(processors, p)
 		}
 	}
 	return processors

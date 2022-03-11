@@ -57,13 +57,13 @@ func newTestContractManager() *contractManager {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	cm, _ := NewContractManager(context.Background(), mdi, mdm, mbm, mim, mbi, mom, txHelper)
+	cm, _ := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper)
 	cm.(*contractManager).txHelper = &txcommonmocks.Helper{}
 	return cm.(*contractManager)
 }
 
 func TestNewContractManagerFail(t *testing.T) {
-	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewContractManager(context.Background(), nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -81,7 +81,7 @@ func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mom := &operationmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	_, err := NewContractManager(context.Background(), mdi, mdm, mbm, mim, mbi, mom, txHelper)
+	_, err := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -95,7 +95,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	_, err := NewContractManager(context.Background(), mdi, mdm, mbm, mim, mbi, mom, txHelper)
+	_, err := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper)
 	assert.NoError(t, err)
 }
 

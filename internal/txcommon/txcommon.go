@@ -52,7 +52,7 @@ func NewTransactionHelper(di database.Plugin, dm data.Manager) Helper {
 	t.transactionCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.MessageCacheTTL)),
+			MaxSize(config.GetByteSize(config.TransactionCacheSize)),
 	)
 	return t
 }
