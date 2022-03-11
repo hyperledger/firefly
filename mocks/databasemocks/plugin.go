@@ -2291,6 +2291,20 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operat
 	return r0
 }
 
+// InsertPins provides a mock function with given fields: ctx, pins
+func (_m *Plugin) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
+	ret := _m.Called(ctx, pins)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Pin) error); ok {
+		r0 = rf(ctx, pins)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertTransaction provides a mock function with given fields: ctx, data
 func (_m *Plugin) InsertTransaction(ctx context.Context, data *fftypes.Transaction) error {
 	ret := _m.Called(ctx, data)

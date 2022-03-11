@@ -185,6 +185,9 @@ type iOffsetCollection interface {
 }
 
 type iPinCollection interface {
+	// InsertPins - Inserts a list of pins - fails if they already exist, so caller can fall back to UpsertPin individually
+	InsertPins(ctx context.Context, pins []*fftypes.Pin) (err error)
+
 	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash+index sequence already exists
 	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
 

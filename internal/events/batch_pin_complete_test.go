@@ -140,7 +140,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEventReceived
 	})).Return(nil).Times(2)
-	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil).Once()
 	mbi := &blockchainmocks.Plugin{}
 
@@ -198,6 +198,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("These pins have been seen before")) // simulate replay fallback
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
@@ -764,6 +765,7 @@ func TestPersistContextsFail(t *testing.T) {
 	defer cancel()
 
 	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("duplicate pins"))
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := em.persistContexts(em.ctx, &blockchain.BatchPin{
