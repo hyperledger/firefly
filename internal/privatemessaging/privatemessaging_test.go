@@ -73,13 +73,6 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
-	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{
-			a[1].(func(context.Context) error)(a[0].(context.Context)),
-		}
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi, mom)
 	assert.NoError(t, err)

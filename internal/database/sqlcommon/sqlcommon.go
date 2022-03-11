@@ -70,6 +70,9 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.P
 	if connLimit > 0 {
 		s.db.SetMaxOpenConns(connLimit)
 	}
+	if connLimit > 1 {
+		capabilities.Concurrency = true
+	}
 
 	if prefix.GetBool(SQLConfMigrationsAuto) {
 		if err = s.applyDBMigrations(ctx, prefix, provider); err != nil {
@@ -241,40 +244,58 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 }
 
 func (s *SQLCommon) insertTxExt(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func(), requestConflictEmptyResult bool) (int64, error) {
+	sequences := []int64{-1}
+	err := s.insertTxRows(ctx, tx, q, postCommit, sequences, requestConflictEmptyResult)
+	return sequences[0], err
+}
+
+func (s *SQLCommon) insertTxRows(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func(), sequences []int64, requestConflictEmptyResult bool) error {
 	l := log.L(ctx)
 	q, useQuery := s.provider.ApplyInsertQueryCustomizations(q, requestConflictEmptyResult)
 
 	sqlQuery, args, err := q.PlaceholderFormat(s.features.PlaceholderFormat).ToSql()
 	if err != nil {
-		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> insert: %s`, sqlQuery)
 	l.Tracef(`SQL-> insert args: %+v`, args)
-	var sequence int64
 	if useQuery {
-		err := tx.sqlTX.QueryRowContext(ctx, sqlQuery, args...).Scan(&sequence)
+		result, err := tx.sqlTX.QueryContext(ctx, sqlQuery, args...)
+		for i := 0; i < len(sequences) && err == nil; i++ {
+			if result.Next() {
+				err = result.Scan(&sequences[i])
+			} else {
+				err = i18n.NewError(ctx, i18n.MsgDBNoSequence, i+1)
+			}
+		}
+		if result != nil {
+			result.Close()
+		}
 		if err != nil {
 			level := logrus.DebugLevel
 			if !requestConflictEmptyResult {
 				level = logrus.ErrorLevel
 			}
 			l.Logf(level, `SQL insert failed (conflictEmptyRequested=%t): %s sql=[ %s ]: %s`, requestConflictEmptyResult, err, sqlQuery, err)
-			return -1, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
+			return i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
 		}
 	} else {
+		if len(sequences) > 1 {
+			return i18n.WrapError(ctx, err, i18n.MsgDBMultiRowConfigError)
+		}
 		res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 		if err != nil {
 			l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
-			return -1, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
+			return i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
 		}
-		sequence, _ = res.LastInsertId()
+		sequences[0], _ = res.LastInsertId()
 	}
-	l.Debugf(`SQL<- inserted sequence=%d`, sequence)
+	l.Debugf(`SQL<- inserted sequences=%v`, sequences)
 
 	if postCommit != nil {
 		s.postCommitEvent(tx, postCommit)
 	}
-	return sequence, nil
+	return nil
 }
 
 func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder, postCommit func()) error {

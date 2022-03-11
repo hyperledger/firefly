@@ -84,29 +84,31 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 		})
 }
 
+func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *fftypes.Message) sq.InsertBuilder {
+	return query.Values(
+		message.Header.ID,
+		message.Header.CID,
+		string(message.Header.Type),
+		message.Header.Author,
+		message.Header.Key,
+		message.Header.Created,
+		message.Header.Namespace,
+		message.Header.Topics,
+		message.Header.Tag,
+		message.Header.Group,
+		message.Header.DataHash,
+		message.Hash,
+		message.Pins,
+		message.State,
+		message.Confirmed,
+		message.Header.TxType,
+		message.BatchID,
+	)
+}
+
 func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message, requestConflictEmptyResult bool) (err error) {
 	message.Sequence, err = s.insertTxExt(ctx, tx,
-		sq.Insert("messages").
-			Columns(msgColumns...).
-			Values(
-				message.Header.ID,
-				message.Header.CID,
-				string(message.Header.Type),
-				message.Header.Author,
-				message.Header.Key,
-				message.Header.Created,
-				message.Header.Namespace,
-				message.Header.Topics,
-				message.Header.Tag,
-				message.Header.Group,
-				message.Header.DataHash,
-				message.Hash,
-				message.Pins,
-				message.State,
-				message.Confirmed,
-				message.Header.TxType,
-				message.BatchID,
-			),
+		s.setMessageInsertValues(sq.Insert("messages").Columns(msgColumns...), message),
 		func() {
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
 		}, requestConflictEmptyResult)
@@ -181,6 +183,69 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	if s.features.MultiRowInsert {
+		msgQuery := sq.Insert("messages").Columns(msgColumns...)
+		dataRefQuery := sq.Insert("messages_data").Columns(
+			"message_id",
+			"data_id",
+			"data_hash",
+			"data_idx",
+		)
+		dataRefCount := 0
+		for _, message := range messages {
+			msgQuery = s.setMessageInsertValues(msgQuery, message)
+			for idx, dataRef := range message.Data {
+				dataRefQuery = dataRefQuery.Values(message.Header.ID, dataRef.ID, dataRef.Hash, idx)
+				dataRefCount++
+			}
+		}
+		sequences := make([]int64, len(messages))
+
+		// Use a single multi-row insert for the messages
+		err := s.insertTxRows(ctx, tx, msgQuery, func() {
+			for i, message := range messages {
+				message.Sequence = sequences[i]
+				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+			}
+		}, sequences, false)
+		if err != nil {
+			return err
+		}
+
+		// Use a single multi-row insert for the data refs
+		if dataRefCount > 0 {
+			dataRefSeqs := make([]int64, dataRefCount)
+			err = s.insertTxRows(ctx, tx, dataRefQuery, nil, dataRefSeqs, false)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, message := range messages {
+			err := s.attemptMessageInsert(ctx, tx, message, false)
+			if err != nil {
+				return err
+			}
+			err = s.updateMessageDataRefs(ctx, tx, message, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+
 }
 
 // In SQL update+bump is a delete+insert within a TX

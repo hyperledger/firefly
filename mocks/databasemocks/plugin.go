@@ -2221,6 +2221,20 @@ func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bloc
 	return r0
 }
 
+// InsertDataArray provides a mock function with given fields: ctx, data
+func (_m *Plugin) InsertDataArray(ctx context.Context, data fftypes.DataArray) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.DataArray) error); ok {
+		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertEvent provides a mock function with given fields: ctx, data
 func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	ret := _m.Called(ctx, data)
@@ -2228,6 +2242,20 @@ func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) error); ok {
 		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertMessages provides a mock function with given fields: ctx, messages
+func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Message) error {
+	ret := _m.Called(ctx, messages)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Message) error); ok {
+		r0 = rf(ctx, messages)
 	} else {
 		r0 = ret.Error(0)
 	}

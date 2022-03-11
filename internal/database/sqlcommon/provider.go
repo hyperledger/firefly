@@ -29,6 +29,7 @@ const (
 
 type SQLFeatures struct {
 	UseILIKE              bool
+	MultiRowInsert        bool
 	PlaceholderFormat     sq.PlaceholderFormat
 	ExclusiveTableLockSQL func(table string) string
 }
@@ -36,6 +37,7 @@ type SQLFeatures struct {
 func DefaultSQLProviderFeatures() SQLFeatures {
 	return SQLFeatures{
 		UseILIKE:          false,
+		MultiRowInsert:    false,
 		PlaceholderFormat: sq.Dollar,
 	}
 }

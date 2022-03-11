@@ -77,6 +77,9 @@ type iMessageCollection interface {
 	//                 must match the hash of the record that is being inserted.
 	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
+	// InsertMessages performs a batch insert of messages assured to be new records
+	InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error)
+
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
@@ -102,6 +105,9 @@ type iDataCollection interface {
 	//              The database layer must ensure that if a record already exists, the hash of that existing record
 	//              must match the hash of the record that is being inserted.
 	UpsertData(ctx context.Context, data *fftypes.Data, optimization UpsertOptimization) (err error)
+
+	// InsertDataArray performs a batch insert of data assured to be new records
+	InsertDataArray(ctx context.Context, data fftypes.DataArray) (err error)
 
 	// UpdateData - Update data
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -659,7 +665,7 @@ type Callbacks interface {
 
 // Capabilities defines the capabilities a plugin can report as implementing or not
 type Capabilities struct {
-	ClusterEvents bool
+	Concurrency bool
 }
 
 // NamespaceQueryFactory filter fields for namespaces

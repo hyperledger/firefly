@@ -19,10 +19,10 @@ package broadcast
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -30,7 +30,9 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 	broadcast := &broadcastSender{
 		mgr:       bm,
 		namespace: ns,
-		msg:       in,
+		msg: &data.NewMessage{
+			Message: in,
+		},
 	}
 	broadcast.setDefaults()
 	return broadcast
@@ -52,8 +54,7 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 type broadcastSender struct {
 	mgr       *broadcastManager
 	namespace string
-	msg       *fftypes.MessageInOut
-	data      []*fftypes.Data
+	msg       *data.NewMessage
 	resolved  bool
 }
 
@@ -83,94 +84,77 @@ func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 }
 
 func (s *broadcastSender) setDefaults() {
-	s.msg.Header.ID = fftypes.NewUUID()
-	s.msg.Header.Namespace = s.namespace
-	s.msg.State = fftypes.MessageStateReady
-	if s.msg.Header.Type == "" {
-		s.msg.Header.Type = fftypes.MessageTypeBroadcast
+	msg := s.msg.Message
+	msg.Header.ID = fftypes.NewUUID()
+	msg.Header.Namespace = s.namespace
+	msg.State = fftypes.MessageStateReady
+	if msg.Header.Type == "" {
+		msg.Header.Type = fftypes.MessageTypeBroadcast
 	}
 	// We only have one transaction type for broadcast currently
-	s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
+	msg.Header.TxType = fftypes.TransactionTypeBatchPin
 }
 
 func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod) error {
-	sent := false
 
-	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin)
-	var dataToPublish []*fftypes.DataAndBlob
-	err := s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		if !s.resolved {
-			if dataToPublish, err = s.resolve(ctx); err != nil {
-				return err
-			}
-			msgSizeEstimate := s.msg.EstimateSize(true)
-			if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
-				return i18n.NewError(ctx, i18n.MsgTooLargeBroadcast, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
-			}
-			s.resolved = true
-		}
-
-		// For the simple case where we have no data to publish and aren't waiting for blockchain confirmation,
-		// insert the local message immediately within the same DB transaction.
-		// Otherwise, break out of the DB transaction (since those operations could take multiple seconds).
-		if len(dataToPublish) == 0 && method != methodSendAndWait {
-			sent = true
-			return s.sendInternal(ctx, method)
-		}
-		return nil
-	})
-
-	if err != nil || sent {
-		return err
-	}
-
-	// Perform deferred processing
-	if len(dataToPublish) > 0 {
-		if err := s.mgr.publishBlobs(ctx, dataToPublish); err != nil {
+	if !s.resolved {
+		if err := s.resolve(ctx); err != nil {
 			return err
 		}
+		msgSizeEstimate := s.msg.Message.EstimateSize(true)
+		if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
+			return i18n.NewError(ctx, i18n.MsgTooLargeBroadcast, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
+		}
+
+		// Perform deferred processing
+		if len(s.msg.ResolvedData.DataToPublish) > 0 {
+			if err := s.mgr.publishBlobs(ctx, s.msg); err != nil {
+				return err
+			}
+		}
+		s.resolved = true
 	}
 	return s.sendInternal(ctx, method)
 }
 
-func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
+func (s *broadcastSender) resolve(ctx context.Context) error {
+	msg := s.msg.Message
+
 	// Resolve the sending identity
-	if s.msg.Header.Type != fftypes.MessageTypeDefinition || s.msg.Header.Tag != fftypes.SystemTagIdentityClaim {
-		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, s.msg.Header.Namespace, &s.msg.Header.SignerRef); err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	if msg.Header.Type != fftypes.MessageTypeDefinition || msg.Header.Tag != fftypes.SystemTagIdentityClaim {
+		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 		}
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	data, dataToPublish, err := s.mgr.data.ResolveInlineDataBroadcast(ctx, s.namespace, s.msg.InlineData)
-	s.data = data
-	s.msg.Message.Data = data.Refs()
-	return dataToPublish, err
+	err := s.mgr.data.ResolveInlineDataBroadcast(ctx, s.msg)
+	return err
 }
 
 func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
 	if method == methodSendAndWait {
-		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.msg.Header.ID, s.Send)
+		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.msg.Message.Header.ID, s.Send)
 		if out != nil {
-			s.msg.Message = *out
+			s.msg.Message.Message = *out
 		}
 		return err
 	}
 
 	// Seal the message
-	if err := s.msg.Seal(ctx); err != nil {
+	msg := s.msg.Message
+	if err := msg.Seal(ctx); err != nil {
 		return err
 	}
 	if method == methodPrepare {
 		return nil
 	}
 
-	// Store the message - this asynchronously triggers the next step in process
-	if err := s.mgr.database.UpsertMessage(ctx, &s.msg.Message, database.UpsertOptimizationNew); err != nil {
+	// Write the message
+	if err := s.mgr.data.WriteNewMessage(ctx, s.msg); err != nil {
 		return err
 	}
-	s.mgr.data.UpdateMessageCache(&s.msg.Message, s.data)
-	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d datacount=%d", s.msg.Header.Namespace, s.msg.Header.ID, s.msg.Sequence, len(s.data))
+	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d datacount=%d", msg.Header.Namespace, msg.Header.ID, msg.Sequence, len(s.msg.ResolvedData.AllData))
 
 	return err
 }

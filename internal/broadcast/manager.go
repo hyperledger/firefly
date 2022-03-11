@@ -144,8 +144,8 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
 }
 
-func (bm *broadcastManager) publishBlobs(ctx context.Context, dataToPublish []*fftypes.DataAndBlob) error {
-	for _, d := range dataToPublish {
+func (bm *broadcastManager) publishBlobs(ctx context.Context, newMsg *data.NewMessage) error {
+	for _, d := range newMsg.ResolvedData.DataToPublish {
 		// Stream from the local data exchange ...
 		reader, err := bm.exchange.DownloadBLOB(ctx, d.Blob.PayloadRef)
 		if err != nil {
@@ -154,19 +154,11 @@ func (bm *broadcastManager) publishBlobs(ctx context.Context, dataToPublish []*f
 		defer reader.Close()
 
 		// ... to the shared storage
-		sharedRef, err := bm.sharedstorage.PublishData(ctx, reader)
+		d.Data.Blob.Public, err = bm.sharedstorage.PublishData(ctx, reader)
 		if err != nil {
 			return err
 		}
-		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.Data.ID, sharedRef)
-
-		// Update the data in the database, with the shared reference.
-		// We do this independently for each piece of data
-		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", sharedRef)
-		err = bm.database.UpdateData(ctx, d.Data.ID, update)
-		if err != nil {
-			return err
-		}
+		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.Data.ID, d.Data.Blob.Public)
 	}
 
 	return nil

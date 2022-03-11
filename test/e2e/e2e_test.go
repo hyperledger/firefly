@@ -336,10 +336,12 @@ func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery
 
 func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, ref *fftypes.UUID) {
 	for {
-		eventDelivery := <-c
-		if eventDelivery.Type == eventType && (ref == nil || *ref == *eventDelivery.Reference) {
+		ed := <-c
+		if ed.Type == eventType && (ref == nil || *ref == *ed.Reference) {
+			t.Logf("Detected '%s' event for ref '%s'", ed.Type, ed.Reference)
 			return
 		}
+		t.Logf("Ignored event '%s'", ed.ID)
 	}
 }
 

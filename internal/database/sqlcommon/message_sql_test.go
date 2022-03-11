@@ -276,6 +276,93 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestInsertMessagesBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesMultiRowOK(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID()}}}
+	msg2 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID()}}}
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns1", msg1.Header.ID, int64(1001))
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns1", msg2.Header.ID, int64(1002))
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*messages").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectQuery("INSERT.*messages_data").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1003)).
+		AddRow(int64(1004)),
+	)
+	mock.ExpectCommit()
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1, msg2})
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesMultiRowDataRefsFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID()}}}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*messages").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).AddRow(int64(1001)))
+	mock.ExpectQuery("INSERT.*messages_data").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesMultiRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesSingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesSingleRowFailDataRefs(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}}}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*messages").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT.*messages_data").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
 func TestReplaceMessageFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))

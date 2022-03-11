@@ -54,6 +54,7 @@ type transferSender struct {
 	namespace string
 	transfer  *fftypes.TokenTransferInput
 	resolved  bool
+	msgSender sysmessaging.MessageSender
 }
 
 // sendMethod is the specific operation requested of the transferSender.
@@ -189,14 +190,14 @@ func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) 
 	return s.sendInternal(ctx, method)
 }
 
-func (s *transferSender) resolve(ctx context.Context) error {
+func (s *transferSender) resolve(ctx context.Context) (err error) {
 	// Resolve the attached message
 	if s.transfer.Message != nil {
-		sender, err := s.buildTransferMessage(ctx, s.namespace, s.transfer.Message)
+		s.msgSender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message)
 		if err != nil {
 			return err
 		}
-		if err = sender.Prepare(ctx); err != nil {
+		if err = s.msgSender.Prepare(ctx); err != nil {
 			return err
 		}
 		s.transfer.TokenTransfer.Message = s.transfer.Message.Header.ID
@@ -255,14 +256,18 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return err
 		}
 
-		if s.transfer.Message != nil {
-			s.transfer.Message.State = fftypes.MessageStateStaged
-			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, database.UpsertOptimizationNew)
-		}
 		return err
 	})
 	if err != nil {
 		return err
+	}
+
+	// Write the transfer message outside of any DB transaction, as it will use the background message writer.
+	if s.transfer.Message != nil {
+		s.transfer.Message.State = fftypes.MessageStateStaged
+		if err = s.msgSender.Send(ctx); err != nil {
+			return err
+		}
 	}
 
 	return s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))

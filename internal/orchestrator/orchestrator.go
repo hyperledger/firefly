@@ -249,6 +249,10 @@ func (or *orchestrator) WaitStop() {
 		or.broadcast.WaitStop()
 		or.broadcast = nil
 	}
+	if or.data != nil {
+		or.data.WaitStop()
+		or.data = nil
+	}
 	or.started = false
 }
 

@@ -24,14 +24,13 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -40,21 +39,12 @@ import (
 func TestBroadcastMessageOk(t *testing.T) {
 	bm, cancel := newTestBroadcastWithMetrics(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-	}, []*fftypes.DataAndBlob{}, nil)
-	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
-	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdm.On("ResolveInlineDataBroadcast", ctx, mock.Anything).Return(nil)
+	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -71,32 +61,21 @@ func TestBroadcastMessageOk(t *testing.T) {
 		},
 	}, false)
 	assert.NoError(t, err)
-	assert.NotNil(t, msg.Data[0].ID)
-	assert.NotNil(t, msg.Data[0].Hash)
 	assert.Equal(t, "ns1", msg.Header.Namespace)
 
-	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-	}, []*fftypes.DataAndBlob{}, nil)
-	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
+	mdm.On("ResolveInlineDataBroadcast", ctx, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	replyMsg := &fftypes.Message{
@@ -111,7 +90,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 			send(ctx)
 		}).
 		Return(replyMsg, nil)
-	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdm.On("WriteNewMessage", ctx, mock.Anything, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -130,14 +109,13 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	assert.Equal(t, replyMsg, msg)
 	assert.Equal(t, "ns1", msg.Header.Namespace)
 
-	mdi.AssertExpectations(t)
+	msa.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
@@ -147,37 +125,40 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
-		{ID: dataID, Hash: fftypes.NewRandB32()},
-	}, []*fftypes.DataAndBlob{
-		{
-			Data: &fftypes.Data{
-				ID: dataID,
-				Blob: &fftypes.BlobRef{
-					Hash: blobHash,
+	mdm.On("ResolveInlineDataBroadcast", ctx, mock.Anything).
+		Run(func(args mock.Arguments) {
+			newMsg := args[1].(*data.NewMessage)
+			newMsg.ResolvedData.AllData = fftypes.DataArray{
+				{ID: dataID, Hash: fftypes.NewRandB32()},
+			}
+			newMsg.ResolvedData.DataToPublish = []*fftypes.DataAndBlob{
+				{
+					Data: &fftypes.Data{
+						ID: dataID,
+						Blob: &fftypes.BlobRef{
+							Hash: blobHash,
+						},
+					},
+					Blob: &fftypes.Blob{
+						Hash:       blobHash,
+						PayloadRef: "blob/1",
+					},
 				},
-			},
-			Blob: &fftypes.Blob{
-				Hash:       blobHash,
-				PayloadRef: "blob/1",
-			},
-		},
-	}, nil)
-	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
+			}
+		}).
+		Return(nil)
 	mdx.On("DownloadBLOB", ctx, "blob/1").Return(ioutil.NopCloser(bytes.NewReader([]byte(`some data`))), nil)
+	var readStr string
 	mps.On("PublishData", ctx, mock.MatchedBy(func(reader io.ReadCloser) bool {
-		b, err := ioutil.ReadAll(reader)
-		assert.NoError(t, err)
-		assert.Equal(t, "some data", string(b))
+		if readStr == "" { // called again in AssertExpectationa
+			b, err := ioutil.ReadAll(reader)
+			assert.NoError(t, err)
+			readStr = string(b)
+		}
+		assert.Equal(t, "some data", readStr)
 		return true
-	})).Return("payload-ref", nil)
-	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	})).Return("payload-ref", nil).Once()
+	mdm.On("WriteNewMessage", ctx, mock.Anything, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -196,31 +177,30 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 		},
 	}, false)
 	assert.NoError(t, err)
-	assert.NotNil(t, msg.Data[0].ID)
-	assert.NotNil(t, msg.Data[0].Hash)
 	assert.Equal(t, "ns1", msg.Header.Namespace)
 
-	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mps.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestBroadcastMessageTooLarge(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	bm.maxBatchPayloadLength = 1000000
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), ValueSize: 1000001},
-	}, []*fftypes.DataAndBlob{}, nil)
+	mdm.On("ResolveInlineDataBroadcast", ctx, mock.Anything).Run(
+		func(args mock.Arguments) {
+			newMsg := args[1].(*data.NewMessage)
+			newMsg.Message.Data = fftypes.DataRefs{
+				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), ValueSize: 1000001},
+			}
+		}).
+		Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -238,24 +218,17 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 	}, true)
 	assert.Regexp(t, "FF10327", err)
 
-	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastMessageBadInput(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdm.On("ResolveInlineDataBroadcast", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -265,7 +238,6 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	}, false)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
 
@@ -290,7 +262,6 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 func TestPublishBlobsSendMessageFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
@@ -299,28 +270,29 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
-		{ID: dataID, Hash: fftypes.NewRandB32()},
-	}, []*fftypes.DataAndBlob{
-		{
-			Data: &fftypes.Data{
-				ID: dataID,
-				Blob: &fftypes.BlobRef{
-					Hash: blobHash,
+	mdm.On("ResolveInlineDataBroadcast", ctx, mock.Anything).
+		Run(func(args mock.Arguments) {
+			newMsg := args[1].(*data.NewMessage)
+			newMsg.ResolvedData.AllData = fftypes.DataArray{
+				{ID: dataID, Hash: fftypes.NewRandB32()},
+			}
+			newMsg.ResolvedData.DataToPublish = []*fftypes.DataAndBlob{
+				{
+					Data: &fftypes.Data{
+						ID: dataID,
+						Blob: &fftypes.BlobRef{
+							Hash: blobHash,
+						},
+					},
+					Blob: &fftypes.Blob{
+						Hash:       blobHash,
+						PayloadRef: "blob/1",
+					},
 				},
-			},
-			Blob: &fftypes.Blob{
-				Hash:       blobHash,
-				PayloadRef: "blob/1",
-			},
-		},
-	}, nil)
+			}
+		}).
+		Return(nil)
 	mdx.On("DownloadBLOB", ctx, "blob/1").Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
@@ -340,7 +312,6 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	}, false)
 	assert.Regexp(t, "FF10240", err)
 
-	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -349,19 +320,11 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 func TestBroadcastPrepare(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-	}, []*fftypes.DataAndBlob{}, nil)
+	mdm.On("ResolveInlineDataBroadcast", ctx, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
 	msg := &fftypes.MessageInOut{
@@ -381,10 +344,7 @@ func TestBroadcastPrepare(t *testing.T) {
 	err := sender.Prepare(ctx)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, msg.Data[0].ID)
-	assert.NotNil(t, msg.Data[0].Hash)
 	assert.Equal(t, "ns1", msg.Header.Namespace)
 
-	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
