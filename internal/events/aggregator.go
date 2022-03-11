@@ -337,11 +337,13 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.
 func (ag *aggregator) processMessage(ctx context.Context, manifest *fftypes.BatchManifest, pin *fftypes.Pin, msgBaseIndex int64, msgEntry *fftypes.MessageManifestEntry, state *batchState) (err error) {
 	l := log.L(ctx)
 
-	var cros []data.CacheReadOption
+	var cro data.CacheReadOption
 	if pin.Masked {
-		cros = []data.CacheReadOption{data.CRORequirePins}
+		cro = data.CRORequirePins
+	} else {
+		cro = data.CRORequirePublicBlobRefs
 	}
-	msg, data, dataAvailable, err := ag.data.GetMessageWithDataCached(ctx, msgEntry.ID, cros...)
+	msg, data, dataAvailable, err := ag.data.GetMessageWithDataCached(ctx, msgEntry.ID, cro)
 	if err != nil {
 		return err
 	}
@@ -534,14 +536,14 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data fftypes.DataArray) 
 				return false, err
 			}
 			if blob != nil {
-				l.Debugf("Blob '%s' downloaded from shared storage to local DX with ref '%s'", blob.Hash, blob.PayloadRef)
+				l.Debugf("Blob '%s' for data %s downloaded from shared storage to local DX with ref '%s'", blob.Hash, d.ID, blob.PayloadRef)
 				continue
 			}
 		}
 
 		// If we've reached here, the data isn't available yet.
 		// This isn't an error, we just need to wait for it to arrive.
-		l.Debugf("Blob '%s' not available", d.Blob.Hash)
+		l.Debugf("Blob '%s' not available for data %s", d.Blob.Hash, d.ID)
 		return false, nil
 
 	}
