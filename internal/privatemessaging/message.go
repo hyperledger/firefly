@@ -30,7 +30,6 @@ func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysm
 	message := &messageSender{
 		mgr:       pm,
 		namespace: ns,
-		group:     in.Group,
 		msg: &data.NewMessage{
 			Message: in,
 		},
