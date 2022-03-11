@@ -20,6 +20,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
@@ -49,6 +50,21 @@ type txWrapper struct {
 	preCommitEvents []*fftypes.Event
 	postCommit      []func()
 	tableLocks      []string
+}
+
+func shortenSQL(sqlString string) string {
+	buff := strings.Builder{}
+	spaceCount := 0
+	for _, c := range sqlString {
+		if c == ' ' {
+			spaceCount++
+			if spaceCount >= 3 {
+				break
+			}
+		}
+		buff.WriteRune(c)
+	}
+	return buff.String()
 }
 
 func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.Prefix, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
@@ -176,7 +192,7 @@ func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuild
 	if err != nil {
 		return nil, tx, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Debugf(`SQL-> query: %s`, sqlQuery)
+	l.Debugf(`SQL-> query: %s`, shortenSQL(sqlQuery))
 	l.Tracef(`SQL-> query args: %+v`, args)
 	var rows *sql.Rows
 	if tx != nil {
@@ -212,7 +228,7 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 	if err != nil {
 		return count, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Debugf(`SQL-> count query: %s`, sqlQuery)
+	l.Debugf(`SQL-> count query: %s`, shortenSQL(sqlQuery))
 	l.Tracef(`SQL-> count query args: %+v`, args)
 	var rows *sql.Rows
 	if tx != nil {
@@ -265,7 +281,7 @@ func (s *SQLCommon) insertTxRows(ctx context.Context, tx *txWrapper, q sq.Insert
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Debugf(`SQL-> insert: %s`, sqlQuery)
+	l.Debugf(`SQL-> insert: %s`, shortenSQL(sqlQuery))
 	l.Tracef(`SQL-> insert args: %+v`, args)
 	if useQuery {
 		result, err := tx.sqlTX.QueryContext(ctx, sqlQuery, args...)
@@ -312,7 +328,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Debugf(`SQL-> delete: %s`, sqlQuery)
+	l.Debugf(`SQL-> delete: %s`, shortenSQL(sqlQuery))
 	l.Tracef(`SQL-> delete args: %+v`, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
@@ -337,7 +353,7 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuil
 	if err != nil {
 		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Debugf(`SQL-> update: %s`, sqlQuery)
+	l.Debugf(`SQL-> update: %s`, shortenSQL(sqlQuery))
 	l.Tracef(`SQL-> update args: %+v`, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
@@ -375,7 +391,7 @@ func (s *SQLCommon) lockTableExclusiveTx(ctx context.Context, tx *txWrapper, tab
 	if s.features.ExclusiveTableLockSQL != nil && !tx.tableIsLocked(table) {
 		sqlQuery := s.features.ExclusiveTableLockSQL(table)
 
-		l.Debugf(`SQL-> lock: %s`, sqlQuery)
+		l.Debugf(`SQL-> lock: %s`, shortenSQL(sqlQuery))
 		_, err := tx.sqlTX.ExecContext(ctx, sqlQuery)
 		if err != nil {
 			l.Errorf(`SQL lock failed: %s sql=[ %s ]`, err, sqlQuery)

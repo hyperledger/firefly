@@ -57,6 +57,7 @@ func (psql *Postgres) Features() sqlcommon.SQLFeatures {
 	features.ExclusiveTableLockSQL = func(table string) string {
 		return fmt.Sprintf(`LOCK TABLE "%s" IN EXCLUSIVE MODE;`, table)
 	}
+	features.MultiRowInsert = true
 	return features
 }
 

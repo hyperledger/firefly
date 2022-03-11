@@ -75,6 +75,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			Operator: suite.testState.org2key.Value,
 			Approved: true,
 		},
+		Pool: poolName,
 	}
 	approvalOut := TokenApproval(suite.T(), suite.testState.client1, approval, false)
 
