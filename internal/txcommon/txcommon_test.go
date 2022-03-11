@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,8 @@ import (
 func TestSubmitNewTransactionOK(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	var txidInserted *fftypes.UUID
@@ -58,7 +60,8 @@ func TestSubmitNewTransactionOK(t *testing.T) {
 func TestSubmitNewTransactionFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	mdi.On("InsertTransaction", ctx, mock.Anything).Return(fmt.Errorf("pop"))
@@ -73,7 +76,8 @@ func TestSubmitNewTransactionFail(t *testing.T) {
 func TestSubmitNewTransactionEventFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	mdi.On("InsertTransaction", ctx, mock.Anything).Return(nil)
@@ -89,7 +93,8 @@ func TestSubmitNewTransactionEventFail(t *testing.T) {
 func TestPersistTransactionNew(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -113,7 +118,8 @@ func TestPersistTransactionNew(t *testing.T) {
 func TestPersistTransactionNewInserTFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -131,7 +137,8 @@ func TestPersistTransactionNewInserTFail(t *testing.T) {
 func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -155,7 +162,8 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 func TestPersistTransactionExistingUpdateFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -179,7 +187,8 @@ func TestPersistTransactionExistingUpdateFail(t *testing.T) {
 func TestPersistTransactionExistingNoChange(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -202,7 +211,8 @@ func TestPersistTransactionExistingNoChange(t *testing.T) {
 func TestPersistTransactionExistingNoBlockchainID(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -225,7 +235,8 @@ func TestPersistTransactionExistingNoBlockchainID(t *testing.T) {
 func TestPersistTransactionExistingLookupFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -242,7 +253,8 @@ func TestPersistTransactionExistingLookupFail(t *testing.T) {
 func TestPersistTransactionExistingMismatchNS(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -265,7 +277,8 @@ func TestPersistTransactionExistingMismatchNS(t *testing.T) {
 func TestPersistTransactionExistingMismatchType(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -288,7 +301,8 @@ func TestPersistTransactionExistingMismatchType(t *testing.T) {
 func TestAddBlockchainTX(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -318,7 +332,8 @@ func TestAddBlockchainTX(t *testing.T) {
 func TestAddBlockchainTXGetFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -334,7 +349,8 @@ func TestAddBlockchainTXGetFail(t *testing.T) {
 func TestAddBlockchainTXUpdateFail(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -357,7 +373,8 @@ func TestAddBlockchainTXUpdateFail(t *testing.T) {
 func TestAddBlockchainTXUnchanged(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	txHelper := NewTransactionHelper(mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -371,6 +388,34 @@ func TestAddBlockchainTXUnchanged(t *testing.T) {
 
 	err := txHelper.AddBlockchainTX(ctx, txid, "0x111111")
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestGetTransactionByIDCached(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	txid := fftypes.NewUUID()
+	mdi.On("GetTransactionByID", ctx, txid).Return(&fftypes.Transaction{
+		ID:            txid,
+		Namespace:     "ns1",
+		Type:          fftypes.TransactionTypeContractInvoke,
+		Created:       fftypes.Now(),
+		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
+	}, nil).Once()
+
+	tx, err := txHelper.GetTransactionByIDCached(ctx, txid)
+	assert.NoError(t, err)
+	assert.Equal(t, txid, tx.ID)
+
+	tx, err = txHelper.GetTransactionByIDCached(ctx, txid)
+	assert.NoError(t, err)
+	assert.Equal(t, txid, tx.ID)
 
 	mdi.AssertExpectations(t)
 

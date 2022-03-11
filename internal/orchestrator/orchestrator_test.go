@@ -516,6 +516,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.identity = nil
+	or.txHelper = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -47,11 +48,12 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mti := &tokenmocks.Plugin{}
 	mm := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mti.On("Name").Return("ut_tokens").Maybe()
 	mm.On("IsMetricsEnabled").Return(false)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom)
+	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -73,12 +75,13 @@ func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
 	mti := &tokenmocks.Plugin{}
 	mm := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mti.On("Name").Return("ut_tokens").Maybe()
 	mm.On("IsMetricsEnabled").Return(true)
 	mm.On("TransferSubmitted", mock.Anything)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom)
+	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -90,7 +93,7 @@ func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

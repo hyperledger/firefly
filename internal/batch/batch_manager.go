@@ -28,11 +28,12 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager) (Manager, error) {
+func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -44,11 +45,13 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		ni:                         ni,
 		database:                   di,
 		data:                       dm,
+		txHelper:                   txHelper,
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
-		dispatchers:                make(map[string]*dispatcher),
+		dispatcherMap:              make(map[string]*dispatcher),
+		allDispatchers:             make([]*dispatcher, 0),
 		newMessages:                make(chan int64, 1),
 		done:                       make(chan struct{}),
 		retry: &retry.Retry{
@@ -85,8 +88,10 @@ type batchManager struct {
 	ni                         sysmessaging.LocalNodeInfo
 	database                   database.Plugin
 	data                       data.Manager
+	txHelper                   txcommon.Helper
 	dispatcherMux              sync.Mutex
-	dispatchers                map[string]*dispatcher
+	dispatcherMap              map[string]*dispatcher
+	allDispatchers             []*dispatcher
 	newMessages                chan int64
 	done                       chan struct{}
 	retry                      *retry.Retry
@@ -122,14 +127,18 @@ func (bm *batchManager) getDispatcherKey(txType fftypes.TransactionType, msgType
 }
 
 func (bm *batchManager) RegisterDispatcher(name string, txType fftypes.TransactionType, msgTypes []fftypes.MessageType, handler DispatchHandler, options DispatcherOptions) {
+	bm.dispatcherMux.Lock()
+	defer bm.dispatcherMux.Unlock()
+
 	dispatcher := &dispatcher{
 		name:       name,
 		handler:    handler,
 		options:    options,
 		processors: make(map[string]*batchProcessor),
 	}
+	bm.allDispatchers = append(bm.allDispatchers, dispatcher)
 	for _, msgType := range msgTypes {
-		bm.dispatchers[bm.getDispatcherKey(txType, msgType)] = dispatcher
+		bm.dispatcherMap[bm.getDispatcherKey(txType, msgType)] = dispatcher
 	}
 }
 
@@ -147,7 +156,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	defer bm.dispatcherMux.Unlock()
 
 	dispatcherKey := bm.getDispatcherKey(txType, msgType)
-	dispatcher, ok := bm.dispatchers[dispatcherKey]
+	dispatcher, ok := bm.dispatcherMap[dispatcherKey]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, dispatcherKey)
 	}
@@ -170,6 +179,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 				dispatch:          dispatcher.handler,
 			},
 			bm.retry,
+			bm.txHelper,
 		)
 		dispatcher.processors[name] = processor
 	}
@@ -316,7 +326,7 @@ func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.
 func (bm *batchManager) reapQuiescing() {
 	bm.dispatcherMux.Lock()
 	var reaped []*batchProcessor
-	for _, d := range bm.dispatchers {
+	for _, d := range bm.allDispatchers {
 		for k, p := range d.processors {
 			select {
 			case <-p.quescing:
@@ -344,7 +354,7 @@ func (bm *batchManager) getProcessors() []*batchProcessor {
 	defer bm.dispatcherMux.Unlock()
 
 	var processors []*batchProcessor
-	for _, d := range bm.dispatchers {
+	for _, d := range bm.allDispatchers {
 		for _, p := range d.processors {
 			processors = append(processors, p)
 		}
