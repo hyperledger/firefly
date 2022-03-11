@@ -27,14 +27,9 @@ import (
 )
 
 type NewMessage struct {
-	Message      *fftypes.MessageInOut
-	ResolvedData Resolved
-}
-
-type Resolved struct {
-	AllData       fftypes.DataArray
-	NewData       fftypes.DataArray
-	DataToPublish []*fftypes.DataAndBlob
+	Message *fftypes.MessageInOut
+	AllData fftypes.DataArray
+	NewData fftypes.DataArray
 }
 
 // writeRequest is a combination of a message and a list of data that is new and needs to be
@@ -100,7 +95,7 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 		}
 		nmi := &writeRequest{
 			newMessage: &newMsg.Message.Message,
-			newData:    newMsg.ResolvedData.NewData,
+			newData:    newMsg.NewData,
 			result:     make(chan error),
 		}
 		select {
@@ -112,7 +107,7 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 	}
 	// Otherwise do it in-line on this context
 	return mw.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return mw.writeMessages(ctx, []*fftypes.Message{&newMsg.Message.Message}, newMsg.ResolvedData.NewData)
+		return mw.writeMessages(ctx, []*fftypes.Message{&newMsg.Message.Message}, newMsg.NewData)
 	})
 }
 

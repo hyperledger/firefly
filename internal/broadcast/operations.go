@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -78,6 +79,7 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *fftypes.Prepar
 		if err != nil {
 			return false, err
 		}
+		log.L(ctx).Infof("Published batch '%s' to shared storage: '%s'", data.Batch.ID, payloadRef)
 
 		// Update the batch to store the payloadRef
 		data.Batch.PayloadRef = payloadRef

@@ -141,7 +141,7 @@ func (s *messageSender) resolve(ctx context.Context) error {
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	err := s.mgr.data.ResolveInlineDataPrivate(ctx, s.msg)
+	err := s.mgr.data.ResolveInlineData(ctx, s.msg)
 	return err
 }
 
