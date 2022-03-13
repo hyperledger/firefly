@@ -217,7 +217,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 				message.Sequence = sequences[i]
 				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
 			}
-		}, sequences, false)
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
 		if err != nil {
 			return err
 		}

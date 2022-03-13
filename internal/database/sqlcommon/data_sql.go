@@ -198,7 +198,7 @@ func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray fftypes.DataA
 			for _, data := range dataArray {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
 			}
-		}, sequences, false)
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
 		if err != nil {
 			return err
 		}

@@ -91,7 +91,7 @@ type BatchPersisted struct {
 type BatchPayload struct {
 	TX       TransactionRef `json:"tx"`
 	Messages []*Message     `json:"messages"`
-	Data     []*Data        `json:"data"`
+	Data     DataArray      `json:"data"`
 }
 
 func (bm *BatchManifest) String() string {

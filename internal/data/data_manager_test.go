@@ -1082,7 +1082,13 @@ func TestUpdateMessageCacheCRORequirePins(t *testing.T) {
 		Pins:   fftypes.FFStringArray{"pin1"},
 	}
 
+	msg, _ := dm.PeekMessageCache(ctx, msgWithPins.Header.ID)
+	assert.Nil(t, msg)
+
 	dm.UpdateMessageCache(msgNoPins, data)
+
+	msg, _ = dm.PeekMessageCache(ctx, msgWithPins.Header.ID)
+	assert.NotNil(t, msg)
 
 	mce := dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequirePins)
 	assert.Nil(t, mce)

@@ -35,8 +35,9 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func sampleBatchTransfer(t *testing.T, txType fftypes.TransactionType, data ...*fftypes.Data) (*fftypes.Batch, []byte) {
-	batch := sampleBatch(t, txType, data...)
+func sampleBatchTransfer(t *testing.T, txType fftypes.TransactionType) (*fftypes.Batch, []byte) {
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypePrivate, txType, fftypes.DataArray{data})
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Batch: batch,
 		Group: &fftypes.Group{
@@ -97,7 +98,8 @@ func TestPinnedReceiveOK(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil, nil)
+	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil, nil)
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
@@ -726,7 +728,9 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(fmt.Errorf("optimization fail"))
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -740,11 +744,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: fftypes.JSONAnyPtr(`{}`),
-	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -761,7 +761,8 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(fmt.Errorf("optimization miss"))
+	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -775,11 +776,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: fftypes.JSONAnyPtr(`{}`),
-	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -796,8 +793,8 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdm := em.data.(*datamocks.Manager)
@@ -811,15 +808,12 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
+
 func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: fftypes.JSONAnyPtr(`{}`),
-	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -836,8 +830,8 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
@@ -855,11 +849,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: fftypes.JSONAnyPtr(`{}`),
-	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -876,8 +866,8 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)
@@ -896,11 +886,7 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: fftypes.JSONAnyPtr(`{}`),
-	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -920,11 +906,7 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: fftypes.JSONAnyPtr(`{}`),
-	}
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned, data)
+	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}

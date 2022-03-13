@@ -37,6 +37,7 @@ type Manager interface {
 	ValidateAll(ctx context.Context, data fftypes.DataArray) (valid bool, err error)
 	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data fftypes.DataArray, foundAllData bool, err error)
 	GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...CacheReadOption) (data fftypes.DataArray, foundAll bool, err error)
+	PeekMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data fftypes.DataArray)
 	UpdateMessageCache(msg *fftypes.Message, data fftypes.DataArray)
 	UpdateMessageIfCached(ctx context.Context, msg *fftypes.Message)
 	ResolveInlineData(ctx context.Context, msg *NewMessage) error
@@ -215,6 +216,14 @@ func (dm *dataManager) dataLookupAndCache(ctx context.Context, msg *fftypes.Mess
 	}
 	dm.UpdateMessageCache(msg, data)
 	return data, true, nil
+}
+
+func (dm *dataManager) PeekMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data fftypes.DataArray) {
+	mce := dm.queryMessageCache(ctx, id, options...)
+	if mce != nil {
+		return mce.msg, mce.data
+	}
+	return nil, nil
 }
 
 func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) *messageCacheEntry {
