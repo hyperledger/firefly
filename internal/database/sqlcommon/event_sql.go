@@ -68,7 +68,24 @@ func (s *SQLCommon) InsertEvent(ctx context.Context, event *fftypes.Event) (err 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) insertEventPreCommit(ctx context.Context, tx *txWrapper, event *fftypes.Event) (err error) {
+func (s *SQLCommon) setEventInsertValues(query sq.InsertBuilder, event *fftypes.Event) sq.InsertBuilder {
+	return query.Values(
+		event.ID,
+		string(event.Type),
+		event.Namespace,
+		event.Reference,
+		event.Correlator,
+		event.Transaction,
+		event.Created,
+	)
+}
+
+func (s *SQLCommon) eventInserted(ctx context.Context, event *fftypes.Event) {
+	s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
+	log.L(ctx).Infof("Emitted %s event %s ref=%s (sequence=%d)", event.Type, event.ID, event.Reference, event.Sequence)
+}
+
+func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, events []*fftypes.Event) (err error) {
 
 	// We take the cost of a full table lock on the events table.
 	// This allows us to rely on the sequence to always be increasing, even when writing events
@@ -77,23 +94,35 @@ func (s *SQLCommon) insertEventPreCommit(ctx context.Context, tx *txWrapper, eve
 		return err
 	}
 
-	event.Sequence, err = s.insertTx(ctx, tx,
-		sq.Insert("events").
-			Columns(eventColumns...).
-			Values(
-				event.ID,
-				string(event.Type),
-				event.Namespace,
-				event.Reference,
-				event.Correlator,
-				event.Transaction,
-				event.Created,
-			),
-		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
-		},
-	)
-	return err
+	if s.features.MultiRowInsert {
+		query := sq.Insert("events").Columns(eventColumns...)
+		for _, event := range events {
+			query = s.setEventInsertValues(query, event)
+		}
+		sequences := make([]int64, len(events))
+		err := s.insertTxRows(ctx, tx, query, func() {
+			for i, event := range events {
+				event.Sequence = sequences[i]
+				s.eventInserted(ctx, event)
+			}
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, event := range events {
+			query := s.setEventInsertValues(sq.Insert("events").Columns(eventColumns...), event)
+			event.Sequence, err = s.insertTx(ctx, tx, query, func() {
+				s.eventInserted(ctx, event)
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Event, error) {

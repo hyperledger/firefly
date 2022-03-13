@@ -266,14 +266,27 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	// using the index range of pins it owns within the batch it is a part of.
 	// Note that this might include pins not in the batch we read from the database, as the page size
 	// cannot be guaranteed to overlap with the set of indexes of a message within a batch.
+	pinsDispatched := make(map[fftypes.UUID][]driver.Value)
 	for _, dm := range bs.dispatchedMessages {
-		fb := database.PinQueryFactory.NewFilter(ctx)
-		filter := fb.And(
-			fb.Eq("batch", dm.batchID),
-			fb.Gte("index", dm.firstPinIndex),
-			fb.Lte("index", dm.lastPinIndex),
-		)
+		batchDispatched := pinsDispatched[*dm.batchID]
 		log.L(ctx).Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d lastIndex=%d", dm.batchID, dm.msgID, dm.firstPinIndex, dm.lastPinIndex)
+		for pinIndex := dm.firstPinIndex; pinIndex <= dm.lastPinIndex; pinIndex++ {
+			batchDispatched = append(batchDispatched, pinIndex)
+		}
+		if len(batchDispatched) > 0 {
+			pinsDispatched[*dm.batchID] = batchDispatched
+		}
+	}
+	// Build one uber update for DB efficiency
+	if len(pinsDispatched) > 0 {
+		fb := database.PinQueryFactory.NewFilter(ctx)
+		filter := fb.Or()
+		for batchID, batchDispached := range pinsDispatched {
+			filter.Condition(fb.And(
+				fb.Eq("batch", &batchID),
+				fb.In("index", batchDispached),
+			))
+		}
 		update := database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true)
 		if err := bs.database.UpdatePins(ctx, filter, update); err != nil {
 			return err

@@ -429,12 +429,11 @@ func (s *SQLCommon) commitTx(ctx context.Context, tx *txWrapper, autoCommit bool
 	// Only at this stage do we write to the special events Database table, so we know
 	// regardless of the higher level logic, the events are always written at this point
 	// at the end of the transaction
-	for _, event := range tx.preCommitEvents {
-		if err := s.insertEventPreCommit(ctx, tx, event); err != nil {
+	if len(tx.preCommitEvents) > 0 {
+		if err := s.insertEventsPreCommit(ctx, tx, tx.preCommitEvents); err != nil {
 			s.rollbackTx(ctx, tx, false)
 			return err
 		}
-		l.Infof("Emitted %s event %s ref=%s (sequence=%d)", event.Type, event.ID, event.Reference, event.Sequence)
 	}
 
 	l.Debugf(`SQL-> commit`)
