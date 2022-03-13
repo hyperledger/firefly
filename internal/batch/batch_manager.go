@@ -225,6 +225,9 @@ func (bm *batchManager) messageSequencer() {
 	defer close(bm.done)
 
 	for {
+		// Set a timer for the minimum time to wait before the next poll
+		minimumPollDelay := time.NewTimer(bm.minimumPollTime)
+
 		// Each time round the loop we check for quiescing processors
 		bm.reapQuiescing()
 
@@ -262,7 +265,7 @@ func (bm *batchManager) messageSequencer() {
 		}
 
 		// Wait to be woken again
-		if !batchWasFull && !bm.drainNewMessages() {
+		if !batchWasFull && !bm.drainNewMessages(minimumPollDelay) {
 			if done := bm.waitForNewMessages(); done {
 				l.Debugf("Exiting: %s", err)
 				return
@@ -281,10 +284,9 @@ func (bm *batchManager) newMessageNotification(seq int64) {
 	}
 }
 
-func (bm *batchManager) drainNewMessages() bool {
+func (bm *batchManager) drainNewMessages(minimumPollDelay *time.Timer) bool {
 	// Drain any new message notifications, moving back our readOffset as required
 	newMessages := false
-	minimumPollDelay := time.NewTimer(bm.minimumPollTime)
 	for {
 		select {
 		case seq := <-bm.newMessages:
