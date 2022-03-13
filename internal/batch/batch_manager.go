@@ -49,6 +49,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
+		minimumPollTime:            config.GetDuration(config.BatchManagerMinimumPollTime),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatcherMap:              make(map[string]*dispatcher),
 		allDispatchers:             make([]*dispatcher, 0),
@@ -98,6 +99,7 @@ type batchManager struct {
 	readOffset                 int64
 	readPageSize               uint64
 	messagePollTimeout         time.Duration
+	minimumPollTime            time.Duration
 	startupOffsetRetryAttempts int
 }
 
@@ -282,17 +284,16 @@ func (bm *batchManager) newMessageNotification(seq int64) {
 func (bm *batchManager) drainNewMessages() bool {
 	// Drain any new message notifications, moving back our readOffset as required
 	newMessages := false
-	checkingMessages := true
-	for checkingMessages {
+	minimumPollDelay := time.NewTimer(bm.minimumPollTime)
+	for {
 		select {
 		case seq := <-bm.newMessages:
 			bm.newMessageNotification(seq)
 			newMessages = true
-		default:
-			checkingMessages = false
+		case <-minimumPollDelay.C:
+			return newMessages
 		}
 	}
-	return newMessages
 }
 
 func (bm *batchManager) waitForNewMessages() (done bool) {

@@ -197,7 +197,7 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 
 func (bp *batchProcessor) addFlushedSequences(flushAssembly []*batchWork) {
 	// We need to keep track of the sequences we're flushing, because until we finish our flush
-	// the batch processor might be re-queuing the same messages to use due to rewinds.
+	// the batch processor might be re-queuing the same messages to us due to rewinds.
 
 	// We keep twice the batch size, which might be made up of multiple batches
 	maxFlushedSeqLen := int(2 * bp.conf.BatchMaxSize)

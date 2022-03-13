@@ -34,9 +34,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestE2EDispatchBroadcast(t *testing.T) {
-	log.SetLevel("debug")
+func testConfigReset() {
 	config.Reset()
+	config.Set(config.BatchManagerMinimumPollTime, "1ns")
+	log.SetLevel("debug")
+}
+
+func TestE2EDispatchBroadcast(t *testing.T) {
+	testConfigReset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -150,8 +155,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 }
 
 func TestE2EDispatchPrivateUnpinned(t *testing.T) {
-	log.SetLevel("debug")
-	config.Reset()
+	testConfigReset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -264,8 +268,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 }
 
 func TestDispatchUnknownType(t *testing.T) {
-	log.SetLevel("debug")
-	config.Reset()
+	testConfigReset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
