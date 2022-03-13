@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/sirupsen/logrus"
 )
 
 func newBatchState(ag *aggregator) *batchState {
@@ -197,7 +198,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 	}
 
 	// This message must be the next hash for the author
-	l.Debugf("Group=%s Topic='%s' Sequence=%d Pin=%s NextPins=%v", msg.Header.Group, topic, firstMsgPinSequence, pin, npg.nextPins)
+	l.Debugf("Group=%s Topic='%s' Sequence=%d Pin=%s", msg.Header.Group, topic, firstMsgPinSequence, pin)
 	var nextPin *fftypes.NextPin
 	for _, np := range npg.nextPins {
 		if *np.Hash == *pin {
@@ -206,6 +207,11 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 		}
 	}
 	if nextPin == nil || nextPin.Identity != msg.Header.Author {
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			for _, np := range npg.nextPins {
+				l.Debugf("NextPin: context=%s author=%s nonce=%d hash=%s", np.Context, np.Identity, np.Nonce, np.Hash)
+			}
+		}
 		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v author=%s", msg.Header.Group, topic, contextUnmasked, pin, nextPin, msg.Header.Author)
 		return nil, nil
 	}
