@@ -220,6 +220,7 @@ func (dm *dataManager) dataLookupAndCache(ctx context.Context, msg *fftypes.Mess
 func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) *messageCacheEntry {
 	cached := dm.messageCache.Get(id.String())
 	if cached == nil {
+		log.L(context.Background()).Debugf("Cache miss for message %s", id)
 		return nil
 	}
 	mce := cached.Value().(*messageCacheEntry)
@@ -228,23 +229,23 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 		case CRORequirePublicBlobRefs:
 			for idx, d := range mce.data {
 				if d.Blob != nil && d.Blob.Public == "" {
-					log.L(ctx).Debugf("Cache entry for data %d (%s) in message %s is missing public blob ref", idx, d.ID, mce.msg.Header.ID)
+					log.L(ctx).Debugf("Cache miss for message %s - data %d (%s) is missing public blob ref", idx, d.ID, mce.msg.Header.ID)
 					return nil
 				}
 			}
 		case CRORequirePins:
 			if len(mce.msg.Header.Topics) != len(mce.msg.Pins) {
-				log.L(ctx).Debugf("Cache entry for message %s is missing pins", mce.msg.Header.ID)
+				log.L(ctx).Debugf("Cache miss for message %s - missing pins (topics=%d,pins=%d)", mce.msg.Header.ID, len(mce.msg.Header.Topics), len(mce.msg.Pins))
 				return nil
 			}
 		case CRORequireBatchID:
 			if mce.msg.BatchID == nil {
-				log.L(ctx).Debugf("Cache entry for message %s is missing batch ID", mce.msg.Header.ID)
+				log.L(ctx).Debugf("Cache miss for message %s - missing batch ID", mce.msg.Header.ID)
 				return nil
 			}
 		}
 	}
-	log.L(ctx).Debugf("Returning msg %s from cache", id)
+	log.L(ctx).Debugf("Cache hit for message %s", id)
 	cached.Extend(dm.messageCacheTTL)
 	return mce
 }
@@ -258,6 +259,7 @@ func (dm *dataManager) UpdateMessageCache(msg *fftypes.Message, data fftypes.Dat
 		size: msg.EstimateSize(true),
 	}
 	dm.messageCache.Set(msg.Header.ID.String(), cacheEntry, dm.messageCacheTTL)
+	log.L(context.Background()).Debugf("Added to cache: %s (topics=%d,pins=%d)", msg.Header.ID.String(), len(msg.Header.Topics), len(msg.Pins))
 }
 
 // UpdateMessageIfCached is used in order to notify the fields of a message that are not initially filled in, have been filled in.
