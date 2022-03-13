@@ -506,11 +506,20 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 // DB RunAsGroup - because if a large number of routines enter the same function they could starve the background
 // worker of the spare connection required to execute (and thus deadlock).
 func (dm *dataManager) WriteNewMessage(ctx context.Context, newMsg *NewMessage) error {
+
+	if newMsg.Message == nil {
+		return i18n.NewError(ctx, i18n.MsgNilOrNullObject)
+	}
+
+	// We add the message to the cache before we write it, because the batch aggregator might
+	// pick up our message from the message-writer before we return. The batch processor
+	// writes a more authoritative cache entry, with pings/batchID etc.
+	dm.UpdateMessageCache(&newMsg.Message.Message, newMsg.AllData)
+
 	err := dm.messageWriter.WriteNewMessage(ctx, newMsg)
 	if err != nil {
 		return err
 	}
-	dm.UpdateMessageCache(&newMsg.Message.Message, newMsg.AllData)
 	return nil
 }
 

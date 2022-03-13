@@ -1135,3 +1135,15 @@ func TestWriteNewMessageFailNil(t *testing.T) {
 	err := dm.WriteNewMessage(ctx, &NewMessage{})
 	assert.Regexp(t, "FF10368", err)
 }
+
+func TestWriteNewMessageFailClosed(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	dm.messageWriter.close()
+
+	err := dm.WriteNewMessage(ctx, &NewMessage{
+		Message: &fftypes.MessageInOut{},
+	})
+	assert.Regexp(t, "FF10158", err)
+}
