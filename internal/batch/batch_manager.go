@@ -227,20 +227,24 @@ func (bm *batchManager) messageSequencer() {
 		bm.reapQuiescing()
 
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
-		msgIDs, err := bm.readPage()
+		entries, err := bm.readPage()
 		if err != nil {
 			l.Debugf("Exiting: %s", err)
 			return
 		}
-		batchWasFull := (uint64(len(msgIDs)) == bm.readPageSize)
+		batchWasFull := (uint64(len(entries)) == bm.readPageSize)
 
-		if len(msgIDs) > 0 {
-			for _, id := range msgIDs {
-				msg, data, err := bm.assembleMessageData(&id.ID)
+		if len(entries) > 0 {
+			for _, entry := range entries {
+				msg, data, err := bm.assembleMessageData(&entry.ID)
 				if err != nil {
-					l.Errorf("Failed to retrieve message data for %s: %s", id.ID, err)
+					l.Errorf("Failed to retrieve message data for %s (seq=%d): %s", entry.ID, entry.Sequence, err)
 					continue
 				}
+
+				// We likely retrieved this message from the cache, which is written by the message-writer before
+				// the database store. Meaning we cannot rely on the sequence having been set.
+				msg.Sequence = entry.Sequence
 
 				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
 				if err != nil {
@@ -252,7 +256,7 @@ func (bm *batchManager) messageSequencer() {
 			}
 
 			// Next time round only read after the messages we just processed (unless we get a tap to rewind)
-			bm.readOffset = msgIDs[len(msgIDs)-1].Sequence
+			bm.readOffset = entries[len(entries)-1].Sequence
 		}
 
 		// Wait to be woken again
@@ -311,7 +315,7 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 
 func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.Message, data fftypes.DataArray) {
 	l := log.L(bm.ctx)
-	l.Debugf("Dispatching message %s to %s batch processor %s", msg.Header.ID, msg.Header.Type, processor.conf.name)
+	l.Debugf("Dispatching message %s (seq=%d) to %s batch processor %s", msg.Header.ID, msg.Sequence, msg.Header.Type, processor.conf.name)
 	work := &batchWork{
 		msg:  msg,
 		data: data,
