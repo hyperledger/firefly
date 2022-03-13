@@ -229,7 +229,7 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 		case CRORequirePublicBlobRefs:
 			for idx, d := range mce.data {
 				if d.Blob != nil && d.Blob.Public == "" {
-					log.L(ctx).Debugf("Cache miss for message %s - data %d (%s) is missing public blob ref", idx, d.ID, mce.msg.Header.ID)
+					log.L(ctx).Debugf("Cache miss for message %s - data %d (%s) is missing public blob ref", mce.msg.Header.ID, idx, d.ID)
 					return nil
 				}
 			}

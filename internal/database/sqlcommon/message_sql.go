@@ -470,6 +470,34 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 	return msgs, s.queryRes(ctx, tx, "messages", fop, fi), err
 }
 
+func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (ids []*fftypes.IDAndSequence, err error) {
+	query, _, _, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn).From("messages"), filter, msgFilterFieldMap,
+		[]interface{}{
+			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
+			"created",
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	rows, _, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ids = []*fftypes.IDAndSequence{}
+	for rows.Next() {
+		var id fftypes.IDAndSequence
+		err = rows.Scan(&id.ID, &id.Sequence)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
+		}
+		ids = append(ids, &id)
+	}
+	return ids, nil
+}
+
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, fr *database.FilterResult, err error) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)

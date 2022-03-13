@@ -96,6 +96,9 @@ type iMessageCollection interface {
 	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 
+	// GetMessageIDs - Retrieves messages, but only querying the messages ID (no other fields)
+	GetMessageIDs(ctx context.Context, filter Filter) (ids []*fftypes.IDAndSequence, err error)
+
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 }

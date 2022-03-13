@@ -187,34 +187,34 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	return processor, nil
 }
 
-func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (retData fftypes.DataArray, err error) {
+func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *fftypes.Message, retData fftypes.DataArray, err error) {
 	var foundAll = false
-	err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble message %s data", msg.Header.ID), func(attempt int) (retry bool, err error) {
-		retData, foundAll, err = bm.data.GetMessageDataCached(bm.ctx, msg)
+	err = bm.retry.Do(bm.ctx, "retrieve message", func(attempt int) (retry bool, err error) {
+		msg, retData, foundAll, err = bm.data.GetMessageWithDataCached(bm.ctx, id)
 		// continual retry for persistence error (distinct from not-found)
 		return true, err
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if !foundAll {
-		return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, msg.Header.ID)
+		return nil, nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, id)
 	}
-	return retData, nil
+	return msg, retData, nil
 }
 
-func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
+func (bm *batchManager) readPage() ([]*fftypes.IDAndSequence, error) {
 
-	var msgs []*fftypes.Message
+	var ids []*fftypes.IDAndSequence
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
-		msgs, _, err = bm.database.GetMessages(bm.ctx, fb.And(
+		ids, err = bm.database.GetMessageIDs(bm.ctx, fb.And(
 			fb.Gt("sequence", bm.readOffset),
 			fb.Eq("state", fftypes.MessageStateReady),
 		).Sort("sequence").Limit(bm.readPageSize))
 		return true, err
 	})
-	return msgs, err
+	return ids, err
 }
 
 func (bm *batchManager) messageSequencer() {
@@ -227,24 +227,24 @@ func (bm *batchManager) messageSequencer() {
 		bm.reapQuiescing()
 
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
-		msgs, err := bm.readPage()
+		msgIDs, err := bm.readPage()
 		if err != nil {
 			l.Debugf("Exiting: %s", err)
 			return
 		}
-		batchWasFull := (uint64(len(msgs)) == bm.readPageSize)
+		batchWasFull := (uint64(len(msgIDs)) == bm.readPageSize)
 
-		if len(msgs) > 0 {
-			for _, msg := range msgs {
-				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
+		if len(msgIDs) > 0 {
+			for _, id := range msgIDs {
+				msg, data, err := bm.assembleMessageData(&id.ID)
 				if err != nil {
-					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
+					l.Errorf("Failed to retrieve message data for %s: %s", id.ID, err)
 					continue
 				}
 
-				data, err := bm.assembleMessageData(msg)
+				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
 				if err != nil {
-					l.Errorf("Failed to retrieve message data for %s: %s", msg.Header.ID, err)
+					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
 					continue
 				}
 
@@ -252,7 +252,7 @@ func (bm *batchManager) messageSequencer() {
 			}
 
 			// Next time round only read after the messages we just processed (unless we get a tap to rewind)
-			bm.readOffset = msgs[len(msgs)-1].Sequence
+			bm.readOffset = msgIDs[len(msgIDs)-1].Sequence
 		}
 
 		// Wait to be woken again
