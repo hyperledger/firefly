@@ -72,7 +72,8 @@ type dispatchedMessage struct {
 	batchID       *fftypes.UUID
 	msgID         *fftypes.UUID
 	firstPinIndex int64
-	lastPinIndex  int64
+	topicCount    int
+	msgPins       fftypes.FFStringArray
 }
 
 // batchState is the object that tracks the in-memory state that builds up while processing a batch of pins,
@@ -176,7 +177,7 @@ func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnma
 
 }
 
-func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32) (*nextPinState, error) {
+func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// For masked pins, we can only process if:
@@ -212,7 +213,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 				l.Debugf("NextPin: context=%s author=%s nonce=%d hash=%s", np.Context, np.Identity, np.Nonce, np.Hash)
 			}
 		}
-		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v author=%s", msg.Header.Group, topic, contextUnmasked, pin, nextPin, msg.Header.Author)
+		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nonce=%s nextHash=%+v author=%s", msg.Header.Group, topic, contextUnmasked, pin, nonceStr, nextPin, msg.Header.Author)
 		return nil, nil
 	}
 	return &nextPinState{
@@ -226,7 +227,8 @@ func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftype
 		batchID:       batchID,
 		msgID:         msg.Header.ID,
 		firstPinIndex: msgBaseIndex,
-		lastPinIndex:  msgBaseIndex + int64(len(msg.Header.Topics)) - 1,
+		topicCount:    len(msg.Header.Topics),
+		msgPins:       msg.Pins,
 	})
 }
 
@@ -242,6 +244,7 @@ func (bs *batchState) SetContextBlockedBy(ctx context.Context, unmaskedContext f
 }
 
 func (bs *batchState) flushPins(ctx context.Context) error {
+	l := log.L(ctx)
 
 	// Update all the next pins
 	for _, npg := range bs.maskedContexts {
@@ -269,9 +272,9 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	pinsDispatched := make(map[fftypes.UUID][]driver.Value)
 	for _, dm := range bs.dispatchedMessages {
 		batchDispatched := pinsDispatched[*dm.batchID]
-		log.L(ctx).Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d lastIndex=%d", dm.batchID, dm.msgID, dm.firstPinIndex, dm.lastPinIndex)
-		for pinIndex := dm.firstPinIndex; pinIndex <= dm.lastPinIndex; pinIndex++ {
-			batchDispatched = append(batchDispatched, pinIndex)
+		l.Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d topics=%d pins=%s", dm.batchID, dm.msgID, dm.firstPinIndex, dm.topicCount, dm.msgPins)
+		for i := 0; i < dm.topicCount; i++ {
+			batchDispatched = append(batchDispatched, dm.firstPinIndex+int64(i))
 		}
 		if len(batchDispatched) > 0 {
 			pinsDispatched[*dm.batchID] = batchDispatched
@@ -281,10 +284,10 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	if len(pinsDispatched) > 0 {
 		fb := database.PinQueryFactory.NewFilter(ctx)
 		filter := fb.Or()
-		for batchID, batchDispached := range pinsDispatched {
+		for batchID, indexes := range pinsDispatched {
 			filter.Condition(fb.And(
-				fb.Eq("batch", &batchID),
-				fb.In("index", batchDispached),
+				fb.Eq("batch", batchID),
+				fb.In("index", indexes),
 			))
 		}
 		update := database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true)

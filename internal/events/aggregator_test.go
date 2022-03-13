@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -170,7 +171,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 							Key:    member2key,
 						},
 					},
-					Pins: []string{member2NonceZero.String()},
+					Pins: []string{fmt.Sprintf("%s:%.9d", member2NonceZero, 0)},
 					Data: fftypes.DataRefs{
 						{ID: fftypes.NewUUID()},
 					},
@@ -1067,7 +1068,9 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 10, &fftypes.MessageManifestEntry{
+	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{
+		ID: fftypes.NewUUID(),
+	}, &fftypes.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 10, &fftypes.MessageManifestEntry{
 		MessageRef: fftypes.MessageRef{
 			ID:   msg.Header.ID,
 			Hash: msg.Hash,
@@ -1101,7 +1104,7 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 				Key:    "0x12345",
 			},
 		},
-	}, "topic1", 12345, fftypes.NewRandB32())
+	}, "topic1", 12345, fftypes.NewRandB32(), "12345")
 	assert.NoError(t, err)
 
 }
@@ -2184,4 +2187,26 @@ func TestMigrateManifestFail(t *testing.T) {
 	})
 
 	assert.Nil(t, manifest)
+}
+
+func TestExtractBatchMessagePin(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	b, err := ioutil.ReadFile("/tmp/4ba80bc9-28c3-494a-84a0-a6ae2d647f96.batch.json")
+	assert.NoError(t, err)
+	var bp fftypes.BatchPersisted
+	err = json.Unmarshal(b, &bp)
+	assert.NoError(t, err)
+
+	var manifest *fftypes.BatchManifest
+	err = bp.Manifest.Unmarshal(context.Background(), &manifest)
+	assert.NoError(t, err)
+
+	totalBatchPins, msgEntry, msgBaseIndex := ag.extractBatchMessagePin(manifest, 100)
+	assert.Equal(t, int64(len(manifest.Messages)), totalBatchPins)
+	assert.Equal(t, "86f4a5c8-e7ad-4df1-8af9-ff5f8f579827", msgEntry.ID.String())
+	assert.Equal(t, int64(100), msgBaseIndex)
+
+	// b7a08c51-ef24-4afd-8da2-f85568ae8208 was the one that we dispatched for 100
 }

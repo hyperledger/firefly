@@ -182,14 +182,6 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	if len(m.Header.Topics) == 0 {
 		m.Header.Topics = []string{DefaultTopic}
 	}
-	if err := m.Header.Topics.Validate(ctx, "header.topics", true); err != nil {
-		return err
-	}
-	if m.Header.Tag != "" {
-		if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
-			return err
-		}
-	}
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}
@@ -200,7 +192,10 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	if m.Data == nil {
 		m.Data = DataRefs{}
 	}
-	err = m.DupDataCheck(ctx)
+	if m.Header.TxType == "" {
+		m.Header.TxType = TransactionTypeBatchPin
+	}
+	err = m.VerifyFields(ctx)
 	if err == nil {
 		m.Header.DataHash = m.Data.Hash()
 		m.Hash = m.Header.Hash()
@@ -223,14 +218,14 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 	return nil
 }
 
-func (m *Message) Verify(ctx context.Context) error {
+func (m *Message) VerifyFields(ctx context.Context) error {
 	switch m.Header.TxType {
 	case TransactionTypeBatchPin:
 	case TransactionTypeUnpinned:
 	default:
 		return i18n.NewError(ctx, i18n.MsgInvalidTXTypeForMessage, m.Header.TxType)
 	}
-	if err := m.Header.Topics.Validate(ctx, "header.topics", true); err != nil {
+	if err := m.Header.Topics.Validate(ctx, "header.topics", true, 10 /* Pins need 96 chars each*/); err != nil {
 		return err
 	}
 	if m.Header.Tag != "" {
@@ -238,7 +233,11 @@ func (m *Message) Verify(ctx context.Context) error {
 			return err
 		}
 	}
-	err := m.DupDataCheck(ctx)
+	return m.DupDataCheck(ctx)
+}
+
+func (m *Message) Verify(ctx context.Context) error {
+	err := m.VerifyFields(ctx)
 	if err != nil {
 		return err
 	}

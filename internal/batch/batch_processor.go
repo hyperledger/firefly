@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -412,7 +413,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 			state.Payload.Messages = append(state.Payload.Messages, w.msg.BatchMessage())
 		}
 		for _, d := range w.data {
-			log.L(bp.ctx).Debugf("Adding data '%s' to batch for message '%s'", d.ID, w.msg.Header.ID)
+			log.L(bp.ctx).Debugf("Adding data '%s' to batch '%s' for message '%s'", d.ID, id, w.msg.Header.ID)
 			state.Payload.Data = append(state.Payload.Data, d.BatchData(state.Persisted.Type))
 		}
 	}
@@ -420,7 +421,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 	return state
 }
 
-func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (contextOrPin *fftypes.Bytes32, err error) {
+func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
@@ -429,7 +430,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	// of the topic. There would be no way to unmask it if we did, because we don't have
 	// the full list of senders to know what their next hashes should be.
 	if msg.Header.Group == nil {
-		return fftypes.HashResult(hashBuilder), nil
+		return "", fftypes.HashResult(hashBuilder), nil
 	}
 
 	// For private groups, we need to make the topic specific to the group (which is
@@ -448,7 +449,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	}
 	err = bp.database.UpsertNonceNext(ctx, gc)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	// Now combine our sending identity, and this nonce, to produce the hash that should
@@ -459,7 +460,10 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	binary.BigEndian.PutUint64(nonceBytes, uint64(gc.Nonce))
 	hashBuilder.Write(nonceBytes)
 
-	return fftypes.HashResult(hashBuilder), err
+	pin := fftypes.HashResult(hashBuilder)
+	pinStr := fmt.Sprintf("%s:%.16d", pin, gc.Nonce)
+	log.L(ctx).Debugf("Assigned pin '%s' to message %s for topic '%s'", pinStr, msg.Header.ID, topic)
+	return pinStr, pin, err
 }
 
 func (bp *batchProcessor) maskContexts(ctx context.Context, payload *fftypes.BatchPayload) ([]*fftypes.Bytes32, error) {
@@ -473,13 +477,13 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, payload *fftypes.Bat
 			continue
 		}
 		for _, topic := range msg.Header.Topics {
-			contextOrPin, err := bp.maskContext(ctx, msg, topic)
+			pinString, contextOrPin, err := bp.maskContext(ctx, msg, topic)
 			if err != nil {
 				return nil, err
 			}
 			contextsOrPins = append(contextsOrPins, contextOrPin)
 			if msg.Header.Group != nil {
-				msg.Pins = append(msg.Pins, contextOrPin.String())
+				msg.Pins = append(msg.Pins, pinString /* contains the nonce as well as the pin hash */)
 				pinsAssigned = true
 			}
 		}

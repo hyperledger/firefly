@@ -85,8 +85,6 @@ func TestVerifyTXType(t *testing.T) {
 
 	msg.Header.TxType = TransactionTypeTokenPool
 	err = msg.Seal(context.Background())
-	assert.NoError(t, err)
-	err = msg.Verify(context.Background())
 	assert.Regexp(t, "FF10343", err)
 }
 

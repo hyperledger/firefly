@@ -116,7 +116,15 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeTokenPool)
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypePrivate, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	batch.Payload.TX.Type = fftypes.TransactionTypeTokenPool
+	b, _ := json.Marshal(&fftypes.TransportWrapper{
+		Batch: batch,
+		Group: &fftypes.Group{
+			Hash: fftypes.NewRandB32(),
+		},
+	})
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)

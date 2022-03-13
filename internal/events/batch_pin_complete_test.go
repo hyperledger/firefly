@@ -75,7 +75,7 @@ func sampleBatch(t *testing.T, batchType fftypes.BatchType, txType fftypes.Trans
 	}
 	err := msg.Seal(context.Background())
 	assert.NoError(t, err)
-	batch.Hash = batch.Payload.Hash()
+	batch.Hash = fftypes.HashString(batch.Manifest().String())
 	return batch
 }
 

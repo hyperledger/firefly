@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql/driver"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
@@ -364,12 +365,19 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *fftypes.Batc
 		}
 		for i, pinStr := range msg.Pins {
 			var msgContext fftypes.Bytes32
-			err := msgContext.UnmarshalText([]byte(pinStr))
+			pinSplit := strings.Split(pinStr, ":")
+			nonceStr := ""
+			if len(pinSplit) > 1 {
+				// We introduced a "HASH:NONCE" syntax into the pin strings, to aid debug, but the inclusion of the
+				// nonce after the hash is not necessary.
+				nonceStr = pinSplit[1]
+			}
+			err := msgContext.UnmarshalText([]byte(pinSplit[0]))
 			if err != nil {
 				l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, manifest.ID, i, pinStr)
 				return nil
 			}
-			nextPin, err := state.CheckMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext)
+			nextPin, err := state.CheckMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
 			if err != nil || nextPin == nil {
 				return err
 			}

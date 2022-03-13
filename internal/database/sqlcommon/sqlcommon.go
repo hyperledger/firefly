@@ -281,8 +281,8 @@ func (s *SQLCommon) insertTxRows(ctx context.Context, tx *txWrapper, q sq.Insert
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Debugf(`SQL-> insert: %s`, shortenSQL(sqlQuery))
-	l.Tracef(`SQL-> insert args: %+v`, args)
+	l.Debugf(`SQL-> insert %s`, shortenSQL(sqlQuery))
+	l.Tracef(`SQL-> insert query: %s (args: %+v)`, sqlQuery, args)
 	if useQuery {
 		result, err := tx.sqlTX.QueryContext(ctx, sqlQuery, args...)
 		for i := 0; i < len(sequences) && err == nil; i++ {
@@ -329,7 +329,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> delete: %s`, shortenSQL(sqlQuery))
-	l.Tracef(`SQL-> delete args: %+v`, args)
+	l.Debugf(`SQL-> delete args: %+v`, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL delete failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
@@ -354,7 +354,7 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuil
 		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> update: %s`, shortenSQL(sqlQuery))
-	l.Tracef(`SQL-> update args: %+v`, args)
+	l.Debugf(`SQL-> update query: %s (args: %+v)`, sqlQuery, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL update failed: %s sql=[ %s ]`, err, sqlQuery)
