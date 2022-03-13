@@ -176,11 +176,11 @@ func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, st
 	subName := fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)
 
 	for _, s := range existingSubs {
-		if s.Name == subName ||
+		if s.Stream == stream && (s.Name == subName ||
 			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
 			   If one of these very early environments needed a new subscription, the existing one would need to
 				 be deleted manually. */
-			s.Name == abi.Name {
+			s.Name == abi.Name) {
 			sub = s
 		}
 	}
