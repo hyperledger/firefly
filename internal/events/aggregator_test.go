@@ -21,7 +21,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -2205,26 +2204,4 @@ func TestMigrateManifestFail(t *testing.T) {
 	})
 
 	assert.Nil(t, manifest)
-}
-
-func TestExtractBatchMessagePin(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	b, err := ioutil.ReadFile("/tmp/4ba80bc9-28c3-494a-84a0-a6ae2d647f96.batch.json")
-	assert.NoError(t, err)
-	var bp fftypes.BatchPersisted
-	err = json.Unmarshal(b, &bp)
-	assert.NoError(t, err)
-
-	var manifest *fftypes.BatchManifest
-	err = bp.Manifest.Unmarshal(context.Background(), &manifest)
-	assert.NoError(t, err)
-
-	totalBatchPins, msgEntry, msgBaseIndex := ag.extractBatchMessagePin(manifest, 100)
-	assert.Equal(t, int64(len(manifest.Messages)), totalBatchPins)
-	assert.Equal(t, "86f4a5c8-e7ad-4df1-8af9-ff5f8f579827", msgEntry.ID.String())
-	assert.Equal(t, int64(100), msgBaseIndex)
-
-	// b7a08c51-ef24-4afd-8da2-f85568ae8208 was the one that we dispatched for 100
 }

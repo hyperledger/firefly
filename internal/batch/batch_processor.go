@@ -94,10 +94,11 @@ type batchProcessor struct {
 }
 
 type DispatchState struct {
-	Manifest  *fftypes.BatchManifest
-	Persisted fftypes.BatchPersisted
-	Payload   fftypes.BatchPayload
-	Pins      []*fftypes.Bytes32
+	Manifest       *fftypes.BatchManifest
+	Persisted      fftypes.BatchPersisted
+	Payload        fftypes.BatchPayload
+	Pins           []*fftypes.Bytes32
+	BlobsPublished []*fftypes.UUID
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -371,10 +372,8 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	log.L(bp.ctx).Debugf("Sealed batch %s", id)
 
 	// Dispatch phase: the heavy lifting work - calling plugins to do the hard work of the batch.
-	//   Must manage its own database updates if it performs them, and any that result in updates
-	//   to the payload must be reflected back on the payload objects.
-	//   For example updates to the Blob.Public of a Data entry must be written do the DB,
-	//   and updated in Payload.Data[] array.
+	//   The dispatcher can update the state, such as appending to the BlobsPublished array,
+	//   to affect DB updates as part of the finalization phase.
 	err = bp.dispatchBatch(state)
 	if err != nil {
 		return err
@@ -578,6 +577,19 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 
 			if err = bp.database.UpdateMessages(ctx, filter, allMsgsUpdate); err != nil {
 				return err
+			}
+
+			for _, dataID := range state.BlobsPublished {
+				for _, d := range state.Payload.Data {
+					if d.ID.Equals(dataID) {
+						dataUpdate := database.DataQueryFactory.NewUpdate(ctx).
+							Set("blob.public", state.Persisted.ID)
+						if err = bp.database.UpdateData(ctx, dataID, dataUpdate); err != nil {
+							return err
+						}
+						break
+					}
+				}
 			}
 
 			if bp.conf.txType == fftypes.TransactionTypeUnpinned {

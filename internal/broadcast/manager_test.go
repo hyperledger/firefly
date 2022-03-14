@@ -327,13 +327,17 @@ func TestPublishBlobsPublishOk(t *testing.T) {
 		},
 	}
 
-	err := bm.publishBlobs(ctx, fftypes.DataArray{data})
+	bs := &batch.DispatchState{}
+	err := bm.publishBlobs(ctx, fftypes.DataArray{data}, bs)
 	assert.NoError(t, err)
 	assert.Equal(t, "payload-ref1", data.Blob.Public)
 
 	b, err := ioutil.ReadAll(capturedReader)
 	assert.NoError(t, err)
 	assert.Equal(t, "some data", string(b))
+
+	assert.Len(t, bs.BlobsPublished, 1)
+	assert.Equal(t, data.ID, bs.BlobsPublished[0])
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -370,7 +374,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 				Hash: blob.Hash,
 			},
 		},
-	})
+	}, &batch.DispatchState{})
 	assert.EqualError(t, err, "pop")
 
 	b, err := ioutil.ReadAll(capturedReader)
@@ -406,7 +410,7 @@ func TestPublishBlobsDownloadFail(t *testing.T) {
 				Hash: blob.Hash,
 			},
 		},
-	})
+	}, &batch.DispatchState{})
 	assert.Regexp(t, "FF10240", err)
 
 	mdi.AssertExpectations(t)
@@ -435,7 +439,7 @@ func TestPublishBlobsGetBlobFail(t *testing.T) {
 				Hash: blob.Hash,
 			},
 		},
-	})
+	}, &batch.DispatchState{})
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -463,7 +467,7 @@ func TestPublishBlobsGetBlobNotFound(t *testing.T) {
 				Hash: blob.Hash,
 			},
 		},
-	})
+	}, &batch.DispatchState{})
 	assert.Regexp(t, "FF10239", err)
 
 	mdi.AssertExpectations(t)
