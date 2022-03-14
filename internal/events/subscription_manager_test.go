@@ -155,7 +155,7 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 
 	err = be.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{
 		Message: fftypes.MessageFilter{
-			Topics: "[[[[[ !wrong",
+			Author: "[[[[[ !wrong",
 		},
 	}, &fftypes.SubscriptionOptions{})
 	assert.Regexp(t, "FF10171", err)
@@ -226,10 +226,10 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 			Filter: fftypes.SubscriptionFilter{
+				Tag:    ".*",
+				Topic:  ".*",
 				Events: ".*",
 				Message: fftypes.MessageFilter{
-					Topics: ".*",
-					Tag:    ".*",
 					Group:  ".*",
 					Author: ".*",
 				},
@@ -290,29 +290,11 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Message: fftypes.MessageFilter{
-				Topics: "[[[[! badness",
-			},
+			Topic: "[[[[! badness",
 		},
 		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*topic", err)
-}
-
-func TestCreateSubscriptionBadContextFilter(t *testing.T) {
-	mei := &eventsmocks.PluginAll{}
-	sm, cancel := newTestSubManager(t, mei)
-	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
-	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
-		Filter: fftypes.SubscriptionFilter{
-			Message: fftypes.MessageFilter{
-				Tag: "[[[[! badness",
-			},
-		},
-		Transport: "ut",
-	})
-	assert.Regexp(t, "FF10171.*tag", err)
 }
 
 func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
@@ -400,7 +382,7 @@ func TestCreateSubscriptionBadDeprecatedTagFilter(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			DeprecatedTag: "[[[[! badness",
+			Tag: "[[[[! badness",
 		},
 		Transport: "ut",
 	})
@@ -506,8 +488,9 @@ func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
+			Tag:              "flap",
+			Topic:            "flop",
 			DeprecatedTopics: "test",
-			DeprecatedTag:    "flap",
 			DeprecatedAuthor: "flip",
 			DeprecatedGroup:  "flapflip",
 		},

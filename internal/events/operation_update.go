@@ -37,7 +37,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
-		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction)
+		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction, "", "")
 		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
 		if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
 			log.L(em.ctx).Warnf("Could not parse token transfer: %s", err)
@@ -54,7 +54,7 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 
 	// Special handling for OpTypeTokenApproval, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenApproval && txState == fftypes.OpStatusFailed {
-		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction)
+		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction, "", "")
 		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
 		if err != nil || tokenApproval.LocalID == nil {
 			log.L(em.ctx).Warnf("Could not parse token approval: %s", err)

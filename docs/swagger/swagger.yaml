@@ -3563,6 +3563,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tag
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx
         schema:
           type: string
@@ -3620,6 +3630,10 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tag:
+                    type: string
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -3683,6 +3697,10 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tag:
+                    type: string
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -4798,6 +4816,16 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tag
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx
         schema:
           type: string
@@ -4855,6 +4883,10 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tag:
+                    type: string
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -5881,17 +5913,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: filter.group
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: filter.tag
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: filter.topics
+        name: filters
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5983,12 +6005,10 @@ paths:
                             type: string
                           group:
                             type: string
-                          tag:
-                            type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
@@ -6065,12 +6085,10 @@ paths:
                           type: string
                         group:
                           type: string
-                        tag:
-                          type: string
-                        topics:
-                          type: string
                       type: object
                     tag:
+                      type: string
+                    topic:
                       type: string
                     topics:
                       type: string
@@ -6216,12 +6234,10 @@ paths:
                             type: string
                           group:
                             type: string
-                          tag:
-                            type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
@@ -6298,12 +6314,10 @@ paths:
                           type: string
                         group:
                           type: string
-                        tag:
-                          type: string
-                        topics:
-                          type: string
                       type: object
                     tag:
+                      type: string
+                    topic:
                       type: string
                     topics:
                       type: string
@@ -6449,12 +6463,10 @@ paths:
                             type: string
                           group:
                             type: string
-                          tag:
-                            type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
@@ -6569,12 +6581,10 @@ paths:
                             type: string
                           group:
                             type: string
-                          tag:
-                            type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string

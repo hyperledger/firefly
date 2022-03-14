@@ -398,9 +398,10 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *fftypes.Batc
 	}
 
 	dispatched := false
+	var newState fftypes.MessageState
 	if dataAvailable {
 		l.Debugf("Attempt dispatch msg=%s broadcastContexts=%v privatePins=%v", msg.Header.ID, unmaskedContexts, msg.Pins)
-		dispatched, err = ag.attemptMessageDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
+		newState, dispatched, err = ag.attemptMessageDispatch(ctx, msg, data, manifest.TX.ID, state, pin)
 		if err != nil {
 			return err
 		}
@@ -413,7 +414,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *fftypes.Batc
 		for _, np := range nextPins {
 			np.IncrementNextPin(ctx)
 		}
-		state.MarkMessageDispatched(ctx, manifest.ID, msg, msgBaseIndex)
+		state.MarkMessageDispatched(ctx, manifest.ID, msg, msgBaseIndex, newState)
 	} else {
 		for _, unmaskedContext := range unmaskedContexts {
 			state.SetContextBlockedBy(ctx, *unmaskedContext, pin.Sequence)
@@ -423,16 +424,16 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *fftypes.Batc
 	return nil
 }
 
-func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID, state *batchState, pin *fftypes.Pin) (valid bool, err error) {
+func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID, state *batchState, pin *fftypes.Pin) (newState fftypes.MessageState, valid bool, err error) {
 
 	// Check the pin signer is valid for the message
 	if valid, err := ag.checkOnchainConsistency(ctx, msg, pin); err != nil || !valid {
-		return false, err
+		return "", false, err
 	}
 
 	// Verify we have all the blobs for the data
 	if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
-		return false, err
+		return "", false, err
 	}
 
 	// For transfers, verify the transfer has come through
@@ -443,10 +444,10 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		)
 		if transfers, _, err := ag.database.GetTokenTransfers(ctx, filter); err != nil || len(transfers) == 0 {
 			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
-			return false, err
+			return "", false, err
 		} else if !msg.Hash.Equals(transfers[0].MessageHash) {
 			log.L(ctx).Errorf("Message hash %s does not match hash recorded in transfer: %s", msg.Hash, transfers[0].MessageHash)
-			return false, nil
+			return "", false, nil
 		}
 	}
 
@@ -460,10 +461,10 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
 		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
 		if handlerResult.Action == definitions.ActionRetry {
-			return false, err
+			return "", false, err
 		}
 		if handlerResult.Action == definitions.ActionWait {
-			return false, nil
+			return "", false, nil
 		}
 		customCorrelator = handlerResult.CustomCorrelator
 		valid = handlerResult.Action == definitions.ActionConfirm
@@ -474,46 +475,39 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	case len(msg.Data) > 0:
 		valid, err = ag.data.ValidateAll(ctx, data)
 		if err != nil {
-			return false, err
+			return "", false, err
 		}
 	}
 
-	status := fftypes.MessageStateConfirmed
+	newState = fftypes.MessageStateConfirmed
 	eventType := fftypes.EventTypeMessageConfirmed
 	if valid {
 		state.pendingConfirms[*msg.Header.ID] = msg
 	} else {
-		status = fftypes.MessageStateRejected
+		newState = fftypes.MessageStateRejected
 		eventType = fftypes.EventTypeMessageRejected
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		// This message is now confirmed
-		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
-			Set("confirmed", fftypes.Now()). // the timestamp of the aggregator provides ordering
-			Set("state", status)             // mark if the message was confirmed or rejected
-		if err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed); err != nil {
-			return err
+		// Generate the appropriate event - one per topic (events cover a single topic)
+		for _, topic := range msg.Header.Topics {
+			event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, tx, msg.Header.Tag, topic)
+			event.Correlator = msg.Header.CID
+			if customCorrelator != nil {
+				// Definition handlers can set a custom event correlator (such as a token pool ID)
+				event.Correlator = customCorrelator
+			}
+			if err = ag.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
 		}
-
-		// Generate the appropriate event
-		event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, tx)
-		event.Correlator = msg.Header.CID
-		if customCorrelator != nil {
-			// Definition handlers can set a custom event correlator (such as a token pool ID)
-			event.Correlator = customCorrelator
-		}
-		if err = ag.database.InsertEvent(ctx, event); err != nil {
-			return err
-		}
-		log.L(ctx).Infof("Emitting %s %s for message %s:%s (correlator=%v)", eventType, event.ID, msg.Header.Namespace, msg.Header.ID, event.Correlator)
 		return nil
 	})
 	if ag.metrics.IsMetricsEnabled() {
 		ag.metrics.MessageConfirmed(msg, eventType)
 	}
 
-	return true, nil
+	return newState, true, nil
 }
 
 // resolveBlobs ensures that the blobs for all the attachments in the data array, have been received into the

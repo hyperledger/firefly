@@ -90,6 +90,20 @@ func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 		Get(urlGetNamespaces)
 }
 
+func GetMessageEvents(t *testing.T, client *resty.Client, startTime time.Time, topic string, expectedStatus int) (events []*fftypes.EnrichedEvent) {
+	path := urlGetEvents
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetQueryParam("topic", topic).
+		SetQueryParam("sort", "sequence").
+		SetQueryParam("fetchreferences", "true").
+		SetResult(&events).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s (count=%d)", path, resp.StatusCode(), resp.String(), len(events))
+	return events
+}
+
 func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType fftypes.MessageType, topic string, expectedStatus int) (msgs []*fftypes.Message) {
 	path := urlGetMessages
 	resp, err := client.R().

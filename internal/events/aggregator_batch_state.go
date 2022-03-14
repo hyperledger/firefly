@@ -74,6 +74,7 @@ type dispatchedMessage struct {
 	firstPinIndex int64
 	topicCount    int
 	msgPins       fftypes.FFStringArray
+	newState      fftypes.MessageState
 }
 
 // batchState is the object that tracks the in-memory state that builds up while processing a batch of pins,
@@ -222,13 +223,14 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 	}, err
 }
 
-func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftypes.UUID, msg *fftypes.Message, msgBaseIndex int64) {
+func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftypes.UUID, msg *fftypes.Message, msgBaseIndex int64, newState fftypes.MessageState) {
 	bs.dispatchedMessages = append(bs.dispatchedMessages, &dispatchedMessage{
 		batchID:       batchID,
 		msgID:         msg.Header.ID,
 		firstPinIndex: msgBaseIndex,
 		topicCount:    len(msg.Header.Topics),
 		msgPins:       msg.Pins,
+		newState:      newState,
 	})
 }
 
@@ -270,6 +272,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	// Note that this might include pins not in the batch we read from the database, as the page size
 	// cannot be guaranteed to overlap with the set of indexes of a message within a batch.
 	pinsDispatched := make(map[fftypes.UUID][]driver.Value)
+	msgStateUpdates := make(map[fftypes.MessageState][]driver.Value)
 	for _, dm := range bs.dispatchedMessages {
 		batchDispatched := pinsDispatched[*dm.batchID]
 		l.Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d topics=%d pins=%s", dm.batchID, dm.msgID, dm.firstPinIndex, dm.topicCount, dm.msgPins)
@@ -279,7 +282,9 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 		if len(batchDispatched) > 0 {
 			pinsDispatched[*dm.batchID] = batchDispatched
 		}
+		msgStateUpdates[dm.newState] = append(msgStateUpdates[dm.newState], dm.msgID)
 	}
+
 	// Build one uber update for DB efficiency
 	if len(pinsDispatched) > 0 {
 		fb := database.PinQueryFactory.NewFilter(ctx)
@@ -292,6 +297,19 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 		}
 		update := database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true)
 		if err := bs.database.UpdatePins(ctx, filter, update); err != nil {
+			return err
+		}
+	}
+
+	// Also do the same for each type of state update, to mark messages dispatched with a new state
+	confirmTime := fftypes.Now() // All messages get the same confirmed timestamp the Events (not Messages directly) should be used for confirm sequence
+	for msgState, msgIDs := range msgStateUpdates {
+		fb := database.MessageQueryFactory.NewFilter(ctx)
+		filter := fb.In("id", msgIDs)
+		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
+			Set("confirmed", confirmTime).
+			Set("state", msgState)
+		if err := bs.database.UpdateMessages(ctx, filter, setConfirmed); err != nil {
 			return err
 		}
 	}

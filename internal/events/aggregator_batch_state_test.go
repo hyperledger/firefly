@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestFlushPinsFail(t *testing.T) {
+func TestFlushPinsFailUpdatePins(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 	bs := newBatchState(ag)
@@ -40,7 +40,28 @@ func TestFlushPinsFail(t *testing.T) {
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{"pin1"},
-	}, 0)
+	}, 0, fftypes.MessageStateConfirmed)
+
+	err := bs.flushPins(ag.ctx)
+	assert.Regexp(t, "pop", err)
+}
+
+func TestFlushPinsFailUpdateMessages(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+	bs := newBatchState(ag)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	bs.MarkMessageDispatched(ag.ctx, fftypes.NewUUID(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Topics: fftypes.FFStringArray{"topic1"},
+		},
+		Pins: fftypes.FFStringArray{"pin1"},
+	}, 0, fftypes.MessageStateConfirmed)
 
 	err := bs.flushPins(ag.ctx)
 	assert.Regexp(t, "pop", err)

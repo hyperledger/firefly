@@ -90,7 +90,7 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state Defi
 
 	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID, tx)
+		event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID, tx, "", "")
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil
@@ -121,7 +121,7 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, st
 
 	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID, tx)
+		event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID, tx, "", "")
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

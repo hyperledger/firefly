@@ -35,6 +35,8 @@ var (
 		"ref",
 		"cid",
 		"tx_id",
+		"tag",
+		"topic",
 		"created",
 	}
 	eventFilterFieldMap = map[string]string{
@@ -76,13 +78,15 @@ func (s *SQLCommon) setEventInsertValues(query sq.InsertBuilder, event *fftypes.
 		event.Reference,
 		event.Correlator,
 		event.Transaction,
+		event.Tag,
+		event.Topic,
 		event.Created,
 	)
 }
 
 func (s *SQLCommon) eventInserted(ctx context.Context, event *fftypes.Event) {
 	s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
-	log.L(ctx).Infof("Emitted %s event %s ref=%s (sequence=%d)", event.Type, event.ID, event.Reference, event.Sequence)
+	log.L(ctx).Infof("Emitted %s event %s for %s:%s (correlator=%v,tag=%s,topic=%s)", event.Type, event.ID, event.Namespace, event.Reference, event.Correlator, event.Tag, event.Topic)
 }
 
 func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, events []*fftypes.Event) (err error) {
@@ -134,6 +138,8 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 		&event.Reference,
 		&event.Correlator,
 		&event.Transaction,
+		&event.Tag,
+		&event.Topic,
 		&event.Created,
 		// Must be added to the list of columns in all selects
 		&event.Sequence,
