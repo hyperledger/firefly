@@ -157,6 +157,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 	go ed.deliverEvents()
+	ed.eventPoller.offsetCommitted = make(chan int64, 3)
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdm := ed.data.(*datamocks.Manager)
@@ -177,15 +178,6 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	ref4 := fftypes.NewUUID()
 	ev4 := fftypes.NewUUID()
 
-	// Capture offset commits
-	offsetUpdates := make(chan int64)
-	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	uof.RunFn = func(a mock.Arguments) {
-		f, err := a.Get(2).(database.Update).Finalize()
-		assert.NoError(t, err)
-		v, _ := f.SetOperations[0].Value.Value()
-		offsetUpdates <- v.(int64)
-	}
 	// Setup enrichment
 	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{ID: ref1},
@@ -234,9 +226,9 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	// Confirm we get the offset updates in the correct order, even though the confirmations
 	// came in a different order from the app.
-	assert.Equal(t, int64(10000001), <-offsetUpdates)
-	assert.Equal(t, int64(10000003), <-offsetUpdates)
-	assert.Equal(t, int64(10000004), <-offsetUpdates)
+	assert.Equal(t, int64(10000001), <-ed.eventPoller.offsetCommitted)
+	assert.Equal(t, int64(10000003), <-ed.eventPoller.offsetCommitted)
+	assert.Equal(t, int64(10000004), <-ed.eventPoller.offsetCommitted)
 
 	// This should complete the batch
 	<-batch1Done
@@ -919,52 +911,6 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	assert.Equal(t, int64(100001), ed.eventPoller.pollingOffset)
 }
 
-func TestBufferedDeliveryAckFail(t *testing.T) {
-
-	sub := &subscription{
-		definition: &fftypes.Subscription{},
-	}
-	ed, cancel := newTestEventDispatcher(sub)
-	defer cancel()
-	go ed.deliverEvents()
-	ed.readAhead = 50
-
-	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	delivered := make(chan bool)
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	deliver.RunFn = func(a mock.Arguments) {
-		delivered <- true
-	}
-
-	bdDone := make(chan struct{})
-	ev1 := fftypes.NewUUID()
-	ev2 := fftypes.NewUUID()
-	ed.eventPoller.pollingOffset = 100000
-	go func() {
-		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
-			&fftypes.Event{ID: ev1, Sequence: 100001},
-			&fftypes.Event{ID: ev2, Sequence: 100002},
-		})
-		assert.EqualError(t, err, "pop")
-		assert.False(t, repoll)
-		close(bdDone)
-	}()
-
-	<-delivered
-	<-delivered
-	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
-		ID: ev1,
-	})
-
-	<-bdDone
-	assert.Equal(t, int64(100001), ed.eventPoller.pollingOffset)
-
-}
-
 func TestBufferedDeliveryFailNack(t *testing.T) {
 	log.SetLevel("trace")
 
@@ -1009,39 +955,6 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 
 	<-bdDone
 	assert.Equal(t, int64(100000), ed.eventPoller.pollingOffset)
-
-}
-
-func TestBufferedFinalAckFail(t *testing.T) {
-
-	sub := &subscription{
-		definition: &fftypes.Subscription{},
-		messageFilter: &messageFilter{
-			topicsFilter: regexp.MustCompile("never matches"),
-		},
-		transactionFilter: &transactionFilter{},
-		blockchainFilter:  &blockchainFilter{},
-	}
-	ed, cancel := newTestEventDispatcher(sub)
-	defer cancel()
-	go ed.deliverEvents()
-	ed.readAhead = 50
-
-	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	ev1 := fftypes.NewUUID()
-	ev2 := fftypes.NewUUID()
-	ed.eventPoller.pollingOffset = 100000
-	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
-		&fftypes.Event{ID: ev1, Sequence: 100001},
-		&fftypes.Event{ID: ev2, Sequence: 100002},
-	})
-	assert.EqualError(t, err, "pop")
-	assert.False(t, repoll)
-
-	assert.Equal(t, int64(100002), ed.eventPoller.pollingOffset)
 
 }
 

@@ -329,7 +329,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> delete: %s`, shortenSQL(sqlQuery))
-	l.Debugf(`SQL-> delete args: %+v`, args)
+	l.Tracef(`SQL-> delete query: %s args: %+v`, sqlQuery, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL delete failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
@@ -354,7 +354,7 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuil
 		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> update: %s`, shortenSQL(sqlQuery))
-	l.Debugf(`SQL-> update query: %s (args: %+v)`, sqlQuery, args)
+	l.Tracef(`SQL-> update query: %s (args: %+v)`, sqlQuery, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL update failed: %s sql=[ %s ]`, err, sqlQuery)

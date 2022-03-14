@@ -327,7 +327,7 @@ func Reset() {
 	viper.SetDefault(string(DataexchangeType), "https")
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
-	viper.SetDefault(string(EventAggregatorBatchSize), 50)
+	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)

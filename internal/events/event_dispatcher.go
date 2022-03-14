@@ -322,19 +322,13 @@ func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (
 				nacks++
 				ed.handleNackOffsetUpdate(an)
 			} else if nacks == 0 {
-				err := ed.handleAckOffsetUpdate(an)
-				if err != nil {
-					return false, err
-				}
+				ed.handleAckOffsetUpdate(an)
 				lastAck = an.offset
 			}
 		}
 	}
 	if nacks == 0 && lastAck != highestOffset {
-		err := ed.eventPoller.commitOffset(ed.ctx, highestOffset)
-		if err != nil {
-			return false, err
-		}
+		ed.eventPoller.commitOffset(highestOffset)
 	}
 	return true, nil // poll again straight away for more messages
 }
@@ -352,7 +346,7 @@ func (ed *eventDispatcher) handleNackOffsetUpdate(nack ackNack) {
 	ed.inflight = map[fftypes.UUID]*fftypes.Event{}
 }
 
-func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
+func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 	oldOffset := ed.eventPoller.getPollingOffset()
 	ed.mux.Lock()
 	delete(ed.inflight, ack.id)
@@ -365,9 +359,8 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 	ed.mux.Unlock()
 	if (lowestInflight == -1 || lowestInflight > ack.offset) && ack.offset > oldOffset {
 		// This was the lowest in flight, and we can move the offset forwards
-		return ed.eventPoller.commitOffset(ed.ctx, ack.offset)
+		ed.eventPoller.commitOffset(ack.offset)
 	}
-	return nil
 }
 
 func (ed *eventDispatcher) dispatchChangeEvent(ce *fftypes.ChangeEvent) {

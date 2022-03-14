@@ -291,8 +291,8 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 		}
 	}
 
-	err = ag.eventPoller.commitOffset(ctx, pins[len(pins)-1].Sequence)
-	return err
+	ag.eventPoller.commitOffset(pins[len(pins)-1].Sequence)
+	return nil
 }
 
 func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *fftypes.Message, pin *fftypes.Pin) (valid bool, err error) {

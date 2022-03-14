@@ -504,7 +504,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterFieldMap,
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
-			"created",
+			&database.SortField{Field: "created", Descending: true},
 		})
 	if err != nil {
 		return nil, nil, err

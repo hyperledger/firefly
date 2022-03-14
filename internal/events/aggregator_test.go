@@ -234,8 +234,6 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 		return true
 	})).Return(nil)
-	// Confirm the offset
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -254,6 +252,9 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, bs.GetPendingConfirm()[*msgID])
+
+	// Confirm the offset
+	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -354,8 +355,6 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	// Confirm the offset
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	_, err := ag.processPinsEventsHandler([]fftypes.LocallySequenced{
 		&fftypes.Pin{
@@ -369,6 +368,9 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -439,8 +441,6 @@ func TestAggregationBroadcast(t *testing.T) {
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	// Confirm the offset
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -456,6 +456,9 @@ func TestAggregationBroadcast(t *testing.T) {
 
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -532,8 +535,6 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	// Confirm the offset
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err = ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -549,6 +550,9 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -599,7 +603,6 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 	}
 
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err = ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -615,6 +618,9 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -663,7 +669,6 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 	}
 
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -679,6 +684,9 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -743,12 +751,14 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, bs)
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(12345), <-ag.eventPoller.offsetCommitted)
 
 }
 
@@ -771,13 +781,15 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 25},
 	}, bs)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
+
+	// Confirm the offset
+	assert.Equal(t, int64(12345), <-ag.eventPoller.offsetCommitted)
 
 }
 
@@ -803,12 +815,15 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 0},
 	}, bs)
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(12345), <-ag.eventPoller.offsetCommitted)
+
 	mdi.AssertExpectations(t)
 
 }
@@ -839,7 +854,6 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{
 		{Sequence: 1111}, // blocks the context
 	}, nil, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], nil, true, nil)
@@ -849,6 +863,10 @@ func TestProcessSkipDupMsg(t *testing.T) {
 		{Sequence: 12345, Batch: batchID, Index: 1, Hash: fftypes.NewRandB32()},
 	}, bs)
 	assert.NoError(t, err)
+
+	// Confirm the offset
+	assert.Equal(t, int64(12345), <-ag.eventPoller.offsetCommitted)
+
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 
