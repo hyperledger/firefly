@@ -85,7 +85,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(nil)
+	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -138,7 +138,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(nil)
+	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -235,7 +235,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&fftypes.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	message := &messageSender{
 		mgr:       pm,
@@ -277,7 +277,7 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		newMsg := args[1].(*data.NewMessage)
 		newMsg.Message.Data = fftypes.DataRefs{
 			{ID: dataID, Hash: fftypes.NewRandB32(), ValueSize: 100001},
@@ -352,7 +352,7 @@ func TestMessagePrepare(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&fftypes.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(nil)
+	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 
 	message := pm.NewMessage("ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -425,7 +425,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(nil)
+	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -606,7 +606,7 @@ func TestRequestReplySuccess(t *testing.T) {
 		Return(nil, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, mock.Anything).Return(nil)
+	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
 	groupID := fftypes.NewRandB32()

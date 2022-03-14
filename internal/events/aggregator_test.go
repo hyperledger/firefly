@@ -428,7 +428,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Do not resolve any pins earlier
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -521,7 +521,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	// Do not resolve any pins earlier
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -841,7 +841,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(batch.Payload.Messages[0], nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], nil, true, nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
@@ -879,7 +879,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(batch.Payload.Messages[0], nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], nil, true, nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
@@ -1010,7 +1010,7 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	}
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(msg, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(msg, nil, true, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -1572,8 +1572,8 @@ func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID).Return(msg1, fftypes.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID).Return(msg2, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePublicBlobRefs).Return(msg1, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePublicBlobRefs).Return(msg2, fftypes.DataArray{}, true, nil).Once()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)

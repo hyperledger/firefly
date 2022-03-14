@@ -105,13 +105,6 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 		if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
 			return i18n.NewError(ctx, i18n.MsgTooLargeBroadcast, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
 		}
-
-		// Perform deferred processing
-		if len(s.msg.ResolvedData.DataToPublish) > 0 {
-			if err := s.mgr.publishBlobs(ctx, s.msg); err != nil {
-				return err
-			}
-		}
 		s.resolved = true
 	}
 	return s.sendInternal(ctx, method)
@@ -128,7 +121,7 @@ func (s *broadcastSender) resolve(ctx context.Context) error {
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	err := s.mgr.data.ResolveInlineDataBroadcast(ctx, s.msg)
+	err := s.mgr.data.ResolveInlineData(ctx, s.msg)
 	return err
 }
 
@@ -154,7 +147,7 @@ func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (
 	if err := s.mgr.data.WriteNewMessage(ctx, s.msg); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d datacount=%d", msg.Header.Namespace, msg.Header.ID, msg.Sequence, len(s.msg.ResolvedData.AllData))
+	log.L(ctx).Infof("Sent broadcast message %s:%s sequence=%d datacount=%d", msg.Header.Namespace, msg.Header.ID, msg.Sequence, len(s.msg.AllData))
 
 	return err
 }

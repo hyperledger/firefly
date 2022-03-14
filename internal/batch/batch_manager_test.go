@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -352,7 +351,7 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 		}).
 		Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything, data.CRORequirePublicBlobRefs).Return(fftypes.DataArray{}, false, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, false, nil)
 
 	bm.(*batchManager).messageSequencer()
 
@@ -541,7 +540,7 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
 	bm.Close()
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, false, nil)
-	_, err := bm.(*batchManager).assembleMessageData(fftypes.BatchTypePrivate, &fftypes.Message{
+	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
@@ -558,7 +557,7 @@ func TestGetMessageDataFail(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
 	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 	bm.Close()
-	_, _ = bm.(*batchManager).assembleMessageData(fftypes.BatchTypePrivate, &fftypes.Message{
+	_, _ = bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
@@ -575,9 +574,9 @@ func TestGetMessageNotFound(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
-	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything, data.CRORequirePublicBlobRefs).Return(nil, false, nil)
+	mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, false, nil)
 	bm.Close()
-	_, err := bm.(*batchManager).assembleMessageData(fftypes.BatchTypeBroadcast, &fftypes.Message{
+	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},

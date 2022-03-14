@@ -91,9 +91,7 @@ func TestWriteNewMessageSyncFallback(t *testing.T) {
 
 	err := mw.WriteNewMessage(customCtx, &NewMessage{
 		Message: msg1,
-		ResolvedData: Resolved{
-			NewData: fftypes.DataArray{data1},
-		},
+		NewData: fftypes.DataArray{data1},
 	})
 
 	assert.NoError(t, err)

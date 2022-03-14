@@ -32,11 +32,6 @@ func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *fftyp
 	return r0
 }
 
-// Close provides a mock function with given fields:
-func (_m *Manager) Close() {
-	_m.Called()
-}
-
 // CopyBlobPStoDX provides a mock function with given fields: ctx, _a1
 func (_m *Manager) CopyBlobPStoDX(ctx context.Context, _a1 *fftypes.Data) (*fftypes.Blob, error) {
 	ret := _m.Called(ctx, _a1)
@@ -198,22 +193,8 @@ func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.Bat
 	return r0, r1
 }
 
-// ResolveInlineDataBroadcast provides a mock function with given fields: ctx, msg
-func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, msg *data.NewMessage) error {
-	ret := _m.Called(ctx, msg)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *data.NewMessage) error); ok {
-		r0 = rf(ctx, msg)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ResolveInlineDataPrivate provides a mock function with given fields: ctx, msg
-func (_m *Manager) ResolveInlineDataPrivate(ctx context.Context, msg *data.NewMessage) error {
+// ResolveInlineData provides a mock function with given fields: ctx, msg
+func (_m *Manager) ResolveInlineData(ctx context.Context, msg *data.NewMessage) error {
 	ret := _m.Called(ctx, msg)
 
 	var r0 error

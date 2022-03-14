@@ -187,14 +187,10 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	return processor, nil
 }
 
-func (bm *batchManager) assembleMessageData(batchType fftypes.BatchType, msg *fftypes.Message) (retData fftypes.DataArray, err error) {
-	var cro []data.CacheReadOption
-	if batchType == fftypes.BatchTypeBroadcast {
-		cro = append(cro, data.CRORequirePublicBlobRefs)
-	}
+func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (retData fftypes.DataArray, err error) {
 	var foundAll = false
 	err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble message %s data", msg.Header.ID), func(attempt int) (retry bool, err error) {
-		retData, foundAll, err = bm.data.GetMessageDataCached(bm.ctx, msg, cro...)
+		retData, foundAll, err = bm.data.GetMessageDataCached(bm.ctx, msg)
 		// continual retry for persistence error (distinct from not-found)
 		return true, err
 	})
@@ -246,7 +242,7 @@ func (bm *batchManager) messageSequencer() {
 					continue
 				}
 
-				data, err := bm.assembleMessageData(processor.conf.DispatcherOptions.BatchType, msg)
+				data, err := bm.assembleMessageData(msg)
 				if err != nil {
 					l.Errorf("Failed to retrieve message data for %s: %s", msg.Header.ID, err)
 					continue

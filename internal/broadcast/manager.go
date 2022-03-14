@@ -122,6 +122,12 @@ func (bm *broadcastManager) Name() string {
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.DispatchState) error {
+
+	// Ensure all the blobs are published
+	if err := bm.publishBlobs(ctx, state.Payload.Data); err != nil {
+		return err
+	}
+
 	// The completed SharedStorage upload
 	op := fftypes.NewOperation(
 		bm.sharedstorage,
@@ -144,21 +150,32 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
 }
 
-func (bm *broadcastManager) publishBlobs(ctx context.Context, newMsg *data.NewMessage) error {
-	for _, d := range newMsg.ResolvedData.DataToPublish {
-		// Stream from the local data exchange ...
-		reader, err := bm.exchange.DownloadBLOB(ctx, d.Blob.PayloadRef)
-		if err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDownloadBlobFailed, d.Blob.PayloadRef)
-		}
-		defer reader.Close()
+func (bm *broadcastManager) publishBlobs(ctx context.Context, data fftypes.DataArray) error {
+	for _, d := range data {
+		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage
+		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
+			blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+			if err != nil {
+				return err
+			}
+			if blob == nil {
+				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob.Hash)
+			}
 
-		// ... to the shared storage
-		d.Data.Blob.Public, err = bm.sharedstorage.PublishData(ctx, reader)
-		if err != nil {
-			return err
+			// Stream from the local data exchange ...
+			reader, err := bm.exchange.DownloadBLOB(ctx, blob.PayloadRef)
+			if err != nil {
+				return i18n.WrapError(ctx, err, i18n.MsgDownloadBlobFailed, blob.PayloadRef)
+			}
+			defer reader.Close()
+
+			// ... to the shared storage
+			d.Blob.Public, err = bm.sharedstorage.PublishData(ctx, reader)
+			if err != nil {
+				return err
+			}
+			log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.ID, d.Blob.Public)
 		}
-		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.Data.ID, d.Data.Blob.Public)
 	}
 
 	return nil
