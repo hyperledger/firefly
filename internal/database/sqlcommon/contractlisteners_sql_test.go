@@ -227,9 +227,35 @@ func TestContractListenerDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractListenerColumns).AddRow(
-		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", fftypes.Now()),
+		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", fftypes.Now(), nil),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10118", err)
+}
+
+func TestContractListenerOptions(t *testing.T) {
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	l := &fftypes.ContractListener{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns",
+		Event:     &fftypes.FFISerializedEvent{},
+		Location:  fftypes.JSONAnyPtr("{}"),
+		Options: &fftypes.ContractListenerOptions{
+			FirstEvent: string(fftypes.SubOptsFirstEventOldest),
+		},
+	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, "ns", l.ID).Return()
+
+	err := s.UpsertContractListener(ctx, l)
+	assert.NoError(t, err)
+
+	li, err := s.GetContractListenerByID(ctx, l.ID)
+	assert.NoError(t, err)
+
+	assert.Equal(t, l.Options, li.Options)
 }

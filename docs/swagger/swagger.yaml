@@ -2275,6 +2275,11 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
                     type: string
                 type: object
@@ -2337,6 +2342,11 @@ paths:
                   type: string
                 namespace:
                   type: string
+                options:
+                  properties:
+                    firstEvent:
+                      type: string
+                  type: object
                 protocolId:
                   type: string
               type: object
@@ -2378,6 +2388,11 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
                     type: string
                 type: object
@@ -2474,6 +2489,11 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
                     type: string
                 type: object
