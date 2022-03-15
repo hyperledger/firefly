@@ -59,9 +59,8 @@ func TestRetrieveTokenPoolCreateInputs(t *testing.T) {
 			"config":    config,
 		},
 	}
-	pool := &fftypes.TokenPool{}
 
-	err := RetrieveTokenPoolCreateInputs(context.Background(), op, pool)
+	pool, err := RetrieveTokenPoolCreateInputs(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *pool.ID)
 	assert.Equal(t, "ns1", pool.Namespace)
@@ -76,23 +75,39 @@ func TestRetrieveTokenPoolCreateInputsBadID(t *testing.T) {
 			"id": "bad",
 		},
 	}
-	pool := &fftypes.TokenPool{}
 
-	err := RetrieveTokenPoolCreateInputs(context.Background(), op, pool)
-	assert.Regexp(t, "FF10142", err)
+	_, err := RetrieveTokenPoolCreateInputs(context.Background(), op)
+	assert.Regexp(t, "FF10151", err)
 }
 
-func TestRetrieveTokenPoolCreateInputsNoName(t *testing.T) {
+func TestAddTokenPoolActivateInputs(t *testing.T) {
+	op := &fftypes.Operation{}
+	poolID := fftypes.NewUUID()
+	info := fftypes.JSONObject{
+		"some": "info",
+	}
+
+	AddTokenPoolActivateInputs(op, poolID, info)
+	assert.Equal(t, poolID.String(), op.Input.GetString("id"))
+	assert.Equal(t, info, op.Input.GetObject("info"))
+}
+
+func TestRetrieveTokenPoolActivateInputs(t *testing.T) {
+	id := fftypes.NewUUID()
+	info := fftypes.JSONObject{
+		"foo": "bar",
+	}
 	op := &fftypes.Operation{
 		Input: fftypes.JSONObject{
-			"id":        fftypes.NewUUID().String(),
-			"namespace": "ns1",
+			"id":   id.String(),
+			"info": info,
 		},
 	}
-	pool := &fftypes.TokenPool{}
 
-	err := RetrieveTokenPoolCreateInputs(context.Background(), op, pool)
-	assert.Error(t, err)
+	poolID, newInfo, err := RetrieveTokenPoolActivateInputs(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, *id, *poolID)
+	assert.Equal(t, info, newInfo)
 }
 
 func TestAddTokenTransferInputs(t *testing.T) {
@@ -127,12 +142,11 @@ func TestRetrieveTokenTransferInputs(t *testing.T) {
 			"localId": id.String(),
 		},
 	}
-	transfer := &fftypes.TokenTransfer{Amount: *fftypes.NewFFBigInt(2)}
 
-	err := RetrieveTokenTransferInputs(context.Background(), op, transfer)
+	transfer, err := RetrieveTokenTransferInputs(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *transfer.LocalID)
-	assert.Equal(t, int64(2), transfer.Amount.Int().Int64())
+	assert.Equal(t, int64(1), transfer.Amount.Int().Int64())
 }
 
 func TestRetrieveTokenTransferInputsBadID(t *testing.T) {
@@ -141,18 +155,60 @@ func TestRetrieveTokenTransferInputsBadID(t *testing.T) {
 			"localId": "bad",
 		},
 	}
-	transfer := &fftypes.TokenTransfer{}
 
-	err := RetrieveTokenTransferInputs(context.Background(), op, transfer)
+	_, err := RetrieveTokenTransferInputs(context.Background(), op)
 	assert.Regexp(t, "FF10151", err)
 }
 
-func TestRetrieveTokenTransferInputsMissingID(t *testing.T) {
-	op := &fftypes.Operation{
-		Input: fftypes.JSONObject{},
+func TestAddTokenApprovalInputs(t *testing.T) {
+	op := &fftypes.Operation{}
+	approval := &fftypes.TokenApproval{
+		LocalID:  fftypes.NewUUID(),
+		Approved: true,
+		Operator: "0x01",
+		Key:      "0x02",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenApproval,
+			ID:   fftypes.NewUUID(),
+		},
 	}
-	transfer := &fftypes.TokenTransfer{}
 
-	err := RetrieveTokenTransferInputs(context.Background(), op, transfer)
-	assert.Regexp(t, "FF10142", err)
+	AddTokenApprovalInputs(op, approval)
+	assert.Equal(t, fftypes.JSONObject{
+		"approved": true,
+		"operator": "0x01",
+		"key":      "0x02",
+		"localId":  approval.LocalID.String(),
+		"tx": map[string]interface{}{
+			"id":   approval.TX.ID.String(),
+			"type": "token_approval",
+		},
+	}, op.Input)
+}
+
+func TestRetrieveTokenApprovalInputs(t *testing.T) {
+	id := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		Input: fftypes.JSONObject{
+			"amount":   "1",
+			"localId":  id.String(),
+			"approved": true,
+		},
+	}
+
+	approval, err := RetrieveTokenApprovalInputs(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, *id, *approval.LocalID)
+	assert.Equal(t, true, approval.Approved)
+}
+
+func TestRetrieveTokenApprovalInputsBadID(t *testing.T) {
+	op := &fftypes.Operation{
+		Input: fftypes.JSONObject{
+			"localId": "bad",
+		},
+	}
+
+	_, err := RetrieveTokenApprovalInputs(context.Background(), op)
+	assert.Regexp(t, "FF10151", err)
 }

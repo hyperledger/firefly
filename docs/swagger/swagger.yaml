@@ -658,95 +658,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/apis/{apiName}/subscribe/{eventPath}:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractAPISubscribe
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: apiName
-        required: true
-        schema:
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: eventPath
-        required: true
-        schema:
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                location:
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created: {}
-                  event:
-                    properties:
-                      description:
-                        type: string
-                      name:
-                        type: string
-                      params:
-                        items:
-                          properties:
-                            name:
-                              type: string
-                            schema:
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  id: {}
-                  interface:
-                    properties:
-                      id: {}
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  location:
-                    type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  protocolId:
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
   /namespaces/{ns}/apis/{id}:
     put:
       description: 'TODO: Description'
@@ -992,121 +903,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success
@@ -1145,121 +964,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success
@@ -1291,6 +1018,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: listener
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: name
         schema:
           type: string
@@ -1307,11 +1039,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: source
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: subscription
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1373,6 +1100,7 @@ paths:
                   info:
                     additionalProperties: {}
                     type: object
+                  listener: {}
                   name:
                     type: string
                   namespace:
@@ -1387,7 +1115,6 @@ paths:
                     type: integer
                   source:
                     type: string
-                  subscription: {}
                   timestamp: {}
                   tx:
                     properties:
@@ -1434,6 +1161,7 @@ paths:
                   info:
                     additionalProperties: {}
                     type: object
+                  listener: {}
                   name:
                     type: string
                   namespace:
@@ -1448,7 +1176,6 @@ paths:
                     type: integer
                   source:
                     type: string
-                  subscription: {}
                   timestamp: {}
                   tx:
                     properties:
@@ -1509,6 +1236,15 @@ paths:
                   count:
                     type: string
                   timestamp: {}
+                  types:
+                    items:
+                      properties:
+                        count:
+                          type: string
+                        type:
+                          type: string
+                      type: object
+                    type: array
                 type: object
           description: Success
         default:
@@ -2120,117 +1856,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/interfaces/{interfaceId}/subscribe/{eventPath}:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractInterfaceSubscribe
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: interfaceId
-        required: true
-        schema:
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: eventPath
-        required: true
-        schema:
-          type: string
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                event:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                  type: object
-                location:
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created: {}
-                  event:
-                    properties:
-                      description:
-                        type: string
-                      name:
-                        type: string
-                      params:
-                        items:
-                          properties:
-                            name:
-                              type: string
-                            schema:
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  id: {}
-                  interface:
-                    properties:
-                      id: {}
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  location:
-                    type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  protocolId:
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
   /namespaces/{ns}/contracts/interfaces/{name}/{version}:
     get:
       description: 'TODO: Description'
@@ -2534,84 +2159,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/query:
-    post:
-      description: 'TODO: Description'
-      operationId: postContractQuery
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                input:
-                  additionalProperties: {}
-                  type: object
-                interface: {}
-                key:
-                  type: string
-                ledger:
-                  type: string
-                location:
-                  type: string
-                method:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                    returns:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema: {}
-          description: Success
-        default:
-          description: ""
-  /namespaces/{ns}/contracts/subscriptions:
+  /namespaces/{ns}/contracts/listeners:
     get:
       description: 'TODO: Description'
-      operationId: getContractSubscriptions
+      operationId: getContractListeners
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2732,7 +2283,7 @@ paths:
           description: ""
     post:
       description: 'TODO: Description'
-      operationId: postNewContractSubscription
+      operationId: postNewContractListener
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2833,10 +2384,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/contracts/subscriptions/{nameOrId}:
+  /namespaces/{ns}/contracts/listeners/{nameOrId}:
     delete:
       description: 'TODO: Description'
-      operationId: deleteContractSubscription
+      operationId: deleteContractListener
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2863,7 +2414,7 @@ paths:
           description: ""
     get:
       description: 'TODO: Description'
-      operationId: getContractSubscriptionByNameOrID
+      operationId: getContractListenerByNameOrID
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -2926,6 +2477,80 @@ paths:
                   protocolId:
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/contracts/query:
+    post:
+      description: 'TODO: Description'
+      operationId: postContractQuery
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                input:
+                  additionalProperties: {}
+                  type: object
+                interface: {}
+                key:
+                  type: string
+                ledger:
+                  type: string
+                location:
+                  type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
           description: Success
         default:
           description: ""
@@ -3893,6 +3518,12 @@ paths:
         schema:
           example: default
           type: string
+      - description: 'TODO: Description'
+        in: query
+        name: fetchreferences
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header
@@ -3902,12 +3533,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: created
+        name: correlator
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: group
+        name: created
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3928,6 +3559,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3975,6 +3611,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -3983,6 +3620,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted
@@ -3990,13 +3628,16 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
+                    - token_approval_confirmed
+                    - token_approval_op_failed
                     - contract_interface_confirmed
                     - contract_api_confirmed
-                    - blockchain_event
+                    - blockchain_event_received
                     type: string
                 type: object
           description: Success
@@ -4033,6 +3674,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -4041,6 +3683,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted
@@ -4048,13 +3691,16 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
+                    - token_approval_confirmed
+                    - token_approval_op_failed
                     - contract_interface_confirmed
                     - contract_api_confirmed
-                    - blockchain_event
+                    - blockchain_event_received
                     type: string
                 type: object
           description: Success
@@ -4217,6 +3863,503 @@ paths:
                   namespace:
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentities
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: description
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: did
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.claim
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: parent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created: {}
+                    description:
+                      type: string
+                    did:
+                      type: string
+                    id: {}
+                    messages:
+                      properties:
+                        claim: {}
+                        update: {}
+                        verification: {}
+                      type: object
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    parent: {}
+                    profile:
+                      additionalProperties: {}
+                      type: object
+                    type:
+                      enum:
+                      - org
+                      - node
+                      - custom
+                      type: string
+                    updated: {}
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewIdentity
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  did:
+                    type: string
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  did:
+                    type: string
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities/{iid}:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentityByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: iid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  did:
+                    type: string
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities/{iid}/did:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentityDID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: iid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  '@context':
+                    items:
+                      type: string
+                    type: array
+                  authentication:
+                    items:
+                      type: string
+                    type: array
+                  id:
+                    type: string
+                  verificationMethod:
+                    items:
+                      properties:
+                        blockchainAcountId:
+                          type: string
+                        controller:
+                          type: string
+                        dataExchangePeerID:
+                          type: string
+                        id:
+                          type: string
+                        mspIdentityString:
+                          type: string
+                        type:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/identities/{iid}/verifiers:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentityVerifiers
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: iid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: identity
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: value
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created: {}
+                    hash: {}
+                    identity: {}
+                    namespace:
+                      type: string
+                    type:
+                      enum:
+                      - ethereum_address
+                      - fabric_msp_id
+                      - dx_peer_id
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -4625,12 +4768,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: created
+        name: correlator
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: group
+        name: created
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4651,6 +4794,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4698,6 +4846,7 @@ paths:
             application/json:
               schema:
                 properties:
+                  correlator: {}
                   created: {}
                   id: {}
                   namespace:
@@ -4706,6 +4855,7 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  tx: {}
                   type:
                     enum:
                     - transaction_submitted
@@ -4713,13 +4863,16 @@ paths:
                     - message_rejected
                     - namespace_confirmed
                     - datatype_confirmed
-                    - group_confirmed
+                    - identity_confirmed
+                    - identity_updated
                     - token_pool_confirmed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
+                    - token_approval_confirmed
+                    - token_approval_op_failed
                     - contract_interface_confirmed
                     - contract_api_confirmed
-                    - blockchain_event
+                    - blockchain_event_received
                     type: string
                 type: object
           description: Success
@@ -4770,6 +4923,7 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
@@ -4777,12 +4931,13 @@ paths:
                     enum:
                     - blockchain_batch_pin
                     - blockchain_invoke
-                    - publicstorage_batch_broadcast
+                    - sharedstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
+                    - token_approval
                     type: string
                   updated: {}
                 type: object
@@ -4836,6 +4991,7 @@ paths:
                     - token_pool
                     - token_transfer
                     - contract_invoke
+                    - token_approval
                     type: string
                 type: object
           description: Success
@@ -5459,6 +5615,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: retry
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: status
         schema:
           type: string
@@ -5531,6 +5692,7 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
@@ -5538,12 +5700,13 @@ paths:
                     enum:
                     - blockchain_batch_pin
                     - blockchain_invoke
-                    - publicstorage_batch_broadcast
+                    - sharedstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
+                    - token_approval
                     type: string
                   updated: {}
                 type: object
@@ -5595,6 +5758,7 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
@@ -5602,12 +5766,84 @@ paths:
                     enum:
                     - blockchain_batch_pin
                     - blockchain_invoke
-                    - publicstorage_batch_broadcast
+                    - sharedstorage_batch_broadcast
                     - dataexchange_batch_send
                     - dataexchange_blob_send
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
+                    - token_approval
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/operations/{opid}/retry:
+    post:
+      description: 'TODO: Description'
+      operationId: postOpRetry
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: opid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  error:
+                    type: string
+                  id: {}
+                  input:
+                    additionalProperties: {}
+                    type: object
+                  namespace:
+                    type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
+                  plugin:
+                    type: string
+                  retry: {}
+                  status:
+                    type: string
+                  tx: {}
+                  type:
+                    enum:
+                    - blockchain_batch_pin
+                    - blockchain_invoke
+                    - sharedstorage_batch_broadcast
+                    - dataexchange_batch_send
+                    - dataexchange_blob_send
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
                     type: string
                   updated: {}
                 type: object
@@ -5730,14 +5966,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -5789,14 +6048,37 @@ paths:
                   properties:
                     author:
                       type: string
+                    blockchainevent:
+                      properties:
+                        listener:
+                          type: string
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
                     group:
                       type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          type: string
+                      type: object
                     tag:
                       type: string
                     topics:
                       type: string
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -5917,14 +6199,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -5976,14 +6281,37 @@ paths:
                   properties:
                     author:
                       type: string
+                    blockchainevent:
+                      properties:
+                        listener:
+                          type: string
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
                     group:
                       type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          type: string
+                      type: object
                     tag:
                       type: string
                     topics:
                       type: string
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -6104,14 +6432,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6201,14 +6552,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                          topics:
+                            type: string
+                        type: object
                       tag:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6394,6 +6768,296 @@ paths:
               schema:
                 properties:
                   pool: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/approvals:
+    get:
+      description: 'TODO: Description'
+      operationId: getTokenApprovals
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: approved
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: blockchainevent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: connector
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: localid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: operator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: pool
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tx.type
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  approved:
+                    type: boolean
+                  blockchainEvent: {}
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  key:
+                    type: string
+                  localId: {}
+                  namespace:
+                    type: string
+                  operator:
+                    type: string
+                  pool: {}
+                  protocolId:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenApproval
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                approved:
+                  type: boolean
+                blockchainEvent: {}
+                config:
+                  additionalProperties: {}
+                  type: object
+                connector:
+                  type: string
+                created: {}
+                info:
+                  additionalProperties: {}
+                  type: object
+                key:
+                  type: string
+                localId: {}
+                namespace:
+                  type: string
+                operator:
+                  type: string
+                pool:
+                  type: string
+                protocolId:
+                  type: string
+                tokenIndex:
+                  type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  approved:
+                    type: boolean
+                  blockchainEvent: {}
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  key:
+                    type: string
+                  localId: {}
+                  namespace:
+                    type: string
+                  operator:
+                    type: string
+                  pool: {}
+                  protocolId:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  approved:
+                    type: boolean
+                  blockchainEvent: {}
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
+                  key:
+                    type: string
+                  localId: {}
+                  namespace:
+                    type: string
+                  operator:
+                    type: string
+                  pool: {}
+                  protocolId:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:
@@ -7472,6 +8136,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: uri
         schema:
           type: string
@@ -7947,6 +8616,7 @@ paths:
                     - token_pool
                     - token_transfer
                     - contract_invoke
+                    - token_approval
                     type: string
                 type: object
           description: Success
@@ -8058,6 +8728,7 @@ paths:
                     - token_pool
                     - token_transfer
                     - contract_invoke
+                    - token_approval
                     type: string
                 type: object
           description: Success
@@ -8099,6 +8770,7 @@ paths:
                     info:
                       additionalProperties: {}
                       type: object
+                    listener: {}
                     name:
                       type: string
                     namespace:
@@ -8113,7 +8785,6 @@ paths:
                       type: integer
                     source:
                       type: string
-                    subscription: {}
                     timestamp: {}
                     tx:
                       properties:
@@ -8172,6 +8843,7 @@ paths:
                       type: object
                     plugin:
                       type: string
+                    retry: {}
                     status:
                       type: string
                     tx: {}
@@ -8179,12 +8851,13 @@ paths:
                       enum:
                       - blockchain_batch_pin
                       - blockchain_invoke
-                      - publicstorage_batch_broadcast
+                      - sharedstorage_batch_broadcast
                       - dataexchange_batch_send
                       - dataexchange_blob_send
                       - token_create_pool
                       - token_activate_pool
                       - token_transfer
+                      - token_approval
                       type: string
                     updated: {}
                   type: object
@@ -8247,6 +8920,163 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/verifiers:
+    get:
+      description: 'TODO: Description'
+      operationId: getVerifiers
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: identity
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: value
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created: {}
+                    hash: {}
+                    identity: {}
+                    namespace:
+                      type: string
+                    type:
+                      enum:
+                      - ethereum_address
+                      - fabric_msp_id
+                      - dx_peer_id
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/verifiers/{vid}:
+    get:
+      description: 'TODO: Description'
+      operationId: getVerifierByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: vid
+        required: true
+        schema:
+          example: id
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  hash: {}
+                  identity: {}
+                  namespace:
+                    type: string
+                  type:
+                    enum:
+                    - ethereum_address
+                    - fabric_msp_id
+                    - dx_peer_id
+                    type: string
+                  value:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/nodes:
     get:
       description: 'TODO: Description'
@@ -8271,12 +9101,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: dx.endpoint
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: dx.peer
+        name: did
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -8286,7 +9111,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: message
+        name: messages.claim
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -8296,7 +9131,27 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: owner
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: parent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -8342,20 +9197,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8387,20 +9252,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8437,20 +9312,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         "202":
@@ -8461,20 +9346,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  dx:
-                    properties:
-                      endpoint:
-                        additionalProperties: {}
-                        type: object
-                      peer:
-                        type: string
-                    type: object
+                  did:
+                    type: string
                   id: {}
-                  message: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  owner:
+                  namespace:
                     type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8503,17 +9398,37 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: did
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: identity
+        name: messages.claim
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: message
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -8524,6 +9439,16 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -8569,17 +9494,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8608,12 +9546,11 @@ paths:
               properties:
                 description:
                   type: string
-                identity:
+                key:
                   type: string
                 name:
                   type: string
-                parent:
-                  type: string
+                parent: {}
                 profile:
                   additionalProperties: {}
                   type: object
@@ -8627,17 +9564,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         "202":
@@ -8648,17 +9598,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8690,17 +9653,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8737,17 +9713,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         "202":
@@ -8758,17 +9747,30 @@ paths:
                   created: {}
                   description:
                     type: string
-                  id: {}
-                  identity:
+                  did:
                     type: string
-                  message: {}
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
                   name:
                     type: string
-                  parent:
+                  namespace:
                     type: string
+                  parent: {}
                   profile:
                     additionalProperties: {}
                     type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -8806,9 +9808,9 @@ paths:
                     type: object
                   org:
                     properties:
-                      id: {}
-                      identity:
+                      did:
                         type: string
+                      id: {}
                       name:
                         type: string
                       registered:
@@ -8877,5 +9879,111 @@ paths:
           description: Success
         default:
           description: ""
+  /status/pins:
+    get:
+      description: 'TODO: Description'
+      operationId: getStatusPins
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: batch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: dispatched
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: index
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: masked
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  created: {}
+                  dispatched:
+                    type: boolean
+                  hash: {}
+                  index:
+                    format: int64
+                    type: integer
+                  masked:
+                    type: boolean
+                  sequence:
+                    format: int64
+                    type: integer
+                  signer:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
 servers:
-- url: http://localhost:12345
+- url: http://localhost:5000

@@ -28,6 +28,52 @@ func (_m *Helper) AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockch
 	return r0
 }
 
+// EnrichEvent provides a mock function with given fields: ctx, event
+func (_m *Helper) EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error) {
+	ret := _m.Called(ctx, event)
+
+	var r0 *fftypes.EnrichedEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) *fftypes.EnrichedEvent); ok {
+		r0 = rf(ctx, event)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.EnrichedEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Event) error); ok {
+		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTransactionByIDCached provides a mock function with given fields: ctx, id
+func (_m *Helper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Transaction); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Transaction)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PersistTransaction provides a mock function with given fields: ctx, ns, id, txType, blockchainTXID
 func (_m *Helper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.FFEnum, blockchainTXID string) (bool, error) {
 	ret := _m.Called(ctx, ns, id, txType, blockchainTXID)
@@ -70,14 +116,4 @@ func (_m *Helper) SubmitNewTransaction(ctx context.Context, ns string, txType ff
 	}
 
 	return r0, r1
-}
-
-// WriteOperationFailure provides a mock function with given fields: ctx, opID, err
-func (_m *Helper) WriteOperationFailure(ctx context.Context, opID *fftypes.UUID, err error) {
-	_m.Called(ctx, opID, err)
-}
-
-// WriteOperationSuccess provides a mock function with given fields: ctx, opID, output
-func (_m *Helper) WriteOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject) {
-	_m.Called(ctx, opID, output)
 }

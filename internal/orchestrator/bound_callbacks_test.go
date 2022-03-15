@@ -42,11 +42,12 @@ func TestBoundCallbacks(t *testing.T) {
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
 	pool := &tokens.TokenPool{}
 	transfer := &tokens.TokenTransfer{}
+	approval := &tokens.TokenApproval{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
-	mei.On("BatchPinComplete", mbi, batch, "0x12345").Return(fmt.Errorf("pop"))
-	err := bc.BatchPinComplete(batch, "0x12345")
+	mei.On("BatchPinComplete", mbi, batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err := bc.BatchPinComplete(batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
 	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
@@ -77,6 +78,10 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mei.On("TokensTransferred", mti, transfer).Return(fmt.Errorf("pop"))
 	err = bc.TokensTransferred(mti, transfer)
+	assert.EqualError(t, err, "pop")
+
+	mei.On("TokensApproved", mti, approval).Return(fmt.Errorf("pop"))
+	err = bc.TokensApproved(mti, approval)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("BlockchainEvent", mock.AnythingOfType("*blockchain.EventWithSubscription")).Return(fmt.Errorf("pop"))

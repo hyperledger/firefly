@@ -81,17 +81,13 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 	autoAck, hasAutoack := req.URL.Query()["autoack"]
 	isAutoack := hasAutoack && (len(autoAck) == 0 || autoAck[0] != "false")
 	if hasEphemeral || hasName {
+		filter := fftypes.NewSubscriptionFilterFromQuery(query)
 		err := wc.handleStart(&fftypes.WSClientActionStartPayload{
-			AutoAck:   &isAutoack,
-			Ephemeral: isEphemeral,
-			Namespace: query.Get("namespace"),
-			Name:      query.Get("name"),
-			Filter: fftypes.SubscriptionFilter{
-				Events: query.Get("filter.events"),
-				Topics: query.Get("filter.topics"),
-				Group:  query.Get("filter.group"),
-				Tag:    query.Get("filter.tag"),
-			},
+			AutoAck:      &isAutoack,
+			Ephemeral:    isEphemeral,
+			Namespace:    query.Get("namespace"),
+			Name:         query.Get("name"),
+			Filter:       filter,
 			ChangeEvents: query.Get("changeevents"),
 		})
 		if err != nil {

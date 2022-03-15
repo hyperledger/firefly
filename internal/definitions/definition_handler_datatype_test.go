@@ -30,7 +30,7 @@ import (
 )
 
 func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -53,14 +53,14 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionConfirm, action)
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
-	err = ba.Finalize(context.Background())
+	err = bs.finalizers[0](context.Background())
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
@@ -68,7 +68,7 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -91,14 +91,14 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, ba, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionConfirm, action)
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
-	err = ba.Finalize(context.Background())
+	err = bs.finalizers[0](context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -106,7 +106,7 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		Validator: fftypes.ValidatorTypeJSON,
@@ -122,17 +122,18 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionReject, action)
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -151,19 +152,20 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionReject, action)
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -175,17 +177,18 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 	}
 	dt.Hash = dt.Value.Hash()
 
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{})
-	assert.Equal(t, ActionReject, action)
+	}, fftypes.DataArray{}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -206,21 +209,22 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineDatatype),
+			Tag:       fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionRetry, action)
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
 	mbi.AssertExpectations(t)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -242,20 +246,21 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionRetry, action)
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
 	mbi.AssertExpectations(t)
+	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
-	dh := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandlers(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -276,14 +281,15 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
-	action, _, err := dh.HandleDefinitionBroadcast(context.Background(), &fftypes.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Tag: string(fftypes.SystemTagDefineDatatype),
+			Tag: fftypes.SystemTagDefineDatatype,
 		},
-	}, []*fftypes.Data{data})
-	assert.Equal(t, ActionReject, action)
+	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
 	mbi.AssertExpectations(t)
+	bs.assertNoFinalizers()
 }

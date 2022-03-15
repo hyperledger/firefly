@@ -18,6 +18,8 @@ package fftypes
 
 type TransactionType = FFEnum
 
+const transactionBaseSizeEstimate = int64(256)
+
 var (
 	// TransactionTypeNone deprecated - replaced by TransactionTypeUnpinned
 	TransactionTypeNone TransactionType = ffEnum("txtype", "none")
@@ -31,6 +33,8 @@ var (
 	TransactionTypeTokenTransfer TransactionType = ffEnum("txtype", "token_transfer")
 	// TransactionTypeContractInvoke is a smart contract invoke
 	TransactionTypeContractInvoke OpType = ffEnum("txtype", "contract_invoke")
+	// TransactionTypeTokenTransfer represents a token approval
+	TransactionTypeTokenApproval TransactionType = ffEnum("txtype", "token_approval")
 )
 
 // TransactionRef refers to a transaction, in other types
@@ -57,6 +61,7 @@ var (
 	TransactionStatusTypeBatch           TransactionStatusType = "Batch"
 	TransactionStatusTypeTokenPool       TransactionStatusType = "TokenPool"
 	TransactionStatusTypeTokenTransfer   TransactionStatusType = "TokenTransfer"
+	TransactionStatusTypeTokenApproval   TransactionStatusType = "TokenApproval"
 )
 
 type TransactionStatusDetails struct {
@@ -72,4 +77,8 @@ type TransactionStatusDetails struct {
 type TransactionStatus struct {
 	Status  OpStatus                    `json:"status"`
 	Details []*TransactionStatusDetails `json:"details"`
+}
+
+func (tx *Transaction) Size() int64 {
+	return transactionBaseSizeEstimate // currently a static size assessment for caching
 }

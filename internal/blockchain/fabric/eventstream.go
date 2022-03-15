@@ -153,7 +153,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, location *Locati
 
 	subName := event
 	for _, s := range existingSubs {
-		if s.Name == subName {
+		if s.Stream == stream && s.Name == subName {
 			sub = s
 		}
 	}

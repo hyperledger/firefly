@@ -23,57 +23,27 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error) {
+func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
 	l := log.L(ctx)
 
-	var node fftypes.Node
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &node)
+	var nodeOld fftypes.DeprecatedNode
+	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld)
 	if !valid {
-		return ActionReject, nil, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
-	if err := node.Validate(ctx, true); err != nil {
-		l.Warnf("Unable to process node broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return ActionReject, nil, nil
-	}
-
-	owner, err := dh.database.GetOrganizationByIdentity(ctx, node.Owner)
+	owner, err := dh.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  dh.blockchain.VerifierType(),
+		Value: nodeOld.Owner,
+	})
 	if err != nil {
-		return ActionRetry, nil, err // We only return database errors
+		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if owner == nil {
-		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, node.Owner)
-		return ActionReject, nil, nil
+		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, nodeOld.Owner)
+		return HandlerResult{Action: ActionReject}, nil
 	}
 
-	if msg.Header.Key != node.Owner {
-		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, node.Owner, msg.Header.Author)
-		return ActionReject, nil, nil
-	}
+	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.AddMigratedParent(owner.ID), nil)
 
-	existing, err := dh.database.GetNode(ctx, node.Owner, node.Name)
-	if err == nil && existing == nil {
-		existing, err = dh.database.GetNodeByID(ctx, node.ID)
-	}
-	if err != nil {
-		return ActionRetry, nil, err // We only return database errors
-	}
-	if existing != nil {
-		if existing.Owner != node.Owner {
-			l.Warnf("Unable to process node broadcast %s - mismatch with existing %v", msg.Header.ID, existing.ID)
-			return ActionReject, nil, nil
-		}
-		node.ID = nil // we keep the existing ID
-	}
-
-	if err = dh.database.UpsertNode(ctx, &node, true); err != nil {
-		return ActionRetry, nil, err
-	}
-
-	return ActionConfirm, &DefinitionBatchActions{
-		PreFinalize: func(ctx context.Context) error {
-			// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-			return dh.exchange.AddPeer(ctx, node.DX)
-		},
-	}, nil
 }

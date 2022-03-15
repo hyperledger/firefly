@@ -18,7 +18,6 @@ package assets
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -55,6 +54,7 @@ type transferSender struct {
 	namespace string
 	transfer  *fftypes.TokenTransferInput
 	resolved  bool
+	msgSender sysmessaging.MessageSender
 }
 
 // sendMethod is the specific operation requested of the transferSender.
@@ -86,7 +86,7 @@ func (s *transferSender) setDefaults() {
 	s.transfer.LocalID = fftypes.NewUUID()
 }
 
-func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput) error {
+func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput) (err error) {
 	if transfer.Connector == "" {
 		connector, err := am.getTokenConnectorName(ctx, ns)
 		if err != nil {
@@ -101,12 +101,8 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 		}
 		transfer.Pool = pool
 	}
-	if transfer.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return err
-		}
-		transfer.Key = org.Identity
+	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
+		return err
 	}
 	if transfer.From == "" {
 		transfer.From = transfer.Key
@@ -194,14 +190,14 @@ func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) 
 	return s.sendInternal(ctx, method)
 }
 
-func (s *transferSender) resolve(ctx context.Context) error {
+func (s *transferSender) resolve(ctx context.Context) (err error) {
 	// Resolve the attached message
 	if s.transfer.Message != nil {
-		sender, err := s.buildTransferMessage(ctx, s.namespace, s.transfer.Message)
+		s.msgSender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message)
 		if err != nil {
 			return err
 		}
-		if err = sender.Prepare(ctx); err != nil {
+		if err = s.msgSender.Prepare(ctx); err != nil {
 			return err
 		}
 		s.transfer.TokenTransfer.Message = s.transfer.Message.Header.ID
@@ -228,8 +224,8 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		return nil
 	}
 
-	var pool *fftypes.TokenPool
 	var op *fftypes.Operation
+	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.transfer.Pool)
 		if err != nil {
@@ -246,6 +242,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 
 		s.transfer.TX.ID = txid
 		s.transfer.TX.Type = fftypes.TransactionTypeTokenTransfer
+		s.transfer.TokenTransfer.Pool = pool.ID
 
 		op = fftypes.NewOperation(
 			plugin,
@@ -259,31 +256,21 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return err
 		}
 
-		if s.transfer.Message != nil {
-			s.transfer.Message.State = fftypes.MessageStateStaged
-			err = s.mgr.database.UpsertMessage(ctx, &s.transfer.Message.Message, database.UpsertOptimizationNew)
-		}
 		return err
 	})
 	if err != nil {
 		return err
 	}
 
-	switch s.transfer.Type {
-	case fftypes.TokenTransferTypeMint:
-		err = plugin.MintTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
-	case fftypes.TokenTransferTypeTransfer:
-		err = plugin.TransferTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
-	case fftypes.TokenTransferTypeBurn:
-		err = plugin.BurnTokens(ctx, op.ID, pool.ProtocolID, &s.transfer.TokenTransfer)
-	default:
-		panic(fmt.Sprintf("unknown transfer type: %v", s.transfer.Type))
+	// Write the transfer message outside of any DB transaction, as it will use the background message writer.
+	if s.transfer.Message != nil {
+		s.transfer.Message.State = fftypes.MessageStateStaged
+		if err = s.msgSender.Send(ctx); err != nil {
+			return err
+		}
 	}
 
-	if err != nil {
-		s.mgr.txHelper.WriteOperationFailure(ctx, op.ID, err)
-	}
-	return err
+	return s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {

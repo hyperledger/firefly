@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/sirupsen/logrus"
 )
 
 func newBatchState(ag *aggregator) *batchState {
@@ -35,6 +36,7 @@ func newBatchState(ag *aggregator) *batchState {
 		maskedContexts:     make(map[fftypes.Bytes32]*nextPinGroupState),
 		unmaskedContexts:   make(map[fftypes.Bytes32]*contextState),
 		dispatchedMessages: make([]*dispatchedMessage, 0),
+		pendingConfirms:    make(map[fftypes.UUID]*fftypes.Message),
 
 		PreFinalize: make([]func(ctx context.Context) error, 0),
 		Finalize:    make([]func(ctx context.Context) error, 0),
@@ -70,7 +72,8 @@ type dispatchedMessage struct {
 	batchID       *fftypes.UUID
 	msgID         *fftypes.UUID
 	firstPinIndex int64
-	lastPinIndex  int64
+	topicCount    int
+	msgPins       fftypes.FFStringArray
 }
 
 // batchState is the object that tracks the in-memory state that builds up while processing a batch of pins,
@@ -93,6 +96,7 @@ type batchState struct {
 	maskedContexts     map[fftypes.Bytes32]*nextPinGroupState
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
+	pendingConfirms    map[fftypes.UUID]*fftypes.Message
 
 	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
 	// - Will execute after all batch messages have been processed
@@ -117,6 +121,10 @@ func (bs *batchState) AddFinalize(action func(ctx context.Context) error) {
 	if action != nil {
 		bs.Finalize = append(bs.Finalize, action)
 	}
+}
+
+func (bs *batchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
+	return bs.pendingConfirms
 }
 
 func (bs *batchState) RunPreFinalize(ctx context.Context) error {
@@ -169,7 +177,7 @@ func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnma
 
 }
 
-func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32) (*nextPinState, error) {
+func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// For masked pins, we can only process if:
@@ -191,7 +199,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 	}
 
 	// This message must be the next hash for the author
-	l.Debugf("Group=%s Topic='%s' Sequence=%d Pin=%s NextPins=%v", msg.Header.Group, topic, firstMsgPinSequence, pin, npg.nextPins)
+	l.Debugf("Group=%s Topic='%s' Sequence=%d Pin=%s", msg.Header.Group, topic, firstMsgPinSequence, pin)
 	var nextPin *fftypes.NextPin
 	for _, np := range npg.nextPins {
 		if *np.Hash == *pin {
@@ -200,7 +208,12 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 		}
 	}
 	if nextPin == nil || nextPin.Identity != msg.Header.Author {
-		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", msg.Header.Group, topic, contextUnmasked, pin, nextPin)
+		if logrus.IsLevelEnabled(logrus.DebugLevel) {
+			for _, np := range npg.nextPins {
+				l.Debugf("NextPin: context=%s author=%s nonce=%d hash=%s", np.Context, np.Identity, np.Nonce, np.Hash)
+			}
+		}
+		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nonce=%s nextHash=%+v author=%s", msg.Header.Group, topic, contextUnmasked, pin, nonceStr, nextPin, msg.Header.Author)
 		return nil, nil
 	}
 	return &nextPinState{
@@ -214,7 +227,8 @@ func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftype
 		batchID:       batchID,
 		msgID:         msg.Header.ID,
 		firstPinIndex: msgBaseIndex,
-		lastPinIndex:  msgBaseIndex + int64(len(msg.Header.Topics)) - 1,
+		topicCount:    len(msg.Header.Topics),
+		msgPins:       msg.Pins,
 	})
 }
 
@@ -230,6 +244,7 @@ func (bs *batchState) SetContextBlockedBy(ctx context.Context, unmaskedContext f
 }
 
 func (bs *batchState) flushPins(ctx context.Context) error {
+	l := log.L(ctx)
 
 	// Update all the next pins
 	for _, npg := range bs.maskedContexts {
@@ -254,14 +269,27 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	// using the index range of pins it owns within the batch it is a part of.
 	// Note that this might include pins not in the batch we read from the database, as the page size
 	// cannot be guaranteed to overlap with the set of indexes of a message within a batch.
+	pinsDispatched := make(map[fftypes.UUID][]driver.Value)
 	for _, dm := range bs.dispatchedMessages {
+		batchDispatched := pinsDispatched[*dm.batchID]
+		l.Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d topics=%d pins=%s", dm.batchID, dm.msgID, dm.firstPinIndex, dm.topicCount, dm.msgPins)
+		for i := 0; i < dm.topicCount; i++ {
+			batchDispatched = append(batchDispatched, dm.firstPinIndex+int64(i))
+		}
+		if len(batchDispatched) > 0 {
+			pinsDispatched[*dm.batchID] = batchDispatched
+		}
+	}
+	// Build one uber update for DB efficiency
+	if len(pinsDispatched) > 0 {
 		fb := database.PinQueryFactory.NewFilter(ctx)
-		filter := fb.And(
-			fb.Eq("batch", dm.batchID),
-			fb.Gte("index", dm.firstPinIndex),
-			fb.Lte("index", dm.lastPinIndex),
-		)
-		log.L(ctx).Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d lastIndex=%d", dm.batchID, dm.msgID, dm.firstPinIndex, dm.lastPinIndex)
+		filter := fb.Or()
+		for batchID, indexes := range pinsDispatched {
+			filter.Condition(fb.And(
+				fb.Eq("batch", batchID),
+				fb.In("index", indexes),
+			))
+		}
 		update := database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true)
 		if err := bs.database.UpdatePins(ctx, filter, update); err != nil {
 			return err

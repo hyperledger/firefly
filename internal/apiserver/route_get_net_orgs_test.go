@@ -35,7 +35,7 @@ func TestGetOrganizations(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mnm.On("GetOrganizations", mock.Anything, mock.Anything).
-		Return([]*fftypes.Organization{}, nil, nil)
+		Return([]*fftypes.Identity{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

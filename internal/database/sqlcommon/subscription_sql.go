@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,20 +34,12 @@ var (
 		"namespace",
 		"name",
 		"transport",
-		"filter_events",
-		"filter_topics",
-		"filter_tag",
-		"filter_group",
+		"filters",
 		"options",
 		"created",
 		"updated",
 	}
-	subscriptionFilterFieldMap = map[string]string{
-		"filter.events": "filter_events",
-		"filter.topics": "filter_topics",
-		"filter.tag":    "filter_tag",
-		"filter.group":  "filter_group",
-	}
+	subscriptionFilterFieldMap = map[string]string{}
 )
 
 func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftypes.Subscription, allowExisting bool) (err error) {
@@ -95,10 +87,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 				Set("namespace", subscription.Namespace).
 				Set("name", subscription.Name).
 				Set("transport", subscription.Transport).
-				Set("filter_events", subscription.Filter.Events).
-				Set("filter_topics", subscription.Filter.Topics).
-				Set("filter_tag", subscription.Filter.Tag).
-				Set("filter_group", subscription.Filter.Group).
+				Set("filters", subscription.Filter).
 				Set("options", subscription.Options).
 				Set("created", subscription.Created).
 				Set("updated", subscription.Updated).
@@ -125,10 +114,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					subscription.Namespace,
 					subscription.Name,
 					subscription.Transport,
-					subscription.Filter.Events,
-					subscription.Filter.Topics,
-					subscription.Filter.Tag,
-					subscription.Filter.Group,
+					subscription.Filter,
 					subscription.Options,
 					subscription.Created,
 					subscription.Updated,
@@ -152,10 +138,7 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 		&subscription.Namespace,
 		&subscription.Name,
 		&subscription.Transport,
-		&subscription.Filter.Events,
-		&subscription.Filter.Topics,
-		&subscription.Filter.Tag,
-		&subscription.Filter.Group,
+		&subscription.Filter,
 		&subscription.Options,
 		&subscription.Created,
 		&subscription.Updated,

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -37,7 +37,7 @@ var getBatches = &oapispec.Route{
 	FilterFactory:   database.BatchQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetBatches(r.Ctx, r.PP["ns"], r.Filter))

@@ -60,7 +60,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
@@ -73,12 +73,11 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 func TestBroadcastUpsertFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 
@@ -89,6 +88,9 @@ func TestBroadcastUpsertFail(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
+
+	mim.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastDatatypeInvalid(t *testing.T) {
@@ -112,40 +114,16 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBroadcastBroadcastFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
-
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
-
-	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
-		Namespace: "ns1",
-		Name:      "ent1",
-		Version:   "0.0.1",
-		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
-	}, false)
-	assert.EqualError(t, err, "pop")
-}
-
 func TestBroadcastOk(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
@@ -154,4 +132,7 @@ func TestBroadcastOk(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.NoError(t, err)
+
+	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }

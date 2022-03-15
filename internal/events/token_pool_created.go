@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -60,7 +61,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 		return err
 	}
 	log.L(ctx).Infof("Token pool confirmed, id=%s", pool.ID)
-	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID)
+	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID, pool.TX.ID)
 	return em.database.InsertEvent(ctx, event)
 }
 
@@ -89,8 +90,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 		// Unknown pool state - should only happen on first run after database migration
 		// Activate the pool, then immediately confirm
 		// TODO: can this state eventually be removed?
-		ev := buildBlockchainEvent(existingPool.Namespace, nil, &pool.Event, &existingPool.TX)
-		if err = em.assets.ActivateTokenPool(ctx, existingPool, ev); err != nil {
+		if err = em.assets.ActivateTokenPool(ctx, existingPool, pool.Event.Info); err != nil {
 			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", existingPool.ID, err)
 			return nil, err
 		}
@@ -106,8 +106,8 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPo
 		return nil, nil
 	}
 
-	announcePool = &fftypes.TokenPool{}
-	if err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op, announcePool); err != nil {
+	announcePool, err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
+	if err != nil || announcePool.ID == nil || announcePool.Namespace == "" || announcePool.Name == "" {
 		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
 		return nil, nil
 	}
@@ -134,7 +134,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				if existingPool.State == fftypes.TokenPoolStateConfirmed {
 					return nil // already confirmed
 				}
-				if msg, err := em.database.GetMessageByID(ctx, existingPool.Message); err != nil {
+				if msg, _, _, err := em.data.GetMessageWithDataCached(ctx, existingPool.Message, data.CRORequireBatchID); err != nil {
 					return err
 				} else if msg != nil {
 					batchID = msg.BatchID // trigger rewind after completion of database transaction
@@ -165,7 +165,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		// Initiate a rewind if a batch was potentially completed by the arrival of this transaction
 		if batchID != nil {
 			log.L(em.ctx).Infof("Batch '%s' contains reference to received pool '%s'", batchID, pool.ProtocolID)
-			em.aggregator.offchainBatches <- batchID
+			em.aggregator.rewindBatches <- batchID
 		}
 
 		// Announce the details of the new token pool with the blockchain event details

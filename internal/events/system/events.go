@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -89,7 +89,7 @@ func (se *Events) AddListener(ns string, el EventListener) error {
 	return nil
 }
 
-func (se *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+func (se *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
 	se.mux.Lock()
 	defer se.mux.Unlock()
 	for ns, listeners := range se.listeners {

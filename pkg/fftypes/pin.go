@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -37,12 +37,13 @@ package fftypes
 // This is because the sequence must be in the order the pins arrive.
 //
 type Pin struct {
-	Sequence   int64    `json:"sequence,omitempty"`
+	Sequence   int64    `json:"sequence"`
 	Masked     bool     `json:"masked,omitempty"`
 	Hash       *Bytes32 `json:"hash,omitempty"`
 	Batch      *UUID    `json:"batch,omitempty"`
-	Index      int64    `json:"index,omitempty"`
+	Index      int64    `json:"index"`
 	Dispatched bool     `json:"dispatched,omitempty"`
+	Signer     string   `json:"signer,omitempty"`
 	Created    *FFTime  `json:"created,omitempty"`
 }
 

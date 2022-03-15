@@ -23,7 +23,9 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
+	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -32,7 +34,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -43,39 +45,20 @@ import (
 var testNodeID = fftypes.NewUUID()
 
 func newTestEventManager(t *testing.T) (*eventManager, func()) {
-	config.Reset()
-	ctx, cancel := context.WithCancel(context.Background())
-	mdi := &databasemocks.Plugin{}
-	mim := &identitymanagermocks.Manager{}
-	mpi := &publicstoragemocks.Plugin{}
-	met := &eventsmocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandlers{}
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
-	mam := &assetmocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mmi := &metricsmocks.Manager{}
-	mmi.On("IsMetricsEnabled").Return(false)
-	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
-	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mmi)
-	em := emi.(*eventManager)
-	em.txHelper = &txcommonmocks.Helper{}
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
-	assert.NoError(t, err)
-	return em, cancel
+	return newTestEventManagerCommon(t, false)
 }
 
 func newTestEventManagerWithMetrics(t *testing.T) (*eventManager, func()) {
+	return newTestEventManagerCommon(t, true)
+}
+
+func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func()) {
 	config.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
-	mpi := &publicstoragemocks.Plugin{}
+	mpi := &sharedstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
@@ -84,11 +67,15 @@ func newTestEventManagerWithMetrics(t *testing.T) (*eventManager, func()) {
 	mam := &assetmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mmi := &metricsmocks.Manager{}
-	mmi.On("IsMetricsEnabled").Return(true)
-	mmi.On("TransferConfirmed", mock.Anything)
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	mmi.On("IsMetricsEnabled").Return(metrics)
+	if metrics {
+		mmi.On("TransferConfirmed", mock.Anything)
+	}
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mmi)
+	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
+	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mmi, txHelper)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
@@ -119,7 +106,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -128,8 +115,9 @@ func TestStartStopBadTransports(t *testing.T) {
 	config.Set(config.EventTransportsEnabled, []string{"wrongun"})
 	defer config.Reset()
 	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
-	mpi := &publicstoragemocks.Plugin{}
+	mpi := &sharedstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
 	mbm := &broadcastmocks.Manager{}
@@ -137,7 +125,9 @@ func TestStartStopBadTransports(t *testing.T) {
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mam := &assetmocks.Manager{}
 	mm := &metricsmocks.Manager{}
-	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mim, msh, mdm, mbm, mpm, mam, mm)
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
+	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mm, txHelper)
 	assert.Regexp(t, "FF10172", err)
 }
 

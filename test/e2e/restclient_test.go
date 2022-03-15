@@ -34,29 +34,33 @@ import (
 )
 
 var (
-	urlGetNamespaces         = "/namespaces"
-	urlUploadData            = "/namespaces/default/data"
-	urlGetMessages           = "/namespaces/default/messages"
-	urlBroadcastMessage      = "/namespaces/default/messages/broadcast"
-	urlPrivateMessage        = "/namespaces/default/messages/private"
-	urlRequestMessage        = "/namespaces/default/messages/requestreply"
-	urlGetData               = "/namespaces/default/data"
-	urlGetDataBlob           = "/namespaces/default/data/%s/blob"
-	urlGetEvents             = "/namespaces/default/events"
-	urlSubscriptions         = "/namespaces/default/subscriptions"
-	urlDatatypes             = "/namespaces/default/datatypes"
-	urlTokenPools            = "/namespaces/default/tokens/pools"
-	urlTokenMint             = "/namespaces/default/tokens/mint"
-	urlTokenBurn             = "/namespaces/default/tokens/burn"
-	urlTokenTransfers        = "/namespaces/default/tokens/transfers"
-	urlTokenAccounts         = "/namespaces/default/tokens/accounts"
-	urlTokenBalances         = "/namespaces/default/tokens/balances"
-	urlContractInvoke        = "/namespaces/default/contracts/invoke"
-	urlContractQuery         = "/namespaces/default/contracts/query"
-	urlContractInterface     = "/namespaces/default/contracts/interfaces"
-	urlContractSubscriptions = "/namespaces/default/contracts/subscriptions"
-	urlBlockchainEvents      = "/namespaces/default/blockchainevents"
-	urlGetOrganizations      = "/network/organizations"
+	urlGetNamespaces     = "/namespaces"
+	urlUploadData        = "/namespaces/default/data"
+	urlGetMessages       = "/namespaces/default/messages"
+	urlBroadcastMessage  = "/namespaces/default/messages/broadcast"
+	urlPrivateMessage    = "/namespaces/default/messages/private"
+	urlRequestMessage    = "/namespaces/default/messages/requestreply"
+	urlGetData           = "/namespaces/default/data"
+	urlGetDataBlob       = "/namespaces/default/data/%s/blob"
+	urlGetEvents         = "/namespaces/default/events"
+	urlSubscriptions     = "/namespaces/default/subscriptions"
+	urlDatatypes         = "/namespaces/default/datatypes"
+	urlIdentities        = "/namespaces/default/identities"
+	urlIdentity          = "/namespaces/default/identities/%s"
+	urlTokenPools        = "/namespaces/default/tokens/pools"
+	urlTokenMint         = "/namespaces/default/tokens/mint"
+	urlTokenBurn         = "/namespaces/default/tokens/burn"
+	urlTokenTransfers    = "/namespaces/default/tokens/transfers"
+	urlTokenApprovals    = "/namespaces/default/tokens/approvals"
+	urlTokenAccounts     = "/namespaces/default/tokens/accounts"
+	urlTokenBalances     = "/namespaces/default/tokens/balances"
+	urlContractInvoke    = "/namespaces/default/contracts/invoke"
+	urlContractQuery     = "/namespaces/default/contracts/query"
+	urlContractInterface = "/namespaces/default/contracts/interfaces"
+	urlContractListeners = "/namespaces/default/contracts/listeners"
+	urlBlockchainEvents  = "/namespaces/default/blockchainevents"
+	urlGetOrganizations  = "/network/organizations"
+	urlGetOrgKeys        = "/namespaces/ff_system/identities/%s/verifiers"
 )
 
 func NewResty(t *testing.T) *resty.Client {
@@ -100,7 +104,7 @@ func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgTyp
 	return msgs
 }
 
-func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data []*fftypes.Data) {
+func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data fftypes.DataArray) {
 	path := urlGetData
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -111,7 +115,7 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	return data
 }
 
-func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data []*fftypes.Data) {
+func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data fftypes.DataArray) {
 	path := urlGetMessages
 	path += "/" + msgID.String() + "/data"
 	resp, err := client.R().
@@ -135,7 +139,7 @@ func GetBlob(t *testing.T, client *resty.Client, data *fftypes.Data, expectedSta
 	return blob
 }
 
-func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Organization) {
+func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Identity) {
 	path := urlGetOrganizations
 	resp, err := client.R().
 		SetQueryParam("sort", "created").
@@ -144,6 +148,17 @@ func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*ff
 	require.NoError(t, err)
 	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return orgs
+}
+
+func GetIdentityBlockchainKeys(t *testing.T, client *resty.Client, identityID *fftypes.UUID, expectedStatus int) (verifiers []*fftypes.Verifier) {
+	path := fmt.Sprintf(urlGetOrgKeys, identityID)
+	resp, err := client.R().
+		SetQueryParam("type", fmt.Sprintf("!=%s", fftypes.VerifierTypeFFDXPeerID)).
+		SetResult(&verifiers).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return verifiers
 }
 
 func CreateSubscription(t *testing.T, client *resty.Client, input interface{}, expectedStatus int) *fftypes.Subscription {
@@ -181,18 +196,82 @@ func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func BroadcastMessage(client *resty.Client, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
-	return client.R().
+func BroadcastMessage(t *testing.T, client *resty.Client, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	return BroadcastMessageAsIdentity(t, client, "", topic, data, confirm)
+}
+
+func BroadcastMessageAsIdentity(t *testing.T, client *resty.Client, did, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	var msg fftypes.Message
+	res, err := client.R().
 		SetBody(fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
 					Topics: fftypes.FFStringArray{topic},
+					SignerRef: fftypes.SignerRef{
+						Author: did,
+					},
 				},
 			},
 			InlineData: fftypes.InlineData{data},
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&msg).
 		Post(urlBroadcastMessage)
+	t.Logf("Sent broadcast msg: %s", msg.Header.ID)
+	return res, err
+}
+
+func CreateEthAccount(t *testing.T, client *resty.Client) string {
+	createPayload := map[string]interface{}{"jsonrpc": "2.0", "id": 0, "method": "personal_newAccount", "params": []interface{}{""}}
+	var resBody struct {
+		Result string `json:"result"`
+	}
+	res, err := client.R().
+		SetBody(createPayload).
+		SetResult(&resBody).
+		Post("/")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	newKey := resBody.Result
+	t.Logf("New key: %s", newKey)
+	unlockPayload := map[string]interface{}{"jsonrpc": "2.0", "id": 0, "method": "personal_unlockAccount", "params": []interface{}{newKey, "", 0}}
+	res, err = client.R().
+		SetBody(unlockPayload).
+		Post("/")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+	return newKey
+}
+
+func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc string, profile fftypes.JSONObject, parent *fftypes.UUID, confirm bool) *fftypes.Identity {
+	var identity fftypes.Identity
+	res, err := client.R().
+		SetBody(fftypes.IdentityCreateDTO{
+			Name:   name,
+			Type:   fftypes.IdentityTypeCustom,
+			Parent: parent,
+			Key:    key,
+			IdentityProfile: fftypes.IdentityProfile{
+				Description: desc,
+				Profile:     profile,
+			},
+		}).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&identity).
+		Post(urlIdentities)
+	assert.NoError(t, err)
+	assert.True(t, res.IsSuccess())
+	return &identity
+}
+
+func GetIdentity(t *testing.T, client *resty.Client, id *fftypes.UUID) *fftypes.Identity {
+	var identity fftypes.Identity
+	res, err := client.R().
+		SetResult(&identity).
+		Get(fmt.Sprintf(urlIdentity, id))
+	assert.NoError(t, err)
+	assert.True(t, res.IsSuccess())
+	return &identity
 }
 
 func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *fftypes.Data {
@@ -283,6 +362,10 @@ func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic
 }
 
 func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
+	return PrivateMessageWithKey(ts, client, "", topic, data, orgNames, tag, txType, confirm)
+}
+
+func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -296,6 +379,9 @@ func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fft
 				Tag:    tag,
 				TxType: txType,
 				Topics: fftypes.FFStringArray{topic},
+				SignerRef: fftypes.SignerRef{
+					Key: key,
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{data},
@@ -304,10 +390,13 @@ func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fft
 			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 		},
 	}
-	return client.R().
+	res, err := client.R().
 		SetBody(msg).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&msg.Message).
 		Post(urlPrivateMessage)
+	ts.t.Logf("Sent private message %s to %+v", msg.Header.ID, msg.Group.Members)
+	return res, err
 }
 
 func RequestReply(ts *testState, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType) *fftypes.MessageInOut {
@@ -448,6 +537,34 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 	return transfers
 }
 
+func TokenApproval(t *testing.T, client *resty.Client, approval *fftypes.TokenApprovalInput, confirm bool) *fftypes.TokenApproval {
+	var approvalOut fftypes.TokenApproval
+	path := urlTokenApprovals
+	resp, err := client.R().
+		SetBody(approval).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&approvalOut).
+		Post(path)
+	require.NoError(t, err)
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &approvalOut
+}
+
+func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (approvals []*fftypes.TokenApproval) {
+	path := urlTokenApprovals
+	resp, err := client.R().
+		SetQueryParam("pool", poolID.String()).
+		SetResult(&approvals).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return approvals
+}
+
 func GetTokenAccounts(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (accounts []*fftypes.TokenAccount) {
 	path := urlTokenAccounts
 	resp, err := client.R().
@@ -484,17 +601,17 @@ func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, t
 	return accounts[0]
 }
 
-func CreateContractSubscription(t *testing.T, client *resty.Client, event *fftypes.FFIEvent, location *fftypes.JSONObject) *fftypes.ContractSubscription {
-	body := fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.FFIEvent, location *fftypes.JSONObject) *fftypes.ContractListener {
+	body := fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(location.String()),
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},
 		},
 	}
-	var sub fftypes.ContractSubscription
-	path := urlContractSubscriptions
+	var sub fftypes.ContractListener
+	path := urlContractListeners
 	resp, err := client.R().
 		SetBody(&body).
 		SetResult(&sub).
@@ -504,8 +621,31 @@ func CreateContractSubscription(t *testing.T, client *resty.Client, event *fftyp
 	return &sub
 }
 
-func GetContractSubscriptions(t *testing.T, client *resty.Client, startTime time.Time) (subs []*fftypes.ContractSubscription) {
-	path := urlContractSubscriptions
+func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *fftypes.FFIReference, eventName string, location *fftypes.JSONObject) *fftypes.ContractListener {
+	body := fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
+			Location:  fftypes.JSONAnyPtr(location.String()),
+			Interface: ffiReference,
+			Event: &fftypes.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: eventName,
+				},
+			},
+		},
+	}
+	var sub fftypes.ContractListener
+	path := urlContractListeners
+	resp, err := client.R().
+		SetBody(&body).
+		SetResult(&sub).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &sub
+}
+
+func GetContractListeners(t *testing.T, client *resty.Client, startTime time.Time) (subs []*fftypes.ContractListener) {
+	path := urlContractListeners
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&subs).
@@ -527,8 +667,8 @@ func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time, 
 	return events
 }
 
-func DeleteContractSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
-	path := urlContractSubscriptions + "/" + id.String()
+func DeleteContractListener(t *testing.T, client *resty.Client, id *fftypes.UUID) {
+	path := urlContractListeners + "/" + id.String()
 	resp, err := client.R().Delete(path)
 	require.NoError(t, err)
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())

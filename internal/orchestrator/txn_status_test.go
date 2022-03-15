@@ -60,10 +60,12 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	batches := []*fftypes.Batch{
+	batches := []*fftypes.BatchPersisted{
 		{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.MessageTypeBroadcast,
+			BatchHeader: fftypes.BatchHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.BatchTypeBroadcast,
+			},
 			Confirmed: fftypes.UnixTime(2),
 		},
 	}
@@ -126,7 +128,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -178,7 +180,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -476,6 +478,76 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 	or.mdi.AssertExpectations(t)
 }
 
+func TestGetTransactionStatusTokenApprovalSuccess(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: fftypes.TransactionTypeTokenApproval,
+	}
+	ops := []*fftypes.Operation{
+		{
+			Status:  fftypes.OpStatusSucceeded,
+			ID:      fftypes.NewUUID(),
+			Type:    fftypes.OpTypeTokenApproval,
+			Updated: fftypes.UnixTime(0),
+			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
+		},
+	}
+	events := []*fftypes.BlockchainEvent{
+		{
+			ID:        fftypes.NewUUID(),
+			Timestamp: fftypes.UnixTime(0),
+			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
+		},
+	}
+	approvals := []*fftypes.TokenApproval{
+		{
+			LocalID: fftypes.NewUUID(),
+			Created: fftypes.UnixTime(0),
+		},
+	}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetTokenApprovals", mock.Anything, mock.Anything).Return(approvals, nil, nil)
+
+	status, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.NoError(t, err)
+
+	expectedStatus := compactJSON(`{
+		"status": "Succeeded",
+		"details": [
+			{
+				"type": "Operation",
+				"subtype": "token_approval",
+				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
+				"id": "` + ops[0].ID.String() + `",
+				"info": {"transactionHash": "0x100"}
+			},
+			{
+				"type": "BlockchainEvent",
+				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
+				"id": "` + events[0].ID.String() + `",
+				"info": {"transactionHash": "0x100"}
+			},
+			{
+				"type": "TokenApproval",
+				"status": "Succeeded",
+				"timestamp": "1970-01-01T00:00:00Z",
+				"id": "` + approvals[0].LocalID.String() + `"
+			}
+		]
+	}`)
+	statusJSON, _ := json.Marshal(status)
+	assert.Equal(t, expectedStatus, string(statusJSON))
+
+	or.mdi.AssertExpectations(t)
+}
+
 func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 	or := newTestOrchestrator()
 
@@ -518,6 +590,122 @@ func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 			},
 			{
 				"type": "TokenTransfer",
+				"status": "Pending"
+			}
+		]
+	}`)
+	statusJSON, _ := json.Marshal(status)
+	assert.Equal(t, expectedStatus, string(statusJSON))
+
+	or.mdi.AssertExpectations(t)
+}
+
+func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: fftypes.TransactionTypeTokenTransfer,
+	}
+	op1ID := fftypes.NewUUID()
+	op2ID := fftypes.NewUUID()
+	ops := []*fftypes.Operation{
+		{
+			Status: fftypes.OpStatusFailed,
+			ID:     op1ID,
+			Type:   fftypes.OpTypeTokenTransfer,
+			Retry:  op2ID,
+		},
+		{
+			Status: fftypes.OpStatusPending,
+			ID:     op2ID,
+			Type:   fftypes.OpTypeTokenTransfer,
+		},
+	}
+	events := []*fftypes.BlockchainEvent{}
+	transfers := []*fftypes.TokenTransfer{}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(transfers, nil, nil)
+
+	status, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.NoError(t, err)
+
+	expectedStatus := compactJSON(`{
+		"status": "Pending",
+		"details": [
+			{
+				"type": "Operation",
+				"subtype": "token_transfer",
+				"status": "Failed",
+				"id": "` + op1ID.String() + `"
+			},
+			{
+				"type": "Operation",
+				"subtype": "token_transfer",
+				"status": "Pending",
+				"id": "` + op2ID.String() + `"
+			},
+			{
+				"type": "BlockchainEvent",
+				"status": "Pending"
+			},
+			{
+				"type": "TokenTransfer",
+				"status": "Pending"
+			}
+		]
+	}`)
+	statusJSON, _ := json.Marshal(status)
+	assert.Equal(t, expectedStatus, string(statusJSON))
+
+	or.mdi.AssertExpectations(t)
+}
+
+func TestGetTransactionStatusTokenApprovalPending(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: fftypes.TransactionTypeTokenApproval,
+	}
+	ops := []*fftypes.Operation{
+		{
+			Status: fftypes.OpStatusSucceeded,
+			ID:     fftypes.NewUUID(),
+			Type:   fftypes.OpTypeTokenApproval,
+			Output: fftypes.JSONObject{"transactionHash": "0x100"},
+		},
+	}
+	events := []*fftypes.BlockchainEvent{}
+	approvals := []*fftypes.TokenApproval{}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetTokenApprovals", mock.Anything, mock.Anything).Return(approvals, nil, nil)
+
+	status, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.NoError(t, err)
+
+	expectedStatus := compactJSON(`{
+		"status": "Pending",
+		"details": [
+			{
+				"type": "Operation",
+				"subtype": "token_approval",
+				"status": "Succeeded",
+				"id": "` + ops[0].ID.String() + `",
+				"info": {"transactionHash": "0x100"}
+			},
+			{
+				"type": "BlockchainEvent",
+				"status": "Pending"
+			},
+			{
+				"type": "TokenApproval",
 				"status": "Pending"
 			}
 		]
@@ -673,6 +861,25 @@ func TestGetTransactionStatusTransferError(t *testing.T) {
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.EqualError(t, err, "pop")
+
+	or.mdi.AssertExpectations(t)
+}
+
+func TestGetTransactionStatusApprovalError(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: fftypes.TransactionTypeTokenApproval,
+	}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetTokenApprovals", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
 	assert.EqualError(t, err, "pop")

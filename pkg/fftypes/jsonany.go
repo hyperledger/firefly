@@ -19,6 +19,7 @@ package fftypes
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql/driver"
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -68,6 +69,13 @@ func (h JSONAny) MarshalJSON() ([]byte, error) {
 		h = NullString
 	}
 	return []byte(h), nil
+}
+
+func (h *JSONAny) Unmarshal(ctx context.Context, v interface{}) error {
+	if h == nil {
+		return i18n.NewError(ctx, i18n.MsgNilOrNullObject)
+	}
+	return json.Unmarshal([]byte(*h), v)
 }
 
 func (h *JSONAny) Hash() *Bytes32 {
@@ -135,11 +143,18 @@ func (h *JSONAny) JSONObjectNowarn() JSONObject {
 	return jo
 }
 
+// Value ensures we write null to the DB for null values
+func (h *JSONAny) Value() (driver.Value, error) {
+	if h.IsNil() {
+		return nil, nil
+	}
+	return string(*h), nil
+}
+
 // Scan implements sql.Scanner
 func (h *JSONAny) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case nil:
-		*h = NullString
 		return nil
 	case []byte:
 		return h.UnmarshalJSON(src)

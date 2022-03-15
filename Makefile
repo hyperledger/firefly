@@ -35,8 +35,8 @@ $(eval $(call makemock, pkg/blockchain,            Plugin,             blockchai
 $(eval $(call makemock, pkg/blockchain,            Callbacks,          blockchainmocks))
 $(eval $(call makemock, pkg/database,              Plugin,             databasemocks))
 $(eval $(call makemock, pkg/database,              Callbacks,          databasemocks))
-$(eval $(call makemock, pkg/publicstorage,         Plugin,             publicstoragemocks))
-$(eval $(call makemock, pkg/publicstorage,         Callbacks,          publicstoragemocks))
+$(eval $(call makemock, pkg/sharedstorage,         Plugin,             sharedstoragemocks))
+$(eval $(call makemock, pkg/sharedstorage,         Callbacks,          sharedstoragemocks))
 $(eval $(call makemock, pkg/events,                Plugin,             eventsmocks))
 $(eval $(call makemock, pkg/events,                PluginAll,          eventsmocks))
 $(eval $(call makemock, pkg/events,                Callbacks,          eventsmocks))
@@ -68,6 +68,7 @@ $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestra
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
 $(eval $(call makemock, internal/apiserver,        IServer,            apiservermocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
+$(eval $(call makemock, internal/operations,       Manager,            operationmocks))
 
 firefly-nocgo: ${GOFILES}
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v

@@ -56,73 +56,67 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 		}
 	}
 
-	mf, err := em.privateBatchReceived(peerID, wrapper.Batch)
-	manifestBytes := []byte{}
-	if err == nil && mf != nil {
-		manifestBytes, err = json.Marshal(&mf)
-	}
-	return string(manifestBytes), err
+	manifestString, err := em.privateBatchReceived(peerID, wrapper.Batch)
+	return manifestString, err
 }
 
-func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID, author, signingKey string) (node *fftypes.Node, err error) {
+// Check data exchange peer the data came from, has been registered to the org listed in the batch.
+// Note the on-chain identity check is performed separately by the aggregator (across broadcast and private consistently).
+func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string) (node *fftypes.Identity, err error) {
 	l := log.L(em.ctx)
 
-	// Find the node associated with the peer
-	filter := database.NodeQueryFactory.NewFilter(ctx).Eq("dx.peer", peerID)
-	nodes, _, err := em.database.GetNodes(ctx, filter)
+	// Resolve the node for the peer ID
+	node, err = em.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeFFDXPeerID,
+		Value: peerID,
+	})
 	if err != nil {
-		l.Errorf("Failed to retrieve node: %v", err)
-		return nil, err // retry for persistence error
+		return nil, err
 	}
-	if len(nodes) < 1 {
-		l.Errorf("Node not found for peer %s", peerID)
-		return nil, nil
-	}
-	node = nodes[0]
 
 	// Find the identity in the mesage
-	org, err := em.database.GetOrganizationByIdentity(ctx, signingKey)
-	if err != nil {
+	org, retryable, err := em.identity.CachedIdentityLookup(ctx, author)
+	if err != nil && retryable {
 		l.Errorf("Failed to retrieve org: %v", err)
-		return nil, err // retry for persistence error
+		return nil, err // retryable error
 	}
-	if org == nil {
-		l.Errorf("Org not found for identity %s", author)
+	if org == nil || err != nil {
+		l.Errorf("Identity %s not found", author)
 		return nil, nil
 	}
 
 	// One of the orgs in the hierarchy of the author must be the owner of the peer node
 	candidate := org
-	foundNodeOrg := signingKey == node.Owner
-	for !foundNodeOrg && candidate.Parent != "" {
+	foundNodeOrg := org.ID.Equals(node.Parent)
+	for !foundNodeOrg && candidate.Parent != nil {
 		parent := candidate.Parent
-		candidate, err = em.database.GetOrganizationByIdentity(ctx, parent)
+		candidate, err = em.identity.CachedIdentityLookupByID(ctx, parent)
 		if err != nil {
 			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
 			return nil, err // retry for persistence error
 		}
 		if candidate == nil {
-			l.Errorf("Did not find org '%s' in chain for identity '%s'", parent, org.Identity)
+			l.Errorf("Did not find org '%s' in chain for identity '%s' (%s)", parent, org.DID, org.ID)
 			return nil, nil
 		}
-		foundNodeOrg = candidate.Identity == node.Owner
+		foundNodeOrg = candidate.ID.Equals(node.Parent)
 	}
 	if !foundNodeOrg {
-		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Owner, node.ID, node.Name)
+		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Parent, node.ID, node.Name)
 		return nil, nil
 	}
 
 	return node, nil
 }
 
-func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest *fftypes.Manifest, err error) {
+func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest string, err error) {
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
 		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			l := log.L(ctx)
 
-			node, err := em.checkReceivedIdentity(ctx, peerID, batch.Author, batch.Key)
+			node, err := em.checkReceivedOffchainIdentity(ctx, peerID, batch.Author)
 			if err != nil {
 				return err
 			}
@@ -131,22 +125,22 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 				return nil
 			}
 
-			valid, err := em.persistBatch(ctx, batch)
+			persistedBatch, valid, err := em.persistBatch(ctx, batch)
 			if err != nil || !valid {
-				l.Errorf("Batch received from %s/%s processing failed valid=%t: %s", node.Owner, node.Name, valid, err)
+				l.Errorf("Batch received from org=%s node=%s processing failed valid=%t: %s", node.Parent, node.Name, valid, err)
 				return err // retry - persistBatch only returns retryable errors
 			}
 
 			if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
 				// Poke the aggregator to do its stuff
-				em.aggregator.offchainBatches <- batch.ID
+				em.aggregator.rewindBatches <- batch.ID
 			} else if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 				// We need to confirm all these messages immediately.
 				if err := em.markUnpinnedMessagesConfirmed(ctx, batch); err != nil {
 					return err
 				}
 			}
-			manifest = batch.Manifest()
+			manifest = persistedBatch.Manifest.String()
 			return nil
 		})
 	})
@@ -178,7 +172,8 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 	}
 
 	for _, msg := range batch.Payload.Messages {
-		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID)
+		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
+		event.Correlator = msg.Header.CID
 		if err := em.database.InsertEvent(ctx, event); err != nil {
 			return err
 		}
@@ -252,7 +247,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 		for bid := range batchIDs {
 			var batchID = bid // cannot use the address of the loop var
 			l.Infof("Batch '%s' contains reference to received blob. Peer='%s' Hash='%v' PayloadRef='%s'", &bid, peerID, &hash, payloadRef)
-			em.aggregator.offchainBatches <- &batchID
+			em.aggregator.rewindBatches <- &batchID
 		}
 
 		return false, nil
@@ -292,13 +287,35 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		// The maniest should exactly match that stored into the operation input, if supported
 		op := operations[0]
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
-			expectedManifest := op.Input.GetString("manifest")
-			if update.Manifest != expectedManifest {
-				// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
-				mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)
-				log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
-				update.Error = mismatchErr.Error()
-				status = fftypes.OpStatusFailed
+			switch op.Type {
+			case fftypes.OpTypeDataExchangeBatchSend:
+				batchID, _ := fftypes.ParseUUID(em.ctx, op.Input.GetString("batch"))
+				expectedManifest := ""
+				if batchID != nil {
+					batch, err := em.database.GetBatchByID(em.ctx, batchID)
+					if err != nil {
+						return true, err
+					}
+					if batch != nil {
+						expectedManifest = batch.Manifest.String()
+					}
+				}
+				if update.Manifest != expectedManifest {
+					// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
+					mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)
+					log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
+					update.Error = mismatchErr.Error()
+					status = fftypes.OpStatusFailed
+				}
+			case fftypes.OpTypeDataExchangeBlobSend:
+				expectedHash := op.Input.GetString("hash")
+				if update.Hash != expectedHash {
+					// Log and map to failure for user to see that the receiver did not provide a matching hash
+					mismatchErr := i18n.NewError(em.ctx, i18n.MsgBlobHashMismatch, expectedHash, update.Hash)
+					log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
+					update.Error = mismatchErr.Error()
+					status = fftypes.OpStatusFailed
+				}
 			}
 		}
 

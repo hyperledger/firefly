@@ -34,7 +34,7 @@ func TestGroupInitSealFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
+	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, &fftypes.Group{})
 	assert.Regexp(t, "FF10137", err)
 }
 
@@ -55,7 +55,7 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 		},
 	}
 	group.Seal()
-	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, group)
+	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -77,7 +77,7 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 		},
 	}
 	group.Seal()
-	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, group)
+	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -86,15 +86,15 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil)
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{}, false, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -109,7 +109,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`!json`)},
 	}, true, nil)
 
@@ -117,9 +117,9 @@ func TestResolveInitGroupBadData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -134,7 +134,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`{}`)},
 	}, true, nil)
 
@@ -142,9 +142,9 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -172,7 +172,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 
@@ -180,9 +180,9 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -210,7 +210,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -220,9 +220,9 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     group.Hash,
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -250,7 +250,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -261,9 +261,9 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			Tag:       fftypes.SystemTagDefineGroup,
 			Group:     group.Hash,
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -287,7 +287,7 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -309,7 +309,7 @@ func TestResolveInitGroupExistingFail(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -331,7 +331,7 @@ func TestResolveInitGroupExistingNotFound(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			Identity: fftypes.Identity{
+			SignerRef: fftypes.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -409,17 +409,20 @@ func TestGetGroupNodesCache(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, mock.Anything).Return(&fftypes.Node{
-		ID: node1,
+	mdi.On("GetIdentityByID", pm.ctx, mock.Anything).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:   node1,
+			Type: fftypes.IdentityTypeNode,
+		},
 	}, nil).Once()
 
-	g, nodes, err := pm.getGroupNodes(pm.ctx, group.Hash)
+	g, nodes, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *node1, *nodes[0].ID)
 	assert.Equal(t, *group.Hash, *g.Hash)
 
 	// Note this validates the cache as we only mocked the calls once
-	g, nodes, err = pm.getGroupNodes(pm.ctx, group.Hash)
+	g, nodes, err = pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *node1, *nodes[0].ID)
 	assert.Equal(t, *group.Hash, *g.Hash)
@@ -433,7 +436,7 @@ func TestGetGroupNodesGetGroupFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, _, err := pm.getGroupNodes(pm.ctx, groupID)
+	_, _, err := pm.getGroupNodes(pm.ctx, groupID, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -445,7 +448,7 @@ func TestGetGroupNodesGetGroupNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
 
-	_, _, err := pm.getGroupNodes(pm.ctx, groupID)
+	_, _, err := pm.getGroupNodes(pm.ctx, groupID, false)
 	assert.Regexp(t, "FF10226", err)
 }
 
@@ -465,9 +468,9 @@ func TestGetGroupNodesNodeLookupFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, node1).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetIdentityByID", pm.ctx, node1).Return(nil, fmt.Errorf("pop")).Once()
 
-	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash)
+	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -486,9 +489,9 @@ func TestGetGroupNodesNodeLookupNotFound(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, node1).Return(nil, nil).Once()
+	mdi.On("GetIdentityByID", pm.ctx, node1).Return(nil, nil).Once()
 
-	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash)
+	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.Regexp(t, "FF10224", err)
 }
 

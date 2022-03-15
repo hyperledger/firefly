@@ -23,6 +23,29 @@ func (_m *Bridge) Init(sysevents sysmessaging.SystemEvents) {
 	_m.Called(sysevents)
 }
 
+// WaitForIdentity provides a mock function with given fields: ctx, ns, id, send
+func (_m *Bridge) WaitForIdentity(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, ns, id, send)
+
+	var r0 *fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.Identity); ok {
+		r0 = rf(ctx, ns, id, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, id, send)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // WaitForMessage provides a mock function with given fields: ctx, ns, id, send
 func (_m *Bridge) WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, id, send)
@@ -56,6 +79,29 @@ func (_m *Bridge) WaitForReply(ctx context.Context, ns string, id *fftypes.UUID,
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.MessageInOut)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, id, send)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// WaitForTokenApproval provides a mock function with given fields: ctx, ns, id, send
+func (_m *Bridge) WaitForTokenApproval(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.TokenApproval, error) {
+	ret := _m.Called(ctx, ns, id, send)
+
+	var r0 *fftypes.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.TokenApproval); ok {
+		r0 = rf(ctx, ns, id, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenApproval)
 		}
 	}
 

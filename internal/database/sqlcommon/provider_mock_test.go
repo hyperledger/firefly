@@ -46,10 +46,14 @@ type mockProvider struct {
 }
 
 func newMockProvider() *mockProvider {
+	config.Reset()
 	mp := &mockProvider{
-		prefix: config.NewPluginConfig("unittest.mockdb"),
+		capabilities: &database.Capabilities{},
+		callbacks:    &databasemocks.Callbacks{},
+		prefix:       config.NewPluginConfig("unittest.mockdb"),
 	}
 	mp.SQLCommon.InitPrefix(mp, mp.prefix)
+	mp.prefix.Set(SQLConfMaxConnections, 10)
 	mp.mockDB, mp.mdb, _ = sqlmock.New()
 	return mp
 }

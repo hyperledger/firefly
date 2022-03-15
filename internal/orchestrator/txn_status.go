@@ -38,6 +38,29 @@ func pendingPlaceholder(t fftypes.TransactionStatusType) *fftypes.TransactionSta
 	}
 }
 
+func txOperationStatus(op *fftypes.Operation) *fftypes.TransactionStatusDetails {
+	return &fftypes.TransactionStatusDetails{
+		Status:    op.Status,
+		Type:      fftypes.TransactionStatusTypeOperation,
+		SubType:   op.Type.String(),
+		Timestamp: op.Updated,
+		ID:        op.ID,
+		Error:     op.Error,
+		Info:      op.Output,
+	}
+}
+
+func txBlockchainEventStatus(event *fftypes.BlockchainEvent) *fftypes.TransactionStatusDetails {
+	return &fftypes.TransactionStatusDetails{
+		Status:    fftypes.OpStatusSucceeded,
+		Type:      fftypes.TransactionStatusTypeBlockchainEvent,
+		SubType:   event.Name,
+		Timestamp: event.Timestamp,
+		ID:        event.ID,
+		Info:      event.Info,
+	}
+}
+
 func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*fftypes.TransactionStatus, error) {
 	result := &fftypes.TransactionStatus{
 		Status:  fftypes.OpStatusSucceeded,
@@ -56,16 +79,10 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		return nil, err
 	}
 	for _, op := range ops {
-		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-			Status:    op.Status,
-			Type:      fftypes.TransactionStatusTypeOperation,
-			SubType:   op.Type.String(),
-			Timestamp: op.Updated,
-			ID:        op.ID,
-			Error:     op.Error,
-			Info:      op.Output,
-		})
-		updateStatus(result, op.Status)
+		result.Details = append(result.Details, txOperationStatus(op))
+		if op.Retry == nil {
+			updateStatus(result, op.Status)
+		}
 	}
 
 	events, _, err := or.GetTransactionBlockchainEvents(ctx, ns, id)
@@ -73,14 +90,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		return nil, err
 	}
 	for _, event := range events {
-		result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-			Status:    fftypes.OpStatusSucceeded,
-			Type:      fftypes.TransactionStatusTypeBlockchainEvent,
-			SubType:   event.Name,
-			Timestamp: event.Timestamp,
-			ID:        event.ID,
-			Info:      event.Info,
-		})
+		result.Details = append(result.Details, txBlockchainEventStatus(event))
 	}
 
 	switch tx.Type {
@@ -154,6 +164,27 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 				SubType:   transfers[0].Type.String(),
 				Timestamp: transfers[0].Created,
 				ID:        transfers[0].LocalID,
+			})
+		}
+
+	case fftypes.TransactionTypeTokenApproval:
+		if len(events) == 0 {
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, fftypes.OpStatusPending)
+		}
+		f := database.TokenApprovalQueryFacory.NewFilter(ctx)
+		switch approvals, _, err := or.database.GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
+		case err != nil:
+			return nil, err
+		case len(approvals) == 0:
+			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeTokenApproval))
+			updateStatus(result, fftypes.OpStatusPending)
+		default:
+			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
+				Status:    fftypes.OpStatusSucceeded,
+				Type:      fftypes.TransactionStatusTypeTokenApproval,
+				Timestamp: approvals[0].Created,
+				ID:        approvals[0].LocalID,
 			})
 		}
 

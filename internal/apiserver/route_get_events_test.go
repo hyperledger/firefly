@@ -17,9 +17,11 @@
 package apiserver
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,4 +38,26 @@ func TestGetEvents(t *testing.T) {
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
+}
+
+func TestGetEventsWithReferences(t *testing.T) {
+	o, r := newTestAPIServer()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/events?fetchreferences", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	var ten int64 = 10
+	o.On("GetEventsWithReferences", mock.Anything, "mynamespace", mock.Anything).
+		Return([]*fftypes.EnrichedEvent{}, &database.FilterResult{
+			TotalCount: &ten,
+		}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
+	var resWithCount filterResultsWithCount
+	err := json.NewDecoder(res.Body).Decode(&resWithCount)
+	assert.NoError(t, err)
+	assert.NotNil(t, resWithCount.Items)
+	assert.Equal(t, int64(0), resWithCount.Count)
+	assert.Equal(t, int64(10), resWithCount.Total)
 }

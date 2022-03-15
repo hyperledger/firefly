@@ -84,32 +84,34 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 		})
 }
 
-func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message) (err error) {
-	message.Sequence, err = s.insertTx(ctx, tx,
-		sq.Insert("messages").
-			Columns(msgColumns...).
-			Values(
-				message.Header.ID,
-				message.Header.CID,
-				string(message.Header.Type),
-				message.Header.Author,
-				message.Header.Key,
-				message.Header.Created,
-				message.Header.Namespace,
-				message.Header.Topics,
-				message.Header.Tag,
-				message.Header.Group,
-				message.Header.DataHash,
-				message.Hash,
-				message.Pins,
-				message.State,
-				message.Confirmed,
-				message.Header.TxType,
-				message.BatchID,
-			),
+func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *fftypes.Message) sq.InsertBuilder {
+	return query.Values(
+		message.Header.ID,
+		message.Header.CID,
+		string(message.Header.Type),
+		message.Header.Author,
+		message.Header.Key,
+		message.Header.Created,
+		message.Header.Namespace,
+		message.Header.Topics,
+		message.Header.Tag,
+		message.Header.Group,
+		message.Header.DataHash,
+		message.Hash,
+		message.Pins,
+		message.State,
+		message.Confirmed,
+		message.Header.TxType,
+		message.BatchID,
+	)
+}
+
+func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message, requestConflictEmptyResult bool) (err error) {
+	message.Sequence, err = s.insertTxExt(ctx, tx,
+		s.setMessageInsertValues(sq.Insert("messages").Columns(msgColumns...), message),
 		func() {
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
-		})
+		}, requestConflictEmptyResult)
 	return err
 }
 
@@ -128,7 +130,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	optimized := false
 	recreateDatarefs := false
 	if optimization == database.UpsertOptimizationNew {
-		opErr := s.attemptMessageInsert(ctx, tx, message)
+		opErr := s.attemptMessageInsert(ctx, tx, message, true /* we want a failure here we can progress past */)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
 		rowsAffected, opErr := s.attemptMessageUpdate(ctx, tx, message)
@@ -165,7 +167,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 				return err
 			}
 		} else {
-			if err = s.attemptMessageInsert(ctx, tx, message); err != nil {
+			if err = s.attemptMessageInsert(ctx, tx, message, false); err != nil {
 				return err
 			}
 		}
@@ -181,6 +183,69 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	if s.features.MultiRowInsert {
+		msgQuery := sq.Insert("messages").Columns(msgColumns...)
+		dataRefQuery := sq.Insert("messages_data").Columns(
+			"message_id",
+			"data_id",
+			"data_hash",
+			"data_idx",
+		)
+		dataRefCount := 0
+		for _, message := range messages {
+			msgQuery = s.setMessageInsertValues(msgQuery, message)
+			for idx, dataRef := range message.Data {
+				dataRefQuery = dataRefQuery.Values(message.Header.ID, dataRef.ID, dataRef.Hash, idx)
+				dataRefCount++
+			}
+		}
+		sequences := make([]int64, len(messages))
+
+		// Use a single multi-row insert for the messages
+		err := s.insertTxRows(ctx, tx, msgQuery, func() {
+			for i, message := range messages {
+				message.Sequence = sequences[i]
+				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+			}
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
+		if err != nil {
+			return err
+		}
+
+		// Use a single multi-row insert for the data refs
+		if dataRefCount > 0 {
+			dataRefSeqs := make([]int64, dataRefCount)
+			err = s.insertTxRows(ctx, tx, dataRefQuery, nil, dataRefSeqs, false)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, message := range messages {
+			err := s.attemptMessageInsert(ctx, tx, message, false)
+			if err != nil {
+				return err
+			}
+			err = s.updateMessageDataRefs(ctx, tx, message, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+
 }
 
 // In SQL update+bump is a delete+insert within a TX
@@ -201,7 +266,7 @@ func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *fftypes.Message
 		return err
 	}
 
-	if err = s.attemptMessageInsert(ctx, tx, message); err != nil {
+	if err = s.attemptMessageInsert(ctx, tx, message, false); err != nil {
 		return err
 	}
 
@@ -405,13 +470,41 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 	return msgs, s.queryRes(ctx, tx, "messages", fop, fi), err
 }
 
+func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (ids []*fftypes.IDAndSequence, err error) {
+	query, _, _, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn).From("messages"), filter, msgFilterFieldMap,
+		[]interface{}{
+			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
+			"created",
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	rows, _, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ids = []*fftypes.IDAndSequence{}
+	for rows.Next() {
+		var id fftypes.IDAndSequence
+		err = rows.Scan(&id.ID, &id.Sequence)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
+		}
+		ids = append(ids, &id)
+	}
+	return ids, nil
+}
+
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, fr *database.FilterResult, err error) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterFieldMap,
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
-			"created",
+			&database.SortField{Field: "created", Descending: true},
 		})
 	if err != nil {
 		return nil, nil, err

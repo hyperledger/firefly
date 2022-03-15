@@ -45,7 +45,7 @@ type FFDX struct {
 	needsInit    bool
 	initialized  bool
 	initMutex    sync.Mutex
-	nodes        []fftypes.DXInfo
+	nodes        []fftypes.JSONObject
 }
 
 type wsEvent struct {
@@ -70,12 +70,14 @@ const (
 type msgType string
 
 const (
-	messageReceived  msgType = "message-received"
-	messageDelivered msgType = "message-delivered"
-	messageFailed    msgType = "message-failed"
-	blobReceived     msgType = "blob-received"
-	blobDelivered    msgType = "blob-delivered"
-	blobFailed       msgType = "blob-failed"
+	messageReceived     msgType = "message-received"
+	messageDelivered    msgType = "message-delivered"
+	messageAcknowledged msgType = "message-acknowledged"
+	messageFailed       msgType = "message-failed"
+	blobReceived        msgType = "blob-received"
+	blobDelivered       msgType = "blob-delivered"
+	blobAcknowledged    msgType = "blob-acknowledged"
+	blobFailed          msgType = "blob-failed"
 )
 
 type responseWithRequestID struct {
@@ -113,7 +115,7 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.DXInfo, callbacks dataexchange.Callbacks) (err error) {
+func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.JSONObject, callbacks dataexchange.Callbacks) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.callbacks = callbacks
 
@@ -148,21 +150,6 @@ func (h *FFDX) Capabilities() *dataexchange.Capabilities {
 	return h.capabilities
 }
 
-func (h *FFDX) dxEndpointArray(nodes []fftypes.DXInfo) []fftypes.JSONObject {
-	// The remote DataExchange connector HTTP API expects a flat array
-	// where "id" is in embedded in each entry - because that's how it
-	// originally passed the data to us.
-	// In the DXInfo contract on the Go plugin in FireFly we raise the "id" up
-	// to be a first class "peer" field, so it can be indexed outside of the opaque
-	// endpoint payload.
-	// This function just converts back to a flat array.
-	dxEndpointArray := make([]fftypes.JSONObject, len(nodes))
-	for i, node := range nodes {
-		dxEndpointArray[i] = node.Endpoint
-	}
-	return dxEndpointArray
-}
-
 func (h *FFDX) beforeConnect(ctx context.Context) error {
 	h.initMutex.Lock()
 	defer h.initMutex.Unlock()
@@ -171,7 +158,7 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 		h.initialized = false
 		var status dxStatus
 		res, err := h.client.R().SetContext(ctx).
-			SetBody(h.dxEndpointArray(h.nodes)).
+			SetBody(h.nodes).
 			SetResult(&status).
 			Post("/api/v1/init")
 		if err != nil || !res.IsSuccess() {
@@ -195,30 +182,34 @@ func (h *FFDX) checkInitialized(ctx context.Context) error {
 	return nil
 }
 
-func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.DXInfo, err error) {
+func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return peer, err
 	}
 
 	res, err := h.client.R().SetContext(ctx).
-		SetResult(&peer.Endpoint).
+		SetResult(&peer).
 		Get("/api/v1/id")
 	if err != nil || !res.IsSuccess() {
 		return peer, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
-	peer.Peer = peer.Endpoint.GetString("id")
+	id := peer.GetString("id")
+	if id == "" {
+		log.L(ctx).Errorf("Invalid DX info: %s", peer.String())
+		return nil, i18n.NewError(ctx, i18n.MsgDXInfoMissingID)
+	}
 	h.nodes = append(h.nodes, peer)
 	return peer, nil
 }
 
-func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.DXInfo) (err error) {
+func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
 
 	res, err := h.client.R().SetContext(ctx).
-		SetBody(peer.Endpoint).
-		Put(fmt.Sprintf("/api/v1/peers/%s", peer.Peer))
+		SetBody(peer).
+		Put(fmt.Sprintf("/api/v1/peers/%s", peer.GetString("id")))
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
@@ -345,8 +336,19 @@ func (h *FFDX) eventLoop() {
 			var manifest string
 			switch msg.Type {
 			case messageFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+					Error: msg.Error,
+					Info:  msg.Info,
+				})
 			case messageDelivered:
+				status := fftypes.OpStatusSucceeded
+				if h.capabilities.Manifest {
+					status = fftypes.OpStatusPending
+				}
+				err = h.callbacks.TransferResult(msg.RequestID, status, fftypes.TransportStatusUpdate{
+					Info: msg.Info,
+				})
+			case messageAcknowledged:
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
 					Manifest: msg.Manifest,
 					Info:     msg.Info,
@@ -354,9 +356,18 @@ func (h *FFDX) eventLoop() {
 			case messageReceived:
 				manifest, err = h.callbacks.MessageReceived(msg.Sender, []byte(msg.Message))
 			case blobFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{Error: msg.Error})
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
+					Error: msg.Error,
+					Info:  msg.Info,
+				})
 			case blobDelivered:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{})
+				status := fftypes.OpStatusSucceeded
+				if h.capabilities.Manifest {
+					status = fftypes.OpStatusPending
+				}
+				err = h.callbacks.TransferResult(msg.RequestID, status, fftypes.TransportStatusUpdate{
+					Info: msg.Info,
+				})
 			case blobReceived:
 				var hash *fftypes.Bytes32
 				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)
@@ -366,6 +377,11 @@ func (h *FFDX) eventLoop() {
 				} else {
 					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Size, msg.Path)
 				}
+			case blobAcknowledged:
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+					Hash: msg.Hash,
+					Info: msg.Info,
+				})
 			default:
 				l.Errorf("Message unexpected: %s", msg.Type)
 			}

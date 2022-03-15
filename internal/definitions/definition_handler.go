@@ -24,8 +24,10 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -35,8 +37,13 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (DefinitionMessageAction, *DefinitionBatchActions, error)
+	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
+}
+
+type HandlerResult struct {
+	Action           DefinitionMessageAction
+	CustomCorrelator *fftypes.UUID
 }
 
 // DefinitionMessageAction is the action to be taken on an individual definition message
@@ -56,35 +63,59 @@ const (
 	ActionWait
 )
 
-// DefinitionBatchActions are actions to be taken at the end of a definition batch
-// See further notes on "batchActions" in the event aggregator
-type DefinitionBatchActions struct {
+func (dma DefinitionMessageAction) String() string {
+	switch dma {
+	case ActionReject:
+		return "reject"
+	case ActionConfirm:
+		return "confirm"
+	case ActionRetry:
+		return "retry"
+	case ActionWait:
+		return "wait"
+	default:
+		return "unknown"
+	}
+}
+
+// DefinitionBatchState tracks the state between definition handlers that run in-line on the pin processing route in the
+// aggregator as part of a batch of pins. They might have complex API calls, and interdependencies, that need to be managed via this state.
+// The actions to be taken at the end of a definition batch.
+// See further notes on "batchState" in the event aggregator
+type DefinitionBatchState interface {
 	// PreFinalize may perform a blocking action (possibly to an external connector) that should execute outside database RunAsGroup
-	PreFinalize func(ctx context.Context) error
+	AddPreFinalize(func(ctx context.Context) error)
 
 	// Finalize may perform final, non-idempotent database operations (such as inserting Events)
-	Finalize func(ctx context.Context) error
+	AddFinalize(func(ctx context.Context) error)
+
+	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
+	GetPendingConfirm() map[fftypes.UUID]*fftypes.Message
 }
 
 type definitionHandlers struct {
-	database  database.Plugin
-	exchange  dataexchange.Plugin
-	data      data.Manager
-	broadcast broadcast.Manager
-	messaging privatemessaging.Manager
-	assets    assets.Manager
-	contracts contracts.Manager
+	database   database.Plugin
+	blockchain blockchain.Plugin
+	exchange   dataexchange.Plugin
+	data       data.Manager
+	identity   identity.Manager
+	broadcast  broadcast.Manager
+	messaging  privatemessaging.Manager
+	assets     assets.Manager
+	contracts  contracts.Manager
 }
 
-func NewDefinitionHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
+func NewDefinitionHandlers(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
 	return &definitionHandlers{
-		database:  di,
-		exchange:  dx,
-		data:      dm,
-		broadcast: bm,
-		messaging: pm,
-		assets:    am,
-		contracts: cm,
+		database:   di,
+		blockchain: bi,
+		exchange:   dx,
+		data:       dm,
+		identity:   im,
+		broadcast:  bm,
+		messaging:  pm,
+		assets:     am,
+		contracts:  cm,
 	}
 }
 
@@ -104,31 +135,37 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (msgAction DefinitionMessageAction, batchActions *DefinitionBatchActions, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
-	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
-	switch fftypes.SystemTag(msg.Header.Tag) {
+	l.Infof("Processing system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
+	switch msg.Header.Tag {
 	case fftypes.SystemTagDefineDatatype:
-		return dh.handleDatatypeBroadcast(ctx, msg, data)
+		return dh.handleDatatypeBroadcast(ctx, state, msg, data, tx)
 	case fftypes.SystemTagDefineNamespace:
-		return dh.handleNamespaceBroadcast(ctx, msg, data)
-	case fftypes.SystemTagDefineOrganization:
-		return dh.handleOrganizationBroadcast(ctx, msg, data)
-	case fftypes.SystemTagDefineNode:
-		return dh.handleNodeBroadcast(ctx, msg, data)
+		return dh.handleNamespaceBroadcast(ctx, state, msg, data, tx)
+	case fftypes.DeprecatedSystemTagDefineOrganization:
+		return dh.handleDeprecatedOrganizationBroadcast(ctx, state, msg, data)
+	case fftypes.DeprecatedSystemTagDefineNode:
+		return dh.handleDeprecatedNodeBroadcast(ctx, state, msg, data)
+	case fftypes.SystemTagIdentityClaim:
+		return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, nil)
+	case fftypes.SystemTagIdentityVerification:
+		return dh.handleIdentityVerificationBroadcast(ctx, state, msg, data)
+	case fftypes.SystemTagIdentityUpdate:
+		return dh.handleIdentityUpdateBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagDefinePool:
-		return dh.handleTokenPoolBroadcast(ctx, msg, data)
+		return dh.handleTokenPoolBroadcast(ctx, state, msg, data)
 	case fftypes.SystemTagDefineFFI:
-		return dh.handleFFIBroadcast(ctx, msg, data)
+		return dh.handleFFIBroadcast(ctx, state, msg, data, tx)
 	case fftypes.SystemTagDefineContractAPI:
-		return dh.handleContractAPIBroadcast(ctx, msg, data)
+		return dh.handleContractAPIBroadcast(ctx, state, msg, data, tx)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
-		return ActionReject, nil, nil
+		return HandlerResult{Action: ActionReject}, nil
 	}
 }
 
-func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
+func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data fftypes.DataArray, res fftypes.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))

@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
+	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -38,9 +39,11 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
@@ -58,7 +61,7 @@ type testOrchestrator struct {
 	mba *batchmocks.Manager
 	mem *eventmocks.EventManager
 	mnm *networkmapmocks.Manager
-	mps *publicstoragemocks.Plugin
+	mps *sharedstoragemocks.Plugin
 	mpm *privatemessagingmocks.Manager
 	mbi *blockchainmocks.Plugin
 	mii *identitymocks.Plugin
@@ -68,6 +71,9 @@ type testOrchestrator struct {
 	mti *tokenmocks.Plugin
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
+	mom *operationmocks.Manager
+	mbp *batchpinmocks.Submitter
+	mth *txcommonmocks.Helper
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -84,7 +90,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mba: &batchmocks.Manager{},
 		mem: &eventmocks.EventManager{},
 		mnm: &networkmapmocks.Manager{},
-		mps: &publicstoragemocks.Plugin{},
+		mps: &sharedstoragemocks.Plugin{},
 		mpm: &privatemessagingmocks.Manager{},
 		mbi: &blockchainmocks.Plugin{},
 		mii: &identitymocks.Plugin{},
@@ -94,6 +100,9 @@ func newTestOrchestrator() *testOrchestrator {
 		mti: &tokenmocks.Plugin{},
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
+		mom: &operationmocks.Manager{},
+		mbp: &batchpinmocks.Submitter{},
+		mth: &txcommonmocks.Helper{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -101,7 +110,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.networkmap = tor.mnm
-	tor.orchestrator.publicstorage = tor.mps
+	tor.orchestrator.sharedstorage = tor.mps
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.identity = tor.mim
@@ -111,6 +120,9 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
 	tor.orchestrator.metrics = tor.mmi
+	tor.orchestrator.operations = tor.mom
+	tor.orchestrator.batchpin = tor.mbp
+	tor.orchestrator.txHelper = tor.mth
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -231,10 +243,10 @@ func TestBlockchainInitMergeConfigRecordsFail(t *testing.T) {
 	assert.EqualError(t, err, "invalid character 'c' looking for beginning of value")
 }
 
-func TestBadPublicStoragePlugin(t *testing.T) {
+func TestBadSharedStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.PublicStorageType, "wrong")
-	or.publicstorage = nil
+	config.Set(config.SharedStorageType, "wrong")
+	or.sharedstorage = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -244,7 +256,20 @@ func TestBadPublicStoragePlugin(t *testing.T) {
 	assert.Regexp(t, "FF10134.*wrong", err)
 }
 
-func TestBadPublicStorageInitFail(t *testing.T) {
+func TestBadSharedStoragePluginOldConfig(t *testing.T) {
+	or := newTestOrchestrator()
+	config.Set(config.PublicStorageType, "wrong")
+	or.sharedstorage = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10134.*wrong", err)
+}
+
+func TestBadSharedStorageInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -277,7 +302,7 @@ func TestBadDataExchangeInitFail(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
@@ -295,7 +320,7 @@ func TestDataExchangePluginOldName(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
@@ -314,7 +339,7 @@ func TestBadTokensPlugin(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -336,7 +361,7 @@ func TestBadTokensPluginNoConnector(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -357,7 +382,7 @@ func TestBadTokensPluginNoName(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -378,7 +403,7 @@ func TestBadTokensPluginInvalidName(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -400,7 +425,7 @@ func TestBadTokensPluginNoType(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -423,7 +448,7 @@ func TestGoodTokensPlugin(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -491,6 +516,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.identity = nil
+	or.txHelper = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -507,6 +533,22 @@ func TestInitContractsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.contracts = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitBatchPinComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.batchpin = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitOperationsComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -551,6 +593,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mbm.On("WaitStop").Return(nil)
 	or.mam.On("WaitStop").Return(nil)
 	or.mti.On("WaitStop").Return(nil)
+	or.mdm.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -621,7 +664,7 @@ func TestInitOK(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -643,12 +686,13 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
+	assert.Equal(t, or.mom, or.Operations())
 }
 
 func TestInitDataExchangeGetNodesFail(t *testing.T) {
 	or := newTestOrchestrator()
 
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := or.initDataExchange(or.ctx)
 	assert.EqualError(t, err, "pop")
@@ -657,7 +701,7 @@ func TestInitDataExchangeGetNodesFail(t *testing.T) {
 func TestInitDataExchangeWithNodes(t *testing.T) {
 	or := newTestOrchestrator()
 
-	or.mdi.On("GetNodes", mock.Anything, mock.Anything).Return([]*fftypes.Node{{}}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{{}}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := or.initDataExchange(or.ctx)

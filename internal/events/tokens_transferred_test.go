@@ -78,7 +78,7 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil).Times(3)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+		return ev.Type == fftypes.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(3)
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(fmt.Errorf("pop")).Once()
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
@@ -288,7 +288,7 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+		return ev.Type == fftypes.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil)
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil)
 	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil)
@@ -364,7 +364,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+		return ev.Type == fftypes.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
@@ -424,7 +424,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeBlockchainEvent && ev.Namespace == pool.Namespace
+		return ev.Type == fftypes.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)

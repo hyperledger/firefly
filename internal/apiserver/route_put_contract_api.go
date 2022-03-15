@@ -50,7 +50,7 @@ var putContractAPI = &oapispec.Route{
 		api.ID, err = fftypes.ParseUUID(r.Ctx, r.PP["id"])
 		var res interface{}
 		if err == nil {
-			res, err = getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.PP["ns"], api, waitConfirm)
+			res, err = getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, r.PP["ns"], api, waitConfirm)
 		}
 		return res, err
 	},

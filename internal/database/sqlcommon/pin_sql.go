@@ -33,6 +33,7 @@ var (
 		"hash",
 		"batch_id",
 		"idx",
+		"signer",
 		"dispatched",
 		"created",
 	}
@@ -73,24 +74,67 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 		log.L(ctx).Debugf("Existing pin returned at sequence %d", pin.Sequence)
 	} else {
 		pinRows.Close()
-		if pin.Sequence, err = s.insertTx(ctx, tx,
-			sq.Insert("pins").
-				Columns(pinColumns...).
-				Values(
-					pin.Masked,
-					pin.Hash,
-					pin.Batch,
-					pin.Index,
-					pin.Dispatched,
-					pin.Created,
-				),
-			func() {
-				s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
-			},
-		); err != nil {
+		if err = s.attemptPinInsert(ctx, tx, pin); err != nil {
 			return err
 		}
 
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *txWrapper, pin *fftypes.Pin) (err error) {
+	pin.Sequence, err = s.insertTx(ctx, tx,
+		s.setPinInsertValues(sq.Insert("pins").Columns(pinColumns...), pin),
+		func() {
+			log.L(ctx).Debugf("Triggering creation event for pin %d", pin.Sequence)
+			s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
+		},
+	)
+	return err
+}
+
+func (s *SQLCommon) setPinInsertValues(query sq.InsertBuilder, pin *fftypes.Pin) sq.InsertBuilder {
+	return query.Values(
+		pin.Masked,
+		pin.Hash,
+		pin.Batch,
+		pin.Index,
+		pin.Signer,
+		pin.Dispatched,
+		pin.Created,
+	)
+}
+
+func (s *SQLCommon) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	if s.features.MultiRowInsert {
+		query := sq.Insert("pins").Columns(pinColumns...)
+		for _, pin := range pins {
+			query = s.setPinInsertValues(query, pin)
+		}
+		sequences := make([]int64, len(pins))
+		err := s.insertTxRows(ctx, tx, query, func() {
+			for i, pin := range pins {
+				pin.Sequence = sequences[i]
+				s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
+			}
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, pin := range pins {
+			if err := s.attemptPinInsert(ctx, tx, pin); err != nil {
+				return err
+			}
+		}
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
@@ -103,6 +147,7 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 		&pin.Hash,
 		&pin.Batch,
 		&pin.Index,
+		&pin.Signer,
 		&pin.Dispatched,
 		&pin.Created,
 		&pin.Sequence,

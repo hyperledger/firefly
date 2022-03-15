@@ -110,7 +110,7 @@ func TestOperationTXUpdateError(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestOperationUpdateTransferFail(t *testing.T) {
+func TestOperationUpdateTransferFailBadData(t *testing.T) {
 	em, cancel := newTestEventManagerWithMetrics(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
@@ -129,6 +129,40 @@ func TestOperationUpdateTransferFail(t *testing.T) {
 	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
+	})).Return(nil)
+	mth.On("AddBlockchainTX", mock.Anything, op.Transaction, "0x12345").Return(nil)
+
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransferFail(t *testing.T) {
+	em, cancel := newTestEventManagerWithMetrics(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
+
+	localID := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		ID:          fftypes.NewUUID(),
+		Type:        fftypes.OpTypeTokenTransfer,
+		Namespace:   "ns1",
+		Transaction: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"localId": localID.String(),
+			"type":    "transfer",
+		},
+	}
+	info := fftypes.JSONObject{"some": "info"}
+
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1" && e.Correlator.Equals(localID)
 	})).Return(nil)
 	mth.On("AddBlockchainTX", mock.Anything, op.Transaction, "0x12345").Return(nil)
 
@@ -183,6 +217,120 @@ func TestOperationUpdateTransferEventFail(t *testing.T) {
 	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeTransferOpFailed && e.Namespace == "ns1"
+	})).Return(fmt.Errorf("pop"))
+
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApprovalFailBadInput(t *testing.T) {
+	em, cancel := newTestEventManagerWithMetrics(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
+
+	op := &fftypes.Operation{
+		ID:          fftypes.NewUUID(),
+		Type:        fftypes.OpTypeTokenApproval,
+		Namespace:   "ns1",
+		Transaction: fftypes.NewUUID(),
+	}
+	info := fftypes.JSONObject{"some": "info"}
+
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeApprovalOpFailed && e.Namespace == "ns1"
+	})).Return(nil)
+	mth.On("AddBlockchainTX", mock.Anything, op.Transaction, "0x12345").Return(nil)
+
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApprovalFail(t *testing.T) {
+	em, cancel := newTestEventManagerWithMetrics(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
+
+	localID := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		ID:          fftypes.NewUUID(),
+		Type:        fftypes.OpTypeTokenApproval,
+		Namespace:   "ns1",
+		Transaction: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"localId": localID.String(),
+		},
+	}
+	info := fftypes.JSONObject{"some": "info"}
+
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeApprovalOpFailed && e.Namespace == "ns1" && e.Correlator.Equals(localID)
+	})).Return(nil)
+	mth.On("AddBlockchainTX", mock.Anything, op.Transaction, "0x12345").Return(nil)
+
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+func TestOperationUpdateApprovalTransactionFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
+
+	op := &fftypes.Operation{
+		ID:          fftypes.NewUUID(),
+		Type:        fftypes.OpTypeTokenApproval,
+		Namespace:   "ns1",
+		Transaction: fftypes.NewUUID(),
+	}
+	info := fftypes.JSONObject{"some": "info"}
+
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
+	mth.On("AddBlockchainTX", mock.Anything, op.Transaction, "0x12345").Return(fmt.Errorf("pop"))
+
+	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApprovalEventFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+
+	op := &fftypes.Operation{
+		ID:        fftypes.NewUUID(),
+		Type:      fftypes.OpTypeTokenApproval,
+		Namespace: "ns1",
+	}
+	info := fftypes.JSONObject{"some": "info"}
+
+	mdi.On("GetOperationByID", em.ctx, op.ID).Return(op, nil)
+	mdi.On("ResolveOperation", mock.Anything, op.ID, fftypes.OpStatusFailed, "some error", info).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeApprovalOpFailed && e.Namespace == "ns1"
 	})).Return(fmt.Errorf("pop"))
 
 	err := em.operationUpdateCtx(em.ctx, op.ID, fftypes.OpStatusFailed, "0x12345", "some error", info)

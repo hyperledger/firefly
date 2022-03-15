@@ -43,12 +43,10 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 		pool.Connector = connector
 	}
 
-	if pool.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		pool.Key = org.Identity
+	var err error
+	pool.Key, err = am.identity.NormalizeSigningKey(ctx, pool.Key, am.keyNormalization)
+	if err != nil {
+		return nil, err
 	}
 	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
 }
@@ -81,24 +79,19 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 			pool.Namespace,
 			txid,
 			fftypes.OpTypeTokenCreatePool)
-		txcommon.AddTokenPoolCreateInputs(op, pool)
-
-		return am.database.InsertOperation(ctx, op)
+		if err = txcommon.AddTokenPoolCreateInputs(op, pool); err == nil {
+			err = am.database.InsertOperation(ctx, op)
+		}
+		return err
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if complete, err := plugin.CreateTokenPool(ctx, op.ID, pool); err != nil {
-		am.txHelper.WriteOperationFailure(ctx, op.ID, err)
-		return nil, err
-	} else if complete {
-		am.txHelper.WriteOperationSuccess(ctx, op.ID, nil)
-	}
-	return pool, nil
+	return pool, am.operations.RunOperation(ctx, opCreatePool(op, pool))
 }
 
-func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error {
+func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) error {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return err
@@ -109,17 +102,12 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 		pool.Namespace,
 		pool.TX.ID,
 		fftypes.OpTypeTokenActivatePool)
+	txcommon.AddTokenPoolActivateInputs(op, pool.ID, blockchainInfo)
 	if err := am.database.InsertOperation(ctx, op); err != nil {
 		return err
 	}
 
-	if complete, err := plugin.ActivateTokenPool(ctx, op.ID, pool, event); err != nil {
-		am.txHelper.WriteOperationFailure(ctx, op.ID, err)
-		return err
-	} else if complete {
-		am.txHelper.WriteOperationSuccess(ctx, op.ID, nil)
-	}
-	return nil
+	return am.operations.RunOperation(ctx, opActivatePool(op, pool, blockchainInfo))
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {

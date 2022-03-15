@@ -54,7 +54,15 @@ var (
 	}
 )
 
-func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *fftypes.Data, datatype *fftypes.DatatypeRef, blob *fftypes.BlobRef) (int64, error) {
+func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *fftypes.Data) (int64, error) {
+	datatype := data.Datatype
+	if datatype == nil {
+		datatype = &fftypes.DatatypeRef{}
+	}
+	blob := data.Blob
+	if blob == nil {
+		blob = &fftypes.BlobRef{}
+	}
 	data.ValueSize = data.Value.Length()
 	return s.updateTx(ctx, tx,
 		sq.Update("data").
@@ -79,29 +87,39 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 		})
 }
 
-func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, datatype *fftypes.DatatypeRef, blob *fftypes.BlobRef) (int64, error) {
+func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *fftypes.Data) sq.InsertBuilder {
+	datatype := data.Datatype
+	if datatype == nil {
+		datatype = &fftypes.DatatypeRef{}
+	}
+	blob := data.Blob
+	if blob == nil {
+		blob = &fftypes.BlobRef{}
+	}
+	return query.Values(
+		data.ID,
+		string(data.Validator),
+		data.Namespace,
+		datatype.Name,
+		datatype.Version,
+		data.Hash,
+		data.Created,
+		blob.Hash,
+		blob.Public,
+		blob.Name,
+		blob.Size,
+		data.ValueSize,
+		data.Value,
+	)
+}
+
+func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, requestConflictEmptyResult bool) (int64, error) {
 	data.ValueSize = data.Value.Length()
-	return s.insertTx(ctx, tx,
-		sq.Insert("data").
-			Columns(dataColumnsWithValue...).
-			Values(
-				data.ID,
-				string(data.Validator),
-				data.Namespace,
-				datatype.Name,
-				datatype.Version,
-				data.Hash,
-				data.Created,
-				blob.Hash,
-				blob.Public,
-				blob.Name,
-				blob.Size,
-				data.ValueSize,
-				data.Value,
-			),
+	return s.insertTxExt(ctx, tx,
+		s.setDataInsertValues(sq.Insert("data").Columns(dataColumnsWithValue...), data),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
-		})
+		}, requestConflictEmptyResult)
 }
 
 func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimization database.UpsertOptimization) (err error) {
@@ -111,15 +129,6 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	datatype := data.Datatype
-	if datatype == nil {
-		datatype = &fftypes.DatatypeRef{}
-	}
-	blob := data.Blob
-	if blob == nil {
-		blob = &fftypes.BlobRef{}
-	}
-
 	// This is a performance critical function, as we stream data into the database for every message, in every batch.
 	//
 	// First attempt the operation based on the optimization passed in.
@@ -127,10 +136,10 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 	// as only recovery paths require us to go down the un-optimized route.
 	optimized := false
 	if optimization == database.UpsertOptimizationNew {
-		_, opErr := s.attemptDataInsert(ctx, tx, data, datatype, blob)
+		_, opErr := s.attemptDataInsert(ctx, tx, data, true /* we want a failure here we can progress past */)
 		optimized = opErr == nil
 	} else if optimization == database.UpsertOptimizationExisting {
-		rowsAffected, opErr := s.attemptDataUpdate(ctx, tx, data, datatype, blob)
+		rowsAffected, opErr := s.attemptDataUpdate(ctx, tx, data)
 		optimized = opErr == nil && rowsAffected == 1
 	}
 
@@ -158,17 +167,53 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 		dataRows.Close()
 
 		if existing {
-			if _, err = s.attemptDataUpdate(ctx, tx, data, datatype, blob); err != nil {
+			if _, err = s.attemptDataUpdate(ctx, tx, data); err != nil {
 				return err
 			}
 		} else {
-			if _, err = s.attemptDataInsert(ctx, tx, data, datatype, blob); err != nil {
+			if _, err = s.attemptDataInsert(ctx, tx, data, false); err != nil {
 				return err
 			}
 		}
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray fftypes.DataArray) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	if s.features.MultiRowInsert {
+		query := sq.Insert("data").Columns(dataColumnsWithValue...)
+		for _, data := range dataArray {
+			query = s.setDataInsertValues(query, data)
+		}
+		sequences := make([]int64, len(dataArray))
+		err := s.insertTxRows(ctx, tx, query, func() {
+			for _, data := range dataArray {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
+			}
+		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, data := range dataArray {
+			_, err := s.attemptDataInsert(ctx, tx, data, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+
 }
 
 func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue bool) (*fftypes.Data, error) {
@@ -237,7 +282,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	return data, nil
 }
 
-func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message fftypes.DataArray, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -250,7 +295,7 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 	}
 	defer rows.Close()
 
-	data := []*fftypes.Data{}
+	data := fftypes.DataArray{}
 	for rows.Next() {
 		d, err := s.dataResult(ctx, rows, true)
 		if err != nil {

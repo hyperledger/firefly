@@ -33,7 +33,7 @@ const (
 type MessageType = FFEnum
 
 var (
-	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, members, data definitions, etc.)
+	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, identities, data definitions, etc.)
 	MessageTypeDefinition MessageType = ffEnum("messagetype", "definition")
 	// MessageTypeBroadcast is a broadcast message, meaning it is intended to be visible by all parties in the network
 	MessageTypeBroadcast MessageType = ffEnum("messagetype", "broadcast")
@@ -72,7 +72,7 @@ type MessageHeader struct {
 	CID    *UUID           `json:"cid,omitempty"`
 	Type   MessageType     `json:"type" ffenum:"messagetype"`
 	TxType TransactionType `json:"txtype,omitempty"`
-	Identity
+	SignerRef
 	Created   *FFTime       `json:"created,omitempty"`
 	Namespace string        `json:"namespace,omitempty"`
 	Group     *Bytes32      `json:"group,omitempty"`
@@ -93,6 +93,18 @@ type Message struct {
 	Data      DataRefs      `json:"data"`
 	Pins      FFStringArray `json:"pins,omitempty"`
 	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
+}
+
+// BatchMessage is the fields in a message record that are assured to be consistent on all parties.
+// This is what is transferred and hashed in a batch payload between nodes.
+func (m *Message) BatchMessage() *Message {
+	return &Message{
+		Header: m.Header,
+		Hash:   m.Hash,
+		Data:   m.Data,
+		// The pins are immutable once assigned by the sender, which happens before the batch is sealed
+		Pins: m.Pins,
+	}
 }
 
 // MessageInOut allows API users to submit values in-line in the payload submitted, which
@@ -170,14 +182,6 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	if len(m.Header.Topics) == 0 {
 		m.Header.Topics = []string{DefaultTopic}
 	}
-	if err := m.Header.Topics.Validate(ctx, "header.topics", true); err != nil {
-		return err
-	}
-	if m.Header.Tag != "" {
-		if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
-			return err
-		}
-	}
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}
@@ -188,7 +192,10 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	if m.Data == nil {
 		m.Data = DataRefs{}
 	}
-	err = m.DupDataCheck(ctx)
+	if m.Header.TxType == "" {
+		m.Header.TxType = TransactionTypeBatchPin
+	}
+	err = m.VerifyFields(ctx)
 	if err == nil {
 		m.Header.DataHash = m.Data.Hash()
 		m.Hash = m.Header.Hash()
@@ -211,14 +218,14 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 	return nil
 }
 
-func (m *Message) Verify(ctx context.Context) error {
+func (m *Message) VerifyFields(ctx context.Context) error {
 	switch m.Header.TxType {
 	case TransactionTypeBatchPin:
 	case TransactionTypeUnpinned:
 	default:
 		return i18n.NewError(ctx, i18n.MsgInvalidTXTypeForMessage, m.Header.TxType)
 	}
-	if err := m.Header.Topics.Validate(ctx, "header.topics", true); err != nil {
+	if err := m.Header.Topics.Validate(ctx, "header.topics", true, 10 /* Pins need 96 chars each*/); err != nil {
 		return err
 	}
 	if m.Header.Tag != "" {
@@ -226,7 +233,11 @@ func (m *Message) Verify(ctx context.Context) error {
 			return err
 		}
 	}
-	err := m.DupDataCheck(ctx)
+	return m.DupDataCheck(ctx)
+}
+
+func (m *Message) Verify(ctx context.Context) error {
+	err := m.VerifyFields(ctx)
 	if err != nil {
 		return err
 	}

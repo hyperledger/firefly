@@ -31,10 +31,10 @@ var getNetworkOrgs = &oapispec.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.OrganizationQueryFactory,
+	FilterFactory:   database.IdentityQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Organization{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).NetworkMap().GetOrganizations(r.Ctx, r.Filter))

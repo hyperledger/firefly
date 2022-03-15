@@ -34,7 +34,7 @@ var (
 		"namespace",
 		"name",
 		"protocol_id",
-		"subscription_id",
+		"listener_id",
 		"output",
 		"info",
 		"timestamp",
@@ -42,10 +42,10 @@ var (
 		"tx_id",
 	}
 	blockchainEventFilterFieldMap = map[string]string{
-		"protocolid":   "protocol_id",
-		"subscription": "subscription_id",
-		"tx.type":      "tx_type",
-		"tx.id":        "tx_id",
+		"protocolid": "protocol_id",
+		"listener":   "listener_id",
+		"tx.type":    "tx_type",
+		"tx.id":      "tx_id",
 	}
 )
 
@@ -65,7 +65,7 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 				event.Namespace,
 				event.Name,
 				event.ProtocolID,
-				event.Subscription,
+				event.Listener,
 				event.Output,
 				event.Info,
 				event.Timestamp,
@@ -90,7 +90,7 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 		&event.Namespace,
 		&event.Name,
 		&event.ProtocolID,
-		&event.Subscription,
+		&event.Listener,
 		&event.Output,
 		&event.Info,
 		&event.Timestamp,

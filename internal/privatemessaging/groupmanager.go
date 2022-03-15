@@ -45,7 +45,7 @@ type groupManager struct {
 
 type groupHashEntry struct {
 	group *fftypes.Group
-	nodes []*fftypes.Node
+	nodes []*fftypes.Identity
 }
 
 func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
@@ -77,7 +77,7 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Gro
 	return true, nil
 }
 
-func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity, group *fftypes.Group) (err error) {
+func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.SignerRef, group *fftypes.Group) (err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
@@ -118,8 +118,8 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 			Group:     group.Hash,
 			Namespace: group.Namespace, // Must go into the same ordering context as the message itself
 			Type:      fftypes.MessageTypeGroupInit,
-			Identity:  *signer,
-			Tag:       string(fftypes.SystemTagDefineGroup),
+			SignerRef: *signer,
+			Tag:       fftypes.SystemTagDefineGroup,
 			Topics:    fftypes.FFStringArray{group.Topic()},
 			TxType:    fftypes.TransactionTypeBatchPin,
 		},
@@ -157,7 +157,7 @@ func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter
 	return gm.database.GetGroups(ctx, filter)
 }
 
-func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32) (*fftypes.Group, []*fftypes.Node, error) {
+func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32, allowNil bool) (*fftypes.Group, []*fftypes.Identity, error) {
 
 	if cached := gm.groupCache.Get(groupHash.String()); cached != nil {
 		cached.Extend(gm.groupCacheTTL)
@@ -166,7 +166,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 	}
 
 	group, err := gm.database.GetGroupByHash(ctx, groupHash)
-	if err != nil {
+	if err != nil || (allowNil && group == nil) {
 		return nil, nil, err
 	}
 	if group == nil {
@@ -175,14 +175,14 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 
 	// We de-duplicate nodes in the case that the payload needs to be received by multiple org identities
 	// that share a single node.
-	nodes := make([]*fftypes.Node, 0, len(group.Members))
+	nodes := make([]*fftypes.Identity, 0, len(group.Members))
 	knownIDs := make(map[fftypes.UUID]bool)
 	for _, r := range group.Members {
-		node, err := gm.database.GetNodeByID(ctx, r.Node)
+		node, err := gm.database.GetIdentityByID(ctx, r.Node)
 		if err != nil {
 			return nil, nil, err
 		}
-		if node == nil {
+		if node == nil || node.Type != fftypes.IdentityTypeNode {
 			return nil, nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, r.Node)
 		}
 		if !knownIDs[*node.ID] {
@@ -204,9 +204,9 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 //
 // Errors are only returned for database issues. For validation issues, a nil group is returned without an error.
 func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
-	if msg.Header.Tag == string(fftypes.SystemTagDefineGroup) {
+	if msg.Header.Tag == fftypes.SystemTagDefineGroup {
 		// Store the new group
-		data, foundAll, err := gm.data.GetMessageData(ctx, msg, true)
+		data, foundAll, err := gm.data.GetMessageDataCached(ctx, msg)
 		if err != nil || !foundAll || len(data) == 0 {
 			log.L(ctx).Warnf("Group %s definition in message %s invalid: missing data", msg.Header.Group, msg.Header.ID)
 			return nil, err

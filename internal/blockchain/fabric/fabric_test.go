@@ -85,6 +85,10 @@ func testFFIMethod() *fftypes.FFIMethod {
 				Name:   "y",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
+			{
+				Name:   "description",
+				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
+			},
 		},
 		Returns: []*fftypes.FFIParam{
 			{
@@ -169,6 +173,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())
+	assert.Equal(t, fftypes.VerifierTypeMSPIdentity, e.VerifierType())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
@@ -234,7 +239,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "BatchPin"},
+			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
 
 	resetConf()
@@ -397,11 +402,10 @@ func TestSubmitBatchPinOK(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, signer, req.FormValue(defaultPrefixShort+"-signer"))
-			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", (body["args"].([]interface{}))[1])
-			assert.Equal(t, hexFormatB32(batch.BatchHash), (body["args"].([]interface{}))[2])
-			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", (body["args"].([]interface{}))[3])
+			assert.Equal(t, signer, (body["headers"].(map[string]interface{}))["signer"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", (body["args"].(map[string]interface{}))["uuids"])
+			assert.Equal(t, hexFormatB32(batch.BatchHash), (body["args"].(map[string]interface{}))["batchHash"])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", (body["args"].(map[string]interface{}))["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
@@ -433,11 +437,10 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, signer, req.FormValue("fly-signer"))
-			assert.Equal(t, "false", req.FormValue("fly-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", (body["args"].([]interface{}))[1])
-			assert.Equal(t, hexFormatB32(batch.BatchHash), (body["args"].([]interface{}))[2])
-			assert.Equal(t, "", (body["args"].([]interface{}))[3])
+			assert.Equal(t, signer, (body["headers"].(map[string]interface{}))["signer"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", (body["args"].(map[string]interface{}))["uuids"])
+			assert.Equal(t, hexFormatB32(batch.BatchHash), (body["args"].(map[string]interface{}))["batchHash"])
+			assert.Equal(t, "", (body["args"].(map[string]interface{}))["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
@@ -481,7 +484,7 @@ func TestResolveFullIDSigner(t *testing.T) {
 	defer cancel()
 
 	id := "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server"
-	signKey, err := e.ResolveSigningKey(context.Background(), id)
+	signKey, err := e.NormalizeSigningKey(context.Background(), id)
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", signKey)
 
@@ -501,7 +504,7 @@ func TestResolveSigner(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	resolved, err := e.ResolveSigningKey(context.Background(), "signer001")
+	resolved, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", resolved)
 }
@@ -516,7 +519,7 @@ func TestResolveSignerFailedFabricCARequest(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(503, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s()")
 }
 
@@ -534,7 +537,7 @@ func TestResolveSignerBadECertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
@@ -552,7 +555,7 @@ func TestResolveSignerBadCACertReturned(t *testing.T) {
 
 	responder, _ := httpmock.NewJsonResponder(200, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
-	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
 	assert.Contains(t, err.Error(), "FF10286: Failed to decode certificate:")
 }
 
@@ -599,7 +602,12 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server").Return(nil)
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -613,7 +621,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[1].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[1].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -643,7 +651,12 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(nil)
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -657,7 +670,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Empty(t, b.BatchPayloadRef)
-	assert.Equal(t, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", em.Calls[0].Arguments[1])
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
 	assert.Len(t, b.Contexts, 2)
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
@@ -687,7 +700,12 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	em.On("BatchPinComplete", mock.Anything, "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	expectedSigningKeyRef := &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -1067,8 +1085,8 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
@@ -1098,8 +1116,8 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(""),
 			Event:    &fftypes.FFISerializedEvent{},
 		},
@@ -1123,8 +1141,8 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscriptionInput{
-		ContractSubscription: fftypes.ContractSubscription{
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
@@ -1155,7 +1173,7 @@ func TestDeleteSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		ProtocolID: "sb-1",
 	}
 
@@ -1180,7 +1198,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractSubscription{
+	sub := &fftypes.ContractListener{
 		ProtocolID: "sb-1",
 	}
 
@@ -1329,8 +1347,9 @@ func TestInvokeContractOK(t *testing.T) {
 	}
 	method := testFFIMethod()
 	params := map[string]interface{}{
-		"x": float64(1),
-		"y": float64(2),
+		"x":           float64(1),
+		"y":           float64(2),
+		"description": "test",
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
@@ -1338,16 +1357,47 @@ func TestInvokeContractOK(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, signingKey, req.URL.Query().Get(defaultPrefixShort+"-signer"))
-			assert.Equal(t, "firefly", req.URL.Query().Get(defaultPrefixShort+"-channel"))
-			assert.Equal(t, "simplestorage", req.URL.Query().Get(defaultPrefixShort+"-chaincode"))
-			assert.Equal(t, "false", req.URL.Query().Get(defaultPrefixShort+"-sync"))
+			assert.Equal(t, signingKey, (body["headers"].(map[string]interface{}))["signer"])
+			assert.Equal(t, "firefly", (body["headers"].(map[string]interface{}))["channel"])
+			assert.Equal(t, "simplestorage", (body["headers"].(map[string]interface{}))["chaincode"])
 			assert.Equal(t, "1", body["args"].(map[string]interface{})["x"])
 			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
+			assert.Equal(t, "test", body["args"].(map[string]interface{})["description"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
 	assert.NoError(t, err)
+}
+
+func TestInvokeContractBadSchema(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	method := &fftypes.FFIMethod{
+		Name: "sum",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{not json]`),
+			},
+		},
+		Returns: []*fftypes.FFIParam{},
+	}
+	params := map[string]interface{}{
+		"x":           float64(1),
+		"y":           float64(2),
+		"description": "test",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "FF10151", err)
 }
 
 func TestInvokeContractChaincodeNotSet(t *testing.T) {
@@ -1396,6 +1446,8 @@ func TestQueryContractOK(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	e.signer = signingKey
 	location := &Location{
 		Channel:   "firefly",
 		Chaincode: "simplestorage",
@@ -1407,8 +1459,110 @@ func TestQueryContractOK(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signingKey, body["headers"].(map[string]interface{})["signer"])
+			assert.Equal(t, "firefly", body["headers"].(map[string]interface{})["channel"])
+			assert.Equal(t, "simplestorage", body["headers"].(map[string]interface{})["chaincode"])
+			assert.Equal(t, "1", body["args"].(map[string]interface{})["x"])
+			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
+			return httpmock.NewJsonResponderOrPanic(200, &fabQueryNamedOutput{})(req)
+		})
 	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.EqualError(t, err, "not yet supported")
+	assert.NoError(t, err)
+}
+
+func TestQueryContractInputNotJSON(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	e.signer = signingKey
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"bad": map[interface{}]interface{}{true: false},
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "FF10151", err)
+}
+
+func TestQueryContractBadLocation(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := fftypes.NewRandB32().String()
+	e.signer = signingKey
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	_, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtr(`{"validLocation": false}`), method, params)
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestQueryContractFabconnectError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Channel:   "fabric",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
+		func(req *http.Request) (*http.Response, error) {
+			return httpmock.NewJsonResponderOrPanic(400, &fabQueryNamedOutput{})(req)
+		})
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "FF10284", err)
+}
+
+func TestQueryContractUnmarshalResponseError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "firefly", (body["headers"].(map[string]interface{}))["channel"])
+			assert.Equal(t, "simplestorage", (body["headers"].(map[string]interface{}))["chaincode"])
+			assert.Equal(t, "1", body["args"].(map[string]interface{})["x"])
+			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
+			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
+		})
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	assert.Regexp(t, "invalid character", err)
 }
 
 func TestValidateContractLocation(t *testing.T) {

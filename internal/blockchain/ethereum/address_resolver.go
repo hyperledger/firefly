@@ -80,7 +80,7 @@ func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressR
 	return ar, nil
 }
 
-func (ar *addressResolver) ResolveSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
+func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescriptor string) (string, error) {
 
 	if cached := ar.cache.Get(keyDescriptor); cached != nil {
 		cached.Extend(ar.cacheTTL)

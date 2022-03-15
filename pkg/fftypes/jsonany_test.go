@@ -17,6 +17,7 @@
 package fftypes
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -108,7 +109,7 @@ func TestScan(t *testing.T) {
 	var h JSONAny
 	assert.Equal(t, int64(0), h.Length())
 	assert.NoError(t, h.Scan(nil))
-	assert.Equal(t, []byte(NullString), []byte(h))
+	assert.Empty(t, h)
 
 	assert.NoError(t, h.Scan(`{"some": "stuff"}`))
 	assert.Equal(t, "stuff", h.JSONObject().GetString("some"))
@@ -129,4 +130,41 @@ func TestScan(t *testing.T) {
 	assert.NotEmpty(t, JSONAnyPtr("{}").Bytes())
 	assert.Equal(t, int64(2), JSONAnyPtr("{}").Length())
 
+}
+
+func TestValue(t *testing.T) {
+
+	var h *JSONAny
+	v, err := h.Value()
+	assert.NoError(t, err)
+	assert.Nil(t, v)
+	err = h.Scan(v)
+	assert.NoError(t, err)
+	assert.Nil(t, h)
+
+	h = JSONAnyPtr("")
+	v, err = h.Value()
+	assert.NoError(t, err)
+	assert.Nil(t, v)
+
+	h = JSONAnyPtr("{}")
+	v, err = h.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "{}", v)
+
+}
+
+func TestUnmarshal(t *testing.T) {
+
+	var h *JSONAny
+	var myObj struct {
+		Key1 string `json:"key1"`
+	}
+	err := h.Unmarshal(context.Background(), &myObj)
+	assert.Regexp(t, "FF10368", err)
+
+	h = JSONAnyPtr(`{"key1":"value1"}`)
+	err = h.Unmarshal(context.Background(), &myObj)
+	assert.NoError(t, err)
+	assert.Equal(t, "value1", myObj.Key1)
 }

@@ -45,7 +45,7 @@ type Plugin interface {
 	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) (complete bool, err error)
+	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
 	MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
@@ -55,6 +55,9 @@ type Plugin interface {
 
 	// TransferTokens transfers tokens within a pool from one account to another
 	TransferTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error
+
+	// TokenApproval approves an operator to transfer tokens on the owner's behalf
+	TokensApproval(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, approval *fftypes.TokenApproval) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -82,6 +85,11 @@ type Callbacks interface {
 	//
 	// Error should only be returned in shutdown scenarios
 	TokensTransferred(plugin Plugin, transfer *TokenTransfer) error
+
+	// TokensApproved notifies on a token approval
+	//
+	// Error should will only be returned in shutdown scenarios
+	TokensApproved(plugin Plugin, approval *TokenApproval) error
 }
 
 // Capabilities is the supported featureset of the tokens interface implemented by the plugin, with the specified config
@@ -114,6 +122,16 @@ type TokenTransfer struct {
 	// Although not every field will be filled in, embed fftypes.TokenTransfer to avoid duplicating lots of fields
 	// Notable fields NOT expected to be populated by plugins: Namespace, LocalID, Pool
 	fftypes.TokenTransfer
+
+	// PoolProtocolID is the ID assigned to the token pool by the connector
+	PoolProtocolID string
+
+	// Event contains info on the underlying blockchain event for this transfer
+	Event blockchain.Event
+}
+
+type TokenApproval struct {
+	fftypes.TokenApproval
 
 	// PoolProtocolID is the ID assigned to the token pool by the connector
 	PoolProtocolID string
