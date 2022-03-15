@@ -52,6 +52,8 @@ type txWrapper struct {
 	tableLocks      []string
 }
 
+// shortenSQL grabs the first three words of a SQL statement, for minimal debug logging (SQL statements can be huge
+// even without args in the example of a multi-row insert - so we reserve full logging for trace level only.)
 func shortenSQL(sqlString string) string {
 	buff := strings.Builder{}
 	spaceCount := 0
