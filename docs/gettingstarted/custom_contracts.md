@@ -56,6 +56,8 @@ For the this guide, we will assume that the SimpleStorage contract is deployed a
 
 **Deployment of smart contracts is not currently within the scope of responsibility for FireFly.** You can use your standard blockchain specific tools to deploy your contract to whichever blockchain you are using. For Ethereum blockchains you could use [Truffle](https://trufflesuite.com/) or [Hardhat](https://hardhat.org/).
 
+### Using Truffle
+
 If you're using Truffle, you'll need to set your `truffle-config.js` file to point to the locally running blockchain node that the FireFly CLI created. Make sure your `networks` section looks like this:
 
 ```javascript
@@ -67,6 +69,33 @@ networks: {
     }
 }
 ```
+
+### Using the FireFly CLI
+
+The FireFly CLI also has a function to deploy an already-compiled smart contract to a local FireFly stack.
+
+> **NOTE:** The contract deployment function of the FireFly CLI is a convenience function to speed up local development, and not intended for production applications
+
+We will use the `solc` compiler to compile our smart contract. For details on how to install `solc` on your system, please see the [Solidity Compiler Documentation](https://docs.soliditylang.org/en/v0.8.9/installing-solidity.html).
+
+If you take the smart contract source code in the example above, and save that to a file called `simple_storage.sol`, here is the command to compile the contract:
+
+```
+$ solc --combined-json abi,bin simple_storage.sol > simple_storage.json
+```
+
+Next, we'll tell the FireFly to deploy the compiled contract to a running stack named `dev`. If your stack name is different, update the command accordingly:
+
+```
+$ ff deploy dev simple_storage.json
+reading stack config... done
+deploying simple_storage.sol:SimpleStorage... done
+
+contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
+```
+
+The FireFly CLI tells us that it has successfully deployed the contract with an address of `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1`. We will use this contract address for the rest of this guide.
+
 
 ## The FireFly Interface Format
 
@@ -218,7 +247,7 @@ FireFly generates and returns the the full FireFly Interface for the SimpleStora
 
 ## Broadcast the contract interface
 
-Now that we have a FireFly Interface representation of our smart contract, we want to broadcast that to the entire network. This broadcast will actually be pinned to the blockchain, so we can always refer to this specific name and version, and everyone in the network will know exactly which contract interface we are talking about.
+Now that we have a FireFly Interface representation of our smart contract, we want to broadcast that to the entire network. This broadcast will be pinned to the blockchain, so we can always refer to this specific name and version, and everyone in the network will know exactly which contract interface we are talking about.
 
 > **NOTE**: Contract interfaces are scoped to a namespace. Within a namespace each contract interface must have a unique name and version combination. The same name and version combination can exist in *different* namespaces simultaneously.
 
@@ -449,9 +478,9 @@ You'll notice in the response body that there are a couple of URLs near the bott
 
 Before we start using our smart contract, it's worth taking a moment to understand the programming model when working with smart contracts in FireFly. Like the rest of FireFly, smart contracts are implemented with an asynchronous programming model. The key concepts here are:
 
-- Transactions are submitted to FireFly and will immediately be assigned an ID. This is the **Operation ID**.
+- Transactions are submitted to FireFly and an ID is returned. This is the **Operation ID**.
 - The transaction itself happens asynchronously from the HTTP request that initiated it
-- Blockchain events emitted smart contracts will be stored in FireFly's database if FireFly has a listener set up for that specific type of event. FireFly will also emit an event of type `blockchain_event_received` when this happens
+- Blockchain events emitted by smart contracts will be stored in FireFly's database if FireFly has a **Listener** set up for that specific type of event. FireFly will also emit an event of type `blockchain_event_received` when this happens.
 
 <!-- TODO: Update this diagram -->
 ![Smart Contracts Async Flow](../images/smart_contracts_async_flow.svg "Smart Contracts Async Flow")
@@ -500,11 +529,13 @@ To make a read-only request to the blockchain to check the current value of the 
 }
 ```
 
+> **NOTE:** Some contracts may have queries that require input parameters. That's why the query endpoint is a `POST`, rather than a `GET` so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.
+
 ## Create a blockchain event listener
 
 Now that we've seen how to submit transactions and preform read-only queries to the blockchain, let's look at how to receive blockchain events so we know when things are happening in realtime.
 
-If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create a **listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events.
+If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create a **Listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events.
 
 ### Request
 
@@ -519,6 +550,9 @@ If you look at the source code for the smart contract we're working with above, 
     },
     "event": {
         "name": "Changed"
+    },
+    "options": {
+        "firstEvent": "oldest"
     }
 }
 ```
@@ -564,80 +598,90 @@ If you look at the source code for the smart contract we're working with above, 
                 }
             }
         ]
+    },
+    "options": {
+        "firstEvent": "oldest"
     }
 }
 ```
 
 We can see in the response, that FireFly pulls all the schema information from the FireFly Interface that we broadcasted earlier and creates the listener with that schema. This is useful so that we don't have to enter all of that data again.
 
-## Receive custom smart contract events
-
- need to set up a WebSocket client to listen for them. You can use any WebSocket client you like, from a browser plugin to a command line app like `websocat`.
-
-Connect your WebSocket client to `ws://localhost:5000/ws?namespace=default&ephemeral&autoack&filter.events=blockchain_event`
-
-This URL has a few parameters included in it that will:
-
-- Restrict messages received to those on the `default` namespace
-- Not block if no WebSocket clients are connected - the `ephemeral` option
-- Automatically acknowledge any incoming events
-- Only show events of type `blockchain_event`
-
 ## Subscribe to events from our contract
 
-You'll notice at first when you connect your WebSocket client, you don't receive any events, even if you continue to invoke your contract after your connected. This is because we haven't yet told FireFly to *subscribe* to those events being emitted from our contract. To do that, we can make a `POST` request to the `/subscribe/Changed` endpoint on our generated API.
+Now that we've told FireFly that it should listen for specific events on the blockchain, we can set up a **Subscription** for FireFly to send events to our app. This is exactly the same as listening for any other events from FireFly. For more details on how Subscriptions work in FireFly you can read the [Getting Started guide to Listen for events](./events.md). To set up our subscription, we will make a `POST` to the `/subscriptions` endpoint.
+
+We will set a friendly name `simple-storage` to identify the Subscription when we are connecting to it in the next step.
+
+We're also going to set up a filter to only send events blockchain events from our listener that we created in the previous step. To do that, we'll **copy the listener ID** from the step above (`0e448231-bc1f-455e-b290-c21a38bed06b`) and set that as the value of the `listener` field in the example below:
 
 ### Request
 
-`POST` `http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/subscribe/Changed`
+`POST` `http://localhost:5000/api/v1/namespaces/default/subscriptions`
 ```json
-{}
+{
+    "namespace": "default",
+    "name": "simple-storage",
+    "transport": "websockets",
+    "filter": {
+        "events": "blockchain_event_received",
+        "blockchainevent": {
+            "listener": "0e448231-bc1f-455e-b290-c21a38bed06b"
+        }
+    },
+    "options": {
+        "firstEvent": "oldest"
+    }
+}
 ```
 
 ### Response
 
 ```json
 {
-    "id": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14",
-    "interface": {
-        "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
-    },
+    "id": "f826269c-65ed-4634-b24c-4f399ec53a32",
     "namespace": "default",
-    "name": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
-    "protocolId": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
-    "location": {
-        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+    "name": "simple-storage",
+    "transport": "websockets",
+    "filter": {
+        "events": "blockchain_event_received",
+        "message": {},
+        "transaction": {},
+        "blockchainevent": {
+            "listener": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14"
+        }
     },
-    "created": "2022-02-17T22:02:36.34549538Z",
-    "event": {
-        "name": "Changed",
-        "description": "",
-        "params": [
-            {
-                "name": "from",
-                "schema": {
-                    "type": "string",
-                    "details": {
-                        "type": "address",
-                        "internalType": "address",
-                        "indexed": true
-                    }
-                }
-            },
-            {
-                "name": "value",
-                "schema": {
-                    "type": "integer",
-                    "details": {
-                        "type": "uint256",
-                        "internalType": "uint256"
-                    }
-                }
-            }
-        ]
-    }
+    "options": {
+        "firstEvent": "-1",
+        "withData": false
+    },
+    "created": "2022-03-15T17:35:30.131698921Z",
+    "updated": null
 }
 ```
+
+## Receive custom smart contract events
+
+ The last step is to connect a WebSocket client to FireFly to receive the event. You can use any WebSocket client you like, such as [Postman](https://www.postman.com/) or a command line app like [`websocat`](https://github.com/vi/websocat).
+
+Connect your WebSocket client to `ws://localhost:5000`
+
+After connecting the WebSocket client, send a message to tell FireFly to:
+
+- Start sending events
+- For the Subscription named `simple-storage`
+- On the `default` namespace
+- Automatically "ack" each event which will let FireFly immediately send the next event when available
+
+```json
+{
+  "type": "start",
+  "name": "simple-storage",
+  "namespace": "default",
+  "autoack": true
+}
+```
+
 
 ### WebSocket event
 
@@ -645,59 +689,50 @@ After creating the subscription, you should see an event arrive on the connected
 
 ```json
 {
-    "id": "49e24cb2-47cb-4f6f-80c8-f12791cdbe8b",
-    "sequence": 26,
-    "type": "blockchain_event",
-    "namespace": "default",
-    "reference": "b5d05bed-8c4a-4e2c-a6ec-a8a4ed42bb57",
-    "created": "2022-02-17T22:02:37.381407964Z",
-    "subscription": {
-        "id": "f366992e-0f7d-4d42-bfd0-e3aa8e948147",
-        "namespace": "default",
-        "name": "f366992e-0f7d-4d42-bfd0-e3aa8e948147"
-    }
-}
-```
-
-## Retrieve the output of a blockchain event
-
-Once we have received a blockchain event, we can go look up the output of that event to see the interesting things about it, like what value the stored integer was actually set to. To do that, we use the `reference` ID from the WebSocket event, and query the `blockchainevents` endpoint.
-
-### Request
-`GET` `http://localhost:5000/api/v1/namespaces/default/blockchainevents/5d7e27f5-29e3-4ec7-853d-101ac487fd9e`
-
-### Response
-```json
-{
-    "id": "b5d05bed-8c4a-4e2c-a6ec-a8a4ed42bb57",
-    "sequence": 12,
+  "id": "0f4a31d6-9743-4537-82df-5a9c76ccbd1e",
+  "sequence": 24,
+  "type": "blockchain_event_received",
+  "namespace": "default",
+  "reference": "dd3e1554-c832-47a8-898e-f1ee406bea41",
+  "created": "2022-03-15T17:32:27.824417878Z",
+  "blockchainevent": {
+    "id": "dd3e1554-c832-47a8-898e-f1ee406bea41",
+    "sequence": 7,
     "source": "ethereum",
     "namespace": "default",
     "name": "Changed",
-    "subscription": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14",
-    "protocolId": "000000000015/000000/000001",
+    "listener": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14",
+    "protocolId": "000000000010/000000/000000",
     "output": {
-        "from": "0x65e2c670f791047f7e622c863651eafe96fb4fa2",
-        "value": "3"
+      "from": "0xb7e6a5eb07a75a2c81801a157192a82bcbce0f21",
+      "value": "3"
     },
     "info": {
-        "address": "0xA5ea5D0a6B2EAf194716F0cc73981939dCa26Da1",
-        "blockNumber": "15",
-        "logIndex": "1",
-        "signature": "Changed(address,uint256)",
-        "subId": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
-        "timestamp": "1645134495",
-        "transactionHash": "0x3e2f167149747f4d7b65dd28f992667c378b40daca8229a2492dc91581d17b1a",
-        "transactionIndex": "0x0"
+      "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1",
+      "blockNumber": "10",
+      "logIndex": "0",
+      "signature": "Changed(address,uint256)",
+      "subId": "sb-724b8416-786d-4e67-4cd3-5bae4a26eb0e",
+      "timestamp": "1647365460",
+      "transactionHash": "0xd5b5c716554097b2868d8705241bb2189bb76d16300f702ad05b0b02fccc4afb",
+      "transactionIndex": "0x0"
     },
-    "timestamp": "2022-02-17T21:48:15Z",
+    "timestamp": "2022-03-15T17:31:00Z",
     "tx": {
-        "type": ""
+      "type": ""
     }
+  },
+  "subscription": {
+    "id": "f826269c-65ed-4634-b24c-4f399ec53a32",
+    "namespace": "default",
+    "name": "simple-storage"
+  }
 }
 ```
 
-Here we can see the `output.value` is `3` just like we submitted in our original request to invoke the contract.
+You can see in the event received over the WebSocket connection, the blockchain event that was emitted from our first transaction, which happened in the past. We received this event, because when we set up both the Listener, and the Subscription, we specified the `"firstEvent"` as `"oldest"`. This tells FireFly to look for this event from the beginning of the blockchain, and that your app is interested in FireFly events since the beginning of FireFly's event history.
+
+In the event, we can also see the `blockchainevent` itself, which has an `output` object. These are the `params` in our FireFly Interface, and the actual output of the event. Here we can see the `value` is `3` which is what we set the integer to in our original transaction.
 
 **You've reached the end of the main guide to working with custom smart contracts in FireFly**. Hopefully this was helpful and gives you what you need to get up and running with your own contracts. There are several additional ways to invoke or query smart contracts detailed below, so feel free to keep reading if you're curious.
 
