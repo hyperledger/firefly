@@ -36,8 +36,10 @@ func TestFlushPinsFail(t *testing.T) {
 
 	bs.MarkMessageDispatched(ag.ctx, fftypes.NewUUID(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID: fftypes.NewUUID(),
+			ID:     fftypes.NewUUID(),
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
+		Pins: fftypes.FFStringArray{"pin1"},
 	}, 0)
 
 	err := bs.flushPins(ag.ctx)

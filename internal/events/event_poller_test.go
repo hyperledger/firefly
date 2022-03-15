@@ -311,3 +311,41 @@ func TestDoubleTap(t *testing.T) {
 	ep.shoulderTap()
 	ep.shoulderTap() // this should not block
 }
+
+func TestDoubleConfirm(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	defer cancel()
+	ep.commitOffset(12345)
+	ep.commitOffset(12346) // this should not block
+}
+
+func TestOffsetCommitLoopOk(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	cancel()
+
+	mdi.On("UpdateOffset", mock.Anything, ep.offsetID, mock.Anything).Return(nil)
+
+	ep.offsetCommitted <- int64(12345)
+	close(ep.offsetCommitted)
+	ep.offsetCommitLoop()
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOffsetCommitLoopFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	cancel()
+
+	mdi.On("UpdateOffset", mock.Anything, ep.offsetID, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ep.offsetCommitted <- int64(12345)
+	close(ep.offsetCommitted)
+	ep.offsetCommitLoop()
+
+	mdi.AssertExpectations(t)
+}

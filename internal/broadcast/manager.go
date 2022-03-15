@@ -124,7 +124,7 @@ func (bm *broadcastManager) Name() string {
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.DispatchState) error {
 
 	// Ensure all the blobs are published
-	if err := bm.publishBlobs(ctx, state.Payload.Data); err != nil {
+	if err := bm.publishBlobs(ctx, state.Payload.Data, state); err != nil {
 		return err
 	}
 
@@ -150,7 +150,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
 }
 
-func (bm *broadcastManager) publishBlobs(ctx context.Context, data fftypes.DataArray) error {
+func (bm *broadcastManager) publishBlobs(ctx context.Context, data fftypes.DataArray, state *batch.DispatchState) error {
 	for _, d := range data {
 		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage
 		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
@@ -174,6 +174,7 @@ func (bm *broadcastManager) publishBlobs(ctx context.Context, data fftypes.DataA
 			if err != nil {
 				return err
 			}
+			state.BlobsPublished = append(state.BlobsPublished, d.ID)
 			log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.ID, d.Blob.Public)
 		}
 	}

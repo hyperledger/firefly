@@ -90,9 +90,6 @@ func newMessageWriter(ctx context.Context, di database.Plugin, conf *messageWrit
 func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage) error {
 	if mw.conf.workerCount > 0 {
 		// Dispatch to background worker
-		if newMsg.Message == nil {
-			return i18n.NewError(ctx, i18n.MsgNilOrNullObject)
-		}
 		nmi := &writeRequest{
 			newMessage: &newMsg.Message.Message,
 			newData:    newMsg.NewData,

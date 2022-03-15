@@ -74,6 +74,7 @@ type privateMessaging struct {
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
+	orgFirstNodes         map[fftypes.UUID]*fftypes.Identity
 }
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
@@ -106,6 +107,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
 		metrics:               mm,
 		operations:            om,
+		orgFirstNodes:         make(map[fftypes.UUID]*fftypes.Identity),
 	}
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max

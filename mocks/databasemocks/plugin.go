@@ -1193,6 +1193,29 @@ func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*fftype
 	return r0, r1
 }
 
+// GetMessageIDs provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]*fftypes.IDAndSequence, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.IDAndSequence
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.IDAndSequence); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.IDAndSequence)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMessages provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*fftypes.Message, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -2284,6 +2307,20 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operat
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
 		r0 = rf(ctx, operation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertPins provides a mock function with given fields: ctx, pins
+func (_m *Plugin) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
+	ret := _m.Called(ctx, pins)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Pin) error); ok {
+		r0 = rf(ctx, pins)
 	} else {
 		r0 = ret.Error(0)
 	}

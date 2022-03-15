@@ -58,6 +58,8 @@ var (
 	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
 	BatchManagerReadPollTimeout = rootKey("batch.manager.pollTimeout")
+	// BatchManagerMinimumPollTime is the minimum duration between polls, to avoid continual polling at high throughput
+	BatchManagerMinimumPollTime = rootKey("batch.manager.minimumPollTime")
 	// BatchRetryFactor is the retry backoff factor for database operations performed by the batch manager
 	BatchRetryFactor = rootKey("batch.retry.factor")
 	// BatchRetryInitDelay is the retry initial delay for database operations
@@ -305,6 +307,7 @@ func Reset() {
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
+	viper.SetDefault(string(BatchManagerMinimumPollTime), "50ms")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
 	viper.SetDefault(string(BatchRetryInitDelay), "250ms")
@@ -324,7 +327,7 @@ func Reset() {
 	viper.SetDefault(string(DataexchangeType), "https")
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
-	viper.SetDefault(string(EventAggregatorBatchSize), 50)
+	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
@@ -333,7 +336,7 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorOpCorrelationRetries), 3)
 	viper.SetDefault(string(EventDBEventsBufferSize), 100)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
-	viper.SetDefault(string(EventDispatcherBatchTimeout), "0")
+	viper.SetDefault(string(EventDispatcherBatchTimeout), "250ms")
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets", "webhooks"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
@@ -351,7 +354,7 @@ func Reset() {
 	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
-	viper.SetDefault(string(MessageWriterBatchTimeout), "25ms")
+	viper.SetDefault(string(MessageWriterBatchTimeout), "50ms")
 	viper.SetDefault(string(MessageWriterCount), 5)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})

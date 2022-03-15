@@ -1082,7 +1082,13 @@ func TestUpdateMessageCacheCRORequirePins(t *testing.T) {
 		Pins:   fftypes.FFStringArray{"pin1"},
 	}
 
+	msg, _ := dm.PeekMessageCache(ctx, msgWithPins.Header.ID)
+	assert.Nil(t, msg)
+
 	dm.UpdateMessageCache(msgNoPins, data)
+
+	msg, _ = dm.PeekMessageCache(ctx, msgWithPins.Header.ID)
+	assert.NotNil(t, msg)
 
 	mce := dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequirePins)
 	assert.Nil(t, mce)
@@ -1134,4 +1140,16 @@ func TestWriteNewMessageFailNil(t *testing.T) {
 
 	err := dm.WriteNewMessage(ctx, &NewMessage{})
 	assert.Regexp(t, "FF10368", err)
+}
+
+func TestWriteNewMessageFailClosed(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	dm.messageWriter.close()
+
+	err := dm.WriteNewMessage(ctx, &NewMessage{
+		Message: &fftypes.MessageInOut{},
+	})
+	assert.Regexp(t, "FF10158", err)
 }

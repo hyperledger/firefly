@@ -77,15 +77,28 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 }
 
 func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef, private bool) error {
+	pins := make([]*fftypes.Pin, len(batchPin.Contexts))
 	for idx, hash := range batchPin.Contexts {
-		if err := em.database.UpsertPin(ctx, &fftypes.Pin{
+		pins[idx] = &fftypes.Pin{
 			Masked:  private,
 			Hash:    hash,
 			Batch:   batchPin.BatchID,
 			Index:   int64(idx),
 			Signer:  signingKey.Value, // We don't store the type as we can infer that from the blockchain
 			Created: fftypes.Now(),
-		}); err != nil {
+		}
+	}
+
+	// First attempt a single batch insert
+	err := em.database.InsertPins(ctx, pins)
+	if err == nil {
+		return nil
+	}
+	log.L(ctx).Warnf("Batch insert of pins failed - assuming replay and performing upserts: %s", err)
+
+	// Fall back to an upsert
+	for _, pin := range pins {
+		if err := em.database.UpsertPin(ctx, pin); err != nil {
 			return err
 		}
 	}

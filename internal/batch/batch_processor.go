@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -93,10 +94,11 @@ type batchProcessor struct {
 }
 
 type DispatchState struct {
-	Manifest  *fftypes.BatchManifest
-	Persisted fftypes.BatchPersisted
-	Payload   fftypes.BatchPayload
-	Pins      []*fftypes.Bytes32
+	Manifest       *fftypes.BatchManifest
+	Persisted      fftypes.BatchPersisted
+	Payload        fftypes.BatchPayload
+	Pins           []*fftypes.Bytes32
+	BlobsPublished []*fftypes.UUID
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -197,7 +199,7 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 
 func (bp *batchProcessor) addFlushedSequences(flushAssembly []*batchWork) {
 	// We need to keep track of the sequences we're flushing, because until we finish our flush
-	// the batch processor might be re-queuing the same messages to use due to rewinds.
+	// the batch processor might be re-queuing the same messages to us due to rewinds.
 
 	// We keep twice the batch size, which might be made up of multiple batches
 	maxFlushedSeqLen := int(2 * bp.conf.BatchMaxSize)
@@ -370,10 +372,8 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	log.L(bp.ctx).Debugf("Sealed batch %s", id)
 
 	// Dispatch phase: the heavy lifting work - calling plugins to do the hard work of the batch.
-	//   Must manage its own database updates if it performs them, and any that result in updates
-	//   to the payload must be reflected back on the payload objects.
-	//   For example updates to the Blob.Public of a Data entry must be written do the DB,
-	//   and updated in Payload.Data[] array.
+	//   The dispatcher can update the state, such as appending to the BlobsPublished array,
+	//   to affect DB updates as part of the finalization phase.
 	err = bp.dispatchBatch(state)
 	if err != nil {
 		return err
@@ -412,7 +412,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 			state.Payload.Messages = append(state.Payload.Messages, w.msg.BatchMessage())
 		}
 		for _, d := range w.data {
-			log.L(bp.ctx).Debugf("Adding data '%s' to batch for message '%s'", d.ID, w.msg.Header.ID)
+			log.L(bp.ctx).Debugf("Adding data '%s' to batch '%s' for message '%s'", d.ID, id, w.msg.Header.ID)
 			state.Payload.Data = append(state.Payload.Data, d.BatchData(state.Persisted.Type))
 		}
 	}
@@ -420,7 +420,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 	return state
 }
 
-func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (contextOrPin *fftypes.Bytes32, err error) {
+func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
@@ -429,7 +429,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	// of the topic. There would be no way to unmask it if we did, because we don't have
 	// the full list of senders to know what their next hashes should be.
 	if msg.Header.Group == nil {
-		return fftypes.HashResult(hashBuilder), nil
+		return "", fftypes.HashResult(hashBuilder), nil
 	}
 
 	// For private groups, we need to make the topic specific to the group (which is
@@ -448,7 +448,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	}
 	err = bp.database.UpsertNonceNext(ctx, gc)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	// Now combine our sending identity, and this nonce, to produce the hash that should
@@ -459,7 +459,10 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	binary.BigEndian.PutUint64(nonceBytes, uint64(gc.Nonce))
 	hashBuilder.Write(nonceBytes)
 
-	return fftypes.HashResult(hashBuilder), err
+	pin := fftypes.HashResult(hashBuilder)
+	pinStr := fmt.Sprintf("%s:%.16d", pin, gc.Nonce)
+	log.L(ctx).Debugf("Assigned pin '%s' to message %s for topic '%s'", pinStr, msg.Header.ID, topic)
+	return pinStr, pin, err
 }
 
 func (bp *batchProcessor) maskContexts(ctx context.Context, payload *fftypes.BatchPayload) ([]*fftypes.Bytes32, error) {
@@ -473,13 +476,13 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, payload *fftypes.Bat
 			continue
 		}
 		for _, topic := range msg.Header.Topics {
-			contextOrPin, err := bp.maskContext(ctx, msg, topic)
+			pinString, contextOrPin, err := bp.maskContext(ctx, msg, topic)
 			if err != nil {
 				return nil, err
 			}
 			contextsOrPins = append(contextsOrPins, contextOrPin)
 			if msg.Header.Group != nil {
-				msg.Pins = append(msg.Pins, contextOrPin.String())
+				msg.Pins = append(msg.Pins, pinString /* contains the nonce as well as the pin hash */)
 				pinsAssigned = true
 			}
 		}
@@ -574,6 +577,19 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 
 			if err = bp.database.UpdateMessages(ctx, filter, allMsgsUpdate); err != nil {
 				return err
+			}
+
+			for _, dataID := range state.BlobsPublished {
+				for _, d := range state.Payload.Data {
+					if d.ID.Equals(dataID) {
+						dataUpdate := database.DataQueryFactory.NewUpdate(ctx).
+							Set("blob.public", state.Persisted.ID)
+						if err = bp.database.UpdateData(ctx, dataID, dataUpdate); err != nil {
+							return err
+						}
+						break
+					}
+				}
 			}
 
 			if bp.conf.txType == fftypes.TransactionTypeUnpinned {

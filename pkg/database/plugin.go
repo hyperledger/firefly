@@ -77,7 +77,7 @@ type iMessageCollection interface {
 	//                 must match the hash of the record that is being inserted.
 	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
-	// InsertMessages performs a batch insert of messages assured to be new records
+	// InsertMessages performs a batch insert of messages assured to be new records - fails if they already exist, so caller can fall back to upsert individually
 	InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error)
 
 	// UpdateMessage - Update message
@@ -96,6 +96,9 @@ type iMessageCollection interface {
 	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 
+	// GetMessageIDs - Retrieves messages, but only querying the messages ID (no other fields)
+	GetMessageIDs(ctx context.Context, filter Filter) (ids []*fftypes.IDAndSequence, err error)
+
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 }
@@ -106,7 +109,7 @@ type iDataCollection interface {
 	//              must match the hash of the record that is being inserted.
 	UpsertData(ctx context.Context, data *fftypes.Data, optimization UpsertOptimization) (err error)
 
-	// InsertDataArray performs a batch insert of data assured to be new records
+	// InsertDataArray performs a batch insert of data assured to be new records - fails if they already exist, so caller can fall back to upsert individually
 	InsertDataArray(ctx context.Context, data fftypes.DataArray) (err error)
 
 	// UpdateData - Update data
@@ -185,6 +188,9 @@ type iOffsetCollection interface {
 }
 
 type iPinCollection interface {
+	// InsertPins - Inserts a list of pins - fails if they already exist, so caller can fall back to upsert individually
+	InsertPins(ctx context.Context, pins []*fftypes.Pin) (err error)
+
 	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash+index sequence already exists
 	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
 

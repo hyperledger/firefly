@@ -193,6 +193,38 @@ func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.Bat
 	return r0, r1
 }
 
+// PeekMessageCache provides a mock function with given fields: ctx, id, options
+func (_m *Manager) PeekMessageCache(ctx context.Context, id *fftypes.UUID, options ...data.CacheReadOption) (*fftypes.Message, fftypes.DataArray) {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) *fftypes.Message); ok {
+		r0 = rf(ctx, id, options...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 fftypes.DataArray
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) fftypes.DataArray); ok {
+		r1 = rf(ctx, id, options...)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(fftypes.DataArray)
+		}
+	}
+
+	return r0, r1
+}
+
 // ResolveInlineData provides a mock function with given fields: ctx, msg
 func (_m *Manager) ResolveInlineData(ctx context.Context, msg *data.NewMessage) error {
 	ret := _m.Called(ctx, msg)

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -95,7 +95,8 @@ func run() error {
 
 	// Setup logging after reading config (even if failed), to output header correctly
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	ctx = log.WithLogger(ctx, logrus.WithField("pid", os.Getpid()))
+	ctx = log.WithLogger(ctx, logrus.WithField("pid", fmt.Sprintf("%d", os.Getpid())))
+	ctx = log.WithLogger(ctx, logrus.WithField("prefix", config.GetString(config.NodeName)))
 
 	config.SetupLogging(ctx)
 	log.L(ctx).Infof("Project Firefly")

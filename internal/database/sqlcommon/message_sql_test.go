@@ -159,6 +159,12 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
+	msgIDs, err := s.GetMessageIDs(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(msgIDs))
+	assert.Equal(t, msg.Header.ID, &msgIDs[0].ID)
+	assert.Equal(t, msg.Sequence, msgIDs[0].Sequence)
+
 	// Check we can get it with a filter on only mesasges with a particular data ref
 	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
@@ -583,6 +589,32 @@ func TestMessageUpdateBeginFail(t *testing.T) {
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
+}
+
+func TestGetMessageIDsQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetMessageIDs(context.Background(), f)
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessageIDsReadMessageFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("bad id"))
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetMessageIDs(context.Background(), f)
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessageIDsBadQuery(t *testing.T) {
+	s, mock := newMockProvider().init()
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
+	_, err := s.GetMessageIDs(context.Background(), f)
+	assert.Regexp(t, "FF10148", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestMessageUpdateBuildQueryFail(t *testing.T) {
