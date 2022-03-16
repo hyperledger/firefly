@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
@@ -28,12 +29,18 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.TokenPool) {
+func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.TokenPool) error {
 	ffPool.Type = pluginPool.Type
 	ffPool.ProtocolID = pluginPool.ProtocolID
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
-	ffPool.Symbol = pluginPool.Symbol
+	if pluginPool.Symbol != "" {
+		if ffPool.Symbol == "" {
+			ffPool.Symbol = pluginPool.Symbol
+		} else if ffPool.Symbol != pluginPool.Symbol {
+			return fmt.Errorf("received symbol '%s' does not match requested '%s'", pluginPool.Symbol, ffPool.Symbol)
+		}
+	}
 	ffPool.Info = pluginPool.Info
 	if pluginPool.TransactionID != nil {
 		ffPool.TX = fftypes.TransactionRef{
@@ -41,6 +48,7 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 			ID:   pluginPool.TransactionID,
 		}
 	}
+	return nil
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event, blockchainTXID string) error {
@@ -86,7 +94,10 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 	if existingPool, err = em.database.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID); err != nil || existingPool == nil {
 		return existingPool, err
 	}
-	addPoolDetailsFromPlugin(existingPool, pool)
+	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {
+		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TransactionID, err)
+		return nil, nil
+	}
 
 	if existingPool.State == fftypes.TokenPoolStateUnknown {
 		// Unknown pool state - should only happen on first run after database migration
@@ -114,12 +125,10 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPo
 		return nil, nil
 	}
 
-	if announcePool.Symbol != "" && pool.Symbol != "" && announcePool.Symbol != pool.Symbol {
-		log.L(ctx).Errorf("Error processing pool for transaction '%s' - received token pool symbol '%s' does not match requested '%s' (ignoring)", pool.TransactionID, pool.Symbol, announcePool.Symbol)
+	if err = addPoolDetailsFromPlugin(announcePool, pool); err != nil {
+		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TransactionID, err)
 		return nil, nil
 	}
-
-	addPoolDetailsFromPlugin(announcePool, pool)
 	return announcePool, nil
 }
 
