@@ -99,17 +99,20 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 
 	opID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
-	info := fftypes.JSONObject{"some": "info"}
+	info1 := fftypes.JSONObject{"pool": "info"}
+	info2 := fftypes.JSONObject{"block": "info"}
 	chainPool := &tokens.TokenPool{
 		Type:          fftypes.TokenTypeFungible,
 		ProtocolID:    "123",
 		Connector:     "erc1155",
 		TransactionID: txID,
+		Standard:      "ERC1155",
+		Info:          info1,
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			Name:           "TokenPool",
 			ProtocolID:     "tx1",
-			Info:           info,
+			Info:           info2,
 		},
 	}
 	storedPool := &fftypes.TokenPool{
@@ -148,6 +151,9 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 
 	err := em.TokenPoolCreated(mti, chainPool)
 	assert.NoError(t, err)
+
+	assert.Equal(t, "ERC1155", storedPool.Standard)
+	assert.Equal(t, info1, storedPool.Info)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)

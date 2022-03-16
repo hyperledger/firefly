@@ -193,6 +193,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	rawOutput := data.GetObject("rawOutput") // optional
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash") // optional
+	info := data.GetObject("info")            // optional
 
 	timestampStr := data.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
@@ -221,6 +222,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		TransactionID: poolData.TX,
 		Connector:     ft.configuredName,
 		Standard:      standard,
+		Info:          info,
 		Event: blockchain.Event{
 			BlockchainTXID: txHash,
 			Source:         ft.Name() + ":" + ft.configuredName,

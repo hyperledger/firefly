@@ -7722,6 +7722,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7814,6 +7817,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7858,6 +7864,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7930,6 +7939,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}

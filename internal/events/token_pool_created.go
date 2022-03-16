@@ -33,6 +33,7 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	ffPool.ProtocolID = pluginPool.ProtocolID
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
+	ffPool.Info = pluginPool.Info
 	if pluginPool.TransactionID != nil {
 		ffPool.TX = fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
