@@ -33,6 +33,7 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	ffPool.ProtocolID = pluginPool.ProtocolID
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
+	ffPool.Symbol = pluginPool.Symbol
 	ffPool.Info = pluginPool.Info
 	if pluginPool.TransactionID != nil {
 		ffPool.TX = fftypes.TransactionRef{
@@ -112,6 +113,12 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPo
 		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
 		return nil, nil
 	}
+
+	if announcePool.Symbol != "" && pool.Symbol != "" && announcePool.Symbol != pool.Symbol {
+		log.L(ctx).Errorf("Error processing pool for transaction '%s' - received token pool symbol '%s' does not match requested '%s' (ignoring)", pool.TransactionID, pool.Symbol, announcePool.Symbol)
+		return nil, nil
+	}
+
 	addPoolDetailsFromPlugin(announcePool, pool)
 	return announcePool, nil
 }

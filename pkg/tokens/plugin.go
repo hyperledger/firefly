@@ -114,7 +114,10 @@ type TokenPool struct {
 	// Standard is the well-defined token standard that this pool conforms to (optional)
 	Standard string
 
-	// Info is any other connector-specific info on the pool that may be worth saving
+	// Symbol is the short token symbol, if the connector uses one (optional)
+	Symbol string
+
+	// Info is any other connector-specific info on the pool that may be worth saving (optional)
 	Info fftypes.JSONObject
 
 	// Event contains info on the underlying blockchain event for this pool creation
