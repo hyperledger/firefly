@@ -31,9 +31,9 @@ type SubscriptionFilter struct {
 	Message          MessageFilter         `json:"message,omitempty"`
 	Transaction      TransactionFilter     `json:"transaction,omitempty"`
 	BlockchainEvent  BlockchainEventFilter `json:"blockchainevent,omitempty"`
-	Tag              string                `json:"tag,omitempty"`
 	Topic            string                `json:"topic,omitempty"`
 	DeprecatedTopics string                `json:"topics,omitempty"`
+	DeprecatedTag    string                `json:"tag,omitempty"`
 	DeprecatedGroup  string                `json:"group,omitempty"`
 	DeprecatedAuthor string                `json:"author,omitempty"`
 }
@@ -43,6 +43,7 @@ func NewSubscriptionFilterFromQuery(query url.Values) SubscriptionFilter {
 		Events: query.Get("filter.events"),
 		Message: MessageFilter{
 			Group:  query.Get("filter.message.group"),
+			Tag:    query.Get("filter.message.tag"),
 			Author: query.Get("filter.message.author"),
 		},
 		BlockchainEvent: BlockchainEventFilter{
@@ -53,7 +54,7 @@ func NewSubscriptionFilterFromQuery(query url.Values) SubscriptionFilter {
 			Type: query.Get("filter.transaction.type"),
 		},
 		Topic:            query.Get("filter.topic"),
-		Tag:              query.Get("filter.tag"),
+		DeprecatedTag:    query.Get("filter.tag"),
 		DeprecatedTopics: query.Get("filter.topics"),
 		DeprecatedGroup:  query.Get("filter.group"),
 		DeprecatedAuthor: query.Get("filter.author"),
@@ -61,6 +62,7 @@ func NewSubscriptionFilterFromQuery(query url.Values) SubscriptionFilter {
 }
 
 type MessageFilter struct {
+	Tag    string `json:"tag,omitempty"`
 	Group  string `json:"group,omitempty"`
 	Author string `json:"author,omitempty"`
 }

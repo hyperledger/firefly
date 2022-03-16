@@ -802,7 +802,6 @@ var EventQueryFactory = &queryFields{
 	"reference":  &UUIDField{},
 	"correlator": &UUIDField{},
 	"tx":         &UUIDField{},
-	"tag":        &StringField{},
 	"topic":      &StringField{},
 	"sequence":   &Int64Field{},
 	"created":    &TimeField{},

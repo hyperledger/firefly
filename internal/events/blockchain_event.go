@@ -46,7 +46,7 @@ func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *
 	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
-	ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, "", "")
+	ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, "")
 	if err := em.database.InsertEvent(ctx, ffEvent); err != nil {
 		return err
 	}

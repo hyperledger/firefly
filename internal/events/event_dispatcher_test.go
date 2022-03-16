@@ -472,7 +472,6 @@ func TestFilterEventsMatch(t *testing.T) {
 					ID:    id1,
 					Type:  fftypes.EventTypeMessageConfirmed,
 					Topic: "topic1",
-					Tag:   "tag1",
 				},
 				Message: &fftypes.Message{
 					Header: fftypes.MessageHeader{
@@ -493,7 +492,6 @@ func TestFilterEventsMatch(t *testing.T) {
 					ID:    id2,
 					Type:  fftypes.EventTypeMessageConfirmed,
 					Topic: "topic1",
-					Tag:   "tag2",
 				},
 				Message: &fftypes.Message{
 					Header: fftypes.MessageHeader{
@@ -514,7 +512,6 @@ func TestFilterEventsMatch(t *testing.T) {
 					ID:    id3,
 					Type:  fftypes.EventTypeMessageRejected,
 					Topic: "topic2",
-					Tag:   "tag1",
 				},
 				Message: &fftypes.Message{
 					Header: fftypes.MessageHeader{
@@ -566,7 +563,7 @@ func TestFilterEventsMatch(t *testing.T) {
 
 	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypeMessageConfirmed))
 	ed.subscription.topicFilter = regexp.MustCompile(".*")
-	ed.subscription.tagFilter = regexp.MustCompile(".*")
+	ed.subscription.messageFilter.tagFilter = regexp.MustCompile(".*")
 	ed.subscription.messageFilter.groupFilter = regexp.MustCompile(".*")
 	matched := ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
@@ -576,7 +573,7 @@ func TestFilterEventsMatch(t *testing.T) {
 
 	ed.subscription.eventMatcher = nil
 	ed.subscription.topicFilter = nil
-	ed.subscription.tagFilter = nil
+	ed.subscription.messageFilter.tagFilter = nil
 	ed.subscription.messageFilter.groupFilter = nil
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 6, len(matched))
@@ -593,7 +590,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, *id2, *matched[1].ID)
 
 	ed.subscription.topicFilter = nil
-	ed.subscription.tagFilter = regexp.MustCompile("tag2")
+	ed.subscription.messageFilter.tagFilter = regexp.MustCompile("tag2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)
@@ -611,7 +608,7 @@ func TestFilterEventsMatch(t *testing.T) {
 
 	ed.subscription.messageFilter.groupFilter = nil
 	ed.subscription.topicFilter = nil
-	ed.subscription.tagFilter = nil
+	ed.subscription.messageFilter.tagFilter = nil
 	ed.subscription.messageFilter.authorFilter = regexp.MustCompile("org2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))

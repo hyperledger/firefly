@@ -3563,11 +3563,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: tag
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: topic
         schema:
           type: string
@@ -3630,8 +3625,6 @@ paths:
                   sequence:
                     format: int64
                     type: integer
-                  tag:
-                    type: string
                   topic:
                     type: string
                   tx: {}
@@ -3697,8 +3690,6 @@ paths:
                   sequence:
                     format: int64
                     type: integer
-                  tag:
-                    type: string
                   topic:
                     type: string
                   tx: {}
@@ -4816,11 +4807,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: tag
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: topic
         schema:
           type: string
@@ -4883,8 +4869,6 @@ paths:
                   sequence:
                     format: int64
                     type: integer
-                  tag:
-                    type: string
                   topic:
                     type: string
                   tx: {}
@@ -6005,6 +5989,8 @@ paths:
                             type: string
                           group:
                             type: string
+                          tag:
+                            type: string
                         type: object
                       tag:
                         type: string
@@ -6084,6 +6070,8 @@ paths:
                         author:
                           type: string
                         group:
+                          type: string
+                        tag:
                           type: string
                       type: object
                     tag:
@@ -6234,6 +6222,8 @@ paths:
                             type: string
                           group:
                             type: string
+                          tag:
+                            type: string
                         type: object
                       tag:
                         type: string
@@ -6313,6 +6303,8 @@ paths:
                         author:
                           type: string
                         group:
+                          type: string
+                        tag:
                           type: string
                       type: object
                     tag:
@@ -6463,6 +6455,8 @@ paths:
                             type: string
                           group:
                             type: string
+                          tag:
+                            type: string
                         type: object
                       tag:
                         type: string
@@ -6580,6 +6574,8 @@ paths:
                           author:
                             type: string
                           group:
+                            type: string
+                          tag:
                             type: string
                         type: object
                       tag:

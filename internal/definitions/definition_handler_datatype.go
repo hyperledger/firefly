@@ -56,7 +56,7 @@ func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID, tx, "", "")
+		event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID, tx, "")
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

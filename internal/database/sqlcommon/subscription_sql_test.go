@@ -79,8 +79,8 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		Filter: fftypes.SubscriptionFilter{
 			Events: string(fftypes.EventTypeMessageConfirmed),
 			Topic:  "topics.*",
-			Tag:    "tag.*",
 			Message: fftypes.MessageFilter{
+				Tag:   "tag.*",
 				Group: "group.*",
 			},
 		},

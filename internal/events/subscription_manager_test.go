@@ -226,10 +226,10 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 			Filter: fftypes.SubscriptionFilter{
-				Tag:    ".*",
 				Topic:  ".*",
 				Events: ".*",
 				Message: fftypes.MessageFilter{
+					Tag:    ".*",
 					Group:  ".*",
 					Author: ".*",
 				},
@@ -382,7 +382,7 @@ func TestCreateSubscriptionBadDeprecatedTagFilter(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Tag: "[[[[! badness",
+			DeprecatedTag: "[[[[! badness",
 		},
 		Transport: "ut",
 	})
@@ -488,9 +488,9 @@ func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Tag:              "flap",
 			Topic:            "flop",
 			DeprecatedTopics: "test",
+			DeprecatedTag:    "flap",
 			DeprecatedAuthor: "flip",
 			DeprecatedGroup:  "flapflip",
 		},

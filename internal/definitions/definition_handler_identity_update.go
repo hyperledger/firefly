@@ -63,7 +63,7 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil, "", "")
+		event := fftypes.NewEvent(fftypes.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil, "")
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, err

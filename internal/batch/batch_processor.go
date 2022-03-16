@@ -597,7 +597,7 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 					// Emit a confirmation event locally immediately
 					for _, topic := range msg.Header.Topics {
 						// One event per topic
-						event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, state.Persisted.Namespace, msg.Header.ID, state.Persisted.TX.ID, msg.Header.Tag, topic)
+						event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, state.Persisted.Namespace, msg.Header.ID, state.Persisted.TX.ID, topic)
 						event.Correlator = msg.Header.CID
 						if err := bp.database.InsertEvent(ctx, event); err != nil {
 							return err

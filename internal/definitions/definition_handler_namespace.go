@@ -56,7 +56,7 @@ func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, stat
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID, tx, "", "")
+		event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID, tx, "")
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

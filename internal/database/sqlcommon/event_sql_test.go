@@ -44,7 +44,6 @@ func TestEventE2EWithDB(t *testing.T) {
 		Type:       fftypes.EventTypeMessageConfirmed,
 		Reference:  fftypes.NewUUID(),
 		Correlator: fftypes.NewUUID(),
-		Tag:        "tag1",
 		Topic:      "topic1",
 		Created:    fftypes.Now(),
 	}
