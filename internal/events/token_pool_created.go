@@ -38,7 +38,7 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 		if ffPool.Symbol == "" {
 			ffPool.Symbol = pluginPool.Symbol
 		} else if ffPool.Symbol != pluginPool.Symbol {
-			return fmt.Errorf("received symbol '%s' does not match requested '%s'", pluginPool.Symbol, ffPool.Symbol)
+			return fmt.Errorf("token symbol '%s' from blockchain does not match stored symbol '%s'", pluginPool.Symbol, ffPool.Symbol)
 		}
 	}
 	ffPool.Info = pluginPool.Info
