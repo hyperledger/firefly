@@ -32,12 +32,15 @@ jobs:
       matrix:
         test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
         blockchain-provider: [geth, fabric]
+        token-provider: [erc1155, erc20_erc721]
         database-type: [sqlite3]
         exclude:
           - blockchain-provider: geth
             test-suite: TestFabricE2ESuite
           - blockchain-provider: fabric
             test-suite: TestEthereumE2ESuite
+          - blockchain-provider: fabric
+            token-provider: erc20_erc721
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
