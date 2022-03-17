@@ -2124,14 +2124,8 @@ func TestBatchCaching(t *testing.T) {
 
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
-	persisted := &fftypes.BatchPersisted{
-		BatchHeader: batch.BatchHeader,
-		Manifest:    fftypes.JSONAnyPtr(batch.Manifest().String()),
-		Hash:        batch.Hash,
-		TX:          batch.Payload.TX,
-		PayloadRef:  "payload1",
-		Confirmed:   fftypes.Now(),
-	}
+	persisted, expectedManifest := batch.Confirmed()
+
 	pin := &fftypes.Pin{
 		Batch:     batch.ID,
 		BatchHash: batch.Hash,
@@ -2143,12 +2137,12 @@ func TestBatchCaching(t *testing.T) {
 	batchRetrieved, manifest, err := ag.GetBatchForPin(ag.ctx, pin)
 	assert.NoError(t, err)
 	assert.Equal(t, persisted, batchRetrieved)
-	assert.Equal(t, batch.Manifest(), manifest)
+	assert.Equal(t, expectedManifest, manifest)
 
 	batchRetrieved, manifest, err = ag.GetBatchForPin(ag.ctx, pin)
 	assert.NoError(t, err)
 	assert.Equal(t, persisted, batchRetrieved)
-	assert.Equal(t, batch.Manifest(), manifest)
+	assert.Equal(t, expectedManifest, manifest)
 
 }
 
@@ -2158,14 +2152,7 @@ func TestGetBatchForPinHashMismatch(t *testing.T) {
 
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
-	persisted := &fftypes.BatchPersisted{
-		BatchHeader: batch.BatchHeader,
-		Manifest:    fftypes.JSONAnyPtr(batch.Manifest().String()),
-		Hash:        batch.Hash,
-		TX:          batch.Payload.TX,
-		PayloadRef:  "payload1",
-		Confirmed:   fftypes.Now(),
-	}
+	persisted, _ := batch.Confirmed()
 	pin := &fftypes.Pin{
 		Batch:     batch.ID,
 		BatchHash: fftypes.NewRandB32(),

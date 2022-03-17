@@ -235,10 +235,8 @@ func (ag *aggregator) migrateManifest(ctx context.Context, persistedBatch *fftyp
 		log.L(ctx).Errorf("Invalid migration persisted batch: no payload")
 		return nil
 	}
-	return (&fftypes.Batch{
-		BatchHeader: persistedBatch.BatchHeader,
-		Payload:     fullPayload,
-	}).Manifest()
+
+	return persistedBatch.GenManifest(fullPayload.Messages, fullPayload.Data)
 }
 
 func (ag *aggregator) extractManifest(ctx context.Context, batch *fftypes.BatchPersisted) *fftypes.BatchManifest {

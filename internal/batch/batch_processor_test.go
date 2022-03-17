@@ -100,7 +100,7 @@ func TestUnfilledBatch(t *testing.T) {
 	batch := <-dispatched
 
 	// Check we got all the messages in a single batch
-	assert.Equal(t, 5, len(batch.Payload.Messages))
+	assert.Equal(t, 5, len(batch.Messages))
 
 	bp.cancelCtx()
 	<-bp.done
@@ -145,10 +145,10 @@ func TestBatchSizeOverflow(t *testing.T) {
 	batch2 := <-dispatched
 
 	// Check we got all messages across two batches
-	assert.Equal(t, 1, len(batch1.Payload.Messages))
-	assert.Equal(t, msgIDs[0], batch1.Payload.Messages[0].Header.ID)
-	assert.Equal(t, 1, len(batch2.Payload.Messages))
-	assert.Equal(t, msgIDs[1], batch2.Payload.Messages[0].Header.ID)
+	assert.Equal(t, 1, len(batch1.Messages))
+	assert.Equal(t, msgIDs[0], batch1.Messages[0].Header.ID)
+	assert.Equal(t, 1, len(batch2.Messages))
+	assert.Equal(t, msgIDs[1], batch2.Messages[0].Header.ID)
 
 	bp.cancelCtx()
 	<-bp.done
@@ -218,13 +218,11 @@ func TestCalcPinsFail(t *testing.T) {
 				Group: gid,
 			},
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{
-					Group:  gid,
-					Topics: fftypes.FFStringArray{"topic1"},
-				}},
-			},
+		Messages: []*fftypes.Message{
+			{Header: fftypes.MessageHeader{
+				Group:  gid,
+				Topics: fftypes.FFStringArray{"topic1"},
+			}},
 		},
 	})
 	assert.Regexp(t, "FF10158", err)
@@ -347,7 +345,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	batch := <-dispatched
 
 	// Check we got all the messages in a single batch
-	assert.Equal(t, 5, len(batch.Payload.Messages))
+	assert.Equal(t, 5, len(batch.Messages))
 
 	bp.cancelCtx()
 	<-bp.done
@@ -370,24 +368,22 @@ func TestMaskContextsDuplicate(t *testing.T) {
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
-	payload := &fftypes.BatchPayload{
-		Messages: []*fftypes.Message{
-			{
-				Header: fftypes.MessageHeader{
-					ID:     fftypes.NewUUID(),
-					Type:   fftypes.MessageTypePrivate,
-					Group:  fftypes.NewRandB32(),
-					Topics: fftypes.FFStringArray{"topic1"},
-				},
+	messages := []*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
+				Type:   fftypes.MessageTypePrivate,
+				Group:  fftypes.NewRandB32(),
+				Topics: fftypes.FFStringArray{"topic1"},
 			},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, payload)
+	_, err := bp.maskContexts(bp.ctx, messages)
 	assert.NoError(t, err)
 
 	// 2nd time no DB ops
-	_, err = bp.maskContexts(bp.ctx, payload)
+	_, err = bp.maskContexts(bp.ctx, messages)
 	assert.NoError(t, err)
 
 	bp.cancelCtx()
@@ -409,20 +405,18 @@ func TestMaskContextsUpdataMessageFail(t *testing.T) {
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
-	payload := &fftypes.BatchPayload{
-		Messages: []*fftypes.Message{
-			{
-				Header: fftypes.MessageHeader{
-					ID:     fftypes.NewUUID(),
-					Type:   fftypes.MessageTypePrivate,
-					Group:  fftypes.NewRandB32(),
-					Topics: fftypes.FFStringArray{"topic1"},
-				},
+	messages := []*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
+				Type:   fftypes.MessageTypePrivate,
+				Group:  fftypes.NewRandB32(),
+				Topics: fftypes.FFStringArray{"topic1"},
 			},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, payload)
+	_, err := bp.maskContexts(bp.ctx, messages)
 	assert.Regexp(t, "pop", err)
 
 	bp.cancelCtx()

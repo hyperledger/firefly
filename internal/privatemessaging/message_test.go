@@ -392,16 +392,14 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 				Group: groupID,
 			},
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{
-					Header: fftypes.MessageHeader{
-						SignerRef: fftypes.SignerRef{
-							Author: "org1",
-						},
-						TxType: fftypes.TransactionTypeUnpinned,
-						Group:  groupID,
+		Messages: []*fftypes.Message{
+			{
+				Header: fftypes.MessageHeader{
+					SignerRef: fftypes.SignerRef{
+						Author: "org1",
 					},
+					TxType: fftypes.TransactionTypeUnpinned,
+					Group:  groupID,
 				},
 			},
 		},
@@ -675,19 +673,13 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 				Group: groupID,
 			},
 		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID:   fftypes.NewUUID(),
-				Type: fftypes.TransactionTypeUnpinned,
-			},
-			Messages: []*fftypes.Message{
-				{
-					Header: fftypes.MessageHeader{
-						Tag:   "mytag",
-						Group: groupID,
-						SignerRef: fftypes.SignerRef{
-							Author: "org1",
-						},
+		Messages: []*fftypes.Message{
+			{
+				Header: fftypes.MessageHeader{
+					Tag:   "mytag",
+					Group: groupID,
+					SignerRef: fftypes.SignerRef{
+						Author: "org1",
 					},
 				},
 			},

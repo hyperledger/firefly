@@ -82,7 +82,8 @@ func TestPersistBatch(t *testing.T) {
 			},
 		},
 	}
-	batch.Hash = fftypes.HashString(batch.Manifest().String())
+	bp, _ := batch.Confirmed()
+	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
 	_, _, err = em.persistBatch(em.ctx, batch)
 	assert.EqualError(t, err, "pop") // Confirms we got to upserting the batch
@@ -102,7 +103,8 @@ func TestPersistBatchNoCacheDataNotInBatch(t *testing.T) {
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 	data.ID = fftypes.NewUUID()
 	_ = data.Seal(em.ctx, nil)
-	batch.Hash = fftypes.HashString(batch.Manifest().String())
+	bp, _ := batch.Confirmed()
+	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
 	_, valid, err := em.persistBatch(em.ctx, batch)
 	assert.False(t, valid)
@@ -124,7 +126,8 @@ func TestPersistBatchExtraDataInBatch(t *testing.T) {
 	data2 := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test2"`)}
 	_ = data2.Seal(em.ctx, nil)
 	batch.Payload.Data = append(batch.Payload.Data, data2)
-	batch.Hash = fftypes.HashString(batch.Manifest().String())
+	bp, _ := batch.Confirmed()
+	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
 	_, valid, err := em.persistBatch(em.ctx, batch)
 	assert.False(t, valid)

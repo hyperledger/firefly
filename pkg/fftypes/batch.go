@@ -138,16 +138,29 @@ func (ma *BatchPayload) Manifest(id *UUID) *BatchManifest {
 	return tm
 }
 
-func (b *Batch) Manifest() *BatchManifest {
-	if b == nil {
-		return nil
+func (b *BatchPersisted) GenManifest(messages []*Message, data DataArray) *BatchManifest {
+	return (&BatchPayload{
+		TX:       b.TX,
+		Messages: messages,
+		Data:     data,
+	}).Manifest(b.ID)
+}
+
+func (b *BatchPersisted) Inflight(messages []*Message, data DataArray) *Batch {
+	return &Batch{
+		BatchHeader: b.BatchHeader,
+		Hash:        b.Hash,
+		Payload: BatchPayload{
+			TX:       b.TX,
+			Messages: messages,
+			Data:     data,
+		},
 	}
-	return b.Payload.Manifest(b.ID)
 }
 
 // Confirmed generates a newly confirmed persisted batch, including (re-)generating the manifest
 func (b *Batch) Confirmed() (*BatchPersisted, *BatchManifest) {
-	manifest := b.Manifest()
+	manifest := b.Payload.Manifest(b.ID)
 	manifestString := manifest.String()
 	return &BatchPersisted{
 		BatchHeader: b.BatchHeader,

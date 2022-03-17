@@ -180,15 +180,14 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 				Group:     groupID,
 				Namespace: "ns1",
 			},
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeUnpinned,
+				ID:   txID,
+			},
 			Hash: batchHash,
 		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID: txID,
-			},
-			Data: fftypes.DataArray{
-				{ID: dataID1, Blob: &fftypes.BlobRef{Hash: blob1}},
-			},
+		Data: fftypes.DataArray{
+			{ID: dataID1, Blob: &fftypes.BlobRef{Hash: blob1}},
 		},
 		Pins: []*fftypes.Bytes32{pin1, pin2},
 	})
@@ -340,11 +339,6 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 				},
 			},
 		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID: fftypes.NewUUID(),
-			},
-		},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -400,10 +394,8 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 				},
 			},
 		},
-		Payload: fftypes.BatchPayload{
-			Data: fftypes.DataArray{
-				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
-			},
+		Data: fftypes.DataArray{
+			{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
 		},
 	})
 	assert.Regexp(t, "pop", err)
@@ -474,10 +466,8 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 				},
 			},
 		},
-		Payload: fftypes.BatchPayload{
-			Data: fftypes.DataArray{
-				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
-			},
+		Data: fftypes.DataArray{
+			{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: blob1}},
 		},
 	})
 	assert.Regexp(t, "pop", err)

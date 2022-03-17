@@ -138,8 +138,8 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	assert.NotNil(t, status.Processors[0].Status.Flushing)
 
 	b := <-waitForDispatch
-	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
-	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+	assert.Equal(t, *msg.Header.ID, *b.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Data[0].ID)
 
 	close(readyForDispatch)
 
@@ -257,8 +257,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 
 	readyForDispatch <- true
 	b := <-waitForDispatch
-	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
-	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+	assert.Equal(t, *msg.Header.ID, *b.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Data[0].ID)
 
 	// Wait until everything closes
 	close(readyForDispatch)

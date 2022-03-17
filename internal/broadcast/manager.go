@@ -124,7 +124,7 @@ func (bm *broadcastManager) Name() string {
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.DispatchState) error {
 
 	// Ensure all the blobs are published
-	if err := bm.uploadBlobs(ctx, state.Persisted.TX.ID, state.Payload.Data); err != nil {
+	if err := bm.uploadBlobs(ctx, state.Persisted.TX.ID, state.Data); err != nil {
 		return err
 	}
 
@@ -138,11 +138,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
-	batch := &fftypes.Batch{
-		BatchHeader: state.Persisted.BatchHeader,
-		Hash:        state.Persisted.Hash,
-		Payload:     state.Payload,
-	}
+	batch := state.Persisted.Inflight(state.Messages, state.Data)
 	if err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch, &state.Persisted)); err != nil {
 		return err
 	}

@@ -170,11 +170,7 @@ func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *ba
 }
 
 func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batch.DispatchState) error {
-	batch := &fftypes.Batch{
-		BatchHeader: state.Persisted.BatchHeader,
-		Hash:        state.Persisted.Hash,
-		Payload:     state.Payload,
-	}
+	batch := state.Persisted.Inflight(state.Messages, state.Data)
 	tw := &fftypes.TransportWrapper{
 		Batch: batch,
 	}

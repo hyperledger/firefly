@@ -171,12 +171,10 @@ func TestDispatchBatchBlobsFaill(t *testing.T) {
 
 	blobHash := fftypes.NewRandB32()
 	state := &batch.DispatchState{
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
-					Hash: blobHash,
-				}},
-			},
+		Data: []*fftypes.Data{
+			{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+				Hash: blobHash,
+			}},
 		},
 		Pins: []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
