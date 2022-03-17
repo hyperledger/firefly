@@ -93,7 +93,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		return opApproval(op, pool, approval), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -139,7 +139,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 		return nil, false, plugin.TokensApproval(ctx, op.ID, data.Pool.ProtocolID, data.Approval)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

@@ -94,7 +94,7 @@ func (dm *downloadManager) PrepareOperation(ctx context.Context, op *fftypes.Ope
 		return opDownloadBlob(op, namespace, dataID, payloadRef), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -105,7 +105,7 @@ func (dm *downloadManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 	case downloadBlobData:
 		return dm.downloadBlob(ctx, data)
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

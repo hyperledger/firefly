@@ -112,6 +112,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 
 	om.RegisterHandler(ctx, bm, []fftypes.OpType{
 		fftypes.OpTypeSharedStorageUploadBatch,
+		fftypes.OpTypeSharedStorageUploadBlob,
 	})
 
 	return bm, nil

@@ -68,7 +68,7 @@ func (om *operationsManager) RegisterHandler(ctx context.Context, handler Operat
 func (om *operationsManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	handler, ok := om.handlers[op.Type]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 	return handler.PrepareOperation(ctx, op)
 }
@@ -80,7 +80,7 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 func (om *operationsManager) RunOperationWithFailState(ctx context.Context, op *fftypes.PreparedOperation, failState fftypes.OpStatus) error {
 	handler, ok := om.handlers[op.Type]
 	if !ok {
-		return i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 	log.L(ctx).Infof("Executing %s operation %s via handler %s", op.Type, op.ID, handler.Name())
 	log.L(ctx).Tracef("Operation detail: %+v", op)

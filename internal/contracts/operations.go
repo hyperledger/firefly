@@ -55,7 +55,7 @@ func (cm *contractManager) PrepareOperation(ctx context.Context, op *fftypes.Ope
 		return opBlockchainInvoke(op, req), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -66,7 +66,7 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 		return nil, false, cm.blockchain.InvokeContract(ctx, op.ID, req.Key, req.Location, req.Method, req.Input)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

@@ -72,7 +72,7 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.O
 		return opBatchPin(op, batch, contexts), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -90,7 +90,7 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 		})
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

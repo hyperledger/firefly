@@ -108,7 +108,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 		return opUploadBlob(op, d, blob), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -119,7 +119,7 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *fftypes.Prepar
 	case uploadBlobData:
 		return bm.uploadBlob(ctx, data)
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

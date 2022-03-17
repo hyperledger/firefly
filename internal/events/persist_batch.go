@@ -159,8 +159,12 @@ func (em *eventManager) validateBatchData(ctx context.Context, batch *fftypes.Ba
 		if err != nil {
 			return false, err
 		}
-		if blob == nil && data.Blob.Public != "" {
-			if err = em.ssDownload.InitiateDownloadBlob(em.ctx, data.Namespace, batch.Payload.TX.ID, data.ID, data.Blob.Public); err != nil {
+		if blob == nil {
+			if data.Blob.Public == "" {
+				log.L(ctx).Errorf("Invalid data entry %d id=%s in batch '%s' - missing public blob reference", i, data.ID, batch.ID)
+				return false, nil
+			}
+			if err = em.ssDownload.InitiateDownloadBlob(ctx, data.Namespace, batch.Payload.TX.ID, data.ID, data.Blob.Public); err != nil {
 				return false, err
 			}
 		}

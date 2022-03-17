@@ -120,7 +120,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		return opSendBatch(op, node, transport), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -137,7 +137,7 @@ func (pm *privateMessaging) RunOperation(ctx context.Context, op *fftypes.Prepar
 		return nil, false, pm.exchange.SendMessage(ctx, op.ID, data.Node.Profile.GetString("id"), payload)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
