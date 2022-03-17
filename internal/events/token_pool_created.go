@@ -34,6 +34,9 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	ffPool.ProtocolID = pluginPool.ProtocolID
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
+	if pluginPool.TX.ID != nil {
+		ffPool.TX = pluginPool.TX
+	}
 	if pluginPool.Symbol != "" {
 		if ffPool.Symbol == "" {
 			ffPool.Symbol = pluginPool.Symbol
@@ -42,12 +45,6 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 		}
 	}
 	ffPool.Info = pluginPool.Info
-	if pluginPool.TransactionID != nil {
-		ffPool.TX = fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenPool,
-			ID:   pluginPool.TransactionID,
-		}
-	}
 	return nil
 }
 
@@ -95,7 +92,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 		return existingPool, err
 	}
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {
-		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TransactionID, err)
+		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TX.ID, err)
 		return nil, nil
 	}
 
@@ -112,7 +109,7 @@ func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPoo
 }
 
 func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPool) (announcePool *fftypes.TokenPool, err error) {
-	op, err := em.findTXOperation(ctx, pool.TransactionID, fftypes.OpTypeTokenCreatePool)
+	op, err := em.findTXOperation(ctx, pool.TX.ID, fftypes.OpTypeTokenCreatePool)
 	if err != nil {
 		return nil, err
 	} else if op == nil {
@@ -121,12 +118,12 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPo
 
 	announcePool, err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
 	if err != nil || announcePool.ID == nil || announcePool.Namespace == "" || announcePool.Name == "" {
-		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TransactionID, err, op.Input)
+		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TX.ID, err, op.Input)
 		return nil, nil
 	}
 
 	if err = addPoolDetailsFromPlugin(announcePool, pool); err != nil {
-		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TransactionID, err)
+		log.L(ctx).Errorf("Error processing pool for transaction '%s' (%s) - ignoring", pool.TX.ID, err)
 		return nil, nil
 	}
 	return announcePool, nil
@@ -157,7 +154,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 					batchID = msg.BatchID // trigger rewind after completion of database transaction
 				}
 				return em.confirmPool(ctx, existingPool, &pool.Event, pool.Event.BlockchainTXID)
-			} else if pool.TransactionID == nil {
+			} else if pool.TX.ID == nil {
 				// TransactionID is required if the pool doesn't exist yet
 				// (but it may be omitted when activating a pool that was received via definition broadcast)
 				log.L(em.ctx).Errorf("Invalid token pool transaction - ID is nil")
