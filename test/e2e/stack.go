@@ -25,6 +25,7 @@ type Stack struct {
 	Name                  string    `json:"name,omitempty"`
 	ExposedBlockchainPort int       `json:"exposedGethPort,omitempty"`
 	BlockchainProvider    string    `json:"blockchainProvider"`
+	TokenProviders        []string  `json:"tokenProviders"`
 	Members               []*Member `json:"members,omitempty"`
 }
 
