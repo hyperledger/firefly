@@ -104,9 +104,8 @@ type TokenPool struct {
 	// ProtocolID is the ID assigned to this pool by the connector (must be unique for this connector)
 	ProtocolID string
 
-	// TransactionID is the FireFly-assigned ID to correlate this to a transaction (optional)
-	// Not guaranteed to be set for pool creation events triggered outside of FireFly
-	TransactionID *fftypes.UUID
+	// TX is the FireFly-assigned information to correlate this to a transaction (optional)
+	TX fftypes.TransactionRef
 
 	// Connector is the configured name of this connector
 	Connector string
