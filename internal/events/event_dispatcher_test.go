@@ -911,7 +911,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	})
 
 	<-bdDone
-	assert.Equal(t, int64(100001), ed.eventPoller.pollingOffset)
+	assert.Equal(t, int64(100000), ed.eventPoller.pollingOffset)
 }
 
 func TestBufferedDeliveryFailNack(t *testing.T) {
@@ -1014,7 +1014,7 @@ func TestGetEvents(t *testing.T) {
 		{Sequence: 12345},
 	}, nil, nil)
 
-	lc, err := ed.getEvents(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345))
+	lc, err := ed.getEvents(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345), 12345)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), lc[0].LocalSequence())
 }

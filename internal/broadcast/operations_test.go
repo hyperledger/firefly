@@ -169,7 +169,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	_, complete, err := bm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10371", err)
+	assert.Regexp(t, "FF10378", err)
 }
 
 func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {

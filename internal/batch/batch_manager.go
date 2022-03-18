@@ -184,8 +184,8 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 			bm.txHelper,
 		)
 		dispatcher.processors[name] = processor
+		log.L(bm.ctx).Debugf("Created new processor: %s", name)
 	}
-	log.L(bm.ctx).Debugf("Created new processor: %s", name)
 	return processor, nil
 }
 

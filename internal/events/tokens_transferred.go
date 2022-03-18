@@ -154,7 +154,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 	// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
 	if err == nil && batchID != nil {
 		log.L(em.ctx).Infof("Batch '%s' contains reference to received transfer. Transfer='%s' Message='%s'", batchID, transfer.ProtocolID, transfer.Message)
-		em.aggregator.rewindBatches <- batchID
+		em.aggregator.rewindBatches <- *batchID
 	}
 
 	return err

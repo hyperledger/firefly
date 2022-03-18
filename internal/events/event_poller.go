@@ -51,7 +51,7 @@ type eventPollerConf struct {
 	firstEvent                 *fftypes.SubOptsFirstEvent
 	queryFactory               database.QueryFactory
 	addCriteria                func(database.AndFilter) database.AndFilter
-	getItems                   func(context.Context, database.Filter) ([]fftypes.LocallySequenced, error)
+	getItems                   func(context.Context, database.Filter, int64) ([]fftypes.LocallySequenced, error)
 	maybeRewind                func() (bool, int64)
 	newEventsHandler           newEventsHandler
 	namespace                  string
@@ -126,13 +126,14 @@ func (ep *eventPoller) start() {
 	go ep.offsetCommitLoop()
 }
 
-func (ep *eventPoller) rewindPollingOffset(offset int64) {
+func (ep *eventPoller) rewindPollingOffset(offset int64) int64 {
 	log.L(ep.ctx).Infof("Event polling rewind to: %d", offset)
 	ep.mux.Lock()
 	defer ep.mux.Unlock()
 	if offset < ep.pollingOffset {
-		ep.pollingOffset = offset - 1
+		ep.pollingOffset = offset
 	}
+	return ep.pollingOffset
 }
 
 func (ep *eventPoller) getPollingOffset() int64 {
@@ -165,7 +166,7 @@ func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
 	// a rewind based on it.
 	rewind, pollingOffset := ep.conf.maybeRewind()
 	if rewind {
-		ep.rewindPollingOffset(pollingOffset)
+		pollingOffset = ep.rewindPollingOffset(pollingOffset)
 	} else {
 		// Ensure we go through the mutex to pickup rewinds that happened elsewhere
 		pollingOffset = ep.getPollingOffset()
@@ -177,7 +178,7 @@ func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
 			fb.Gt("sequence", pollingOffset),
 		)
 		filter = ep.conf.addCriteria(filter)
-		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
+		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)), pollingOffset)
 		if err != nil {
 			return true, err // Retry indefinitely, until context cancelled
 		}

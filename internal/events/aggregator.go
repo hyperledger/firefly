@@ -49,9 +49,8 @@ type aggregator struct {
 	data          data.Manager
 	eventPoller   *eventPoller
 	verifierType  fftypes.VerifierType
-	newPins       chan int64
-	rewindBatches chan *fftypes.UUID
-	queuedRewinds chan *fftypes.UUID
+	rewindBatches chan fftypes.UUID
+	queuedRewinds chan fftypes.UUID
 	retry         *retry.Retry
 	metrics       metrics.Manager
 	batchCache    *ccache.Cache
@@ -72,9 +71,8 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 		identity:      im,
 		data:          dm,
 		verifierType:  bi.VerifierType(),
-		newPins:       make(chan int64),
-		rewindBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
-		queuedRewinds: make(chan *fftypes.UUID, batchSize),
+		rewindBatches: make(chan fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
+		queuedRewinds: make(chan fftypes.UUID, batchSize),
 		metrics:       mm,
 		batchCacheTTL: config.GetDuration(config.BatchCacheTTL),
 	}
@@ -128,18 +126,20 @@ func (ag *aggregator) batchRewindListener() {
 }
 
 func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
+	l := log.L(ag.ctx)
+	var batchIDs []driver.Value
+	draining := true
+	for draining {
+		select {
+		case batchID := <-ag.queuedRewinds:
+			batchIDs = append(batchIDs, batchID)
+			l.Debugf("Rewinding for batch %s", &batchID)
+		default:
+			draining = false
+		}
+	}
 	// Retry idefinitely for database errors (until the context closes)
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
-		var batchIDs []driver.Value
-		draining := true
-		for draining {
-			select {
-			case batchID := <-ag.queuedRewinds:
-				batchIDs = append(batchIDs, batchID)
-			default:
-				draining = false
-			}
-		}
 		if len(batchIDs) > 0 {
 			fb := database.PinQueryFactory.NewFilter(ag.ctx)
 			filter := fb.And(
@@ -152,8 +152,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 			}
 			if len(sequences) > 0 {
 				rewind = true
-				offset = sequences[0].Sequence - 1
-				log.L(ag.ctx).Debugf("Rewinding for off-chain data arrival. New local pin sequence %d", offset)
+				offset = sequences[0].Sequence - 1 // offset is set to the last event we saw (so one behind the next pin we want)
 			}
 		}
 		return false, nil
@@ -200,7 +199,8 @@ func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced)
 	})
 }
 
-func (ag *aggregator) getPins(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
+func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]fftypes.LocallySequenced, error) {
+	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
 	pins, _, err := ag.database.GetPins(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(pins))
 	for i, p := range pins {
@@ -276,7 +276,6 @@ func (ag *aggregator) GetBatchForPin(ctx context.Context, pin *fftypes.Pin) (*ff
 		return nil, nil, err
 	}
 	if batch == nil {
-		log.L(ctx).Debugf("Batch %s not available - pin %s is parked", pin.Batch, pin.Hash)
 		return nil, nil, nil
 	}
 	if !batch.Hash.Equals(pin.BatchHash) {
@@ -318,6 +317,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 				return err
 			}
 			if batch == nil {
+				l.Errorf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
 				continue
 			}
 		}
@@ -628,7 +628,7 @@ func (ag *aggregator) rewindForBlobArrival(ctx context.Context, blobHash *fftype
 	for bid := range batchIDs {
 		var batchID = bid // cannot use the address of the loop var
 		log.L(ag.ctx).Infof("Batch '%s' contains reference to received blob %s", &bid, blobHash)
-		ag.rewindBatches <- &batchID
+		ag.rewindBatches <- batchID
 	}
 	return nil
 }

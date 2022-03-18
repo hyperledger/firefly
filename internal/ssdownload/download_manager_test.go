@@ -274,5 +274,5 @@ func TestRunOperationUnknown(t *testing.T) {
 	_, _, err := dm.RunOperation(dm.ctx, &fftypes.PreparedOperation{
 		Type: fftypes.CallTypeInvoke,
 	})
-	assert.Regexp(t, "FF10371", err)
+	assert.Regexp(t, "FF10378", err)
 }

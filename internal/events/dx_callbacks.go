@@ -131,10 +131,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 				return err // retry - persistBatch only returns retryable errors
 			}
 
-			if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
-				// Poke the aggregator to do its stuff
-				em.aggregator.rewindBatches <- batch.ID
-			} else if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
+			if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 				// We need to confirm all these messages immediately.
 				if err := em.markUnpinnedMessagesConfirmed(ctx, batch); err != nil {
 					return err
@@ -144,8 +141,11 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 			return nil
 		})
 	})
+	// Poke the aggregator to do its stuff - after we have committed the transaction so the pins are visible
+	if err == nil && batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
+		em.aggregator.rewindBatches <- *batch.ID
+	}
 	return manifest, err
-
 }
 
 func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch *fftypes.Batch) error {

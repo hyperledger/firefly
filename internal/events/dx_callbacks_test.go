@@ -361,7 +361,7 @@ func TestPrivateBLOBReceivedTriggersRewindOk(t *testing.T) {
 	assert.NoError(t, err)
 
 	bid := <-em.aggregator.rewindBatches
-	assert.Equal(t, *batchID, *bid)
+	assert.Equal(t, *batchID, bid)
 
 	mdi.AssertExpectations(t)
 }

@@ -43,7 +43,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 		return nil, nil // This is not retryable. skip this batch
 	}
 
-	return batch.ID, em.retry.Do(em.ctx, "persist batch", func(attempt int) (bool, error) {
+	err = em.retry.Do(em.ctx, "persist batch", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			_, _, err := em.persistBatch(ctx, batch)
 			return err
@@ -51,10 +51,15 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 		if err != nil {
 			return true, err
 		}
-		// Rewind the aggregator to this batch
-		em.aggregator.rewindBatches <- batch.ID
 		return false, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Rewind the aggregator to this batch - after the DB updates are complete
+	em.aggregator.rewindBatches <- *batch.ID
+	return batch.ID, nil
 }
 
 func (em *eventManager) SharedStorageBLOBDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) error {

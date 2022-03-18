@@ -739,7 +739,7 @@ func TestGetPins(t *testing.T) {
 		{Sequence: 12345},
 	}, nil, nil)
 
-	lc, err := ag.getPins(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345))
+	lc, err := ag.getPins(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345), 12345)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), lc[0].LocalSequence())
 }
@@ -1892,10 +1892,10 @@ func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
 	defer cancel()
 	go ag.batchRewindListener()
 
-	ag.rewindBatches <- fftypes.NewUUID()
-	ag.rewindBatches <- fftypes.NewUUID()
-	ag.rewindBatches <- fftypes.NewUUID()
-	ag.rewindBatches <- fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
@@ -1912,10 +1912,10 @@ func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
 	defer cancel()
 	go ag.batchRewindListener()
 
-	ag.rewindBatches <- fftypes.NewUUID()
-	ag.rewindBatches <- fftypes.NewUUID()
-	ag.rewindBatches <- fftypes.NewUUID()
-	ag.rewindBatches <- fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
+	ag.rewindBatches <- *fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
@@ -1933,7 +1933,7 @@ func TestRewindOffchainBatchesBatchesError(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	cancel()
 
-	ag.queuedRewinds <- fftypes.NewUUID()
+	ag.queuedRewinds <- *fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))

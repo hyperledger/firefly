@@ -279,3 +279,27 @@ func TestPersistBatchContentDataHashMismatch(t *testing.T) {
 	mdi.AssertExpectations(t)
 
 }
+
+func TestPersistBatchContentDataMissingBlobRef(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`), Blob: &fftypes.BlobRef{
+		Hash: blob.Hash,
+	}}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data}, blob)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", mock.Anything, mock.Anything).Return(nil, nil)
+
+	ok, err := em.validateAndPersistBatchContent(em.ctx, batch)
+	assert.NoError(t, err)
+	assert.False(t, ok)
+
+	mdi.AssertExpectations(t)
+
+}

@@ -51,7 +51,7 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, batch.ID, bid)
 
-	assert.Equal(t, batch.ID, <-em.aggregator.rewindBatches)
+	assert.Equal(t, *batch.ID, <-em.aggregator.rewindBatches)
 
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)
@@ -137,7 +137,7 @@ func TestSharedStorageBLOBDownloadedOk(t *testing.T) {
 	err := em.SharedStorageBLOBDownloaded(mss, *fftypes.NewRandB32(), 12345, "payload1")
 	assert.NoError(t, err)
 
-	assert.Equal(t, batchID, <-em.aggregator.rewindBatches)
+	assert.Equal(t, *batchID, <-em.aggregator.rewindBatches)
 
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)
