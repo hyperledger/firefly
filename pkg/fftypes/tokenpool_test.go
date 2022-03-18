@@ -52,7 +52,7 @@ func TestTokenPoolDefinition(t *testing.T) {
 		Name:      "ok",
 	}
 	var def Definition = &TokenPoolAnnouncement{Pool: pool}
-	assert.Equal(t, "ff_ns_ok", def.Topic())
+	assert.Equal(t, "73008386c5579b7015385528eb892f7773e13a20015c692f6b90b26e413fe8a4", def.Topic())
 
 	id := NewUUID()
 	def.SetBroadcastMessage(id)

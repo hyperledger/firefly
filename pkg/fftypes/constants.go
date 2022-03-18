@@ -23,6 +23,11 @@ const (
 )
 
 const (
+	// SystemTopicDefinitions is the FireFly event topic for events that are confirmations of definition of pre-defined datatypes
+	SystemTopicDefinitions = "ff_definition"
+)
+
+const (
 
 	// SystemTagDefineDatatype is the tag for messages that broadcast data definitions
 	SystemTagDefineDatatype = "ff_define_datatype"

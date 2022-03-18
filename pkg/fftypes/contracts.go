@@ -74,7 +74,7 @@ func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (c *ContractAPI) Topic() string {
-	return namespaceTopic(c.Namespace)
+	return typeNamespaceNameTopicHash("contractapi", c.Namespace, c.Name)
 }
 
 func (c *ContractAPI) SetBroadcastMessage(msgID *UUID) {

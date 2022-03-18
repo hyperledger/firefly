@@ -18,7 +18,7 @@ package fftypes
 
 import (
 	"context"
-	"fmt"
+	"crypto/sha256"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 )
@@ -61,12 +61,18 @@ func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
 	return nil
 }
 
-func namespaceTopic(ns string) string {
-	return fmt.Sprintf("ff_ns_%s", ns)
+func typeNamespaceNameTopicHash(objType string, ns string, name string) string {
+	// Topic generation function for ordering anything with a type, namespace and name.
+	// Means all messages racing for this name will be consistently ordered by all parties.
+	h := sha256.New()
+	h.Write([]byte(objType))
+	h.Write([]byte(ns))
+	h.Write([]byte(name))
+	return HashResult(h).String()
 }
 
 func (ns *Namespace) Topic() string {
-	return namespaceTopic(ns.Name)
+	return typeNamespaceNameTopicHash("namespace", ns.Name, "")
 }
 
 func (ns *Namespace) SetBroadcastMessage(msgID *UUID) {
