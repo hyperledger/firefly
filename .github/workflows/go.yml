@@ -40,6 +40,8 @@ jobs:
           - blockchain-provider: fabric
             test-suite: TestEthereumE2ESuite
           - blockchain-provider: fabric
+            token-provider: erc1155
+          - blockchain-provider: fabric
             token-provider: erc20_erc721
           - blockchain-provider: geth
             token-provider: none
