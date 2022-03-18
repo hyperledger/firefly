@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -28,11 +28,11 @@ type NamespaceType = FFEnum
 
 var (
 	// NamespaceTypeLocal is a namespace that only exists because it was defined in the local configuration of the node
-	NamespaceTypeLocal NamespaceType = ffEnum("namespacetype", "local")
+	NamespaceTypeLocal = ffEnum("namespacetype", "local")
 	// NamespaceTypeBroadcast is a namespace that was broadcast through the network. Broadcast namespaces can overwrite a local namespace
-	NamespaceTypeBroadcast NamespaceType = ffEnum("namespacetype", "broadcast")
+	NamespaceTypeBroadcast = ffEnum("namespacetype", "broadcast")
 	// NamespaceTypeSystem is a reserved namespace used by FireFly itself
-	NamespaceTypeSystem NamespaceType = ffEnum("namespacetype", "system")
+	NamespaceTypeSystem = ffEnum("namespacetype", "system")
 )
 
 // Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.

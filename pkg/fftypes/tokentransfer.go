@@ -19,9 +19,9 @@ package fftypes
 type TokenTransferType = FFEnum
 
 var (
-	TokenTransferTypeMint     TokenType = ffEnum("tokentransfertype", "mint")
-	TokenTransferTypeBurn     TokenType = ffEnum("tokentransfertype", "burn")
-	TokenTransferTypeTransfer TokenType = ffEnum("tokentransfertype", "transfer")
+	TokenTransferTypeMint     = ffEnum("tokentransfertype", "mint")
+	TokenTransferTypeBurn     = ffEnum("tokentransfertype", "burn")
+	TokenTransferTypeTransfer = ffEnum("tokentransfertype", "transfer")
 )
 
 type TokenTransfer struct {

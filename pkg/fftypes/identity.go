@@ -30,11 +30,11 @@ type IdentityType = FFEnum
 
 var (
 	// IdentityTypeOrg is an organization
-	IdentityTypeOrg IdentityType = ffEnum("identitytype", "org")
+	IdentityTypeOrg = ffEnum("identitytype", "org")
 	// IdentityTypeNode is a node
-	IdentityTypeNode IdentityType = ffEnum("identitytype", "node")
+	IdentityTypeNode = ffEnum("identitytype", "node")
 	// IdentityTypeCustom is a user defined identity within a namespace
-	IdentityTypeCustom IdentityType = ffEnum("identitytype", "custom")
+	IdentityTypeCustom = ffEnum("identitytype", "custom")
 )
 
 const (
