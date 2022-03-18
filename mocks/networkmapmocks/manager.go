@@ -73,6 +73,29 @@ func (_m *Manager) GetIdentities(ctx context.Context, ns string, filter database
 	return r0, r1, r2
 }
 
+// GetIdentityByDID provides a mock function with given fields: ctx, did
+func (_m *Manager) GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, did)
+
+	var r0 *fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
+		r0 = rf(ctx, did)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, did)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetIdentityByID provides a mock function with given fields: ctx, ns, id
 func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx, ns, id)

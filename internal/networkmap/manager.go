@@ -40,6 +40,7 @@ type Manager interface {
 	GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error)
 	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 	GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error)
+	GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error)
 	GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 	GetIdentityVerifiers(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)
 	GetVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)

@@ -90,6 +90,16 @@ func (nm *networkMap) GetIdentityByID(ctx context.Context, ns, id string) (*ffty
 	return identity, nil
 }
 
+func (nm *networkMap) GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error) {
+	fb := database.IdentityQueryFactory.NewFilter(ctx)
+	filter := fb.And().Condition(fb.Eq("did", did))
+	results, _, err := nm.database.GetIdentities(ctx, filter)
+	if err != nil || len(results) == 0 {
+		return nil, err
+	}
+	return results[0], nil
+}
+
 func (nm *networkMap) GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("namespace", ns))
 	return nm.database.GetIdentities(ctx, filter)
