@@ -40,6 +40,16 @@ func testConfigReset() {
 	log.SetLevel("debug")
 }
 
+func newTestBatchManager(t *testing.T) *batchManager {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, err := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
+	assert.NoError(t, err)
+	return bm.(*batchManager)
+}
+
 func TestE2EDispatchBroadcast(t *testing.T) {
 	testConfigReset()
 
@@ -574,4 +584,12 @@ func TestGetMessageNotFound(t *testing.T) {
 	bm.Close()
 	_, _, err := bm.(*batchManager).assembleMessageData(fftypes.NewUUID())
 	assert.Regexp(t, "FF10133", err)
+}
+
+func TestDrainNewMessages(t *testing.T) {
+
+	bm := newTestBatchManager(t)
+	bm.newMessages <- 12345
+	assert.True(t, bm.drainNewMessages(time.NewTimer(1*time.Millisecond)))
+
 }

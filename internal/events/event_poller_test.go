@@ -226,6 +226,7 @@ func TestReadPageRewind(t *testing.T) {
 	}, func() (bool, int64) {
 		return true, 12345
 	})
+	ep.pollingOffset = 23456
 	cancel()
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
 	mdi.On("GetEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {

@@ -141,6 +141,9 @@ const dataSizeEstimateBase = int64(256)
 
 func (d *Data) EstimateSize() int64 {
 	// For now we have a static estimate for the size of the serialized outer structure.
+	if d.ValueSize <= 0 {
+		d.ValueSize = d.Value.Length()
+	}
 	// As long as this has been persisted, the value size will represent the length
 	return dataSizeEstimateBase + d.ValueSize
 }
@@ -201,6 +204,9 @@ func (d *Data) Seal(ctx context.Context, blob *Blob) (err error) {
 		}
 	} else if d.Blob != nil && d.Blob.Hash != nil {
 		return i18n.NewError(ctx, i18n.MsgBlobMismatchSealingData)
+	}
+	if d.ValueSize <= 0 {
+		d.ValueSize = d.Value.Length()
 	}
 	d.Hash, err = d.CalcHash(ctx)
 	if err == nil {
