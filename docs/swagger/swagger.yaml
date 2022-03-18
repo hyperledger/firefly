@@ -9191,14 +9191,14 @@ paths:
           description: Success
         default:
           description: ""
-  /network/nodes/{nid}:
+  /network/nodes/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getNetworkNode
       parameters:
       - description: 'TODO: Description'
         in: path
-        name: nid
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -9592,14 +9592,14 @@ paths:
           description: Success
         default:
           description: ""
-  /network/organizations/{oid}:
+  /network/organizations/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getNetworkOrg
       parameters:
       - description: 'TODO: Description'
         in: path
-        name: oid
+        name: nameOrId
         required: true
         schema:
           type: string

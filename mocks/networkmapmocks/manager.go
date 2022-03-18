@@ -128,13 +128,13 @@ func (_m *Manager) GetIdentityVerifiers(ctx context.Context, ns string, id strin
 	return r0, r1, r2
 }
 
-// GetNodeByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error) {
-	ret := _m.Called(ctx, id)
+// GetNodeByNameOrID provides a mock function with given fields: ctx, nameOrID
+func (_m *Manager) GetNodeByNameOrID(ctx context.Context, nameOrID string) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, nameOrID)
 
 	var r0 *fftypes.Identity
 	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
-		r0 = rf(ctx, id)
+		r0 = rf(ctx, nameOrID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Identity)
@@ -143,7 +143,7 @@ func (_m *Manager) GetNodeByID(ctx context.Context, id string) (*fftypes.Identit
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+		r1 = rf(ctx, nameOrID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -183,13 +183,13 @@ func (_m *Manager) GetNodes(ctx context.Context, filter database.AndFilter) ([]*
 	return r0, r1, r2
 }
 
-// GetOrganizationByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetOrganizationByID(ctx context.Context, id string) (*fftypes.Identity, error) {
-	ret := _m.Called(ctx, id)
+// GetOrganizationByNameOrID provides a mock function with given fields: ctx, nameOrID
+func (_m *Manager) GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, nameOrID)
 
 	var r0 *fftypes.Identity
 	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
-		r0 = rf(ctx, id)
+		r0 = rf(ctx, nameOrID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Identity)
@@ -198,7 +198,7 @@ func (_m *Manager) GetOrganizationByID(ctx context.Context, id string) (*fftypes
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+		r1 = rf(ctx, nameOrID)
 	} else {
 		r1 = ret.Error(1)
 	}
