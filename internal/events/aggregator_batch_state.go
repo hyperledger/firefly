@@ -214,7 +214,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 				l.Debugf("NextPin: context=%s author=%s nonce=%d hash=%s", np.Context, np.Identity, np.Nonce, np.Hash)
 			}
 		}
-		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nonce=%s nextHash=%+v author=%s", msg.Header.Group, topic, contextUnmasked, pin, nonceStr, nextPin, msg.Header.Author)
+		l.Warnf("Mismatched nexthash or author msg=%s group=%s topic=%s context=%s pin=%s nonce=%s nextHash=%+v author=%s", msg.Header.ID, msg.Header.Group, topic, contextUnmasked, pin, nonceStr, nextPin, msg.Header.Author)
 		return nil, nil
 	}
 	return &nextPinState{

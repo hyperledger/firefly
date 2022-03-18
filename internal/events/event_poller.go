@@ -131,7 +131,7 @@ func (ep *eventPoller) rewindPollingOffset(offset int64) {
 	ep.mux.Lock()
 	defer ep.mux.Unlock()
 	if offset < ep.pollingOffset {
-		ep.pollingOffset = offset // this will be re-delivered
+		ep.pollingOffset = offset - 1
 	}
 }
 
