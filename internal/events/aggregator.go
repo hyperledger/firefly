@@ -317,7 +317,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 				return err
 			}
 			if batch == nil {
-				l.Errorf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
+				l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
 				continue
 			}
 		}
