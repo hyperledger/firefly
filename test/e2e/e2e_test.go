@@ -145,7 +145,6 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
 	for key, balance := range balances {
 		account := GetTokenBalance(t, client, poolID, tokenIndex, key)
-		assert.Equal(t, "erc1155", account.Connector)
 		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}
 }

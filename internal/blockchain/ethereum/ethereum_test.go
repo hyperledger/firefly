@@ -1254,13 +1254,16 @@ func TestAddSubscription(t *testing.T) {
 					},
 				},
 			},
+			Options: &fftypes.ContractListenerOptions{
+				FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+			},
 		},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddSubscription(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub)
 
 	assert.NoError(t, err)
 }
@@ -1299,7 +1302,7 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddSubscription(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10311", err)
 }
@@ -1324,7 +1327,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		},
 	}
 
-	err := e.AddSubscription(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10310", err)
 }
@@ -1348,13 +1351,16 @@ func TestAddSubscriptionFail(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 			Event: &fftypes.FFISerializedEvent{},
+			Options: &fftypes.ContractListenerOptions{
+				FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+			},
 		},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.AddSubscription(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10111", err)
 	assert.Regexp(t, "pop", err)
@@ -1380,7 +1386,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(204, ""))
 
-	err := e.DeleteSubscription(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub)
 
 	assert.NoError(t, err)
 }
@@ -1405,7 +1411,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(500, ""))
 
-	err := e.DeleteSubscription(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10111", err)
 }

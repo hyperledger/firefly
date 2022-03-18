@@ -26,9 +26,9 @@ type BatchType = FFEnum
 
 var (
 	// BatchTypeBroadcast is a batch that is broadcast via the shared data interface
-	BatchTypeBroadcast BatchType = ffEnum("batchtype", "broadcast")
+	BatchTypeBroadcast = ffEnum("batchtype", "broadcast")
 	// BatchTypePrivate is a batch that is sent privately to a group
-	BatchTypePrivate BatchType = ffEnum("batchtype", "private")
+	BatchTypePrivate = ffEnum("batchtype", "private")
 )
 
 const (

@@ -2275,6 +2275,11 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
                     type: string
                 type: object
@@ -2337,6 +2342,11 @@ paths:
                   type: string
                 namespace:
                   type: string
+                options:
+                  properties:
+                    firstEvent:
+                      type: string
+                  type: object
                 protocolId:
                   type: string
               type: object
@@ -2378,6 +2388,11 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
                     type: string
                 type: object
@@ -2474,6 +2489,11 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
                     type: string
                 type: object
@@ -4890,72 +4910,6 @@ paths:
                     - contract_api_confirmed
                     - blockchain_event_received
                     type: string
-                type: object
-          description: Success
-        default:
-          description: ""
-  /namespaces/{ns}/messages/{msgid}/operations:
-    get:
-      description: 'TODO: Description'
-      operationId: getMsgOps
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: msgid
-        required: true
-        schema:
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created: {}
-                  error:
-                    type: string
-                  id: {}
-                  input:
-                    additionalProperties: {}
-                    type: object
-                  namespace:
-                    type: string
-                  output:
-                    additionalProperties: {}
-                    type: object
-                  plugin:
-                    type: string
-                  retry: {}
-                  status:
-                    type: string
-                  tx: {}
-                  type:
-                    enum:
-                    - blockchain_batch_pin
-                    - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
-                    - token_create_pool
-                    - token_activate_pool
-                    - token_transfer
-                    - token_approval
-                    type: string
-                  updated: {}
                 type: object
           description: Success
         default:
@@ -7794,6 +7748,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7886,6 +7843,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7930,6 +7890,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -8002,6 +7965,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}

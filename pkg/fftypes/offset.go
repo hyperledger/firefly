@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,11 +20,11 @@ type OffsetType = FFEnum
 
 var (
 	// OffsetTypeBatch is an offset stored by the batch manager on the messages table
-	OffsetTypeBatch OffsetType = ffEnum("offsettype", "batch")
+	OffsetTypeBatch = ffEnum("offsettype", "batch")
 	// OffsetTypeAggregator is an offset stored by the aggregator on the events table
-	OffsetTypeAggregator OffsetType = ffEnum("offsettype", "aggregator")
+	OffsetTypeAggregator = ffEnum("offsettype", "aggregator")
 	// OffsetTypeSubscription is an offeset stored by a dispatcher on the events table
-	OffsetTypeSubscription OffsetType = ffEnum("offsettype", "subscription")
+	OffsetTypeSubscription = ffEnum("offsettype", "subscription")
 )
 
 // Offset is a simple stored data structure that records a sequence position within another collection

@@ -19,8 +19,8 @@ package fftypes
 type TransportPayloadType = FFEnum
 
 var (
-	TransportPayloadTypeMessage TransportPayloadType = ffEnum("transportpayload", "message")
-	TransportPayloadTypeBatch   TransportPayloadType = ffEnum("transportpayload", "batch")
+	TransportPayloadTypeMessage = ffEnum("transportpayload", "message")
+	TransportPayloadTypeBatch   = ffEnum("transportpayload", "batch")
 )
 
 // TransportWrapper wraps paylaods over data exchange transfers, for easy deserialization at target

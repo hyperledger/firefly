@@ -61,3 +61,37 @@ func TestFFISerializedEventValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"name":"event1","description":"a super event","params":[{"name":"details","schema":{"type":"integer","details":{"type":"uint256"}}}]}`, string(val.([]byte)))
 }
+
+func TestContractListenerOptionsScan(t *testing.T) {
+	options := &ContractListenerOptions{}
+	err := options.Scan([]byte(`{"firstBlock":"newest"}`))
+	assert.NoError(t, err)
+}
+
+func TestContractListenerOptionsScanNil(t *testing.T) {
+	options := &ContractListenerOptions{}
+	err := options.Scan(nil)
+	assert.Nil(t, err)
+}
+
+func TestContractListenerOptionsScanString(t *testing.T) {
+	options := &ContractListenerOptions{}
+	err := options.Scan(`{"firstBlock":"newest"}`)
+	assert.NoError(t, err)
+}
+
+func TestContractListenerOptionsScanError(t *testing.T) {
+	options := &ContractListenerOptions{}
+	err := options.Scan(false)
+	assert.Regexp(t, "FF10125", err)
+}
+
+func TestContractListenerOptionsValue(t *testing.T) {
+	options := &ContractListenerOptions{
+		FirstEvent: "newest",
+	}
+
+	val, err := options.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, `{"firstEvent":"newest"}`, string(val.([]byte)))
+}

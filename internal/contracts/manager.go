@@ -458,6 +458,12 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 		return nil, err
 	}
 
+	if listener.Options == nil {
+		listener.Options = cm.getDefaultContractListenerOptions()
+	} else if listener.Options.FirstEvent == "" {
+		listener.Options.FirstEvent = cm.getDefaultContractListenerOptions().FirstEvent
+	}
+
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		if listener.Name != "" {
 			if err := fftypes.ValidateFFNameField(ctx, listener.Name, "name"); err != nil {
@@ -513,7 +519,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 	if err := cm.validateFFIEvent(ctx, &listener.Event.FFIEventDefinition); err != nil {
 		return nil, err
 	}
-	if err = cm.blockchain.AddSubscription(ctx, listener); err != nil {
+	if err = cm.blockchain.AddContractListener(ctx, listener); err != nil {
 		return nil, err
 	}
 	if listener.Name == "" {
@@ -554,7 +560,7 @@ func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context,
 		if err != nil {
 			return err
 		}
-		if err = cm.blockchain.DeleteSubscription(ctx, listener); err != nil {
+		if err = cm.blockchain.DeleteContractListener(ctx, listener); err != nil {
 			return err
 		}
 		return cm.database.DeleteContractListenerByID(ctx, listener.ID)
@@ -581,4 +587,10 @@ func (cm *contractManager) checkParamSchema(ctx context.Context, input interface
 func (cm *contractManager) GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	generationRequest.Namespace = ns
 	return cm.blockchain.GenerateFFI(ctx, generationRequest)
+}
+
+func (cm *contractManager) getDefaultContractListenerOptions() *fftypes.ContractListenerOptions {
+	return &fftypes.ContractListenerOptions{
+		FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+	}
 }

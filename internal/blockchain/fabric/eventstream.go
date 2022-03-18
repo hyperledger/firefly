@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type streamManager struct {
@@ -112,7 +113,11 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event string) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, fromBlock string) (*subscription, error) {
+	// Map FireFly "firstEvent" values to Fabric "fromBlock" values
+	if fromBlock == string(fftypes.SubOptsFirstEventOldest) {
+		fromBlock = "0"
+	}
 	sub := subscription{
 		Name:    name,
 		Channel: location.Channel,
@@ -122,7 +127,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 			ChaincodeID: location.Chaincode,
 			EventFilter: event,
 		},
-		FromBlock: "0",
+		FromBlock: fromBlock,
 	}
 	res, err := s.client.R().
 		SetContext(ctx).
@@ -159,7 +164,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, location *Locati
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, subName, event); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, event, string(fftypes.SubOptsFirstEventOldest)); err != nil {
 			return nil, err
 		}
 	}
