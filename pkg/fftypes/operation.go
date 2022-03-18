@@ -23,23 +23,23 @@ type OpType = FFEnum
 
 var (
 	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
-	OpTypeBlockchainBatchPin OpType = ffEnum("optype", "blockchain_batch_pin")
+	OpTypeBlockchainBatchPin = ffEnum("optype", "blockchain_batch_pin")
 	// OpTypeBlockchainInvoke is a smart contract invoke
-	OpTypeBlockchainInvoke OpType = ffEnum("optype", "blockchain_invoke")
+	OpTypeBlockchainInvoke = ffEnum("optype", "blockchain_invoke")
 	// OpTypeSharedStorageBatchBroadcast is a shared storage operation to store broadcast data
-	OpTypeSharedStorageBatchBroadcast OpType = ffEnum("optype", "sharedstorage_batch_broadcast")
+	OpTypeSharedStorageBatchBroadcast = ffEnum("optype", "sharedstorage_batch_broadcast")
 	// OpTypeDataExchangeBatchSend is a private send
-	OpTypeDataExchangeBatchSend OpType = ffEnum("optype", "dataexchange_batch_send")
+	OpTypeDataExchangeBatchSend = ffEnum("optype", "dataexchange_batch_send")
 	// OpTypeDataExchangeBlobSend is a private send
-	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
+	OpTypeDataExchangeBlobSend = ffEnum("optype", "dataexchange_blob_send")
 	// OpTypeTokenCreatePool is a token pool creation
-	OpTypeTokenCreatePool OpType = ffEnum("optype", "token_create_pool")
+	OpTypeTokenCreatePool = ffEnum("optype", "token_create_pool")
 	// OpTypeTokenActivatePool is a token pool activation
-	OpTypeTokenActivatePool OpType = ffEnum("optype", "token_activate_pool")
+	OpTypeTokenActivatePool = ffEnum("optype", "token_activate_pool")
 	// OpTypeTokenTransfer is a token transfer
-	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
+	OpTypeTokenTransfer = ffEnum("optype", "token_transfer")
 	// OpTypeTokenApproval is a token approval
-	OpTypeTokenApproval OpType = ffEnum("optype", "token_approval")
+	OpTypeTokenApproval = ffEnum("optype", "token_approval")
 )
 
 // OpStatus is the current status of an operation
