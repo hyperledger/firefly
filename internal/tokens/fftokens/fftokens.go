@@ -59,9 +59,10 @@ const (
 )
 
 type tokenData struct {
-	TX          *fftypes.UUID    `json:"tx,omitempty"`
-	Message     *fftypes.UUID    `json:"message,omitempty"`
-	MessageHash *fftypes.Bytes32 `json:"messageHash,omitempty"`
+	TX          *fftypes.UUID           `json:"tx,omitempty"`
+	TXType      fftypes.TransactionType `json:"txtype,omitempty"`
+	Message     *fftypes.UUID           `json:"message,omitempty"`
+	MessageHash *fftypes.Bytes32        `json:"messageHash,omitempty"`
 }
 
 type createPool struct {
@@ -217,14 +218,22 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		poolData = tokenData{}
 	}
 
+	txType := poolData.TXType
+	if txType == "" {
+		txType = fftypes.TransactionTypeTokenPool
+	}
+
 	pool := &tokens.TokenPool{
-		Type:          fftypes.FFEnum(tokenType),
-		ProtocolID:    protocolID,
-		TransactionID: poolData.TX,
-		Connector:     ft.configuredName,
-		Standard:      standard,
-		Symbol:        symbol,
-		Info:          info,
+		Type:       fftypes.FFEnum(tokenType),
+		ProtocolID: protocolID,
+		TX: fftypes.TransactionRef{
+			ID:   poolData.TX,
+			Type: txType,
+		},
+		Connector: ft.configuredName,
+		Standard:  standard,
+		Symbol:    symbol,
+		Info:      info,
 		Event: blockchain.Event{
 			BlockchainTXID: txHash,
 			Source:         ft.Name() + ":" + ft.configuredName,
@@ -295,6 +304,11 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		return nil // move on
 	}
 
+	txType := transferData.TXType
+	if txType == "" {
+		txType = fftypes.TransactionTypeTokenTransfer
+	}
+
 	transfer := &tokens.TokenTransfer{
 		PoolProtocolID: poolProtocolID,
 		TokenTransfer: fftypes.TokenTransfer{
@@ -311,7 +325,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			MessageHash: transferData.MessageHash,
 			TX: fftypes.TransactionRef{
 				ID:   transferData.TX,
-				Type: fftypes.TransactionTypeTokenTransfer,
+				Type: txType,
 			},
 		},
 		Event: blockchain.Event{
@@ -363,6 +377,11 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 		transferData = tokenData{}
 	}
 
+	txType := transferData.TXType
+	if txType == "" {
+		txType = fftypes.TransactionTypeTokenApproval
+	}
+
 	approval := &tokens.TokenApproval{
 		PoolProtocolID: poolProtocolID,
 		TokenApproval: fftypes.TokenApproval{
@@ -373,7 +392,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 			ProtocolID: eventProtocolID,
 			TX: fftypes.TransactionRef{
 				ID:   transferData.TX,
-				Type: fftypes.TransactionTypeTokenApproval,
+				Type: txType,
 			},
 		},
 		Event: blockchain.Event{
@@ -450,7 +469,8 @@ func (ft *FFTokens) eventLoop() {
 
 func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
 	data, _ := json.Marshal(tokenData{
-		TX: pool.TX.ID,
+		TX:     pool.TX.ID,
+		TXType: pool.TX.Type,
 	})
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
@@ -502,6 +522,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          mint.TX.ID,
+		TXType:      mint.TX.Type,
 		Message:     mint.Message,
 		MessageHash: mint.MessageHash,
 	})
@@ -525,6 +546,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          burn.TX.ID,
+		TXType:      burn.TX.Type,
 		Message:     burn.Message,
 		MessageHash: burn.MessageHash,
 	})
@@ -548,6 +570,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          transfer.TX.ID,
+		TXType:      transfer.TX.Type,
 		Message:     transfer.Message,
 		MessageHash: transfer.MessageHash,
 	})
@@ -571,7 +594,8 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 
 func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, approval *fftypes.TokenApproval) error {
 	data, _ := json.Marshal(tokenData{
-		TX: approval.TX.ID,
+		TX:     approval.TX.ID,
+		TXType: approval.TX.Type,
 	})
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&tokenApproval{

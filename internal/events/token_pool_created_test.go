@@ -44,10 +44,13 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	operations := []*fftypes.Operation{}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -72,10 +75,9 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: nil,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -102,13 +104,16 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	info1 := fftypes.JSONObject{"pool": "info"}
 	info2 := fftypes.JSONObject{"block": "info"}
 	chainPool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		Connector:     "erc1155",
-		TransactionID: txID,
-		Standard:      "ERC1155",
-		Symbol:        "FFT",
-		Info:          info1,
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Standard: "ERC1155",
+		Symbol:   "FFT",
+		Info:     info1,
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			Name:           "TokenPool",
@@ -170,10 +175,13 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	txID := fftypes.NewUUID()
 	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		Connector:     "erc1155",
-		TransactionID: txID,
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -208,11 +216,14 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 	txID := fftypes.NewUUID()
 	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		Connector:     "erc1155",
-		TransactionID: txID,
-		Symbol:        "ETH",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Symbol: "ETH",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -253,10 +264,13 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	txID := fftypes.NewUUID()
 	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		Connector:     "magic-tokens",
-		TransactionID: txID,
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "magic-tokens",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -497,10 +511,13 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -539,10 +556,13 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -577,10 +597,13 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -618,11 +641,14 @@ func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
-		Symbol:        "ETH",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
+		Symbol:    "ETH",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
