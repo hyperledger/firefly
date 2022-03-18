@@ -54,6 +54,7 @@ type TokenPool struct {
 	State      TokenPoolState `json:"state,omitempty" ffenum:"tokenpoolstate"`
 	Created    *FFTime        `json:"created,omitempty"`
 	Config     JSONObject     `json:"config,omitempty"` // for REST calls only (not stored)
+	Info       JSONObject     `json:"info,omitempty"`
 	TX         TransactionRef `json:"tx,omitempty"`
 }
 
