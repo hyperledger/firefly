@@ -38,6 +38,7 @@ var (
 		"protocol_id",
 		"location",
 		"created",
+		"options",
 	}
 	contractListenerFilterFieldMap = map[string]string{
 		"interface":  "interface_id",
@@ -77,6 +78,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, sub *fftypes.Con
 				Set("namespace", sub.Namespace).
 				Set("name", sub.Name).
 				Set("location", sub.Location).
+				Set("options", sub.Options).
 				Where(sq.Eq{"protocol_id": sub.ProtocolID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, sub.Namespace, sub.ID)
@@ -98,6 +100,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, sub *fftypes.Con
 					sub.ProtocolID,
 					sub.Location,
 					sub.Created,
+					sub.Options,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, sub.Namespace, sub.ID)
@@ -123,6 +126,7 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 		&sub.ProtocolID,
 		&sub.Location,
 		&sub.Created,
+		&sub.Options,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contractlisteners")

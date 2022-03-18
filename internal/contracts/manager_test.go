@@ -576,10 +576,11 @@ func TestAddContractListenerInline(t *testing.T) {
 					},
 				},
 			},
+			Options: &fftypes.ContractListenerOptions{},
 		},
 	}
 
-	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
 	result, err := cm.AddContractListener(context.Background(), "ns", sub)
@@ -628,7 +629,7 @@ func TestAddContractListenerByRef(t *testing.T) {
 		},
 	}
 
-	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, sub.Event.Name).Return(event, nil)
 	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
@@ -672,7 +673,7 @@ func TestAddContractListenerByEventID(t *testing.T) {
 		EventID: eventID,
 	}
 
-	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("GetFFIEventByID", context.Background(), sub.EventID).Return(event, nil)
 	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
@@ -978,7 +979,7 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("AddSubscription", context.Background(), sub).Return(fmt.Errorf("pop"))
+	mbi.On("AddContractListener", context.Background(), sub).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns", sub)
 	assert.EqualError(t, err, "pop")
@@ -1011,7 +1012,7 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("AddSubscription", context.Background(), sub).Return(nil)
+	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns", sub)
@@ -1497,7 +1498,7 @@ func TestDeleteContractListener(t *testing.T) {
 	}
 
 	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(sub, nil)
-	mbi.On("DeleteSubscription", context.Background(), sub).Return(nil)
+	mbi.On("DeleteContractListener", context.Background(), sub).Return(nil)
 	mdi.On("DeleteContractListenerByID", context.Background(), sub.ID).Return(nil)
 
 	err := cm.DeleteContractListenerByNameOrID(context.Background(), "ns", "sub1")
@@ -1514,7 +1515,7 @@ func TestDeleteContractListenerBlockchainFail(t *testing.T) {
 	}
 
 	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(sub, nil)
-	mbi.On("DeleteSubscription", context.Background(), sub).Return(fmt.Errorf("pop"))
+	mbi.On("DeleteContractListener", context.Background(), sub).Return(fmt.Errorf("pop"))
 	mdi.On("DeleteContractListenerByID", context.Background(), sub.ID).Return(nil)
 
 	err := cm.DeleteContractListenerByNameOrID(context.Background(), "ns", "sub1")
