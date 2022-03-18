@@ -51,6 +51,13 @@ var (
 			},
 		},
 	}
+	expectedHistogramResultNoTypes = []*fftypes.ChartHistogram{
+		{
+			Count:     "10",
+			Timestamp: fftypes.UnixTime(1000000000),
+			Types:     make([]*fftypes.ChartHistogramType, 0),
+		},
+	}
 
 	mockHistogramInterval = []fftypes.ChartHistogramInterval{
 		{
@@ -58,12 +65,15 @@ var (
 			EndTime:   fftypes.UnixTime(1000000001),
 		},
 	}
-	validCollections = []string{
+	validCollectionsWithTypes = []string{
 		"events",
 		"messages",
 		"operations",
 		"transactions",
 		"tokentransfers",
+	}
+	validCollectionsNoTypes = []string{
+		"blockchainevents",
 	}
 )
 
@@ -74,16 +84,28 @@ func TestGetChartHistogramInvalidCollectionName(t *testing.T) {
 	assert.Regexp(t, "FF10301", err)
 }
 
-func TestGetChartHistogramValidCollectionName(t *testing.T) {
-	for i := range validCollections {
+func TestGetChartHistogramValidCollectionNameWithTypes(t *testing.T) {
+	for i := range validCollectionsWithTypes {
 		s, mock := newMockProvider().init()
 		mock.ExpectQuery("SELECT DISTINCT .*").WillReturnRows(sqlmock.NewRows([]string{"type"}).AddRow("typeA").AddRow("typeB"))
 		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0", "case_1"}).AddRow("5", "5"))
 
-		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollections[i]))
+		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollectionsWithTypes[i]))
 
 		assert.NoError(t, err)
 		assert.Equal(t, histogram, expectedHistogramResult)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	}
+}
+
+func TestGetChartHistogramValidCollectionNameNoTypes(t *testing.T) {
+	for i := range validCollectionsNoTypes {
+		s, mock := newMockProvider().init()
+		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("10"))
+
+		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollectionsNoTypes[i]))
+		assert.NoError(t, err)
+		assert.Equal(t, expectedHistogramResultNoTypes, histogram)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	}
 }
@@ -94,6 +116,15 @@ func TestGetChartHistogramsQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT *").WillReturnError(fmt.Errorf("pop"))
 
 	_, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("messages"))
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetChartHistogramsQueryFailNoTypes(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT *").WillReturnError(fmt.Errorf("pop"))
+
+	_, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("blockchainevents"))
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -126,6 +157,15 @@ func TestGetChartHistogramScanFailTooManyCols(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestGetChartHistogramScanFailTooManyColsNoTypes(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0", "unexpected"}).AddRow("10", "abc"))
+
+	_, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("blockchainevents"))
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestGetChartHistogramFailStringToIntConversion(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT DISTINCT .*").WillReturnRows(sqlmock.NewRows([]string{"type"}).AddRow("typeA").AddRow("typeB"))
@@ -144,6 +184,27 @@ func TestGetChartHistogramSuccessNoRows(t *testing.T) {
 	histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("messages"))
 	assert.NoError(t, err)
 	assert.Equal(t, emptyHistogramResult, histogram)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetChartHistogramSuccessNoRowsNoTypes(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0", "case_1"}))
+
+	histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("blockchainevents"))
+	assert.NoError(t, err)
+
+	assert.Equal(t, emptyHistogramResult, histogram)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetChartHistogramSuccessNoTypes(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"case_0"}).AddRow("10"))
+
+	histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName("blockchainevents"))
+	assert.NoError(t, err)
+	assert.Equal(t, expectedHistogramResultNoTypes, histogram)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
