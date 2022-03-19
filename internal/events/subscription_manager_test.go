@@ -389,6 +389,22 @@ func TestCreateSubscriptionBadDeprecatedTagFilter(t *testing.T) {
 	assert.Regexp(t, "FF10171.*tag", err)
 }
 
+func TestCreateSubscriptionBadMessageTagFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Message: fftypes.MessageFilter{
+				Tag: "[[[[! badness",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*message.tag", err)
+}
+
 func TestCreateSubscriptionBadDeprecatedAuthorFilter(t *testing.T) {
 	mei := &eventsmocks.PluginAll{}
 	sm, cancel := newTestSubManager(t, mei)

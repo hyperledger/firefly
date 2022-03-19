@@ -2282,6 +2282,8 @@ paths:
                     type: object
                   protocolId:
                     type: string
+                  topic:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2349,6 +2351,8 @@ paths:
                   type: object
                 protocolId:
                   type: string
+                topic:
+                  type: string
               type: object
       responses:
         "200":
@@ -2394,6 +2398,8 @@ paths:
                         type: string
                     type: object
                   protocolId:
+                    type: string
+                  topic:
                     type: string
                 type: object
           description: Success
@@ -2495,6 +2501,8 @@ paths:
                         type: string
                     type: object
                   protocolId:
+                    type: string
+                  topic:
                     type: string
                 type: object
           description: Success
