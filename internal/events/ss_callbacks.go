@@ -58,6 +58,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	}
 
 	// Rewind the aggregator to this batch - after the DB updates are complete
+	log.L(em.ctx).Errorf("Rewinding for downloaded broadcast batch %s", batch.ID)
 	em.aggregator.rewindBatches <- *batch.ID
 	return batch.ID, nil
 }

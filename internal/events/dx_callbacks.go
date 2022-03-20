@@ -143,6 +143,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 	})
 	// Poke the aggregator to do its stuff - after we have committed the transaction so the pins are visible
 	if err == nil && batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
+		log.L(em.ctx).Errorf("Rewinding for persisted private batch %s", batch.ID)
 		em.aggregator.rewindBatches <- *batch.ID
 	}
 	return manifest, err

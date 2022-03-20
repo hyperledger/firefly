@@ -40,14 +40,14 @@ func testConfigReset() {
 	log.SetLevel("debug")
 }
 
-func newTestBatchManager(t *testing.T) *batchManager {
+func newTestBatchManager(t *testing.T) (*batchManager, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	bm, err := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
 	assert.NoError(t, err)
-	return bm.(*batchManager)
+	return bm.(*batchManager), bm.(*batchManager).cancelCtx
 }
 
 func TestE2EDispatchBroadcast(t *testing.T) {
@@ -527,26 +527,35 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 }
 
 func TestWaitForPollTimeout(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
-	bm.(*batchManager).messagePollTimeout = 1 * time.Microsecond
-	bm.(*batchManager).waitForNewMessages()
+	bm, _ := newTestBatchManager(t)
+	bm.messagePollTimeout = 1 * time.Microsecond
+	bm.waitForNewMessages(time.NewTimer(1 * time.Second))
 }
 
-func TestWaitForNewMessage(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
-	bm := bmi.(*batchManager)
+func TestRewindForNewMessage(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+	go bm.newMessageNotifier()
+	bm.messagePollTimeout = 1 * time.Microsecond
+	bm.waitForNewMessages(time.NewTimer(1 * time.Second))
 	bm.readOffset = 22222
+	bm.NewMessages() <- 12346
+	bm.NewMessages() <- 12347
 	bm.NewMessages() <- 12345
-	bm.waitForNewMessages()
-	assert.Equal(t, int64(12344), bm.readOffset)
+	bm.waitForNewMessages(time.NewTimer(1 * time.Second))
+	assert.Equal(t, int64(12344), bm.rewindOffset)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageIDs", mock.Anything, mock.MatchedBy(func(f database.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		v, err := fi.Children[0].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12344), v)
+		return true
+	})).Return(nil, nil)
+	_, err := bm.readPage()
+	assert.NoError(t, err)
 }
 
 func TestAssembleMessageDataNilData(t *testing.T) {
@@ -584,12 +593,4 @@ func TestGetMessageNotFound(t *testing.T) {
 	bm.Close()
 	_, _, err := bm.(*batchManager).assembleMessageData(fftypes.NewUUID())
 	assert.Regexp(t, "FF10133", err)
-}
-
-func TestDrainNewMessages(t *testing.T) {
-
-	bm := newTestBatchManager(t)
-	bm.newMessages <- 12345
-	assert.True(t, bm.drainNewMessages(time.NewTimer(1*time.Millisecond)))
-
 }
