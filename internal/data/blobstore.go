@@ -38,7 +38,7 @@ type blobStore struct {
 	exchange      dataexchange.Plugin
 }
 
-func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftypes.UUID, expectedHash *fftypes.Bytes32, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
+func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftypes.UUID, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
 	hashCalc := sha256.New()
 	dxReader, dx := io.Pipe()
 	storeAndHash := io.MultiWriter(hashCalc, dx)
@@ -63,14 +63,10 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 	}
 
 	hash = fftypes.HashResult(hashCalc)
-	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v) size=%d (expected=%d)", written, hash, uploadHash, expectedHash, uploadSize, written)
+	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v) size=%d", written, hash, uploadHash, uploadSize, written)
 
 	if !uploadHash.Equals(hash) {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, hash)
-	}
-
-	if expectedHash != nil && !uploadHash.Equals(expectedHash) {
-		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, expectedHash)
 	}
 	if uploadSize > 0 && uploadSize != written {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadSize, uploadSize, written)
@@ -95,7 +91,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	data.Namespace = ns
 	data.Created = fftypes.Now()
 
-	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, nil /* we don't have an expected hash for a new upload */, mpart.Data)
+	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, mpart.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -141,37 +137,6 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	}
 
 	return data, nil
-}
-
-func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error) {
-
-	reader, err := bs.sharedstorage.RetrieveData(ctx, data.Blob.Public)
-	if err != nil {
-		return nil, err
-	}
-	if reader == nil {
-		log.L(ctx).Infof("Blob '%s' not found in shared storage", data.Blob.Public)
-		return nil, nil
-	}
-	defer reader.Close()
-
-	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, data.Namespace, data.ID, data.Blob.Hash, reader)
-	if err != nil {
-		return nil, err
-	}
-	log.L(ctx).Infof("Transferred blob '%s' (%s) from shared storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.Blob.Public, payloadRef)
-
-	blob = &fftypes.Blob{
-		Hash:       hash,
-		Size:       blobSize,
-		PayloadRef: payloadRef,
-		Created:    fftypes.Now(),
-	}
-	err = bs.database.InsertBlob(ctx, blob)
-	if err != nil {
-		return nil, err
-	}
-	return blob, nil
 }
 
 func (bs *blobStore) DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error) {

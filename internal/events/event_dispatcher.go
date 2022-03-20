@@ -151,7 +151,8 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.eventPoller.closed
 }
 
-func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
+func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]fftypes.LocallySequenced, error) {
+	log.L(ctx).Tracef("Reading page of events > %d (first events would be %d)", offset, offset+1)
 	events, _, err := ed.database.GetEvents(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(events))
 	for i, e := range events {
@@ -338,7 +339,7 @@ func (ed *eventDispatcher) handleNackOffsetUpdate(nack ackNack) {
 	// That means resetting the polling offest, and clearing out all our state
 	delete(ed.inflight, nack.id)
 	if ed.eventPoller.pollingOffset > nack.offset {
-		ed.eventPoller.rewindPollingOffset(nack.offset)
+		ed.eventPoller.rewindPollingOffset(nack.offset - 1)
 	}
 	ed.inflight = map[fftypes.UUID]*fftypes.Event{}
 }

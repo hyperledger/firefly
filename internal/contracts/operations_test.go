@@ -55,7 +55,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, req, po.Data.(blockchainInvokeData).Request)
 
-	complete, err := cm.RunOperation(context.Background(), po)
+	_, complete, err := cm.RunOperation(context.Background(), po)
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
@@ -87,8 +87,8 @@ func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
 func TestRunOperationNotSupported(t *testing.T) {
 	cm := newTestContractManager()
 
-	complete, err := cm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := cm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10371", err)
+	assert.Regexp(t, "FF10378", err)
 }

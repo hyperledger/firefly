@@ -2300,13 +2300,20 @@ func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) e
 	return r0
 }
 
-// InsertOperation provides a mock function with given fields: ctx, operation
-func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operation) error {
-	ret := _m.Called(ctx, operation)
+// InsertOperation provides a mock function with given fields: ctx, operation, hooks
+func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, operation)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
-		r0 = rf(ctx, operation)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, operation, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -47,10 +47,10 @@ func TestBatch2EWithDB(t *testing.T) {
 				Author: "did:firefly:org/abcd",
 			},
 			Namespace: "ns1",
-			Hash:      fftypes.NewRandB32(),
 			Node:      fftypes.NewUUID(),
 			Created:   fftypes.Now(),
 		},
+		Hash: fftypes.NewRandB32(),
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeUnpinned,
 		},
@@ -89,10 +89,10 @@ func TestBatch2EWithDB(t *testing.T) {
 				Author: "did:firefly:org/abcd",
 			},
 			Namespace: "ns1",
-			Hash:      fftypes.NewRandB32(),
 			Node:      fftypes.NewUUID(),
 			Created:   fftypes.Now(),
 		},
+		Hash: fftypes.NewRandB32(),
 		TX: fftypes.TransactionRef{
 			ID:   txid,
 			Type: fftypes.TransactionTypeBatchPin,
@@ -204,7 +204,7 @@ func TestUpsertBatchFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow(hash))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{BatchHeader: fftypes.BatchHeader{ID: batchID, Hash: hash}})
+	err := s.UpsertBatch(context.Background(), &fftypes.BatchPersisted{BatchHeader: fftypes.BatchHeader{ID: batchID}, Hash: hash})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

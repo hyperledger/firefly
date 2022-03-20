@@ -31,19 +31,19 @@ func TestRunWithOperationCache(t *testing.T) {
 
 	op1 := &fftypes.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Type:   fftypes.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
 		Status: fftypes.OpStatusFailed,
 	}
 	op1Copy := &fftypes.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Type:   fftypes.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
 		Status: fftypes.OpStatusPending,
 	}
 	op2 := &fftypes.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Type:   fftypes.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "2"},
 		Status: fftypes.OpStatusFailed,
 	}
@@ -72,7 +72,7 @@ func TestRunWithOperationCacheFail(t *testing.T) {
 
 	op1 := &fftypes.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Type:   fftypes.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
 		Status: fftypes.OpStatusFailed,
 	}
@@ -95,13 +95,13 @@ func TestAddOrReuseOperationNoCache(t *testing.T) {
 	ctx := context.Background()
 	op1 := &fftypes.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Type:   fftypes.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
 		Status: fftypes.OpStatusFailed,
 	}
 	op2 := &fftypes.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainBatchPin,
+		Type:   fftypes.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
 		Status: fftypes.OpStatusPending,
 	}

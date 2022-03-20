@@ -20,7 +20,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql/driver"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
@@ -32,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -46,11 +49,17 @@ type aggregator struct {
 	data          data.Manager
 	eventPoller   *eventPoller
 	verifierType  fftypes.VerifierType
-	newPins       chan int64
-	rewindBatches chan *fftypes.UUID
-	queuedRewinds chan *fftypes.UUID
+	rewindBatches chan fftypes.UUID
+	queuedRewinds chan fftypes.UUID
 	retry         *retry.Retry
 	metrics       metrics.Manager
+	batchCache    *ccache.Cache
+	batchCacheTTL time.Duration
+}
+
+type batchCacheEntry struct {
+	batch    *fftypes.BatchPersisted
+	manifest *fftypes.BatchManifest
 }
 
 func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
@@ -62,11 +71,16 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 		identity:      im,
 		data:          dm,
 		verifierType:  bi.VerifierType(),
-		newPins:       make(chan int64),
-		rewindBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
-		queuedRewinds: make(chan *fftypes.UUID, batchSize),
+		rewindBatches: make(chan fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
+		queuedRewinds: make(chan fftypes.UUID, batchSize),
 		metrics:       mm,
+		batchCacheTTL: config.GetDuration(config.BatchCacheTTL),
 	}
+	ag.batchCache = ccache.New(
+		// We use a LRU cache with a size-aware max
+		ccache.Configure().
+			MaxSize(config.GetByteSize(config.BatchCacheSize)),
+	)
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
 		eventBatchSize:             batchSize,
@@ -112,18 +126,20 @@ func (ag *aggregator) batchRewindListener() {
 }
 
 func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
+	l := log.L(ag.ctx)
+	var batchIDs []driver.Value
+	draining := true
+	for draining {
+		select {
+		case batchID := <-ag.queuedRewinds:
+			batchIDs = append(batchIDs, batchID)
+			l.Debugf("Rewinding for batch %s", &batchID)
+		default:
+			draining = false
+		}
+	}
 	// Retry idefinitely for database errors (until the context closes)
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
-		var batchIDs []driver.Value
-		draining := true
-		for draining {
-			select {
-			case batchID := <-ag.queuedRewinds:
-				batchIDs = append(batchIDs, batchID)
-			default:
-				draining = false
-			}
-		}
 		if len(batchIDs) > 0 {
 			fb := database.PinQueryFactory.NewFilter(ag.ctx)
 			filter := fb.And(
@@ -136,8 +152,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 			}
 			if len(sequences) > 0 {
 				rewind = true
-				offset = sequences[0].Sequence - 1
-				log.L(ag.ctx).Debugf("Rewinding for off-chain data arrival. New local pin sequence %d", offset)
+				offset = sequences[0].Sequence - 1 // offset is set to the last event we saw (so one behind the next pin we want)
 			}
 		}
 		return false, nil
@@ -184,7 +199,8 @@ func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced)
 	})
 }
 
-func (ag *aggregator) getPins(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
+func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]fftypes.LocallySequenced, error) {
+	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
 	pins, _, err := ag.database.GetPins(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(pins))
 	for i, p := range pins {
@@ -219,10 +235,8 @@ func (ag *aggregator) migrateManifest(ctx context.Context, persistedBatch *fftyp
 		log.L(ctx).Errorf("Invalid migration persisted batch: no payload")
 		return nil
 	}
-	return (&fftypes.Batch{
-		BatchHeader: persistedBatch.BatchHeader,
-		Payload:     fullPayload,
-	}).Manifest()
+
+	return persistedBatch.GenManifest(fullPayload.Messages, fullPayload.Data)
 }
 
 func (ag *aggregator) extractManifest(ctx context.Context, batch *fftypes.BatchPersisted) *fftypes.BatchManifest {
@@ -244,6 +258,48 @@ func (ag *aggregator) extractManifest(ctx context.Context, batch *fftypes.BatchP
 	}
 }
 
+func (ag *aggregator) getBatchCacheKey(id *fftypes.UUID, hash *fftypes.Bytes32) string {
+	return fmt.Sprintf("%s/%s", id, hash)
+}
+
+func (ag *aggregator) GetBatchForPin(ctx context.Context, pin *fftypes.Pin) (*fftypes.BatchPersisted, *fftypes.BatchManifest, error) {
+	cacheKey := ag.getBatchCacheKey(pin.Batch, pin.BatchHash)
+	cached := ag.batchCache.Get(cacheKey)
+	if cached != nil {
+		cached.Extend(ag.batchCacheTTL)
+		bce := cached.Value().(*batchCacheEntry)
+		log.L(ag.ctx).Debugf("Batch cache hit %s", cacheKey)
+		return bce.batch, bce.manifest, nil
+	}
+	batch, err := ag.database.GetBatchByID(ctx, pin.Batch)
+	if err != nil {
+		return nil, nil, err
+	}
+	if batch == nil {
+		return nil, nil, nil
+	}
+	if !batch.Hash.Equals(pin.BatchHash) {
+		log.L(ctx).Errorf("Batch %s hash does not match the pin. OffChain=%s OnChain=%s", pin.Batch, batch.Hash, pin.Hash)
+		return nil, nil, nil
+	}
+	manifest := ag.extractManifest(ctx, batch)
+	if manifest == nil {
+		log.L(ctx).Errorf("Batch %s manifest could not be extracted - pin %s is parked", pin.Batch, pin.Hash)
+		return nil, nil, nil
+	}
+	ag.cacheBatch(cacheKey, batch, manifest)
+	return batch, manifest, nil
+}
+
+func (ag *aggregator) cacheBatch(cacheKey string, batch *fftypes.BatchPersisted, manifest *fftypes.BatchManifest) {
+	bce := &batchCacheEntry{
+		batch:    batch,
+		manifest: manifest,
+	}
+	ag.batchCache.Set(cacheKey, bce, ag.batchCacheTTL)
+	log.L(ag.ctx).Debugf("Cached batch %s", cacheKey)
+}
+
 func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, state *batchState) (err error) {
 	l := log.L(ctx)
 
@@ -255,18 +311,13 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin, stat
 	dupMsgCheck := make(map[fftypes.UUID]bool)
 	for _, pin := range pins {
 
-		if batch == nil || *batch.ID != *pin.Batch {
-			batch, err = ag.database.GetBatchByID(ctx, pin.Batch)
+		if batch == nil || !batch.ID.Equals(pin.Batch) {
+			batch, manifest, err = ag.GetBatchForPin(ctx, pin)
 			if err != nil {
 				return err
 			}
 			if batch == nil {
-				l.Debugf("Batch %s not available - pin %s is parked", pin.Batch, pin.Hash)
-				continue
-			}
-			manifest = ag.extractManifest(ctx, batch)
-			if manifest == nil {
-				l.Errorf("Batch %s manifest could not be extracted - pin %s is parked", pin.Batch, pin.Hash)
+				l.Debugf("Pin %.10d batch unavailable: batch=%s pinIndex=%d hash=%s masked=%t", pin.Sequence, pin.Batch, pin.Index, pin.Hash, pin.Masked)
 				continue
 			}
 		}
@@ -530,19 +581,6 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data fftypes.DataArray) 
 			continue
 		}
 
-		// If there's a public reference, download it from there and stream it into the blob store
-		// We double check the hash on the way, to ensure the streaming from A->B worked ok.
-		if d.Blob.Public != "" {
-			blob, err = ag.data.CopyBlobPStoDX(ctx, d)
-			if err != nil {
-				return false, err
-			}
-			if blob != nil {
-				l.Debugf("Blob '%s' for data %s downloaded from shared storage to local DX with ref '%s'", blob.Hash, d.ID, blob.PayloadRef)
-				continue
-			}
-		}
-
 		// If we've reached here, the data isn't available yet.
 		// This isn't an error, we just need to wait for it to arrive.
 		l.Debugf("Blob '%s' not available for data %s", d.Blob.Hash, d.ID)
@@ -552,4 +590,45 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data fftypes.DataArray) 
 
 	return true, nil
 
+}
+
+func (ag *aggregator) rewindForBlobArrival(ctx context.Context, blobHash *fftypes.Bytes32) error {
+
+	batchIDs := make(map[fftypes.UUID]bool)
+
+	// We need to work out what pins potentially are unblocked by the arrival of this data
+
+	// Find any data associated with this blob
+	var data []*fftypes.DataRef
+	filter := database.DataQueryFactory.NewFilter(ctx).Eq("blob.hash", blobHash)
+	data, _, err := ag.database.GetDataRefs(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	// Find the messages assocated with that data
+	var messages []*fftypes.Message
+	for _, data := range data {
+		fb := database.MessageQueryFactory.NewFilter(ctx)
+		filter := fb.And(fb.Eq("confirmed", nil))
+		messages, _, err = ag.database.GetMessagesForData(ctx, data.ID, filter)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Find the unique batch IDs for all the messages
+	for _, msg := range messages {
+		if msg.BatchID != nil {
+			batchIDs[*msg.BatchID] = true
+		}
+	}
+
+	// Initiate rewinds for all the batchIDs that are potentially completed by the arrival of this data
+	for bid := range batchIDs {
+		var batchID = bid // cannot use the address of the loop var
+		log.L(ag.ctx).Infof("Batch '%s' contains reference to received blob %s", &bid, blobHash)
+		ag.rewindBatches <- batchID
+	}
+	return nil
 }

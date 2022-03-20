@@ -41,6 +41,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 		Masked:     true,
 		Hash:       fftypes.NewRandB32(),
 		Batch:      fftypes.NewUUID(),
+		BatchHash:  fftypes.NewRandB32(),
 		Index:      10,
 		Created:    fftypes.Now(),
 		Signer:     "0x12345",

@@ -29,24 +29,13 @@ type messageAndData struct {
 	data    fftypes.DataArray
 }
 
-func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32) (valid bool, err error) {
-
-	if !onchainHash.Equals(batch.Hash) {
-		log.L(ctx).Errorf("Invalid batch '%s'. Hash in batch '%s' does not match transaction hash '%s'", batch.ID, batch.Hash, onchainHash)
-		return false, nil // This is not retryable. skip this batch
-	}
-
-	_, valid, err = em.persistBatch(ctx, batch)
-	return valid, err
-}
-
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) (persistedBatch *fftypes.BatchPersisted, valid bool, err error) {
+func (em *eventManager) persistBatch(ctx context.Context, batch *fftypes.Batch) (persistedBatch *fftypes.BatchPersisted, valid bool, err error) {
 	l := log.L(ctx)
 
-	if batch.ID == nil || batch.Payload.TX.ID == nil {
-		l.Errorf("Invalid batch '%s'. Missing ID or transaction ID (%v)", batch.ID, batch.Payload.TX.ID)
+	if batch.ID == nil || batch.Payload.TX.ID == nil || batch.Hash == nil {
+		l.Errorf("Invalid batch. Missing ID (%v), transaction ID (%s) or hash (%s)", batch.ID, batch.Payload.TX.ID, batch.Hash)
 		return nil, false, nil // This is not retryable. skip this batch
 	}
 
@@ -64,7 +53,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	}
 
 	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
-	persistedBatch, _ = batch.Confirmed()
+	persistedBatch, manifest := batch.Confirmed()
 	manifestHash := fftypes.HashString(persistedBatch.Manifest.String())
 
 	// Verify the hash calculation.
@@ -94,7 +83,8 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	if err != nil || !valid {
 		return nil, valid, err
 	}
-	return persistedBatch, valid, err
+	em.aggregator.cacheBatch(em.aggregator.getBatchCacheKey(persistedBatch.ID, persistedBatch.Hash), persistedBatch, manifest)
+	return persistedBatch, true, err
 }
 
 func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batch *fftypes.Batch) (valid bool, err error) {
@@ -104,6 +94,9 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 	for i, data := range batch.Payload.Data {
 		if valid = em.validateBatchData(ctx, batch, i, data); !valid {
 			return false, nil
+		}
+		if valid, err = em.checkAndInitiateBlobDownloads(ctx, batch, i, data); !valid || err != nil {
+			return false, err
 		}
 		dataByID[*data.ID] = data
 	}
@@ -164,6 +157,29 @@ func (em *eventManager) validateBatchData(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return true
+}
+
+func (em *eventManager) checkAndInitiateBlobDownloads(ctx context.Context, batch *fftypes.Batch, i int, data *fftypes.Data) (bool, error) {
+
+	if data.Blob != nil && batch.Type == fftypes.BatchTypeBroadcast {
+		// Need to check if we need to initiate a download
+		blob, err := em.database.GetBlobMatchingHash(ctx, data.Blob.Hash)
+		if err != nil {
+			return false, err
+		}
+		if blob == nil {
+			if data.Blob.Public == "" {
+				log.L(ctx).Errorf("Invalid data entry %d id=%s in batch '%s' - missing public blob reference", i, data.ID, batch.ID)
+				return false, nil
+			}
+			if err = em.sharedDownload.InitiateDownloadBlob(ctx, data.Namespace, batch.Payload.TX.ID, data.ID, data.Blob.Public); err != nil {
+				return false, err
+			}
+		}
+
+	}
+
+	return true, nil
 }
 
 func (em *eventManager) validateBatchMessage(ctx context.Context, batch *fftypes.Batch, i int, msg *fftypes.Message) bool {

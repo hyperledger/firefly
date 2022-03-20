@@ -52,7 +52,7 @@ type Manager interface {
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
 }
 
 type privateMessaging struct {
@@ -140,8 +140,8 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		pm.dispatchUnpinnedBatch, bo)
 
 	om.RegisterHandler(ctx, pm, []fftypes.OpType{
-		fftypes.OpTypeDataExchangeBlobSend,
-		fftypes.OpTypeDataExchangeBatchSend,
+		fftypes.OpTypeDataExchangeSendBlob,
+		fftypes.OpTypeDataExchangeSendBatch,
 	})
 
 	return pm, nil
@@ -170,10 +170,7 @@ func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *ba
 }
 
 func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batch.DispatchState) error {
-	batch := &fftypes.Batch{
-		BatchHeader: state.Persisted.BatchHeader,
-		Payload:     state.Payload,
-	}
+	batch := state.Persisted.GenInflight(state.Messages, state.Data)
 	tw := &fftypes.TransportWrapper{
 		Batch: batch,
 	}
@@ -210,13 +207,13 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.Data
 				pm.exchange,
 				d.Namespace,
 				txid,
-				fftypes.OpTypeDataExchangeBlobSend)
+				fftypes.OpTypeDataExchangeSendBlob)
 			addTransferBlobInputs(op, node.ID, blob.Hash)
 			if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 				return err
 			}
 
-			return pm.operations.RunOperation(ctx, opTransferBlob(op, node, blob))
+			return pm.operations.RunOperation(ctx, opSendBlob(op, node, blob))
 		}
 	}
 	return nil
@@ -251,7 +248,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 			pm.exchange,
 			batch.Namespace,
 			batch.Payload.TX.ID,
-			fftypes.OpTypeDataExchangeBatchSend)
+			fftypes.OpTypeDataExchangeSendBatch)
 		var groupHash *fftypes.Bytes32
 		if tw.Group != nil {
 			groupHash = tw.Group.Hash
@@ -260,7 +257,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 		if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 			return err
 		}
-		if err = pm.operations.RunOperation(ctx, opBatchSend(op, node, tw)); err != nil {
+		if err = pm.operations.RunOperation(ctx, opSendBatch(op, node, tw)); err != nil {
 			return err
 		}
 	}

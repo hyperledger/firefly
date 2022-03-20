@@ -52,6 +52,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
 		Value:     fftypes.JSONAnyPtr(val.String()),
+		ValueSize: 12345,
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", dataID, mock.Anything).Return()
@@ -72,7 +73,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataJson, _ := json.Marshal(&data)
 	dataReadJson, _ := json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
-	assert.Equal(t, int64(data.Value.Length()), dataRead.ValueSize)
+	assert.Equal(t, int64(12345), dataRead.ValueSize)
 
 	// Update the data (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
@@ -118,7 +119,6 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataJson, _ = json.Marshal(&dataUpdated)
 	dataReadJson, _ = json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
-	assert.Equal(t, int64(dataUpdated.Value.Length()), dataRead.ValueSize)
 
 	valRestored, ok := dataRead.Value.JSONObjectOk()
 	assert.True(t, ok)

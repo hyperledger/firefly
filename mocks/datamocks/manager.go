@@ -32,29 +32,6 @@ func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *fftyp
 	return r0
 }
 
-// CopyBlobPStoDX provides a mock function with given fields: ctx, _a1
-func (_m *Manager) CopyBlobPStoDX(ctx context.Context, _a1 *fftypes.Data) (*fftypes.Blob, error) {
-	ret := _m.Called(ctx, _a1)
-
-	var r0 *fftypes.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data) *fftypes.Blob); ok {
-		r0 = rf(ctx, _a1)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Blob)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Data) error); ok {
-		r1 = rf(ctx, _a1)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // DownloadBLOB provides a mock function with given fields: ctx, ns, dataID
 func (_m *Manager) DownloadBLOB(ctx context.Context, ns string, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
 	ret := _m.Called(ctx, ns, dataID)

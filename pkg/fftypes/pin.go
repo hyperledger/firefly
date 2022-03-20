@@ -41,6 +41,7 @@ type Pin struct {
 	Masked     bool     `json:"masked,omitempty"`
 	Hash       *Bytes32 `json:"hash,omitempty"`
 	Batch      *UUID    `json:"batch,omitempty"`
+	BatchHash  *Bytes32 `json:"batchHash,omitempty"`
 	Index      int64    `json:"index"`
 	Dispatched bool     `json:"dispatched,omitempty"`
 	Signer     string   `json:"signer,omitempty"`

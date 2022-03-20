@@ -47,7 +47,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 		namespace:        "unit",
 		offsetName:       "test",
 		queryFactory:     database.EventQueryFactory,
-		getItems: func(c context.Context, f database.Filter) ([]fftypes.LocallySequenced, error) {
+		getItems: func(c context.Context, f database.Filter, o int64) ([]fftypes.LocallySequenced, error) {
 			events, _, err := mdi.GetEvents(c, f)
 			ls := make([]fftypes.LocallySequenced, len(events))
 			for i, e := range events {
@@ -226,6 +226,7 @@ func TestReadPageRewind(t *testing.T) {
 	}, func() (bool, int64) {
 		return true, 12345
 	})
+	ep.pollingOffset = 23456
 	cancel()
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
 	mdi.On("GetEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {

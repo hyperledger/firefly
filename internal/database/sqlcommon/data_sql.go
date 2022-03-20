@@ -63,7 +63,6 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 	if blob == nil {
 		blob = &fftypes.BlobRef{}
 	}
-	data.ValueSize = data.Value.Length()
 	return s.updateTx(ctx, tx,
 		sq.Update("data").
 			Set("validator", string(data.Validator)).
@@ -114,7 +113,6 @@ func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *fftypes.Da
 }
 
 func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, requestConflictEmptyResult bool) (int64, error) {
-	data.ValueSize = data.Value.Length()
 	return s.insertTxExt(ctx, tx,
 		s.setDataInsertValues(sq.Insert("data").Columns(dataColumnsWithValue...), data),
 		func() {

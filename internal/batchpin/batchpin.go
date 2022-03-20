@@ -35,7 +35,7 @@ type Submitter interface {
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
 }
 
 type batchPinSubmitter struct {
@@ -58,7 +58,7 @@ func NewBatchPinSubmitter(ctx context.Context, di database.Plugin, im identity.M
 		operations: om,
 	}
 	om.RegisterHandler(ctx, bp, []fftypes.OpType{
-		fftypes.OpTypeBlockchainBatchPin,
+		fftypes.OpTypeBlockchainPinBatch,
 	})
 	return bp, nil
 }
@@ -73,7 +73,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 		bp.blockchain,
 		batch.Namespace,
 		batch.TX.ID,
-		fftypes.OpTypeBlockchainBatchPin)
+		fftypes.OpTypeBlockchainPinBatch)
 	addBatchPinInputs(op, batch.ID, contexts)
 	if err := bp.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err

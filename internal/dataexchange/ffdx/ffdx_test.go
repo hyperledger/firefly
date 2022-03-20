@@ -466,7 +466,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
 	hash := fftypes.NewRandB32()
-	mcb.On("BLOBReceived", mock.Anything, mock.MatchedBy(func(b32 fftypes.Bytes32) bool {
+	mcb.On("PrivateBLOBReceived", mock.Anything, mock.MatchedBy(func(b32 fftypes.Bytes32) bool {
 		return b32 == *hash
 	}), int64(12345), fmt.Sprintf("ns1/%s", u.String())).Return(nil)
 	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"%s","size":12345}`, u.String(), hash.String())

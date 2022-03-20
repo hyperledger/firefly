@@ -16,6 +16,7 @@ package batch
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -100,7 +101,7 @@ func TestUnfilledBatch(t *testing.T) {
 	batch := <-dispatched
 
 	// Check we got all the messages in a single batch
-	assert.Equal(t, 5, len(batch.Payload.Messages))
+	assert.Equal(t, 5, len(batch.Messages))
 
 	bp.cancelCtx()
 	<-bp.done
@@ -145,10 +146,10 @@ func TestBatchSizeOverflow(t *testing.T) {
 	batch2 := <-dispatched
 
 	// Check we got all messages across two batches
-	assert.Equal(t, 1, len(batch1.Payload.Messages))
-	assert.Equal(t, msgIDs[0], batch1.Payload.Messages[0].Header.ID)
-	assert.Equal(t, 1, len(batch2.Payload.Messages))
-	assert.Equal(t, msgIDs[1], batch2.Payload.Messages[0].Header.ID)
+	assert.Equal(t, 1, len(batch1.Messages))
+	assert.Equal(t, msgIDs[0], batch1.Messages[0].Header.ID)
+	assert.Equal(t, 1, len(batch2.Messages))
+	assert.Equal(t, msgIDs[1], batch2.Messages[0].Header.ID)
 
 	bp.cancelCtx()
 	<-bp.done
@@ -218,13 +219,11 @@ func TestCalcPinsFail(t *testing.T) {
 				Group: gid,
 			},
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{
-					Group:  gid,
-					Topics: fftypes.FFStringArray{"topic1"},
-				}},
-			},
+		Messages: []*fftypes.Message{
+			{Header: fftypes.MessageHeader{
+				Group:  gid,
+				Topics: fftypes.FFStringArray{"topic1"},
+			}},
 		},
 	})
 	assert.Regexp(t, "FF10158", err)
@@ -347,7 +346,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	batch := <-dispatched
 
 	// Check we got all the messages in a single batch
-	assert.Equal(t, 5, len(batch.Payload.Messages))
+	assert.Equal(t, 5, len(batch.Messages))
 
 	bp.cancelCtx()
 	<-bp.done
@@ -370,24 +369,22 @@ func TestMaskContextsDuplicate(t *testing.T) {
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
-	payload := &fftypes.BatchPayload{
-		Messages: []*fftypes.Message{
-			{
-				Header: fftypes.MessageHeader{
-					ID:     fftypes.NewUUID(),
-					Type:   fftypes.MessageTypePrivate,
-					Group:  fftypes.NewRandB32(),
-					Topics: fftypes.FFStringArray{"topic1"},
-				},
+	messages := []*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
+				Type:   fftypes.MessageTypePrivate,
+				Group:  fftypes.NewRandB32(),
+				Topics: fftypes.FFStringArray{"topic1"},
 			},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, payload)
+	_, err := bp.maskContexts(bp.ctx, messages)
 	assert.NoError(t, err)
 
 	// 2nd time no DB ops
-	_, err = bp.maskContexts(bp.ctx, payload)
+	_, err = bp.maskContexts(bp.ctx, messages)
 	assert.NoError(t, err)
 
 	bp.cancelCtx()
@@ -409,20 +406,18 @@ func TestMaskContextsUpdataMessageFail(t *testing.T) {
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
-	payload := &fftypes.BatchPayload{
-		Messages: []*fftypes.Message{
-			{
-				Header: fftypes.MessageHeader{
-					ID:     fftypes.NewUUID(),
-					Type:   fftypes.MessageTypePrivate,
-					Group:  fftypes.NewRandB32(),
-					Topics: fftypes.FFStringArray{"topic1"},
-				},
+	messages := []*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
+				Type:   fftypes.MessageTypePrivate,
+				Group:  fftypes.NewRandB32(),
+				Topics: fftypes.FFStringArray{"topic1"},
 			},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, payload)
+	_, err := bp.maskContexts(bp.ctx, messages)
 	assert.Regexp(t, "pop", err)
 
 	bp.cancelCtx()
@@ -431,79 +426,91 @@ func TestMaskContextsUpdataMessageFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestDispatchWithPublicBlobUpdates(t *testing.T) {
+func TestBigBatchEstimate(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
-	dataID := fftypes.NewUUID()
-	dispatched := make(chan *DispatchState)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
-		state.BlobsPublished = append(state.BlobsPublished, dataID)
-		dispatched <- state
-		return nil
-	})
-	bp.conf.BatchMaxSize = 1
-	bp.conf.txType = fftypes.TransactionTypeUnpinned
-
-	mockRunAsGroupPassthrough(mdi)
-	mdi.On("UpdateData", mock.Anything, dataID, mock.Anything).Return(nil)
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-
-	mth := bp.txHelper.(*txcommonmocks.Helper)
-	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeUnpinned).Return(fftypes.NewUUID(), nil)
-
-	mdm := bp.data.(*datamocks.Manager)
-	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
-
-	// Dispatch the work
-	go func() {
-		bp.newWork <- &batchWork{
-			msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Topics: fftypes.FFStringArray{"topic1"}}, Sequence: int64(1000)},
-			data: fftypes.DataArray{
-				{ID: dataID, Blob: &fftypes.BlobRef{
-					Public: "public/ref",
-				}},
-			},
+	bd := []byte(`{
+		"id": "37ba893b-fcfa-4cf9-8ce8-34cd8bc9bc72",
+		"type": "broadcast",
+		"namespace": "default",
+		"node": "248ba775-f595-40a6-a989-c2f2faae2dea",
+		"author": "did:firefly:org/org_0",
+		"key": "0x7e3bb2198959d3a1c3ede9db1587560320ce8998",
+		"Group": null,
+		"created": "2022-03-18T14:57:33.228374398Z",
+		"hash": "7c620c12207ec153afea75d958de3edf601beced2570c798ebc246c2c44a5f66",
+		"payload": {
+		  "tx": {
+			"type": "batch_pin",
+			"id": "8d3f06b8-adb5-4745-a536-a9e262fd2e9f"
+		  },
+		  "messages": [
+			{
+			  "header": {
+				"id": "2b393190-28e7-4b86-8af6-00906e94989b",
+				"type": "broadcast",
+				"txtype": "batch_pin",
+				"author": "did:firefly:org/org_0",
+				"key": "0x7e3bb2198959d3a1c3ede9db1587560320ce8998",
+				"created": "2022-03-18T14:57:32.209734225Z",
+				"namespace": "default",
+				"topics": [
+				  "default"
+				],
+				"tag": "perf_02e01e12-b918-4982-8407-2f9a08d673f3_740",
+				"datahash": "b5b0c398450707b885f5973248ffa9a542f4c2f54860eba6c2d7aee48d0f9109"
+			  },
+			  "hash": "5fc430f1c8134c6c32c4e34ef65984843bb77bb19e73c862d464669537d96dbd",
+			  "data": [
+				{
+				  "id": "147743b4-bd23-4da1-bd21-90c4ad9f1650",
+				  "hash": "8ed265110f60711f79de1bc87b476e00bd8f8be436cdda3cf27fbf886d5e6ce6"
+				}
+			  ]
+			}
+		  ],
+		  "data": [
+			{
+			  "id": "147743b4-bd23-4da1-bd21-90c4ad9f1650",
+			  "validator": "json",
+			  "namespace": "default",
+			  "hash": "8ed265110f60711f79de1bc87b476e00bd8f8be436cdda3cf27fbf886d5e6ce6",
+			  "created": "2022-03-18T14:57:32.209705277Z",
+			  "value": {
+				"broadcastID": "740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740740"
+			  }
+			}
+		  ]
 		}
-	}()
+	  }`)
+	var batch fftypes.Batch
+	err := json.Unmarshal(bd, &batch)
+	assert.NoError(t, err)
 
-	batch := <-dispatched
-	assert.Equal(t, 1, len(batch.Payload.Messages))
-
-	bp.cancelCtx()
-	<-bp.done
-
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-	mth.AssertExpectations(t)
-}
-
-func TestDispatchWithPublicBlobUpdatesFail(t *testing.T) {
-	log.SetLevel("debug")
-	config.Reset()
-
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error { return nil })
-	bp.cancelCtx()
-
-	mockRunAsGroupPassthrough(mdi)
-	mdi.On("UpdateData", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-		Blob: &fftypes.BlobRef{
-			Public: "test/ref",
-		},
+	sizeEstimate := batchSizeEstimateBase
+	for i, m := range batch.Payload.Messages {
+		dataJSONSize := 0
+		bw := &batchWork{
+			msg: m,
+		}
+		for _, dr := range m.Data {
+			for _, d := range batch.Payload.Data {
+				if d.ID.Equals(dr.ID) {
+					bw.data = append(bw.data, d)
+					break
+				}
+			}
+			bd, err := json.Marshal(&bw.data)
+			assert.NoError(t, err)
+			dataJSONSize += len(bd)
+		}
+		md, err := json.Marshal(&bw.msg)
+		assert.NoError(t, err)
+		msgJSONSize := len(md)
+		t.Logf("Msg=%.3d/%s Estimate=%d JSON - Msg=%d Data=%d Total=%d", i, m.Header.ID, bw.estimateSize(), msgJSONSize, dataJSONSize, msgJSONSize+dataJSONSize)
+		sizeEstimate += bw.estimateSize()
 	}
-	err := bp.markPayloadDispatched(&DispatchState{
-		Payload: fftypes.BatchPayload{
-			Data: fftypes.DataArray{data},
-		},
-		BlobsPublished: []*fftypes.UUID{data.ID},
-	})
-	assert.Regexp(t, "FF10158", err)
 
-	mdi.AssertExpectations(t)
+	assert.Greater(t, sizeEstimate, int64(len(bd)))
 }

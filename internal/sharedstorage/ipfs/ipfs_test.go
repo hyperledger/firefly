@@ -91,7 +91,7 @@ func TestIPFSUploadSuccess(t *testing.T) {
 		}))
 
 	data := []byte(`hello world`)
-	payloadRef, err := i.PublishData(context.Background(), bytes.NewReader(data))
+	payloadRef, err := i.UploadData(context.Background(), bytes.NewReader(data))
 	assert.NoError(t, err)
 	assert.Equal(t, `Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD`, payloadRef)
 
@@ -116,7 +116,7 @@ func TestIPFSUploadFail(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
 
 	data := []byte(`hello world`)
-	_, err = i.PublishData(context.Background(), bytes.NewReader(data))
+	_, err = i.UploadData(context.Background(), bytes.NewReader(data))
 	assert.Regexp(t, "FF10136", err)
 
 }
@@ -140,7 +140,7 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
 		httpmock.NewBytesResponder(200, data))
 
-	r, err := i.RetrieveData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
+	r, err := i.DownloadData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
 	assert.NoError(t, err)
 	defer r.Close()
 
@@ -168,7 +168,7 @@ func TestIPFSDownloadFail(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
 		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
 
-	_, err = i.RetrieveData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
+	_, err = i.DownloadData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
 	assert.Regexp(t, "FF10136", err)
 
 }
@@ -191,7 +191,7 @@ func TestIPFSDownloadError(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
 		httpmock.NewErrorResponder(fmt.Errorf("pop")))
 
-	_, err = i.RetrieveData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
+	_, err = i.DownloadData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
 	assert.Regexp(t, "FF10136", err)
 
 }

@@ -36,8 +36,17 @@ import (
 
 func testConfigReset() {
 	config.Reset()
-	config.Set(config.BatchManagerMinimumPollTime, "1ns")
 	log.SetLevel("debug")
+}
+
+func newTestBatchManager(t *testing.T) (*batchManager, func()) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, err := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
+	assert.NoError(t, err)
+	return bm.(*batchManager), bm.(*batchManager).cancelCtx
 }
 
 func TestE2EDispatchBroadcast(t *testing.T) {
@@ -138,8 +147,8 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	assert.NotNil(t, status.Processors[0].Status.Flushing)
 
 	b := <-waitForDispatch
-	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
-	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+	assert.Equal(t, *msg.Header.ID, *b.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Data[0].ID)
 
 	close(readyForDispatch)
 
@@ -257,8 +266,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 
 	readyForDispatch <- true
 	b := <-waitForDispatch
-	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
-	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+	assert.Equal(t, *msg.Header.ID, *b.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Data[0].ID)
 
 	// Wait until everything closes
 	close(readyForDispatch)
@@ -517,26 +526,35 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 }
 
 func TestWaitForPollTimeout(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
-	bm.(*batchManager).messagePollTimeout = 1 * time.Microsecond
-	bm.(*batchManager).waitForNewMessages()
+	bm, _ := newTestBatchManager(t)
+	bm.messagePollTimeout = 1 * time.Microsecond
+	bm.waitForNewMessages()
 }
 
-func TestWaitForNewMessage(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
-	bm := bmi.(*batchManager)
+func TestRewindForNewMessage(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+	go bm.newMessageNotifier()
+	bm.messagePollTimeout = 1 * time.Second
+	bm.waitForNewMessages()
 	bm.readOffset = 22222
+	bm.NewMessages() <- 12346
+	bm.NewMessages() <- 12347
 	bm.NewMessages() <- 12345
 	bm.waitForNewMessages()
-	assert.Equal(t, int64(12344), bm.readOffset)
+	assert.Equal(t, int64(12344), bm.rewindOffset)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageIDs", mock.Anything, mock.MatchedBy(func(f database.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		v, err := fi.Children[0].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12344), v)
+		return true
+	})).Return(nil, nil)
+	_, err := bm.readPage()
+	assert.NoError(t, err)
 }
 
 func TestAssembleMessageDataNilData(t *testing.T) {

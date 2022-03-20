@@ -32,14 +32,16 @@ var (
 		"masked",
 		"hash",
 		"batch_id",
+		"batch_hash",
 		"idx",
 		"signer",
 		"dispatched",
 		"created",
 	}
 	pinFilterFieldMap = map[string]string{
-		"batch": "batch_id",
-		"index": "idx",
+		"batch":     "batch_id",
+		"batchhash": "batch_hash",
+		"index":     "idx",
 	}
 )
 
@@ -99,6 +101,7 @@ func (s *SQLCommon) setPinInsertValues(query sq.InsertBuilder, pin *fftypes.Pin)
 		pin.Masked,
 		pin.Hash,
 		pin.Batch,
+		pin.BatchHash,
 		pin.Index,
 		pin.Signer,
 		pin.Dispatched,
@@ -146,6 +149,7 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 		&pin.Masked,
 		&pin.Hash,
 		&pin.Batch,
+		&pin.BatchHash,
 		&pin.Index,
 		&pin.Signer,
 		&pin.Dispatched,
