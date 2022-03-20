@@ -110,3 +110,14 @@ export STACK_FILE
 
 go clean -testcache && go test -v . -run $TEST_SUITE
 checkOk $?
+
+if [ "$RESTART" == "true" ]; then
+  $CLI stop $STACK_NAME
+  checkOk $?
+
+  $CLI start $STACK_NAME
+  checkOk $?
+
+  go clean -testcache && go test -v . -run $TEST_SUITE
+  checkOk $?
+fi

@@ -45,6 +45,7 @@ jobs:
           BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
           DATABASE_TYPE: ${{ matrix.database-type }}
           BUILD_FIREFLY: false
+          RESTART: true
         run: ./test/e2e/run.sh
 
       - name: Archive container logs
