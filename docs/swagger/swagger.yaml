@@ -9043,14 +9043,15 @@ paths:
           description: Success
         default:
           description: ""
-  /network/did:
+  /network/identities/{did:.+}:
     get:
       description: 'TODO: Description'
       operationId: getIdentityByDID
       parameters:
       - description: 'TODO: Description'
-        in: query
+        in: path
         name: did
+        required: true
         schema:
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix

@@ -25,11 +25,10 @@ import (
 )
 
 var getIdentityByDID = &oapispec.Route{
-	Name:       "getIdentityByDID",
-	Path:       "network/did",
-	Method:     http.MethodGet,
-	PathParams: nil,
-	QueryParams: []*oapispec.QueryParam{
+	Name:   "getIdentityByDID",
+	Path:   "network/identities/{did:.+}",
+	Method: http.MethodGet,
+	PathParams: []*oapispec.PathParam{
 		{Name: "did", Description: i18n.MsgTBD},
 	},
 	FilterFactory:   nil,
@@ -38,7 +37,7 @@ var getIdentityByDID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, r.QP["did"])
+		output, err = getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, r.PP["did"])
 		return output, err
 	},
 }

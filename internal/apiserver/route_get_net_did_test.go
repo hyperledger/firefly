@@ -30,7 +30,7 @@ func TestGetIdentityByDID(t *testing.T) {
 	o, r := newTestAPIServer()
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
-	req := httptest.NewRequest("GET", "/api/v1/network/did?did=did:firefly:org/org_1", nil)
+	req := httptest.NewRequest("GET", "/api/v1/network/identities/did:firefly:org/org_1", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
