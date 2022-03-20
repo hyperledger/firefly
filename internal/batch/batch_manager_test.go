@@ -36,7 +36,6 @@ import (
 
 func testConfigReset() {
 	config.Reset()
-	config.Set(config.BatchManagerMinimumPollTime, "1ns")
 	log.SetLevel("debug")
 }
 
@@ -529,7 +528,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 func TestWaitForPollTimeout(t *testing.T) {
 	bm, _ := newTestBatchManager(t)
 	bm.messagePollTimeout = 1 * time.Microsecond
-	bm.waitForNewMessages(time.NewTimer(1 * time.Second))
+	bm.waitForNewMessages()
 }
 
 func TestRewindForNewMessage(t *testing.T) {
@@ -537,12 +536,12 @@ func TestRewindForNewMessage(t *testing.T) {
 	defer cancel()
 	go bm.newMessageNotifier()
 	bm.messagePollTimeout = 1 * time.Microsecond
-	bm.waitForNewMessages(time.NewTimer(1 * time.Second))
+	bm.waitForNewMessages()
 	bm.readOffset = 22222
 	bm.NewMessages() <- 12346
 	bm.NewMessages() <- 12347
 	bm.NewMessages() <- 12345
-	bm.waitForNewMessages(time.NewTimer(1 * time.Second))
+	bm.waitForNewMessages()
 	assert.Equal(t, int64(12344), bm.rewindOffset)
 
 	mdi := bm.database.(*databasemocks.Plugin)

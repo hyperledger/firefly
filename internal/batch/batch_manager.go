@@ -49,7 +49,6 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
-		minimumPollTime:            config.GetDuration(config.BatchManagerMinimumPollTime),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatcherMap:              make(map[string]*dispatcher),
 		allDispatchers:             make([]*dispatcher, 0),
@@ -104,7 +103,6 @@ type batchManager struct {
 	shoulderTap                chan bool
 	readPageSize               uint64
 	messagePollTimeout         time.Duration
-	minimumPollTime            time.Duration
 	startupOffsetRetryAttempts int
 }
 
@@ -241,9 +239,6 @@ func (bm *batchManager) messageSequencer() {
 	defer close(bm.done)
 
 	for {
-		// Set a timer for the minimum time to wait before the next poll
-		minimumPollDelay := time.NewTimer(bm.minimumPollTime)
-
 		// Each time round the loop we check for quiescing processors
 		bm.reapQuiescing()
 
@@ -282,7 +277,7 @@ func (bm *batchManager) messageSequencer() {
 
 		// Wait to be woken again
 		if !batchWasFull {
-			if done := bm.waitForNewMessages(minimumPollDelay); done {
+			if done := bm.waitForNewMessages(); done {
 				l.Debugf("Exiting: %s", err)
 				return
 			}
@@ -319,11 +314,8 @@ func (bm *batchManager) newMessageNotifier() {
 	}
 }
 
-func (bm *batchManager) waitForNewMessages(minimumPollDelay *time.Timer) (done bool) {
+func (bm *batchManager) waitForNewMessages() (done bool) {
 	l := log.L(bm.ctx)
-
-	// Always wait for the minimum poll delay to pop first
-	<-minimumPollDelay.C
 
 	timeout := time.NewTimer(bm.messagePollTimeout)
 	select {
