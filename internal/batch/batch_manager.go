@@ -49,11 +49,12 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
-		minimumPollTime:            config.GetDuration(config.BatchManagerMinimumPollTime),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatcherMap:              make(map[string]*dispatcher),
 		allDispatchers:             make([]*dispatcher, 0),
-		newMessages:                make(chan int64, 1),
+		newMessages:                make(chan int64, readPageSize),
+		shoulderTap:                make(chan bool, 1),
+		rewindOffset:               -1,
 		done:                       make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
@@ -97,9 +98,11 @@ type batchManager struct {
 	done                       chan struct{}
 	retry                      *retry.Retry
 	readOffset                 int64
+	rewindOffsetMux            sync.Mutex
+	rewindOffset               int64
+	shoulderTap                chan bool
 	readPageSize               uint64
 	messagePollTimeout         time.Duration
-	minimumPollTime            time.Duration
 	startupOffsetRetryAttempts int
 }
 
@@ -146,6 +149,8 @@ func (bm *batchManager) RegisterDispatcher(name string, txType fftypes.Transacti
 
 func (bm *batchManager) Start() error {
 	go bm.messageSequencer()
+	// We must be always ready to process DB events, or we block commits. So we have a dedicated worker for that
+	go bm.newMessageNotifier()
 	return nil
 }
 
@@ -184,8 +189,8 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 			bm.txHelper,
 		)
 		dispatcher.processors[name] = processor
+		log.L(bm.ctx).Debugf("Created new processor: %s", name)
 	}
-	log.L(bm.ctx).Debugf("Created new processor: %s", name)
 	return processor, nil
 }
 
@@ -207,6 +212,15 @@ func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *fftypes.Mess
 
 func (bm *batchManager) readPage() ([]*fftypes.IDAndSequence, error) {
 
+	// Pop out a rewind offset if there is one and it's behind the cursor
+	bm.rewindOffsetMux.Lock()
+	rewindOffset := bm.rewindOffset
+	if rewindOffset >= 0 && rewindOffset < bm.readOffset {
+		bm.readOffset = rewindOffset
+	}
+	bm.rewindOffset = -1
+	bm.rewindOffsetMux.Unlock()
+
 	var ids []*fftypes.IDAndSequence
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
@@ -225,9 +239,6 @@ func (bm *batchManager) messageSequencer() {
 	defer close(bm.done)
 
 	for {
-		// Set a timer for the minimum time to wait before the next poll
-		minimumPollDelay := time.NewTimer(bm.minimumPollTime)
-
 		// Each time round the loop we check for quiescing processors
 		bm.reapQuiescing()
 
@@ -265,7 +276,7 @@ func (bm *batchManager) messageSequencer() {
 		}
 
 		// Wait to be woken again
-		if !batchWasFull && !bm.drainNewMessages(minimumPollDelay) {
+		if !batchWasFull {
 			if done := bm.waitForNewMessages(); done {
 				l.Debugf("Exiting: %s", err)
 				return
@@ -275,25 +286,30 @@ func (bm *batchManager) messageSequencer() {
 }
 
 func (bm *batchManager) newMessageNotification(seq int64) {
-	log.L(bm.ctx).Debugf("Notification of message %d", seq)
-	// The readOffset is the last sequence we have already read.
-	// So we need to ensure it is at least one earlier, than this message sequence
+	// Determine if we need to queue q rewind
+	bm.rewindOffsetMux.Lock()
 	lastSequenceBeforeMsg := seq - 1
-	if lastSequenceBeforeMsg < bm.readOffset {
-		bm.readOffset = lastSequenceBeforeMsg
+	if bm.rewindOffset == -1 || lastSequenceBeforeMsg < bm.rewindOffset {
+		bm.rewindOffset = lastSequenceBeforeMsg
+	}
+	bm.rewindOffsetMux.Unlock()
+	// Shoulder tap that there is a new message, regardless of whether we rewound
+	// the cursor. As we need to wake up the poll.
+	select {
+	case bm.shoulderTap <- true:
+	default:
 	}
 }
 
-func (bm *batchManager) drainNewMessages(minimumPollDelay *time.Timer) bool {
-	// Drain any new message notifications, moving back our readOffset as required
-	newMessages := false
+func (bm *batchManager) newMessageNotifier() {
+	l := log.L(bm.ctx)
 	for {
 		select {
 		case seq := <-bm.newMessages:
 			bm.newMessageNotification(seq)
-			newMessages = true
-		case <-minimumPollDelay.C:
-			return newMessages
+		case <-bm.ctx.Done():
+			l.Debugf("Exiting due to cancelled context")
+			return
 		}
 	}
 }
@@ -301,11 +317,10 @@ func (bm *batchManager) drainNewMessages(minimumPollDelay *time.Timer) bool {
 func (bm *batchManager) waitForNewMessages() (done bool) {
 	l := log.L(bm.ctx)
 
-	// Otherwise set a timeout
 	timeout := time.NewTimer(bm.messagePollTimeout)
 	select {
-	case seq := <-bm.newMessages:
-		bm.newMessageNotification(seq)
+	case <-bm.shoulderTap:
+		timeout.Stop()
 		return false
 	case <-timeout.C:
 		l.Debugf("Woken after poll timeout")

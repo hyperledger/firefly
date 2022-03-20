@@ -25,23 +25,26 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) GetOrganizationByID(ctx context.Context, id string) (*fftypes.Identity, error) {
-	u, err := fftypes.ParseUUID(ctx, id)
+func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (org *fftypes.Identity, err error) {
+	u, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
+			return nil, err
+		}
+		if org, err = nm.database.GetIdentityByName(ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, nameOrID); err != nil {
+			return nil, err
+		}
+	} else if org, err = nm.database.GetIdentityByID(ctx, u); err != nil {
 		return nil, err
 	}
-	o, err := nm.database.GetIdentityByID(ctx, u)
-	if err != nil {
-		return nil, err
-	}
-	if o == nil {
+	if org == nil {
 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
-	if o.Type != fftypes.IdentityTypeOrg {
-		log.L(ctx).Warnf("Identity '%s' (%s) is not an org identity", o.DID, o.ID)
+	if org.Type != fftypes.IdentityTypeOrg {
+		log.L(ctx).Warnf("Identity '%s' (%s) is not an org identity", org.DID, org.ID)
 		return nil, nil
 	}
-	return o, nil
+	return org, nil
 }
 
 func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
@@ -50,23 +53,26 @@ func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndF
 	return nm.database.GetIdentities(ctx, filter)
 }
 
-func (nm *networkMap) GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error) {
-	u, err := fftypes.ParseUUID(ctx, id)
+func (nm *networkMap) GetNodeByNameOrID(ctx context.Context, nameOrID string) (node *fftypes.Identity, err error) {
+	u, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
+			return nil, err
+		}
+		if node, err = nm.database.GetIdentityByName(ctx, fftypes.IdentityTypeNode, fftypes.SystemNamespace, nameOrID); err != nil {
+			return nil, err
+		}
+	} else if node, err = nm.database.GetIdentityByID(ctx, u); err != nil {
 		return nil, err
 	}
-	n, err := nm.database.GetIdentityByID(ctx, u)
-	if err != nil {
-		return nil, err
-	}
-	if n == nil {
+	if node == nil {
 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
-	if n.Type != fftypes.IdentityTypeNode {
-		log.L(ctx).Warnf("Identity '%s' (%s) is not a node identity", n.DID, n.ID)
+	if node.Type != fftypes.IdentityTypeNode {
+		log.L(ctx).Warnf("Identity '%s' (%s) is not a node identity", node.DID, node.ID)
 		return nil, nil
 	}
-	return n, nil
+	return node, nil
 }
 
 func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {

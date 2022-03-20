@@ -22,9 +22,9 @@ type ContractCallType = FFEnum
 
 var (
 	// CallTypeInvoke is an invocation that submits a transaction for inclusion in the chain
-	CallTypeInvoke ContractCallType = ffEnum("contractcalltype", "invoke")
+	CallTypeInvoke = ffEnum("contractcalltype", "invoke")
 	// CallTypeQuery is a query that returns data from the chain
-	CallTypeQuery ContractCallType = ffEnum("contractcalltype", "query")
+	CallTypeQuery = ffEnum("contractcalltype", "query")
 )
 
 type ContractCallRequest struct {
@@ -74,7 +74,7 @@ func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (c *ContractAPI) Topic() string {
-	return namespaceTopic(c.Namespace)
+	return typeNamespaceNameTopicHash("contractapi", c.Namespace, c.Name)
 }
 
 func (c *ContractAPI) SetBroadcastMessage(msgID *UUID) {

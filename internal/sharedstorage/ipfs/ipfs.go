@@ -72,7 +72,7 @@ func (i *IPFS) Capabilities() *sharedstorage.Capabilities {
 	return i.capabilities
 }
 
-func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (string, error) {
+func (i *IPFS) UploadData(ctx context.Context, data io.Reader) (string, error) {
 	var ipfsResponse ipfsUploadResponse
 	res, err := i.apiClient.R().
 		SetContext(ctx).
@@ -86,7 +86,7 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (string, error) 
 	return ipfsResponse.Hash, err
 }
 
-func (i *IPFS) RetrieveData(ctx context.Context, payloadRef string) (data io.ReadCloser, err error) {
+func (i *IPFS) DownloadData(ctx context.Context, payloadRef string) (data io.ReadCloser, err error) {
 	res, err := i.gwClient.R().
 		SetContext(ctx).
 		SetDoNotParseResponse(true).

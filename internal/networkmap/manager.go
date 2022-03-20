@@ -35,9 +35,9 @@ type Manager interface {
 	RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
 	UpdateIdentity(ctx context.Context, ns string, id string, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
 
-	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Identity, error)
+	GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (*fftypes.Identity, error)
 	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
-	GetNodeByID(ctx context.Context, id string) (*fftypes.Identity, error)
+	GetNodeByNameOrID(ctx context.Context, nameOrID string) (*fftypes.Identity, error)
 	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 	GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error)
 	GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error)

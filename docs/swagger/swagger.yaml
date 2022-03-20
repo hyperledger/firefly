@@ -2282,6 +2282,8 @@ paths:
                     type: object
                   protocolId:
                     type: string
+                  topic:
+                    type: string
                 type: object
           description: Success
         default:
@@ -2349,6 +2351,8 @@ paths:
                   type: object
                 protocolId:
                   type: string
+                topic:
+                  type: string
               type: object
       responses:
         "200":
@@ -2394,6 +2398,8 @@ paths:
                         type: string
                     type: object
                   protocolId:
+                    type: string
+                  topic:
                     type: string
                 type: object
           description: Success
@@ -2495,6 +2501,8 @@ paths:
                         type: string
                     type: object
                   protocolId:
+                    type: string
+                  topic:
                     type: string
                 type: object
           description: Success
@@ -3583,6 +3591,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx
         schema:
           type: string
@@ -3640,6 +3653,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -3703,6 +3718,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -4818,6 +4835,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx
         schema:
           type: string
@@ -4875,6 +4897,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -5652,11 +5676,14 @@ paths:
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -5718,11 +5745,14 @@ paths:
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -5789,11 +5819,14 @@ paths:
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -5835,17 +5868,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: filter.group
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: filter.tag
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: filter.topics
+        name: filters
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5939,10 +5962,10 @@ paths:
                             type: string
                           tag:
                             type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
@@ -6021,10 +6044,10 @@ paths:
                           type: string
                         tag:
                           type: string
-                        topics:
-                          type: string
                       type: object
                     tag:
+                      type: string
+                    topic:
                       type: string
                     topics:
                       type: string
@@ -6172,10 +6195,10 @@ paths:
                             type: string
                           tag:
                             type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
@@ -6254,10 +6277,10 @@ paths:
                           type: string
                         tag:
                           type: string
-                        topics:
-                          type: string
                       type: object
                     tag:
+                      type: string
+                    topic:
                       type: string
                     topics:
                       type: string
@@ -6405,10 +6428,10 @@ paths:
                             type: string
                           tag:
                             type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
@@ -6525,10 +6548,10 @@ paths:
                             type: string
                           tag:
                             type: string
-                          topics:
-                            type: string
                         type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
@@ -8815,11 +8838,14 @@ paths:
                     tx: {}
                     type:
                       enum:
-                      - blockchain_batch_pin
+                      - blockchain_pin_batch
                       - blockchain_invoke
-                      - sharedstorage_batch_broadcast
-                      - dataexchange_batch_send
-                      - dataexchange_blob_send
+                      - sharedstorage_upload_batch
+                      - sharedstorage_upload_blob
+                      - sharedstorage_download_batch
+                      - sharedstorage_download_blob
+                      - dataexchange_send_batch
+                      - dataexchange_send_blob
                       - token_create_pool
                       - token_activate_pool
                       - token_transfer
@@ -9246,14 +9272,14 @@ paths:
           description: Success
         default:
           description: ""
-  /network/nodes/{nid}:
+  /network/nodes/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getNetworkNode
       parameters:
       - description: 'TODO: Description'
         in: path
-        name: nid
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -9647,14 +9673,14 @@ paths:
           description: Success
         default:
           description: ""
-  /network/organizations/{oid}:
+  /network/organizations/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getNetworkOrg
       parameters:
       - description: 'TODO: Description'
         in: path
-        name: oid
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -9988,6 +10014,7 @@ paths:
               schema:
                 properties:
                   batch: {}
+                  batchHash: {}
                   created: {}
                   dispatched:
                     type: boolean

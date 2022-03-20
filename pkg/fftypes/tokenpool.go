@@ -23,8 +23,8 @@ import (
 type TokenType = FFEnum
 
 var (
-	TokenTypeFungible    TokenType = ffEnum("tokentype", "fungible")
-	TokenTypeNonFungible TokenType = ffEnum("tokentype", "nonfungible")
+	TokenTypeFungible    = ffEnum("tokentype", "fungible")
+	TokenTypeNonFungible = ffEnum("tokentype", "nonfungible")
 )
 
 // TokenPoolState is the current confirmation state of a token pool
@@ -33,11 +33,11 @@ type TokenPoolState = FFEnum
 var (
 	// TokenPoolStateUnknown is a token pool that may not yet be activated
 	// (should not be used in the code - only set via database migration for previously-created pools)
-	TokenPoolStateUnknown TokenPoolState = ffEnum("tokenpoolstate", "unknown")
+	TokenPoolStateUnknown = ffEnum("tokenpoolstate", "unknown")
 	// TokenPoolStatePending is a token pool that has been announced but not yet confirmed
-	TokenPoolStatePending TokenPoolState = ffEnum("tokenpoolstate", "pending")
+	TokenPoolStatePending = ffEnum("tokenpoolstate", "pending")
 	// TokenPoolStateConfirmed is a token pool that has been confirmed on chain
-	TokenPoolStateConfirmed TokenPoolState = ffEnum("tokenpoolstate", "confirmed")
+	TokenPoolStateConfirmed = ffEnum("tokenpoolstate", "confirmed")
 )
 
 type TokenPool struct {
@@ -74,7 +74,7 @@ func (t *TokenPool) Validate(ctx context.Context) (err error) {
 }
 
 func (t *TokenPoolAnnouncement) Topic() string {
-	return namespaceTopic(t.Pool.Namespace)
+	return typeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.Name)
 }
 
 func (t *TokenPoolAnnouncement) SetBroadcastMessage(msgID *UUID) {

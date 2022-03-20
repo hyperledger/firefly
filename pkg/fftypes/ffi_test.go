@@ -138,7 +138,7 @@ func TestFFITopic(t *testing.T) {
 	ffi := &FFI{
 		Namespace: "ns1",
 	}
-	assert.Equal(t, "ff_ns_ns1", ffi.Topic())
+	assert.Equal(t, "01a982a7251400a7ec64fccce6febee3942a56e37967fa2ba26d7d6f43523c82", ffi.Topic())
 }
 
 func TestFFISetBroadCastMessage(t *testing.T) {

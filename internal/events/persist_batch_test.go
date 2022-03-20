@@ -29,7 +29,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPersistBatchFromBroadcast(t *testing.T) {
+func TestPersistBatch(t *testing.T) {
 
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -82,14 +82,15 @@ func TestPersistBatchFromBroadcast(t *testing.T) {
 			},
 		},
 	}
-	batch.Hash = fftypes.HashString(batch.Manifest().String())
+	bp, _ := batch.Confirmed()
+	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
-	_, err = em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash)
+	_, _, err = em.persistBatch(em.ctx, batch)
 	assert.EqualError(t, err, "pop") // Confirms we got to upserting the batch
 
 }
 
-func TestPersistBatchFromBroadcastNoCacheDataNotInBatch(t *testing.T) {
+func TestPersistBatchNoCacheDataNotInBatch(t *testing.T) {
 
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -102,15 +103,16 @@ func TestPersistBatchFromBroadcastNoCacheDataNotInBatch(t *testing.T) {
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 	data.ID = fftypes.NewUUID()
 	_ = data.Seal(em.ctx, nil)
-	batch.Hash = fftypes.HashString(batch.Manifest().String())
+	bp, _ := batch.Confirmed()
+	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
-	valid, err := em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash)
+	_, valid, err := em.persistBatch(em.ctx, batch)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
 }
 
-func TestPersistBatchFromBroadcastExtraDataInBatch(t *testing.T) {
+func TestPersistBatchExtraDataInBatch(t *testing.T) {
 
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -124,9 +126,10 @@ func TestPersistBatchFromBroadcastExtraDataInBatch(t *testing.T) {
 	data2 := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test2"`)}
 	_ = data2.Seal(em.ctx, nil)
 	batch.Payload.Data = append(batch.Payload.Data, data2)
-	batch.Hash = fftypes.HashString(batch.Manifest().String())
+	bp, _ := batch.Confirmed()
+	batch.Hash = fftypes.HashString(bp.Manifest.String())
 
-	valid, err := em.persistBatchFromBroadcast(em.ctx, batch, batch.Hash)
+	_, valid, err := em.persistBatch(em.ctx, batch)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
@@ -139,23 +142,6 @@ func TestPersistBatchNilMessageEntryop(t *testing.T) {
 
 	valid := em.validateBatchMessage(em.ctx, &fftypes.Batch{}, 0, nil)
 	assert.False(t, valid)
-
-}
-
-func TestPersistBatchFromBroadcastBadHash(t *testing.T) {
-
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf(("pop")))
-
-	batch := &fftypes.Batch{}
-	batch.Hash = fftypes.NewRandB32()
-
-	ok, err := em.persistBatchFromBroadcast(em.ctx, batch, fftypes.NewRandB32())
-	assert.NoError(t, err)
-	assert.False(t, ok)
 
 }
 
@@ -287,6 +273,30 @@ func TestPersistBatchContentDataHashMismatch(t *testing.T) {
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(database.HashMismatch)
 
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
+	assert.NoError(t, err)
+	assert.False(t, ok)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestPersistBatchContentDataMissingBlobRef(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`), Blob: &fftypes.BlobRef{
+		Hash: blob.Hash,
+	}}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data}, blob)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", mock.Anything, mock.Anything).Return(nil, nil)
+
+	ok, err := em.validateAndPersistBatchContent(em.ctx, batch)
 	assert.NoError(t, err)
 	assert.False(t, ok)
 

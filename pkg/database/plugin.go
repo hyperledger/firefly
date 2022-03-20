@@ -206,7 +206,7 @@ type iPinCollection interface {
 
 type iOperationCollection interface {
 	// InsertOperation - Insert an operation
-	InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
+	InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
 	ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
@@ -642,6 +642,11 @@ const (
 	CollectionTokenBalances OtherCollection = "tokenbalances"
 )
 
+// PostCompletionHook is a closure/function that will be called after a successful insertion.
+// This includes where the insert is nested in a RunAsGroup, and the database is transactional.
+// These hooks are useful when triggering code that relies on the inserted database object being available.
+type PostCompletionHook func()
+
 // Callbacks are the methods for passing data from plugin to core
 //
 // If Capabilities returns ClusterEvents=true then these should be broadcast to every instance within
@@ -784,16 +789,14 @@ var OperationQueryFactory = &queryFields{
 
 // SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
-	"id":            &UUIDField{},
-	"namespace":     &StringField{},
-	"name":          &StringField{},
-	"transport":     &StringField{},
-	"events":        &StringField{},
-	"filter.topics": &StringField{},
-	"filter.tag":    &StringField{},
-	"filter.group":  &StringField{},
-	"options":       &StringField{},
-	"created":       &TimeField{},
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"transport": &StringField{},
+	"events":    &StringField{},
+	"filters":   &JSONField{},
+	"options":   &StringField{},
+	"created":   &TimeField{},
 }
 
 // EventQueryFactory filter fields for data events
@@ -804,6 +807,7 @@ var EventQueryFactory = &queryFields{
 	"reference":  &UUIDField{},
 	"correlator": &UUIDField{},
 	"tx":         &UUIDField{},
+	"topic":      &StringField{},
 	"sequence":   &Int64Field{},
 	"created":    &TimeField{},
 }

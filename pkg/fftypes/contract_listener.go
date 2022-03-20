@@ -33,6 +33,7 @@ type ContractListener struct {
 	Location   *JSONAny                 `json:"location,omitempty"`
 	Created    *FFTime                  `json:"created,omitempty"`
 	Event      *FFISerializedEvent      `json:"event,omitempty"`
+	Topic      string                   `json:"topic,omitempty"`
 	Options    *ContractListenerOptions `json:"options,omitempty"`
 }
 

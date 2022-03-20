@@ -22,19 +22,19 @@ const transactionBaseSizeEstimate = int64(256)
 
 var (
 	// TransactionTypeNone deprecated - replaced by TransactionTypeUnpinned
-	TransactionTypeNone TransactionType = ffEnum("txtype", "none")
+	TransactionTypeNone = ffEnum("txtype", "none")
 	// TransactionTypeUnpinned indicates the message will be sent without pinning any evidence to the blockchain. Not supported for broadcast. The FireFly transaction will be used to track the sends to all group members.
-	TransactionTypeUnpinned TransactionType = ffEnum("txtype", "unpinned")
+	TransactionTypeUnpinned = ffEnum("txtype", "unpinned")
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
-	TransactionTypeBatchPin TransactionType = ffEnum("txtype", "batch_pin")
+	TransactionTypeBatchPin = ffEnum("txtype", "batch_pin")
 	// TransactionTypeTokenPool represents a token pool creation
-	TransactionTypeTokenPool TransactionType = ffEnum("txtype", "token_pool")
+	TransactionTypeTokenPool = ffEnum("txtype", "token_pool")
 	// TransactionTypeTokenTransfer represents a token transfer
-	TransactionTypeTokenTransfer TransactionType = ffEnum("txtype", "token_transfer")
+	TransactionTypeTokenTransfer = ffEnum("txtype", "token_transfer")
 	// TransactionTypeContractInvoke is a smart contract invoke
-	TransactionTypeContractInvoke OpType = ffEnum("txtype", "contract_invoke")
+	TransactionTypeContractInvoke = ffEnum("txtype", "contract_invoke")
 	// TransactionTypeTokenTransfer represents a token approval
-	TransactionTypeTokenApproval TransactionType = ffEnum("txtype", "token_approval")
+	TransactionTypeTokenApproval = ffEnum("txtype", "token_approval")
 )
 
 // TransactionRef refers to a transaction, in other types

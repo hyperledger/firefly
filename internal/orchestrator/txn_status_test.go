@@ -47,7 +47,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 		{
 			Status:  fftypes.OpStatusSucceeded,
 			ID:      fftypes.NewUUID(),
-			Type:    fftypes.OpTypeBlockchainBatchPin,
+			Type:    fftypes.OpTypeBlockchainPinBatch,
 			Updated: fftypes.UnixTime(0),
 			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
 		},
@@ -98,7 +98,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 			},
 			{
 				"type": "Operation",
-				"subtype": "blockchain_batch_pin",
+				"subtype": "blockchain_pin_batch",
 				"status": "Succeeded",
 				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",
@@ -123,7 +123,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 		{
 			Status: fftypes.OpStatusFailed,
 			ID:     fftypes.NewUUID(),
-			Type:   fftypes.OpTypeBlockchainBatchPin,
+			Type:   fftypes.OpTypeBlockchainPinBatch,
 			Error:  "complete failure",
 		},
 	}
@@ -143,7 +143,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 		"details": [
 			{
 				"type": "Operation",
-				"subtype": "blockchain_batch_pin",
+				"subtype": "blockchain_pin_batch",
 				"status": "Failed",
 				"id": "` + ops[0].ID.String() + `",
 				"error": "complete failure"
@@ -175,7 +175,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 		{
 			Status:  fftypes.OpStatusSucceeded,
 			ID:      fftypes.NewUUID(),
-			Type:    fftypes.OpTypeBlockchainBatchPin,
+			Type:    fftypes.OpTypeBlockchainPinBatch,
 			Updated: fftypes.UnixTime(0),
 		},
 	}
@@ -203,7 +203,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 			},
 			{
 				"type": "Operation",
-				"subtype": "blockchain_batch_pin",
+				"subtype": "blockchain_pin_batch",
 				"status": "Succeeded",
 				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `"

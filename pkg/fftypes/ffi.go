@@ -102,7 +102,7 @@ func (f *FFI) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (f *FFI) Topic() string {
-	return namespaceTopic(f.Namespace)
+	return typeNamespaceNameTopicHash("ffi", f.Namespace, f.Name)
 }
 
 func (f *FFI) SetBroadcastMessage(msgID *UUID) {

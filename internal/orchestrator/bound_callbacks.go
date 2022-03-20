@@ -21,12 +21,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 type boundCallbacks struct {
 	bi blockchain.Plugin
 	dx dataexchange.Plugin
+	ss sharedstorage.Plugin
 	ei events.EventManager
 }
 
@@ -46,8 +48,8 @@ func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpSta
 	return bc.ei.TransferResult(bc.dx, trackingID, status, update)
 }
 
-func (bc *boundCallbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
-	return bc.ei.BLOBReceived(bc.dx, peerID, hash, size, payloadRef)
+func (bc *boundCallbacks) PrivateBLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
+	return bc.ei.PrivateBLOBReceived(bc.dx, peerID, hash, size, payloadRef)
 }
 
 func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) (manifest string, err error) {
@@ -68,4 +70,12 @@ func (bc *boundCallbacks) BlockchainEvent(event *blockchain.EventWithSubscriptio
 
 func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.TokenApproval) error {
 	return bc.ei.TokensApproved(plugin, approval)
+}
+
+func (bc *boundCallbacks) SharedStorageBatchDownloaded(ns, payloadRef string, data []byte) (*fftypes.UUID, error) {
+	return bc.ei.SharedStorageBatchDownloaded(bc.ss, ns, payloadRef, data)
+}
+
+func (bc *boundCallbacks) SharedStorageBLOBDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) error {
+	return bc.ei.SharedStorageBLOBDownloaded(bc.ss, hash, size, payloadRef)
 }

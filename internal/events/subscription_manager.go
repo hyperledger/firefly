@@ -43,12 +43,12 @@ type subscription struct {
 	messageFilter      *messageFilter
 	blockchainFilter   *blockchainFilter
 	transactionFilter  *transactionFilter
+	topicFilter        *regexp.Regexp
 }
 
 type messageFilter struct {
 	groupFilter  *regexp.Regexp
 	tagFilter    *regexp.Regexp
-	topicsFilter *regexp.Regexp
 	authorFilter *regexp.Regexp
 }
 
@@ -326,20 +326,20 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
-	var topicsFilter *regexp.Regexp
+	var topicFilter *regexp.Regexp
 	if filter.DeprecatedTopics != "" {
-		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'topics' key - please change to 'message.topics' instead")
+		log.L(ctx).Warnf("Your subscription filter uses the deprecated 'topics' key - please change to 'topic' instead")
 		// set to topics filter, will be overwritten by non-deprecated key if both are present
-		topicsFilter, err = regexp.Compile(filter.DeprecatedTopics)
+		topicFilter, err = regexp.Compile(filter.DeprecatedTopics)
 		if err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topics", filter.DeprecatedTopics)
 		}
 	}
 
-	if filter.Message.Topics != "" {
-		topicsFilter, err = regexp.Compile(filter.Message.Topics)
+	if filter.Topic != "" {
+		topicFilter, err = regexp.Compile(filter.Topic)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.message.topics", filter.Message.Topics)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topic", filter.Topic)
 		}
 	}
 
@@ -364,10 +364,10 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
 		eventMatcher:       eventFilter,
+		topicFilter:        topicFilter,
 		messageFilter: &messageFilter{
 			tagFilter:    tagFilter,
 			groupFilter:  groupFilter,
-			topicsFilter: topicsFilter,
 			authorFilter: authorFilter,
 		},
 	}

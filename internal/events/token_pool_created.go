@@ -68,7 +68,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 		return err
 	}
 	log.L(ctx).Infof("Token pool confirmed, id=%s", pool.ID)
-	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID, pool.TX.ID)
+	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID, pool.TX.ID, pool.ID.String())
 	return em.database.InsertEvent(ctx, event)
 }
 
@@ -179,7 +179,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 		// Initiate a rewind if a batch was potentially completed by the arrival of this transaction
 		if batchID != nil {
 			log.L(em.ctx).Infof("Batch '%s' contains reference to received pool '%s'", batchID, pool.ProtocolID)
-			em.aggregator.rewindBatches <- batchID
+			em.aggregator.rewindBatches <- *batchID
 		}
 
 		// Announce the details of the new token pool with the blockchain event details

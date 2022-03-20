@@ -38,7 +38,8 @@ func TestBatchManifest(t *testing.T) {
 			},
 		},
 	}
-	tm := tw.Batch.Manifest()
+	bp, _ := tw.Batch.Confirmed()
+	tm := bp.GenManifest(tw.Batch.Payload.Messages, tw.Batch.Payload.Data)
 	assert.Equal(t, 2, len(tm.Messages))
 	assert.Equal(t, tw.Batch.Payload.Messages[0].Header.ID.String(), tm.Messages[0].ID.String())
 	assert.Equal(t, tw.Batch.Payload.Messages[1].Header.ID.String(), tm.Messages[1].ID.String())
@@ -49,12 +50,5 @@ func TestBatchManifest(t *testing.T) {
 	assert.Equal(t, tw.Batch.Payload.Data[1].ID.String(), tm.Data[1].ID.String())
 	assert.Equal(t, tw.Batch.Payload.Data[0].Hash.String(), tm.Data[0].Hash.String())
 	assert.Equal(t, tw.Batch.Payload.Data[1].Hash.String(), tm.Data[1].Hash.String())
-
-}
-
-func TestNillBatchManifest(t *testing.T) {
-
-	tw := TransportWrapper{}
-	assert.Nil(t, tw.Batch.Manifest())
 
 }

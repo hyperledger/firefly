@@ -41,7 +41,7 @@ func addTransferBlobInputs(op *fftypes.Operation, nodeID *fftypes.UUID, blobHash
 	}
 }
 
-func retrieveTransferBlobInputs(ctx context.Context, op *fftypes.Operation) (nodeID *fftypes.UUID, blobHash *fftypes.Bytes32, err error) {
+func retrieveSendBlobInputs(ctx context.Context, op *fftypes.Operation) (nodeID *fftypes.UUID, blobHash *fftypes.Bytes32, err error) {
 	nodeID, err = fftypes.ParseUUID(ctx, op.Input.GetString("node"))
 	if err == nil {
 		blobHash, err = fftypes.ParseBytes32(ctx, op.Input.GetString("hash"))
@@ -70,8 +70,8 @@ func retrieveBatchSendInputs(ctx context.Context, op *fftypes.Operation) (nodeID
 
 func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypeDataExchangeBlobSend:
-		nodeID, blobHash, err := retrieveTransferBlobInputs(ctx, op)
+	case fftypes.OpTypeDataExchangeSendBlob:
+		nodeID, blobHash, err := retrieveSendBlobInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
@@ -87,9 +87,9 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		} else if blob == nil {
 			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 		}
-		return opTransferBlob(op, node, blob), nil
+		return opSendBlob(op, node, blob), nil
 
-	case fftypes.OpTypeDataExchangeBatchSend:
+	case fftypes.OpTypeDataExchangeSendBatch:
 		nodeID, groupHash, batchID, err := retrieveBatchSendInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -117,31 +117,31 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 			return nil, err
 		}
 		transport := &fftypes.TransportWrapper{Group: group, Batch: batch}
-		return opBatchSend(op, node, transport), nil
+		return opSendBatch(op, node, transport), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
 	}
 }
 
-func (pm *privateMessaging) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error) {
+func (pm *privateMessaging) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
-		return false, pm.exchange.TransferBLOB(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
+		return nil, false, pm.exchange.TransferBLOB(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
 
 	case batchSendData:
 		payload, err := json.Marshal(data.Transport)
 		if err != nil {
-			return false, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+			return nil, false, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 		}
-		return false, pm.exchange.SendMessage(ctx, op.ID, data.Node.Profile.GetString("id"), payload)
+		return nil, false, pm.exchange.SendMessage(ctx, op.ID, data.Node.Profile.GetString("id"), payload)
 
 	default:
-		return false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
-func opTransferBlob(op *fftypes.Operation, node *fftypes.Identity, blob *fftypes.Blob) *fftypes.PreparedOperation {
+func opSendBlob(op *fftypes.Operation, node *fftypes.Identity, blob *fftypes.Blob) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
 		ID:   op.ID,
 		Type: op.Type,
@@ -149,7 +149,7 @@ func opTransferBlob(op *fftypes.Operation, node *fftypes.Identity, blob *fftypes
 	}
 }
 
-func opBatchSend(op *fftypes.Operation, node *fftypes.Identity, transport *fftypes.TransportWrapper) *fftypes.PreparedOperation {
+func opSendBatch(op *fftypes.Operation, node *fftypes.Identity, transport *fftypes.TransportWrapper) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
 		ID:   op.ID,
 		Type: op.Type,

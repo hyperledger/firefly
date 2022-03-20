@@ -33,6 +33,7 @@ func TestEstimateDataSize(t *testing.T) {
 		ValueSize: 4,
 	}
 	assert.Equal(t, dataSizeEstimateBase+int64(4), d.EstimateSize())
+	assert.Equal(t, dataSizeEstimateBase+int64(4), d.EstimateSize())
 }
 
 func TestDatatypeReference(t *testing.T) {

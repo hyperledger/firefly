@@ -26,11 +26,11 @@ type ValidatorType = FFEnum
 
 var (
 	// ValidatorTypeJSON is the validator type for JSON Schema validation
-	ValidatorTypeJSON ValidatorType = ffEnum("validatortype", "json")
+	ValidatorTypeJSON = ffEnum("validatortype", "json")
 	// ValidatorTypeNone explicitly disables validation, even when a datatype is set. Allowing categorization of datatype without validation.
-	ValidatorTypeNone ValidatorType = ffEnum("validatortype", "none")
+	ValidatorTypeNone = ffEnum("validatortype", "none")
 	// ValidatorTypeSystemDefinition is the validator type for system definitions
-	ValidatorTypeSystemDefinition ValidatorType = ffEnum("validatortype", "definition")
+	ValidatorTypeSystemDefinition = ffEnum("validatortype", "definition")
 )
 
 // Datatype is the structure defining a data definition, such as a JSON schema
@@ -75,7 +75,7 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (dt *Datatype) Topic() string {
-	return namespaceTopic(dt.Namespace)
+	return typeNamespaceNameTopicHash("datatype", dt.Namespace, dt.Name)
 }
 
 func (dt *Datatype) SetBroadcastMessage(msgID *UUID) {

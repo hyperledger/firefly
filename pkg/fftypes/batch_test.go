@@ -29,7 +29,7 @@ func TestSQLSerializedManifest(t *testing.T) {
 
 	msgID1 := NewUUID()
 	msgID2 := NewUUID()
-	batch := Batch{
+	batch := &Batch{
 		BatchHeader: BatchHeader{
 			ID: NewUUID(),
 		},
@@ -57,7 +57,9 @@ func TestSQLSerializedManifest(t *testing.T) {
 	assert.Equal(t, msgID1, mf.Messages[0].ID)
 	assert.Equal(t, msgID2, mf.Messages[1].ID)
 	mfHash := sha256.Sum256([]byte(mfString))
-	assert.Equal(t, HashString(batch.Manifest().String()).String(), hex.EncodeToString(mfHash[:]))
+	assert.Equal(t, HashString(bp.GenManifest(batch.Payload.Messages, batch.Payload.Data).String()).String(), hex.EncodeToString(mfHash[:]))
+
+	assert.Equal(t, batch, bp.GenInflight(batch.Payload.Messages, batch.Payload.Data))
 
 	assert.NotEqual(t, batch.Payload.Hash().String(), hex.EncodeToString(mfHash[:]))
 

@@ -35,6 +35,8 @@ import (
 var utConfPrefix = config.NewPluginConfig("metrics")
 
 func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitter {
+	config.Reset()
+
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
@@ -84,7 +86,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	contexts := []*fftypes.Bytes32{}
 
 	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
+		assert.Equal(t, fftypes.OpTypeBlockchainPinBatch, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.TX.ID, *op.Transaction)
 		return true
@@ -92,7 +94,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	mmi.On("IsMetricsEnabled").Return(false)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchPinData)
-		return op.Type == fftypes.OpTypeBlockchainBatchPin && data.Batch == batch
+		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
@@ -126,7 +128,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	contexts := []*fftypes.Bytes32{}
 
 	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
+		assert.Equal(t, fftypes.OpTypeBlockchainPinBatch, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.TX.ID, *op.Transaction)
 		return true
@@ -134,7 +136,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mmi.On("IsMetricsEnabled").Return(true)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchPinData)
-		return op.Type == fftypes.OpTypeBlockchainBatchPin && data.Batch == batch
+		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)

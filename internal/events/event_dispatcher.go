@@ -151,7 +151,8 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.eventPoller.closed
 }
 
-func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
+func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]fftypes.LocallySequenced, error) {
+	log.L(ctx).Tracef("Reading page of events > %d (first events would be %d)", offset, offset+1)
 	events, _, err := ed.database.GetEvents(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(events))
 	for i, e := range events {
@@ -188,16 +189,15 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		tx := event.Transaction
 		be := event.BlockchainEvent
 		tag := ""
+		topic := event.Topic
 		group := ""
 		author := ""
 		txType := ""
 		beName := ""
 		beListener := ""
-		var topics []string
 
 		if msg != nil {
 			tag = msg.Header.Tag
-			topics = msg.Header.Topics
 			author = msg.Header.Author
 			if msg.Header.Group != nil {
 				group = msg.Header.Group.String()
@@ -213,24 +213,22 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 			beListener = be.Listener.String()
 		}
 
+		if filter.topicFilter != nil {
+			topicsMatch := false
+			if filter.topicFilter.MatchString(topic) {
+				topicsMatch = true
+			}
+			if !topicsMatch {
+				continue
+			}
+		}
+
 		if filter.messageFilter != nil {
 			if filter.messageFilter.tagFilter != nil && !filter.messageFilter.tagFilter.MatchString(tag) {
 				continue
 			}
 			if filter.messageFilter.authorFilter != nil && !filter.messageFilter.authorFilter.MatchString(author) {
 				continue
-			}
-			if filter.messageFilter.topicsFilter != nil {
-				topicsMatch := false
-				for _, topic := range topics {
-					if filter.messageFilter.topicsFilter.MatchString(topic) {
-						topicsMatch = true
-						break
-					}
-				}
-				if !topicsMatch {
-					continue
-				}
 			}
 			if filter.messageFilter.groupFilter != nil && !filter.messageFilter.groupFilter.MatchString(group) {
 				continue
@@ -341,7 +339,7 @@ func (ed *eventDispatcher) handleNackOffsetUpdate(nack ackNack) {
 	// That means resetting the polling offest, and clearing out all our state
 	delete(ed.inflight, nack.id)
 	if ed.eventPoller.pollingOffset > nack.offset {
-		ed.eventPoller.rewindPollingOffset(nack.offset)
+		ed.eventPoller.rewindPollingOffset(nack.offset - 1)
 	}
 	ed.inflight = map[fftypes.UUID]*fftypes.Event{}
 }

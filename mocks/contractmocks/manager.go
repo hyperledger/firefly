@@ -418,24 +418,33 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) 
 }
 
 // RunOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (bool, error) {
+func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (fftypes.JSONObject, bool, error) {
 	ret := _m.Called(ctx, op)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation) bool); ok {
+	var r0 fftypes.JSONObject
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation) fftypes.JSONObject); ok {
 		r0 = rf(ctx, op)
 	} else {
-		r0 = ret.Get(0).(bool)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(fftypes.JSONObject)
+		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.PreparedOperation) error); ok {
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.PreparedOperation) bool); ok {
 		r1 = rf(ctx, op)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(bool)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.PreparedOperation) error); ok {
+		r2 = rf(ctx, op)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // ValidateFFIAndSetPathnames provides a mock function with given fields: ctx, ffi

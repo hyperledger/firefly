@@ -13,6 +13,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	sharedstorage "github.com/hyperledger/firefly/pkg/sharedstorage"
+
 	system "github.com/hyperledger/firefly/internal/events/system"
 
 	tokens "github.com/hyperledger/firefly/pkg/tokens"
@@ -30,20 +32,6 @@ func (_m *EventManager) AddSystemEventListener(ns string, el system.EventListene
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, system.EventListener) error); ok {
 		r0 = rf(ns, el)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// BLOBReceived provides a mock function with given fields: dx, peerID, hash, size, payloadRef
-func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
-	ret := _m.Called(dx, peerID, hash, size, payloadRef)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.Bytes32, int64, string) error); ok {
-		r0 = rf(dx, peerID, hash, size, payloadRef)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -220,6 +208,57 @@ func (_m *EventManager) OperationUpdate(plugin fftypes.Named, operationID *fftyp
 	}
 
 	return r0
+}
+
+// PrivateBLOBReceived provides a mock function with given fields: dx, peerID, hash, size, payloadRef
+func (_m *EventManager) PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
+	ret := _m.Called(dx, peerID, hash, size, payloadRef)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.Bytes32, int64, string) error); ok {
+		r0 = rf(dx, peerID, hash, size, payloadRef)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SharedStorageBLOBDownloaded provides a mock function with given fields: ss, hash, size, payloadRef
+func (_m *EventManager) SharedStorageBLOBDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) error {
+	ret := _m.Called(ss, hash, size, payloadRef)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(sharedstorage.Plugin, fftypes.Bytes32, int64, string) error); ok {
+		r0 = rf(ss, hash, size, payloadRef)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SharedStorageBatchDownloaded provides a mock function with given fields: ss, ns, payloadRef, data
+func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns string, payloadRef string, data []byte) (*fftypes.UUID, error) {
+	ret := _m.Called(ss, ns, payloadRef, data)
+
+	var r0 *fftypes.UUID
+	if rf, ok := ret.Get(0).(func(sharedstorage.Plugin, string, string, []byte) *fftypes.UUID); ok {
+		r0 = rf(ss, ns, payloadRef, data)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(sharedstorage.Plugin, string, string, []byte) error); ok {
+		r1 = rf(ss, ns, payloadRef, data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Start provides a mock function with given fields:

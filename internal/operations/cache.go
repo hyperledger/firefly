@@ -53,14 +53,14 @@ func getCacheKey(op *fftypes.Operation) (string, error) {
 	return string(key), nil
 }
 
-func beginCache(ctx context.Context) (ctx1 context.Context) {
+func CreateOperationRetryContext(ctx context.Context) (ctx1 context.Context) {
 	l := log.L(ctx).WithField("opcache", fftypes.ShortID())
 	ctx1 = log.WithLogger(ctx, l)
 	return context.WithValue(ctx1, operationCacheKey{}, operationCache{})
 }
 
 func RunWithOperationCache(ctx context.Context, fn func(ctx context.Context) error) error {
-	return fn(beginCache(ctx))
+	return fn(CreateOperationRetryContext(ctx))
 }
 
 func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error {

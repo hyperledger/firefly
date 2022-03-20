@@ -54,12 +54,14 @@ var (
 	APIRequestMaxTimeout = rootKey("api.requestMaxTimeout")
 	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
 	APIShutdownTimeout = rootKey("api.shutdownTimeout")
+	// BatchCacheSize
+	BatchCacheSize = rootKey("batch.cache.size")
+	// BatchCacheSize
+	BatchCacheTTL = rootKey("batch.cache.ttl")
 	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
 	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
 	BatchManagerReadPollTimeout = rootKey("batch.manager.pollTimeout")
-	// BatchManagerMinimumPollTime is the minimum duration between polls, to avoid continual polling at high throughput
-	BatchManagerMinimumPollTime = rootKey("batch.manager.minimumPollTime")
 	// BatchRetryFactor is the retry backoff factor for database operations performed by the batch manager
 	BatchRetryFactor = rootKey("batch.retry.factor")
 	// BatchRetryInitDelay is the retry initial delay for database operations
@@ -76,6 +78,18 @@ var (
 	BroadcastBatchPayloadLimit = rootKey("broadcast.batch.payloadLimit")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
+	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
+	DownloadWorkerCount = rootKey("download.worker.count")
+	// DownloadWorkerQueueLength is the length of the work queue in the channel to the workers - defaults to 2x the worker count
+	DownloadWorkerQueueLength = rootKey("download.worker.queueLength")
+	// DownloadRetryMaxAttempts is the maximum number of automatic attempts to make for each shared storage download before failing the operation
+	DownloadRetryMaxAttempts = rootKey("download.retry.maxAttempts")
+	// DownloadRetryInitDelay is the initial retry delay
+	DownloadRetryInitDelay = rootKey("download.retry.initialDelay")
+	// DownloadRetryMaxDelay is the maximum retry delay
+	DownloadRetryMaxDelay = rootKey("download.retry.maxDelay")
+	// DownloadRetryFactor is the backoff factor to use for retries
+	DownloadRetryFactor = rootKey("download.retry.factor")
 	// PrivateMessagingBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	PrivateMessagingBatchAgentTimeout = rootKey("privatemessaging.batch.agentTimeout")
 	// PrivateMessagingBatchSize is the maximum size of a batch for broadcast messages
@@ -150,6 +164,10 @@ var (
 	EventDispatcherRetryMaxDelay = rootKey("event.dispatcher.retry.maxDelay")
 	// EventDBEventsBufferSize the size of the buffer of change events
 	EventDBEventsBufferSize = rootKey("event.dbevents.bufferSize")
+	// EventListenerTopicCacheSize cache size for blockchain listeners addresses
+	EventListenerTopicCacheSize = rootKey("event.listenerToipc.cache.size")
+	// EventListenerTopicCacheTTL cache time-to-live for private group addresses
+	EventListenerTopicCacheTTL = rootKey("event.listenerToipc.cache.ttl")
 	// GroupCacheSize cache size for private group addresses
 	GroupCacheSize = rootKey("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses
@@ -305,9 +323,10 @@ func Reset() {
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(APIShutdownTimeout), "10s")
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
+	viper.SetDefault(string(BatchCacheSize), "1Mb")
+	viper.SetDefault(string(BatchCacheTTL), "5m")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
-	viper.SetDefault(string(BatchManagerMinimumPollTime), "50ms")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
 	viper.SetDefault(string(BatchRetryInitDelay), "250ms")
@@ -326,6 +345,11 @@ func Reset() {
 	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DataexchangeType), "https")
 	viper.SetDefault(string(DebugPort), -1)
+	viper.SetDefault(string(DownloadWorkerCount), 10)
+	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)
+	viper.SetDefault(string(DownloadRetryInitDelay), "100ms")
+	viper.SetDefault(string(DownloadRetryMaxDelay), "1m")
+	viper.SetDefault(string(DownloadRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
@@ -340,6 +364,8 @@ func Reset() {
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets", "webhooks"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
+	viper.SetDefault(string(EventListenerTopicCacheSize), "100Kb")
+	viper.SetDefault(string(EventListenerTopicCacheTTL), "5m")
 	viper.SetDefault(string(GroupCacheSize), "1Mb")
 	viper.SetDefault(string(GroupCacheTTL), "1h")
 	viper.SetDefault(string(AdminEnabled), false)
@@ -354,7 +380,7 @@ func Reset() {
 	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
-	viper.SetDefault(string(MessageWriterBatchTimeout), "50ms")
+	viper.SetDefault(string(MessageWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(MessageWriterCount), 5)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
