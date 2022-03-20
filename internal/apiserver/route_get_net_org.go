@@ -26,10 +26,10 @@ import (
 
 var getNetworkOrg = &oapispec.Route{
 	Name:   "getNetworkOrg",
-	Path:   "network/organizations/{oid}",
+	Path:   "network/organizations/{nameOrId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "oid", Description: i18n.MsgTBD},
+		{Name: "nameOrId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -38,7 +38,7 @@ var getNetworkOrg = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).NetworkMap().GetOrganizationByID(r.Ctx, r.PP["oid"])
+		output, err = getOr(r.Ctx).NetworkMap().GetOrganizationByNameOrID(r.Ctx, r.PP["nameOrId"])
 		return output, err
 	},
 }

@@ -26,10 +26,10 @@ import (
 
 var getNetworkNode = &oapispec.Route{
 	Name:   "getNetworkNode",
-	Path:   "network/nodes/{nid}",
+	Path:   "network/nodes/{nameOrId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "nid", Description: i18n.MsgTBD},
+		{Name: "nameOrId", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -38,7 +38,7 @@ var getNetworkNode = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).NetworkMap().GetNodeByID(r.Ctx, r.PP["nid"])
+		output, err = getOr(r.Ctx).NetworkMap().GetNodeByNameOrID(r.Ctx, r.PP["nameOrId"])
 		return output, err
 	},
 }
