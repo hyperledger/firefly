@@ -535,7 +535,7 @@ func TestRewindForNewMessage(t *testing.T) {
 	bm, cancel := newTestBatchManager(t)
 	defer cancel()
 	go bm.newMessageNotifier()
-	bm.messagePollTimeout = 1 * time.Microsecond
+	bm.messagePollTimeout = 1 * time.Second
 	bm.waitForNewMessages()
 	bm.readOffset = 22222
 	bm.NewMessages() <- 12346
