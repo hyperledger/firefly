@@ -18,8 +18,6 @@ package events
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -48,24 +46,33 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 	}()
 	log.L(em.ctx).Tracef("BatchPinComplete batch=%s info: %+v", batchPin.BatchID, batchPin.Event.Info)
 
-	if batchPin.BatchPayloadRef != "" {
-		return em.handleBroadcastPinComplete(batchPin, signingKey)
-	}
-	return em.handlePrivatePinComplete(batchPin, signingKey)
-}
-
-func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
 	// Here we simple record all the pins as parked, and emit an event for the aggregator
 	// to check whether the messages in the batch have been written.
-	return em.retry.Do(em.ctx, "persist private batch pins", func(attempt int) (bool, error) {
+	return em.retry.Do(em.ctx, "persist batch pins", func(attempt int) (bool, error) {
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			err := em.persistBatchTransaction(ctx, batchPin)
-			if err == nil {
-				err = em.persistContexts(ctx, batchPin, signingKey, true)
+			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeBatchPin,
+				ID:   batchPin.TransactionID,
+			})
+			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+				return err
 			}
-			return err
+			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
+				return err
+			}
+			private := batchPin.BatchPayloadRef == ""
+			if err := em.persistContexts(ctx, batchPin, signingKey, private); err != nil {
+				return err
+			}
+			// Kick off a download for broadcast batches
+			if !private {
+				if err := em.ssDownload.InitiateDownloadBatch(ctx, batchPin.Namespace, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
+					return err
+				}
+			}
+			return nil
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})
@@ -80,12 +87,13 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 	pins := make([]*fftypes.Pin, len(batchPin.Contexts))
 	for idx, hash := range batchPin.Contexts {
 		pins[idx] = &fftypes.Pin{
-			Masked:  private,
-			Hash:    hash,
-			Batch:   batchPin.BatchID,
-			Index:   int64(idx),
-			Signer:  signingKey.Value, // We don't store the type as we can infer that from the blockchain
-			Created: fftypes.Now(),
+			Masked:    private,
+			Hash:      hash,
+			Batch:     batchPin.BatchID,
+			BatchHash: batchPin.BatchHash,
+			Index:     int64(idx),
+			Signer:    signingKey.Value, // We don't store the type as we can infer that from the blockchain
+			Created:   fftypes.Now(),
 		}
 	}
 
@@ -103,50 +111,4 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 		}
 	}
 	return nil
-}
-
-func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
-	var body io.ReadCloser
-	if err := em.retry.Do(em.ctx, "retrieve data", func(attempt int) (retry bool, err error) {
-		body, err = em.sharedstorage.RetrieveData(em.ctx, batchPin.BatchPayloadRef)
-		return err != nil, err // retry indefinitely (until context closes)
-	}); err != nil {
-		return err
-	}
-	defer body.Close()
-
-	var batch *fftypes.Batch
-	err := json.NewDecoder(body).Decode(&batch)
-	if err != nil {
-		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s': %s", batchPin.BatchID, batchPin.Event.ProtocolID, err)
-		return nil // log and swallow unprocessable data
-	}
-	body.Close()
-
-	// At this point the batch is parsed, so any errors in processing need to be considered as:
-	// 1) Retryable - any transient error returned by processBatch is retried indefinitely
-	// 2) Swallowable - the data is invalid, and we have to move onto subsequent messages
-	// 3) Server shutting down - the context is cancelled (handled by retry)
-	return em.retry.Do(em.ctx, "persist batch", func(attempt int) (bool, error) {
-		// We process the batch into the DB as a single transaction (if transactions are supported), both for
-		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
-		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &batch.Payload.TX)
-			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
-				return err
-			}
-			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
-				return err
-			}
-
-			// Note that in the case of a bad batch broadcast, we don't store the pin. Because we know we
-			// are never going to be able to process it (we retrieved it successfully, it's just invalid).
-			valid, err := em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash)
-			if valid && err == nil {
-				err = em.persistContexts(ctx, batchPin, signingKey, false)
-			}
-			return err
-		})
-		return err != nil, err // retry indefinitely (until context closes)
-	})
 }

@@ -22,16 +22,22 @@ package fftypes
 type OpType = FFEnum
 
 var (
-	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
-	OpTypeBlockchainBatchPin = ffEnum("optype", "blockchain_batch_pin")
+	// OpTypeBlockchainPinBatch is a blockchain transaction to pin a batch
+	OpTypeBlockchainPinBatch = ffEnum("optype", "blockchain_pin_batch")
 	// OpTypeBlockchainInvoke is a smart contract invoke
 	OpTypeBlockchainInvoke = ffEnum("optype", "blockchain_invoke")
-	// OpTypeSharedStorageBatchBroadcast is a shared storage operation to store broadcast data
-	OpTypeSharedStorageBatchBroadcast = ffEnum("optype", "sharedstorage_batch_broadcast")
-	// OpTypeDataExchangeBatchSend is a private send
-	OpTypeDataExchangeBatchSend = ffEnum("optype", "dataexchange_batch_send")
-	// OpTypeDataExchangeBlobSend is a private send
-	OpTypeDataExchangeBlobSend = ffEnum("optype", "dataexchange_blob_send")
+	// OpTypeSharedStorageUploadBatch is a shared storage operation to upload broadcast data
+	OpTypeSharedStorageUploadBatch = ffEnum("optype", "sharedstorage_upload_batch")
+	// OpTypeSharedStorageUploadBlob is a shared storage operation to upload blob data
+	OpTypeSharedStorageUploadBlob = ffEnum("optype", "sharedstorage_upload_blob")
+	// OpTypeSharedStorageDownloadBatch is a shared storage operation to download broadcast data
+	OpTypeSharedStorageDownloadBatch = ffEnum("optype", "sharedstorage_download_batch")
+	// OpTypeSharedStorageDownloadBlob is a shared storage operation to download broadcast data
+	OpTypeSharedStorageDownloadBlob = ffEnum("optype", "sharedstorage_download_blob")
+	// OpTypeDataExchangeSendBatch is a private send of a batch
+	OpTypeDataExchangeSendBatch = ffEnum("optype", "dataexchange_send_batch")
+	// OpTypeDataExchangeSendBlob is a private send of a blob
+	OpTypeDataExchangeSendBlob = ffEnum("optype", "dataexchange_send_blob")
 	// OpTypeTokenCreatePool is a token pool creation
 	OpTypeTokenCreatePool = ffEnum("optype", "token_create_pool")
 	// OpTypeTokenActivatePool is a token pool activation

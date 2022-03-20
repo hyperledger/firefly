@@ -39,7 +39,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	operation := &fftypes.Operation{
 		ID:          operationID,
 		Namespace:   "ns1",
-		Type:        fftypes.OpTypeBlockchainBatchPin,
+		Type:        fftypes.OpTypeBlockchainPinBatch,
 		Transaction: fftypes.NewUUID(),
 		Status:      fftypes.OpStatusFailed,
 		Plugin:      "ethereum",
@@ -50,8 +50,12 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Updated:     fftypes.Now(),
 	}
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeCreated, "ns1", operationID).Return()
-	err := s.InsertOperation(ctx, operation)
+	hookCalled := false
+	err := s.InsertOperation(ctx, operation, func() {
+		hookCalled = true
+	})
 	assert.NoError(t, err)
+	assert.True(t, hookCalled)
 
 	// Query back the operation (by ID)
 	operationRead, err := s.GetOperationByID(ctx, operationID)

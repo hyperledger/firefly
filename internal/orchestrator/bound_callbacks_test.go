@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
+	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -36,7 +37,8 @@ func TestBoundCallbacks(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mti := &tokenmocks.Plugin{}
-	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei}
+	mss := &sharedstoragemocks.Plugin{}
+	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, ss: mss}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
@@ -64,8 +66,8 @@ func TestBoundCallbacks(t *testing.T) {
 	})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BLOBReceived", mdx, "peer1", *hash, int64(12345), "ns1/id1").Return(fmt.Errorf("pop"))
-	err = bc.BLOBReceived("peer1", *hash, 12345, "ns1/id1")
+	mei.On("PrivateBLOBReceived", mdx, "peer1", *hash, int64(12345), "ns1/id1").Return(fmt.Errorf("pop"))
+	err = bc.PrivateBLOBReceived("peer1", *hash, 12345, "ns1/id1")
 	assert.EqualError(t, err, "pop")
 
 	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return("manifest data", fmt.Errorf("pop"))
@@ -86,5 +88,13 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mei.On("BlockchainEvent", mock.AnythingOfType("*blockchain.EventWithSubscription")).Return(fmt.Errorf("pop"))
 	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
+	assert.EqualError(t, err, "pop")
+
+	mei.On("SharedStorageBatchDownloaded", mss, "ns1", "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
+	_, err = bc.SharedStorageBatchDownloaded("ns1", "payload1", []byte(`{}`))
+	assert.EqualError(t, err, "pop")
+
+	mei.On("SharedStorageBLOBDownloaded", mss, *hash, int64(12345), "payload1").Return(fmt.Errorf("pop"))
+	err = bc.SharedStorageBLOBDownloaded(*hash, 12345, "payload1")
 	assert.EqualError(t, err, "pop")
 }

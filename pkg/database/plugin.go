@@ -206,7 +206,7 @@ type iPinCollection interface {
 
 type iOperationCollection interface {
 	// InsertOperation - Insert an operation
-	InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
+	InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
 	ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
@@ -641,6 +641,11 @@ const (
 	CollectionOffsets       OtherCollection = "offsets"
 	CollectionTokenBalances OtherCollection = "tokenbalances"
 )
+
+// PostCompletionHook is a closure/function that will be called after a successful insertion.
+// This includes where the insert is nested in a RunAsGroup, and the database is transactional.
+// These hooks are useful when triggering code that relies on the inserted database object being available.
+type PostCompletionHook func()
 
 // Callbacks are the methods for passing data from plugin to core
 //

@@ -5676,11 +5676,14 @@ paths:
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -5742,11 +5745,14 @@ paths:
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -5813,11 +5819,14 @@ paths:
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -8829,11 +8838,14 @@ paths:
                     tx: {}
                     type:
                       enum:
-                      - blockchain_batch_pin
+                      - blockchain_pin_batch
                       - blockchain_invoke
-                      - sharedstorage_batch_broadcast
-                      - dataexchange_batch_send
-                      - dataexchange_blob_send
+                      - sharedstorage_upload_batch
+                      - sharedstorage_upload_blob
+                      - sharedstorage_download_batch
+                      - sharedstorage_download_blob
+                      - dataexchange_send_batch
+                      - dataexchange_send_blob
                       - token_create_pool
                       - token_activate_pool
                       - token_transfer
@@ -9947,6 +9959,7 @@ paths:
               schema:
                 properties:
                   batch: {}
+                  batchHash: {}
                   created: {}
                   dispatched:
                     type: boolean

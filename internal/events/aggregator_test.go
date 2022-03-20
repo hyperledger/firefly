@@ -40,6 +40,7 @@ import (
 )
 
 func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
+	config.Reset()
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
@@ -1366,7 +1367,6 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 
 	blobHash := fftypes.NewRandB32()
 
-	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
 	org1 := newTestOrg("org1")
@@ -1374,8 +1374,6 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", ag.ctx, blobHash).Return(nil, nil)
-
-	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(nil, nil)
 
 	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID}},
@@ -2007,69 +2005,6 @@ func TestResolveBlobsFoundPrivate(t *testing.T) {
 	assert.True(t, resolved)
 }
 
-func TestResolveBlobsCopyNotFound(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(nil, nil)
-
-	resolved, err := ag.resolveBlobs(ag.ctx, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
-			Hash:   fftypes.NewRandB32(),
-			Public: "public-ref",
-		}},
-	})
-
-	assert.NoError(t, err)
-	assert.False(t, resolved)
-}
-
-func TestResolveBlobsCopyFail(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
-
-	resolved, err := ag.resolveBlobs(ag.ctx, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
-			Hash:   fftypes.NewRandB32(),
-			Public: "public-ref",
-		}},
-	})
-
-	assert.EqualError(t, err, "pop")
-	assert.False(t, resolved)
-}
-
-func TestResolveBlobsCopyOk(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(&fftypes.Blob{}, nil)
-
-	resolved, err := ag.resolveBlobs(ag.ctx, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
-			Hash:   fftypes.NewRandB32(),
-			Public: "public-ref",
-		}},
-	})
-
-	assert.NoError(t, err)
-	assert.True(t, resolved)
-}
-
 func TestBatchActions(t *testing.T) {
 	prefinalizeCalled := false
 	finalizeCalled := false
@@ -2181,4 +2116,67 @@ func TestMigrateManifestFail(t *testing.T) {
 	})
 
 	assert.Nil(t, manifest)
+}
+
+func TestBatchCaching(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	persisted := &fftypes.BatchPersisted{
+		BatchHeader: batch.BatchHeader,
+		Manifest:    fftypes.JSONAnyPtr(batch.Manifest().String()),
+		Hash:        batch.Hash,
+		TX:          batch.Payload.TX,
+		PayloadRef:  "payload1",
+		Confirmed:   fftypes.Now(),
+	}
+	pin := &fftypes.Pin{
+		Batch:     batch.ID,
+		BatchHash: batch.Hash,
+	}
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", ag.ctx, batch.ID).Return(persisted, nil).Once() // to prove caching
+
+	batchRetrieved, manifest, err := ag.GetBatchForPin(ag.ctx, pin)
+	assert.NoError(t, err)
+	assert.Equal(t, persisted, batchRetrieved)
+	assert.Equal(t, batch.Manifest(), manifest)
+
+	batchRetrieved, manifest, err = ag.GetBatchForPin(ag.ctx, pin)
+	assert.NoError(t, err)
+	assert.Equal(t, persisted, batchRetrieved)
+	assert.Equal(t, batch.Manifest(), manifest)
+
+}
+
+func TestGetBatchForPinHashMismatch(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	persisted := &fftypes.BatchPersisted{
+		BatchHeader: batch.BatchHeader,
+		Manifest:    fftypes.JSONAnyPtr(batch.Manifest().String()),
+		Hash:        batch.Hash,
+		TX:          batch.Payload.TX,
+		PayloadRef:  "payload1",
+		Confirmed:   fftypes.Now(),
+	}
+	pin := &fftypes.Pin{
+		Batch:     batch.ID,
+		BatchHash: fftypes.NewRandB32(),
+	}
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBatchByID", ag.ctx, batch.ID).Return(persisted, nil)
+
+	batchRetrieved, manifest, err := ag.GetBatchForPin(ag.ctx, pin)
+	assert.Nil(t, batchRetrieved)
+	assert.Nil(t, manifest)
+	assert.Nil(t, err)
+
 }

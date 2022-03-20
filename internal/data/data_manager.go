@@ -46,7 +46,6 @@ type Manager interface {
 
 	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
 	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
-	CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error)
 	DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error)
 	HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error)
 	WaitStop()
@@ -268,7 +267,7 @@ func (dm *dataManager) UpdateMessageCache(msg *fftypes.Message, data fftypes.Dat
 		size: msg.EstimateSize(true),
 	}
 	dm.messageCache.Set(msg.Header.ID.String(), cacheEntry, dm.messageCacheTTL)
-	log.L(context.Background()).Debugf("Added to cache: %s (topics=%d,pins=%d)", msg.Header.ID.String(), len(msg.Header.Topics), len(msg.Pins))
+	log.L(context.Background()).Debugf("Added to message cache: %s (topics=%d,pins=%d)", msg.Header.ID.String(), len(msg.Header.Topics), len(msg.Pins))
 }
 
 // UpdateMessageIfCached is used in order to notify the fields of a message that are not initially filled in, have been filled in.
@@ -482,7 +481,6 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 
 	batch := &fftypes.Batch{
 		BatchHeader: persistedBatch.BatchHeader,
-		PayloadRef:  persistedBatch.PayloadRef,
 		Payload: fftypes.BatchPayload{
 			TX:       persistedBatch.TX,
 			Messages: make([]*fftypes.Message, len(manifest.Messages)),

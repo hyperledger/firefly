@@ -94,11 +94,10 @@ type batchProcessor struct {
 }
 
 type DispatchState struct {
-	Manifest       *fftypes.BatchManifest
-	Persisted      fftypes.BatchPersisted
-	Payload        fftypes.BatchPayload
-	Pins           []*fftypes.Bytes32
-	BlobsPublished []*fftypes.UUID
+	Manifest  *fftypes.BatchManifest
+	Persisted fftypes.BatchPersisted
+	Payload   fftypes.BatchPayload
+	Pins      []*fftypes.Bytes32
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -577,19 +576,6 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 
 			if err = bp.database.UpdateMessages(ctx, filter, allMsgsUpdate); err != nil {
 				return err
-			}
-
-			for _, dataID := range state.BlobsPublished {
-				for _, d := range state.Payload.Data {
-					if d.ID.Equals(dataID) {
-						dataUpdate := database.DataQueryFactory.NewUpdate(ctx).
-							Set("blob.public", state.Persisted.ID)
-						if err = bp.database.UpdateData(ctx, dataID, dataUpdate); err != nil {
-							return err
-						}
-						break
-					}
-				}
 			}
 
 			if bp.conf.txType == fftypes.TransactionTypeUnpinned {

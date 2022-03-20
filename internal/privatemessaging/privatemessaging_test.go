@@ -142,26 +142,26 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		PayloadRef: "/blob/1",
 	}, nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeDataExchangeBlobSend
+		return op.Type == fftypes.OpTypeDataExchangeSendBlob
 	})).Return(nil, nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeDataExchangeBlobSend
+		return op.Type == fftypes.OpTypeDataExchangeSendBlob
 	})).Return(nil, nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeDataExchangeBatchSend
+		return op.Type == fftypes.OpTypeDataExchangeSendBatch
 	})).Return(nil, nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeDataExchangeBatchSend
+		return op.Type == fftypes.OpTypeDataExchangeSendBatch
 	})).Return(nil, nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
-		if op.Type != fftypes.OpTypeDataExchangeBlobSend {
+		if op.Type != fftypes.OpTypeDataExchangeSendBlob {
 			return false
 		}
 		data := op.Data.(transferBlobData)
 		return *data.Node.ID == *node2.ID
 	})).Return(nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
-		if op.Type != fftypes.OpTypeDataExchangeBatchSend {
+		if op.Type != fftypes.OpTypeDataExchangeSendBatch {
 			return false
 		}
 		data := op.Data.(batchSendData)
@@ -179,8 +179,8 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 				},
 				Group:     groupID,
 				Namespace: "ns1",
-				Hash:      batchHash,
 			},
+			Hash: batchHash,
 		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -388,7 +388,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferBlobData)
-		return op.Type == fftypes.OpTypeDataExchangeBlobSend && *data.Node.ID == *node2.ID
+		return op.Type == fftypes.OpTypeDataExchangeSendBlob && *data.Node.ID == *node2.ID
 	})).Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
@@ -443,14 +443,14 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
-		if op.Type != fftypes.OpTypeDataExchangeBlobSend {
+		if op.Type != fftypes.OpTypeDataExchangeSendBlob {
 			return false
 		}
 		data := op.Data.(transferBlobData)
 		return *data.Node.ID == *node2.ID
 	})).Return(nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
-		if op.Type != fftypes.OpTypeDataExchangeBatchSend {
+		if op.Type != fftypes.OpTypeDataExchangeSendBatch {
 			return false
 		}
 		data := op.Data.(batchSendData)

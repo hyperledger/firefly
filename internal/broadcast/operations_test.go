@@ -17,9 +17,12 @@ package broadcast
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -33,7 +36,7 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageBatchBroadcast,
+		Type: fftypes.OpTypeSharedStorageUploadBatch,
 	}
 	bp := &fftypes.BatchPersisted{
 		BatchHeader: fftypes.BatchHeader{
@@ -43,14 +46,14 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	batch := &fftypes.Batch{
 		BatchHeader: bp.BatchHeader,
 	}
-	addBatchBroadcastInputs(op, bp.ID)
+	addUploadBatchInputs(op, bp.ID)
 
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
 	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
-	mps.On("PublishData", context.Background(), mock.Anything).Return("123", nil)
+	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdi.On("UpdateBatch", context.Background(), bp.ID, mock.MatchedBy(func(update database.Update) bool {
 		info, _ := update.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
@@ -62,12 +65,13 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 
 	po, err := bm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
-	assert.Equal(t, bp.ID, po.Data.(batchBroadcastData).Batch.ID)
+	assert.Equal(t, bp.ID, po.Data.(uploadBatchData).Batch.ID)
 
-	complete, err := bm.RunOperation(context.Background(), opBatchBroadcast(op, batch))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, bp))
 
 	assert.True(t, complete)
 	assert.NoError(t, err)
+	assert.Equal(t, "123", bp.PayloadRef)
 
 	mps.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -79,14 +83,14 @@ func TestPrepareAndRunBatchBroadcastHydrateFail(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageBatchBroadcast,
+		Type: fftypes.OpTypeSharedStorageUploadBatch,
 	}
 	bp := &fftypes.BatchPersisted{
 		BatchHeader: fftypes.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	addBatchBroadcastInputs(op, bp.ID)
+	addUploadBatchInputs(op, bp.ID)
 
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
@@ -116,7 +120,7 @@ func TestPrepareOperationBatchBroadcastBadInput(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeSharedStorageBatchBroadcast,
+		Type:  fftypes.OpTypeSharedStorageUploadBatch,
 		Input: fftypes.JSONObject{"id": "bad"},
 	}
 
@@ -130,7 +134,7 @@ func TestPrepareOperationBatchBroadcastError(t *testing.T) {
 
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeSharedStorageBatchBroadcast,
+		Type:  fftypes.OpTypeSharedStorageUploadBatch,
 		Input: fftypes.JSONObject{"id": batchID.String()},
 	}
 
@@ -147,7 +151,7 @@ func TestPrepareOperationBatchBroadcastNotFound(t *testing.T) {
 
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeSharedStorageBatchBroadcast,
+		Type:  fftypes.OpTypeSharedStorageUploadBatch,
 		Input: fftypes.JSONObject{"id": batchID.String()},
 	}
 
@@ -162,7 +166,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	complete, err := bm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := bm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10371", err)
@@ -181,7 +185,7 @@ func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {
 		},
 	}
 
-	complete, err := bm.RunOperation(context.Background(), opBatchBroadcast(op, batch))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &fftypes.BatchPersisted{}))
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10137", err)
@@ -199,9 +203,9 @@ func TestRunOperationBatchBroadcastPublishFail(t *testing.T) {
 	}
 
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
-	mps.On("PublishData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
+	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
-	complete, err := bm.RunOperation(context.Background(), opBatchBroadcast(op, batch))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &fftypes.BatchPersisted{}))
 
 	assert.False(t, complete)
 	assert.EqualError(t, err, "pop")
@@ -222,7 +226,7 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
-	mps.On("PublishData", context.Background(), mock.Anything).Return("123", nil)
+	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdi.On("UpdateBatch", context.Background(), batch.ID, mock.MatchedBy(func(update database.Update) bool {
 		info, _ := update.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
@@ -232,11 +236,281 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	complete, err := bm.RunOperation(context.Background(), opBatchBroadcast(op, batch))
+	bp := &fftypes.BatchPersisted{}
+	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, bp))
+	assert.Equal(t, "123", outputs["payloadRef"])
+
+	assert.True(t, complete)
+	assert.NoError(t, err)
+	assert.Equal(t, "123", bp.PayloadRef)
+
+	mps.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestPrepareAndRunUploadBlob(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	}
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+	addUploadBlobInputs(op, data.ID)
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	reader := ioutil.NopCloser(strings.NewReader("some data"))
+	mdi.On("GetDataByID", mock.Anything, data.ID, false).Return(data, nil)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
+	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
+	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, nil)
+	mdi.On("UpdateData", context.Background(), data.ID, mock.MatchedBy(func(update database.Update) bool {
+		info, _ := update.Finalize()
+		assert.Equal(t, 1, len(info.SetOperations))
+		assert.Equal(t, "blob.public", info.SetOperations[0].Field)
+		val, _ := info.SetOperations[0].Value.Value()
+		assert.Equal(t, "123", val)
+		return true
+	})).Return(nil)
+
+	po, err := bm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, data, po.Data.(uploadBlobData).Data)
+	assert.Equal(t, blob, po.Data.(uploadBlobData).Blob)
+
+	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+	assert.Equal(t, "123", outputs["payloadRef"])
 
 	assert.True(t, complete)
 	assert.NoError(t, err)
 
 	mps.AssertExpectations(t)
+	mdx.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+
+}
+
+func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	}
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+	addUploadBlobInputs(op, data.ID)
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetDataByID", mock.Anything, data.ID, false).Return(data, nil)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10109", err)
+
+	mps.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestPrepareUploadBlobGetBlobFailg(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	}
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+	addUploadBlobInputs(op, data.ID)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetDataByID", mock.Anything, data.ID, false).Return(data, nil)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestPrepareUploadBlobGetDataMissing(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	}
+	dataID := fftypes.NewUUID()
+	addUploadBlobInputs(op, dataID)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetDataByID", mock.Anything, dataID, false).Return(nil, nil)
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10109", err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestPrepareUploadBlobGetDataFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	}
+	dataID := fftypes.NewUUID()
+	addUploadBlobInputs(op, dataID)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetDataByID", mock.Anything, dataID, false).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestPrepareUploadBlobGetDataBadID(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	}
+
+	_, err := bm.PrepareOperation(context.Background(), op)
+	assert.Regexp(t, "FF10142", err)
+
+}
+
+func TestRunOperationUploadBlobUpdateFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{}
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mdi := bm.database.(*databasemocks.Plugin)
+
+	reader := ioutil.NopCloser(strings.NewReader("some data"))
+	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, nil)
+	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
+	mdi.On("UpdateData", context.Background(), data.ID, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+
+	assert.False(t, complete)
+	assert.Regexp(t, "pop", err)
+
+	mps.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestRunOperationUploadBlobUploadFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{}
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+
+	reader := ioutil.NopCloser(strings.NewReader("some data"))
+	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, nil)
+	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
+
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+
+	assert.False(t, complete)
+	assert.Regexp(t, "pop", err)
+
+	mps.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+}
+
+func TestRunOperationUploadBlobDownloadFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	op := &fftypes.Operation{}
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+	}
+	data := &fftypes.Data{
+		ID: fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash: blob.Hash,
+		},
+	}
+
+	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+
+	reader := ioutil.NopCloser(strings.NewReader("some data"))
+	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, fmt.Errorf("pop"))
+
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
+
+	assert.False(t, complete)
+	assert.Regexp(t, "pop", err)
+
+	mps.AssertExpectations(t)
+	mdx.AssertExpectations(t)
 }

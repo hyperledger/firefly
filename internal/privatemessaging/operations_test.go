@@ -32,7 +32,7 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBlobSend,
+		Type: fftypes.OpTypeDataExchangeSendBlob,
 		ID:   fftypes.NewUUID(),
 	}
 	node := &fftypes.Identity{
@@ -62,7 +62,7 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	assert.Equal(t, node, po.Data.(transferBlobData).Node)
 	assert.Equal(t, blob, po.Data.(transferBlobData).Blob)
 
-	complete, err := pm.RunOperation(context.Background(), po)
+	_, complete, err := pm.RunOperation(context.Background(), po)
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
@@ -76,7 +76,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		ID:   fftypes.NewUUID(),
 	}
 	node := &fftypes.Identity{
@@ -117,7 +117,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	assert.Equal(t, group, po.Data.(batchSendData).Transport.Group)
 	assert.Equal(t, batch, po.Data.(batchSendData).Transport.Batch)
 
-	complete, err := pm.RunOperation(context.Background(), po)
+	_, complete, err := pm.RunOperation(context.Background(), po)
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
@@ -132,7 +132,7 @@ func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		ID:   fftypes.NewUUID(),
 	}
 	node := &fftypes.Identity{
@@ -187,7 +187,7 @@ func TestPrepareOperationBlobSendBadInput(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeDataExchangeBlobSend,
+		Type:  fftypes.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{"node": "bad"},
 	}
 
@@ -202,7 +202,7 @@ func TestPrepareOperationBlobSendNodeFail(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 	blobHash := fftypes.NewRandB32()
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBlobSend,
+		Type: fftypes.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": nodeID.String(),
 			"hash": blobHash.String(),
@@ -225,7 +225,7 @@ func TestPrepareOperationBlobSendNodeNotFound(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 	blobHash := fftypes.NewRandB32()
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBlobSend,
+		Type: fftypes.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": nodeID.String(),
 			"hash": blobHash.String(),
@@ -257,7 +257,7 @@ func TestPrepareOperationBlobSendBlobFail(t *testing.T) {
 		},
 	}
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBlobSend,
+		Type: fftypes.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": node.ID.String(),
 			"hash": blobHash.String(),
@@ -290,7 +290,7 @@ func TestPrepareOperationBlobSendBlobNotFound(t *testing.T) {
 		},
 	}
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBlobSend,
+		Type: fftypes.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": node.ID.String(),
 			"hash": blobHash.String(),
@@ -312,7 +312,7 @@ func TestPrepareOperationBatchSendBadInput(t *testing.T) {
 	defer cancel()
 
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeDataExchangeBatchSend,
+		Type:  fftypes.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{"node": "bad"},
 	}
 
@@ -328,7 +328,7 @@ func TestPrepareOperationBatchSendNodeFail(t *testing.T) {
 	groupHash := fftypes.NewRandB32()
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  nodeID.String(),
 			"group": groupHash.String(),
@@ -353,7 +353,7 @@ func TestPrepareOperationBatchSendNodeNotFound(t *testing.T) {
 	groupHash := fftypes.NewRandB32()
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  nodeID.String(),
 			"group": groupHash.String(),
@@ -382,7 +382,7 @@ func TestPrepareOperationBatchSendGroupFail(t *testing.T) {
 		},
 	}
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": groupHash.String(),
@@ -412,7 +412,7 @@ func TestPrepareOperationBatchSendGroupNotFound(t *testing.T) {
 		},
 	}
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": groupHash.String(),
@@ -444,7 +444,7 @@ func TestPrepareOperationBatchSendBatchFail(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": group.Hash.String(),
@@ -477,7 +477,7 @@ func TestPrepareOperationBatchSendBatchNotFound(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeBatchSend,
+		Type: fftypes.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": group.Hash.String(),
@@ -500,7 +500,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	complete, err := pm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := pm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10371", err)
@@ -527,7 +527,7 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 		},
 	}
 
-	complete, err := pm.RunOperation(context.Background(), opBatchSend(op, node, transport))
+	_, complete, err := pm.RunOperation(context.Background(), opSendBatch(op, node, transport))
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10137", err)

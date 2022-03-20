@@ -45,7 +45,6 @@ type BatchHeader struct {
 	SignerRef
 	Group   *Bytes32 `jdon:"group,omitempty"`
 	Created *FFTime  `json:"created"`
-	Hash    *Bytes32 `json:"hash"`
 }
 
 type MessageManifestEntry struct {
@@ -54,12 +53,15 @@ type MessageManifestEntry struct {
 }
 
 // BatchManifest is all we need to persist to be able to reconstitute
-// an identical batch. It can be generated from a received batch to
+// an identical batch, and also all of the fields that are protected by
+// the hash of the batch.
+// It can be generated from a received batch to
 // confirm you have received an identical batch to that sent.
 type BatchManifest struct {
-	Version  uint                    `json:"version"`
-	ID       *UUID                   `json:"id"`
-	TX       TransactionRef          `json:"tx"`
+	Version uint           `json:"version"`
+	ID      *UUID          `json:"id"`
+	TX      TransactionRef `json:"tx"`
+	SignerRef
 	Messages []*MessageManifestEntry `json:"messages"`
 	Data     DataRefs                `json:"data"`
 }
@@ -67,13 +69,14 @@ type BatchManifest struct {
 // Batch is the full payload object used in-flight.
 type Batch struct {
 	BatchHeader
-	Payload    BatchPayload `json:"payload"`
-	PayloadRef string       `json:"payloadRef,omitempty"`
+	Hash    *Bytes32     `json:"hash"`
+	Payload BatchPayload `json:"payload"`
 }
 
 // BatchPersisted is the structure written to the database
 type BatchPersisted struct {
 	BatchHeader
+	Hash       *Bytes32       `json:"hash"`
 	Manifest   *JSONAny       `json:"manifest"`
 	TX         TransactionRef `json:"tx"`
 	PayloadRef string         `json:"payloadRef,omitempty"`
@@ -148,6 +151,7 @@ func (b *Batch) Confirmed() (*BatchPersisted, *BatchManifest) {
 	manifestString := manifest.String()
 	return &BatchPersisted{
 		BatchHeader: b.BatchHeader,
+		Hash:        b.Hash,
 		TX:          b.Payload.TX,
 		Manifest:    JSONAnyPtr(manifestString),
 		Confirmed:   Now(),

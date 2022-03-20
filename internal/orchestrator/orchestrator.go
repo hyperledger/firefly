@@ -41,6 +41,7 @@ import (
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
+	"github.com/hyperledger/firefly/internal/ssdownload"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -166,6 +167,7 @@ type orchestrator struct {
 	node           *fftypes.UUID
 	metrics        metrics.Manager
 	operations     operations.Manager
+	ssDownload     ssdownload.Manager
 	txHelper       txcommon.Helper
 }
 
@@ -201,6 +203,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
+	or.bc.ss = or.sharedstorage
 	return err
 }
 
@@ -221,6 +224,9 @@ func (or *orchestrator) Start() error {
 	}
 	if err == nil {
 		err = or.messaging.Start()
+	}
+	if err == nil {
+		err = or.ssDownload.Start()
 	}
 	if err == nil {
 		for _, el := range or.tokens {
@@ -251,6 +257,10 @@ func (or *orchestrator) WaitStop() {
 	if or.data != nil {
 		or.data.WaitStop()
 		or.data = nil
+	}
+	if or.ssDownload != nil {
+		or.ssDownload.WaitStop()
+		or.ssDownload = nil
 	}
 	or.started = false
 }
@@ -478,7 +488,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.operations == nil {
-		if or.operations, err = operations.NewOperationsManager(ctx, or.database, or.tokens); err != nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.database); err != nil {
 			return err
 		}
 	}
@@ -519,8 +529,15 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	or.definitions = definitions.NewDefinitionHandlers(or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.broadcast, or.messaging, or.assets, or.contracts)
 
+	if or.ssDownload == nil {
+		or.ssDownload, err = ssdownload.NewDownloadManager(ctx, or.database, or.sharedstorage, or.dataexchange, or.operations, &or.bc)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics, or.txHelper)
+		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.ssDownload, or.metrics, or.txHelper)
 		if err != nil {
 			return err
 		}

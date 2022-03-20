@@ -58,7 +58,7 @@ func retrieveBatchPinInputs(ctx context.Context, op *fftypes.Operation) (batchID
 
 func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypeBlockchainBatchPin:
+	case fftypes.OpTypeBlockchainPinBatch:
 		batchID, contexts, err := retrieveBatchPinInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -76,11 +76,11 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.O
 	}
 }
 
-func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error) {
+func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case batchPinData:
 		batch := data.Batch
-		return false, bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
+		return nil, false, bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
 			Namespace:       batch.Namespace,
 			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,
@@ -90,7 +90,7 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 		})
 
 	default:
-		return false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
 	}
 }
 

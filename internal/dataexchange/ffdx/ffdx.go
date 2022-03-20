@@ -375,7 +375,7 @@ func (h *FFDX) eventLoop() {
 					l.Errorf("Invalid hash received in DX event: '%s'", msg.Hash)
 					err = nil // still confirm the message
 				} else {
-					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Size, msg.Path)
+					err = h.callbacks.PrivateBLOBReceived(msg.Sender, *hash, msg.Size, msg.Path)
 				}
 			case blobAcknowledged:
 				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{

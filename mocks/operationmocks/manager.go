@@ -94,3 +94,17 @@ func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperati
 
 	return r0
 }
+
+// RunOperationWithFailState provides a mock function with given fields: ctx, op, failState
+func (_m *Manager) RunOperationWithFailState(ctx context.Context, op *fftypes.PreparedOperation, failState fftypes.OpStatus) error {
+	ret := _m.Called(ctx, op, failState)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation, fftypes.OpStatus) error); ok {
+		r0 = rf(ctx, op, failState)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

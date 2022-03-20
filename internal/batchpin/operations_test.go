@@ -30,7 +30,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainBatchPin,
+		Type: fftypes.OpTypeBlockchainPinBatch,
 		ID:   fftypes.NewUUID(),
 	}
 	batch := &fftypes.BatchPersisted{
@@ -56,7 +56,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, batch, po.Data.(batchPinData).Batch)
 
-	complete, err := bp.RunOperation(context.Background(), opBatchPin(op, batch, contexts))
+	_, complete, err := bp.RunOperation(context.Background(), opBatchPin(op, batch, contexts))
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
@@ -77,7 +77,7 @@ func TestPrepareOperationBatchPinBadBatch(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
 	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeBlockchainBatchPin,
+		Type:  fftypes.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{"batch": "bad"},
 	}
 
@@ -89,7 +89,7 @@ func TestPrepareOperationBatchPinBadContext(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainBatchPin,
+		Type: fftypes.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{
 			"batch":    fftypes.NewUUID().String(),
 			"contexts": []string{"bad"},
@@ -103,7 +103,7 @@ func TestPrepareOperationBatchPinBadContext(t *testing.T) {
 func TestRunOperationNotSupported(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
-	complete, err := bp.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := bp.RunOperation(context.Background(), &fftypes.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10371", err)
@@ -114,7 +114,7 @@ func TestPrepareOperationBatchPinError(t *testing.T) {
 
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainBatchPin,
+		Type: fftypes.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{
 			"batch":    batchID.String(),
 			"contexts": []string{},
@@ -133,7 +133,7 @@ func TestPrepareOperationBatchPinNotFound(t *testing.T) {
 
 	batchID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainBatchPin,
+		Type: fftypes.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{
 			"batch":    batchID.String(),
 			"contexts": []string{},

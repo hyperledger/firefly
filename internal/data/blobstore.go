@@ -143,37 +143,6 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	return data, nil
 }
 
-func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error) {
-
-	reader, err := bs.sharedstorage.RetrieveData(ctx, data.Blob.Public)
-	if err != nil {
-		return nil, err
-	}
-	if reader == nil {
-		log.L(ctx).Infof("Blob '%s' not found in shared storage", data.Blob.Public)
-		return nil, nil
-	}
-	defer reader.Close()
-
-	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, data.Namespace, data.ID, data.Blob.Hash, reader)
-	if err != nil {
-		return nil, err
-	}
-	log.L(ctx).Infof("Transferred blob '%s' (%s) from shared storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.Blob.Public, payloadRef)
-
-	blob = &fftypes.Blob{
-		Hash:       hash,
-		Size:       blobSize,
-		PayloadRef: payloadRef,
-		Created:    fftypes.Now(),
-	}
-	err = bs.database.InsertBlob(ctx, blob)
-	if err != nil {
-		return nil, err
-	}
-	return blob, nil
-}
-
 func (bs *blobStore) DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
 
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {

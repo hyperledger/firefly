@@ -50,7 +50,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error) {
+func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...database.PostCompletionHook) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -76,6 +76,9 @@ func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Oper
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeCreated, operation.Namespace, operation.ID)
+			for _, hook := range hooks {
+				hook()
+			}
 		},
 	); err != nil {
 		return err

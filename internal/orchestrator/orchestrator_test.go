@@ -42,6 +42,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/ssdownloadmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -74,6 +75,7 @@ type testOrchestrator struct {
 	mom *operationmocks.Manager
 	mbp *batchpinmocks.Submitter
 	mth *txcommonmocks.Helper
+	msd *ssdownloadmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -103,6 +105,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mom: &operationmocks.Manager{},
 		mbp: &batchpinmocks.Submitter{},
 		mth: &txcommonmocks.Helper{},
+		msd: &ssdownloadmocks.Manager{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -122,6 +125,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
+	tor.orchestrator.ssDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
@@ -482,6 +486,14 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.ssDownload = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestInitBatchComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
@@ -571,6 +583,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.mpm.On("Start").Return(nil)
 	or.mam.On("Start").Return(nil)
+	or.msd.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -587,6 +600,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mam.On("Start").Return(nil)
 	or.mti.On("Start").Return(nil)
 	or.mmi.On("Start").Return(nil)
+	or.msd.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
@@ -594,6 +608,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mam.On("WaitStop").Return(nil)
 	or.mti.On("WaitStop").Return(nil)
 	or.mdm.On("WaitStop").Return(nil)
+	or.msd.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()

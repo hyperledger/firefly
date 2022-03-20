@@ -54,6 +54,10 @@ var (
 	APIRequestMaxTimeout = rootKey("api.requestMaxTimeout")
 	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
 	APIShutdownTimeout = rootKey("api.shutdownTimeout")
+	// BatchCacheSize
+	BatchCacheSize = rootKey("batch.cache.size")
+	// BatchCacheSize
+	BatchCacheTTL = rootKey("batch.cache.ttl")
 	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
 	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
@@ -76,6 +80,18 @@ var (
 	BroadcastBatchPayloadLimit = rootKey("broadcast.batch.payloadLimit")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
+	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
+	DownloadWorkerCount = rootKey("download.worker.count")
+	// DownloadWorkerQueueLength is the length of the work queue in the channel to the workers - defaults to 2x the worker count
+	DownloadWorkerQueueLength = rootKey("download.worker.queueLength")
+	// DownloadRetryMaxAttempts is the maximum number of automatic attempts to make for each shared storage download before failing the operation
+	DownloadRetryMaxAttempts = rootKey("download.retry.maxAttempts")
+	// DownloadRetryInitDelay is the initial retry delay
+	DownloadRetryInitDelay = rootKey("download.retry.initialDelay")
+	// DownloadRetryMaxDelay is the maximum retry delay
+	DownloadRetryMaxDelay = rootKey("download.retry.maxDelay")
+	// DownloadRetryFactor is the backoff factor to use for retries
+	DownloadRetryFactor = rootKey("download.retry.factor")
 	// PrivateMessagingBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	PrivateMessagingBatchAgentTimeout = rootKey("privatemessaging.batch.agentTimeout")
 	// PrivateMessagingBatchSize is the maximum size of a batch for broadcast messages
@@ -309,6 +325,8 @@ func Reset() {
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(APIShutdownTimeout), "10s")
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
+	viper.SetDefault(string(BatchCacheSize), "1Mb")
+	viper.SetDefault(string(BatchCacheTTL), "5m")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
 	viper.SetDefault(string(BatchManagerMinimumPollTime), "50ms")
@@ -330,6 +348,11 @@ func Reset() {
 	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DataexchangeType), "https")
 	viper.SetDefault(string(DebugPort), -1)
+	viper.SetDefault(string(DownloadWorkerCount), 10)
+	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)
+	viper.SetDefault(string(DownloadRetryInitDelay), "100ms")
+	viper.SetDefault(string(DownloadRetryMaxDelay), "1m")
+	viper.SetDefault(string(DownloadRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")

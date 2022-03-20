@@ -55,7 +55,7 @@ type Manager interface {
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
 }
 
 type broadcastManager struct {
@@ -111,7 +111,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		}, bm.dispatchBatch, bo)
 
 	om.RegisterHandler(ctx, bm, []fftypes.OpType{
-		fftypes.OpTypeSharedStorageBatchBroadcast,
+		fftypes.OpTypeSharedStorageUploadBatch,
 	})
 
 	return bm, nil
@@ -124,58 +124,55 @@ func (bm *broadcastManager) Name() string {
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.DispatchState) error {
 
 	// Ensure all the blobs are published
-	if err := bm.publishBlobs(ctx, state.Payload.Data, state); err != nil {
+	if err := bm.uploadBlobs(ctx, state.Persisted.TX.ID, state.Payload.Data); err != nil {
 		return err
 	}
 
-	// The completed SharedStorage upload
+	// Upload the batch itself
 	op := fftypes.NewOperation(
 		bm.sharedstorage,
 		state.Persisted.Namespace,
 		state.Persisted.TX.ID,
-		fftypes.OpTypeSharedStorageBatchBroadcast)
-	addBatchBroadcastInputs(op, state.Persisted.ID)
+		fftypes.OpTypeSharedStorageUploadBatch)
+	addUploadBatchInputs(op, state.Persisted.ID)
 	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
 	batch := &fftypes.Batch{
 		BatchHeader: state.Persisted.BatchHeader,
+		Hash:        state.Persisted.Hash,
 		Payload:     state.Payload,
 	}
-	if err := bm.operations.RunOperation(ctx, opBatchBroadcast(op, batch)); err != nil {
+	if err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch, &state.Persisted)); err != nil {
 		return err
 	}
-	state.Persisted.PayloadRef = batch.PayloadRef
 	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payload=%s", batch.ID, batch.Author, batch.Key, state.Persisted.PayloadRef)
 	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
 }
 
-func (bm *broadcastManager) publishBlobs(ctx context.Context, data fftypes.DataArray, state *batch.DispatchState) error {
+func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data fftypes.DataArray) error {
 	for _, d := range data {
 		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage
 		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
+
+			op := fftypes.NewOperation(
+				bm.sharedstorage,
+				d.Namespace,
+				tx,
+				fftypes.OpTypeSharedStorageUploadBlob)
+			addUploadBlobInputs(op, d.ID)
+
 			blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
 			if err != nil {
 				return err
-			}
-			if blob == nil {
+			} else if blob == nil {
 				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob.Hash)
 			}
 
-			// Stream from the local data exchange ...
-			reader, err := bm.exchange.DownloadBLOB(ctx, blob.PayloadRef)
-			if err != nil {
-				return i18n.WrapError(ctx, err, i18n.MsgDownloadBlobFailed, blob.PayloadRef)
-			}
-			defer reader.Close()
-
-			// ... to the shared storage
-			d.Blob.Public, err = bm.sharedstorage.PublishData(ctx, reader)
+			err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blob))
 			if err != nil {
 				return err
 			}
-			state.BlobsPublished = append(state.BlobsPublished, d.ID)
-			log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", d.Blob.Hash, d.ID, d.Blob.Public)
 		}
 	}
 

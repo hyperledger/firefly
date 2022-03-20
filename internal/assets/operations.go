@@ -97,34 +97,36 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 	}
 }
 
-func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (complete bool, err error) {
+func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case createPoolData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
-		return plugin.CreateTokenPool(ctx, op.ID, data.Pool)
+		complete, err = plugin.CreateTokenPool(ctx, op.ID, data.Pool)
+		return nil, complete, err
 
 	case activatePoolData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
-		return plugin.ActivateTokenPool(ctx, op.ID, data.Pool, data.BlockchainInfo)
+		complete, err = plugin.ActivateTokenPool(ctx, op.ID, data.Pool, data.BlockchainInfo)
+		return nil, complete, err
 
 	case transferData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
 		switch data.Transfer.Type {
 		case fftypes.TokenTransferTypeMint:
-			return false, plugin.MintTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
+			return nil, false, plugin.MintTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
 		case fftypes.TokenTransferTypeTransfer:
-			return false, plugin.TransferTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
+			return nil, false, plugin.TransferTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
 		case fftypes.TokenTransferTypeBurn:
-			return false, plugin.BurnTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
+			return nil, false, plugin.BurnTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
 		default:
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
 		}
@@ -132,12 +134,12 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 	case approvalData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
-		return false, plugin.TokensApproval(ctx, op.ID, data.Pool.ProtocolID, data.Approval)
+		return nil, false, plugin.TokensApproval(ctx, op.ID, data.Pool.ProtocolID, data.Approval)
 
 	default:
-		return false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
+		return nil, false, i18n.NewError(ctx, i18n.MsgOperationNotSupported)
 	}
 }
 
