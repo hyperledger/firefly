@@ -9069,7 +9069,7 @@ paths:
           description: Success
         default:
           description: ""
-  /network/identities/{did:.+}:
+  /network/identities/{did}:
     get:
       description: 'TODO: Description'
       operationId: getIdentityByDID
