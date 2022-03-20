@@ -74,7 +74,7 @@ func (t *TokenPool) Validate(ctx context.Context) (err error) {
 }
 
 func (t *TokenPoolAnnouncement) Topic() string {
-	return namespaceTopic(t.Pool.Namespace)
+	return typeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.Name)
 }
 
 func (t *TokenPoolAnnouncement) SetBroadcastMessage(msgID *UUID) {

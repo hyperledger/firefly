@@ -469,8 +469,9 @@ func TestFilterEventsMatch(t *testing.T) {
 		{
 			EnrichedEvent: fftypes.EnrichedEvent{
 				Event: fftypes.Event{
-					ID:   id1,
-					Type: fftypes.EventTypeMessageConfirmed,
+					ID:    id1,
+					Type:  fftypes.EventTypeMessageConfirmed,
+					Topic: "topic1",
 				},
 				Message: &fftypes.Message{
 					Header: fftypes.MessageHeader{
@@ -488,8 +489,9 @@ func TestFilterEventsMatch(t *testing.T) {
 		{
 			EnrichedEvent: fftypes.EnrichedEvent{
 				Event: fftypes.Event{
-					ID:   id2,
-					Type: fftypes.EventTypeMessageConfirmed,
+					ID:    id2,
+					Type:  fftypes.EventTypeMessageConfirmed,
+					Topic: "topic1",
 				},
 				Message: &fftypes.Message{
 					Header: fftypes.MessageHeader{
@@ -507,8 +509,9 @@ func TestFilterEventsMatch(t *testing.T) {
 		{
 			EnrichedEvent: fftypes.EnrichedEvent{
 				Event: fftypes.Event{
-					ID:   id3,
-					Type: fftypes.EventTypeMessageRejected,
+					ID:    id3,
+					Type:  fftypes.EventTypeMessageRejected,
+					Topic: "topic2",
 				},
 				Message: &fftypes.Message{
 					Header: fftypes.MessageHeader{
@@ -559,7 +562,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	})
 
 	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypeMessageConfirmed))
-	ed.subscription.messageFilter.topicsFilter = regexp.MustCompile(".*")
+	ed.subscription.topicFilter = regexp.MustCompile(".*")
 	ed.subscription.messageFilter.tagFilter = regexp.MustCompile(".*")
 	ed.subscription.messageFilter.groupFilter = regexp.MustCompile(".*")
 	matched := ed.filterEvents(events)
@@ -569,7 +572,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	// id three has the wrong event type
 
 	ed.subscription.eventMatcher = nil
-	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.topicFilter = nil
 	ed.subscription.messageFilter.tagFilter = nil
 	ed.subscription.messageFilter.groupFilter = nil
 	matched = ed.filterEvents(events)
@@ -580,19 +583,19 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, *id4, *matched[3].ID)
 	assert.Equal(t, *id5, *matched[4].ID)
 
-	ed.subscription.messageFilter.topicsFilter = regexp.MustCompile("topic1")
+	ed.subscription.topicFilter = regexp.MustCompile("topic1")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
 	assert.Equal(t, *id1, *matched[0].ID)
 	assert.Equal(t, *id2, *matched[1].ID)
 
-	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.topicFilter = nil
 	ed.subscription.messageFilter.tagFilter = regexp.MustCompile("tag2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)
 
-	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.topicFilter = nil
 	ed.subscription.messageFilter.authorFilter = nil
 	ed.subscription.messageFilter.groupFilter = regexp.MustCompile(gid1.String())
 	matched = ed.filterEvents(events)
@@ -604,7 +607,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, 0, len(matched))
 
 	ed.subscription.messageFilter.groupFilter = nil
-	ed.subscription.messageFilter.topicsFilter = nil
+	ed.subscription.topicFilter = nil
 	ed.subscription.messageFilter.tagFilter = nil
 	ed.subscription.messageFilter.authorFilter = regexp.MustCompile("org2")
 	matched = ed.filterEvents(events)

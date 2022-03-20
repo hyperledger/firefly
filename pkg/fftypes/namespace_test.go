@@ -45,7 +45,7 @@ func TestNamespaceValidation(t *testing.T) {
 	assert.Regexp(t, "FF10203", ns.Validate(context.Background(), true))
 
 	var nsDef Definition = ns
-	assert.Equal(t, "ff_ns_ok", nsDef.Topic())
+	assert.Equal(t, "358de1708c312f6b9eb4c44e0d9811c6f69bf389871d38dd7501992b2c00b557", nsDef.Topic())
 	nsDef.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, ns.Message)
 

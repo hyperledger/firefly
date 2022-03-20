@@ -784,16 +784,14 @@ var OperationQueryFactory = &queryFields{
 
 // SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
-	"id":            &UUIDField{},
-	"namespace":     &StringField{},
-	"name":          &StringField{},
-	"transport":     &StringField{},
-	"events":        &StringField{},
-	"filter.topics": &StringField{},
-	"filter.tag":    &StringField{},
-	"filter.group":  &StringField{},
-	"options":       &StringField{},
-	"created":       &TimeField{},
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"transport": &StringField{},
+	"events":    &StringField{},
+	"filters":   &JSONField{},
+	"options":   &StringField{},
+	"created":   &TimeField{},
 }
 
 // EventQueryFactory filter fields for data events
@@ -804,6 +802,7 @@ var EventQueryFactory = &queryFields{
 	"reference":  &UUIDField{},
 	"correlator": &UUIDField{},
 	"tx":         &UUIDField{},
+	"topic":      &StringField{},
 	"sequence":   &Int64Field{},
 	"created":    &TimeField{},
 }

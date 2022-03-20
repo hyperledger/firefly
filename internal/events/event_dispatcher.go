@@ -188,16 +188,15 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		tx := event.Transaction
 		be := event.BlockchainEvent
 		tag := ""
+		topic := event.Topic
 		group := ""
 		author := ""
 		txType := ""
 		beName := ""
 		beListener := ""
-		var topics []string
 
 		if msg != nil {
 			tag = msg.Header.Tag
-			topics = msg.Header.Topics
 			author = msg.Header.Author
 			if msg.Header.Group != nil {
 				group = msg.Header.Group.String()
@@ -213,24 +212,22 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 			beListener = be.Listener.String()
 		}
 
+		if filter.topicFilter != nil {
+			topicsMatch := false
+			if filter.topicFilter.MatchString(topic) {
+				topicsMatch = true
+			}
+			if !topicsMatch {
+				continue
+			}
+		}
+
 		if filter.messageFilter != nil {
 			if filter.messageFilter.tagFilter != nil && !filter.messageFilter.tagFilter.MatchString(tag) {
 				continue
 			}
 			if filter.messageFilter.authorFilter != nil && !filter.messageFilter.authorFilter.MatchString(author) {
 				continue
-			}
-			if filter.messageFilter.topicsFilter != nil {
-				topicsMatch := false
-				for _, topic := range topics {
-					if filter.messageFilter.topicsFilter.MatchString(topic) {
-						topicsMatch = true
-						break
-					}
-				}
-				if !topicsMatch {
-					continue
-				}
 			}
 			if filter.messageFilter.groupFilter != nil && !filter.messageFilter.groupFilter.MatchString(group) {
 				continue

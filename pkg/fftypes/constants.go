@@ -23,6 +23,13 @@ const (
 )
 
 const (
+	// SystemTopicDefinitions is the FireFly event topic for events that are confirmations of definition of pre-defined datatypes
+	SystemTopicDefinitions = "ff_definition"
+	// SystemBatchPinTopic is the FireFly event topic for events from the FireFly batch pin listener
+	SystemBatchPinTopic = "ff_batch_pin"
+)
+
+const (
 
 	// SystemTagDefineDatatype is the tag for messages that broadcast data definitions
 	SystemTagDefineDatatype = "ff_define_datatype"

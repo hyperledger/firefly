@@ -338,7 +338,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			msgid := fftypes.NewUUID()
 			bp.newWork <- &batchWork{
-				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}, Sequence: int64(1000 + i)},
+				msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid, Topics: fftypes.FFStringArray{"topic1"}}, Sequence: int64(1000 + i)},
 			}
 		}
 	}()
@@ -460,7 +460,7 @@ func TestDispatchWithPublicBlobUpdates(t *testing.T) {
 	// Dispatch the work
 	go func() {
 		bp.newWork <- &batchWork{
-			msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}, Sequence: int64(1000)},
+			msg: &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Topics: fftypes.FFStringArray{"topic1"}}, Sequence: int64(1000)},
 			data: fftypes.DataArray{
 				{ID: dataID, Blob: &fftypes.BlobRef{
 					Public: "public/ref",

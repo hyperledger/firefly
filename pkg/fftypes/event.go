@@ -62,6 +62,7 @@ type Event struct {
 	Reference   *UUID     `json:"reference"`
 	Correlator  *UUID     `json:"correlator,omitempty"`
 	Transaction *UUID     `json:"tx,omitempty"`
+	Topic       string    `json:"topic,omitempty"`
 	Created     *FFTime   `json:"created"`
 }
 
@@ -90,13 +91,14 @@ type EventDeliveryResponse struct {
 	Reply        *MessageInOut   `json:"reply,omitempty"`
 }
 
-func NewEvent(t EventType, ns string, ref *UUID, tx *UUID) *Event {
+func NewEvent(t EventType, ns string, ref *UUID, tx *UUID, topic string) *Event {
 	return &Event{
 		ID:          NewUUID(),
 		Type:        t,
 		Namespace:   ns,
 		Reference:   ref,
 		Transaction: tx,
+		Topic:       topic,
 		Created:     Now(),
 	}
 }

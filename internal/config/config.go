@@ -150,6 +150,10 @@ var (
 	EventDispatcherRetryMaxDelay = rootKey("event.dispatcher.retry.maxDelay")
 	// EventDBEventsBufferSize the size of the buffer of change events
 	EventDBEventsBufferSize = rootKey("event.dbevents.bufferSize")
+	// EventListenerTopicCacheSize cache size for blockchain listeners addresses
+	EventListenerTopicCacheSize = rootKey("event.listenerToipc.cache.size")
+	// EventListenerTopicCacheTTL cache time-to-live for private group addresses
+	EventListenerTopicCacheTTL = rootKey("event.listenerToipc.cache.ttl")
 	// GroupCacheSize cache size for private group addresses
 	GroupCacheSize = rootKey("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses
@@ -340,6 +344,8 @@ func Reset() {
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets", "webhooks"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
+	viper.SetDefault(string(EventListenerTopicCacheSize), "100Kb")
+	viper.SetDefault(string(EventListenerTopicCacheTTL), "5m")
 	viper.SetDefault(string(GroupCacheSize), "1Mb")
 	viper.SetDefault(string(GroupCacheTTL), "1h")
 	viper.SetDefault(string(AdminEnabled), false)
@@ -354,7 +360,7 @@ func Reset() {
 	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
-	viper.SetDefault(string(MessageWriterBatchTimeout), "50ms")
+	viper.SetDefault(string(MessageWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(MessageWriterCount), 5)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})

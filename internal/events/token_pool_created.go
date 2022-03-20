@@ -68,7 +68,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 		return err
 	}
 	log.L(ctx).Infof("Token pool confirmed, id=%s", pool.ID)
-	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID, pool.TX.ID)
+	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID, pool.TX.ID, pool.ID.String())
 	return em.database.InsertEvent(ctx, event)
 }
 

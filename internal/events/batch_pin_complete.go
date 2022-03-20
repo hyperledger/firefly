@@ -118,7 +118,7 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 	var batch *fftypes.Batch
 	err := json.NewDecoder(body).Decode(&batch)
 	if err != nil {
-		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchPin.BatchID, batchPin.Event.ProtocolID)
+		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s': %s", batchPin.BatchID, batchPin.Event.ProtocolID, err)
 		return nil // log and swallow unprocessable data
 	}
 	body.Close()

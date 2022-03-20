@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
@@ -43,6 +44,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
+	"github.com/karlseguin/ccache"
 )
 
 type EventManager interface {
@@ -77,26 +79,28 @@ type EventManager interface {
 }
 
 type eventManager struct {
-	ctx                  context.Context
-	ni                   sysmessaging.LocalNodeInfo
-	sharedstorage        sharedstorage.Plugin
-	database             database.Plugin
-	txHelper             txcommon.Helper
-	identity             identity.Manager
-	definitions          definitions.DefinitionHandlers
-	data                 data.Manager
-	subManager           *subscriptionManager
-	retry                retry.Retry
-	aggregator           *aggregator
-	broadcast            broadcast.Manager
-	messaging            privatemessaging.Manager
-	assets               assets.Manager
-	newEventNotifier     *eventNotifier
-	newPinNotifier       *eventNotifier
-	opCorrelationRetries int
-	defaultTransport     string
-	internalEvents       *system.Events
-	metrics              metrics.Manager
+	ctx                   context.Context
+	ni                    sysmessaging.LocalNodeInfo
+	sharedstorage         sharedstorage.Plugin
+	database              database.Plugin
+	txHelper              txcommon.Helper
+	identity              identity.Manager
+	definitions           definitions.DefinitionHandlers
+	data                  data.Manager
+	subManager            *subscriptionManager
+	retry                 retry.Retry
+	aggregator            *aggregator
+	broadcast             broadcast.Manager
+	messaging             privatemessaging.Manager
+	assets                assets.Manager
+	newEventNotifier      *eventNotifier
+	newPinNotifier        *eventNotifier
+	opCorrelationRetries  int
+	defaultTransport      string
+	internalEvents        *system.Events
+	metrics               metrics.Manager
+	chainListenerCache    *ccache.Cache
+	chainListenerCacheTTL time.Duration
 }
 
 func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
@@ -122,12 +126,14 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		defaultTransport:     config.GetString(config.EventTransportsDefault),
-		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
-		newEventNotifier:     newEventNotifier,
-		newPinNotifier:       newPinNotifier,
-		aggregator:           newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
-		metrics:              mm,
+		defaultTransport:      config.GetString(config.EventTransportsDefault),
+		opCorrelationRetries:  config.GetInt(config.EventAggregatorOpCorrelationRetries),
+		newEventNotifier:      newEventNotifier,
+		newPinNotifier:        newPinNotifier,
+		aggregator:            newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
+		metrics:               mm,
+		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(config.EventListenerTopicCacheSize))),
+		chainListenerCacheTTL: config.GetDuration(config.EventListenerTopicCacheTTL),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)

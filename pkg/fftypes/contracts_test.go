@@ -52,7 +52,7 @@ func TestContractAPITopic(t *testing.T) {
 	api := &ContractAPI{
 		Namespace: "ns1",
 	}
-	assert.Equal(t, "ff_ns_ns1", api.Topic())
+	assert.Equal(t, "4cccc66c1f0eebcf578f1e63b73a2047d4eb4c84c0a00c69b0e00c7490403d20", api.Topic())
 }
 
 func TestContractAPISetBroadCastMessage(t *testing.T) {

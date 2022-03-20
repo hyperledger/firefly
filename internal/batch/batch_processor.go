@@ -595,10 +595,13 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 			if bp.conf.txType == fftypes.TransactionTypeUnpinned {
 				for _, msg := range state.Payload.Messages {
 					// Emit a confirmation event locally immediately
-					event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, state.Persisted.Namespace, msg.Header.ID, state.Persisted.TX.ID)
-					event.Correlator = msg.Header.CID
-					if err := bp.database.InsertEvent(ctx, event); err != nil {
-						return err
+					for _, topic := range msg.Header.Topics {
+						// One event per topic
+						event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, state.Persisted.Namespace, msg.Header.ID, state.Persisted.TX.ID, topic)
+						event.Correlator = msg.Header.CID
+						if err := bp.database.InsertEvent(ctx, event); err != nil {
+							return err
+						}
 					}
 				}
 			}
