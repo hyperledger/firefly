@@ -59,7 +59,7 @@ func TestSQLSerializedManifest(t *testing.T) {
 	mfHash := sha256.Sum256([]byte(mfString))
 	assert.Equal(t, HashString(bp.GenManifest(batch.Payload.Messages, batch.Payload.Data).String()).String(), hex.EncodeToString(mfHash[:]))
 
-	assert.Equal(t, batch, bp.Inflight(batch.Payload.Messages, batch.Payload.Data))
+	assert.Equal(t, batch, bp.GenInflight(batch.Payload.Messages, batch.Payload.Data))
 
 	assert.NotEqual(t, batch.Payload.Hash().String(), hex.EncodeToString(mfHash[:]))
 

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ssdownload
+package shareddownload
 
 import (
 	"context"
@@ -28,8 +28,8 @@ import (
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
-	"github.com/hyperledger/firefly/mocks/ssdownloadmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +44,7 @@ func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
 	mdi := &databasemocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
-	mci := &ssdownloadmocks.Callbacks{}
+	mci := &shareddownloadmocks.Callbacks{}
 	operations, err := operations.NewOperationsManager(context.Background(), mdi)
 	assert.NoError(t, err)
 
@@ -85,7 +85,7 @@ func TestDownloadBatchE2EOk(t *testing.T) {
 
 	called := make(chan struct{})
 
-	mci := dm.callbacks.(*ssdownloadmocks.Callbacks)
+	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBatchDownloaded", "ns1", "ref1", []byte("some batch data")).Run(func(args mock.Arguments) {
 		close(called)
 	}).Return(batchID, nil)
@@ -136,7 +136,7 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 
 	called := make(chan struct{})
 
-	mci := dm.callbacks.(*ssdownloadmocks.Callbacks)
+	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBLOBDownloaded", *blobHash, int64(12345), "privateRef1").Return(fmt.Errorf("pop")).Twice()
 	mci.On("SharedStorageBLOBDownloaded", *blobHash, int64(12345), "privateRef1").Run(func(args mock.Arguments) {
 		close(called)
@@ -239,7 +239,7 @@ func TestDownloadManagerStartupRecoveryCombinations(t *testing.T) {
 		called <- true
 	}).Return(nil)
 
-	mci := dm.callbacks.(*ssdownloadmocks.Callbacks)
+	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBatchDownloaded", "ns1", "ref2", []byte("some batch data")).Return(batchID, nil)
 
 	err := dm.Start()

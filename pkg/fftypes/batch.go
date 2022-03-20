@@ -146,7 +146,7 @@ func (b *BatchPersisted) GenManifest(messages []*Message, data DataArray) *Batch
 	}).Manifest(b.ID)
 }
 
-func (b *BatchPersisted) Inflight(messages []*Message, data DataArray) *Batch {
+func (b *BatchPersisted) GenInflight(messages []*Message, data DataArray) *Batch {
 	return &Batch{
 		BatchHeader: b.BatchHeader,
 		Hash:        b.Hash,

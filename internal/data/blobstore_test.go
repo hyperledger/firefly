@@ -188,7 +188,7 @@ func TestUploadBlobWriteFailDoesNotRead(t *testing.T) {
 
 }
 
-func TestUploadBlobHashMismatch(t *testing.T) {
+func TestUploadBlobHashMismatchCalculated(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()

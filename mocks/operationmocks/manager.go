@@ -81,27 +81,20 @@ func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.
 	return r0, r1
 }
 
-// RunOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) error {
-	ret := _m.Called(ctx, op)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation) error); ok {
-		r0 = rf(ctx, op)
-	} else {
-		r0 = ret.Error(0)
+// RunOperation provides a mock function with given fields: ctx, op, options
+func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...operations.RunOperationOption) error {
+	_va := make([]interface{}, len(options))
+	for _i := range options {
+		_va[_i] = options[_i]
 	}
-
-	return r0
-}
-
-// RunOperationWithFailState provides a mock function with given fields: ctx, op, failState
-func (_m *Manager) RunOperationWithFailState(ctx context.Context, op *fftypes.PreparedOperation, failState fftypes.OpStatus) error {
-	ret := _m.Called(ctx, op, failState)
+	var _ca []interface{}
+	_ca = append(_ca, ctx, op)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation, fftypes.OpStatus) error); ok {
-		r0 = rf(ctx, op, failState)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation, ...operations.RunOperationOption) error); ok {
+		r0 = rf(ctx, op, options...)
 	} else {
 		r0 = ret.Error(0)
 	}

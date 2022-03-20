@@ -34,11 +34,16 @@ type OperationHandler interface {
 type Manager interface {
 	RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType)
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) error
-	RunOperationWithFailState(ctx context.Context, op *fftypes.PreparedOperation, failState fftypes.OpStatus) error
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
 }
+
+type RunOperationOption int
+
+const (
+	RemainPendingOnFailure RunOperationOption = iota
+)
 
 type operationsManager struct {
 	ctx      context.Context
@@ -73,11 +78,14 @@ func (om *operationsManager) PrepareOperation(ctx context.Context, op *fftypes.O
 	return handler.PrepareOperation(ctx, op)
 }
 
-func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) error {
-	return om.RunOperationWithFailState(ctx, op, fftypes.OpStatusFailed)
-}
+func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error {
+	failState := fftypes.OpStatusFailed
+	for _, o := range options {
+		if o == RemainPendingOnFailure {
+			failState = fftypes.OpStatusPending
+		}
+	}
 
-func (om *operationsManager) RunOperationWithFailState(ctx context.Context, op *fftypes.PreparedOperation, failState fftypes.OpStatus) error {
 	handler, ok := om.handlers[op.Type]
 	if !ok {
 		return i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ssdownload
+package shareddownload
 
 import (
 	"context"
@@ -38,8 +38,9 @@ type downloadBlobData struct {
 	PayloadRef string        `json:"payloadRef"`
 }
 
-func addDownloadBatchInputs(op *fftypes.Operation, payloadRef string) {
+func addDownloadBatchInputs(op *fftypes.Operation, ns, payloadRef string) {
 	op.Input = fftypes.JSONObject{
+		"namespace":  ns,
 		"payloadRef": payloadRef,
 	}
 }
@@ -50,8 +51,10 @@ func getDownloadBatchOutputs(batchID *fftypes.UUID) fftypes.JSONObject {
 	}
 }
 
-func addDownloadBlobInputs(op *fftypes.Operation, payloadRef string) {
+func addDownloadBlobInputs(op *fftypes.Operation, ns string, dataID *fftypes.UUID, payloadRef string) {
 	op.Input = fftypes.JSONObject{
+		"namespace":  ns,
+		"dataId":     dataID.String(),
 		"payloadRef": payloadRef,
 	}
 }

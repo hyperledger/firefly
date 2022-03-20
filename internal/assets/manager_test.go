@@ -38,33 +38,14 @@ import (
 )
 
 func newTestAssets(t *testing.T) (*assetManager, func()) {
-	config.Reset()
-	mdi := &databasemocks.Plugin{}
-	mim := &identitymanagermocks.Manager{}
-	mdm := &datamocks.Manager{}
-	msa := &syncasyncmocks.Bridge{}
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
-	mti := &tokenmocks.Plugin{}
-	mm := &metricsmocks.Manager{}
-	mom := &operationmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	mti.On("Name").Return("ut_tokens").Maybe()
-	mm.On("IsMetricsEnabled").Return(false)
-	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
-	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
-	assert.NoError(t, err)
-	am := a.(*assetManager)
-	am.txHelper = &txcommonmocks.Helper{}
-	return am, cancel
+	return newTestAssetsCommon(t, false)
 }
 
 func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
+	return newTestAssetsCommon(t, true)
+}
+
+func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 	config.Reset()
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
@@ -76,10 +57,10 @@ func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
 	mm := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	mti.On("Name").Return("ut_tokens").Maybe()
-	mm.On("IsMetricsEnabled").Return(true)
+	mm.On("IsMetricsEnabled").Return(metrics)
 	mm.On("TransferSubmitted", mock.Anything)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
+	mti.On("Name").Return("ut").Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
 	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()

@@ -292,7 +292,7 @@ var (
 	MsgBlobMissingPublic            = ffm("FF10373", "Blob for data %s missing public payload reference while flushing batch", 500)
 	MsgDBMultiRowConfigError        = ffm("FF10374", "Database invalid configuration - using multi-row insert on DB plugin that does not support query syntax for input")
 	MsgDBNoSequence                 = ffm("FF10375", "Failed to retrieve sequence for insert row %d (could mean duplicate insert)", 500)
-	MsgDownloadSharedFailed         = ffm("FF10376", "Error download data with reference '%s' from shared storage")
+	MsgDownloadSharedFailed         = ffm("FF10376", "Error downloading data with reference '%s' from shared storage")
 	MsgDownloadBatchMaxBytes        = ffm("FF10377", "Error downloading batch with reference '%s' from shared storage - maximum size limit reached")
 	MsgOperationDataIncorrect       = ffm("FF10378", "Operation data type incorrect: %T", 400)
 )

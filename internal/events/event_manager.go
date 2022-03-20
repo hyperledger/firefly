@@ -36,7 +36,7 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
-	"github.com/hyperledger/firefly/internal/ssdownload"
+	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -98,7 +98,7 @@ type eventManager struct {
 	broadcast             broadcast.Manager
 	messaging             privatemessaging.Manager
 	assets                assets.Manager
-	ssDownload            ssdownload.Manager
+	sharedDownload        shareddownload.Manager
 	newEventNotifier      *eventNotifier
 	newPinNotifier        *eventNotifier
 	opCorrelationRetries  int
@@ -109,25 +109,25 @@ type eventManager struct {
 	chainListenerCacheTTL time.Duration
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd ssdownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
 	em := &eventManager{
-		ctx:           log.WithLogField(ctx, "role", "event-manager"),
-		ni:            ni,
-		sharedstorage: si,
-		database:      di,
-		txHelper:      txHelper,
-		identity:      im,
-		definitions:   dh,
-		data:          dm,
-		broadcast:     bm,
-		messaging:     pm,
-		assets:        am,
-		ssDownload:    sd,
+		ctx:            log.WithLogField(ctx, "role", "event-manager"),
+		ni:             ni,
+		sharedstorage:  si,
+		database:       di,
+		txHelper:       txHelper,
+		identity:       im,
+		definitions:    dh,
+		data:           dm,
+		broadcast:      bm,
+		messaging:      pm,
+		assets:         am,
+		sharedDownload: sd,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),

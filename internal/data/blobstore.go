@@ -38,7 +38,7 @@ type blobStore struct {
 	exchange      dataexchange.Plugin
 }
 
-func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftypes.UUID, expectedHash *fftypes.Bytes32, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
+func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftypes.UUID, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
 	hashCalc := sha256.New()
 	dxReader, dx := io.Pipe()
 	storeAndHash := io.MultiWriter(hashCalc, dx)
@@ -63,14 +63,10 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 	}
 
 	hash = fftypes.HashResult(hashCalc)
-	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v) size=%d (expected=%d)", written, hash, uploadHash, expectedHash, uploadSize, written)
+	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v) size=%d", written, hash, uploadHash, uploadSize, written)
 
 	if !uploadHash.Equals(hash) {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, hash)
-	}
-
-	if expectedHash != nil && !uploadHash.Equals(expectedHash) {
-		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, expectedHash)
 	}
 	if uploadSize > 0 && uploadSize != written {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadSize, uploadSize, written)
@@ -95,7 +91,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	data.Namespace = ns
 	data.Created = fftypes.Now()
 
-	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, nil /* we don't have an expected hash for a new upload */, mpart.Data)
+	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, mpart.Data)
 	if err != nil {
 		return nil, err
 	}

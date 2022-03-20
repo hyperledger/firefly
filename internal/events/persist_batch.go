@@ -92,7 +92,10 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 	// Insert the data entries
 	dataByID := make(map[fftypes.UUID]*fftypes.Data)
 	for i, data := range batch.Payload.Data {
-		if valid, err = em.validateBatchData(ctx, batch, i, data); !valid || err != nil {
+		if valid = em.validateBatchData(ctx, batch, i, data); !valid {
+			return false, nil
+		}
+		if valid, err = em.checkAndInitiateBlobDownloads(ctx, batch, i, data); !valid || err != nil {
 			return false, err
 		}
 		dataByID[*data.ID] = data
@@ -133,25 +136,30 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 	return em.persistBatchContent(ctx, batch, matchedMsgs)
 }
 
-func (em *eventManager) validateBatchData(ctx context.Context, batch *fftypes.Batch, i int, data *fftypes.Data) (bool, error) {
+func (em *eventManager) validateBatchData(ctx context.Context, batch *fftypes.Batch, i int, data *fftypes.Data) bool {
 
 	l := log.L(ctx)
 	l.Tracef("Batch '%s' data %d: %+v", batch.ID, i, data)
 
 	if data == nil {
 		l.Errorf("null data entry %d in batch '%s'", i, batch.ID)
-		return false, nil
+		return false
 	}
 
 	hash, err := data.CalcHash(ctx)
 	if err != nil {
 		log.L(ctx).Errorf("Invalid data entry %d in batch '%s': %s", i, batch.ID, err)
-		return false, nil
+		return false
 	}
 	if data.Hash == nil || *data.Hash != *hash {
 		log.L(ctx).Errorf("Invalid data entry %d in batch '%s': Hash=%v Expected=%v", i, batch.ID, data.Hash, hash)
-		return false, nil
+		return false
 	}
+
+	return true
+}
+
+func (em *eventManager) checkAndInitiateBlobDownloads(ctx context.Context, batch *fftypes.Batch, i int, data *fftypes.Data) (bool, error) {
 
 	if data.Blob != nil && batch.Type == fftypes.BatchTypeBroadcast {
 		// Need to check if we need to initiate a download
@@ -164,7 +172,7 @@ func (em *eventManager) validateBatchData(ctx context.Context, batch *fftypes.Ba
 				log.L(ctx).Errorf("Invalid data entry %d id=%s in batch '%s' - missing public blob reference", i, data.ID, batch.ID)
 				return false, nil
 			}
-			if err = em.ssDownload.InitiateDownloadBlob(ctx, data.Namespace, batch.Payload.TX.ID, data.ID, data.Blob.Public); err != nil {
+			if err = em.sharedDownload.InitiateDownloadBlob(ctx, data.Namespace, batch.Payload.TX.ID, data.ID, data.Blob.Public); err != nil {
 				return false, err
 			}
 		}

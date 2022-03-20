@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ssdownload
+package shareddownload
 
 import (
 	"bytes"
@@ -25,8 +25,8 @@ import (
 	"testing/iotest"
 
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
-	"github.com/hyperledger/firefly/mocks/ssdownloadmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -98,7 +98,7 @@ func TestDownloadBatchDownloadCallbackFailed(t *testing.T) {
 	mss := dm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
 
-	mci := dm.callbacks.(*ssdownloadmocks.Callbacks)
+	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBatchDownloaded", "ns1", "ref1", []byte("some batch data")).Return(nil, fmt.Errorf("pop"))
 
 	_, _, err := dm.downloadBatch(dm.ctx, downloadBatchData{

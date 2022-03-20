@@ -41,8 +41,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
-	"github.com/hyperledger/firefly/mocks/ssdownloadmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -75,7 +75,7 @@ type testOrchestrator struct {
 	mom *operationmocks.Manager
 	mbp *batchpinmocks.Submitter
 	mth *txcommonmocks.Helper
-	msd *ssdownloadmocks.Manager
+	msd *shareddownloadmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -105,7 +105,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mom: &operationmocks.Manager{},
 		mbp: &batchpinmocks.Submitter{},
 		mth: &txcommonmocks.Helper{},
-		msd: &ssdownloadmocks.Manager{},
+		msd: &shareddownloadmocks.Manager{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -125,7 +125,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
-	tor.orchestrator.ssDownload = tor.msd
+	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
@@ -489,7 +489,7 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
-	or.ssDownload = nil
+	or.sharedDownload = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

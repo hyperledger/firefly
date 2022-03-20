@@ -21,7 +21,6 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +49,6 @@ func (m *mockHandler) RunOperation(ctx context.Context, op *fftypes.PreparedOper
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	config.Reset()
 	mdi := &databasemocks.Plugin{}
-	mti := &tokenmocks.Plugin{}
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -59,7 +57,6 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 		}
 	}
 
-	mti.On("Name").Return("ut_tokens").Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
 	om, err := NewOperationsManager(ctx, mdi)
 	assert.NoError(t, err)
@@ -157,6 +154,27 @@ func TestRunOperationFail(t *testing.T) {
 
 	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
 	err := om.RunOperation(ctx, op)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestRunOperationFailRemainPending(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &fftypes.PreparedOperation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeBlockchainPinBatch,
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusPending, "pop", mock.Anything).Return(nil)
+
+	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
+	err := om.RunOperation(ctx, op, RemainPendingOnFailure)
 
 	assert.EqualError(t, err, "pop")
 

@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -223,7 +224,7 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
-	})).Return(fmt.Errorf("pop"))
+	}), operations.RemainPendingOnFailure).Return(fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
@@ -252,7 +253,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
-	})).Return(nil)
+	}), operations.RemainPendingOnFailure).Return(nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.NoError(t, err)
@@ -284,7 +285,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
-	})).Return(nil)
+	}), operations.RemainPendingOnFailure).Return(nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")

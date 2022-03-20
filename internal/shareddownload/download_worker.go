@@ -14,14 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ssdownload
+package shareddownload
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/operations"
 )
 
 type downloadWorker struct {
@@ -59,12 +59,12 @@ func (dw *downloadWorker) attemptWork(work *downloadWork) {
 
 	work.attempts++
 	isLastAttempt := work.attempts >= dw.dm.retryMaxAttempts
-	failState := fftypes.OpStatusPending
+	options := []operations.RunOperationOption{operations.RemainPendingOnFailure}
 	if isLastAttempt {
-		failState = fftypes.OpStatusFailed
+		options = []operations.RunOperationOption{}
 	}
 
-	err := dw.dm.operations.RunOperationWithFailState(dw.ctx, work.preparedOp, failState)
+	err := dw.dm.operations.RunOperation(dw.ctx, work.preparedOp, options...)
 	if err != nil {
 		log.L(dw.ctx).Errorf("Download operation %s/%s attempt=%d/%d failed: %s", work.preparedOp.Type, work.preparedOp.ID, work.attempts, dw.dm.retryMaxAttempts, err)
 		if !isLastAttempt {

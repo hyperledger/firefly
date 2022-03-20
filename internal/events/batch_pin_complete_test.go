@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/ssdownloadmocks"
+	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -126,12 +126,12 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	})).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
-	})).Return(nil).Times(2)
+	})).Return(nil).Times(1)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEventReceived
-	})).Return(nil).Times(2)
+	})).Return(nil).Times(1)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
-	msd := em.ssDownload.(*ssdownloadmocks.Manager)
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
@@ -246,7 +246,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
-	msd := em.ssDownload.(*ssdownloadmocks.Manager)
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
 
 	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
@@ -553,8 +553,7 @@ func TestPersistBatchDataNilData(t *testing.T) {
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	valid, err := em.validateBatchData(context.Background(), batch, 0, data)
-	assert.Nil(t, err)
+	valid := em.validateBatchData(context.Background(), batch, 0, data)
 	assert.False(t, valid)
 }
 
@@ -567,8 +566,7 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 	}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 	batch.Payload.Data[0].Hash = fftypes.NewRandB32()
-	valid, err := em.validateBatchData(context.Background(), batch, 0, data)
-	assert.Nil(t, err)
+	valid := em.validateBatchData(context.Background(), batch, 0, data)
 	assert.False(t, valid)
 }
 
@@ -579,8 +577,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 
-	valid, err := em.validateBatchData(context.Background(), batch, 0, data)
-	assert.Nil(t, err)
+	valid := em.validateBatchData(context.Background(), batch, 0, data)
 	assert.True(t, valid)
 }
 
@@ -603,7 +600,7 @@ func TestPersistBatchDataWithPublicAlreaydDownloadedOk(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
 
-	valid, err := em.validateBatchData(context.Background(), batch, 0, data)
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Nil(t, err)
 	assert.True(t, valid)
 }
@@ -627,10 +624,10 @@ func TestPersistBatchDataWithPublicInitiateDownload(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
 
-	msd := em.ssDownload.(*ssdownloadmocks.Manager)
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(nil)
 
-	valid, err := em.validateBatchData(context.Background(), batch, 0, data)
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Nil(t, err)
 	assert.True(t, valid)
 }
@@ -654,10 +651,10 @@ func TestPersistBatchDataWithPublicInitiateDownloadFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
 
-	msd := em.ssDownload.(*ssdownloadmocks.Manager)
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(fmt.Errorf("pop"))
 
-	valid, err := em.validateBatchData(context.Background(), batch, 0, data)
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Regexp(t, "pop", err)
 	assert.False(t, valid)
 }
@@ -681,7 +678,7 @@ func TestPersistBatchDataWithBlobGetBlobFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
 
-	valid, err := em.validateBatchData(context.Background(), batch, 0, data)
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Regexp(t, "pop", err)
 	assert.False(t, valid)
 }

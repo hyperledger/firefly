@@ -479,7 +479,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, fmt.Sprintf("batch %s manifest", persistedBatch.ID))
 	}
 
-	batch := persistedBatch.Inflight(make([]*fftypes.Message, len(manifest.Messages)), make(fftypes.DataArray, len(manifest.Data)))
+	batch := persistedBatch.GenInflight(make([]*fftypes.Message, len(manifest.Messages)), make(fftypes.DataArray, len(manifest.Data)))
 
 	for i, mr := range manifest.Messages {
 		m, err := dm.database.GetMessageByID(ctx, mr.ID)

@@ -34,8 +34,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
-	"github.com/hyperledger/firefly/mocks/ssdownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -67,7 +67,7 @@ func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func(
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mdd := &ssdownloadmocks.Manager{}
+	mdd := &shareddownloadmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mmi.On("IsMetricsEnabled").Return(metrics)
@@ -126,7 +126,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mpm := &privatemessagingmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mam := &assetmocks.Manager{}
-	msd := &ssdownloadmocks.Manager{}
+	msd := &shareddownloadmocks.Manager{}
 	mm := &metricsmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)

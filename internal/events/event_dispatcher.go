@@ -152,6 +152,7 @@ func (ed *eventDispatcher) electAndStart() {
 }
 
 func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]fftypes.LocallySequenced, error) {
+	log.L(ctx).Tracef("Reading page of events > %d (first events would be %d)", offset, offset+1)
 	events, _, err := ed.database.GetEvents(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(events))
 	for i, e := range events {

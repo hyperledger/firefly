@@ -52,14 +52,14 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
+				return err
+			}
 			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 				ID:   batchPin.TransactionID,
 			})
 			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
-				return err
-			}
-			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
 				return err
 			}
 			private := batchPin.BatchPayloadRef == ""
@@ -68,7 +68,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 			}
 			// Kick off a download for broadcast batches
 			if !private {
-				if err := em.ssDownload.InitiateDownloadBatch(ctx, batchPin.Namespace, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
+				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.Namespace, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
 					return err
 				}
 			}

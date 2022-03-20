@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ssdownload
+package shareddownload
 
 import (
 	"context"
@@ -65,9 +65,9 @@ type downloadManager struct {
 }
 
 type downloadWork struct {
-	op         *fftypes.Operation
-	preparedOp *fftypes.PreparedOperation
-	attempts   int
+	dispatchedAt time.Time
+	preparedOp   *fftypes.PreparedOperation
+	attempts     int
 }
 
 type Callbacks interface {
@@ -96,7 +96,7 @@ func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorag
 		retryMaxDelay:              config.GetDuration(config.DownloadRetryMaxDelay),
 		retryFactor:                config.GetFloat64(config.DownloadRetryFactor),
 	}
-	// Work queue is twice
+	// Work queue is twice the size of the worker count
 	workQueueLength := config.GetInt(config.DownloadWorkerQueueLength)
 	if workQueueLength <= 0 {
 		workQueueLength = 2 * dm.workerCount
@@ -186,10 +186,11 @@ func (dm *downloadManager) recoverDownloads(startupTime *fftypes.FFTime) {
 				log.L(dm.ctx).Errorf("Failed to recover pending download %s/%s: %s", op.Type, op.ID, err)
 				continue
 			}
+			recovered++
 			log.L(dm.ctx).Infof("Recovering pending download %s/%s", op.Type, op.ID)
 			dm.dispatchWork(&downloadWork{
-				op:         op,
-				preparedOp: preparedOp,
+				dispatchedAt: time.Now(),
+				preparedOp:   preparedOp,
 			})
 		}
 	}
@@ -209,7 +210,7 @@ func (dm *downloadManager) waitAndRetryDownload(work *downloadWork) {
 	delay := dm.calcDelay(work.attempts)
 	<-time.After(delay)
 	delayTimeMS := time.Since(startedWaiting).Milliseconds()
-	totalTimeMS := time.Since(*work.op.Created.Time()).Milliseconds()
+	totalTimeMS := time.Since(work.dispatchedAt).Milliseconds()
 	log.L(dm.ctx).Infof("Retrying download operation %s/%s after %dms (total=%dms,attempts=%d)",
 		work.preparedOp.Type, work.preparedOp.ID, delayTimeMS, totalTimeMS, work.attempts)
 	dm.dispatchWork(work)
@@ -217,13 +218,13 @@ func (dm *downloadManager) waitAndRetryDownload(work *downloadWork) {
 
 func (dm *downloadManager) InitiateDownloadBatch(ctx context.Context, ns string, tx *fftypes.UUID, payloadRef string) error {
 	op := fftypes.NewOperation(dm.sharedstorage, ns, tx, fftypes.OpTypeSharedStorageDownloadBatch)
-	addDownloadBatchInputs(op, payloadRef)
+	addDownloadBatchInputs(op, ns, payloadRef)
 	return dm.createAndDispatchOp(ctx, op, opDownloadBatch(op, ns, payloadRef))
 }
 
 func (dm *downloadManager) InitiateDownloadBlob(ctx context.Context, ns string, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error {
 	op := fftypes.NewOperation(dm.sharedstorage, ns, tx, fftypes.OpTypeSharedStorageDownloadBlob)
-	addDownloadBlobInputs(op, payloadRef)
+	addDownloadBlobInputs(op, ns, dataID, payloadRef)
 	return dm.createAndDispatchOp(ctx, op, opDownloadBlob(op, ns, dataID, payloadRef))
 }
 
@@ -232,8 +233,8 @@ func (dm *downloadManager) createAndDispatchOp(ctx context.Context, op *fftypes.
 		// Use a closure hook to dispatch the work once the operation is successfully in the DB.
 		// Note we have crash recovery of pending operations on startup.
 		dm.dispatchWork(&downloadWork{
-			op:         op,
-			preparedOp: preparedOp,
+			dispatchedAt: time.Now(),
+			preparedOp:   preparedOp,
 		})
 	})
 	if err != nil {
