@@ -9597,7 +9597,8 @@ paths:
                   type: string
                 name:
                   type: string
-                parent: {}
+                parent:
+                  type: string
                 profile:
                   additionalProperties: {}
                   type: object
