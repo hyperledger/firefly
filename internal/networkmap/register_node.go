@@ -32,7 +32,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 	}
 
 	nodeRequest := &fftypes.IdentityCreateDTO{
-		Parent: nodeOwningOrg.ID,
+		Parent: nodeOwningOrg.ID.String(),
 		Name:   config.GetString(config.NodeName),
 		Type:   fftypes.IdentityTypeNode,
 		IdentityProfile: fftypes.IdentityProfile{

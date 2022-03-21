@@ -9069,6 +9069,61 @@ paths:
           description: Success
         default:
           description: ""
+  /network/identities/{did}:
+    get:
+      description: 'TODO: Description'
+      operationId: getIdentityByDID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  did:
+                    type: string
+                  id: {}
+                  messages:
+                    properties:
+                      claim: {}
+                      update: {}
+                      verification: {}
+                    type: object
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  parent: {}
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                  type:
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/nodes:
     get:
       description: 'TODO: Description'
@@ -9542,7 +9597,8 @@ paths:
                   type: string
                 name:
                   type: string
-                parent: {}
+                parent:
+                  type: string
                 profile:
                   additionalProperties: {}
                   type: object

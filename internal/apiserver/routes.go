@@ -47,6 +47,7 @@ var routes = []*oapispec.Route{
 	getGroups,
 	getIdentities,
 	getIdentityByID,
+	getIdentityByDID,
 	getIdentityDID,
 	getIdentityVerifiers,
 	getMsgByID,

@@ -23,6 +23,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,6 +41,8 @@ type SwaggerGenConfig struct {
 	Version     string
 	Description string
 }
+
+var customRegexRemoval = regexp.MustCompile(`{(\w+)\:[^}]+}`)
 
 func SwaggerGen(ctx context.Context, routes []*Route, conf *SwaggerGenConfig) *openapi3.T {
 
@@ -72,6 +75,7 @@ func getPathItem(doc *openapi3.T, path string) *openapi3.PathItem {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
+	path = customRegexRemoval.ReplaceAllString(path, `{$1}`)
 	if doc.Paths == nil {
 		doc.Paths = openapi3.Paths{}
 	}

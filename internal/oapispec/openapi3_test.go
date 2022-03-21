@@ -178,3 +178,24 @@ func TestBadCustomSchema(t *testing.T) {
 		})
 	})
 }
+
+func TestWildcards(t *testing.T) {
+
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:            "op1",
+			Path:            "namespaces/{ns}/example1/{id:.*wildcard.*}",
+			Method:          http.MethodPost,
+			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+			JSONInputMask:   []string{"id"},
+			JSONOutputCodes: []int{http.StatusOK},
+		},
+	}
+	swagger := SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+		Title:   "UnitTest",
+		Version: "1.0",
+		BaseURL: "http://localhost:12345/api/v1",
+	})
+	assert.NotNil(t, swagger.Paths["/namespaces/{ns}/example1/{id}"])
+}

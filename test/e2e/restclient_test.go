@@ -263,7 +263,7 @@ func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc str
 		SetBody(fftypes.IdentityCreateDTO{
 			Name:   name,
 			Type:   fftypes.IdentityTypeCustom,
-			Parent: parent,
+			Parent: parent.String(),
 			Key:    key,
 			IdentityProfile: fftypes.IdentityProfile{
 				Description: desc,

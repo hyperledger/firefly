@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -285,4 +286,34 @@ func TestGetVerifierByHashBadUUID(t *testing.T) {
 	defer cancel()
 	_, err := nm.GetVerifierByHash(nm.ctx, "ns1", "bad")
 	assert.Regexp(t, "FF10232", err)
+}
+
+func TestGetVerifierByDIDOk(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookup", nm.ctx, "did:firefly:org/abc").
+		Return(testOrg("abc"), true, nil)
+	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
+	assert.NoError(t, err)
+	assert.Equal(t, "did:firefly:org/abc", id.DID)
+}
+
+func TestGetVerifierByDIDNotFound(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookup", nm.ctx, "did:firefly:org/abc").
+		Return(nil, true, nil)
+	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
+	assert.Regexp(t, "FF10109", err)
+	assert.Nil(t, id)
+}
+
+func TestGetVerifierByDIDNotErr(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookup", nm.ctx, "did:firefly:org/abc").
+		Return(nil, true, fmt.Errorf("pop"))
+	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
+	assert.Regexp(t, "pop", err)
+	assert.Nil(t, id)
 }

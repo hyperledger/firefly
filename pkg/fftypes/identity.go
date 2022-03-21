@@ -82,7 +82,7 @@ type Identity struct {
 type IdentityCreateDTO struct {
 	Name   string       `json:"name"`
 	Type   IdentityType `json:"type,omitempty"`
-	Parent *UUID        `json:"parent,omitempty"`
+	Parent string       `json:"parent,omitempty"` // can be a DID for resolution, or the UUID directly
 	Key    string       `json:"key,omitempty"`
 	IdentityProfile
 }
