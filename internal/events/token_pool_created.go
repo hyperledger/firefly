@@ -45,6 +45,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
+	em.emitBlockchainEventMetric(*ev)
 	if op, err := em.findTXOperation(ctx, pool.TX.ID, fftypes.OpTypeTokenActivatePool); err != nil {
 		return err
 	} else if op == nil {

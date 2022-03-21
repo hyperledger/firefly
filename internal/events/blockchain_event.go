@@ -35,8 +35,6 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 		Output:     event.Output,
 		Info:       event.Info,
 		Timestamp:  event.Timestamp,
-		Location:   event.Location,
-		Signature:  event.Signature,
 	}
 	if tx != nil {
 		ev.TX = *tx
@@ -45,9 +43,6 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 }
 
 func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
-	if em.metrics.IsMetricsEnabled() && chainEvent.Location != "" && chainEvent.Signature != "" {
-		em.metrics.BlockchainEvent(chainEvent.Location, chainEvent.Signature)
-	}
 	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
@@ -56,6 +51,12 @@ func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *
 		return err
 	}
 	return nil
+}
+
+func (em *eventManager) emitBlockchainEventMetric(event blockchain.Event) {
+	if em.metrics.IsMetricsEnabled() && event.Location != "" && event.Signature != "" {
+		em.metrics.BlockchainEvent(event.Location, event.Signature)
+	}
 }
 
 func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
@@ -75,6 +76,7 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
+			em.emitBlockchainEventMetric(event.Event)
 			return nil
 		})
 		return err != nil, err

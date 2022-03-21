@@ -122,6 +122,7 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
+			em.emitBlockchainEventMetric(batchPin.Event)
 			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
 				return err
 			}

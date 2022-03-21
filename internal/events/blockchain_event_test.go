@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -94,4 +95,29 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestBlockchainEventMetric(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mm := &metricsmocks.Manager{}
+	em.metrics = mm
+	mm.On("IsMetricsEnabled").Return(true)
+	mm.On("BlockchainEvent", mock.Anything, mock.Anything).Return()
+
+	event := blockchain.Event{
+		BlockchainTXID: "0xabcd1234",
+		Name:           "Changed",
+		Output: fftypes.JSONObject{
+			"value": "1",
+		},
+		Info: fftypes.JSONObject{
+			"blockNumber": "10",
+		},
+		Location:  "0x12345",
+		Signature: "John Hancock",
+	}
+
+	em.emitBlockchainEventMetric(event)
+	mm.AssertExpectations(t)
 }

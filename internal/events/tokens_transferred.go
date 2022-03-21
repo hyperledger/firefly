@@ -100,7 +100,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
-
+	em.emitBlockchainEventMetric(transfer.Event)
 	if err := em.database.UpsertTokenTransfer(ctx, &transfer.TokenTransfer); err != nil {
 		log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 		return false, err
@@ -142,10 +142,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 					}
 				}
 			}
-
-			if em.metrics.IsMetricsEnabled() && transfer.Event.Location != "" && transfer.Event.Signature != "" {
-				em.metrics.BlockchainEvent(transfer.Event.Location, transfer.Event.Signature)
-			}
+			em.emitBlockchainEventMetric(transfer.Event)
 
 			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, transfer.Namespace, transfer.LocalID, transfer.TX.ID)
 			return em.database.InsertEvent(ctx, event)

@@ -28,6 +28,4 @@ type BlockchainEvent struct {
 	Info       JSONObject     `json:"info,omitempty"`
 	Timestamp  *FFTime        `json:"timestamp,omitempty"`
 	TX         TransactionRef `json:"tx"`
-	Location   string         `json:"-"`
-	Signature  string         `json:"-"`
 }
