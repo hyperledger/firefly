@@ -101,7 +101,7 @@ func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *
 	return nil
 }
 
-func (em *eventManager) emitBlockchainEventMetric(event blockchain.Event) {
+func (em *eventManager) emitBlockchainEventMetric(event *blockchain.Event) {
 	if em.metrics.IsMetricsEnabled() && event.Location != "" && event.Signature != "" {
 		em.metrics.BlockchainEvent(event.Location, event.Signature)
 	}
@@ -123,7 +123,7 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
-			em.emitBlockchainEventMetric(event.Event)
+			em.emitBlockchainEventMetric(&event.Event)
 			return nil
 		})
 		return err != nil, err

@@ -165,6 +165,6 @@ func TestBlockchainEventMetric(t *testing.T) {
 		Signature: "John Hancock",
 	}
 
-	em.emitBlockchainEventMetric(event)
+	em.emitBlockchainEventMetric(&event)
 	mm.AssertExpectations(t)
 }

@@ -88,7 +88,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
-	em.emitBlockchainEventMetric(approval.Event)
+	em.emitBlockchainEventMetric(&approval.Event)
 	if err := em.database.UpsertTokenApproval(ctx, &approval.TokenApproval); err != nil {
 		log.L(ctx).Errorf("Failed to record token approval '%s': %s", approval.ProtocolID, err)
 		return false, err
