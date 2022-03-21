@@ -100,8 +100,11 @@ func (nm *networkMap) GetIdentityByDID(ctx context.Context, did string) (*fftype
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	filter := fb.And().Condition(fb.Eq("did", did))
 	results, _, err := nm.database.GetIdentities(ctx, filter)
-	if err != nil || len(results) == 0 {
+	if err != nil {
 		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
 	return results[0], nil
 }

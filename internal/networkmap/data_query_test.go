@@ -286,3 +286,39 @@ func TestGetVerifierByHashBadUUID(t *testing.T) {
 	_, err := nm.GetVerifierByHash(nm.ctx, "ns1", "bad")
 	assert.Regexp(t, "FF10232", err)
 }
+
+func TestGetVerifierByDIDOk(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.MatchedBy(func(f database.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		v, err := fi.Children[0].Value.Value()
+		assert.NoError(t, err)
+		return v == "did:firefly:org/abc"
+	})).
+		Return([]*fftypes.Identity{testOrg("abc")}, nil, nil)
+	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
+	assert.NoError(t, err)
+	assert.Equal(t, "did:firefly:org/abc", id.DID)
+}
+
+func TestGetVerifierByDIDNotFound(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).
+		Return([]*fftypes.Identity{}, nil, nil)
+	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
+	assert.Regexp(t, "FF10109", err)
+	assert.Nil(t, id)
+}
+
+func TestGetVerifierByDIDNotErr(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).
+		Return(nil, nil, fmt.Errorf("pop"))
+	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
+	assert.Regexp(t, "pop", err)
+	assert.Nil(t, id)
+}
