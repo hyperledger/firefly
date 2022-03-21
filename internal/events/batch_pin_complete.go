@@ -62,6 +62,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
+			em.emitBlockchainEventMetric(&batchPin.Event)
 			private := batchPin.BatchPayloadRef == ""
 			if err := em.persistContexts(ctx, batchPin, signingKey, private); err != nil {
 				return err
