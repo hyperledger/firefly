@@ -66,15 +66,19 @@ func TestDeliveryRequestOk(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = se.DeliveryRequest(se.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+			},
 		},
 	}, nil)
 	assert.NoError(t, err)
 
 	err = se.DeliveryRequest(se.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns2",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns2",
+			},
 		},
 	}, nil)
 	assert.NoError(t, err)
@@ -98,8 +102,10 @@ func TestDeliveryRequestFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = se.DeliveryRequest(mock.Anything, &fftypes.Subscription{}, &fftypes.EventDelivery{
-		Event: fftypes.Event{
-			Namespace: "ns1",
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				Namespace: "ns1",
+			},
 		},
 	}, nil)
 	assert.EqualError(t, err, "pop")

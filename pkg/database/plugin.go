@@ -77,6 +77,9 @@ type iMessageCollection interface {
 	//                 must match the hash of the record that is being inserted.
 	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
+	// InsertMessages performs a batch insert of messages assured to be new records - fails if they already exist, so caller can fall back to upsert individually
+	InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error)
+
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
@@ -93,6 +96,9 @@ type iMessageCollection interface {
 	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 
+	// GetMessageIDs - Retrieves messages, but only querying the messages ID (no other fields)
+	GetMessageIDs(ctx context.Context, filter Filter) (ids []*fftypes.IDAndSequence, err error)
+
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 }
@@ -103,6 +109,9 @@ type iDataCollection interface {
 	//              must match the hash of the record that is being inserted.
 	UpsertData(ctx context.Context, data *fftypes.Data, optimization UpsertOptimization) (err error)
 
+	// InsertDataArray performs a batch insert of data assured to be new records - fails if they already exist, so caller can fall back to upsert individually
+	InsertDataArray(ctx context.Context, data fftypes.DataArray) (err error)
+
 	// UpdateData - Update data
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
@@ -110,7 +119,7 @@ type iDataCollection interface {
 	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error)
 
 	// GetData - Get data
-	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, res *FilterResult, err error)
+	GetData(ctx context.Context, filter Filter) (message fftypes.DataArray, res *FilterResult, err error)
 
 	// GetDataRefs - Get data references only (no data)
 	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, res *FilterResult, err error)
@@ -118,16 +127,16 @@ type iDataCollection interface {
 
 type iBatchCollection interface {
 	// UpsertBatch - Upsert a batch - the hash cannot change
-	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
+	UpsertBatch(ctx context.Context, data *fftypes.BatchPersisted) (err error)
 
 	// UpdateBatch - Update data
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetBatchByID - Get a batch by ID
-	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
+	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.BatchPersisted, err error)
 
 	// GetBatches - Get batches
-	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, res *FilterResult, err error)
+	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.BatchPersisted, res *FilterResult, err error)
 }
 
 type iTransactionCollection interface {
@@ -179,6 +188,9 @@ type iOffsetCollection interface {
 }
 
 type iPinCollection interface {
+	// InsertPins - Inserts a list of pins - fails if they already exist, so caller can fall back to upsert individually
+	InsertPins(ctx context.Context, pins []*fftypes.Pin) (err error)
+
 	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash+index sequence already exists
 	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
 
@@ -194,10 +206,13 @@ type iPinCollection interface {
 
 type iOperationCollection interface {
 	// InsertOperation - Insert an operation
-	InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
+	InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
 	ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
+
+	// UpdateOperation - Update an operation
+	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
@@ -562,7 +577,7 @@ type OrderedUUIDCollectionNS CollectionName
 const (
 	CollectionMessages         OrderedUUIDCollectionNS = "messages"
 	CollectionEvents           OrderedUUIDCollectionNS = "events"
-	CollectionBlockchainEvents OrderedUUIDCollectionNS = "contractevents"
+	CollectionBlockchainEvents OrderedUUIDCollectionNS = "blockchainevents"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -627,6 +642,11 @@ const (
 	CollectionTokenBalances OtherCollection = "tokenbalances"
 )
 
+// PostCompletionHook is a closure/function that will be called after a successful insertion.
+// This includes where the insert is nested in a RunAsGroup, and the database is transactional.
+// These hooks are useful when triggering code that relies on the inserted database object being available.
+type PostCompletionHook func()
+
 // Callbacks are the methods for passing data from plugin to core
 //
 // If Capabilities returns ClusterEvents=true then these should be broadcast to every instance within
@@ -656,7 +676,7 @@ type Callbacks interface {
 
 // Capabilities defines the capabilities a plugin can report as implementing or not
 type Capabilities struct {
-	ClusterEvents bool
+	Concurrency bool
 }
 
 // NamespaceQueryFactory filter fields for namespaces
@@ -764,20 +784,19 @@ var OperationQueryFactory = &queryFields{
 	"output":    &JSONField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},
+	"retry":     &UUIDField{},
 }
 
 // SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
-	"id":            &UUIDField{},
-	"namespace":     &StringField{},
-	"name":          &StringField{},
-	"transport":     &StringField{},
-	"events":        &StringField{},
-	"filter.topics": &StringField{},
-	"filter.tag":    &StringField{},
-	"filter.group":  &StringField{},
-	"options":       &StringField{},
-	"created":       &TimeField{},
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"transport": &StringField{},
+	"events":    &StringField{},
+	"filters":   &JSONField{},
+	"options":   &StringField{},
+	"created":   &TimeField{},
 }
 
 // EventQueryFactory filter fields for data events
@@ -788,6 +807,7 @@ var EventQueryFactory = &queryFields{
 	"reference":  &UUIDField{},
 	"correlator": &UUIDField{},
 	"tx":         &UUIDField{},
+	"topic":      &StringField{},
 	"sequence":   &Int64Field{},
 	"created":    &TimeField{},
 }

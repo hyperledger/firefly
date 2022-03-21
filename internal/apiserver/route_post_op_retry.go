@@ -17,6 +17,7 @@
 package apiserver
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -25,21 +26,27 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getMsgOps = &oapispec.Route{
-	Name:   "getMsgOps",
-	Path:   "namespaces/{ns}/messages/{msgid}/operations",
-	Method: http.MethodGet,
+var postOpRetry = &oapispec.Route{
+	Name:   "postOpRetry",
+	Path:   "namespaces/{ns}/operations/{opid}/retry",
+	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "msgid", Description: i18n.MsgTBD},
+		{Name: "opid", Description: i18n.MsgTBD},
 	},
-	QueryParams:     nil,
+	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
-	JSONOutputCodes: []int{http.StatusOK},
+	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
+	JSONInputMask:   nil,
+	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
+	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
+	JSONOutputCodes: []int{http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetMessageOperations(r.Ctx, r.PP["ns"], r.PP["msgid"]))
+		opid, err := fftypes.ParseUUID(r.Ctx, r.PP["opid"])
+		if err != nil {
+			return nil, err
+		}
+		return getOr(r.Ctx).Operations().RetryOperation(r.Ctx, r.PP["ns"], opid)
 	},
 }

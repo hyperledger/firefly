@@ -25,14 +25,20 @@ import (
 )
 
 type ContractListener struct {
-	ID         *UUID               `json:"id,omitempty"`
-	Interface  *FFIReference       `json:"interface,omitempty"`
-	Namespace  string              `json:"namespace,omitempty"`
-	Name       string              `json:"name,omitempty"`
-	ProtocolID string              `json:"protocolId,omitempty"`
-	Location   *JSONAny            `json:"location,omitempty"`
-	Created    *FFTime             `json:"created,omitempty"`
-	Event      *FFISerializedEvent `json:"event,omitempty"`
+	ID         *UUID                    `json:"id,omitempty"`
+	Interface  *FFIReference            `json:"interface,omitempty"`
+	Namespace  string                   `json:"namespace,omitempty"`
+	Name       string                   `json:"name,omitempty"`
+	ProtocolID string                   `json:"protocolId,omitempty"`
+	Location   *JSONAny                 `json:"location,omitempty"`
+	Created    *FFTime                  `json:"created,omitempty"`
+	Event      *FFISerializedEvent      `json:"event,omitempty"`
+	Topic      string                   `json:"topic,omitempty"`
+	Options    *ContractListenerOptions `json:"options,omitempty"`
+}
+
+type ContractListenerOptions struct {
+	FirstEvent string `json:"firstEvent,omitempty"`
 }
 
 type ContractListenerInput struct {
@@ -61,5 +67,25 @@ func (fse *FFISerializedEvent) Scan(src interface{}) error {
 
 func (fse FFISerializedEvent) Value() (driver.Value, error) {
 	bytes, _ := json.Marshal(fse)
+	return bytes, nil
+}
+
+// Scan implements sql.Scanner
+func (o *ContractListenerOptions) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case nil:
+		o = nil
+		return nil
+	case string:
+		return json.Unmarshal([]byte(src), &o)
+	case []byte:
+		return json.Unmarshal(src, &o)
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, o)
+	}
+}
+
+func (o ContractListenerOptions) Value() (driver.Value, error) {
+	bytes, _ := json.Marshal(o)
 	return bytes, nil
 }

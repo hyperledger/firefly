@@ -38,10 +38,13 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/networkmap"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
+	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -76,6 +79,7 @@ type Orchestrator interface {
 	Contracts() contracts.Manager
 	Metrics() metrics.Manager
 	BatchManager() batch.Manager
+	Operations() operations.Manager
 	IsPreInit() bool
 
 	// Status
@@ -103,12 +107,12 @@ type Orchestrator interface {
 	GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error)
 	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
-	GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error)
+	GetMessageData(ctx context.Context, ns, id string) (fftypes.DataArray, error)
 	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error)
-	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error)
-	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, *database.FilterResult, error)
+	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.BatchPersisted, error)
+	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BatchPersisted, *database.FilterResult, error)
 	GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error)
-	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error)
+	GetData(ctx context.Context, ns string, filter database.AndFilter) (fftypes.DataArray, *database.FilterResult, error)
 	GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error)
 	GetDatatypeByName(ctx context.Context, ns, name, version string) (*fftypes.Datatype, error)
 	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, *database.FilterResult, error)
@@ -116,8 +120,10 @@ type Orchestrator interface {
 	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
+	GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.EnrichedEvent, *database.FilterResult, error)
 	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
 	GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error)
+	GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error)
 
 	// Charts
 	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogram, error)
@@ -160,6 +166,9 @@ type orchestrator struct {
 	contracts      contracts.Manager
 	node           *fftypes.UUID
 	metrics        metrics.Manager
+	operations     operations.Manager
+	sharedDownload shareddownload.Manager
+	txHelper       txcommon.Helper
 }
 
 func NewOrchestrator() Orchestrator {
@@ -194,6 +203,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
+	or.bc.ss = or.sharedstorage
 	return err
 }
 
@@ -214,6 +224,9 @@ func (or *orchestrator) Start() error {
 	}
 	if err == nil {
 		err = or.messaging.Start()
+	}
+	if err == nil {
+		err = or.sharedDownload.Start()
 	}
 	if err == nil {
 		for _, el := range or.tokens {
@@ -240,6 +253,14 @@ func (or *orchestrator) WaitStop() {
 	if or.broadcast != nil {
 		or.broadcast.WaitStop()
 		or.broadcast = nil
+	}
+	if or.data != nil {
+		or.data.WaitStop()
+		or.data = nil
+	}
+	if or.sharedDownload != nil {
+		or.sharedDownload.WaitStop()
+		or.sharedDownload = nil
 	}
 	or.started = false
 }
@@ -282,6 +303,10 @@ func (or *orchestrator) Contracts() contracts.Manager {
 
 func (or *orchestrator) Metrics() metrics.Manager {
 	return or.metrics
+}
+
+func (or *orchestrator) Operations() operations.Manager {
+	return or.operations
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
@@ -445,6 +470,10 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
+	if or.txHelper == nil {
+		or.txHelper = txcommon.NewTransactionHelper(or.database, or.data)
+	}
+
 	if or.identity == nil {
 		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data)
 		if err != nil {
@@ -453,36 +482,47 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or, or.database, or.data)
+		or.batch, err = batch.NewBatchManager(ctx, or, or.database, or.data, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
+	if or.operations == nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.database); err != nil {
+			return err
+		}
+	}
+
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
-	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain, or.metrics)
+
+	if or.batchpin == nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database, or.identity, or.blockchain, or.metrics, or.operations); err != nil {
+			return err
+		}
+	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics)
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchain)
+		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchain, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}
@@ -490,8 +530,15 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	or.definitions = definitions.NewDefinitionHandlers(or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.broadcast, or.messaging, or.assets, or.contracts)
 
+	if or.sharedDownload == nil {
+		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.database, or.sharedstorage, or.dataexchange, or.operations, &or.bc)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.metrics)
+		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
 		if err != nil {
 			return err
 		}

@@ -85,8 +85,6 @@ func TestVerifyTXType(t *testing.T) {
 
 	msg.Header.TxType = TransactionTypeTokenPool
 	err = msg.Seal(context.Background())
-	assert.NoError(t, err)
-	err = msg.Verify(context.Background())
 	assert.Regexp(t, "FF10343", err)
 }
 
@@ -259,4 +257,21 @@ func TestSetInlineData(t *testing.T) {
 	b, err := json.Marshal(&msg)
 	assert.NoError(t, err)
 	assert.Regexp(t, "some data", string(b))
+}
+
+func TestMessageImmutable(t *testing.T) {
+	msg := &Message{
+		Header: MessageHeader{
+			ID: NewUUID(),
+		},
+		BatchID:   NewUUID(),
+		Hash:      NewRandB32(),
+		State:     MessageStateConfirmed,
+		Confirmed: Now(),
+		Data: DataRefs{
+			{ID: NewUUID(), Hash: NewRandB32()},
+		},
+		Pins: NewFFStringArray("pin1", "pin2"),
+	}
+	assert.True(t, msg.Hash.Equals(msg.BatchMessage().Hash))
 }

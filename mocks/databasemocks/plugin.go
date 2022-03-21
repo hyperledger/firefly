@@ -162,15 +162,15 @@ func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) 
 }
 
 // GetBatchByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Batch, error) {
+func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BatchPersisted, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Batch); ok {
+	var r0 *fftypes.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BatchPersisted); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Batch)
+			r0 = ret.Get(0).(*fftypes.BatchPersisted)
 		}
 	}
 
@@ -185,15 +185,15 @@ func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 }
 
 // GetBatches provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*fftypes.Batch, *database.FilterResult, error) {
+func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*fftypes.BatchPersisted, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Batch); ok {
+	var r0 []*fftypes.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.BatchPersisted); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Batch)
+			r0 = ret.Get(0).([]*fftypes.BatchPersisted)
 		}
 	}
 
@@ -584,15 +584,15 @@ func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filt
 }
 
 // GetData provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftypes.Data, *database.FilterResult, error) {
+func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) (fftypes.DataArray, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Data); ok {
+	var r0 fftypes.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) fftypes.DataArray); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Data)
+			r0 = ret.Get(0).(fftypes.DataArray)
 		}
 	}
 
@@ -1186,6 +1186,29 @@ func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*fftype
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetMessageIDs provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]*fftypes.IDAndSequence, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.IDAndSequence
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.IDAndSequence); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.IDAndSequence)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2221,6 +2244,20 @@ func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bloc
 	return r0
 }
 
+// InsertDataArray provides a mock function with given fields: ctx, data
+func (_m *Plugin) InsertDataArray(ctx context.Context, data fftypes.DataArray) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.DataArray) error); ok {
+		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertEvent provides a mock function with given fields: ctx, data
 func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	ret := _m.Called(ctx, data)
@@ -2228,6 +2265,20 @@ func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) error); ok {
 		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertMessages provides a mock function with given fields: ctx, messages
+func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Message) error {
+	ret := _m.Called(ctx, messages)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Message) error); ok {
+		r0 = rf(ctx, messages)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2249,13 +2300,34 @@ func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) e
 	return r0
 }
 
-// InsertOperation provides a mock function with given fields: ctx, operation
-func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operation) error {
-	ret := _m.Called(ctx, operation)
+// InsertOperation provides a mock function with given fields: ctx, operation, hooks
+func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, operation)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
-		r0 = rf(ctx, operation)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, operation, hooks...)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertPins provides a mock function with given fields: ctx, pins
+func (_m *Plugin) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
+	ret := _m.Called(ctx, pins)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Pin) error); ok {
+		r0 = rf(ctx, pins)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2473,6 +2545,20 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database
 	return r0
 }
 
+// UpdateOperation provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdatePins provides a mock function with given fields: ctx, filter, update
 func (_m *Plugin) UpdatePins(ctx context.Context, filter database.Filter, update database.Update) error {
 	ret := _m.Called(ctx, filter, update)
@@ -2544,11 +2630,11 @@ func (_m *Plugin) UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, upd
 }
 
 // UpsertBatch provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch) error {
+func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.BatchPersisted) error {
 	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)

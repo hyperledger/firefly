@@ -86,6 +86,21 @@ if [ "$CREATE_STACK" == "true" ]; then
 
   $CLI start -b $STACK_NAME
   checkOk $?
+
+  if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
+      prefix='contract address: '
+      output=$($CLI deploy $STACK_NAME ../data/simplestorage/simple_storage.json | grep address)
+      export CONTRACT_ADDRESS=${output#"$prefix"}
+  fi
+fi
+
+if [ "$TOKENS_PROVIDER" == "erc20_erc721" ]; then
+    prefix='contract address: '
+    output=$($CLI deploy $STACK_NAME ../data/erc20/ERC20WithData.json | grep address)
+    export ERC20_CONTRACT_ADDRESS=${output#"$prefix"}
+    prefix='contract address: '
+    output=$($CLI deploy $STACK_NAME ../data/erc721/ERC721WithData.json | grep address)
+    export ERC721_CONTRACT_ADDRESS=${output#"$prefix"}
 fi
 
 $CLI info $STACK_NAME
@@ -95,3 +110,14 @@ export STACK_FILE
 
 go clean -testcache && go test -v . -run $TEST_SUITE
 checkOk $?
+
+if [ "$RESTART" == "true" ]; then
+  $CLI stop $STACK_NAME
+  checkOk $?
+
+  $CLI start $STACK_NAME
+  checkOk $?
+
+  go clean -testcache && go test -v . -run $TEST_SUITE
+  checkOk $?
+fi

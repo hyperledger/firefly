@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	var dt fftypes.Datatype
@@ -56,7 +56,7 @@ func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID, tx)
+		event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID, tx, fftypes.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

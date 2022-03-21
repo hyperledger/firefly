@@ -17,17 +17,14 @@
 package events
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -36,23 +33,40 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func sampleBatch(t *testing.T, txType fftypes.TransactionType, data ...*fftypes.Data) *fftypes.Batch {
+func sampleBatch(t *testing.T, batchType fftypes.BatchType, txType fftypes.TransactionType, data fftypes.DataArray, blobs ...*fftypes.Blob) *fftypes.Batch {
 	identity := fftypes.SignerRef{Author: "signingOrg", Key: "0x12345"}
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			SignerRef: identity,
-			ID:        fftypes.NewUUID(),
-			TxType:    txType,
-		},
+	msgType := fftypes.MessageTypeBroadcast
+	if batchType == fftypes.BatchTypePrivate {
+		msgType = fftypes.MessageTypePrivate
 	}
-	for _, d := range data {
-		err := d.Seal(context.Background(), nil)
+	for i, d := range data {
+		var blob *fftypes.Blob
+		d.Namespace = "ns1"
+		if len(blobs) > i {
+			blob = blobs[i]
+		}
+		err := d.Seal(context.Background(), blob)
 		assert.NoError(t, err)
 	}
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Namespace: "ns1",
+			SignerRef: identity,
+			ID:        fftypes.NewUUID(),
+			Type:      msgType,
+			TxType:    txType,
+			Topics:    fftypes.FFStringArray{"topic1"},
+		},
+		Data: data.Refs(),
+	}
 	batch := &fftypes.Batch{
-		SignerRef: identity,
-		ID:        fftypes.NewUUID(),
-		Node:      fftypes.NewUUID(),
+		BatchHeader: fftypes.BatchHeader{
+			Namespace: "ns1",
+			SignerRef: identity,
+			Type:      batchType,
+			ID:        fftypes.NewUUID(),
+			Node:      fftypes.NewUUID(),
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   fftypes.NewUUID(),
@@ -64,17 +78,21 @@ func sampleBatch(t *testing.T, txType fftypes.TransactionType, data ...*fftypes.
 	}
 	err := msg.Seal(context.Background())
 	assert.NoError(t, err)
-	batch.Hash = batch.Payload.Hash()
+	bp, _ := batch.Confirmed()
+	batch.Hash = fftypes.HashString(bp.Manifest.String())
 	return batch
 }
+
 func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	batch := &blockchain.BatchPin{
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	batchPin := &blockchain.BatchPin{
 		Namespace:       "ns1",
-		TransactionID:   fftypes.NewUUID(),
-		BatchID:         fftypes.NewUUID(),
+		TransactionID:   batch.Payload.TX.ID,
+		BatchID:         batch.ID,
 		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 		Event: blockchain.Event{
@@ -83,38 +101,14 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 			ProtocolID:     "10/20/30",
 		},
 	}
-	batchData := &fftypes.Batch{
-		ID:        batch.BatchID,
-		Namespace: "ns1",
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x22222",
-		},
-		PayloadRef: batch.BatchPayloadRef,
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   batch.TransactionID,
-			},
-			Messages: []*fftypes.Message{},
-			Data:     []*fftypes.Data{},
-		},
-	}
-	batchData.Hash = batchData.Payload.Hash()
-	batch.BatchHash = batchData.Hash
-	batchDataBytes, err := json.Marshal(&batchData)
-	assert.NoError(t, err)
-	batchReadCloser := ioutil.NopCloser(bytes.NewReader(batchDataBytes))
 
-	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
-	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
-		Return(batchReadCloser, nil)
+	batch.Hash = batch.Payload.Hash()
+	batchPin.BatchHash = batch.Hash
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batch.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
 		Return(false, fmt.Errorf("pop")).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", batch.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
 		Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -128,35 +122,34 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	}
 
 	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.Name == batch.Event.Name
+		return e.Name == batchPin.Event.Name
 	})).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.Name == batch.Event.Name
-	})).Return(nil).Times(2)
+		return e.Name == batchPin.Event.Name
+	})).Return(nil).Times(1)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEventReceived
-	})).Return(nil).Times(2)
-	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil).Once()
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil).Once()
+	})).Return(nil).Times(1)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
+	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("NormalizeSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
-
-	err = em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	batch := &blockchain.BatchPin{
+	batchPin := &blockchain.BatchPin{
 		Namespace:     "ns1",
 		TransactionID: fftypes.NewUUID(),
 		BatchID:       fftypes.NewUUID(),
@@ -165,37 +158,20 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 			BlockchainTXID: "0x12345",
 		},
 	}
-	batchData := &fftypes.Batch{
-		ID:         batch.BatchID,
-		Namespace:  "ns1",
-		PayloadRef: batch.BatchPayloadRef,
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   batch.TransactionID,
-			},
-			Messages: []*fftypes.Message{},
-			Data:     []*fftypes.Data{},
-		},
-	}
-	batchDataBytes, err := json.Marshal(&batchData)
-	assert.NoError(t, err)
-	batchReadCloser := ioutil.NopCloser(bytes.NewReader(batchDataBytes))
-
-	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
-	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr string) bool { return pr == batch.BatchPayloadRef })).
-		Return(batchReadCloser, nil)
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batch.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("These pins have been seen before")) // simulate replay fallback
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+
 	mbi := &blockchainmocks.Plugin{}
 
-	err = em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -208,13 +184,49 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
-func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
+func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel()
+
+	batchPin := &blockchain.BatchPin{
+		Namespace:     "ns1",
+		TransactionID: fftypes.NewUUID(),
+		BatchID:       fftypes.NewUUID(),
+		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Event: blockchain.Event{
+			BlockchainTXID: "0x12345",
+		},
+	}
+
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("optimization miss"))
+	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+
+	mbi := &blockchainmocks.Plugin{}
+
+	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
+	assert.Regexp(t, "FF10158", err)
+
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
+}
+func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 
-	batch := &blockchain.BatchPin{
-		Namespace:       "ns",
+	batchPin := &blockchain.BatchPin{
+		Namespace:       "ns1",
 		TransactionID:   fftypes.NewUUID(),
 		BatchID:         fftypes.NewUUID(),
 		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
@@ -225,40 +237,26 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	}
 
 	cancel() // to avoid retry
-	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
-	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
+	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
+
+	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
-	mpi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	msd.AssertExpectations(t)
+	mth.AssertExpectations(t)
 	assert.Regexp(t, "FF10158", err)
-}
-
-func TestBatchPinCompleteBadData(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	batch := &blockchain.BatchPin{
-		Namespace:       "ns",
-		TransactionID:   fftypes.NewUUID(),
-		BatchID:         fftypes.NewUUID(),
-		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
-	}
-	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
-
-	mpi := em.sharedstorage.(*sharedstoragemocks.Plugin)
-	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
-	mbi := &blockchainmocks.Plugin{}
-
-	err := em.BatchPinComplete(mbi, batch, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "0xffffeeee",
-	})
-	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
 }
 
 func TestBatchPinCompleteNoTX(t *testing.T) {
@@ -298,8 +296,9 @@ func TestBatchPinCompleteBadNamespace(t *testing.T) {
 func TestPersistBatchMissingID(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	valid, err := em.persistBatch(context.Background(), &fftypes.Batch{})
+	batch, valid, err := em.persistBatch(context.Background(), &fftypes.Batch{})
 	assert.False(t, valid)
+	assert.Nil(t, batch)
 	assert.NoError(t, err)
 }
 
@@ -308,23 +307,25 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	defer cancel()
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
+		Hash: batchHash,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
-		Hash: batchHash,
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash)
+	_, valid, err := em.persistBatch(context.Background(), batch)
 	assert.NoError(t, err) // retryable
 	assert.False(t, valid)
 }
@@ -334,23 +335,25 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 	defer cancel()
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
+		Hash: batchHash,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
-		Hash: batchHash,
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("author2", nil)
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash)
+	_, valid, err := em.persistBatch(context.Background(), batch)
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -359,23 +362,25 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
+		Hash: fftypes.NewRandB32(),
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
-		Hash: fftypes.NewRandB32(),
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKeyIdentity", mock.Anything, mock.Anything).Return("author1", nil)
 	batch.Hash = batch.Payload.Hash()
-	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32())
+	_, valid, err := em.persistBatch(context.Background(), batch)
 	assert.NoError(t, err)
 	assert.False(t, valid)
 }
@@ -383,26 +388,15 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
-		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-	}
-	batch.Hash = batch.Payload.Hash()
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(database.HashMismatch)
 
-	valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), batch)
 	assert.False(t, valid)
+	assert.Nil(t, bp)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
@@ -410,11 +404,26 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 func TestPersistBatchBadHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	batch.Hash = fftypes.NewRandB32()
+
+	bp, valid, err := em.persistBatch(context.Background(), batch)
+	assert.False(t, valid)
+	assert.Nil(t, bp)
+	assert.NoError(t, err)
+}
+
+func TestPersistBatchNoData(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -425,33 +434,23 @@ func TestPersistBatchBadHash(t *testing.T) {
 	}
 	batch.Hash = fftypes.NewRandB32()
 
-	valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), batch)
 	assert.False(t, valid)
+	assert.Nil(t, bp)
 	assert.NoError(t, err)
 }
 
 func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
-		},
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   fftypes.NewUUID(),
-			},
-		},
-	}
-	batch.Hash = batch.Payload.Hash()
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), batch)
+	assert.Nil(t, bp)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
@@ -460,19 +459,21 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: fftypes.SignerRef{
+				Author: "author1",
+				Key:    "0x12345",
+			},
+			Namespace: "ns1",
 		},
-		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 			Messages: []*fftypes.Message{nil},
-			Data:     []*fftypes.Data{nil},
+			Data:     fftypes.DataArray{nil},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
@@ -480,74 +481,26 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 
-	valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), batch)
 	assert.False(t, valid)
 	assert.NoError(t, err)
+	assert.Nil(t, bp)
 	mdi.AssertExpectations(t)
 }
 
-func TestPersistBatchGoodDataUpsertOptimizeExistingFail(t *testing.T) {
+func TestPersistBatchGoodDataUpsertOptimizFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	batch := &fftypes.Batch{
-		ID:   fftypes.NewUUID(),
-		Node: testNodeID,
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
-		},
-		Namespace: "ns1",
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   fftypes.NewUUID(),
-			},
-			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
-			},
-		},
-	}
-	batch.Payload.Data[0].Hash = batch.Payload.Data[0].Value.Hash()
-	batch.Hash = batch.Payload.Hash()
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(fmt.Errorf("optimzation miss"))
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistBatch(context.Background(), batch)
-	assert.False(t, valid)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	batch := &fftypes.Batch{
-		ID:   fftypes.NewUUID(),
-		Node: fftypes.NewUUID(),
-		SignerRef: fftypes.SignerRef{
-			Author: "author1",
-			Key:    "0x12345",
-		},
-		Namespace: "ns1",
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   fftypes.NewUUID(),
-			},
-			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)},
-			},
-		},
-	}
-	batch.Payload.Data[0].Hash = batch.Payload.Data[0].Value.Hash()
-	batch.Hash = batch.Payload.Hash()
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
-
-	valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), batch)
+	assert.Nil(t, bp)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
@@ -555,25 +508,26 @@ func TestPersistBatchGoodDataUpsertOptimizeNewFail(t *testing.T) {
 func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin)
-	batch.Node = nil
-	batch.Payload.Messages[0].Header.DataHash = batch.Payload.Messages[0].Data.Hash()
-	batch.Payload.Messages[0].Hash = batch.Payload.Messages[0].Header.Hash()
-	batch.Hash = batch.Payload.Hash()
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
+	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", mock.Anything, mock.Anything).Return(fmt.Errorf("optimzation miss"))
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
-	valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), batch)
 	assert.False(t, valid)
+	assert.Nil(t, bp)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin)
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 	batch.Payload.Messages[0].Header.Key = "0x9999999"
 	batch.Payload.Messages[0].Header.DataHash = batch.Payload.Messages[0].Data.Hash()
 	batch.Payload.Messages[0].Hash = batch.Payload.Messages[0].Header.Hash()
@@ -582,7 +536,8 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 
-	valid, err := em.persistBatch(context.Background(), batch)
+	bp, valid, err := em.persistBatch(context.Background(), batch)
+	assert.Nil(t, bp)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 }
@@ -591,13 +546,15 @@ func TestPersistBatchDataNilData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
 	}
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
-	assert.NoError(t, err)
+	valid := em.validateBatchData(context.Background(), batch, 0, data)
+	assert.False(t, valid)
 }
 
 func TestPersistBatchDataBadHash(t *testing.T) {
@@ -607,41 +564,10 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtr(`"test"`),
 	}
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin, data)
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
 	batch.Payload.Data[0].Hash = fftypes.NewRandB32()
-	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
-	assert.NoError(t, err)
-}
-
-func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin)
-	batch.Hash = fftypes.NewRandB32()
-
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	data.Hash = data.Value.Hash()
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(database.HashMismatch)
-
-	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
-	assert.NoError(t, err)
-	mdi.AssertExpectations(t)
-}
-
-func TestPersistBatchDataUpsertDataError(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin, data)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
-
-	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
-	assert.EqualError(t, err, "pop")
+	valid := em.validateBatchData(context.Background(), batch, 0, data)
+	assert.False(t, valid)
 }
 
 func TestPersistBatchDataOk(t *testing.T) {
@@ -649,89 +575,136 @@ func TestPersistBatchDataOk(t *testing.T) {
 	defer cancel()
 
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin, data)
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+
+	valid := em.validateBatchData(context.Background(), batch, 0, data)
+	assert.True(t, valid)
+}
+
+func TestPersistBatchDataWithPublicAlreaydDownloadedOk(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+		Size: 12345,
+	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`), Blob: &fftypes.BlobRef{
+		Hash:   blob.Hash,
+		Size:   12345,
+		Name:   "myfile.txt",
+		Public: "ref1",
+	}}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data}, blob)
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
 
-	err := em.persistBatchData(context.Background(), batch, 0, data, database.UpsertOptimizationSkip)
-	assert.NoError(t, err)
-	mdi.AssertExpectations(t)
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
+	assert.Nil(t, err)
+	assert.True(t, valid)
+}
+
+func TestPersistBatchDataWithPublicInitiateDownload(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+		Size: 12345,
+	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`), Blob: &fftypes.BlobRef{
+		Hash:   blob.Hash,
+		Size:   12345,
+		Name:   "myfile.txt",
+		Public: "ref1",
+	}}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data}, blob)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
+
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
+	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(nil)
+
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
+	assert.Nil(t, err)
+	assert.True(t, valid)
+}
+
+func TestPersistBatchDataWithPublicInitiateDownloadFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+		Size: 12345,
+	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`), Blob: &fftypes.BlobRef{
+		Hash:   blob.Hash,
+		Size:   12345,
+		Name:   "myfile.txt",
+		Public: "ref1",
+	}}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data}, blob)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
+
+	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
+	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(fmt.Errorf("pop"))
+
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
+	assert.Regexp(t, "pop", err)
+	assert.False(t, valid)
+}
+
+func TestPersistBatchDataWithBlobGetBlobFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	blob := &fftypes.Blob{
+		Hash: fftypes.NewRandB32(),
+		Size: 12345,
+	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`), Blob: &fftypes.BlobRef{
+		Hash:   blob.Hash,
+		Size:   12345,
+		Name:   "myfile.txt",
+		Public: "ref1",
+	}}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data}, blob)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
+
+	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
+	assert.Regexp(t, "pop", err)
+	assert.False(t, valid)
 }
 
 func TestPersistBatchMessageNilData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID: fftypes.NewUUID(),
+		BatchHeader: fftypes.BatchHeader{
+			ID: fftypes.NewUUID(),
+		},
 	}
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	valid, err := em.persistBatchMessage(context.Background(), batch, 0, msg, database.UpsertOptimizationSkip)
+	valid := em.validateBatchMessage(context.Background(), batch, 0, msg)
 	assert.False(t, valid)
-	assert.NoError(t, err)
-}
-
-func TestPersistBatchMessageUpsertHashMismatch(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(database.HashMismatch)
-
-	valid, err := em.persistBatchMessage(context.Background(), batch, 0, batch.Payload.Messages[0], database.UpsertOptimizationSkip)
-	assert.False(t, valid)
-	assert.NoError(t, err)
-	mdi.AssertExpectations(t)
-}
-
-func TestPersistBatchMessageUpsertMessageFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin)
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(fmt.Errorf("pop"))
-
-	valid, err := em.persistBatchMessage(context.Background(), batch, 0, batch.Payload.Messages[0], database.UpsertOptimizationSkip)
-	assert.False(t, valid)
-	assert.EqualError(t, err, "pop")
 }
 
 func TestPersistBatchMessageOK(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	batch := sampleBatch(t, fftypes.TransactionTypeBatchPin)
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{})
 
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
-
-	valid, err := em.persistBatchMessage(context.Background(), batch, 0, batch.Payload.Messages[0], database.UpsertOptimizationSkip)
+	valid := em.validateBatchMessage(context.Background(), batch, 0, batch.Payload.Messages[0])
 	assert.True(t, valid)
-	assert.NoError(t, err)
-	mdi.AssertExpectations(t)
-}
-
-func TestPersistContextsFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	err := em.persistContexts(em.ctx, &blockchain.BatchPin{
-		Contexts: []*fftypes.Bytes32{
-			fftypes.NewRandB32(),
-		},
-	}, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
-		Value: "0x12345",
-	}, false)
-	assert.EqualError(t, err, "pop")
-	mdi.AssertExpectations(t)
 }

@@ -47,7 +47,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 		namespace:        "unit",
 		offsetName:       "test",
 		queryFactory:     database.EventQueryFactory,
-		getItems: func(c context.Context, f database.Filter) ([]fftypes.LocallySequenced, error) {
+		getItems: func(c context.Context, f database.Filter, o int64) ([]fftypes.LocallySequenced, error) {
 			events, _, err := mdi.GetEvents(c, f)
 			ls := make([]fftypes.LocallySequenced, len(events))
 			for i, e := range events {
@@ -207,7 +207,7 @@ func TestReadPageSingleCommitEvent(t *testing.T) {
 		return false, nil
 	}, nil)
 	cancel()
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{ev1}, nil, nil).Once()
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil)
 	ep.eventLoop()
@@ -226,8 +226,9 @@ func TestReadPageRewind(t *testing.T) {
 	}, func() (bool, int64) {
 		return true, 12345
 	})
+	ep.pollingOffset = 23456
 	cancel()
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
 	mdi.On("GetEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
 		f, err := filter.Finalize()
 		assert.NoError(t, err)
@@ -248,7 +249,7 @@ func TestReadPageProcessEventsRetryExit(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, func(events []fftypes.LocallySequenced) (bool, error) { return false, fmt.Errorf("pop") }, nil)
 	cancel()
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{ev1}, nil, nil).Once()
 	ep.eventLoop()
 
@@ -262,7 +263,7 @@ func TestProcessEventsFail(t *testing.T) {
 	}, nil)
 	defer cancel()
 	_, err := ep.conf.newEventsHandler([]fftypes.LocallySequenced{
-		fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil),
+		fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, ""),
 	})
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -310,4 +311,42 @@ func TestDoubleTap(t *testing.T) {
 	defer cancel()
 	ep.shoulderTap()
 	ep.shoulderTap() // this should not block
+}
+
+func TestDoubleConfirm(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	defer cancel()
+	ep.commitOffset(12345)
+	ep.commitOffset(12346) // this should not block
+}
+
+func TestOffsetCommitLoopOk(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	cancel()
+
+	mdi.On("UpdateOffset", mock.Anything, ep.offsetID, mock.Anything).Return(nil)
+
+	ep.offsetCommitted <- int64(12345)
+	close(ep.offsetCommitted)
+	ep.offsetCommitLoop()
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOffsetCommitLoopFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+
+	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
+	cancel()
+
+	mdi.On("UpdateOffset", mock.Anything, ep.offsetID, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ep.offsetCommitted <- int64(12345)
+	close(ep.offsetCommitted)
+	ep.offsetCommitLoop()
+
+	mdi.AssertExpectations(t)
 }

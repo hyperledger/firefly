@@ -40,8 +40,10 @@ func (em *eventManager) loadApprovalOperation(ctx context.Context, tx *fftypes.U
 		return err
 	}
 	if len(operations) > 0 {
-		if err = txcommon.RetrieveTokenApprovalInputs(ctx, operations[0], approval); err != nil {
+		if origApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, operations[0]); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.ProtocolID, err)
+		} else if origApproval != nil {
+			approval.LocalID = origApproval.LocalID
 		}
 	}
 
@@ -102,7 +104,7 @@ func (em *eventManager) TokensApproved(ti tokens.Plugin, approval *tokens.TokenA
 				return err
 			}
 
-			event := fftypes.NewEvent(fftypes.EventTypeApprovalConfirmed, approval.Namespace, approval.LocalID, approval.TX.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeApprovalConfirmed, approval.Namespace, approval.LocalID, approval.TX.ID, approval.Pool.String())
 			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)

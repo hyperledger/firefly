@@ -157,7 +157,7 @@ func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter
 	return gm.database.GetGroups(ctx, filter)
 }
 
-func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32) (*fftypes.Group, []*fftypes.Identity, error) {
+func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32, allowNil bool) (*fftypes.Group, []*fftypes.Identity, error) {
 
 	if cached := gm.groupCache.Get(groupHash.String()); cached != nil {
 		cached.Extend(gm.groupCacheTTL)
@@ -166,7 +166,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 	}
 
 	group, err := gm.database.GetGroupByHash(ctx, groupHash)
-	if err != nil {
+	if err != nil || (allowNil && group == nil) {
 		return nil, nil, err
 	}
 	if group == nil {
@@ -206,7 +206,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
 	if msg.Header.Tag == fftypes.SystemTagDefineGroup {
 		// Store the new group
-		data, foundAll, err := gm.data.GetMessageData(ctx, msg, true)
+		data, foundAll, err := gm.data.GetMessageDataCached(ctx, msg)
 		if err != nil || !foundAll || len(data) == 0 {
 			log.L(ctx).Warnf("Group %s definition in message %s invalid: missing data", msg.Header.Group, msg.Header.ID)
 			return nil, err

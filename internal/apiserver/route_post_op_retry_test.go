@@ -17,23 +17,46 @@
 package apiserver
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetMessageOperations(t *testing.T) {
+func TestPostOpRetry(t *testing.T) {
 	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/uuid1/operations", nil)
+	mom := &operationmocks.Manager{}
+	o.On("Operations").Return(mom)
+	input := fftypes.EmptyInput{}
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(&input)
+	opID := fftypes.NewUUID()
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/operations/"+opID.String()+"/retry", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageOperations", mock.Anything, "mynamespace", "uuid1", mock.Anything).
-		Return([]*fftypes.Operation{}, nil, nil)
+	mom.On("RetryOperation", mock.Anything, "ns1", opID).
+		Return(&fftypes.Operation{}, nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Result().StatusCode)
+	assert.Equal(t, 202, res.Result().StatusCode)
+}
+
+func TestPostOpRetryBadID(t *testing.T) {
+	_, r := newTestAPIServer()
+	input := fftypes.EmptyInput{}
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(&input)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/operations/bad/retry", &buf)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
 }

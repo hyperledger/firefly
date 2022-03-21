@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type streamManager struct {
@@ -133,11 +134,18 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName string, abi ABIElementMarshaling) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, fromBlock string, abi ABIElementMarshaling) (*subscription, error) {
+	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
+	switch fromBlock {
+	case string(fftypes.SubOptsFirstEventOldest):
+		fromBlock = "0"
+	case string(fftypes.SubOptsFirstEventNewest):
+		fromBlock = "latest"
+	}
 	sub := subscription{
 		Name:      subName,
 		Stream:    stream,
-		FromBlock: "0",
+		FromBlock: fromBlock,
 		Address:   location.Address,
 		Event:     abi,
 	}
@@ -176,11 +184,11 @@ func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, st
 	subName := fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)
 
 	for _, s := range existingSubs {
-		if s.Name == subName ||
+		if s.Stream == stream && (s.Name == subName ||
 			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
 			   If one of these very early environments needed a new subscription, the existing one would need to
 				 be deleted manually. */
-			s.Name == abi.Name {
+			s.Name == abi.Name) {
 			sub = s
 		}
 	}
@@ -190,7 +198,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, st
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, subName, abi); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, string(fftypes.SubOptsFirstEventOldest), abi); err != nil {
 			return nil, err
 		}
 	}

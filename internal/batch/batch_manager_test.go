@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
@@ -33,29 +34,44 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestE2EDispatchBroadcast(t *testing.T) {
-	log.SetLevel("debug")
+func testConfigReset() {
 	config.Reset()
+	log.SetLevel("debug")
+}
+
+func newTestBatchManager(t *testing.T) (*batchManager, func()) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, err := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
+	assert.NoError(t, err)
+	return bm.(*batchManager), bm.(*batchManager).cancelCtx
+}
+
+func TestE2EDispatchBroadcast(t *testing.T) {
+	testConfigReset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	readyForDispatch := make(chan bool)
-	waitForDispatch := make(chan *fftypes.Batch)
-	handler := func(ctx context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	waitForDispatch := make(chan *DispatchState)
+	handler := func(ctx context.Context, state *DispatchState) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
 		}
-		assert.Len(t, s, 2)
+		assert.Len(t, state.Pins, 2)
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
 			"746f70696331",
 		/*|  topic1   | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[0].String())
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
@@ -63,13 +79,13 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		/*|   topic2  | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[1].String())
 
-		waitForDispatch <- b
+		waitForDispatch <- state
 		return nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm)
+	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
 	bm := bmi.(*batchManager)
 
 	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, handler, DispatcherOptions{
@@ -97,11 +113,13 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		ID:   dataID1,
 		Hash: dataHash,
 	}
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(msg, fftypes.DataArray{data}, true, nil)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{{ID: *msg.Header.ID}}, nil).Once()
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{}, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
@@ -129,8 +147,8 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	assert.NotNil(t, status.Processors[0].Status.Flushing)
 
 	b := <-waitForDispatch
-	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
-	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+	assert.Equal(t, *msg.Header.ID, *b.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Data[0].ID)
 
 	close(readyForDispatch)
 
@@ -146,23 +164,23 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 }
 
 func TestE2EDispatchPrivateUnpinned(t *testing.T) {
-	log.SetLevel("debug")
-	config.Reset()
+	testConfigReset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	readyForDispatch := make(chan bool)
-	waitForDispatch := make(chan *fftypes.Batch)
+	waitForDispatch := make(chan *DispatchState)
 	var groupID fftypes.Bytes32
 	_ = groupID.UnmarshalText([]byte("44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b"))
-	handler := func(ctx context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+	handler := func(ctx context.Context, state *DispatchState) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
 		}
-		assert.Len(t, s, 2)
+		assert.Len(t, state.Pins, 2)
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
 			"746f70696331" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "0000000000003039",
@@ -170,7 +188,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[0].String())
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
@@ -179,12 +197,12 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
-		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
-		waitForDispatch <- b
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), state.Pins[1].String())
+		waitForDispatch <- state
 		return nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm)
+	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
 	bm := bmi.(*batchManager)
 
 	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypePrivate}, handler, DispatcherOptions{
@@ -213,9 +231,11 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		ID:   dataID1,
 		Hash: dataHash,
 	}
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(msg, fftypes.DataArray{data}, true, nil)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{{ID: *msg.Header.ID}}, nil).Once()
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{}, nil)
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil) // pins
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -246,8 +266,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 
 	readyForDispatch <- true
 	b := <-waitForDispatch
-	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
-	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+	assert.Equal(t, *msg.Header.ID, *b.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Data[0].ID)
 
 	// Wait until everything closes
 	close(readyForDispatch)
@@ -257,19 +277,23 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 }
 
 func TestDispatchUnknownType(t *testing.T) {
-	log.SetLevel("debug")
-	config.Reset()
+	testConfigReset()
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	ctx, cancel := context.WithCancel(context.Background())
-	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm)
+	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
 	bm := bmi.(*batchManager)
 
-	msg := &fftypes.Message{}
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{{ID: *msg.Header.ID}}, nil).Once()
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(msg, fftypes.DataArray{}, true, nil)
 
 	err := bm.Start()
 	assert.NoError(t, err)
@@ -280,7 +304,7 @@ func TestDispatchUnknownType(t *testing.T) {
 }
 
 func TestInitFailNoPersistence(t *testing.T) {
-	_, err := NewBatchManager(context.Background(), nil, nil, nil)
+	_, err := NewBatchManager(context.Background(), nil, nil, nil, nil)
 	assert.Error(t, err)
 }
 
@@ -289,10 +313,10 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
 	defer bm.Close()
-	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
-	err := bm.(*batchManager).dispatchMessage(msg)
+	_, err := bm.(*batchManager).getProcessor(fftypes.BatchTypeBroadcast, "wrong", nil, "ns1", &fftypes.SignerRef{})
 	assert.Regexp(t, "FF10126", err)
 }
 
@@ -300,8 +324,9 @@ func TestMessageSequencerCancelledContext(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop")).Once()
+	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
 	defer bm.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -314,26 +339,35 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeNone, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
+		func(c context.Context, state *DispatchState) error {
+			return nil
+		},
+		DispatcherOptions{BatchType: fftypes.BatchTypeBroadcast},
+	)
 
 	dataID := fftypes.NewUUID()
-	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).
-		Return([]*fftypes.Message{
-			{
-				Header: fftypes.MessageHeader{
-					ID:        fftypes.NewUUID(),
-					Namespace: "ns1",
-				},
-				Data: []*fftypes.DataRef{
-					{ID: dataID},
-				}},
-		}, nil, nil).
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.MessageTypeBroadcast,
+			Namespace: "ns1",
+			TxType:    fftypes.TransactionTypeNone,
+		},
+		Data: []*fftypes.DataRef{
+			{ID: dataID},
+		}}
+
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything, mock.Anything).
+		Return([]*fftypes.IDAndSequence{{ID: *msg.Header.ID}}, nil, nil).
 		Run(func(args mock.Arguments) {
 			bm.Close()
 		}).
 		Once()
-	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, nil)
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{}, nil, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(msg, fftypes.DataArray{}, false, nil)
 
 	bm.(*batchManager).messageSequencer()
 
@@ -347,27 +381,32 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		return nil
-	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
+	bm, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
+		func(c context.Context, state *DispatchState) error {
+			return nil
+		},
+		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
+	)
 
 	dataID := fftypes.NewUUID()
-	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
-		{
-			Header: fftypes.MessageHeader{
-				ID:        fftypes.NewUUID(),
-				TxType:    fftypes.TransactionTypeBatchPin,
-				Type:      fftypes.MessageTypeBroadcast,
-				Namespace: "ns1",
-			},
-			Data: []*fftypes.DataRef{
-				{ID: dataID},
-			}},
-	}, nil, nil)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			TxType:    fftypes.TransactionTypeBatchPin,
+			Type:      fftypes.MessageTypeBroadcast,
+			Namespace: "ns1",
+		},
+		Data: []*fftypes.DataRef{
+			{ID: dataID},
+		},
+	}
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{{ID: *msg.Header.ID}}, nil, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(msg, fftypes.DataArray{{ID: dataID}}, true, nil)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -398,27 +437,30 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		cancelCtx()
-		return fmt.Errorf("fizzle")
-	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
+	bm, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
+		func(c context.Context, state *DispatchState) error {
+			cancelCtx()
+			return fmt.Errorf("fizzle")
+		}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
+	)
 
 	dataID := fftypes.NewUUID()
-	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
-		{
-			Header: fftypes.MessageHeader{
-				ID:        fftypes.NewUUID(),
-				TxType:    fftypes.TransactionTypeBatchPin,
-				Type:      fftypes.MessageTypeBroadcast,
-				Namespace: "ns1",
-			},
-			Data: []*fftypes.DataRef{
-				{ID: dataID},
-			}},
-	}, nil, nil)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			TxType:    fftypes.TransactionTypeBatchPin,
+			Type:      fftypes.MessageTypeBroadcast,
+			Namespace: "ns1",
+		},
+		Data: []*fftypes.DataRef{
+			{ID: dataID},
+		},
+	}
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{{ID: *msg.Header.ID}}, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(msg, fftypes.DataArray{{ID: dataID}}, true, nil)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	bm.(*batchManager).messageSequencer()
@@ -429,31 +471,36 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
+
 func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	bm, _ := NewBatchManager(ctx, mni, mdi, mdm)
-	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
-		return nil
-	}, DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0})
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
+	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast},
+		func(c context.Context, state *DispatchState) error {
+			return nil
+		},
+		DispatcherOptions{BatchMaxSize: 1, DisposeTimeout: 0},
+	)
 
 	dataID := fftypes.NewUUID()
-	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
-		{
-			Header: fftypes.MessageHeader{
-				ID:        fftypes.NewUUID(),
-				TxType:    fftypes.TransactionTypeBatchPin,
-				Type:      fftypes.MessageTypeBroadcast,
-				Namespace: "ns1",
-			},
-			Data: []*fftypes.DataRef{
-				{ID: dataID},
-			}},
-	}, nil, nil)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			TxType:    fftypes.TransactionTypeBatchPin,
+			Type:      fftypes.MessageTypeBroadcast,
+			Namespace: "ns1",
+		},
+		Data: []*fftypes.DataRef{
+			{ID: dataID},
+		},
+	}
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.IDAndSequence{{ID: *msg.Header.ID}}, nil)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(msg, fftypes.DataArray{{ID: dataID}}, true, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
@@ -479,39 +526,46 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 }
 
 func TestWaitForPollTimeout(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	bm.(*batchManager).messagePollTimeout = 1 * time.Microsecond
-	bm.(*batchManager).waitForNewMessages()
+	bm, _ := newTestBatchManager(t)
+	bm.messagePollTimeout = 1 * time.Microsecond
+	bm.waitForNewMessages()
 }
 
-func TestWaitForNewMessage(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bmi, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	bm := bmi.(*batchManager)
+func TestRewindForNewMessage(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+	go bm.newMessageNotifier()
+	bm.messagePollTimeout = 1 * time.Second
+	bm.waitForNewMessages()
 	bm.readOffset = 22222
+	bm.NewMessages() <- 12346
+	bm.NewMessages() <- 12347
 	bm.NewMessages() <- 12345
 	bm.waitForNewMessages()
-	assert.Equal(t, int64(12344), bm.readOffset)
+	assert.Equal(t, int64(12344), bm.rewindOffset)
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageIDs", mock.Anything, mock.MatchedBy(func(f database.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		v, err := fi.Children[0].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12344), v)
+		return true
+	})).Return(nil, nil)
+	_, err := bm.readPage()
+	assert.NoError(t, err)
 }
 
 func TestAssembleMessageDataNilData(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
 	bm.Close()
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, nil)
-	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID: fftypes.NewUUID(),
-		},
-		Data: fftypes.DataRefs{{ID: nil}},
-	})
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, nil)
+	_, _, err := bm.(*batchManager).assembleMessageData(fftypes.NewUUID())
 	assert.Regexp(t, "FF10133", err)
 }
 
@@ -519,17 +573,12 @@ func TestGetMessageDataFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, fmt.Errorf("pop"))
 	bm.Close()
-	_, _ = bm.(*batchManager).assembleMessageData(&fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID: fftypes.NewUUID(),
-		},
-		Data: fftypes.DataRefs{
-			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-		},
-	})
+	_, _, err := bm.(*batchManager).assembleMessageData(fftypes.NewUUID())
+	assert.Regexp(t, "FF10158", err)
 	mdm.AssertExpectations(t)
 }
 
@@ -537,16 +586,10 @@ func TestGetMessageNotFound(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, nil)
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	bm, _ := NewBatchManager(context.Background(), mni, mdi, mdm, txHelper)
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(nil, nil, false, nil)
 	bm.Close()
-	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID: fftypes.NewUUID(),
-		},
-		Data: fftypes.DataRefs{
-			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-		},
-	})
+	_, _, err := bm.(*batchManager).assembleMessageData(fftypes.NewUUID())
 	assert.Regexp(t, "FF10133", err)
 }

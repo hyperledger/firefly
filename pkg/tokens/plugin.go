@@ -45,7 +45,7 @@ type Plugin interface {
 	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) (complete bool, err error)
+	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
 	MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
@@ -104,15 +104,20 @@ type TokenPool struct {
 	// ProtocolID is the ID assigned to this pool by the connector (must be unique for this connector)
 	ProtocolID string
 
-	// TransactionID is the FireFly-assigned ID to correlate this to a transaction (optional)
-	// Not guaranteed to be set for pool creation events triggered outside of FireFly
-	TransactionID *fftypes.UUID
+	// TX is the FireFly-assigned information to correlate this to a transaction (optional)
+	TX fftypes.TransactionRef
 
 	// Connector is the configured name of this connector
 	Connector string
 
 	// Standard is the well-defined token standard that this pool conforms to (optional)
 	Standard string
+
+	// Symbol is the short token symbol, if the connector uses one (optional)
+	Symbol string
+
+	// Info is any other connector-specific info on the pool that may be worth saving (optional)
+	Info fftypes.JSONObject
 
 	// Event contains info on the underlying blockchain event for this pool creation
 	Event blockchain.Event

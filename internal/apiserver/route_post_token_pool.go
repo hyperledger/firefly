@@ -39,7 +39,7 @@ var postTokenPool = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.TokenPool{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Standard", "ProtocolID", "TX", "Message", "State", "Created"},
+	JSONInputMask:   []string{"ID", "Namespace", "Standard", "ProtocolID", "TX", "Message", "State", "Created", "Info"},
 	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

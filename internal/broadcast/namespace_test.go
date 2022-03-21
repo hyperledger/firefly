@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -69,9 +68,9 @@ func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, fftypes.SystemNamespace, mock.Anything).Return(nil)
 	mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
+	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
+	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(nil)
 	buff := strings.Builder{}
 	buff.Grow(4097)
 	for i := 0; i < 4097; i++ {

@@ -261,7 +261,7 @@ func (wh *WebHooks) ValidateOptions(options *fftypes.SubscriptionOptions) error 
 	return err
 }
 
-func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) (req *whRequest, res *whResponse, err error) {
+func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) (req *whRequest, res *whResponse, err error) {
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	allData := make([]*fftypes.JSONAny, 0, len(data))
 	var firstData fftypes.JSONObject
@@ -350,7 +350,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 	return req, res, nil
 }
 
-func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
 	req, res, gwErr := wh.attemptRequest(sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
@@ -400,7 +400,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 	return nil
 }
 
-func (wh *WebHooks) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+func (wh *WebHooks) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
 	if event.Message == nil && sub.Options.WithData != nil && *sub.Options.WithData {
 		log.L(wh.ctx).Debugf("Webhook withData=true subscription called with non-message event '%s'", event.ID)
 		return nil

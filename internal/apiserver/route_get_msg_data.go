@@ -37,7 +37,7 @@ var getMsgData = &oapispec.Route{
 	FilterFactory:   nil, // No filtering on this route - use namespaces/{ns}/data
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Data{} },
+	JSONOutputValue: func() interface{} { return fftypes.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = getOr(r.Ctx).GetMessageData(r.Ctx, r.PP["ns"], r.PP["msgid"])

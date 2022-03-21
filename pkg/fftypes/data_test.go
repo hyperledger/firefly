@@ -33,6 +33,7 @@ func TestEstimateDataSize(t *testing.T) {
 		ValueSize: 4,
 	}
 	assert.Equal(t, dataSizeEstimateBase+int64(4), d.EstimateSize())
+	assert.Equal(t, dataSizeEstimateBase+int64(4), d.EstimateSize())
 }
 
 func TestDatatypeReference(t *testing.T) {
@@ -204,5 +205,51 @@ func TestHashDataNull(t *testing.T) {
 	hash, err := d.CalcHash(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(t, expectedHash.String(), hash.String())
+
+}
+
+func TestDataImmutable(t *testing.T) {
+	data := &Data{
+		ID:        NewUUID(),
+		Validator: ValidatorTypeJSON,
+		Namespace: "ns1",
+		Hash:      NewRandB32(),
+		Created:   Now(),
+	}
+	assert.True(t, data.Hash.Equals(data.BatchData(BatchTypeBroadcast).Hash))
+
+	data.Blob = &BlobRef{
+		Hash:   NewRandB32(),
+		Size:   12345,
+		Name:   "name.txt",
+		Public: "sharedStorageRef",
+	}
+	assert.Equal(t, data.Blob, data.BatchData(BatchTypeBroadcast).Blob)
+	assert.Empty(t, data.BatchData(BatchTypePrivate).Blob.Public)
+}
+
+func TestDataArryToRefs(t *testing.T) {
+	data1 := &Data{
+		ID:        NewUUID(),
+		Validator: ValidatorTypeJSON,
+		Namespace: "ns1",
+		Hash:      NewRandB32(),
+		Created:   Now(),
+		ValueSize: 12345,
+	}
+	data2 := &Data{
+		ID:        NewUUID(),
+		Validator: ValidatorTypeJSON,
+		Namespace: "ns1",
+		Hash:      NewRandB32(),
+		Created:   Now(),
+		ValueSize: 23456,
+	}
+
+	da := DataArray{data1, data2}
+	assert.Equal(t, da.Refs(), DataRefs{
+		{ID: data1.ID, Hash: data1.Hash, ValueSize: 12345},
+		{ID: data2.ID, Hash: data2.Hash, ValueSize: 23456},
+	})
 
 }

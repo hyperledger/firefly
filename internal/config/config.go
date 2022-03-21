@@ -54,6 +54,10 @@ var (
 	APIRequestMaxTimeout = rootKey("api.requestMaxTimeout")
 	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
 	APIShutdownTimeout = rootKey("api.shutdownTimeout")
+	// BatchCacheSize
+	BatchCacheSize = rootKey("batch.cache.size")
+	// BatchCacheSize
+	BatchCacheTTL = rootKey("batch.cache.ttl")
 	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
 	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
@@ -74,6 +78,18 @@ var (
 	BroadcastBatchPayloadLimit = rootKey("broadcast.batch.payloadLimit")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
+	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
+	DownloadWorkerCount = rootKey("download.worker.count")
+	// DownloadWorkerQueueLength is the length of the work queue in the channel to the workers - defaults to 2x the worker count
+	DownloadWorkerQueueLength = rootKey("download.worker.queueLength")
+	// DownloadRetryMaxAttempts is the maximum number of automatic attempts to make for each shared storage download before failing the operation
+	DownloadRetryMaxAttempts = rootKey("download.retry.maxAttempts")
+	// DownloadRetryInitDelay is the initial retry delay
+	DownloadRetryInitDelay = rootKey("download.retry.initialDelay")
+	// DownloadRetryMaxDelay is the maximum retry delay
+	DownloadRetryMaxDelay = rootKey("download.retry.maxDelay")
+	// DownloadRetryFactor is the backoff factor to use for retries
+	DownloadRetryFactor = rootKey("download.retry.factor")
 	// PrivateMessagingBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	PrivateMessagingBatchAgentTimeout = rootKey("privatemessaging.batch.agentTimeout")
 	// PrivateMessagingBatchSize is the maximum size of a batch for broadcast messages
@@ -148,6 +164,10 @@ var (
 	EventDispatcherRetryMaxDelay = rootKey("event.dispatcher.retry.maxDelay")
 	// EventDBEventsBufferSize the size of the buffer of change events
 	EventDBEventsBufferSize = rootKey("event.dbevents.bufferSize")
+	// EventListenerTopicCacheSize cache size for blockchain listeners addresses
+	EventListenerTopicCacheSize = rootKey("event.listenerToipc.cache.size")
+	// EventListenerTopicCacheTTL cache time-to-live for private group addresses
+	EventListenerTopicCacheTTL = rootKey("event.listenerToipc.cache.ttl")
 	// GroupCacheSize cache size for private group addresses
 	GroupCacheSize = rootKey("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses
@@ -184,6 +204,16 @@ var (
 	LogMaxAge = rootKey("log.maxAge")
 	// LogCompress sets whether to compress backups
 	LogCompress = rootKey("log.compress")
+	// MessageCacheSize
+	MessageCacheSize = rootKey("message.cache.size")
+	// MessageCacheTTL
+	MessageCacheTTL = rootKey("message.cache.ttl")
+	// MessageWriterCount
+	MessageWriterCount = rootKey("message.writer.count")
+	// MessageWriterBatchTimeout
+	MessageWriterBatchTimeout = rootKey("message.writer.batchTimeout")
+	// MessageWriterBatchMaxInserts
+	MessageWriterBatchMaxInserts = rootKey("message.writer.batchMaxInserts")
 	// MetricsEnabled determines whether metrics will be instrumented and if the metrics server will be enabled or not
 	MetricsEnabled = rootKey("metrics.enabled")
 	// MetricsPath determines what path to serve the Prometheus metrics from
@@ -220,12 +250,10 @@ var (
 	SubscriptionsRetryMaxDelay = rootKey("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = rootKey("subscription.retry.factor")
-	// AssetManagerRetryInitialDelay is the initial retry delay
-	AssetManagerRetryInitialDelay = rootKey("asset.manager.retry.initDelay")
-	// AssetManagerRetryMaxDelay is the initial retry delay
-	AssetManagerRetryMaxDelay = rootKey("asset.manager.retry.maxDelay")
-	// AssetManagerRetryFactor the backoff factor to use for retry of database operations
-	AssetManagerRetryFactor = rootKey("asset.manager.retry.factor")
+	// TransactionCacheSize
+	TransactionCacheSize = rootKey("transaction.cache.size")
+	// TransactionCacheTTL
+	TransactionCacheTTL = rootKey("transaction.cache.ttl")
 	// AssetManagerKeyNormalization mechanism to normalize keys before using them. Valid options: "blockchain_plugin" - use blockchain plugin (default), "none" - do not attempt normalization
 	AssetManagerKeyNormalization = rootKey("asset.manager.keyNormalization")
 	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
@@ -295,6 +323,8 @@ func Reset() {
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(APIShutdownTimeout), "10s")
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
+	viper.SetDefault(string(BatchCacheSize), "1Mb")
+	viper.SetDefault(string(BatchCacheTTL), "5m")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
@@ -315,8 +345,13 @@ func Reset() {
 	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DataexchangeType), "https")
 	viper.SetDefault(string(DebugPort), -1)
+	viper.SetDefault(string(DownloadWorkerCount), 10)
+	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)
+	viper.SetDefault(string(DownloadRetryInitDelay), "100ms")
+	viper.SetDefault(string(DownloadRetryMaxDelay), "1m")
+	viper.SetDefault(string(DownloadRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
-	viper.SetDefault(string(EventAggregatorBatchSize), 50)
+	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
@@ -325,10 +360,12 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorOpCorrelationRetries), 3)
 	viper.SetDefault(string(EventDBEventsBufferSize), 100)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
-	viper.SetDefault(string(EventDispatcherBatchTimeout), "0")
+	viper.SetDefault(string(EventDispatcherBatchTimeout), "250ms")
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets", "webhooks"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
+	viper.SetDefault(string(EventListenerTopicCacheSize), "100Kb")
+	viper.SetDefault(string(EventListenerTopicCacheTTL), "5m")
 	viper.SetDefault(string(GroupCacheSize), "1Mb")
 	viper.SetDefault(string(GroupCacheTTL), "1h")
 	viper.SetDefault(string(AdminEnabled), false)
@@ -340,6 +377,11 @@ func Reset() {
 	viper.SetDefault(string(LogFilesize), "100m")
 	viper.SetDefault(string(LogMaxAge), "24h")
 	viper.SetDefault(string(LogMaxBackups), 2)
+	viper.SetDefault(string(MessageCacheSize), "50Mb")
+	viper.SetDefault(string(MessageCacheTTL), "5m")
+	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
+	viper.SetDefault(string(MessageWriterBatchTimeout), "10ms")
+	viper.SetDefault(string(MessageWriterCount), 5)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
@@ -356,9 +398,8 @@ func Reset() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
-	viper.SetDefault(string(AssetManagerRetryInitialDelay), "250ms")
-	viper.SetDefault(string(AssetManagerRetryMaxDelay), "30s")
-	viper.SetDefault(string(AssetManagerRetryFactor), 2.0)
+	viper.SetDefault(string(TransactionCacheSize), "1Mb")
+	viper.SetDefault(string(TransactionCacheTTL), "5m")
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")

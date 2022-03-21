@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, verificationID *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
 	var claim fftypes.IdentityClaim
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
 	if !valid {
@@ -102,7 +102,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 		}
 	}
 	for _, candidate := range candidates {
-		data, foundAll, err := dh.data.GetMessageData(ctx, candidate, true)
+		data, foundAll, err := dh.data.GetMessageDataCached(ctx, candidate)
 		if err != nil {
 			return nil, err
 		}
@@ -211,7 +211,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil)
+		event := fftypes.NewEvent(fftypes.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil, fftypes.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

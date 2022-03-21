@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2021 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,15 +16,12 @@
 
 package fftypes
 
-import "encoding/json"
+import (
+	"testing"
 
-// Manifest is a list of references to messages and data
-type Manifest struct {
-	Messages []MessageRef `json:"messages"`
-	Data     []DataRef    `json:"data"`
-}
+	"github.com/stretchr/testify/assert"
+)
 
-func (mf *Manifest) String() string {
-	b, _ := json.Marshal(&mf)
-	return string(b)
+func TestTXSizeEstimate(t *testing.T) {
+	assert.Equal(t, transactionBaseSizeEstimate, (&Transaction{}).Size())
 }

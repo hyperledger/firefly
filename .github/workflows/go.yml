@@ -32,12 +32,19 @@ jobs:
       matrix:
         test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
         blockchain-provider: [geth, fabric]
+        token-provider: [none, erc1155, erc20_erc721]
         database-type: [sqlite3]
         exclude:
           - blockchain-provider: geth
             test-suite: TestFabricE2ESuite
           - blockchain-provider: fabric
             test-suite: TestEthereumE2ESuite
+          - blockchain-provider: fabric
+            token-provider: erc1155
+          - blockchain-provider: fabric
+            token-provider: erc20_erc721
+          - blockchain-provider: geth
+            token-provider: none
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -53,6 +60,7 @@ jobs:
         env:
           TEST_SUITE: ${{ matrix.test-suite }}
           BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
+          TOKENS_PROVIDER: ${{ matrix.token-provider }}
           DATABASE_TYPE: ${{ matrix.database-type }}
         run: ./test/e2e/run.sh
 

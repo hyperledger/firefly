@@ -692,20 +692,20 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &fabricLocation, nil
 }
 
-func (f *Fabric) AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
-	location, err := parseContractLocation(ctx, subscription.Location)
+func (f *Fabric) AddContractListener(ctx context.Context, listener *fftypes.ContractListenerInput) error {
+	location, err := parseContractLocation(ctx, listener.Location)
 	if err != nil {
 		return err
 	}
-	result, err := f.streams.createSubscription(ctx, location, f.initInfo.stream.ID, "", subscription.Event.Name)
+	result, err := f.streams.createSubscription(ctx, location, f.initInfo.stream.ID, "", listener.Event.Name, listener.Options.FirstEvent)
 	if err != nil {
 		return err
 	}
-	subscription.ProtocolID = result.ID
+	listener.ProtocolID = result.ID
 	return nil
 }
 
-func (f *Fabric) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error {
+func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
 	return f.streams.deleteSubscription(ctx, subscription.ProtocolID)
 }
 

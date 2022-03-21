@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
@@ -35,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -43,6 +45,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
+	"github.com/karlseguin/ccache"
 )
 
 type EventManager interface {
@@ -64,8 +67,12 @@ type EventManager interface {
 
 	// Bound dataexchange callbacks
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
-	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
+	PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (manifest string, err error)
+
+	// Bound sharedstorage callbacks
+	SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns, payloadRef string, data []byte) (*fftypes.UUID, error)
+	SharedStorageBLOBDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) error
 
 	// Bound token callbacks
 	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error
@@ -77,63 +84,69 @@ type EventManager interface {
 }
 
 type eventManager struct {
-	ctx                  context.Context
-	ni                   sysmessaging.LocalNodeInfo
-	sharedstorage        sharedstorage.Plugin
-	database             database.Plugin
-	txHelper             txcommon.Helper
-	identity             identity.Manager
-	definitions          definitions.DefinitionHandlers
-	data                 data.Manager
-	subManager           *subscriptionManager
-	retry                retry.Retry
-	aggregator           *aggregator
-	broadcast            broadcast.Manager
-	messaging            privatemessaging.Manager
-	assets               assets.Manager
-	newEventNotifier     *eventNotifier
-	newPinNotifier       *eventNotifier
-	opCorrelationRetries int
-	defaultTransport     string
-	internalEvents       *system.Events
-	metrics              metrics.Manager
+	ctx                   context.Context
+	ni                    sysmessaging.LocalNodeInfo
+	sharedstorage         sharedstorage.Plugin
+	database              database.Plugin
+	txHelper              txcommon.Helper
+	identity              identity.Manager
+	definitions           definitions.DefinitionHandlers
+	data                  data.Manager
+	subManager            *subscriptionManager
+	retry                 retry.Retry
+	aggregator            *aggregator
+	broadcast             broadcast.Manager
+	messaging             privatemessaging.Manager
+	assets                assets.Manager
+	sharedDownload        shareddownload.Manager
+	newEventNotifier      *eventNotifier
+	newPinNotifier        *eventNotifier
+	opCorrelationRetries  int
+	defaultTransport      string
+	internalEvents        *system.Events
+	metrics               metrics.Manager
+	chainListenerCache    *ccache.Cache
+	chainListenerCacheTTL time.Duration
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, mm metrics.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
 	em := &eventManager{
-		ctx:           log.WithLogField(ctx, "role", "event-manager"),
-		ni:            ni,
-		sharedstorage: si,
-		database:      di,
-		txHelper:      txcommon.NewTransactionHelper(di),
-		identity:      im,
-		definitions:   dh,
-		data:          dm,
-		broadcast:     bm,
-		messaging:     pm,
-		assets:        am,
+		ctx:            log.WithLogField(ctx, "role", "event-manager"),
+		ni:             ni,
+		sharedstorage:  si,
+		database:       di,
+		txHelper:       txHelper,
+		identity:       im,
+		definitions:    dh,
+		data:           dm,
+		broadcast:      bm,
+		messaging:      pm,
+		assets:         am,
+		sharedDownload: sd,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		defaultTransport:     config.GetString(config.EventTransportsDefault),
-		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
-		newEventNotifier:     newEventNotifier,
-		newPinNotifier:       newPinNotifier,
-		aggregator:           newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
-		metrics:              mm,
+		defaultTransport:      config.GetString(config.EventTransportsDefault),
+		opCorrelationRetries:  config.GetInt(config.EventAggregatorOpCorrelationRetries),
+		newEventNotifier:      newEventNotifier,
+		newPinNotifier:        newPinNotifier,
+		aggregator:            newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
+		metrics:               mm,
+		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(config.EventListenerTopicCacheSize))),
+		chainListenerCacheTTL: config.GetDuration(config.EventListenerTopicCacheTTL),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh, txHelper); err != nil {
 		return nil, err
 	}
 

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -29,15 +29,16 @@ import (
 )
 
 type eventPoller struct {
-	ctx           context.Context
-	database      database.Plugin
-	shoulderTaps  chan bool
-	eventNotifier *eventNotifier
-	closed        chan struct{}
-	offsetID      int64
-	pollingOffset int64
-	mux           sync.Mutex
-	conf          *eventPollerConf
+	ctx             context.Context
+	database        database.Plugin
+	shoulderTaps    chan bool
+	eventNotifier   *eventNotifier
+	closed          chan struct{}
+	offsetCommitted chan int64
+	offsetID        int64
+	pollingOffset   int64
+	mux             sync.Mutex
+	conf            *eventPollerConf
 }
 
 type newEventsHandler func(events []fftypes.LocallySequenced) (bool, error)
@@ -50,7 +51,7 @@ type eventPollerConf struct {
 	firstEvent                 *fftypes.SubOptsFirstEvent
 	queryFactory               database.QueryFactory
 	addCriteria                func(database.AndFilter) database.AndFilter
-	getItems                   func(context.Context, database.Filter) ([]fftypes.LocallySequenced, error)
+	getItems                   func(context.Context, database.Filter, int64) ([]fftypes.LocallySequenced, error)
 	maybeRewind                func() (bool, int64)
 	newEventsHandler           newEventsHandler
 	namespace                  string
@@ -62,12 +63,13 @@ type eventPollerConf struct {
 
 func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, conf *eventPollerConf) *eventPoller {
 	ep := &eventPoller{
-		ctx:           log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.namespace, conf.offsetName)),
-		database:      di,
-		shoulderTaps:  make(chan bool, 1),
-		eventNotifier: en,
-		closed:        make(chan struct{}),
-		conf:          conf,
+		ctx:             log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.namespace, conf.offsetName)),
+		database:        di,
+		shoulderTaps:    make(chan bool, 1),
+		offsetCommitted: make(chan int64, 1),
+		eventNotifier:   en,
+		closed:          make(chan struct{}),
+		conf:            conf,
 	}
 	if ep.conf.maybeRewind == nil {
 		ep.conf.maybeRewind = func() (bool, int64) { return false, -1 }
@@ -121,15 +123,17 @@ func (ep *eventPoller) start() {
 	}
 	go ep.newEventNotifications()
 	go ep.eventLoop()
+	go ep.offsetCommitLoop()
 }
 
-func (ep *eventPoller) rewindPollingOffset(offset int64) {
+func (ep *eventPoller) rewindPollingOffset(offset int64) int64 {
 	log.L(ep.ctx).Infof("Event polling rewind to: %d", offset)
 	ep.mux.Lock()
 	defer ep.mux.Unlock()
 	if offset < ep.pollingOffset {
-		ep.pollingOffset = offset // this will be re-delivered
+		ep.pollingOffset = offset
 	}
+	return ep.pollingOffset
 }
 
 func (ep *eventPoller) getPollingOffset() int64 {
@@ -138,21 +142,20 @@ func (ep *eventPoller) getPollingOffset() int64 {
 	return ep.pollingOffset
 }
 
-func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
+func (ep *eventPoller) commitOffset(offset int64) {
 	// Next polling cycle should start one higher than this offset
+	ep.mux.Lock()
 	ep.pollingOffset = offset
+	ep.mux.Unlock()
 
-	// Must be called from the event polling routine
-	l := log.L(ctx)
 	// No persistence for ephemeral (non-durable) subscriptions
 	if !ep.conf.ephemeral {
-		u := database.OffsetQueryFactory.NewUpdate(ep.ctx).Set("current", ep.pollingOffset)
-		if err := ep.database.UpdateOffset(ctx, ep.offsetID, u); err != nil {
-			return err
+		// We do this in the background, as it is an expensive full DB commit
+		select {
+		case ep.offsetCommitted <- offset:
+		default:
 		}
 	}
-	l.Debugf("Event polling offset committed %d", ep.pollingOffset)
-	return nil
 }
 
 func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
@@ -163,7 +166,7 @@ func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
 	// a rewind based on it.
 	rewind, pollingOffset := ep.conf.maybeRewind()
 	if rewind {
-		ep.rewindPollingOffset(pollingOffset)
+		pollingOffset = ep.rewindPollingOffset(pollingOffset)
 	} else {
 		// Ensure we go through the mutex to pickup rewinds that happened elsewhere
 		pollingOffset = ep.getPollingOffset()
@@ -175,7 +178,7 @@ func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
 			fb.Gt("sequence", pollingOffset),
 		)
 		filter = ep.conf.addCriteria(filter)
-		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
+		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)), pollingOffset)
 		if err != nil {
 			return true, err // Retry indefinitely, until context cancelled
 		}
@@ -187,7 +190,10 @@ func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
 func (ep *eventPoller) eventLoop() {
 	l := log.L(ep.ctx)
 	l.Debugf("Started event detector")
-	defer close(ep.closed)
+	defer func() {
+		close(ep.closed)
+		close(ep.offsetCommitted)
+	}()
 
 	for {
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
@@ -216,6 +222,23 @@ func (ep *eventPoller) eventLoop() {
 				return
 			}
 		}
+	}
+}
+
+func (ep *eventPoller) offsetCommitLoop() {
+	l := log.L(ep.ctx)
+	for range ep.offsetCommitted {
+		_ = ep.conf.retry.Do(ep.ctx, "process events", func(attempt int) (retry bool, err error) {
+			ep.mux.Lock()
+			pollingOffset := ep.pollingOffset
+			ep.mux.Unlock()
+			u := database.OffsetQueryFactory.NewUpdate(ep.ctx).Set("current", pollingOffset)
+			if err := ep.database.UpdateOffset(ep.ctx, ep.offsetID, u); err != nil {
+				return true, err
+			}
+			l.Debugf("Event polling offset committed %d", pollingOffset)
+			return false, nil
+		})
 	}
 }
 

@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
+	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -38,9 +39,12 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
@@ -68,6 +72,10 @@ type testOrchestrator struct {
 	mti *tokenmocks.Plugin
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
+	mom *operationmocks.Manager
+	mbp *batchpinmocks.Submitter
+	mth *txcommonmocks.Helper
+	msd *shareddownloadmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -94,6 +102,10 @@ func newTestOrchestrator() *testOrchestrator {
 		mti: &tokenmocks.Plugin{},
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
+		mom: &operationmocks.Manager{},
+		mbp: &batchpinmocks.Submitter{},
+		mth: &txcommonmocks.Helper{},
+		msd: &shareddownloadmocks.Manager{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -111,6 +123,10 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
 	tor.orchestrator.metrics = tor.mmi
+	tor.orchestrator.operations = tor.mom
+	tor.orchestrator.batchpin = tor.mbp
+	tor.orchestrator.sharedDownload = tor.msd
+	tor.orchestrator.txHelper = tor.mth
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -470,6 +486,14 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.sharedDownload = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestInitBatchComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
@@ -508,6 +532,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.identity = nil
+	or.txHelper = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -524,6 +549,22 @@ func TestInitContractsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.contracts = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitBatchPinComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.batchpin = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitOperationsComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -546,6 +587,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.mpm.On("Start").Return(nil)
 	or.mam.On("Start").Return(nil)
+	or.msd.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -562,12 +604,15 @@ func TestStartStopOk(t *testing.T) {
 	or.mam.On("Start").Return(nil)
 	or.mti.On("Start").Return(nil)
 	or.mmi.On("Start").Return(nil)
+	or.msd.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mam.On("WaitStop").Return(nil)
 	or.mti.On("WaitStop").Return(nil)
+	or.mdm.On("WaitStop").Return(nil)
+	or.msd.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -660,6 +705,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
+	assert.Equal(t, or.mom, or.Operations())
 }
 
 func TestInitDataExchangeGetNodesFail(t *testing.T) {

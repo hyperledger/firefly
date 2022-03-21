@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,15 +21,15 @@ type WSClientPayloadType = FFEnum
 
 var (
 	// WSClientActionStart is a request to the server to start delivering messages to the client
-	WSClientActionStart WSClientPayloadType = ffEnum("wstype", "start")
+	WSClientActionStart = ffEnum("wstype", "start")
 	// WSClientActionAck acknowledges an event that was delivered, allowing further messages to be sent
-	WSClientActionAck WSClientPayloadType = ffEnum("wstype", "ack")
+	WSClientActionAck = ffEnum("wstype", "ack")
 
 	// WSProtocolErrorEventType is a special event "type" field for server to send the client, if it performs a ProtocolError
-	WSProtocolErrorEventType WSClientPayloadType = ffEnum("wstype", "protocol_error")
+	WSProtocolErrorEventType = ffEnum("wstype", "protocol_error")
 
 	// WSClientActionChangeNotifcation a special event type that is a local database change event, and never requires an ack
-	WSClientActionChangeNotifcation WSClientPayloadType = ffEnum("wstype", "change_notification")
+	WSClientActionChangeNotifcation = ffEnum("wstype", "change_notification")
 )
 
 // WSClientActionBase is the base fields of all client actions sent on the websocket

@@ -56,6 +56,24 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 	return err
 }
 
+func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *fftypes.Identity) (*fftypes.Identity, error) {
+	node := pm.orgFirstNodes[*identity.ID]
+	if node == nil && identity.Type == fftypes.IdentityTypeOrg {
+		fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
+		filter := fb.And(
+			fb.Eq("parent", identity.ID),
+			fb.Eq("type", fftypes.IdentityTypeNode),
+		)
+		nodes, _, err := pm.database.GetIdentities(ctx, filter)
+		if err != nil || len(nodes) == 0 {
+			return nil, err
+		}
+		node = nodes[0]
+		pm.orgFirstNodes[*identity.ID] = node
+	}
+	return node, nil
+}
+
 func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
 	retryable := true
 	if nodeInput != "" {
@@ -64,19 +82,10 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.I
 		// Find any node owned by this organization
 		inputIdentityDebugInfo := fmt.Sprintf("%s (%s)", identity.DID, identity.ID)
 		for identity != nil && node == nil {
-			var nodes []*fftypes.Identity
-			if identity.Type == fftypes.IdentityTypeOrg {
-				fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
-				filter := fb.And(
-					fb.Eq("parent", identity.ID),
-					fb.Eq("type", fftypes.IdentityTypeNode),
-				)
-				nodes, _, err = pm.database.GetIdentities(ctx, filter)
-			}
+			node, err = pm.getFirstNodeForOrg(ctx, identity)
 			switch {
-			case err == nil && len(nodes) > 0:
+			case err == nil && node != nil:
 				// This is an org, and it owns a node
-				node = nodes[0]
 			case err == nil && identity.Parent != nil:
 				// This identity has a parent, maybe that org owns a node
 				identity, err = pm.identity.CachedIdentityLookupByID(ctx, identity.Parent)
@@ -178,13 +187,12 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	}
 	newCandidate.Seal()
 
-	filter := database.GroupQueryFactory.NewFilterLimit(ctx, 1).Eq("hash", newCandidate.Hash)
-	groups, _, err := pm.database.GetGroups(ctx, filter)
+	group, _, err = pm.getGroupNodes(ctx, newCandidate.Hash, true)
 	if err != nil {
 		return nil, false, err
 	}
-	if len(groups) > 0 {
-		return groups[0], false, nil
+	if group != nil {
+		return group, false, nil
 	}
 	return newCandidate, true, nil
 }

@@ -22,12 +22,9 @@ We welcome anyone to contribute to the FireFly project! If you're interested, th
 
 ---
 
-## 🚀 Connect with us on Rocket Chat
-You can chat with maintainers and other contributors on Rocket Chat in the `firefly` channel:
-[https://chat.hyperledger.org/channel/firefly](https://chat.hyperledger.org/channel/firefly)
-
-If you don't have a Linux Foundation ID, you can sign up for a free account here:
-[https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID](https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID)
+## 🚀 Connect with us on Discord
+You can chat with maintainers and other contributors on Discord in the `firefly` channel:
+[https://discord.gg/hyperledger](https://discord.gg/hyperledger)
 
 ## 📅 Join our Community Calls
 Community calls are a place to talk to other contributors, maintainers, and other people interested in FireFly. Maintainers often discuss upcoming changes and proposed new features on these calls. These calls are a great way for the community to give feedback on new ideas, ask questions about FireFly, and hear how others are using FireFly to solve real world problems.

@@ -22,24 +22,30 @@ package fftypes
 type OpType = FFEnum
 
 var (
-	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
-	OpTypeBlockchainBatchPin OpType = ffEnum("optype", "blockchain_batch_pin")
+	// OpTypeBlockchainPinBatch is a blockchain transaction to pin a batch
+	OpTypeBlockchainPinBatch = ffEnum("optype", "blockchain_pin_batch")
 	// OpTypeBlockchainInvoke is a smart contract invoke
-	OpTypeBlockchainInvoke OpType = ffEnum("optype", "blockchain_invoke")
-	// OpTypeSharedStorageBatchBroadcast is a shared storage operation to store broadcast data
-	OpTypeSharedStorageBatchBroadcast OpType = ffEnum("optype", "sharedstorage_batch_broadcast")
-	// OpTypeDataExchangeBatchSend is a private send
-	OpTypeDataExchangeBatchSend OpType = ffEnum("optype", "dataexchange_batch_send")
-	// OpTypeDataExchangeBlobSend is a private send
-	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
+	OpTypeBlockchainInvoke = ffEnum("optype", "blockchain_invoke")
+	// OpTypeSharedStorageUploadBatch is a shared storage operation to upload broadcast data
+	OpTypeSharedStorageUploadBatch = ffEnum("optype", "sharedstorage_upload_batch")
+	// OpTypeSharedStorageUploadBlob is a shared storage operation to upload blob data
+	OpTypeSharedStorageUploadBlob = ffEnum("optype", "sharedstorage_upload_blob")
+	// OpTypeSharedStorageDownloadBatch is a shared storage operation to download broadcast data
+	OpTypeSharedStorageDownloadBatch = ffEnum("optype", "sharedstorage_download_batch")
+	// OpTypeSharedStorageDownloadBlob is a shared storage operation to download broadcast data
+	OpTypeSharedStorageDownloadBlob = ffEnum("optype", "sharedstorage_download_blob")
+	// OpTypeDataExchangeSendBatch is a private send of a batch
+	OpTypeDataExchangeSendBatch = ffEnum("optype", "dataexchange_send_batch")
+	// OpTypeDataExchangeSendBlob is a private send of a blob
+	OpTypeDataExchangeSendBlob = ffEnum("optype", "dataexchange_send_blob")
 	// OpTypeTokenCreatePool is a token pool creation
-	OpTypeTokenCreatePool OpType = ffEnum("optype", "token_create_pool")
+	OpTypeTokenCreatePool = ffEnum("optype", "token_create_pool")
 	// OpTypeTokenActivatePool is a token pool activation
-	OpTypeTokenActivatePool OpType = ffEnum("optype", "token_activate_pool")
+	OpTypeTokenActivatePool = ffEnum("optype", "token_activate_pool")
 	// OpTypeTokenTransfer is a token transfer
-	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
+	OpTypeTokenTransfer = ffEnum("optype", "token_transfer")
 	// OpTypeTokenApproval is a token approval
-	OpTypeTokenApproval OpType = ffEnum("optype", "token_approval")
+	OpTypeTokenApproval = ffEnum("optype", "token_approval")
 )
 
 // OpStatus is the current status of an operation
@@ -48,7 +54,7 @@ type OpStatus string
 const (
 	// OpStatusPending indicates the operation has been submitted, but is not yet confirmed as successful or failed
 	OpStatusPending OpStatus = "Pending"
-	// OpStatusSucceeded the infrastructure runtime has returned success for the operation.
+	// OpStatusSucceeded the infrastructure runtime has returned success for the operation
 	OpStatusSucceeded OpStatus = "Succeeded"
 	// OpStatusFailed happens when an error is reported by the infrastructure runtime
 	OpStatusFailed OpStatus = "Failed"
@@ -86,4 +92,15 @@ type Operation struct {
 	Output      JSONObject `json:"output,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Updated     *FFTime    `json:"updated,omitempty"`
+	Retry       *UUID      `json:"retry,omitempty"`
+}
+
+// PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin
+// It is never stored, but it should always be possible for the owning Manager to generate a
+// PreparedOperation from an Operation. Data is defined by the Manager, but should be JSON-serializable
+// to support inspection and debugging.
+type PreparedOperation struct {
+	ID   *UUID       `json:"id"`
+	Type OpType      `json:"type" ffenum:"optype"`
+	Data interface{} `json:"data"`
 }

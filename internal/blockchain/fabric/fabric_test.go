@@ -240,7 +240,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "BatchPin"},
+			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
 
 	resetConf()
@@ -1093,13 +1093,21 @@ func TestAddSubscription(t *testing.T) {
 				"chaincode": "mycode",
 			}.String()),
 			Event: &fftypes.FFISerializedEvent{},
+			Options: &fftypes.ContractListenerOptions{
+				FirstEvent: string(fftypes.SubOptsFirstEventOldest),
+			},
 		},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
-		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "0", body["fromBlock"])
+			return httpmock.NewJsonResponderOrPanic(200, &subscription{})(req)
+		})
 
-	err := e.AddSubscription(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub)
 
 	assert.NoError(t, err)
 }
@@ -1124,7 +1132,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		},
 	}
 
-	err := e.AddSubscription(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10310", err)
 }
@@ -1149,13 +1157,16 @@ func TestAddSubscriptionFail(t *testing.T) {
 				"chaincode": "mycode",
 			}.String()),
 			Event: &fftypes.FFISerializedEvent{},
+			Options: &fftypes.ContractListenerOptions{
+				FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+			},
 		},
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.AddSubscription(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -1181,7 +1192,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(204, ""))
 
-	err := e.DeleteSubscription(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub)
 
 	assert.NoError(t, err)
 }
@@ -1206,7 +1217,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.DeleteSubscription(context.Background(), sub)
+	err := e.DeleteContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)

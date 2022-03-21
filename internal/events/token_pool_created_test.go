@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -42,10 +44,13 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	operations := []*fftypes.Operation{}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -70,10 +75,9 @@ func TestTokenPoolCreatedIgnoreNoTX(t *testing.T) {
 
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: nil,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -93,20 +97,28 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 	mth := em.txHelper.(*txcommonmocks.Helper)
+	mdm := em.data.(*datamocks.Manager)
 
 	opID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
-	info := fftypes.JSONObject{"some": "info"}
+	info1 := fftypes.JSONObject{"pool": "info"}
+	info2 := fftypes.JSONObject{"block": "info"}
 	chainPool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		Connector:     "erc1155",
-		TransactionID: txID,
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Standard: "ERC1155",
+		Symbol:   "FFT",
+		Info:     info1,
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			Name:           "TokenPool",
 			ProtocolID:     "tx1",
-			Info:           info,
+			Info:           info2,
 		},
 	}
 	storedPool := &fftypes.TokenPool{
@@ -140,13 +152,18 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
-	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(storedMessage, nil).Once()
+	mdm.On("GetMessageWithDataCached", em.ctx, storedPool.Message, data.CRORequireBatchID).Return(nil, nil, false, fmt.Errorf("pop")).Once()
+	mdm.On("GetMessageWithDataCached", em.ctx, storedPool.Message, data.CRORequireBatchID).Return(storedMessage, nil, true, nil).Once()
 
 	err := em.TokenPoolCreated(mti, chainPool)
 	assert.NoError(t, err)
 
+	assert.Equal(t, "ERC1155", storedPool.Standard)
+	assert.Equal(t, "FFT", storedPool.Symbol)
+	assert.Equal(t, info1, storedPool.Info)
+
 	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
@@ -158,10 +175,13 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	txID := fftypes.NewUUID()
 	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		Connector:     "erc1155",
-		TransactionID: txID,
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -186,6 +206,52 @@ func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mti := &tokenmocks.Plugin{}
+
+	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
+	info := fftypes.JSONObject{"some": "info"}
+	chainPool := &tokens.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "erc1155",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Symbol: "ETH",
+		Event: blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
+		},
+	}
+	storedPool := &fftypes.TokenPool{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		State:     fftypes.TokenPoolStatePending,
+		Symbol:    "FFT",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   txID,
+		},
+	}
+
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{{
+		ID: opID,
+	}}, nil, nil)
+
+	err := em.TokenPoolCreated(mti, chainPool)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestTokenPoolCreatedMigrate(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -193,14 +259,18 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mam := em.assets.(*assetmocks.Manager)
 	mti := &tokenmocks.Plugin{}
 	mth := em.txHelper.(*txcommonmocks.Helper)
+	mdm := em.data.(*datamocks.Manager)
 
 	txID := fftypes.NewUUID()
 	info := fftypes.JSONObject{"some": "info"}
 	chainPool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		Connector:     "magic-tokens",
-		TransactionID: txID,
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Connector:  "magic-tokens",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -233,19 +303,16 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
-	mam.On("ActivateTokenPool", em.ctx, storedPool, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.ProtocolID == chainPool.Event.ProtocolID
-	})).Return(fmt.Errorf("pop")).Once()
-	mam.On("ActivateTokenPool", em.ctx, storedPool, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.ProtocolID == chainPool.Event.ProtocolID
-	})).Return(nil).Once()
-	mdi.On("GetMessageByID", em.ctx, storedPool.Message).Return(storedMessage, nil)
+	mam.On("ActivateTokenPool", em.ctx, storedPool, info).Return(fmt.Errorf("pop")).Once()
+	mam.On("ActivateTokenPool", em.ctx, storedPool, info).Return(nil).Once()
+	mdm.On("GetMessageWithDataCached", em.ctx, storedPool.Message, data.CRORequireBatchID).Return(storedMessage, nil, true, nil).Once()
 
 	err := em.TokenPoolCreated(mti, chainPool)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mam.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestConfirmPoolBlockchainEventFail(t *testing.T) {
@@ -444,10 +511,13 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -486,10 +556,13 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -524,10 +597,13 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	}
 	info := fftypes.JSONObject{"some": "info"}
 	pool := &tokens.TokenPool{
-		Type:          fftypes.TokenTypeFungible,
-		ProtocolID:    "123",
-		TransactionID: txID,
-		Connector:     "erc1155",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
 		Event: blockchain.Event{
 			BlockchainTXID: "0xffffeeee",
 			ProtocolID:     "tx1",
@@ -541,5 +617,52 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	err := em.TokenPoolCreated(mti, pool)
 	assert.NoError(t, err)
 
+	mdi.AssertExpectations(t)
+}
+
+func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mti := &tokenmocks.Plugin{}
+
+	poolID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
+	operations := []*fftypes.Operation{
+		{
+			ID: fftypes.NewUUID(),
+			Input: fftypes.JSONObject{
+				"id":        poolID.String(),
+				"namespace": "test-ns",
+				"name":      "my-pool",
+				"symbol":    "FFT",
+			},
+		},
+	}
+	info := fftypes.JSONObject{"some": "info"}
+	pool := &tokens.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
+		Symbol:    "ETH",
+		Event: blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
+		},
+	}
+
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
+
+	err := em.TokenPoolCreated(mti, pool)
+	assert.NoError(t, err)
+
+	mti.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -32,6 +33,8 @@ import (
 )
 
 type Manager interface {
+	fftypes.Named
+
 	BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
 	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
@@ -51,6 +54,10 @@ type Manager interface {
 	GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractListener, *database.FilterResult, error)
 	DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
+
+	// From operations.OperationHandler
+	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
 }
 
 type contractManager struct {
@@ -60,24 +67,37 @@ type contractManager struct {
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
 	ffiParamValidator fftypes.FFIParamValidator
+	operations        operations.Manager
 }
 
-func NewContractManager(ctx context.Context, database database.Plugin, broadcast broadcast.Manager, identity identity.Manager, blockchain blockchain.Plugin) (Manager, error) {
-	if database == nil || broadcast == nil || identity == nil || blockchain == nil {
+func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
+	if di == nil || bm == nil || im == nil || bi == nil || om == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	v, err := blockchain.GetFFIParamValidator(ctx)
+	v, err := bi.GetFFIParamValidator(ctx)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgPluginInitializationFailed)
 	}
-	return &contractManager{
-		database:          database,
-		txHelper:          txcommon.NewTransactionHelper(database),
-		broadcast:         broadcast,
-		identity:          identity,
-		blockchain:        blockchain,
+
+	cm := &contractManager{
+		database:          di,
+		txHelper:          txHelper,
+		broadcast:         bm,
+		identity:          im,
+		blockchain:        bi,
 		ffiParamValidator: v,
-	}, nil
+		operations:        om,
+	}
+
+	om.RegisterHandler(ctx, cm, []fftypes.OpType{
+		fftypes.OpTypeBlockchainInvoke,
+	})
+
+	return cm, nil
+}
+
+func (cm *contractManager) Name() string {
+	return "ContractManager"
 }
 
 func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
@@ -156,7 +176,7 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
-func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string, input fftypes.JSONObject) (*fftypes.Operation, error) {
+func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (*fftypes.Operation, error) {
 	txid, err := cm.txHelper.SubmitNewTransaction(ctx, ns, fftypes.TransactionTypeContractInvoke)
 	if err != nil {
 		return nil, err
@@ -167,8 +187,10 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 		ns,
 		txid,
 		fftypes.OpTypeBlockchainInvoke)
-	op.Input = input
-	return op, cm.database.InsertOperation(ctx, op)
+	if err = addBlockchainInvokeInputs(op, req); err == nil {
+		err = cm.database.InsertOperation(ctx, op)
+	}
+	return op, err
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {
@@ -186,7 +208,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 			return err
 		}
 		if req.Type == fftypes.CallTypeInvoke {
-			op, err = cm.writeInvokeTransaction(ctx, ns, req.Input)
+			op, err = cm.writeInvokeTransaction(ctx, ns, req)
 			if err != nil {
 				return err
 			}
@@ -199,18 +221,13 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 
 	switch req.Type {
 	case fftypes.CallTypeInvoke:
-		err = cm.blockchain.InvokeContract(ctx, op.ID, req.Key, req.Location, req.Method, req.Input)
 		res = &fftypes.ContractCallResponse{ID: op.ID}
+		return res, cm.operations.RunOperation(ctx, opBlockchainInvoke(op, req))
 	case fftypes.CallTypeQuery:
-		res, err = cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
-
-	if op != nil && err != nil {
-		cm.txHelper.WriteOperationFailure(ctx, op.ID, err)
-	}
-	return res, err
 }
 
 func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error) {
@@ -441,6 +458,12 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 		return nil, err
 	}
 
+	if listener.Options == nil {
+		listener.Options = cm.getDefaultContractListenerOptions()
+	} else if listener.Options.FirstEvent == "" {
+		listener.Options.FirstEvent = cm.getDefaultContractListenerOptions().FirstEvent
+	}
+
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		if listener.Name != "" {
 			if err := fftypes.ValidateFFNameField(ctx, listener.Name, "name"); err != nil {
@@ -496,7 +519,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 	if err := cm.validateFFIEvent(ctx, &listener.Event.FFIEventDefinition); err != nil {
 		return nil, err
 	}
-	if err = cm.blockchain.AddSubscription(ctx, listener); err != nil {
+	if err = cm.blockchain.AddContractListener(ctx, listener); err != nil {
 		return nil, err
 	}
 	if listener.Name == "" {
@@ -537,7 +560,7 @@ func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context,
 		if err != nil {
 			return err
 		}
-		if err = cm.blockchain.DeleteSubscription(ctx, listener); err != nil {
+		if err = cm.blockchain.DeleteContractListener(ctx, listener); err != nil {
 			return err
 		}
 		return cm.database.DeleteContractListenerByID(ctx, listener.ID)
@@ -564,4 +587,10 @@ func (cm *contractManager) checkParamSchema(ctx context.Context, input interface
 func (cm *contractManager) GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	generationRequest.Namespace = ns
 	return cm.blockchain.GenerateFFI(ctx, generationRequest)
+}
+
+func (cm *contractManager) getDefaultContractListenerOptions() *fftypes.ContractListenerOptions {
+	return &fftypes.ContractListenerOptions{
+		FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+	}
 }

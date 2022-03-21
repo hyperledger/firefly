@@ -47,7 +47,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 		{
 			Status:  fftypes.OpStatusSucceeded,
 			ID:      fftypes.NewUUID(),
-			Type:    fftypes.OpTypeBlockchainBatchPin,
+			Type:    fftypes.OpTypeBlockchainPinBatch,
 			Updated: fftypes.UnixTime(0),
 			Output:  fftypes.JSONObject{"transactionHash": "0x100"},
 		},
@@ -60,10 +60,12 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	batches := []*fftypes.Batch{
+	batches := []*fftypes.BatchPersisted{
 		{
-			ID:        fftypes.NewUUID(),
-			Type:      fftypes.MessageTypeBroadcast,
+			BatchHeader: fftypes.BatchHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.BatchTypeBroadcast,
+			},
 			Confirmed: fftypes.UnixTime(2),
 		},
 	}
@@ -96,7 +98,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 			},
 			{
 				"type": "Operation",
-				"subtype": "blockchain_batch_pin",
+				"subtype": "blockchain_pin_batch",
 				"status": "Succeeded",
 				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `",
@@ -121,12 +123,12 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 		{
 			Status: fftypes.OpStatusFailed,
 			ID:     fftypes.NewUUID(),
-			Type:   fftypes.OpTypeBlockchainBatchPin,
+			Type:   fftypes.OpTypeBlockchainPinBatch,
 			Error:  "complete failure",
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -141,7 +143,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 		"details": [
 			{
 				"type": "Operation",
-				"subtype": "blockchain_batch_pin",
+				"subtype": "blockchain_pin_batch",
 				"status": "Failed",
 				"id": "` + ops[0].ID.String() + `",
 				"error": "complete failure"
@@ -173,12 +175,12 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 		{
 			Status:  fftypes.OpStatusSucceeded,
 			ID:      fftypes.NewUUID(),
-			Type:    fftypes.OpTypeBlockchainBatchPin,
+			Type:    fftypes.OpTypeBlockchainPinBatch,
 			Updated: fftypes.UnixTime(0),
 		},
 	}
 	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.Batch{}
+	batches := []*fftypes.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -201,7 +203,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 			},
 			{
 				"type": "Operation",
-				"subtype": "blockchain_batch_pin",
+				"subtype": "blockchain_pin_batch",
 				"status": "Succeeded",
 				"timestamp": "1970-01-01T00:00:00Z",
 				"id": "` + ops[0].ID.String() + `"
@@ -581,6 +583,70 @@ func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 				"status": "Succeeded",
 				"id": "` + ops[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
+			},
+			{
+				"type": "BlockchainEvent",
+				"status": "Pending"
+			},
+			{
+				"type": "TokenTransfer",
+				"status": "Pending"
+			}
+		]
+	}`)
+	statusJSON, _ := json.Marshal(status)
+	assert.Equal(t, expectedStatus, string(statusJSON))
+
+	or.mdi.AssertExpectations(t)
+}
+
+func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
+	or := newTestOrchestrator()
+
+	txID := fftypes.NewUUID()
+	tx := &fftypes.Transaction{
+		Type: fftypes.TransactionTypeTokenTransfer,
+	}
+	op1ID := fftypes.NewUUID()
+	op2ID := fftypes.NewUUID()
+	ops := []*fftypes.Operation{
+		{
+			Status: fftypes.OpStatusFailed,
+			ID:     op1ID,
+			Type:   fftypes.OpTypeTokenTransfer,
+			Retry:  op2ID,
+		},
+		{
+			Status: fftypes.OpStatusPending,
+			ID:     op2ID,
+			Type:   fftypes.OpTypeTokenTransfer,
+		},
+	}
+	events := []*fftypes.BlockchainEvent{}
+	transfers := []*fftypes.TokenTransfer{}
+
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(transfers, nil, nil)
+
+	status, err := or.GetTransactionStatus(context.Background(), "ns1", txID.String())
+	assert.NoError(t, err)
+
+	expectedStatus := compactJSON(`{
+		"status": "Pending",
+		"details": [
+			{
+				"type": "Operation",
+				"subtype": "token_transfer",
+				"status": "Failed",
+				"id": "` + op1ID.String() + `"
+			},
+			{
+				"type": "Operation",
+				"subtype": "token_transfer",
+				"status": "Pending",
+				"id": "` + op2ID.String() + `"
 			},
 			{
 				"type": "BlockchainEvent",

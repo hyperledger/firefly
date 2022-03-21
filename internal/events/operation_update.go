@@ -27,7 +27,7 @@ import (
 func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
 	op, err := em.database.GetOperationByID(ctx, operationID)
 	if err != nil || op == nil {
-		log.L(em.ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", operationID)
+		log.L(ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", operationID)
 		return nil
 	}
 
@@ -37,15 +37,18 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenTransfer && txState == fftypes.OpStatusFailed {
-		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction)
-		var tokenTransfer fftypes.TokenTransfer
-		err = txcommon.RetrieveTokenTransferInputs(ctx, op, &tokenTransfer)
-		if err != nil {
-			log.L(em.ctx).Warnf("Could not determine token transfer: %s", err)
+		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
+		topic := ""
+		if tokenTransfer != nil {
+			topic = tokenTransfer.Pool.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
+			log.L(em.ctx).Warnf("Could not parse token transfer: %s", err)
 		} else {
 			event.Correlator = tokenTransfer.LocalID
 			if em.metrics.IsMetricsEnabled() {
-				em.metrics.TransferConfirmed(&tokenTransfer)
+				em.metrics.TransferConfirmed(tokenTransfer)
 			}
 		}
 		if err := em.database.InsertEvent(ctx, event); err != nil {
@@ -55,11 +58,14 @@ func (em *eventManager) operationUpdateCtx(ctx context.Context, operationID *fft
 
 	// Special handling for OpTypeTokenApproval, which writes an event when it fails
 	if op.Type == fftypes.OpTypeTokenApproval && txState == fftypes.OpStatusFailed {
-		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction)
-		var tokenApproval fftypes.TokenApproval
-		err = txcommon.RetrieveTokenApprovalInputs(ctx, op, &tokenApproval)
-		if err != nil {
-			log.L(em.ctx).Warnf("Could not determine token retrieval: %s", err)
+		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
+		topic := ""
+		if tokenApproval != nil {
+			topic = tokenApproval.Pool.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenApproval.LocalID == nil {
+			log.L(em.ctx).Warnf("Could not parse token approval: %s", err)
 		} else {
 			event.Correlator = tokenApproval.LocalID
 		}

@@ -58,6 +58,8 @@ $(eval $(call makemock, internal/data,             Manager,            datamocks
 $(eval $(call makemock, internal/batch,            Manager,            batchmocks))
 $(eval $(call makemock, internal/broadcast,        Manager,            broadcastmocks))
 $(eval $(call makemock, internal/privatemessaging, Manager,            privatemessagingmocks))
+$(eval $(call makemock, internal/shareddownload,   Manager,            shareddownloadmocks))
+$(eval $(call makemock, internal/shareddownload,   Callbacks,          shareddownloadmocks))
 $(eval $(call makemock, internal/definitions,      DefinitionHandlers, definitionsmocks))
 $(eval $(call makemock, internal/events,           EventManager,       eventmocks))
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
@@ -68,6 +70,7 @@ $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestra
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
 $(eval $(call makemock, internal/apiserver,        IServer,            apiservermocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
+$(eval $(call makemock, internal/operations,       Manager,            operationmocks))
 
 firefly-nocgo: ${GOFILES}
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v

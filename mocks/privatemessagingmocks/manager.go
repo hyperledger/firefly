@@ -94,6 +94,20 @@ func (_m *Manager) GetGroupsNS(ctx context.Context, ns string, filter database.A
 	return r0, r1, r2
 }
 
+// Name provides a mock function with given fields:
+func (_m *Manager) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // NewMessage provides a mock function with given fields: ns, msg
 func (_m *Manager) NewMessage(ns string, msg *fftypes.MessageInOut) sysmessaging.MessageSender {
 	ret := _m.Called(ns, msg)
@@ -108,6 +122,29 @@ func (_m *Manager) NewMessage(ns string, msg *fftypes.MessageInOut) sysmessaging
 	}
 
 	return r0
+}
+
+// PrepareOperation provides a mock function with given fields: ctx, op
+func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+	ret := _m.Called(ctx, op)
+
+	var r0 *fftypes.PreparedOperation
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) *fftypes.PreparedOperation); ok {
+		r0 = rf(ctx, op)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.PreparedOperation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Operation) error); ok {
+		r1 = rf(ctx, op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // RequestReply provides a mock function with given fields: ctx, ns, request
@@ -154,6 +191,36 @@ func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (
 	}
 
 	return r0, r1
+}
+
+// RunOperation provides a mock function with given fields: ctx, op
+func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (fftypes.JSONObject, bool, error) {
+	ret := _m.Called(ctx, op)
+
+	var r0 fftypes.JSONObject
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation) fftypes.JSONObject); ok {
+		r0 = rf(ctx, op)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(fftypes.JSONObject)
+		}
+	}
+
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.PreparedOperation) bool); ok {
+		r1 = rf(ctx, op)
+	} else {
+		r1 = ret.Get(1).(bool)
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.PreparedOperation) error); ok {
+		r2 = rf(ctx, op)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // SendMessage provides a mock function with given fields: ctx, ns, in, waitConfirm

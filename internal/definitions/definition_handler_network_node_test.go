@@ -129,7 +129,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", ctx, node.DX.Endpoint).Return(nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, []*fftypes.Data{data}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, fftypes.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -148,7 +148,7 @@ func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
 	dh, bs := newTestDefinitionHandlers(t)
 	ctx := context.Background()
 
-	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, &fftypes.Message{}, []*fftypes.Data{})
+	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, &fftypes.Message{}, fftypes.DataArray{})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -167,7 +167,7 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 		Value: node.Owner,
 	}).Return(nil, fmt.Errorf("pop"))
 
-	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, []*fftypes.Data{data})
+	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, fftypes.DataArray{data})
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -188,7 +188,7 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 		Value: node.Owner,
 	}).Return(nil, nil)
 
-	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, []*fftypes.Data{data})
+	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, fftypes.DataArray{data})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

@@ -17,10 +17,9 @@
 package e2e
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -108,40 +107,6 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 	}
 }
 
-func loadSimpleStorageABI(t *testing.T) map[string]string {
-	abi, err := ioutil.ReadFile("../data/simplestorage/simplestorage.abi.json")
-	require.NoError(t, err)
-	bytecode, err := ioutil.ReadFile("../data/simplestorage/simplestorage.bin")
-	require.NoError(t, err)
-	return map[string]string{
-		"abi":      string(abi),
-		"bytecode": "0x" + hex.EncodeToString(bytecode),
-	}
-}
-
-func uploadABI(t *testing.T, client *resty.Client, abi map[string]string) (result uploadABIResult) {
-	path := "/abis"
-	resp, err := client.R().
-		SetMultipartFormData(abi).
-		SetResult(&result).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return result
-}
-
-func deployABI(t *testing.T, client *resty.Client, identity, abiID string) (result deployABIResult) {
-	path := "/abis/" + abiID
-	resp, err := client.R().
-		SetHeader("x-firefly-from", identity).
-		SetHeader("x-firefly-sync", "true").
-		SetResult(&result).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return result
-}
-
 func invokeEthContract(t *testing.T, client *resty.Client, identity, contractAddress, method string, body interface{}) {
 	path := "/contracts/" + contractAddress + "/" + method
 	resp, err := client.R().
@@ -165,18 +130,13 @@ type EthereumContractTestSuite struct {
 func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
 	stack := readStackFile(suite.T())
-
-	abi := loadSimpleStorageABI(suite.T())
-
 	suite.ethClient = NewResty(suite.T())
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 	suite.ethIdentity = suite.testState.org1key.Value
-
-	abiResult := uploadABI(suite.T(), suite.ethClient, abi)
-	contractResult := deployABI(suite.T(), suite.ethClient, suite.ethIdentity, abiResult.ID)
-
-	suite.contractAddress = contractResult.ContractAddress
-
+	suite.contractAddress = os.Getenv("CONTRACT_ADDRESS")
+	if suite.contractAddress == "" {
+		suite.T().Fatal("CONTRACT_ADDRESS must be set")
+	}
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
 
 	res, err := CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
@@ -39,6 +40,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.PluginAll) (*subscriptionM
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")
@@ -47,7 +49,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.PluginAll) (*subscriptionM
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{RowID: 3333333, Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, mdi, mdm, newEventNotifier(ctx, "ut"), msh)
+	sm, err := newSubscriptionManager(ctx, mdi, mdm, newEventNotifier(ctx, "ut"), msh, txHelper)
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,
@@ -123,7 +125,8 @@ func TestRegisterEphemeralSubscriptions(t *testing.T) {
 	assert.NoError(t, err)
 	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = be.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{}, &fftypes.SubscriptionOptions{})
+	// check with filter
+	err = be.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{Message: fftypes.MessageFilter{Author: "flapflip"}}, &fftypes.SubscriptionOptions{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, len(sm.connections["conn1"].dispatchers))
@@ -151,7 +154,9 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	be := &boundCallbacks{sm: sm, ei: mei}
 
 	err = be.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{
-		Topics: "[[[[[ !wrong",
+		Message: fftypes.MessageFilter{
+			Author: "[[[[[ !wrong",
+		},
 	}, &fftypes.SubscriptionOptions{})
 	assert.Regexp(t, "FF10171", err)
 	assert.Empty(t, sm.connections["conn1"].dispatchers)
@@ -161,9 +166,10 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 func TestSubManagerBadPlugin(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	config.Reset()
 	config.Set(config.EventTransportsEnabled, []string{"!unknown!"})
-	_, err := newSubscriptionManager(context.Background(), mdi, mdm, newEventNotifier(context.Background(), "ut"), nil)
+	_, err := newSubscriptionManager(context.Background(), mdi, mdm, newEventNotifier(context.Background(), "ut"), nil, txHelper)
 	assert.Regexp(t, "FF10172", err)
 }
 
@@ -220,11 +226,19 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 			Filter: fftypes.SubscriptionFilter{
+				Topic:  ".*",
 				Events: ".*",
-				Topics: ".*",
-				Tag:    ".*",
-				Group:  ".*",
-				Author: ".*",
+				Message: fftypes.MessageFilter{
+					Tag:    ".*",
+					Group:  ".*",
+					Author: ".*",
+				},
+				Transaction: fftypes.TransactionFilter{
+					Type: ".*",
+				},
+				BlockchainEvent: fftypes.BlockchainEventFilter{
+					Name: ".*",
+				},
 			}},
 	}, nil, nil)
 	err := sm.start()
@@ -276,25 +290,11 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Topics: "[[[[! badness",
+			Topic: "[[[[! badness",
 		},
 		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*topic", err)
-}
-
-func TestCreateSubscriptionBadContextFilter(t *testing.T) {
-	mei := &eventsmocks.PluginAll{}
-	sm, cancel := newTestSubManager(t, mei)
-	defer cancel()
-	mei.On("ValidateOptions", mock.Anything).Return(nil)
-	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
-		Filter: fftypes.SubscriptionFilter{
-			Tag: "[[[[! badness",
-		},
-		Transport: "ut",
-	})
-	assert.Regexp(t, "FF10171.*tag", err)
 }
 
 func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
@@ -304,7 +304,9 @@ func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Group: "[[[[! badness",
+			Message: fftypes.MessageFilter{
+				Group: "[[[[! badness",
+			},
 		},
 		Transport: "ut",
 	})
@@ -318,11 +320,200 @@ func TestCreateSubscriptionBadAuthorFilter(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Author: "[[[[! badness",
+			Message: fftypes.MessageFilter{
+				Author: "[[[[! badness",
+			},
 		},
 		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*author", err)
+}
+
+func TestCreateSubscriptionBadTxTypeFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Transaction: fftypes.TransactionFilter{
+				Type: "[[[[! badness",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*type", err)
+}
+
+func TestCreateSubscriptionBadBlockchainEventNameFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			BlockchainEvent: fftypes.BlockchainEventFilter{
+				Name: "[[[[! badness",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*name", err)
+}
+
+func TestCreateSubscriptionBadDeprecatedGroupFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedGroup: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*group", err)
+}
+
+func TestCreateSubscriptionBadDeprecatedTagFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedTag: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*tag", err)
+}
+
+func TestCreateSubscriptionBadMessageTagFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Message: fftypes.MessageFilter{
+				Tag: "[[[[! badness",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*message.tag", err)
+}
+
+func TestCreateSubscriptionBadDeprecatedAuthorFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedAuthor: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*author", err)
+}
+
+func TestCreateSubscriptionBadDeprecatedTopicsFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			DeprecatedTopics: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*topics", err)
+}
+
+func TestCreateSubscriptionBadBlockchainEventListenerFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			BlockchainEvent: fftypes.BlockchainEventFilter{
+				Listener: "[[[[! badness",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*listener", err)
+}
+
+func TestCreateSubscriptionSuccessMessageFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Message: fftypes.MessageFilter{
+				Author: "flapflip",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.NoError(t, err)
+}
+
+func TestCreateSubscriptionSuccessTxFilter(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Transaction: fftypes.TransactionFilter{
+				Type: "flapflip",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.NoError(t, err)
+}
+
+func TestCreateSubscriptionSuccessBlockchainEvent(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			BlockchainEvent: fftypes.BlockchainEventFilter{
+				Name: "flapflip",
+			},
+		},
+		Transport: "ut",
+	})
+	assert.NoError(t, err)
+}
+
+func TestCreateSubscriptionWithDeprecatedFilters(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Topic:            "flop",
+			DeprecatedTopics: "test",
+			DeprecatedTag:    "flap",
+			DeprecatedAuthor: "flip",
+			DeprecatedGroup:  "flapflip",
+		},
+		Transport: "ut",
+	})
+	assert.NoError(t, err)
+
 }
 
 func TestDispatchDeliveryResponseOK(t *testing.T) {

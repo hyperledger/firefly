@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
-	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -36,8 +36,10 @@ import (
 )
 
 type Manager interface {
+	fftypes.Named
+
 	CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
-	ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, event *fftypes.BlockchainEvent) error
+	ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) error
 	GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, ns, connector, poolName string) (*fftypes.TokenPool, error)
 	GetTokenPoolByNameOrID(ctx context.Context, ns string, poolNameOrID string) (*fftypes.TokenPool, error)
@@ -60,8 +62,9 @@ type Manager interface {
 	TokenApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput, waitConfirm bool) (*fftypes.TokenApproval, error)
 	GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenApproval, *database.FilterResult, error)
 
-	Start() error
-	WaitStop()
+	// From operations.OperationHandler
+	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
 }
 
 type assetManager struct {
@@ -74,34 +77,40 @@ type assetManager struct {
 	broadcast        broadcast.Manager
 	messaging        privatemessaging.Manager
 	tokens           map[string]tokens.Plugin
-	retry            retry.Retry
 	metrics          metrics.Manager
+	operations       operations.Manager
 	keyNormalization int
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager) (Manager, error) {
-	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
+	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
-		ctx:       ctx,
-		database:  di,
-		txHelper:  txcommon.NewTransactionHelper(di),
-		identity:  im,
-		data:      dm,
-		syncasync: sa,
-		broadcast: bm,
-		messaging: pm,
-		tokens:    ti,
-		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.AssetManagerRetryInitialDelay),
-			MaximumDelay: config.GetDuration(config.AssetManagerRetryMaxDelay),
-			Factor:       config.GetFloat64(config.AssetManagerRetryFactor),
-		},
+		ctx:              ctx,
+		database:         di,
+		txHelper:         txHelper,
+		identity:         im,
+		data:             dm,
+		syncasync:        sa,
+		broadcast:        bm,
+		messaging:        pm,
+		tokens:           ti,
 		keyNormalization: identity.ParseKeyNormalizationConfig(config.GetString(config.AssetManagerKeyNormalization)),
 		metrics:          mm,
+		operations:       om,
 	}
+	om.RegisterHandler(ctx, am, []fftypes.OpType{
+		fftypes.OpTypeTokenCreatePool,
+		fftypes.OpTypeTokenActivatePool,
+		fftypes.OpTypeTokenTransfer,
+		fftypes.OpTypeTokenApproval,
+	})
 	return am, nil
+}
+
+func (am *assetManager) Name() string {
+	return "AssetManager"
 }
 
 func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tokens.Plugin, error) {
@@ -145,14 +154,6 @@ func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*f
 	}
 
 	return connectors, nil
-}
-
-func (am *assetManager) Start() error {
-	return nil
-}
-
-func (am *assetManager) WaitStop() {
-	// No go routines
 }
 
 func (am *assetManager) getTokenConnectorName(ctx context.Context, ns string) (string, error) {

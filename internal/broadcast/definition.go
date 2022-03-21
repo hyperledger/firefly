@@ -20,9 +20,9 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -52,10 +52,10 @@ func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns strin
 	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (*fftypes.Message, error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
-	data := &fftypes.Data{
+	d := &fftypes.Data{
 		Validator: fftypes.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
 		Namespace: ns,
@@ -63,40 +63,39 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 	}
 	b, err := json.Marshal(&def)
 	if err == nil {
-		data.Value = fftypes.JSONAnyPtrBytes(b)
-		err = data.Seal(ctx, nil)
+		d.Value = fftypes.JSONAnyPtrBytes(b)
+		err = d.Seal(ctx, nil)
 	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
-	// Write as data to the local store
-	if err = bm.database.UpsertData(ctx, data, database.UpsertOptimizationNew); err != nil {
-		return nil, err
-	}
-
 	// Create a broadcast message referring to the data
-	in := &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Namespace: ns,
-				Type:      fftypes.MessageTypeDefinition,
-				SignerRef: *signingIdentity,
-				Topics:    fftypes.FFStringArray{def.Topic()},
-				Tag:       tag,
-				TxType:    fftypes.TransactionTypeBatchPin,
-			},
-			Data: fftypes.DataRefs{
-				{ID: data.ID, Hash: data.Hash},
+	newMsg := &data.NewMessage{
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Namespace: ns,
+					Type:      fftypes.MessageTypeDefinition,
+					SignerRef: *signingIdentity,
+					Topics:    fftypes.FFStringArray{def.Topic()},
+					Tag:       tag,
+					TxType:    fftypes.TransactionTypeBatchPin,
+				},
+				Data: fftypes.DataRefs{
+					{ID: d.ID, Hash: d.Hash, ValueSize: d.ValueSize},
+				},
 			},
 		},
+		NewData: fftypes.DataArray{d},
+		AllData: fftypes.DataArray{d},
 	}
 
 	// Broadcast the message
 	sender := broadcastSender{
 		mgr:       bm,
 		namespace: ns,
-		msg:       in,
+		msg:       newMsg,
 		resolved:  true,
 	}
 	sender.setDefaults()
@@ -105,5 +104,5 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 	} else {
 		err = sender.Send(ctx)
 	}
-	return &in.Message, err
+	return &newMsg.Message.Message, err
 }

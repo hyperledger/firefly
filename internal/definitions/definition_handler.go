@@ -37,7 +37,7 @@ import (
 type DefinitionHandlers interface {
 	privatemessaging.GroupManager
 
-	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (HandlerResult, error)
+	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
@@ -62,6 +62,21 @@ const (
 	// ActionWait the message is still awaiting further pieces for aggregation and should be held in pending state
 	ActionWait
 )
+
+func (dma DefinitionMessageAction) String() string {
+	switch dma {
+	case ActionReject:
+		return "reject"
+	case ActionConfirm:
+		return "confirm"
+	case ActionRetry:
+		return "retry"
+	case ActionWait:
+		return "wait"
+	default:
+		return "unknown"
+	}
+}
 
 // DefinitionBatchState tracks the state between definition handlers that run in-line on the pin processing route in the
 // aggregator as part of a batch of pins. They might have complex API calls, and interdependencies, that need to be managed via this state.
@@ -120,9 +135,9 @@ func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftyp
 	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data []*fftypes.Data, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
-	l.Infof("Confirming system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
+	l.Infof("Processing system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
 	case fftypes.SystemTagDefineDatatype:
 		return dh.handleDatatypeBroadcast(ctx, state, msg, data, tx)
@@ -150,7 +165,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	}
 }
 
-func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
+func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data fftypes.DataArray, res fftypes.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))

@@ -40,8 +40,10 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 		return err
 	}
 	if len(operations) > 0 {
-		if err = txcommon.RetrieveTokenTransferInputs(ctx, operations[0], transfer); err != nil {
+		if origTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, operations[0]); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
+		} else if origTransfer != nil {
+			transfer.LocalID = origTransfer.LocalID
 		}
 	}
 
@@ -144,7 +146,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 			}
 			em.emitBlockchainEventMetric(transfer.Event)
 
-			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, transfer.Namespace, transfer.LocalID, transfer.TX.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, transfer.Namespace, transfer.LocalID, transfer.TX.ID, transfer.Pool.String())
 			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
@@ -153,7 +155,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 	// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
 	if err == nil && batchID != nil {
 		log.L(em.ctx).Infof("Batch '%s' contains reference to received transfer. Transfer='%s' Message='%s'", batchID, transfer.ProtocolID, transfer.Message)
-		em.aggregator.rewindBatches <- batchID
+		em.aggregator.rewindBatches <- *batchID
 	}
 
 	return err

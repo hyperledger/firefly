@@ -35,6 +35,29 @@ func (_m *Plugin) Capabilities() *sharedstorage.Capabilities {
 	return r0
 }
 
+// DownloadData provides a mock function with given fields: ctx, payloadRef
+func (_m *Plugin) DownloadData(ctx context.Context, payloadRef string) (io.ReadCloser, error) {
+	ret := _m.Called(ctx, payloadRef)
+
+	var r0 io.ReadCloser
+	if rf, ok := ret.Get(0).(func(context.Context, string) io.ReadCloser); ok {
+		r0 = rf(ctx, payloadRef)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(io.ReadCloser)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, payloadRef)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields: ctx, prefix, callbacks
 func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks sharedstorage.Callbacks) error {
 	ret := _m.Called(ctx, prefix, callbacks)
@@ -68,8 +91,8 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// PublishData provides a mock function with given fields: ctx, data
-func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (string, error) {
+// UploadData provides a mock function with given fields: ctx, data
+func (_m *Plugin) UploadData(ctx context.Context, data io.Reader) (string, error) {
 	ret := _m.Called(ctx, data)
 
 	var r0 string
@@ -82,29 +105,6 @@ func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (string, erro
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, io.Reader) error); ok {
 		r1 = rf(ctx, data)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// RetrieveData provides a mock function with given fields: ctx, payloadRef
-func (_m *Plugin) RetrieveData(ctx context.Context, payloadRef string) (io.ReadCloser, error) {
-	ret := _m.Called(ctx, payloadRef)
-
-	var r0 io.ReadCloser
-	if rf, ok := ret.Get(0).(func(context.Context, string) io.ReadCloser); ok {
-		r0 = rf(ctx, payloadRef)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(io.ReadCloser)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, payloadRef)
 	} else {
 		r1 = ret.Error(1)
 	}

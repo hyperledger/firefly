@@ -21,36 +21,36 @@ type EventType = FFEnum
 
 var (
 	// EventTypeTransactionSubmitted occurs only on the node that initiates a tranaction, when the transaction is submitted
-	EventTypeTransactionSubmitted EventType = ffEnum("eventtype", "transaction_submitted")
+	EventTypeTransactionSubmitted = ffEnum("eventtype", "transaction_submitted")
 	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
 	// is available for processing by an application. Most applications only need to listen to this event type
-	EventTypeMessageConfirmed EventType = ffEnum("eventtype", "message_confirmed")
+	EventTypeMessageConfirmed = ffEnum("eventtype", "message_confirmed")
 	// EventTypeMessageRejected occurs if a message is received and confirmed from a sequencing perspective, but is rejected as invalid (mismatch to schema, or duplicate system broadcast)
-	EventTypeMessageRejected EventType = ffEnum("eventtype", "message_rejected")
+	EventTypeMessageRejected = ffEnum("eventtype", "message_rejected")
 	// EventTypeNamespaceConfirmed occurs when a new namespace is ready for use (on the namespace itself)
-	EventTypeNamespaceConfirmed EventType = ffEnum("eventtype", "namespace_confirmed")
+	EventTypeNamespaceConfirmed = ffEnum("eventtype", "namespace_confirmed")
 	// EventTypeDatatypeConfirmed occurs when a new datatype is ready for use (on the namespace of the datatype)
-	EventTypeDatatypeConfirmed EventType = ffEnum("eventtype", "datatype_confirmed")
+	EventTypeDatatypeConfirmed = ffEnum("eventtype", "datatype_confirmed")
 	// EventTypeIdentityConfirmed occurs when a new identity has been confirmed, as as result of a signed claim broadcast, and any associated claim verification
-	EventTypeIdentityConfirmed EventType = ffEnum("eventtype", "identity_confirmed")
+	EventTypeIdentityConfirmed = ffEnum("eventtype", "identity_confirmed")
 	// EventTypeIdentityUpdated occurs when an existing identity is update by the owner of that identity
-	EventTypeIdentityUpdated EventType = ffEnum("eventtype", "identity_updated")
+	EventTypeIdentityUpdated = ffEnum("eventtype", "identity_updated")
 	// EventTypePoolConfirmed occurs when a new token pool is ready for use
-	EventTypePoolConfirmed EventType = ffEnum("eventtype", "token_pool_confirmed")
+	EventTypePoolConfirmed = ffEnum("eventtype", "token_pool_confirmed")
 	// EventTypeTransferConfirmed occurs when a token transfer has been confirmed
-	EventTypeTransferConfirmed EventType = ffEnum("eventtype", "token_transfer_confirmed")
+	EventTypeTransferConfirmed = ffEnum("eventtype", "token_transfer_confirmed")
 	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)
-	EventTypeTransferOpFailed EventType = ffEnum("eventtype", "token_transfer_op_failed")
+	EventTypeTransferOpFailed = ffEnum("eventtype", "token_transfer_op_failed")
 	// EventTypeApprovalConfirmed occurs when a token approval has been confirmed
-	EventTypeApprovalConfirmed EventType = ffEnum("eventtype", "token_approval_confirmed")
+	EventTypeApprovalConfirmed = ffEnum("eventtype", "token_approval_confirmed")
 	// EventTypeApprovalOpFailed occurs when a token approval submitted by this node has failed (based on feedback from connector)
-	EventTypeApprovalOpFailed EventType = ffEnum("eventtype", "token_approval_op_failed")
+	EventTypeApprovalOpFailed = ffEnum("eventtype", "token_approval_op_failed")
 	// EventTypeContractInterfaceConfirmed occurs when a new contract interface has been confirmed
-	EventTypeContractInterfaceConfirmed EventType = ffEnum("eventtype", "contract_interface_confirmed")
+	EventTypeContractInterfaceConfirmed = ffEnum("eventtype", "contract_interface_confirmed")
 	// EventTypeContractAPIConfirmed occurs when a new contract API has been confirmed
-	EventTypeContractAPIConfirmed EventType = ffEnum("eventtype", "contract_api_confirmed")
+	EventTypeContractAPIConfirmed = ffEnum("eventtype", "contract_api_confirmed")
 	// EventTypeBlockchainEventReceived occurs when a new event has been received from the blockchain
-	EventTypeBlockchainEventReceived EventType = ffEnum("eventtype", "blockchain_event_received")
+	EventTypeBlockchainEventReceived = ffEnum("eventtype", "blockchain_event_received")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
@@ -62,15 +62,23 @@ type Event struct {
 	Reference   *UUID     `json:"reference"`
 	Correlator  *UUID     `json:"correlator,omitempty"`
 	Transaction *UUID     `json:"tx,omitempty"`
+	Topic       string    `json:"topic,omitempty"`
 	Created     *FFTime   `json:"created"`
+}
+
+// EnrichedEvent adds the referred object to an event
+type EnrichedEvent struct {
+	Event
+	Message         *Message         `json:"message,omitempty"`
+	Transaction     *Transaction     `json:"transaction,omitempty"`
+	BlockchainEvent *BlockchainEvent `json:"blockchainevent,omitempty"`
 }
 
 // EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to
 // be dispatched to an application.
 type EventDelivery struct {
-	Event
+	EnrichedEvent
 	Subscription SubscriptionRef `json:"subscription"`
-	Message      *Message        `json:"message,omitempty"`
 }
 
 // EventDeliveryResponse is the payload an application sends back, to confirm it has accepted (or rejected) the event and as such
@@ -83,13 +91,14 @@ type EventDeliveryResponse struct {
 	Reply        *MessageInOut   `json:"reply,omitempty"`
 }
 
-func NewEvent(t EventType, ns string, ref *UUID, tx *UUID) *Event {
+func NewEvent(t EventType, ns string, ref *UUID, tx *UUID, topic string) *Event {
 	return &Event{
 		ID:          NewUUID(),
 		Type:        t,
 		Namespace:   ns,
 		Reference:   ref,
 		Transaction: tx,
+		Topic:       topic,
 		Created:     Now(),
 	}
 }

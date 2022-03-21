@@ -34,7 +34,7 @@ func TestGetOrg(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetOrganizationByID", mock.Anything, "org12345").
+	nmn.On("GetOrganizationByNameOrID", mock.Anything, "org12345").
 		Return(&fftypes.Identity{}, nil)
 	r.ServeHTTP(res, req)
 

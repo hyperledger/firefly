@@ -19,28 +19,60 @@ package txcommon
 import (
 	"context"
 	"strings"
+	"time"
 
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/karlseguin/ccache"
 )
 
 type Helper interface {
 	SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.TransactionType) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.TransactionType, blockchainTXID string) (valid bool, err error)
 	AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error
-	WriteOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject)
-	WriteOperationFailure(ctx context.Context, opID *fftypes.UUID, err error)
+	EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error)
+	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error)
 }
 
 type transactionHelper struct {
-	database database.Plugin
+	database            database.Plugin
+	data                data.Manager
+	transactionCache    *ccache.Cache
+	transactionCacheTTL time.Duration
 }
 
-func NewTransactionHelper(di database.Plugin) Helper {
-	return &transactionHelper{
+func NewTransactionHelper(di database.Plugin, dm data.Manager) Helper {
+	t := &transactionHelper{
 		database: di,
+		data:     dm,
 	}
+	t.transactionCache = ccache.New(
+		// We use a LRU cache with a size-aware max
+		ccache.Configure().
+			MaxSize(config.GetByteSize(config.TransactionCacheSize)),
+	)
+	return t
+}
+
+func (t *transactionHelper) updateTransactionsCache(tx *fftypes.Transaction) {
+	t.transactionCache.Set(tx.ID.String(), tx, t.transactionCacheTTL)
+}
+
+func (t *transactionHelper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
+	cached := t.transactionCache.Get(id.String())
+	if cached != nil {
+		cached.Extend(t.transactionCacheTTL)
+		return cached.Value().(*fftypes.Transaction), nil
+	}
+	tx, err := t.database.GetTransactionByID(ctx, id)
+	if err != nil || tx == nil {
+		return tx, err
+	}
+	t.updateTransactionsCache(tx)
+	return tx, nil
 }
 
 // SubmitNewTransaction is called when there is a new transaction being submitted by the local node
@@ -56,7 +88,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, ns string,
 		return nil, err
 	}
 
-	if err := t.database.InsertEvent(ctx, fftypes.NewEvent(fftypes.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID)); err != nil {
+	if err := t.database.InsertEvent(ctx, fftypes.NewEvent(fftypes.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID, tx.Type.String())); err != nil {
 		return nil, err
 	}
 
@@ -66,6 +98,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, ns string,
 // PersistTransaction is called when we need to ensure a transaction exists in the DB, and optionally associate a new BlockchainTXID to it
 func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.TransactionType, blockchainTXID string) (valid bool, err error) {
 
+	// TODO: Consider if this can exploit caching
 	tx, err := t.database.GetTransactionByID(ctx, id)
 	if err != nil {
 		return false, err
@@ -92,14 +125,19 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, i
 			return false, err
 		}
 
-	} else if err = t.database.InsertTransaction(ctx, &fftypes.Transaction{
-		ID:            id,
-		Namespace:     ns,
-		Type:          txType,
-		BlockchainIDs: fftypes.NewFFStringArray(strings.ToLower(blockchainTXID)),
-	}); err != nil {
-		return false, err
+	} else {
+		tx = &fftypes.Transaction{
+			ID:            id,
+			Namespace:     ns,
+			Type:          txType,
+			BlockchainIDs: fftypes.NewFFStringArray(strings.ToLower(blockchainTXID)),
+		}
+		if err = t.database.InsertTransaction(ctx, tx); err != nil {
+			return false, err
+		}
 	}
+
+	t.updateTransactionsCache(tx)
 
 	return true, nil
 }
@@ -127,16 +165,4 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, id *fftypes.UUI
 	}
 
 	return nil
-}
-
-func (t *transactionHelper) WriteOperationSuccess(ctx context.Context, opID *fftypes.UUID, output fftypes.JSONObject) {
-	if err2 := t.database.ResolveOperation(ctx, opID, fftypes.OpStatusSucceeded, "", output); err2 != nil {
-		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err2)
-	}
-}
-
-func (t *transactionHelper) WriteOperationFailure(ctx context.Context, opID *fftypes.UUID, err error) {
-	if err2 := t.database.ResolveOperation(ctx, opID, fftypes.OpStatusFailed, err.Error(), nil); err2 != nil {
-		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err2)
-	}
 }

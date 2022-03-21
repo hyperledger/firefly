@@ -97,8 +97,8 @@ type Callbacks interface {
 	// MessageReceived notifies of a message received from another node in the network
 	MessageReceived(peerID string, data []byte) (manifest string, err error)
 
-	// BLOBReceived notifies of the ID of a BLOB that has been stored by DX after being received from another node in the network
-	BLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
+	// PrivateBLOBReceived notifies of the ID of a BLOB that has been stored by DX after being received from another node in the network
+	PrivateBLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
 
 	// TransferResult notifies of a status update of a transfer (can have multiple status updates).
 	TransferResult(trackingID string, status fftypes.OpStatus, info fftypes.TransportStatusUpdate) error

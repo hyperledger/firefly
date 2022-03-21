@@ -41,6 +41,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 		Masked:     true,
 		Hash:       fftypes.NewRandB32(),
 		Batch:      fftypes.NewUUID(),
+		BatchHash:  fftypes.NewRandB32(),
 		Index:      10,
 		Created:    fftypes.Now(),
 		Signer:     "0x12345",
@@ -139,6 +140,61 @@ func TestUpsertPinFailCommit(t *testing.T) {
 	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertPinsBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertPins(context.Background(), []*fftypes.Pin{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertPinsMultiRowOK(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	pin1 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
+	pin2 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeCreated, int64(1001))
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeCreated, int64(1002))
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectCommit()
+	err := s.InsertPins(context.Background(), []*fftypes.Pin{pin1, pin2})
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertPinsMultiRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+	pin1 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertPins(context.Background(), []*fftypes.Pin{pin1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertPinsSingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	pin1 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertPins(context.Background(), []*fftypes.Pin{pin1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestGetPinQueryFail(t *testing.T) {

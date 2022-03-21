@@ -40,15 +40,17 @@ var (
 		"error",
 		"input",
 		"output",
+		"retry_id",
 	}
 	opFilterFieldMap = map[string]string{
 		"tx":     "tx_id",
 		"type":   "optype",
 		"status": "opstatus",
+		"retry":  "retry_id",
 	}
 )
 
-func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Operation) (err error) {
+func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...database.PostCompletionHook) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -70,9 +72,13 @@ func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Oper
 				operation.Error,
 				operation.Input,
 				operation.Output,
+				operation.Retry,
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeCreated, operation.Namespace, operation.ID)
+			for _, hook := range hooks {
+				hook()
+			}
 		},
 	); err != nil {
 		return err
@@ -95,6 +101,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Error,
 		&op.Input,
 		&op.Output,
+		&op.Retry,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "operations")
@@ -152,7 +159,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (
 	return ops, s.queryRes(ctx, tx, "operations", fop, fi), err
 }
 
-func (s *SQLCommon) updateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -182,5 +189,5 @@ func (s *SQLCommon) ResolveOperation(ctx context.Context, id *fftypes.UUID, stat
 	if output != nil {
 		update.Set("output", output)
 	}
-	return s.updateOperation(ctx, id, update)
+	return s.UpdateOperation(ctx, id, update)
 }

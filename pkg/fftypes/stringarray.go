@@ -87,7 +87,7 @@ func (sa FFStringArray) String() string {
 	return strings.Join([]string(sa), ",")
 }
 
-func (sa FFStringArray) Validate(ctx context.Context, fieldName string, isName bool) error {
+func (sa FFStringArray) Validate(ctx context.Context, fieldName string, isName bool, maxItems int) error {
 	var totalLength int
 	dupCheck := make(map[string]bool)
 	for i, n := range sa {
@@ -106,7 +106,7 @@ func (sa FFStringArray) Validate(ctx context.Context, fieldName string, isName b
 			}
 		}
 	}
-	if isName && len(sa) > FFStringNameItemsMax {
+	if maxItems > 0 && len(sa) > maxItems {
 		return i18n.NewError(ctx, i18n.MsgTooManyItems, fieldName, FFStringNameItemsMax, len(sa))
 	}
 	if totalLength > FFStringArrayStandardMax {

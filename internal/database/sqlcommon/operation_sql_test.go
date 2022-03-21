@@ -39,7 +39,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	operation := &fftypes.Operation{
 		ID:          operationID,
 		Namespace:   "ns1",
-		Type:        fftypes.OpTypeBlockchainBatchPin,
+		Type:        fftypes.OpTypeBlockchainPinBatch,
 		Transaction: fftypes.NewUUID(),
 		Status:      fftypes.OpStatusFailed,
 		Plugin:      "ethereum",
@@ -50,8 +50,12 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Updated:     fftypes.Now(),
 	}
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeCreated, "ns1", operationID).Return()
-	err := s.InsertOperation(ctx, operation)
+	hookCalled := false
+	err := s.InsertOperation(ctx, operation, func() {
+		hookCalled = true
+	})
 	assert.NoError(t, err)
+	assert.True(t, hookCalled)
 
 	// Query back the operation (by ID)
 	operationRead, err := s.GetOperationByID(ctx, operationID)
@@ -193,7 +197,7 @@ func TestOperationUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -201,7 +205,7 @@ func TestOperationUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -211,6 +215,6 @@ func TestOperationUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.updateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

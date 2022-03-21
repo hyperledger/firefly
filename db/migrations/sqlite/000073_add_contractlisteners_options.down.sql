@@ -1,0 +1,1 @@
+ALTER TABLE contractlisteners DROP COLUMN options;

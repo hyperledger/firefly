@@ -83,15 +83,23 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType fftypes.MessageType, txtype fftypes.TransactionType, count int) (data []*fftypes.Data) {
+func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType fftypes.MessageType, txtype fftypes.TransactionType, count int) (data fftypes.DataArray) {
 	var group *fftypes.Bytes32
-	messages := GetMessages(ts.t, client, ts.startTime, msgType, topic, 200)
-	for i, message := range messages {
-		ts.t.Logf("Message %d: %+v", i, *message)
-		if group != nil {
-			assert.Equal(ts.t, group.String(), message.Header.Group.String(), "All messages must be same group")
+	var messages []*fftypes.Message
+	events := GetMessageEvents(ts.t, client, ts.startTime, topic, 200)
+	for i, event := range events {
+		if event.Message != nil {
+			message := event.Message
+			ts.t.Logf("Message %d: %+v", i, *message)
+			if message.Header.Type != msgType {
+				continue
+			}
+			if group != nil {
+				assert.Equal(ts.t, group.String(), message.Header.Group.String(), "All messages must be same group")
+			}
+			group = message.Header.Group
+			messages = append(messages, message)
 		}
-		group = message.Header.Group
 	}
 	assert.Equal(ts.t, count, len(messages))
 
@@ -137,7 +145,6 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 func validateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
 	for key, balance := range balances {
 		account := GetTokenBalance(t, client, poolID, tokenIndex, key)
-		assert.Equal(t, "erc1155", account.Connector)
 		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}
 }
@@ -336,10 +343,12 @@ func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery
 
 func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, ref *fftypes.UUID) {
 	for {
-		eventDelivery := <-c
-		if eventDelivery.Type == eventType && (ref == nil || *ref == *eventDelivery.Reference) {
+		ed := <-c
+		if ed.Type == eventType && (ref == nil || *ref == *ed.Reference) {
+			t.Logf("Detected '%s' event for ref '%s'", ed.Type, ed.Reference)
 			return
 		}
+		t.Logf("Ignored event '%s'", ed.ID)
 	}
 }
 

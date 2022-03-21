@@ -903,121 +903,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success
@@ -1056,121 +964,29 @@ paths:
                 properties:
                   author:
                     type: string
-                  blobs:
-                    items: {}
-                    type: array
                   confirmed: {}
                   created: {}
                   hash: {}
                   id: {}
                   key:
                     type: string
+                  manifest:
+                    type: string
                   namespace:
                     type: string
                   node: {}
-                  payload:
-                    properties:
-                      data:
-                        items:
-                          properties:
-                            blob:
-                              properties:
-                                hash: {}
-                                name:
-                                  type: string
-                                public:
-                                  type: string
-                                size:
-                                  format: int64
-                                  type: integer
-                              type: object
-                            created: {}
-                            datatype:
-                              properties:
-                                name:
-                                  type: string
-                                version:
-                                  type: string
-                              type: object
-                            hash: {}
-                            id: {}
-                            namespace:
-                              type: string
-                            validator:
-                              type: string
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                      messages:
-                        items:
-                          properties:
-                            batch: {}
-                            confirmed: {}
-                            data:
-                              items:
-                                properties:
-                                  hash: {}
-                                  id: {}
-                                type: object
-                              type: array
-                            hash: {}
-                            header:
-                              properties:
-                                author:
-                                  type: string
-                                cid: {}
-                                created: {}
-                                datahash: {}
-                                group: {}
-                                id: {}
-                                key:
-                                  type: string
-                                namespace:
-                                  type: string
-                                tag:
-                                  type: string
-                                topics:
-                                  items:
-                                    type: string
-                                  type: array
-                                txtype:
-                                  type: string
-                                type:
-                                  enum:
-                                  - definition
-                                  - broadcast
-                                  - private
-                                  - groupinit
-                                  - transfer_broadcast
-                                  - transfer_private
-                                  type: string
-                              type: object
-                            pins:
-                              items:
-                                type: string
-                              type: array
-                            state:
-                              enum:
-                              - staged
-                              - ready
-                              - sent
-                              - pending
-                              - confirmed
-                              - rejected
-                              type: string
-                          type: object
-                        type: array
-                      tx:
-                        properties:
-                          id: {}
-                          type:
-                            type: string
-                        type: object
-                    type: object
                   payloadRef:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
+                    enum:
+                    - broadcast
+                    - private
                     type: string
                 type: object
           description: Success
@@ -1420,6 +1236,15 @@ paths:
                   count:
                     type: string
                   timestamp: {}
+                  types:
+                    items:
+                      properties:
+                        count:
+                          type: string
+                        type:
+                          type: string
+                      type: object
+                    type: array
                 type: object
           description: Success
         default:
@@ -2450,7 +2275,14 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
+                    type: string
+                  topic:
                     type: string
                 type: object
           description: Success
@@ -2512,7 +2344,14 @@ paths:
                   type: string
                 namespace:
                   type: string
+                options:
+                  properties:
+                    firstEvent:
+                      type: string
+                  type: object
                 protocolId:
+                  type: string
+                topic:
                   type: string
               type: object
       responses:
@@ -2553,7 +2392,14 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
+                    type: string
+                  topic:
                     type: string
                 type: object
           description: Success
@@ -2649,7 +2495,14 @@ paths:
                     type: string
                   namespace:
                     type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                    type: object
                   protocolId:
+                    type: string
+                  topic:
                     type: string
                 type: object
           description: Success
@@ -3693,6 +3546,12 @@ paths:
         schema:
           example: default
           type: string
+      - description: 'TODO: Description'
+        in: query
+        name: fetchreferences
+        schema:
+          example: "true"
+          type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
         in: header
@@ -3728,6 +3587,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: sequence
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topic
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3789,6 +3653,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -3852,6 +3718,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -4967,6 +4835,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx
         schema:
           type: string
@@ -5024,6 +4897,8 @@ paths:
                   sequence:
                     format: int64
                     type: integer
+                  topic:
+                    type: string
                   tx: {}
                   type:
                     enum:
@@ -5043,71 +4918,6 @@ paths:
                     - contract_api_confirmed
                     - blockchain_event_received
                     type: string
-                type: object
-          description: Success
-        default:
-          description: ""
-  /namespaces/{ns}/messages/{msgid}/operations:
-    get:
-      description: 'TODO: Description'
-      operationId: getMsgOps
-      parameters:
-      - description: 'TODO: Description'
-        in: path
-        name: ns
-        required: true
-        schema:
-          example: default
-          type: string
-      - description: 'TODO: Description'
-        in: path
-        name: msgid
-        required: true
-        schema:
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created: {}
-                  error:
-                    type: string
-                  id: {}
-                  input:
-                    additionalProperties: {}
-                    type: object
-                  namespace:
-                    type: string
-                  output:
-                    additionalProperties: {}
-                    type: object
-                  plugin:
-                    type: string
-                  status:
-                    type: string
-                  tx: {}
-                  type:
-                    enum:
-                    - blockchain_batch_pin
-                    - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
-                    - token_create_pool
-                    - token_activate_pool
-                    - token_transfer
-                    - token_approval
-                    type: string
-                  updated: {}
                 type: object
           description: Success
         default:
@@ -5783,6 +5593,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: retry
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: status
         schema:
           type: string
@@ -5855,16 +5670,20 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -5920,16 +5739,94 @@ paths:
                     type: object
                   plugin:
                     type: string
+                  retry: {}
                   status:
                     type: string
                   tx: {}
                   type:
                     enum:
-                    - blockchain_batch_pin
+                    - blockchain_pin_batch
                     - blockchain_invoke
-                    - sharedstorage_batch_broadcast
-                    - dataexchange_batch_send
-                    - dataexchange_blob_send
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/operations/{opid}/retry:
+    post:
+      description: 'TODO: Description'
+      operationId: postOpRetry
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: opid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  error:
+                    type: string
+                  id: {}
+                  input:
+                    additionalProperties: {}
+                    type: object
+                  namespace:
+                    type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
+                  plugin:
+                    type: string
+                  retry: {}
+                  status:
+                    type: string
+                  tx: {}
+                  type:
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
                     - token_create_pool
                     - token_activate_pool
                     - token_transfer
@@ -5971,17 +5868,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: filter.group
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: filter.tag
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: filter.topics
+        name: filters
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -6056,14 +5943,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                        type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6115,14 +6025,37 @@ paths:
                   properties:
                     author:
                       type: string
+                    blockchainevent:
+                      properties:
+                        listener:
+                          type: string
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
                     group:
                       type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                      type: object
                     tag:
+                      type: string
+                    topic:
                       type: string
                     topics:
                       type: string
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -6243,14 +6176,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                        type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6302,14 +6258,37 @@ paths:
                   properties:
                     author:
                       type: string
+                    blockchainevent:
+                      properties:
+                        listener:
+                          type: string
+                        name:
+                          type: string
+                      type: object
                     events:
                       type: string
                     group:
                       type: string
+                    message:
+                      properties:
+                        author:
+                          type: string
+                        group:
+                          type: string
+                        tag:
+                          type: string
+                      type: object
                     tag:
+                      type: string
+                    topic:
                       type: string
                     topics:
                       type: string
+                    transaction:
+                      properties:
+                        type:
+                          type: string
+                      type: object
                   type: object
                 name:
                   type: string
@@ -6430,14 +6409,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                        type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -6527,14 +6529,37 @@ paths:
                     properties:
                       author:
                         type: string
+                      blockchainevent:
+                        properties:
+                          listener:
+                            type: string
+                          name:
+                            type: string
+                        type: object
                       events:
                         type: string
                       group:
                         type: string
+                      message:
+                        properties:
+                          author:
+                            type: string
+                          group:
+                            type: string
+                          tag:
+                            type: string
+                        type: object
                       tag:
+                        type: string
+                      topic:
                         type: string
                       topics:
                         type: string
+                      transaction:
+                        properties:
+                          type:
+                            type: string
+                        type: object
                     type: object
                   id: {}
                   name:
@@ -7740,6 +7765,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7832,6 +7860,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7876,6 +7907,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -7948,6 +7982,9 @@ paths:
                     type: string
                   created: {}
                   id: {}
+                  info:
+                    additionalProperties: {}
+                    type: object
                   key:
                     type: string
                   message: {}
@@ -8795,16 +8832,20 @@ paths:
                       type: object
                     plugin:
                       type: string
+                    retry: {}
                     status:
                       type: string
                     tx: {}
                     type:
                       enum:
-                      - blockchain_batch_pin
+                      - blockchain_pin_batch
                       - blockchain_invoke
-                      - sharedstorage_batch_broadcast
-                      - dataexchange_batch_send
-                      - dataexchange_blob_send
+                      - sharedstorage_upload_batch
+                      - sharedstorage_upload_blob
+                      - sharedstorage_download_batch
+                      - sharedstorage_download_blob
+                      - dataexchange_send_batch
+                      - dataexchange_send_blob
                       - token_create_pool
                       - token_activate_pool
                       - token_transfer
@@ -9176,14 +9217,14 @@ paths:
           description: Success
         default:
           description: ""
-  /network/nodes/{nid}:
+  /network/nodes/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getNetworkNode
       parameters:
       - description: 'TODO: Description'
         in: path
-        name: nid
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -9577,14 +9618,14 @@ paths:
           description: Success
         default:
           description: ""
-  /network/organizations/{oid}:
+  /network/organizations/{nameOrId}:
     get:
       description: 'TODO: Description'
       operationId: getNetworkOrg
       parameters:
       - description: 'TODO: Description'
         in: path
-        name: oid
+        name: nameOrId
         required: true
         schema:
           type: string
@@ -9826,6 +9867,113 @@ paths:
                           type: object
                       type: object
                     type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+  /status/pins:
+    get:
+      description: 'TODO: Description'
+      operationId: getStatusPins
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: batch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: dispatched
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: index
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: masked
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  batchHash: {}
+                  created: {}
+                  dispatched:
+                    type: boolean
+                  hash: {}
+                  index:
+                    format: int64
+                    type: integer
+                  masked:
+                    type: boolean
+                  sequence:
+                    format: int64
+                    type: integer
+                  signer:
+                    type: string
                 type: object
           description: Success
         default:

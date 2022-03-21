@@ -159,6 +159,12 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
+	msgIDs, err := s.GetMessageIDs(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(msgIDs))
+	assert.Equal(t, msg.Header.ID, &msgIDs[0].ID)
+	assert.Equal(t, msg.Sequence, msgIDs[0].Sequence)
+
 	// Check we can get it with a filter on only mesasges with a particular data ref
 	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
@@ -274,6 +280,93 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertMessagesBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesMultiRowOK(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID()}}}
+	msg2 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID()}}}
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns1", msg1.Header.ID, int64(1001))
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns1", msg2.Header.ID, int64(1002))
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*messages").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectQuery("INSERT.*messages_data").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1003)).
+		AddRow(int64(1004)),
+	)
+	mock.ExpectCommit()
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1, msg2})
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesMultiRowDataRefsFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID()}}}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*messages").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).AddRow(int64(1001)))
+	mock.ExpectQuery("INSERT.*messages_data").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesMultiRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesSingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertMessagesSingleRowFailDataRefs(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}}}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*messages").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT.*messages_data").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestReplaceMessageFailBegin(t *testing.T) {
@@ -496,6 +589,32 @@ func TestMessageUpdateBeginFail(t *testing.T) {
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
+}
+
+func TestGetMessageIDsQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetMessageIDs(context.Background(), f)
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessageIDsReadMessageFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("bad id"))
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetMessageIDs(context.Background(), f)
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessageIDsBadQuery(t *testing.T) {
+	s, mock := newMockProvider().init()
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
+	_, err := s.GetMessageIDs(context.Background(), f)
+	assert.Regexp(t, "FF10148", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestMessageUpdateBuildQueryFail(t *testing.T) {

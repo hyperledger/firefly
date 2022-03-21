@@ -36,14 +36,14 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 	var wrapper *fftypes.TransportWrapper
 	err = json.Unmarshal(data, &wrapper)
 	if err != nil {
-		l.Errorf("Invalid transmission from '%s': %s", peerID, err)
+		l.Errorf("Invalid transmission from %s peer '%s': %s", dx.Name(), peerID, err)
 		return "", nil
 	}
 	if wrapper.Batch == nil {
 		l.Errorf("Invalid transmission: nil batch")
 		return "", nil
 	}
-	l.Infof("Private batch received from '%s' (len=%d)", peerID, len(data))
+	l.Infof("Private batch received from %s peer '%s' (len=%d)", dx.Name(), peerID, len(data))
 
 	if wrapper.Batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 		valid, err := em.definitions.EnsureLocalGroup(em.ctx, wrapper.Group)
@@ -56,12 +56,8 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 		}
 	}
 
-	mf, err := em.privateBatchReceived(peerID, wrapper.Batch)
-	manifestBytes := []byte{}
-	if err == nil && mf != nil {
-		manifestBytes, err = json.Marshal(&mf)
-	}
-	return string(manifestBytes), err
+	manifestString, err := em.privateBatchReceived(peerID, wrapper.Batch)
+	return manifestString, err
 }
 
 // Check data exchange peer the data came from, has been registered to the org listed in the batch.
@@ -113,7 +109,7 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerI
 	return node, nil
 }
 
-func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest *fftypes.Manifest, err error) {
+func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest string, err error) {
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
@@ -129,27 +125,28 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 				return nil
 			}
 
-			valid, err := em.persistBatch(ctx, batch)
+			persistedBatch, valid, err := em.persistBatch(ctx, batch)
 			if err != nil || !valid {
 				l.Errorf("Batch received from org=%s node=%s processing failed valid=%t: %s", node.Parent, node.Name, valid, err)
 				return err // retry - persistBatch only returns retryable errors
 			}
 
-			if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
-				// Poke the aggregator to do its stuff
-				em.aggregator.rewindBatches <- batch.ID
-			} else if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
+			if batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
 				// We need to confirm all these messages immediately.
 				if err := em.markUnpinnedMessagesConfirmed(ctx, batch); err != nil {
 					return err
 				}
 			}
-			manifest = batch.Manifest()
+			manifest = persistedBatch.Manifest.String()
 			return nil
 		})
 	})
+	// Poke the aggregator to do its stuff - after we have committed the transaction so the pins are visible
+	if err == nil && batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
+		log.L(em.ctx).Errorf("Rewinding for persisted private batch %s", batch.ID)
+		em.aggregator.rewindBatches <- *batch.ID
+	}
 	return manifest, err
-
 }
 
 func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch *fftypes.Batch) error {
@@ -176,32 +173,36 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 	}
 
 	for _, msg := range batch.Payload.Messages {
-		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID)
-		event.Correlator = msg.Header.CID
-		if err := em.database.InsertEvent(ctx, event); err != nil {
-			return err
+		for _, topic := range msg.Header.Topics {
+			// One event per topic
+			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, batch.Namespace, msg.Header.ID, batch.Payload.TX.ID, topic)
+			event.Correlator = msg.Header.CID
+			if err := em.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
+func (em *eventManager) PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
 	l := log.L(em.ctx)
-	l.Debugf("Blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", peerID, &hash, payloadRef)
+	l.Infof("Blob received event from data exchange %s: Peer='%s' Hash='%v' PayloadRef='%s'", dx.Name(), peerID, &hash, payloadRef)
 
 	if peerID == "" || len(peerID) > 256 || payloadRef == "" || len(payloadRef) > 1024 {
 		l.Errorf("Invalid blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", peerID, &hash, payloadRef)
 		return nil // we consume the event still
 	}
 
+	return em.blobReceivedCommon(peerID, hash, size, payloadRef)
+}
+
+func (em *eventManager) blobReceivedCommon(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
 	// We process the event in a retry loop (which will break only if the context is closed), so that
 	// we only confirm consumption of the event to the plugin once we've processed it.
 	return em.retry.Do(em.ctx, "blob reference insert", func(attempt int) (retry bool, err error) {
-
-		batchIDs := make(map[fftypes.UUID]bool)
-
-		err = em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// Insert the blob into the detabase
 			err := em.database.InsertBlob(ctx, &fftypes.Blob{
 				Peer:       peerID,
@@ -213,48 +214,8 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 			if err != nil {
 				return err
 			}
-
-			// Now we need to work out what pins potentially are unblocked by the arrival of this data
-
-			// Find any data associated with this blob
-			var data []*fftypes.DataRef
-			filter := database.DataQueryFactory.NewFilter(ctx).Eq("blob.hash", &hash)
-			data, _, err = em.database.GetDataRefs(ctx, filter)
-			if err != nil {
-				return err
-			}
-
-			// Find the messages assocated with that data
-			var messages []*fftypes.Message
-			for _, data := range data {
-				fb := database.MessageQueryFactory.NewFilter(ctx)
-				filter := fb.And(fb.Eq("confirmed", nil))
-				messages, _, err = em.database.GetMessagesForData(ctx, data.ID, filter)
-				if err != nil {
-					return err
-				}
-			}
-
-			// Find the unique batch IDs for all the messages
-			for _, msg := range messages {
-				if msg.BatchID != nil {
-					batchIDs[*msg.BatchID] = true
-				}
-			}
-			return nil
+			return em.aggregator.rewindForBlobArrival(ctx, &hash)
 		})
-		if err != nil {
-			return true, err
-		}
-
-		// Initiate rewinds for all the batchIDs that are potentially completed by the arrival of this data
-		for bid := range batchIDs {
-			var batchID = bid // cannot use the address of the loop var
-			l.Infof("Batch '%s' contains reference to received blob. Peer='%s' Hash='%v' PayloadRef='%s'", &bid, peerID, &hash, payloadRef)
-			em.aggregator.rewindBatches <- &batchID
-		}
-
-		return false, nil
 	})
 }
 
@@ -292,8 +253,18 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		op := operations[0]
 		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
 			switch op.Type {
-			case fftypes.OpTypeDataExchangeBatchSend:
-				expectedManifest := op.Input.GetString("manifest")
+			case fftypes.OpTypeDataExchangeSendBatch:
+				batchID, _ := fftypes.ParseUUID(em.ctx, op.Input.GetString("batch"))
+				expectedManifest := ""
+				if batchID != nil {
+					batch, err := em.database.GetBatchByID(em.ctx, batchID)
+					if err != nil {
+						return true, err
+					}
+					if batch != nil {
+						expectedManifest = batch.Manifest.String()
+					}
+				}
 				if update.Manifest != expectedManifest {
 					// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
 					mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)
@@ -301,7 +272,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 					update.Error = mismatchErr.Error()
 					status = fftypes.OpStatusFailed
 				}
-			case fftypes.OpTypeDataExchangeBlobSend:
+			case fftypes.OpTypeDataExchangeSendBlob:
 				expectedHash := op.Input.GetString("hash")
 				if update.Hash != expectedHash {
 					// Log and map to failure for user to see that the receiver did not provide a matching hash

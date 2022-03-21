@@ -20,8 +20,8 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddSubscription provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
+// AddContractListener provides a mock function with given fields: ctx, subscription
+func (_m *Plugin) AddContractListener(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
 	ret := _m.Called(ctx, subscription)
 
 	var r0 error
@@ -50,8 +50,8 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	return r0
 }
 
-// DeleteSubscription provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error {
+// DeleteContractListener provides a mock function with given fields: ctx, subscription
+func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
 	ret := _m.Called(ctx, subscription)
 
 	var r0 error

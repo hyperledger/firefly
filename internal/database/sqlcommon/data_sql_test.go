@@ -52,6 +52,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
 		Value:     fftypes.JSONAnyPtr(val.String()),
+		ValueSize: 12345,
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", dataID, mock.Anything).Return()
@@ -72,7 +73,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataJson, _ := json.Marshal(&data)
 	dataReadJson, _ := json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
-	assert.Equal(t, int64(data.Value.Length()), dataRead.ValueSize)
+	assert.Equal(t, int64(12345), dataRead.ValueSize)
 
 	// Update the data (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
@@ -118,7 +119,6 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataJson, _ = json.Marshal(&dataUpdated)
 	dataReadJson, _ = json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
-	assert.Equal(t, int64(dataUpdated.Value.Length()), dataRead.ValueSize)
 
 	valRestored, ok := dataRead.Value.JSONObjectOk()
 	assert.True(t, ok)
@@ -220,6 +220,61 @@ func TestUpsertDataFailCommit(t *testing.T) {
 	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertDataArrayBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertDataArrayMultiRowOK(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	data1 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	data2 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", data1.ID)
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", data2.ID)
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectCommit()
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{data1, data2})
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertDataArrayMultiRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+	data1 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{data1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertDataArraySingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	data1 := &fftypes.Data{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertDataArray(context.Background(), fftypes.DataArray{data1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestGetDataByIDSelectFail(t *testing.T) {

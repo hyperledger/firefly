@@ -377,8 +377,8 @@ func (sa *syncAsyncBridge) handleTransferOpFailedEvent(event *fftypes.EventDeliv
 		return err
 	}
 	// Extract the LocalID of the transfer
-	var transfer fftypes.TokenTransfer
-	if err := txcommon.RetrieveTokenTransferInputs(sa.ctx, op, &transfer); err != nil {
+	transfer, err := txcommon.RetrieveTokenTransferInputs(sa.ctx, op)
+	if err != nil || transfer.LocalID == nil {
 		log.L(sa.ctx).Warnf("Failed to extract token transfer inputs for operation '%s': %s", op.ID, err)
 	}
 
@@ -399,8 +399,8 @@ func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *fftypes.EventDeliv
 		return err
 	}
 	// Extract the LocalID of the transfer
-	var approval fftypes.TokenApproval
-	if err := txcommon.RetrieveTokenApprovalInputs(sa.ctx, op, &approval); err != nil {
+	approval, err := txcommon.RetrieveTokenApprovalInputs(sa.ctx, op)
+	if err != nil || approval.LocalID == nil {
 		log.L(sa.ctx).Warnf("Failed to extract token approval inputs for operation '%s': %s", op.ID, err)
 	}
 
@@ -452,7 +452,7 @@ func (sa *syncAsyncBridge) resolveReply(inflight *inflightRequest, msg *fftypes.
 	log.L(sa.ctx).Debugf("Resolving reply request '%s' with message '%s'", inflight.id, msg.Header.ID)
 
 	response := &fftypes.MessageInOut{Message: *msg}
-	data, _, err := sa.data.GetMessageData(sa.ctx, msg, true)
+	data, _, err := sa.data.GetMessageDataCached(sa.ctx, msg)
 	if err != nil {
 		log.L(sa.ctx).Errorf("Failed to read response data for message '%s' on request '%s': %s", msg.Header.ID, inflight.id, err)
 		return

@@ -90,6 +90,20 @@ func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 		Get(urlGetNamespaces)
 }
 
+func GetMessageEvents(t *testing.T, client *resty.Client, startTime time.Time, topic string, expectedStatus int) (events []*fftypes.EnrichedEvent) {
+	path := urlGetEvents
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetQueryParam("topic", topic).
+		SetQueryParam("sort", "sequence").
+		SetQueryParam("fetchreferences", "true").
+		SetResult(&events).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s (count=%d)", path, resp.StatusCode(), resp.String(), len(events))
+	return events
+}
+
 func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType fftypes.MessageType, topic string, expectedStatus int) (msgs []*fftypes.Message) {
 	path := urlGetMessages
 	resp, err := client.R().
@@ -104,7 +118,7 @@ func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgTyp
 	return msgs
 }
 
-func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data []*fftypes.Data) {
+func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data fftypes.DataArray) {
 	path := urlGetData
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -115,7 +129,7 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	return data
 }
 
-func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data []*fftypes.Data) {
+func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data fftypes.DataArray) {
 	path := urlGetMessages
 	path += "/" + msgID.String() + "/data"
 	resp, err := client.R().

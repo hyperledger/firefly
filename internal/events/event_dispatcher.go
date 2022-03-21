@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,7 +18,6 @@ package events
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"sync"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -63,9 +63,10 @@ type eventDispatcher struct {
 	subscription  *subscription
 	cel           *changeEventListener
 	changeEvents  chan *fftypes.ChangeEvent
+	txHelper      txcommon.Helper
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := config.GetUint(config.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
@@ -93,6 +94,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		cel:           cel,
+		txHelper:      txHelper,
 	}
 
 	pollerConf := &eventPollerConf{
@@ -149,7 +151,8 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.eventPoller.closed
 }
 
-func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
+func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]fftypes.LocallySequenced, error) {
+	log.L(ctx).Tracef("Reading page of events > %d (first events would be %d)", offset, offset+1)
 	events, _, err := ed.database.GetEvents(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(events))
 	for i, e := range events {
@@ -159,42 +162,19 @@ func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter
 }
 
 func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*fftypes.EventDelivery, error) {
-	// We need all the messages that match event references
-	refIDs := make([]driver.Value, len(events))
-	for i, ls := range events {
-		e := ls.(*fftypes.Event)
-		if e.Reference != nil {
-			refIDs[i] = *e.Reference
-		}
-	}
-
-	mfb := database.MessageQueryFactory.NewFilter(ed.ctx)
-	msgFilter := mfb.And(
-		mfb.In("id", refIDs),
-		mfb.Eq("namespace", ed.namespace),
-	)
-	msgs, _, err := ed.database.GetMessages(ed.ctx, msgFilter)
-	if err != nil {
-		return nil, err
-	}
-
 	enriched := make([]*fftypes.EventDelivery, len(events))
 	for i, ls := range events {
 		e := ls.(*fftypes.Event)
-		enriched[i] = &fftypes.EventDelivery{
-			Event:        *e,
-			Subscription: ed.subscription.definition.SubscriptionRef,
+		enrichedEvent, err := ed.txHelper.EnrichEvent(ed.ctx, e)
+		if err != nil {
+			return nil, err
 		}
-		for _, msg := range msgs {
-			if *e.Reference == *msg.Header.ID {
-				enriched[i].Message = msg
-				break
-			}
+		enriched[i] = &fftypes.EventDelivery{
+			EnrichedEvent: *enrichedEvent,
+			Subscription:  ed.subscription.definition.SubscriptionRef,
 		}
 	}
-
 	return enriched, nil
-
 }
 
 func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*fftypes.EventDelivery {
@@ -204,40 +184,72 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		if filter.eventMatcher != nil && !filter.eventMatcher.MatchString(string(event.Type)) {
 			continue
 		}
+
 		msg := event.Message
+		tx := event.Transaction
+		be := event.BlockchainEvent
 		tag := ""
+		topic := event.Topic
 		group := ""
 		author := ""
-		var topics []string
+		txType := ""
+		beName := ""
+		beListener := ""
+
 		if msg != nil {
 			tag = msg.Header.Tag
-			topics = msg.Header.Topics
 			author = msg.Header.Author
 			if msg.Header.Group != nil {
 				group = msg.Header.Group.String()
 			}
 		}
-		if filter.tagFilter != nil && !filter.tagFilter.MatchString(tag) {
-			continue
+
+		if tx != nil {
+			txType = tx.Type.String()
 		}
-		if filter.authorFilter != nil && !filter.authorFilter.MatchString(author) {
-			continue
+
+		if be != nil {
+			beName = be.Name
+			beListener = be.Listener.String()
 		}
-		if filter.topicsFilter != nil {
+
+		if filter.topicFilter != nil {
 			topicsMatch := false
-			for _, topic := range topics {
-				if filter.topicsFilter.MatchString(topic) {
-					topicsMatch = true
-					break
-				}
+			if filter.topicFilter.MatchString(topic) {
+				topicsMatch = true
 			}
 			if !topicsMatch {
 				continue
 			}
 		}
-		if filter.groupFilter != nil && !filter.groupFilter.MatchString(group) {
-			continue
+
+		if filter.messageFilter != nil {
+			if filter.messageFilter.tagFilter != nil && !filter.messageFilter.tagFilter.MatchString(tag) {
+				continue
+			}
+			if filter.messageFilter.authorFilter != nil && !filter.messageFilter.authorFilter.MatchString(author) {
+				continue
+			}
+			if filter.messageFilter.groupFilter != nil && !filter.messageFilter.groupFilter.MatchString(group) {
+				continue
+			}
 		}
+
+		if filter.transactionFilter != nil {
+			if filter.transactionFilter.typeFilter != nil && !filter.transactionFilter.typeFilter.MatchString(txType) {
+				continue
+			}
+		}
+
+		if filter.blockchainFilter != nil {
+			if filter.blockchainFilter.nameFilter != nil && !filter.blockchainFilter.nameFilter.MatchString(beName) {
+				continue
+			}
+			if filter.blockchainFilter.listenerFilter != nil && !filter.blockchainFilter.listenerFilter.MatchString(beListener) {
+				continue
+			}
+		}
+
 		matchingEvents = append(matchingEvents, event)
 	}
 	return matchingEvents
@@ -308,19 +320,13 @@ func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (
 				nacks++
 				ed.handleNackOffsetUpdate(an)
 			} else if nacks == 0 {
-				err := ed.handleAckOffsetUpdate(an)
-				if err != nil {
-					return false, err
-				}
+				ed.handleAckOffsetUpdate(an)
 				lastAck = an.offset
 			}
 		}
 	}
 	if nacks == 0 && lastAck != highestOffset {
-		err := ed.eventPoller.commitOffset(ed.ctx, highestOffset)
-		if err != nil {
-			return false, err
-		}
+		ed.eventPoller.commitOffset(highestOffset)
 	}
 	return true, nil // poll again straight away for more messages
 }
@@ -333,12 +339,12 @@ func (ed *eventDispatcher) handleNackOffsetUpdate(nack ackNack) {
 	// That means resetting the polling offest, and clearing out all our state
 	delete(ed.inflight, nack.id)
 	if ed.eventPoller.pollingOffset > nack.offset {
-		ed.eventPoller.rewindPollingOffset(nack.offset)
+		ed.eventPoller.rewindPollingOffset(nack.offset - 1)
 	}
 	ed.inflight = map[fftypes.UUID]*fftypes.Event{}
 }
 
-func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
+func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 	oldOffset := ed.eventPoller.getPollingOffset()
 	ed.mux.Lock()
 	delete(ed.inflight, ack.id)
@@ -351,9 +357,8 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 	ed.mux.Unlock()
 	if (lowestInflight == -1 || lowestInflight > ack.offset) && ack.offset > oldOffset {
 		// This was the lowest in flight, and we can move the offset forwards
-		return ed.eventPoller.commitOffset(ed.ctx, ack.offset)
+		ed.eventPoller.commitOffset(ack.offset)
 	}
-	return nil
 }
 
 func (ed *eventDispatcher) dispatchChangeEvent(ce *fftypes.ChangeEvent) {
@@ -382,7 +387,7 @@ func (ed *eventDispatcher) deliverEvents() {
 			var data []*fftypes.Data
 			var err error
 			if withData && event.Message != nil {
-				data, _, err = ed.data.GetMessageData(ed.ctx, event.Message, true)
+				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
 			}
 			if err == nil {
 				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)

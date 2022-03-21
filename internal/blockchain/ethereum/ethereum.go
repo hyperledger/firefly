@@ -631,26 +631,26 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &ethLocation, nil
 }
 
-func (e *Ethereum) AddSubscription(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
-	location, err := parseContractLocation(ctx, subscription.Location)
+func (e *Ethereum) AddContractListener(ctx context.Context, listener *fftypes.ContractListenerInput) error {
+	location, err := parseContractLocation(ctx, listener.Location)
 	if err != nil {
 		return err
 	}
-	abi, err := e.FFIEventDefinitionToABI(ctx, &subscription.Event.FFIEventDefinition)
+	abi, err := e.FFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgContractParamInvalid)
 	}
 
-	subName := fmt.Sprintf("ff-sub-%s", subscription.ID)
-	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subName, abi)
+	subName := fmt.Sprintf("ff-sub-%s", listener.ID)
+	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subName, listener.Options.FirstEvent, abi)
 	if err != nil {
 		return err
 	}
-	subscription.ProtocolID = result.ID
+	listener.ProtocolID = result.ID
 	return nil
 }
 
-func (e *Ethereum) DeleteSubscription(ctx context.Context, subscription *fftypes.ContractListener) error {
+func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
 	return e.streams.deleteSubscription(ctx, subscription.ProtocolID)
 }
 

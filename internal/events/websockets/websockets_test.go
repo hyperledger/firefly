@@ -182,7 +182,9 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 
 	<-waitSubscribed
 	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		Event:        fftypes.Event{ID: fftypes.NewUUID()},
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{ID: fftypes.NewUUID()},
+		},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
 	}, nil)
 
@@ -230,7 +232,9 @@ func TestStartReceiveDurable(t *testing.T) {
 
 	<-waitSubscribed
 	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		Event: fftypes.Event{ID: fftypes.NewUUID()},
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{ID: fftypes.NewUUID()},
+		},
 		Subscription: fftypes.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -239,7 +243,9 @@ func TestStartReceiveDurable(t *testing.T) {
 	}, nil)
 	// Put a second in flight
 	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		Event: fftypes.Event{ID: fftypes.NewUUID()},
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{ID: fftypes.NewUUID()},
+		},
 		Subscription: fftypes.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
@@ -299,7 +305,9 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 
 	<-waitSubscribed
 	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		Event:        fftypes.Event{ID: fftypes.NewUUID()},
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{ID: fftypes.NewUUID()},
+		},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
 	}, nil)
 
@@ -600,7 +608,9 @@ func TestDispatchAutoAck(t *testing.T) {
 	}
 	wsc.ws.connections[wsc.connID] = wsc
 	err := wsc.ws.DeliveryRequest(wsc.connID, nil, &fftypes.EventDelivery{
-		Event:        fftypes.Event{ID: fftypes.NewUUID()},
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{ID: fftypes.NewUUID()},
+		},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
 	}, nil)
 	assert.NoError(t, err)

@@ -28,11 +28,12 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager) (Manager, error) {
+func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -44,12 +45,16 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		ni:                         ni,
 		database:                   di,
 		data:                       dm,
+		txHelper:                   txHelper,
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
-		dispatchers:                make(map[string]*dispatcher),
-		newMessages:                make(chan int64, 1),
+		dispatcherMap:              make(map[string]*dispatcher),
+		allDispatchers:             make([]*dispatcher, 0),
+		newMessages:                make(chan int64, readPageSize),
+		shoulderTap:                make(chan bool, 1),
+		rewindOffset:               -1,
 		done:                       make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
@@ -85,20 +90,26 @@ type batchManager struct {
 	ni                         sysmessaging.LocalNodeInfo
 	database                   database.Plugin
 	data                       data.Manager
+	txHelper                   txcommon.Helper
 	dispatcherMux              sync.Mutex
-	dispatchers                map[string]*dispatcher
+	dispatcherMap              map[string]*dispatcher
+	allDispatchers             []*dispatcher
 	newMessages                chan int64
 	done                       chan struct{}
 	retry                      *retry.Retry
 	readOffset                 int64
+	rewindOffsetMux            sync.Mutex
+	rewindOffset               int64
+	shoulderTap                chan bool
 	readPageSize               uint64
 	messagePollTimeout         time.Duration
 	startupOffsetRetryAttempts int
 }
 
-type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error
+type DispatchHandler func(context.Context, *DispatchState) error
 
 type DispatcherOptions struct {
+	BatchType      fftypes.BatchType
 	BatchMaxSize   uint
 	BatchMaxBytes  int64
 	BatchTimeout   time.Duration
@@ -121,19 +132,25 @@ func (bm *batchManager) getDispatcherKey(txType fftypes.TransactionType, msgType
 }
 
 func (bm *batchManager) RegisterDispatcher(name string, txType fftypes.TransactionType, msgTypes []fftypes.MessageType, handler DispatchHandler, options DispatcherOptions) {
+	bm.dispatcherMux.Lock()
+	defer bm.dispatcherMux.Unlock()
+
 	dispatcher := &dispatcher{
 		name:       name,
 		handler:    handler,
 		options:    options,
 		processors: make(map[string]*batchProcessor),
 	}
+	bm.allDispatchers = append(bm.allDispatchers, dispatcher)
 	for _, msgType := range msgTypes {
-		bm.dispatchers[bm.getDispatcherKey(txType, msgType)] = dispatcher
+		bm.dispatcherMap[bm.getDispatcherKey(txType, msgType)] = dispatcher
 	}
 }
 
 func (bm *batchManager) Start() error {
 	go bm.messageSequencer()
+	// We must be always ready to process DB events, or we block commits. So we have a dedicated worker for that
+	go bm.newMessageNotifier()
 	return nil
 }
 
@@ -141,68 +158,79 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.SignerRef) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, signer *fftypes.SignerRef) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
 	dispatcherKey := bm.getDispatcherKey(txType, msgType)
-	dispatcher, ok := bm.dispatchers[dispatcherKey]
+	dispatcher, ok := bm.dispatcherMap[dispatcherKey]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, dispatcherKey)
 	}
-	name := bm.getProcessorKey(namespace, identity, group)
+	name := bm.getProcessorKey(namespace, signer, group)
 	processor, ok := dispatcher.processors[name]
 	if !ok {
 		processor = newBatchProcessor(
 			bm.ctx, // Background context, not the call context
 			bm.ni,
 			bm.database,
+			bm.data,
 			&batchProcessorConf{
 				DispatcherOptions: dispatcher.options,
 				name:              name,
 				txType:            txType,
 				dispatcherName:    dispatcher.name,
 				namespace:         namespace,
-				identity:          *identity,
+				signer:            *signer,
 				group:             group,
 				dispatch:          dispatcher.handler,
 			},
 			bm.retry,
+			bm.txHelper,
 		)
 		dispatcher.processors[name] = processor
+		log.L(bm.ctx).Debugf("Created new processor: %s", name)
 	}
-	log.L(bm.ctx).Debugf("Created new processor: %s", name)
 	return processor, nil
 }
 
-func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftypes.Data, err error) {
+func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *fftypes.Message, retData fftypes.DataArray, err error) {
 	var foundAll = false
-	err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble message %s data", msg.Header.ID), func(attempt int) (retry bool, err error) {
-		data, foundAll, err = bm.data.GetMessageData(bm.ctx, msg, true)
+	err = bm.retry.Do(bm.ctx, "retrieve message", func(attempt int) (retry bool, err error) {
+		msg, retData, foundAll, err = bm.data.GetMessageWithDataCached(bm.ctx, id)
 		// continual retry for persistence error (distinct from not-found)
 		return true, err
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if !foundAll {
-		return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, msg.Header.ID)
+		return nil, nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, id)
 	}
-	return data, nil
+	return msg, retData, nil
 }
 
-func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
+func (bm *batchManager) readPage() ([]*fftypes.IDAndSequence, error) {
 
-	var msgs []*fftypes.Message
+	// Pop out a rewind offset if there is one and it's behind the cursor
+	bm.rewindOffsetMux.Lock()
+	rewindOffset := bm.rewindOffset
+	if rewindOffset >= 0 && rewindOffset < bm.readOffset {
+		bm.readOffset = rewindOffset
+	}
+	bm.rewindOffset = -1
+	bm.rewindOffsetMux.Unlock()
+
+	var ids []*fftypes.IDAndSequence
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
-		msgs, _, err = bm.database.GetMessages(bm.ctx, fb.And(
+		ids, err = bm.database.GetMessageIDs(bm.ctx, fb.And(
 			fb.Gt("sequence", bm.readOffset),
 			fb.Eq("state", fftypes.MessageStateReady),
 		).Sort("sequence").Limit(bm.readPageSize))
 		return true, err
 	})
-	return msgs, err
+	return ids, err
 }
 
 func (bm *batchManager) messageSequencer() {
@@ -215,34 +243,40 @@ func (bm *batchManager) messageSequencer() {
 		bm.reapQuiescing()
 
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
-		msgs, err := bm.readPage()
+		entries, err := bm.readPage()
 		if err != nil {
 			l.Debugf("Exiting: %s", err)
 			return
 		}
-		batchWasFull := (uint64(len(msgs)) == bm.readPageSize)
+		batchWasFull := (uint64(len(entries)) == bm.readPageSize)
 
-		if len(msgs) > 0 {
-			for _, msg := range msgs {
-				data, err := bm.assembleMessageData(msg)
+		if len(entries) > 0 {
+			for _, entry := range entries {
+				msg, data, err := bm.assembleMessageData(&entry.ID)
 				if err != nil {
-					l.Errorf("Failed to retrieve message data for %s: %s", msg.Header.ID, err)
+					l.Errorf("Failed to retrieve message data for %s (seq=%d): %s", entry.ID, entry.Sequence, err)
 					continue
 				}
 
-				err = bm.dispatchMessage(msg, data...)
+				// We likely retrieved this message from the cache, which is written by the message-writer before
+				// the database store. Meaning we cannot rely on the sequence having been set.
+				msg.Sequence = entry.Sequence
+
+				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
 				if err != nil {
 					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
 					continue
 				}
+
+				bm.dispatchMessage(processor, msg, data)
 			}
 
 			// Next time round only read after the messages we just processed (unless we get a tap to rewind)
-			bm.readOffset = msgs[len(msgs)-1].Sequence
+			bm.readOffset = entries[len(entries)-1].Sequence
 		}
 
 		// Wait to be woken again
-		if !batchWasFull && !bm.drainNewMessages() {
+		if !batchWasFull {
 			if done := bm.waitForNewMessages(); done {
 				l.Debugf("Exiting: %s", err)
 				return
@@ -252,39 +286,41 @@ func (bm *batchManager) messageSequencer() {
 }
 
 func (bm *batchManager) newMessageNotification(seq int64) {
-	log.L(bm.ctx).Debugf("Notification of message %d", seq)
-	// The readOffset is the last sequence we have already read.
-	// So we need to ensure it is at least one earlier, than this message sequence
+	// Determine if we need to queue q rewind
+	bm.rewindOffsetMux.Lock()
 	lastSequenceBeforeMsg := seq - 1
-	if lastSequenceBeforeMsg < bm.readOffset {
-		bm.readOffset = lastSequenceBeforeMsg
+	if bm.rewindOffset == -1 || lastSequenceBeforeMsg < bm.rewindOffset {
+		bm.rewindOffset = lastSequenceBeforeMsg
+	}
+	bm.rewindOffsetMux.Unlock()
+	// Shoulder tap that there is a new message, regardless of whether we rewound
+	// the cursor. As we need to wake up the poll.
+	select {
+	case bm.shoulderTap <- true:
+	default:
 	}
 }
 
-func (bm *batchManager) drainNewMessages() bool {
-	// Drain any new message notifications, moving back our readOffset as required
-	newMessages := false
-	checkingMessages := true
-	for checkingMessages {
+func (bm *batchManager) newMessageNotifier() {
+	l := log.L(bm.ctx)
+	for {
 		select {
 		case seq := <-bm.newMessages:
 			bm.newMessageNotification(seq)
-			newMessages = true
-		default:
-			checkingMessages = false
+		case <-bm.ctx.Done():
+			l.Debugf("Exiting due to cancelled context")
+			return
 		}
 	}
-	return newMessages
 }
 
 func (bm *batchManager) waitForNewMessages() (done bool) {
 	l := log.L(bm.ctx)
 
-	// Otherwise set a timeout
 	timeout := time.NewTimer(bm.messagePollTimeout)
 	select {
-	case seq := <-bm.newMessages:
-		bm.newMessageNotification(seq)
+	case <-bm.shoulderTap:
+		timeout.Stop()
 		return false
 	case <-timeout.C:
 		l.Debugf("Woken after poll timeout")
@@ -295,25 +331,20 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 	}
 }
 
-func (bm *batchManager) dispatchMessage(msg *fftypes.Message, data ...*fftypes.Data) error {
+func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.Message, data fftypes.DataArray) {
 	l := log.L(bm.ctx)
-	processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
-	if err != nil {
-		return err
-	}
-	l.Debugf("Dispatching message %s to %s batch processor %s", msg.Header.ID, msg.Header.Type, processor.conf.name)
+	l.Debugf("Dispatching message %s (seq=%d) to %s batch processor %s", msg.Header.ID, msg.Sequence, msg.Header.Type, processor.conf.name)
 	work := &batchWork{
 		msg:  msg,
 		data: data,
 	}
 	processor.newWork <- work
-	return nil
 }
 
 func (bm *batchManager) reapQuiescing() {
 	bm.dispatcherMux.Lock()
 	var reaped []*batchProcessor
-	for _, d := range bm.dispatchers {
+	for _, d := range bm.allDispatchers {
 		for k, p := range d.processors {
 			select {
 			case <-p.quescing:
@@ -341,7 +372,7 @@ func (bm *batchManager) getProcessors() []*batchProcessor {
 	defer bm.dispatcherMux.Unlock()
 
 	var processors []*batchProcessor
-	for _, d := range bm.dispatchers {
+	for _, d := range bm.allDispatchers {
 		for _, p := range d.processors {
 			processors = append(processors, p)
 		}
