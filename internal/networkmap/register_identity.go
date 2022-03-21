@@ -25,6 +25,20 @@ import (
 
 func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
 
+	// The parent can be a UUID directly
+	var parent *fftypes.UUID
+	if dto.Parent != "" {
+		parent, err = fftypes.ParseUUID(ctx, dto.Parent)
+		if err != nil {
+			// Or a DID
+			parentIdentity, _, err := nm.identity.CachedIdentityLookup(ctx, dto.Parent)
+			if err != nil {
+				return nil, err
+			}
+			parent = parentIdentity.ID
+		}
+	}
+
 	// Parse the input DTO
 	identity = &fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
@@ -32,7 +46,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 			Namespace: ns,
 			Name:      dto.Name,
 			Type:      dto.Type,
-			Parent:    dto.Parent,
+			Parent:    parent,
 		},
 		IdentityProfile: fftypes.IdentityProfile{
 			Description: dto.Description,
