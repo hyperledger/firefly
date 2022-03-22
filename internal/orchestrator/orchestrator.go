@@ -40,6 +40,7 @@ import (
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
+	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -337,12 +338,6 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	dxPlugin := config.GetString(config.DataexchangeType)
 	if or.dataexchange == nil {
 		pluginName := dxPlugin
-		if pluginName == "https" {
-			// Migration path for old plugin name
-			// TODO: eventually make this fatal
-			log.L(ctx).Warnf("Your data exchange config uses the old plugin name 'https' - this plugin has been renamed to 'ffdx'")
-			pluginName = "ffdx"
-		}
 		if or.dataexchange, err = dxfactory.GetPlugin(ctx, pluginName); err != nil {
 			return err
 		}
@@ -361,7 +356,22 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		nodeInfo[i] = node.Profile
 	}
 
-	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(dxPlugin), nodeInfo, &or.bc)
+	configPrefix := dataexchangeConfig.SubPrefix(dxPlugin)
+	// Migration for explicitly setting the old name ..
+	if dxPlugin == dxfactory.OldFFDXPluginName ||
+		// .. or defaulting to the new name, but without setting the mandatory URL
+		(dxPlugin == dxfactory.NewFFDXPluginName && configPrefix.GetString(restclient.HTTPConfigURL) == "") {
+		// We need to initialize the migration prefix, and use that if it's set
+		migrationPrefix := dataexchangeConfig.SubPrefix(dxfactory.OldFFDXPluginName)
+		or.dataexchange.InitPrefix(migrationPrefix)
+		if migrationPrefix.GetString(restclient.HTTPConfigURL) != "" {
+			// TODO: eventually make this fatal
+			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", config.OrgIdentityDeprecated, config.OrgKey)
+			configPrefix = migrationPrefix
+		}
+	}
+
+	return or.dataexchange.Init(ctx, configPrefix, nodeInfo, &or.bc)
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
