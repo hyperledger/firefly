@@ -41,7 +41,7 @@
   },
   "ui": {
     "tag": "v0.6.0",
-    "release": "v0.6.XXXXXX"
+    "release": "v0.6.0_70d68cc"
   },
   "cli": {
     "tag": "v0.0.45"
