@@ -613,7 +613,7 @@ Now that we've told FireFly that it should listen for specific events on the blo
 
 We will set a friendly name `simple-storage` to identify the Subscription when we are connecting to it in the next step.
 
-We're also going to set up a filter to only send events blockchain events from our listener that we created in the previous step. To do that, we'll **copy the listener ID** from the step above (`0e448231-bc1f-455e-b290-c21a38bed06b`) and set that as the value of the `listener` field in the example below:
+We're also going to set up a filter to only send events blockchain events from our listener that we created in the previous step. To do that, we'll **copy the listener ID** from the step above (`1bfa3b0f-3d90-403e-94a4-af978d8c5b14`) and set that as the value of the `listener` field in the example below:
 
 ### Request
 
@@ -626,7 +626,7 @@ We're also going to set up a filter to only send events blockchain events from o
     "filter": {
         "events": "blockchain_event_received",
         "blockchainevent": {
-            "listener": "0e448231-bc1f-455e-b290-c21a38bed06b"
+            "listener": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14"
         }
     },
     "options": {
