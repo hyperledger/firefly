@@ -171,7 +171,7 @@ func TestGetNamespaceByIDSelectFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIDNotFound(t *testing.T) {
+func TestGetNamespaceByNameNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype", "namespace", "name"}))
 	msg, err := s.GetNamespace(context.Background(), "name1")
@@ -180,7 +180,7 @@ func TestGetNamespaceByIDNotFound(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIDScanFail(t *testing.T) {
+func TestGetNamespaceByNameScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	_, err := s.GetNamespace(context.Background(), "name1")
@@ -202,6 +202,54 @@ func TestGetNamespaceBuildQueryFail(t *testing.T) {
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, _, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
+}
+
+func TestGetNamespaceByIDQueryFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	nsID := fftypes.NewUUID()
+	_, err := s.GetNamespaceByID(context.Background(), nsID)
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNamespaceByIDNotFound(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype", "namespace", "name"}))
+	nsID := fftypes.NewUUID()
+	msg, err := s.GetNamespaceByID(context.Background(), nsID)
+	assert.NoError(t, err)
+	assert.Nil(t, msg)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNamespaceByIDScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
+	nsID := fftypes.NewUUID()
+	_, err := s.GetNamespaceByID(context.Background(), nsID)
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetNamespaceByIDSuccess(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msgID := fftypes.NewUUID()
+	nsID := fftypes.NewUUID()
+	currTime := fftypes.Now()
+	nsMock := &fftypes.Namespace{
+		ID:          nsID,
+		Message:     msgID,
+		Name:        "ns1",
+		Type:        fftypes.NamespaceTypeLocal,
+		Description: "foo",
+		Created:     currTime,
+	}
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "message", "type", "name", "description", "created"}).AddRow(nsID.String(), msgID.String(), fftypes.NamespaceTypeLocal, "ns1", "foo", currTime.String()))
+	ns, err := s.GetNamespaceByID(context.Background(), nsID)
+	assert.NoError(t, err)
+	assert.Equal(t, nsMock, ns)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetNamespaceReadMessageFail(t *testing.T) {

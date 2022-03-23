@@ -1303,6 +1303,29 @@ func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*fftypes.Names
 	return r0, r1
 }
 
+// GetNamespaceByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Namespace, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Namespace); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Namespace)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetNamespaces provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]*fftypes.Namespace, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

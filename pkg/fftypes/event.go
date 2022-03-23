@@ -69,9 +69,17 @@ type Event struct {
 // EnrichedEvent adds the referred object to an event
 type EnrichedEvent struct {
 	Event
-	Message         *Message         `json:"message,omitempty"`
-	Transaction     *Transaction     `json:"transaction,omitempty"`
-	BlockchainEvent *BlockchainEvent `json:"blockchainevent,omitempty"`
+	BlockchainEvent   *BlockchainEvent `json:"blockchainevent,omitempty"`
+	ContractAPI       *ContractAPI     `json:"contractAPI,omitempty"`
+	ContractInterface *FFI             `json:"contractInterface,omitempty"`
+	Datatype          *Datatype        `json:"datatype,omitempty"`
+	Identity          *Identity        `json:"identity,omitempty"`
+	Message           *Message         `json:"message,omitempty"`
+	NamespaceDetails  *Namespace       `json:"namespaceDetails,omitempty"`
+	TokenApproval     *TokenApproval   `json:"tokenApproval,omitempty"`
+	TokenPool         *TokenPool       `json:"tokenPool,omitempty"`
+	Transaction       *Transaction     `json:"transaction,omitempty"`
+	TokenTransfer     *TokenTransfer   `json:"tokenTransfer,omitempty"`
 }
 
 // EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to

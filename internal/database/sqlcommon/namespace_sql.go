@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -137,7 +137,6 @@ func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*fftype
 }
 
 func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fftypes.Namespace, err error) {
-
 	rows, _, err := s.query(ctx,
 		sq.Select(namespaceColumns...).
 			From("namespaces").
@@ -150,6 +149,30 @@ func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fft
 
 	if !rows.Next() {
 		log.L(ctx).Debugf("Namespace '%s' not found", name)
+		return nil, nil
+	}
+
+	namespace, err := s.namespaceResult(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return namespace, nil
+}
+
+func (s *SQLCommon) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (ns *fftypes.Namespace, err error) {
+	rows, _, err := s.query(ctx,
+		sq.Select(namespaceColumns...).
+			From("namespaces").
+			Where(sq.Eq{"id": id}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		log.L(ctx).Debugf("Namespace ID '%s' not found", id)
 		return nil, nil
 	}
 

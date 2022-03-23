@@ -200,3 +200,449 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 	_, err := txHelper.EnrichEvent(ctx, event)
 	assert.EqualError(t, err, "pop")
 }
+
+func TestEnrichContractAPISubmitted(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(&fftypes.ContractAPI{
+		ID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeContractAPIConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.ContractAPI.ID)
+}
+
+func TestEnrichContractAPItFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeContractAPIConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichContractInterfaceSubmitted(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetFFIByID", mock.Anything, ref1).Return(&fftypes.FFI{
+		ID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeContractInterfaceConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.ContractInterface.ID)
+}
+
+func TestEnrichContractInterfacetFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetFFIByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeContractInterfaceConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichDatatypeConfirmed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(&fftypes.Datatype{
+		ID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeDatatypeConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.Datatype.ID)
+}
+
+func TestEnrichDatatypeConfirmedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeDatatypeConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichIdentityConfirmed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetIdentityByID", mock.Anything, ref1).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: ref1,
+		},
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeIdentityConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.Identity.IdentityBase.ID)
+}
+
+func TestEnrichIdentityConfirmedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetIdentityByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeIdentityConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichNamespaceConfirmed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetNamespaceByID", mock.Anything, ref1).Return(&fftypes.Namespace{
+		ID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeNamespaceConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.NamespaceDetails.ID)
+}
+
+func TestEnrichNamespaceConfirmedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetNamespaceByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeNamespaceConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichTokenPoolConfirmed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(&fftypes.TokenPool{
+		ID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypePoolConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.TokenPool.ID)
+}
+
+func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypePoolConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichTokenApprovalConfirmed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenApproval", mock.Anything, ref1).Return(&fftypes.TokenApproval{
+		LocalID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeApprovalConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.TokenApproval.LocalID)
+}
+
+func TestEnrichTokenApprovalFailed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenApproval", mock.Anything, ref1).Return(&fftypes.TokenApproval{
+		LocalID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeApprovalOpFailed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.TokenApproval.LocalID)
+}
+
+func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenApproval", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeApprovalConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichTokenTransferConfirmed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenTransfer", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
+		LocalID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeTransferConfirmed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.TokenTransfer.LocalID)
+}
+
+func TestEnrichTokenTransferFailed(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenTransfer", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
+		LocalID: ref1,
+	}, nil)
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeTransferOpFailed,
+		Reference: ref1,
+	}
+
+	enriched, err := txHelper.EnrichEvent(ctx, event)
+	assert.NoError(t, err)
+	assert.Equal(t, ref1, enriched.TokenTransfer.LocalID)
+}
+
+func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetTokenTransfer", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeTransferConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
