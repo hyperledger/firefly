@@ -46,6 +46,54 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Even
 			return nil, err
 		}
 		e.BlockchainEvent = be
+	case fftypes.EventTypeContractAPIConfirmed:
+		contractAPI, err := t.database.GetContractAPIByID(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.ContractAPI = contractAPI
+	case fftypes.EventTypeContractInterfaceConfirmed:
+		contractInterface, err := t.database.GetFFIByID(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.ContractInterface = contractInterface
+	case fftypes.EventTypeDatatypeConfirmed:
+		dt, err := t.database.GetDatatypeByID(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.Datatype = dt
+	case fftypes.EventTypeIdentityConfirmed, fftypes.EventTypeIdentityUpdated:
+		identity, err := t.database.GetIdentityByID(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.Identity = identity
+	case fftypes.EventTypeNamespaceConfirmed:
+		ns, err := t.database.GetNamespaceByID(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.NamespaceDetails = ns
+	case fftypes.EventTypePoolConfirmed:
+		tokenPool, err := t.database.GetTokenPoolByID(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.TokenPool = tokenPool
+	case fftypes.EventTypeApprovalConfirmed, fftypes.EventTypeApprovalOpFailed:
+		approval, err := t.database.GetTokenApproval(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.TokenApproval = approval
+	case fftypes.EventTypeTransferConfirmed, fftypes.EventTypeTransferOpFailed:
+		transfer, err := t.database.GetTokenTransfer(ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		e.TokenTransfer = transfer
 	}
 	return e, nil
 }

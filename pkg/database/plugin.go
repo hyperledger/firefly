@@ -67,6 +67,9 @@ type iNamespaceCollection interface {
 	// GetNamespace - Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
 
+	// GetNamespaceByID - Get a namespace by ID
+	GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.Namespace, err error)
+
 	// GetNamespaces - Get namespaces
 	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, res *FilterResult, err error)
 }
