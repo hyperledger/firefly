@@ -25,19 +25,18 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
+var (
+	OldFFDXPluginName = "https"
+	NewFFDXPluginName = (*ffdx.FFDX)(nil).Name()
+)
+
 var pluginsByName = map[string]func() dataexchange.Plugin{
-	(*ffdx.FFDX)(nil).Name(): func() dataexchange.Plugin { return &ffdx.FFDX{} },
+	NewFFDXPluginName: func() dataexchange.Plugin { return &ffdx.FFDX{} },
 }
 
 func InitPrefix(prefix config.Prefix) {
 	for name, plugin := range pluginsByName {
 		plugin().InitPrefix(prefix.SubPrefix(name))
-
-		// Migration path for old plugin name
-		// TODO: remove this
-		if name == "ffdx" {
-			plugin().InitPrefix(prefix.SubPrefix("https"))
-		}
 	}
 }
 
