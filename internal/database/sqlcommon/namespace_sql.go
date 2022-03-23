@@ -136,11 +136,11 @@ func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*fftype
 	return &namespace, nil
 }
 
-func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fftypes.Namespace, err error) {
+func (s *SQLCommon) getNamespaceEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Namespace, err error) {
 	rows, _, err := s.query(ctx,
 		sq.Select(namespaceColumns...).
 			From("namespaces").
-			Where(sq.Eq{"name": name}),
+			Where(eq),
 	)
 	if err != nil {
 		return nil, err
@@ -148,7 +148,7 @@ func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fft
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Namespace '%s' not found", name)
+		log.L(ctx).Debugf("Namespace '%s' not found", textName)
 		return nil, nil
 	}
 
@@ -160,28 +160,12 @@ func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fft
 	return namespace, nil
 }
 
+func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fftypes.Namespace, err error) {
+	return s.getNamespaceEq(ctx, sq.Eq{"name": name}, name)
+}
+
 func (s *SQLCommon) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (ns *fftypes.Namespace, err error) {
-	rows, _, err := s.query(ctx,
-		sq.Select(namespaceColumns...).
-			From("namespaces").
-			Where(sq.Eq{"id": id}),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		log.L(ctx).Debugf("Namespace ID '%s' not found", id)
-		return nil, nil
-	}
-
-	namespace, err := s.namespaceResult(ctx, rows)
-	if err != nil {
-		return nil, err
-	}
-
-	return namespace, nil
+	return s.getNamespaceEq(ctx, sq.Eq{"id": id}, id.String())
 }
 
 func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (message []*fftypes.Namespace, fr *database.FilterResult, err error) {
