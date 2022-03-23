@@ -37,7 +37,7 @@ const (
 const (
 	// EthconnectConfigKey is a sub-key in the config to contain all the ethconnect specific config,
 	EthconnectConfigKey = "ethconnect"
-	// EthconnectConfigInstancePath is the /contracts/0x12345 or /instances/0x12345 path of the REST API exposed by ethconnect for the contract
+	// EthconnectConfigInstancePath is the ethereum address of the contract
 	EthconnectConfigInstancePath = "instance"
 	// EthconnectConfigTopic is the websocket listen topic that the node should register on, which is important if there are multiple
 	// nodes using a single ethconnect
