@@ -120,6 +120,32 @@ func TestExecOkRestartThenExit(t *testing.T) {
 	assert.EqualError(t, err, "second run")
 }
 
+func TestExecOkRestartConfigProblem(t *testing.T) {
+	o := &orchestratormocks.Orchestrator{}
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "ut")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+	o.On("IsPreInit").Return(false)
+	var orContext context.Context
+	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	init.RunFn = func(a mock.Arguments) {
+		orContext = a[0].(context.Context)
+		cancelOrContext := a[1].(context.CancelFunc)
+		cancelOrContext()
+	}
+	o.On("Start").Return(nil)
+	o.On("WaitStop").Run(func(args mock.Arguments) {
+		<-orContext.Done()
+		os.Chdir(tmpDir) // this will mean we fail to read the config
+	})
+	_utOrchestrator = o
+	defer func() { _utOrchestrator = nil }()
+
+	os.Chdir(configDir)
+	err = Execute()
+	assert.Regexp(t, "Config File.*Not Found", err)
+}
+
 func TestAPIServerError(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	o.On("Init", mock.Anything, mock.Anything).Return(nil)
