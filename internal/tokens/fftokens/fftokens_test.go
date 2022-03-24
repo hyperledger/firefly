@@ -271,11 +271,15 @@ func TestActivateTokenPool(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
-		ProtocolID: "N1",
-	}
 	txInfo := map[string]interface{}{
 		"foo": "bar",
+	}
+	poolConfig := map[string]interface{}{
+		"address": "0x12345",
+	}
+	pool := &fftypes.TokenPool{
+		ProtocolID: "N1",
+		Config:     poolConfig,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -286,6 +290,7 @@ func TestActivateTokenPool(t *testing.T) {
 			assert.Equal(t, fftypes.JSONObject{
 				"requestId":   opID.String(),
 				"poolId":      "N1",
+				"poolConfig":  poolConfig,
 				"transaction": txInfo,
 			}, body)
 
@@ -329,8 +334,12 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
+	poolConfig := map[string]interface{}{
+		"foo": "bar",
+	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "N1",
+		Config:     poolConfig,
 	}
 	txInfo := map[string]interface{}{
 		"foo": "bar",
@@ -344,6 +353,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 			assert.Equal(t, fftypes.JSONObject{
 				"requestId":   opID.String(),
 				"poolId":      "N1",
+				"poolConfig":  poolConfig,
 				"transaction": txInfo,
 			}, body)
 
@@ -376,8 +386,12 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
+	poolConfig := map[string]interface{}{
+		"foo": "bar",
+	}
 	pool := &fftypes.TokenPool{
 		ProtocolID: "N1",
+		Config:     poolConfig,
 	}
 	txInfo := map[string]interface{}{
 		"foo": "bar",
@@ -391,6 +405,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 			assert.Equal(t, fftypes.JSONObject{
 				"requestId":   opID.String(),
 				"poolId":      "N1",
+				"poolConfig":  poolConfig,
 				"transaction": txInfo,
 			}, body)
 

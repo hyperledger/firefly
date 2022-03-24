@@ -87,6 +87,7 @@ type tokenApproval struct {
 
 type activatePool struct {
 	PoolID      string             `json:"poolId"`
+	PoolConfig  fftypes.JSONObject `json:"poolConfig"`
 	Transaction fftypes.JSONObject `json:"transaction"`
 	RequestID   string             `json:"requestId,omitempty"`
 }
@@ -514,6 +515,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 		SetBody(&activatePool{
 			RequestID:   opID.String(),
 			PoolID:      pool.ProtocolID,
+			PoolConfig:  pool.Config,
 			Transaction: blockchainInfo,
 		}).
 		Post("/api/v1/activatepool")
