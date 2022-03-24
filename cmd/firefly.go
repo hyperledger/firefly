@@ -126,6 +126,12 @@ func run() error {
 		case <-orchestratorCtx.Done():
 			log.L(ctx).Infof("Restarting due to configuration change")
 			o.WaitStop()
+			// Re-read the configuration
+			config.Reset()
+			if err := config.ReadConfig(cfgFile); err != nil {
+				cancelCtx()
+				return err
+			}
 		case err := <-errChan:
 			cancelCtx()
 			return err
