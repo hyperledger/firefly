@@ -36,6 +36,7 @@ import (
 
 func testConfigReset() {
 	config.Reset()
+	config.Set(config.BatchManagerMinimumPollDelay, "0")
 	log.SetLevel("debug")
 }
 
@@ -87,6 +88,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
 	bm := bmi.(*batchManager)
+	bm.readOffset = 1000
 
 	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, handler, DispatcherOptions{
 		BatchMaxSize:   2,
@@ -108,6 +110,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: dataID1, Hash: dataHash},
 		},
+		Sequence: 500,
 	}
 	data := &fftypes.Data{
 		ID:   dataID1,
@@ -155,7 +158,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	// Wait for the reaping
 	for len(bm.getProcessors()) > 0 {
 		time.Sleep(1 * time.Millisecond)
-		bm.NewMessages() <- msg.Sequence
+		bm.shoulderTap <- true
 	}
 
 	cancel()
@@ -553,7 +556,7 @@ func TestRewindForNewMessage(t *testing.T) {
 		assert.Equal(t, int64(12344), v)
 		return true
 	})).Return(nil, nil)
-	_, err := bm.readPage()
+	_, _, err := bm.readPage(false)
 	assert.NoError(t, err)
 }
 

@@ -48,11 +48,13 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		txHelper:                   txHelper,
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
+		minimumPollDelay:           config.GetDuration(config.BatchManagerMinimumPollDelay),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatcherMap:              make(map[string]*dispatcher),
 		allDispatchers:             make([]*dispatcher, 0),
 		newMessages:                make(chan int64, readPageSize),
+		inflightSequences:          make(map[int64]*batchProcessor),
 		shoulderTap:                make(chan bool, 1),
 		rewindOffset:               -1,
 		done:                       make(chan struct{}),
@@ -100,8 +102,12 @@ type batchManager struct {
 	readOffset                 int64
 	rewindOffsetMux            sync.Mutex
 	rewindOffset               int64
+	inflightMux                sync.Mutex
+	inflightSequences          map[int64]*batchProcessor
+	inflightFlushed            []int64
 	shoulderTap                chan bool
 	readPageSize               uint64
+	minimumPollDelay           time.Duration
 	messagePollTimeout         time.Duration
 	startupOffsetRetryAttempts int
 }
@@ -171,10 +177,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	processor, ok := dispatcher.processors[name]
 	if !ok {
 		processor = newBatchProcessor(
-			bm.ctx, // Background context, not the call context
-			bm.ni,
-			bm.database,
-			bm.data,
+			bm,
 			&batchProcessorConf{
 				DispatcherOptions: dispatcher.options,
 				name:              name,
@@ -210,17 +213,56 @@ func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *fftypes.Mess
 	return msg, retData, nil
 }
 
-func (bm *batchManager) readPage() ([]*fftypes.IDAndSequence, error) {
-
-	// Pop out a rewind offset if there is one and it's behind the cursor
+// popRewind is called just before reading a page, to po out a rewind offset if there is one and it's behind the cursor
+func (bm *batchManager) popRewind() {
 	bm.rewindOffsetMux.Lock()
-	rewindOffset := bm.rewindOffset
-	if rewindOffset >= 0 && rewindOffset < bm.readOffset {
-		bm.readOffset = rewindOffset
+	if bm.rewindOffset >= 0 && bm.rewindOffset < bm.readOffset {
+		bm.readOffset = bm.rewindOffset
 	}
 	bm.rewindOffset = -1
 	bm.rewindOffsetMux.Unlock()
+}
 
+// filterFlushed is called after we read a page, to remove in-flight IDs, and clean up our flush map
+func (bm *batchManager) filterFlushed(entries []*fftypes.IDAndSequence) []*fftypes.IDAndSequence {
+	bm.inflightMux.Lock()
+
+	// Remove inflight entries
+	unflushedEntries := make([]*fftypes.IDAndSequence, 0, len(entries))
+	for _, entry := range entries {
+		if _, inflight := bm.inflightSequences[entry.Sequence]; !inflight {
+			unflushedEntries = append(unflushedEntries, entry)
+		}
+	}
+
+	// Drain the list of recently flushed entries that processors have notified us about
+	for _, seq := range bm.inflightFlushed {
+		delete(bm.inflightSequences, seq)
+	}
+	bm.inflightFlushed = bm.inflightFlushed[:0]
+
+	bm.inflightMux.Unlock()
+
+	return unflushedEntries
+}
+
+// nofifyFlushed is called by a processor, when it's finished updating the database to record a set
+// of messages as sent. So it's safe to remove these sequences from the inflight map on the next
+// page read.
+func (bm *batchManager) notifyFlushed(sequences []int64) {
+	bm.inflightMux.Lock()
+	bm.inflightFlushed = append(bm.inflightFlushed, sequences...)
+	bm.inflightMux.Unlock()
+}
+
+func (bm *batchManager) readPage(lastPageFull bool) ([]*fftypes.IDAndSequence, bool, error) {
+
+	// Pop out any rewind that has been queued, but each time we read to the front before we rewind
+	if !lastPageFull {
+		bm.popRewind()
+	}
+
+	// Read a page from the DB
 	var ids []*fftypes.IDAndSequence
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
@@ -230,7 +272,16 @@ func (bm *batchManager) readPage() ([]*fftypes.IDAndSequence, error) {
 		).Sort("sequence").Limit(bm.readPageSize))
 		return true, err
 	})
-	return ids, err
+
+	// Calculate if this was a full page we read (so should immediately re-poll) before we remove flushed IDs
+	pageReadLength := len(ids)
+	fullPage := (pageReadLength == int(bm.readPageSize))
+
+	// Remove any flushed IDs from the list, and then update our flushed map
+	ids = bm.filterFlushed(ids)
+
+	log.L(bm.ctx).Debugf("Read %d records from offset %d. filtered=%d fullPage=%t", pageReadLength, bm.readOffset, len(ids), fullPage)
+	return ids, fullPage, err
 }
 
 func (bm *batchManager) messageSequencer() {
@@ -238,17 +289,17 @@ func (bm *batchManager) messageSequencer() {
 	l.Debugf("Started batch assembly message sequencer")
 	defer close(bm.done)
 
+	lastPageFull := false
 	for {
 		// Each time round the loop we check for quiescing processors
 		bm.reapQuiescing()
 
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
-		entries, err := bm.readPage()
+		entries, fullPage, err := bm.readPage(lastPageFull)
 		if err != nil {
 			l.Debugf("Exiting: %s", err)
 			return
 		}
-		batchWasFull := (uint64(len(entries)) == bm.readPageSize)
 
 		if len(entries) > 0 {
 			for _, entry := range entries {
@@ -276,28 +327,34 @@ func (bm *batchManager) messageSequencer() {
 		}
 
 		// Wait to be woken again
-		if !batchWasFull {
+		if !fullPage {
 			if done := bm.waitForNewMessages(); done {
 				l.Debugf("Exiting: %s", err)
 				return
 			}
 		}
+		lastPageFull = fullPage
 	}
 }
 
 func (bm *batchManager) newMessageNotification(seq int64) {
-	// Determine if we need to queue q rewind
+	rewindToQueue := int64(-1)
+
+	// Determine if we need to queue a rewind
 	bm.rewindOffsetMux.Lock()
 	lastSequenceBeforeMsg := seq - 1
 	if bm.rewindOffset == -1 || lastSequenceBeforeMsg < bm.rewindOffset {
+		rewindToQueue = lastSequenceBeforeMsg
 		bm.rewindOffset = lastSequenceBeforeMsg
 	}
 	bm.rewindOffsetMux.Unlock()
-	// Shoulder tap that there is a new message, regardless of whether we rewound
-	// the cursor. As we need to wake up the poll.
-	select {
-	case bm.shoulderTap <- true:
-	default:
+
+	if rewindToQueue >= 0 {
+		log.L(bm.ctx).Debugf("Notifying batch manager of rewind to %d", rewindToQueue)
+		select {
+		case bm.shoulderTap <- true:
+		default:
+		}
 	}
 }
 
@@ -317,7 +374,10 @@ func (bm *batchManager) newMessageNotifier() {
 func (bm *batchManager) waitForNewMessages() (done bool) {
 	l := log.L(bm.ctx)
 
-	timeout := time.NewTimer(bm.messagePollTimeout)
+	// We have a short minimum timeout, to stop us thrashing the DB
+	time.Sleep(bm.minimumPollDelay)
+
+	timeout := time.NewTimer(bm.messagePollTimeout - bm.minimumPollDelay)
 	select {
 	case <-bm.shoulderTap:
 		timeout.Stop()
@@ -339,6 +399,10 @@ func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.
 		data: data,
 	}
 	processor.newWork <- work
+
+	bm.inflightMux.Lock()
+	bm.inflightSequences[msg.Sequence] = processor
+	bm.inflightMux.Unlock()
 }
 
 func (bm *batchManager) reapQuiescing() {

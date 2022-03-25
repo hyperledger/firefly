@@ -34,13 +34,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *batchProcessor) {
-	mdi := &databasemocks.Plugin{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mdm := &datamocks.Manager{}
+func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *databasemocks.Plugin, *batchProcessor) {
+	bm, cancel := newTestBatchManager(t)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mni := bm.ni.(*sysmessagingmocks.LocalNodeInfo)
+	mdm := bm.data.(*datamocks.Manager)
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
-	bp := newBatchProcessor(context.Background(), mni, mdi, mdm, &batchProcessorConf{
+	bp := newBatchProcessor(bm, &batchProcessorConf{
 		namespace: "ns1",
 		txType:    fftypes.TransactionTypeBatchPin,
 		signer:    fftypes.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
@@ -56,7 +57,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 		MaximumDelay: 1 * time.Microsecond,
 	}, txHelper)
 	bp.txHelper = &txcommonmocks.Helper{}
-	return mdi, bp
+	return cancel, mdi, bp
 }
 
 func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
@@ -72,10 +73,11 @@ func TestUnfilledBatch(t *testing.T) {
 	config.Reset()
 
 	dispatched := make(chan *DispatchState)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		dispatched <- state
 		return nil
 	})
+	defer cancel()
 
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -116,10 +118,11 @@ func TestBatchSizeOverflow(t *testing.T) {
 	config.Reset()
 
 	dispatched := make(chan *DispatchState)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		dispatched <- state
 		return nil
 	})
+	defer cancel()
 	bp.conf.BatchMaxBytes = batchSizeEstimateBase + (&fftypes.Message{}).EstimateSize(false) + 100
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -160,9 +163,10 @@ func TestBatchSizeOverflow(t *testing.T) {
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		return fmt.Errorf("pop")
 	})
+	defer cancel()
 	bp.cancelCtx()
 	bp.dispatchBatch(&DispatchState{})
 	<-bp.done
@@ -170,9 +174,10 @@ func TestCloseToUnblockDispatch(t *testing.T) {
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		return nil
 	})
+	defer cancel()
 	bp.retry.MaximumDelay = 1 * time.Microsecond
 	bp.conf.BatchMaxSize = 1
 	bp.conf.BatchTimeout = 100 * time.Second
@@ -204,9 +209,10 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 }
 
 func TestCalcPinsFail(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		return nil
 	})
+	defer cancel()
 	bp.cancelCtx()
 	mdi := bp.database.(*databasemocks.Plugin)
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -233,33 +239,17 @@ func TestCalcPinsFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestAddWorkInRecentlyFlushed(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+func TestAddWorkInSort(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		return nil
 	})
-	bp.flushedSequences = []int64{100, 500, 400, 900, 200, 700}
-	_, _ = bp.addWork(&batchWork{
-		msg: &fftypes.Message{
-			Sequence: 200,
-		},
-	})
-	assert.Empty(t, bp.assemblyQueue)
-
-}
-
-func TestAddWorkInSortDeDup(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
-		return nil
-	})
+	defer cancel()
 	bp.assemblyQueue = []*batchWork{
 		{msg: &fftypes.Message{Sequence: 200}},
 		{msg: &fftypes.Message{Sequence: 201}},
 		{msg: &fftypes.Message{Sequence: 202}},
 		{msg: &fftypes.Message{Sequence: 204}},
 	}
-	_, _ = bp.addWork(&batchWork{
-		msg: &fftypes.Message{Sequence: 200},
-	})
 	_, _ = bp.addWork(&batchWork{
 		msg: &fftypes.Message{Sequence: 203},
 	})
@@ -272,39 +262,11 @@ func TestAddWorkInSortDeDup(t *testing.T) {
 	}, bp.assemblyQueue)
 }
 
-func TestStartFlushOverflow(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
-		return nil
-	})
-	batchID := fftypes.NewUUID()
-	bp.assemblyID = batchID
-	bp.flushedSequences = []int64{100, 101, 102, 103, 104}
-	bp.assemblyQueue = []*batchWork{
-		{msg: &fftypes.Message{Sequence: 200}},
-		{msg: &fftypes.Message{Sequence: 201}},
-		{msg: &fftypes.Message{Sequence: 202}},
-		{msg: &fftypes.Message{Sequence: 203}},
-	}
-	bp.conf.BatchMaxSize = 3
-
-	flushBatchID, flushAssembly, _ := bp.startFlush(true)
-	assert.Equal(t, batchID, flushBatchID)
-	assert.Equal(t, []int64{102, 103, 104, 200, 201, 202}, bp.flushedSequences)
-	assert.Equal(t, []*batchWork{
-		{msg: &fftypes.Message{Sequence: 200}},
-		{msg: &fftypes.Message{Sequence: 201}},
-		{msg: &fftypes.Message{Sequence: 202}},
-	}, flushAssembly)
-	assert.Equal(t, []*batchWork{
-		{msg: &fftypes.Message{Sequence: 203}},
-	}, bp.assemblyQueue)
-	assert.NotEqual(t, batchID, bp.assemblyID)
-}
-
 func TestStartQuiesceNonBlocking(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		return nil
 	})
+	defer cancel()
 	bp.startQuiesce()
 	bp.startQuiesce() // we're just checking this doesn't hang
 }
@@ -314,10 +276,11 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	config.Reset()
 
 	dispatched := make(chan *DispatchState)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		dispatched <- state
 		return nil
 	})
+	defer cancel()
 	bp.conf.txType = fftypes.TransactionTypeUnpinned
 
 	mockRunAsGroupPassthrough(mdi)
@@ -361,10 +324,11 @@ func TestMaskContextsDuplicate(t *testing.T) {
 	config.Reset()
 
 	dispatched := make(chan *DispatchState)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		dispatched <- state
 		return nil
 	})
+	defer cancel()
 
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
@@ -398,10 +362,11 @@ func TestMaskContextsUpdataMessageFail(t *testing.T) {
 	config.Reset()
 
 	dispatched := make(chan *DispatchState)
-	mdi, bp := newTestBatchProcessor(func(c context.Context, state *DispatchState) error {
+	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		dispatched <- state
 		return nil
 	})
+	defer cancel()
 
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()

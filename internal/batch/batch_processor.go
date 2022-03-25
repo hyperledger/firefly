@@ -75,6 +75,7 @@ type FlushStatus struct {
 
 type batchProcessor struct {
 	ctx                context.Context
+	bm                 *batchManager
 	ni                 sysmessaging.LocalNodeInfo
 	data               data.Manager
 	database           database.Plugin
@@ -86,7 +87,6 @@ type batchProcessor struct {
 	assemblyID         *fftypes.UUID
 	assemblyQueue      []*batchWork
 	assemblyQueueBytes int64
-	flushedSequences   []int64
 	statusMux          sync.Mutex
 	flushStatus        FlushStatus
 	retry              *retry.Retry
@@ -102,15 +102,16 @@ type DispatchState struct {
 
 const batchSizeEstimateBase = int64(512)
 
-func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, conf *batchProcessorConf, baseRetryConf *retry.Retry, txHelper txcommon.Helper) *batchProcessor {
-	pCtx := log.WithLogField(log.WithLogField(ctx, "d", conf.dispatcherName), "p", conf.name)
+func newBatchProcessor(bm *batchManager, conf *batchProcessorConf, baseRetryConf *retry.Retry, txHelper txcommon.Helper) *batchProcessor {
+	pCtx := log.WithLogField(log.WithLogField(bm.ctx, "d", conf.dispatcherName), "p", conf.name)
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
 		ctx:       pCtx,
 		cancelCtx: cancelCtx,
-		ni:        ni,
-		database:  di,
-		data:      dm,
+		bm:        bm,
+		ni:        bm.ni,
+		database:  bm.database,
+		data:      bm.data,
 		txHelper:  txHelper,
 		newWork:   make(chan *batchWork, conf.BatchMaxSize),
 		quescing:  make(chan bool, 1),
@@ -120,8 +121,7 @@ func newBatchProcessor(ctx context.Context, ni sysmessaging.LocalNodeInfo, di da
 			MaximumDelay: baseRetryConf.MaximumDelay,
 			Factor:       baseRetryConf.Factor,
 		},
-		conf:             conf,
-		flushedSequences: []int64{},
+		conf: conf,
 		flushStatus: FlushStatus{
 			LastFlushTime: fftypes.Now(),
 		},
@@ -166,19 +166,8 @@ func (bp *batchProcessor) newAssembly(initalWork ...*batchWork) {
 func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	newQueue := make([]*batchWork, 0, len(bp.assemblyQueue)+1)
 	added := false
-	// Check it's not in the recently flushed list
-	for _, flushedSequence := range bp.flushedSequences {
-		if newWork.msg.Sequence == flushedSequence {
-			log.L(bp.ctx).Debugf("Ignoring add of recently flushed message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
-			return false, false
-		}
-	}
-	// Build the new sorted work list, checking there for duplicates too
+	// Build the new sorted work list
 	for _, work := range bp.assemblyQueue {
-		if newWork.msg.Sequence == work.msg.Sequence {
-			log.L(bp.ctx).Debugf("Ignoring duplicate add of message %s sequence=%d to in-flight batch assembly %s", newWork.msg.Header.ID, newWork.msg.Sequence, bp.assemblyID)
-			return false, false
-		}
 		if !added && newWork.msg.Sequence < work.msg.Sequence {
 			newQueue = append(newQueue, newWork)
 			added = true
@@ -196,32 +185,6 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 	return full, overflow
 }
 
-func (bp *batchProcessor) addFlushedSequences(flushAssembly []*batchWork) {
-	// We need to keep track of the sequences we're flushing, because until we finish our flush
-	// the batch processor might be re-queuing the same messages to us due to rewinds.
-
-	// We keep twice the batch size, which might be made up of multiple batches
-	maxFlushedSeqLen := int(2 * bp.conf.BatchMaxSize)
-
-	// We keep as much of the END of the existing set as we can, and shift it forwards.
-	// Then we add the whole of the current flush set after that
-	combinedLen := len(flushAssembly) + len(bp.flushedSequences)
-	newLength := combinedLen
-	if combinedLen > maxFlushedSeqLen {
-		newLength = maxFlushedSeqLen
-	}
-	dropLength := combinedLen - newLength
-	retainLength := len(bp.flushedSequences) - dropLength
-	newFlushedSequences := make([]int64, newLength)
-	for i := 0; i < retainLength; i++ {
-		newFlushedSequences[i] = bp.flushedSequences[dropLength+i]
-	}
-	for i := 0; i < len(flushAssembly); i++ {
-		newFlushedSequences[retainLength+i] = flushAssembly[i].msg.Sequence
-	}
-	bp.flushedSequences = newFlushedSequences
-}
-
 func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAssembly []*batchWork, byteSize int64) {
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
@@ -237,7 +200,6 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	} else {
 		flushAssembly = bp.assemblyQueue
 	}
-	bp.addFlushedSequences(flushAssembly)
 	// Cycle to the next assembly
 	id = bp.assemblyID
 	byteSize = bp.assemblyQueueBytes
@@ -246,7 +208,15 @@ func (bp *batchProcessor) startFlush(overflow bool) (id *fftypes.UUID, flushAsse
 	return id, flushAssembly, byteSize
 }
 
-func (bp *batchProcessor) endFlush(state *DispatchState, byteSize int64) {
+func (bp *batchProcessor) notifyFlushComplete(flushWork []*batchWork) {
+	sequences := make([]int64, len(flushWork))
+	for i, work := range flushWork {
+		sequences[i] = work.msg.Sequence
+	}
+	bp.bm.notifyFlushed(sequences)
+}
+
+func (bp *batchProcessor) updateFlushStats(state *DispatchState, byteSize int64) {
 	bp.statusMux.Lock()
 	defer bp.statusMux.Unlock()
 	fs := &bp.flushStatus
@@ -387,7 +357,11 @@ func (bp *batchProcessor) flush(overflow bool) error {
 	}
 	log.L(bp.ctx).Debugf("Finalized batch %s", id)
 
-	bp.endFlush(state, byteSize)
+	// Notify the manager that we've flushed these sequences
+	bp.notifyFlushComplete(flushWork)
+
+	// Update our stats
+	bp.updateFlushStats(state, byteSize)
 	return nil
 }
 
