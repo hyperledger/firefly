@@ -291,7 +291,7 @@ func TestGetVerifierByHashBadUUID(t *testing.T) {
 func TestGetVerifierByDIDOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookup", nm.ctx, "did:firefly:org/abc").
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(testOrg("abc"), true, nil)
 	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
 	assert.NoError(t, err)
@@ -301,7 +301,7 @@ func TestGetVerifierByDIDOk(t *testing.T) {
 func TestGetVerifierByDIDNotFound(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookup", nm.ctx, "did:firefly:org/abc").
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(nil, true, nil)
 	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
 	assert.Regexp(t, "FF10109", err)
@@ -311,7 +311,7 @@ func TestGetVerifierByDIDNotFound(t *testing.T) {
 func TestGetVerifierByDIDNotErr(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookup", nm.ctx, "did:firefly:org/abc").
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(nil, true, fmt.Errorf("pop"))
 	id, err := nm.GetIdentityByDID(nm.ctx, "did:firefly:org/abc")
 	assert.Regexp(t, "pop", err)

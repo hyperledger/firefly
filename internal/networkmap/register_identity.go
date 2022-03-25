@@ -31,7 +31,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 		parent, err = fftypes.ParseUUID(ctx, dto.Parent)
 		if err != nil {
 			// Or a DID
-			parentIdentity, _, err := nm.identity.CachedIdentityLookup(ctx, dto.Parent)
+			parentIdentity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, dto.Parent)
 			if err != nil {
 				return nil, err
 			}

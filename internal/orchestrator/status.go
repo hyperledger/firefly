@@ -65,7 +65,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStat
 		status.Org.ID = org.ID
 		status.Org.DID = org.DID
 
-		node, _, err := or.identity.CachedIdentityLookup(ctx, fmt.Sprintf("%s%s", fftypes.FireFlyNodeDIDPrefix, status.Node.Name))
+		node, _, err := or.identity.CachedIdentityLookupNilOK(ctx, fmt.Sprintf("%s%s", fftypes.FireFlyNodeDIDPrefix, status.Node.Name))
 		if err != nil {
 			return nil, err
 		}
