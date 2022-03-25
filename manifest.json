@@ -40,8 +40,8 @@
     }
   },
   "ui": {
-    "tag": "v0.6.0",
-    "release": "v0.6.0_3fc40f7"
+    "tag": "v0.6.3",
+    "release": "v0.6.3_2ccb2bb"
   },
   "cli": {
     "tag": "v0.0.45"
