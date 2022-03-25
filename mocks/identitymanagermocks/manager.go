@@ -15,8 +15,31 @@ type Manager struct {
 	mock.Mock
 }
 
-// CachedIdentityLookup provides a mock function with given fields: ctx, did
-func (_m *Manager) CachedIdentityLookup(ctx context.Context, did string) (*fftypes.Identity, bool, error) {
+// CachedIdentityLookupByID provides a mock function with given fields: ctx, id
+func (_m *Manager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Identity); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CachedIdentityLookupMustExist provides a mock function with given fields: ctx, did
+func (_m *Manager) CachedIdentityLookupMustExist(ctx context.Context, did string) (*fftypes.Identity, bool, error) {
 	ret := _m.Called(ctx, did)
 
 	var r0 *fftypes.Identity
@@ -45,27 +68,34 @@ func (_m *Manager) CachedIdentityLookup(ctx context.Context, did string) (*fftyp
 	return r0, r1, r2
 }
 
-// CachedIdentityLookupByID provides a mock function with given fields: ctx, id
-func (_m *Manager) CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Identity, error) {
-	ret := _m.Called(ctx, id)
+// CachedIdentityLookupNilOK provides a mock function with given fields: ctx, did
+func (_m *Manager) CachedIdentityLookupNilOK(ctx context.Context, did string) (*fftypes.Identity, bool, error) {
+	ret := _m.Called(ctx, did)
 
 	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Identity); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
+		r0 = rf(ctx, did)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Identity)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(context.Context, string) bool); ok {
+		r1 = rf(ctx, did)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(bool)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, did)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // CachedVerifierLookup provides a mock function with given fields: ctx, vType, ns, value

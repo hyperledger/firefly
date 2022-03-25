@@ -96,7 +96,7 @@ func TestPinnedReceiveOK(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil, nil)
@@ -136,7 +136,7 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
@@ -162,7 +162,7 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -279,7 +279,7 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(nil, true, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(nil, true, fmt.Errorf("pop"))
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
 	assert.Empty(t, m)
@@ -304,7 +304,7 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(nil, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(nil, false, nil)
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
@@ -329,7 +329,7 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(newTestOrg("org2"), false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(newTestOrg("org2"), false, nil)
 	m, err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 	assert.Empty(t, m)
@@ -661,7 +661,7 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org2, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org2, false, nil)
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, fmt.Errorf("pop"))
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
@@ -693,7 +693,7 @@ func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org2, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org2, false, nil)
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, nil)
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
@@ -726,7 +726,7 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org2, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org2, false, nil)
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(org3, nil)
 
 	m, err := em.MessageReceived(mdx, "peer1", b)
@@ -757,7 +757,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(fmt.Errorf("optimization fail"))
@@ -791,7 +791,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
@@ -824,7 +824,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
@@ -862,7 +862,7 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
@@ -899,7 +899,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 		Type:  fftypes.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	}).Return(node1, nil)
-	mim.On("CachedIdentityLookup", em.ctx, "signingOrg").Return(org1, false, nil)
+	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)

@@ -97,7 +97,7 @@ func (nm *networkMap) GetIdentityByID(ctx context.Context, ns, id string) (*ffty
 }
 
 func (nm *networkMap) GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error) {
-	identity, _, err := nm.identity.CachedIdentityLookup(ctx, did)
+	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, did)
 	if err != nil {
 		return nil, err
 	}
