@@ -142,7 +142,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentIdentity, false, nil)
-	mim.On("CachedIdentityLookup", nm.ctx, "did:firefly:org/parent1").Return(&fftypes.Identity{
+	mim.On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/parent1").Return(&fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
 			ID:  fftypes.NewUUID(),
 			DID: "did:firefly:org/parent1",
@@ -271,7 +271,7 @@ func TestRegisterIdentityBadParent(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookup", nm.ctx, "did:firefly:org/1").Return(nil, false, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/1").Return(nil, false, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &fftypes.IdentityCreateDTO{
 		Name:   "custom1",

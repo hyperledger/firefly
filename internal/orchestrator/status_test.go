@@ -45,7 +45,7 @@ func TestGetStatusRegistered(t *testing.T) {
 			DID:  "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(&fftypes.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
@@ -91,7 +91,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 			DID:  "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(&fftypes.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&fftypes.Identity{
 		IdentityBase: fftypes.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
@@ -159,7 +159,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 			DID:  "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -195,7 +195,7 @@ func TestGetStatusNodeError(t *testing.T) {
 			DID:  "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookup", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
 
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")

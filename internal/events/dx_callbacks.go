@@ -75,7 +75,7 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerI
 	}
 
 	// Find the identity in the mesage
-	org, retryable, err := em.identity.CachedIdentityLookup(ctx, author)
+	org, retryable, err := em.identity.CachedIdentityLookupMustExist(ctx, author)
 	if err != nil && retryable {
 		l.Errorf("Failed to retrieve org: %v", err)
 		return nil, err // retryable error

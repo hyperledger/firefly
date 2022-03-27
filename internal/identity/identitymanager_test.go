@@ -368,7 +368,7 @@ func TestResolveInputSigningIdentityByOrgLookkupNotFound(t *testing.T) {
 		Author: "org1",
 	}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
-	assert.Regexp(t, "FF10278", err)
+	assert.Regexp(t, "FF10277", err)
 
 	mdi.AssertExpectations(t)
 
@@ -777,7 +777,7 @@ func TestCachedIdentityLookupByVerifierRefNotFound(t *testing.T) {
 
 }
 
-func TestCachedIdentityLookupCaching(t *testing.T) {
+func TestCachedIdentityLookupMustExistCaching(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
@@ -793,33 +793,33 @@ func TestCachedIdentityLookupCaching(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(id, nil).Once()
 
-	v1, _, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
+	v1, _, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
-	v2, _, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
+	v2, _, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v2)
 }
 
-func TestCachedIdentityLookupUnknownResolver(t *testing.T) {
+func TestCachedIdentityLookupMustExistUnknownResolver(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	_, retryable, err := im.CachedIdentityLookup(ctx, "did:random:anything")
+	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "did:random:anything")
 	assert.Regexp(t, "FF10349", err)
 	assert.False(t, retryable)
 
 }
 
-func TestCachedIdentityLookupGetIDFail(t *testing.T) {
+func TestCachedIdentityLookupMustExistGetIDFail(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(nil, fmt.Errorf("pop"))
 
-	_, retryable, err := im.CachedIdentityLookup(ctx, "did:firefly:node/peer1")
+	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
 	assert.Regexp(t, "pop", err)
 	assert.True(t, retryable)
 
@@ -838,7 +838,7 @@ func TestCachedIdentityLookupByVerifierByOldDIDFail(t *testing.T) {
 		return uuid.Equals(orgUUID)
 	})).Return(nil, fmt.Errorf("pop"))
 
-	_, retryable, err := im.CachedIdentityLookup(ctx, did)
+	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, did)
 	assert.Regexp(t, "pop", err)
 	assert.True(t, retryable)
 

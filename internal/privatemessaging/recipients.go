@@ -77,7 +77,7 @@ func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *ff
 func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
 	retryable := true
 	if nodeInput != "" {
-		node, retryable, err = pm.identity.CachedIdentityLookup(ctx, nodeInput)
+		node, retryable, err = pm.identity.CachedIdentityLookupMustExist(ctx, nodeInput)
 	} else {
 		// Find any node owned by this organization
 		inputIdentityDebugInfo := fmt.Sprintf("%s (%s)", identity.DID, identity.ID)
@@ -119,7 +119,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the identity
-		identity, _, err := pm.identity.CachedIdentityLookup(ctx, rInput.Identity)
+		identity, _, err := pm.identity.CachedIdentityLookupMustExist(ctx, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}
