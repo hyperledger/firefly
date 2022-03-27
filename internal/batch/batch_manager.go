@@ -213,7 +213,7 @@ func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *fftypes.Mess
 	return msg, retData, nil
 }
 
-// popRewind is called just before reading a page, to po out a rewind offset if there is one and it's behind the cursor
+// popRewind is called just before reading a page, to pop out a rewind offset if there is one and it's behind the cursor
 func (bm *batchManager) popRewind() {
 	bm.rewindOffsetMux.Lock()
 	if bm.rewindOffset >= 0 && bm.rewindOffset < bm.readOffset {
