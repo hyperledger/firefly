@@ -9,6 +9,6 @@ CREATE TABLE events (
 );
 
 CREATE UNIQUE INDEX events_id ON events(id);
-CREATE UNIQUE INDEX events_created ON events(created);
+CREATE INDEX events_created ON events(created);
 
 COMMIT;
