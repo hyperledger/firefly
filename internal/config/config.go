@@ -62,6 +62,8 @@ var (
 	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
 	BatchManagerReadPollTimeout = rootKey("batch.manager.pollTimeout")
+	// BatchManagerMinimumPollDelay is the minimum time the batch manager waits between polls on the DB - to prevent thrashing
+	BatchManagerMinimumPollDelay = rootKey("batch.manager.minimumPollDelay")
 	// BatchRetryFactor is the retry backoff factor for database operations performed by the batch manager
 	BatchRetryFactor = rootKey("batch.retry.factor")
 	// BatchRetryInitDelay is the retry initial delay for database operations
@@ -327,6 +329,7 @@ func Reset() {
 	viper.SetDefault(string(BatchCacheTTL), "5m")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
+	viper.SetDefault(string(BatchManagerMinimumPollDelay), "100ms")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
 	viper.SetDefault(string(BatchRetryInitDelay), "250ms")

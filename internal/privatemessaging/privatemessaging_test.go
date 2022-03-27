@@ -478,6 +478,17 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
+func TestTransferBlobsNoHash(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{}},
+	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
+	assert.Regexp(t, "FF10379", err)
+
+}
+
 func TestTransferBlobsNotFound(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
