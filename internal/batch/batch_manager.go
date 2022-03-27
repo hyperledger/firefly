@@ -394,15 +394,16 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.Message, data fftypes.DataArray) {
 	l := log.L(bm.ctx)
 	l.Debugf("Dispatching message %s (seq=%d) to %s batch processor %s", msg.Header.ID, msg.Sequence, msg.Header.Type, processor.conf.name)
+
+	bm.inflightMux.Lock()
+	bm.inflightSequences[msg.Sequence] = processor
+	bm.inflightMux.Unlock()
+
 	work := &batchWork{
 		msg:  msg,
 		data: data,
 	}
 	processor.newWork <- work
-
-	bm.inflightMux.Lock()
-	bm.inflightSequences[msg.Sequence] = processor
-	bm.inflightMux.Unlock()
 }
 
 func (bm *batchManager) reapQuiescing() {
