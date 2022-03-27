@@ -596,3 +596,17 @@ func TestGetMessageNotFound(t *testing.T) {
 	_, _, err := bm.(*batchManager).assembleMessageData(fftypes.NewUUID())
 	assert.Regexp(t, "FF10133", err)
 }
+
+func TestDoubleTap(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+	bm.readOffset = 3000
+	go bm.newMessageNotifier()
+
+	bm.NewMessages() <- 2000
+	bm.NewMessages() <- 1000
+
+	for bm.rewindOffset != int64(999) {
+		time.Sleep(1 * time.Microsecond)
+	}
+}
