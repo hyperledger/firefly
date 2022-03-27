@@ -193,8 +193,11 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batc
 func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.DataArray, txid *fftypes.UUID, node *fftypes.Identity) error {
 	// Send all the blobs associated with this batch
 	for _, d := range data {
-		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage
-		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
+		if d.Blob != nil {
+			if d.Blob.Hash == nil {
+				return i18n.NewError(ctx, i18n.MsgDataMissingBlobHash, d.ID)
+			}
+
 			blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
 			if err != nil {
 				return err
@@ -203,6 +206,7 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.Data
 				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
 			}
 
+			log.L(ctx).Debugf("Transferring blob %s for data %s", d.Blob.Hash, d.ID)
 			op := fftypes.NewOperation(
 				pm.exchange,
 				d.Namespace,

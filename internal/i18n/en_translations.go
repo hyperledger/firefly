@@ -294,4 +294,5 @@ var (
 	MsgDownloadSharedFailed         = ffm("FF10376", "Error downloading data with reference '%s' from shared storage")
 	MsgDownloadBatchMaxBytes        = ffm("FF10377", "Error downloading batch with reference '%s' from shared storage - maximum size limit reached")
 	MsgOperationDataIncorrect       = ffm("FF10378", "Operation data type incorrect: %T", 400)
+	MsgDataMissingBlobHash          = ffm("FF10379", "Blob for data %s cannot be transferred as it is missing a hash", 500)
 )
