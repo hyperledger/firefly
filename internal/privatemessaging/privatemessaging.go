@@ -206,18 +206,20 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.Data
 				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
 			}
 
-			log.L(ctx).Debugf("Transferring blob %s for data %s", d.Blob.Hash, d.ID)
 			op := fftypes.NewOperation(
 				pm.exchange,
 				d.Namespace,
 				txid,
 				fftypes.OpTypeDataExchangeSendBlob)
 			addTransferBlobInputs(op, node.ID, blob.Hash)
+			log.L(ctx).Debugf("Transferring blob %s for data %s in operation %s", d.Blob.Hash, d.ID, op.ID)
 			if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 				return err
 			}
 
-			return pm.operations.RunOperation(ctx, opSendBlob(op, node, blob))
+			if err = pm.operations.RunOperation(ctx, opSendBlob(op, node, blob)); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
