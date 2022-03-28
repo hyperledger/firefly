@@ -25,6 +25,9 @@ type Stack struct {
 	Name                  string    `json:"name,omitempty"`
 	ExposedBlockchainPort int       `json:"exposedGethPort,omitempty"`
 	BlockchainProvider    string    `json:"blockchainProvider"`
+	BlockchainHostname    string    `json:"blockchainHostname,omitempty"`
+	BlockchainUsername    string    `json:"blockchainUsername,omitempty"`
+	BlockchainPassword    string    `json:"blockchainPassword,omitempty"`
 	TokenProviders        []string  `json:"tokenProviders"`
 	Members               []*Member `json:"members,omitempty"`
 }
@@ -87,6 +90,10 @@ func ReadStack(filename string) (*Stack, error) {
 			member.FireflyHostname = "127.0.0.1"
 		}
 
+	}
+
+	if stack.BlockchainHostname == "" {
+		stack.BlockchainHostname = "127.0.0.1"
 	}
 
 	return stack, nil

@@ -203,10 +203,17 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
 	if stack.BlockchainProvider == "geth" {
-		ethNodeURL := fmt.Sprintf("%s://%s:%d", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.ExposedBlockchainPort)
+		ethNodeURL := fmt.Sprintf("%s://%s:%d", httpProtocolClient1, stack.BlockchainHostname, stack.ExposedBlockchainPort)
 		t.Logf("Ethereum node URL: %s", ethNodeURL)
 		ts.ethNode = NewResty(t)
 		ts.ethNode.SetBaseURL(ethNodeURL)
+		if stack.BlockchainUsername != "" && stack.BlockchainPassword != "" {
+			t.Log("Setting auth for Ethereum node")
+			ts.ethNode.SetBasicAuth(stack.BlockchainUsername, stack.BlockchainPassword)
+			authHeader1 = http.Header{
+				"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.BlockchainUsername, stack.BlockchainPassword))))},
+			}
+		}
 	}
 
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
