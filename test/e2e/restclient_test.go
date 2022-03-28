@@ -275,6 +275,7 @@ func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc str
 		Post(urlIdentities)
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
+	t.Logf("Identity claimed")
 	return &identity
 }
 
