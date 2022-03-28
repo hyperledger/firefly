@@ -121,10 +121,10 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		}
 	}
 
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
 	})).Return(fmt.Errorf("pop")).Once()
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
 	})).Return(nil).Times(1)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -166,7 +166,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("These pins have been seen before")) // simulate replay fallback
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
 	mbi := &blockchainmocks.Plugin{}
@@ -208,7 +208,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
 	mbi := &blockchainmocks.Plugin{}
@@ -243,7 +243,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)

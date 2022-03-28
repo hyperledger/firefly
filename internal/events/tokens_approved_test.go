@@ -62,6 +62,7 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	approval := newApproval()
 	approval.TX = fftypes.TransactionRef{}
@@ -71,7 +72,7 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -88,6 +89,8 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+	mth.AssertExpectations(t)
+
 }
 
 func TestPersistApprovalOpFail(t *testing.T) {
@@ -239,7 +242,7 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenApproval", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -255,6 +258,7 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovedBlockchainEventFail(t *testing.T) {
@@ -279,7 +283,7 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenApproval", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(fmt.Errorf("pop"))
 
@@ -288,4 +292,5 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }

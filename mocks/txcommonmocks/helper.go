@@ -51,6 +51,29 @@ func (_m *Helper) EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftyp
 	return r0, r1
 }
 
+// GetBlockchainEventByIDCached provides a mock function with given fields: ctx, id
+func (_m *Helper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BlockchainEvent); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTransactionByIDCached provides a mock function with given fields: ctx, id
 func (_m *Helper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, id)
@@ -72,6 +95,20 @@ func (_m *Helper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID
 	}
 
 	return r0, r1
+}
+
+// InsertBlockchainEvent provides a mock function with given fields: ctx, chainEvent
+func (_m *Helper) InsertBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+	ret := _m.Called(ctx, chainEvent)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BlockchainEvent) error); ok {
+		r0 = rf(ctx, chainEvent)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // PersistTransaction provides a mock function with given fields: ctx, ns, id, txType, blockchainTXID
