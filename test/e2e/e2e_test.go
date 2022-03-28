@@ -203,7 +203,7 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
 	if stack.BlockchainProvider == "geth" {
-		ethNodeURL := fmt.Sprintf("%s://%s:%d", httpProtocolClient1, stack.BlockchainHostname, stack.ExposedBlockchainPort)
+		ethNodeURL := fmt.Sprintf("%s://%s", httpProtocolClient1, stack.BlockchainHostname)
 		t.Logf("Ethereum node URL: %s", ethNodeURL)
 		ts.ethNode = NewResty(t)
 		ts.ethNode.SetBaseURL(ethNodeURL)
