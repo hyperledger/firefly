@@ -26,31 +26,29 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetIdentityByDID(t *testing.T) {
+func TestGetNetIdentities(t *testing.T) {
 	o, r := newTestAPIServer()
-	nmn := &networkmapmocks.Manager{}
-	o.On("NetworkMap").Return(nmn)
-	req := httptest.NewRequest("GET", "/api/v1/network/identities/did:firefly:org/org_1", nil)
+	mnm := &networkmapmocks.Manager{}
+	o.On("NetworkMap").Return(mnm)
+	req := httptest.NewRequest("GET", "/api/v1/network/identities", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetIdentityByDID", mock.Anything, "did:firefly:org/org_1").
-		Return(&fftypes.Identity{}, nil)
+	mnm.On("GetIdentitiesGlobal", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
 
-func TestGetIdentityByDIDWithVerifiers(t *testing.T) {
+func TestGetNetIdentitiesWithVerifiers(t *testing.T) {
 	o, r := newTestAPIServer()
-	nmn := &networkmapmocks.Manager{}
-	o.On("NetworkMap").Return(nmn)
-	req := httptest.NewRequest("GET", "/api/v1/network/identities/did:firefly:org/org_1?fetchverifiers", nil)
+	mnm := &networkmapmocks.Manager{}
+	o.On("NetworkMap").Return(mnm)
+	req := httptest.NewRequest("GET", "/api/v1/network/identities?fetchverifiers", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "did:firefly:org/org_1").
-		Return(&fftypes.IdentityWithVerifiers{}, nil)
+	mnm.On("GetIdentitiesWithVerifiersGlobal", mock.Anything, mock.Anything).Return([]*fftypes.IdentityWithVerifiers{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

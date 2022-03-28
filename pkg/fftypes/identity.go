@@ -76,6 +76,12 @@ type Identity struct {
 	Updated  *FFTime          `json:"updated,omitempty"`
 }
 
+// IdentityWithVerifiers has an embedded array of verifiers
+type IdentityWithVerifiers struct {
+	Identity
+	Verifiers []*VerifierRef `json:"verifiers"`
+}
+
 // IdentityCreateDTO is the input structure to submit to register an identity.
 // The blockchain key that will be used to establish the claim for the identity
 // needs to be provided.
