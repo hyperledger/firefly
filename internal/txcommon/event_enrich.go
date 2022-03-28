@@ -41,7 +41,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Even
 		}
 		e.Message = msg
 	case fftypes.EventTypeBlockchainEventReceived:
-		be, err := t.database.GetBlockchainEventByID(ctx, event.Reference)
+		be, err := t.GetBlockchainEventByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}

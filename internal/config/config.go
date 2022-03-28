@@ -70,6 +70,10 @@ var (
 	BatchRetryInitDelay = rootKey("batch.retry.initDelay")
 	// BatchRetryMaxDelay is the maximum delay between retry attempts
 	BatchRetryMaxDelay = rootKey("batch.retry.maxDelay")
+	// BlockchainEventCacheSize size of cache for blockchain events
+	BlockchainEventCacheSize = rootKey("blockchainevent.cache.size")
+	// BlockchainEventCacheTTL time to live of cache for blockchain events
+	BlockchainEventCacheTTL = rootKey("blockchainevent.cache.ttl")
 	// BlockchainType is the name of the blockchain interface plugin being used by this firefly node
 	BlockchainType = rootKey("blockchain.type")
 	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
@@ -167,9 +171,9 @@ var (
 	// EventDBEventsBufferSize the size of the buffer of change events
 	EventDBEventsBufferSize = rootKey("event.dbevents.bufferSize")
 	// EventListenerTopicCacheSize cache size for blockchain listeners addresses
-	EventListenerTopicCacheSize = rootKey("event.listenerToipc.cache.size")
+	EventListenerTopicCacheSize = rootKey("event.listenerTopic.cache.size")
 	// EventListenerTopicCacheTTL cache time-to-live for private group addresses
-	EventListenerTopicCacheTTL = rootKey("event.listenerToipc.cache.ttl")
+	EventListenerTopicCacheTTL = rootKey("event.listenerTopic.cache.ttl")
 	// GroupCacheSize cache size for private group addresses
 	GroupCacheSize = rootKey("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses

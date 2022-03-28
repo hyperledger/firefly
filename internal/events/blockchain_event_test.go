@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -55,8 +56,9 @@ func TestContractEventWithRetries(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(sub, nil).Times(1) // cached
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		eventID = e.ID
 		return *e.Listener == *sub.ID && e.Name == "Changed" && e.Namespace == "ns"
 	})).Return(nil).Times(2)
@@ -70,6 +72,7 @@ func TestContractEventWithRetries(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestContractEventUnknownSubscription(t *testing.T) {
@@ -115,13 +118,15 @@ func TestPersistBlockchainEventChainListenerLookupFail(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetContractListenerByID", mock.Anything, ev.Listener).Return(nil, fmt.Errorf("pop"))
 
 	err := em.persistBlockchainEvent(em.ctx, ev)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestGetTopicForChainListenerFallback(t *testing.T) {
