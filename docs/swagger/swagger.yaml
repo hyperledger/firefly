@@ -5037,12 +5037,9 @@ paths:
                     topics:
                       items:
                         type: string
-                    tx:
-                      properties:
-                        type:
-                          default: pin
-                          type: string
-                      type: object
+                    txtype:
+                      default: pin
+                      type: string
                   type: object
               type: object
       responses:
@@ -5246,12 +5243,9 @@ paths:
                     topics:
                       items:
                         type: string
-                    tx:
-                      properties:
-                        type:
-                          default: pin
-                          type: string
-                      type: object
+                    txtype:
+                      default: pin
+                      type: string
                   type: object
               type: object
       responses:
@@ -5450,12 +5444,9 @@ paths:
                     topics:
                       items:
                         type: string
-                    tx:
-                      properties:
-                        type:
-                          default: pin
-                          type: string
-                      type: object
+                    txtype:
+                      default: pin
+                      type: string
                   type: object
               type: object
       responses:
