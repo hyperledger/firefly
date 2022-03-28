@@ -91,12 +91,9 @@ var privateSendSchema = `{
 							 }
 					 },
 					 "txType": {
-							"type": {
-								"type": "string",
-								"default": "pin"
-							}
-						}
-					 }
+							"type": "string",
+							"default": "pin"
+					}
 				},
 				"type": "object"
 		 }
