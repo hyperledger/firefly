@@ -226,6 +226,11 @@ func (_m *Manager) UpdateMessageIfCached(ctx context.Context, msg *fftypes.Messa
 	_m.Called(ctx, msg)
 }
 
+// UpdateMessageStateIfCached provides a mock function with given fields: ctx, id, state, confirmed
+func (_m *Manager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state fftypes.FFEnum, confirmed *fftypes.FFTime) {
+	_m.Called(ctx, id, state, confirmed)
+}
+
 // UploadBLOB provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
 func (_m *Manager) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
 	ret := _m.Called(ctx, ns, inData, blob, autoMeta)
