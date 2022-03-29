@@ -10131,6 +10131,19 @@ paths:
                         type: string
                       registered:
                         type: boolean
+                      verifiers:
+                        items:
+                          properties:
+                            type:
+                              enum:
+                              - ethereum_address
+                              - fabric_msp_id
+                              - dx_peer_id
+                              type: string
+                            value:
+                              type: string
+                          type: object
+                        type: array
                     type: object
                 type: object
           description: Success
