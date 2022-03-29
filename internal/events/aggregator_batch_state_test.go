@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,14 +51,17 @@ func TestFlushPinsFailUpdateMessages(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 	bs := newBatchState(ag)
+	msgID := fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, msgID, fftypes.MessageStateConfirmed, mock.Anything).Return()
 
 	bs.MarkMessageDispatched(ag.ctx, fftypes.NewUUID(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
+			ID:     msgID,
 			Topics: fftypes.FFStringArray{"topic1"},
 		},
 		Pins: fftypes.FFStringArray{"pin1"},
