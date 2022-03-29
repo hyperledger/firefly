@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -38,7 +40,8 @@ func TestBoundCallbacks(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mti := &tokenmocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}
-	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, ss: mss}
+	mom := &operationmocks.Manager{}
+	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, ss: mss, om: mom}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
@@ -52,11 +55,17 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
+	mom.On("SubmitOperationUpdate", &operations.OperationUpdate{
+		ID:             opID,
+		State:          fftypes.OpStatusFailed,
+		BlockchainTXID: "0xffffeeee",
+		ErrorMessage:   "error info",
+		Output:         info,
+	}).Return(fmt.Errorf("pop"))
+
 	err = bc.BlockchainOpUpdate(opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("OperationUpdate", mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
 	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 	assert.EqualError(t, err, "pop")
 

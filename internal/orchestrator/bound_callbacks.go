@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"github.com/hyperledger/firefly/internal/events"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -30,14 +31,27 @@ type boundCallbacks struct {
 	dx dataexchange.Plugin
 	ss sharedstorage.Plugin
 	ei events.EventManager
+	om operations.Manager
 }
 
 func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.ei.OperationUpdate(bc.bi, operationID, txState, blockchainTXID, errorMessage, opOutput)
+	return bc.om.SubmitOperationUpdate(&operations.OperationUpdate{
+		ID:             operationID,
+		State:          txState,
+		BlockchainTXID: blockchainTXID,
+		ErrorMessage:   errorMessage,
+		Output:         opOutput,
+	})
 }
 
 func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.ei.OperationUpdate(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
+	return bc.om.SubmitOperationUpdate(&operations.OperationUpdate{
+		ID:             operationID,
+		State:          txState,
+		BlockchainTXID: blockchainTXID,
+		ErrorMessage:   errorMessage,
+		Output:         opOutput,
+	})
 }
 
 func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {

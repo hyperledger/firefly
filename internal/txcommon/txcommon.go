@@ -32,7 +32,7 @@ import (
 type Helper interface {
 	SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.TransactionType) (*fftypes.UUID, error)
 	PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.TransactionType, blockchainTXID string) (valid bool, err error)
-	AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error
+	AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, blockchainTXID string) error
 	InsertBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error
 	EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error)
 	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error)
@@ -153,27 +153,14 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, i
 
 // AddBlockchainTX is called when we know the transaction should exist, and we don't need any validation
 // but just want to bolt on an extra blockchain TXID (if it's not there already).
-func (t *transactionHelper) AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error {
+func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, blockchainTXID string) error {
 
-	tx, err := t.database.GetTransactionByID(ctx, id)
-	if err != nil {
-		return err
+	newBlockchainIDs, changed := tx.BlockchainIDs.AddToSortedSet(blockchainTXID)
+	if !changed {
+		return nil
 	}
 
-	if tx != nil {
-
-		newBlockchainIDs, changed := tx.BlockchainIDs.AddToSortedSet(blockchainTXID)
-		if !changed {
-			return nil
-		}
-
-		if err = t.database.UpdateTransaction(ctx, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", newBlockchainIDs)); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
+	return t.database.UpdateTransaction(ctx, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", newBlockchainIDs))
 }
 
 func (t *transactionHelper) addBlockchainEventToCache(chainEvent *fftypes.BlockchainEvent) {

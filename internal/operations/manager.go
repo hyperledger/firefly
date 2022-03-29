@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -37,6 +38,9 @@ type Manager interface {
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
+	SubmitOperationUpdate(update *OperationUpdate) error
+	Start() error
+	WaitStop()
 }
 
 type RunOperationOption int
@@ -49,16 +53,18 @@ type operationsManager struct {
 	ctx      context.Context
 	database database.Plugin
 	handlers map[fftypes.OpType]OperationHandler
+	updater  *operationUpdater
 }
 
-func NewOperationsManager(ctx context.Context, di database.Plugin) (Manager, error) {
-	if di == nil {
+func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
+	if di == nil || txHelper == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	om := &operationsManager{
 		ctx:      ctx,
 		database: di,
 		handlers: make(map[fftypes.OpType]OperationHandler),
+		updater:  newOperationUpdater(ctx, di, txHelper),
 	}
 	return om, nil
 }
@@ -157,4 +163,17 @@ func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *ff
 	if err := om.database.ResolveOperation(ctx, opID, newState, err.Error(), outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
+}
+
+func (om *operationsManager) SubmitOperationUpdate(update *OperationUpdate) error {
+	return om.updater.SubmitOperationUpdate(om.ctx, update)
+}
+
+func (om *operationsManager) Start() error {
+	om.updater.start()
+	return nil
+}
+
+func (om *operationsManager) WaitStop() {
+	om.updater.close()
 }

@@ -101,3 +101,36 @@ func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperati
 
 	return r0
 }
+
+// Start provides a mock function with given fields:
+func (_m *Manager) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SubmitOperationUpdate provides a mock function with given fields: update
+func (_m *Manager) SubmitOperationUpdate(update *operations.OperationUpdate) error {
+	ret := _m.Called(update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*operations.OperationUpdate) error); ok {
+		r0 = rf(update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WaitStop provides a mock function with given fields:
+func (_m *Manager) WaitStop() {
+	_m.Called()
+}

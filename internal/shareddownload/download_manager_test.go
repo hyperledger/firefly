@@ -26,8 +26,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -45,7 +47,12 @@ func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
 	mss := &sharedstoragemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mci := &shareddownloadmocks.Callbacks{}
-	operations, err := operations.NewOperationsManager(context.Background(), mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: false,
+	})
+	operations, err := operations.NewOperationsManager(context.Background(), mdi, txHelper)
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())

@@ -305,15 +305,14 @@ func TestAddBlockchainTX(t *testing.T) {
 	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
-	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&fftypes.Transaction{
-		ID:            txid,
+	tx := &fftypes.Transaction{
+		ID:            fftypes.NewUUID(),
 		Namespace:     "ns1",
 		Type:          fftypes.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
 		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
-	}, nil)
-	mdi.On("UpdateTransaction", ctx, txid, mock.MatchedBy(func(u database.Update) bool {
+	}
+	mdi.On("UpdateTransaction", ctx, tx.ID, mock.MatchedBy(func(u database.Update) bool {
 		info, _ := u.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "blockchainids", info.SetOperations[0].Field)
@@ -322,25 +321,8 @@ func TestAddBlockchainTX(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := txHelper.AddBlockchainTX(ctx, txid, "abc")
+	err := txHelper.AddBlockchainTX(ctx, tx, "abc")
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-
-}
-
-func TestAddBlockchainTXGetFail(t *testing.T) {
-
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
-	ctx := context.Background()
-
-	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(nil, fmt.Errorf("pop"))
-
-	err := txHelper.AddBlockchainTX(ctx, txid, "abc")
-	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
 
@@ -353,17 +335,16 @@ func TestAddBlockchainTXUpdateFail(t *testing.T) {
 	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
-	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&fftypes.Transaction{
-		ID:            txid,
+	tx := &fftypes.Transaction{
+		ID:            fftypes.NewUUID(),
 		Namespace:     "ns1",
 		Type:          fftypes.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
 		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
-	}, nil)
-	mdi.On("UpdateTransaction", ctx, txid, mock.Anything).Return(fmt.Errorf("pop"))
+	}
+	mdi.On("UpdateTransaction", ctx, tx.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := txHelper.AddBlockchainTX(ctx, txid, "abc")
+	err := txHelper.AddBlockchainTX(ctx, tx, "abc")
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -377,19 +358,16 @@ func TestAddBlockchainTXUnchanged(t *testing.T) {
 	txHelper := NewTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
-	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&fftypes.Transaction{
-		ID:            txid,
+	tx := &fftypes.Transaction{
+		ID:            fftypes.NewUUID(),
 		Namespace:     "ns1",
 		Type:          fftypes.TransactionTypeContractInvoke,
 		Created:       fftypes.Now(),
 		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
-	}, nil)
+	}
 
-	err := txHelper.AddBlockchainTX(ctx, txid, "0x111111")
+	err := txHelper.AddBlockchainTX(ctx, tx, "0x111111")
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
 
 }
 

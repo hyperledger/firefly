@@ -20,7 +20,9 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +50,13 @@ func (m *mockHandler) RunOperation(ctx context.Context, op *fftypes.PreparedOper
 
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	config.Reset()
+	config.Set(config.OpUpdateWorkerCount, 1)
 	mdi := &databasemocks.Plugin{}
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: true,
+	})
+	mdm := &datamocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -58,13 +66,13 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	om, err := NewOperationsManager(ctx, mdi)
+	om, err := NewOperationsManager(ctx, mdi, txHelper)
 	assert.NoError(t, err)
 	return om.(*operationsManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewOperationsManager(context.Background(), nil)
+	_, err := NewOperationsManager(context.Background(), nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
