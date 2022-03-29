@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -64,6 +65,14 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStat
 		status.Org.Registered = true
 		status.Org.ID = org.ID
 		status.Org.DID = org.DID
+		verifiers, _, err := or.networkmap.GetIdentityVerifiers(ctx, fftypes.SystemNamespace, org.ID.String(), database.VerifierQueryFactory.NewFilter(ctx).And())
+		if err != nil {
+			return nil, err
+		}
+		status.Org.Verifiers = make([]*fftypes.VerifierRef, len(verifiers))
+		for i, v := range verifiers {
+			status.Org.Verifiers[i] = &v.VerifierRef
+		}
 
 		node, _, err := or.identity.CachedIdentityLookupNilOK(ctx, fmt.Sprintf("%s%s", fftypes.FireFlyNodeDIDPrefix, status.Node.Name))
 		if err != nil {

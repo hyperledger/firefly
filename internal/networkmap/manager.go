@@ -37,15 +37,22 @@ type Manager interface {
 
 	GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (*fftypes.Identity, error)
 	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetOrganizationsWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*fftypes.IdentityWithVerifiers, *database.FilterResult, error)
 	GetNodeByNameOrID(ctx context.Context, nameOrID string) (*fftypes.Identity, error)
 	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
 	GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error)
+	GetIdentityByIDWithVerifiers(ctx context.Context, ns, id string) (*fftypes.IdentityWithVerifiers, error)
 	GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error)
+	GetIdentityByDIDWithVerifiers(ctx context.Context, did string) (*fftypes.IdentityWithVerifiers, error)
 	GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetIdentitiesGlobal(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error)
+	GetIdentitiesWithVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.IdentityWithVerifiers, *database.FilterResult, error)
+	GetIdentitiesWithVerifiersGlobal(ctx context.Context, filter database.AndFilter) ([]*fftypes.IdentityWithVerifiers, *database.FilterResult, error)
 	GetIdentityVerifiers(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)
 	GetVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Verifier, *database.FilterResult, error)
 	GetVerifierByHash(ctx context.Context, ns, hash string) (*fftypes.Verifier, error)
 	GetDIDDocForIndentityByID(ctx context.Context, ns, id string) (*DIDDocument, error)
+	GetDIDDocForIndentityByDID(ctx context.Context, did string) (*DIDDocument, error)
 }
 
 type networkMap struct {

@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -33,13 +34,18 @@ var getIdentities = &oapispec.Route{
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams:     nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchverifiers", Example: "true", Description: i18n.MsgTBD, IsBool: true},
+	},
 	FilterFactory:   database.IdentityQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &[]*fftypes.Identity{} },
+	JSONOutputValue: func() interface{} { return &[]*fftypes.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+			return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesWithVerifiers(r.Ctx, r.PP["ns"], r.Filter))
+		}
 		return filterResult(getOr(r.Ctx).NetworkMap().GetIdentities(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

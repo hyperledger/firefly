@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -140,5 +141,37 @@ func TestDIDGenerationGetIdentityFail(t *testing.T) {
 	mdi.On("GetIdentityByID", nm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := nm.GetDIDDocForIndentityByID(nm.ctx, org1.Namespace, org1.ID.String())
+	assert.Regexp(t, "pop", err)
+}
+
+func TestDIDGenerationGetIdentityByDIDFail(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	org1 := testOrg("org1")
+
+	mii := nm.identity.(*identitymanagermocks.Manager)
+	mii.On("CachedIdentityLookupMustExist", nm.ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
+
+	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, org1.DID)
+	assert.Regexp(t, "pop", err)
+}
+
+func TestDIDGenerationGetIdentityByDIDFailVerifiers(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	org1 := testOrg("org1")
+
+	mii := nm.identity.(*identitymanagermocks.Manager)
+	mii.On("CachedIdentityLookupMustExist", nm.ctx, mock.Anything).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID: fftypes.NewUUID(),
+		},
+	}, false, nil)
+	mdi := nm.database.(*databasemocks.Plugin)
+	mdi.On("GetVerifiers", nm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, org1.DID)
 	assert.Regexp(t, "pop", err)
 }

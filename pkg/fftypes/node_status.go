@@ -32,10 +32,11 @@ type NodeStatusNode struct {
 
 // NodeStatusOrg is the information about the node owning org, returned in the node status
 type NodeStatusOrg struct {
-	Name       string `json:"name"`
-	Registered bool   `json:"registered"`
-	DID        string `json:"did,omitempty"`
-	ID         *UUID  `json:"id,omitempty"`
+	Name       string         `json:"name"`
+	Registered bool           `json:"registered"`
+	DID        string         `json:"did,omitempty"`
+	ID         *UUID          `json:"id,omitempty"`
+	Verifiers  []*VerifierRef `json:"verifiers,omitempty"`
 }
 
 // NodeStatusDefaults is information about core configuration th

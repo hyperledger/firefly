@@ -22,8 +22,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestGetStatusRegistered(t *testing.T) {
@@ -52,6 +54,13 @@ func TestGetStatusRegistered(t *testing.T) {
 			Parent: orgID,
 		},
 	}, false, nil)
+	nmn := or.networkmap.(*networkmapmocks.Manager)
+	nmn.On("GetIdentityVerifiers", or.ctx, fftypes.SystemNamespace, orgID.String(), mock.Anything).Return([]*fftypes.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: fftypes.VerifierRef{
+			Type:  fftypes.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -66,9 +75,44 @@ func TestGetStatusRegistered(t *testing.T) {
 	assert.Equal(t, "node1", status.Node.Name)
 	assert.True(t, status.Node.Registered)
 	assert.Equal(t, *nodeID, *status.Node.ID)
+	assert.Equal(t, "0x12345", status.Org.Verifiers[0].Value)
 
 	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID))
 	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID)) // cached
+
+}
+
+func TestGetStatusVerifierLookupFail(t *testing.T) {
+	or := newTestOrchestrator()
+
+	config.Reset()
+	config.Set(config.NamespacesDefault, "default")
+	config.Set(config.OrgName, "org1")
+	config.Set(config.NodeName, "node1")
+
+	orgID := fftypes.NewUUID()
+	nodeID := fftypes.NewUUID()
+
+	mim := or.identity.(*identitymanagermocks.Manager)
+	mim.On("GetNodeOwnerOrg", or.ctx).Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:   orgID,
+			Name: "org1",
+			DID:  "did:firefly:org/org1",
+		},
+	}, nil)
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&fftypes.Identity{
+		IdentityBase: fftypes.IdentityBase{
+			ID:     nodeID,
+			Name:   "node1",
+			Parent: fftypes.NewUUID(),
+		},
+	}, false, nil)
+	nmn := or.networkmap.(*networkmapmocks.Manager)
+	nmn.On("GetIdentityVerifiers", or.ctx, fftypes.SystemNamespace, orgID.String(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := or.GetStatus(or.ctx)
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -98,6 +142,13 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 			Parent: fftypes.NewUUID(),
 		},
 	}, false, nil)
+	nmn := or.networkmap.(*networkmapmocks.Manager)
+	nmn.On("GetIdentityVerifiers", or.ctx, fftypes.SystemNamespace, orgID.String(), mock.Anything).Return([]*fftypes.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: fftypes.VerifierRef{
+			Type:  fftypes.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -160,6 +211,13 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
+	nmn := or.networkmap.(*networkmapmocks.Manager)
+	nmn.On("GetIdentityVerifiers", or.ctx, fftypes.SystemNamespace, orgID.String(), mock.Anything).Return([]*fftypes.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: fftypes.VerifierRef{
+			Type:  fftypes.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -196,6 +254,13 @@ func TestGetStatusNodeError(t *testing.T) {
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
+	nmn := or.networkmap.(*networkmapmocks.Manager)
+	nmn.On("GetIdentityVerifiers", or.ctx, fftypes.SystemNamespace, orgID.String(), mock.Anything).Return([]*fftypes.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: fftypes.VerifierRef{
+			Type:  fftypes.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
 
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
