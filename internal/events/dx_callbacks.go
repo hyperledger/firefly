@@ -21,7 +21,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -217,79 +216,4 @@ func (em *eventManager) blobReceivedCommon(peerID string, hash fftypes.Bytes32, 
 			return em.aggregator.rewindForBlobArrival(ctx, &hash)
 		})
 	})
-}
-
-func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	log.L(em.ctx).Infof("Transfer result %s=%s error='%s' manifest='%s' info='%s'", trackingID, status, update.Error, update.Manifest, update.Info)
-
-	// We process the event in a retry loop (which will break only if the context is closed), so that
-	// we only confirm consumption of the event to the plugin once we've processed it.
-	return em.retry.Do(em.ctx, "operation update", func(attempt int) (retry bool, err error) {
-
-		// Find a matching operation, for this plugin, with the specified ID.
-		// We retry a few times, as there's an outside possibility of the event arriving before we're finished persisting the operation itself
-		var operations []*fftypes.Operation
-		fb := database.OperationQueryFactory.NewFilter(em.ctx)
-		filter := fb.And(
-			fb.Eq("id", trackingID),
-			fb.Eq("plugin", dx.Name()),
-		)
-		operations, _, err = em.database.GetOperations(em.ctx, filter)
-		if err != nil {
-			return true, err
-		}
-		if len(operations) != 1 {
-			// we have a limit on how long we wait to correlate an operation if we don't have a DB erro,
-			// as it should only be a short window where the DB transaction to insert the operation is still
-			// outstanding
-			if attempt >= em.opCorrelationRetries {
-				log.L(em.ctx).Warnf("Unable to correlate %s event %s", dx.Name(), trackingID)
-				return false, nil // just skip this
-			}
-			return true, i18n.NewError(em.ctx, i18n.Msg404NotFound)
-		}
-
-		// The maniest should exactly match that stored into the operation input, if supported
-		op := operations[0]
-		if status == fftypes.OpStatusSucceeded && dx.Capabilities().Manifest {
-			switch op.Type {
-			case fftypes.OpTypeDataExchangeSendBatch:
-				batchID, _ := fftypes.ParseUUID(em.ctx, op.Input.GetString("batch"))
-				expectedManifest := ""
-				if batchID != nil {
-					batch, err := em.database.GetBatchByID(em.ctx, batchID)
-					if err != nil {
-						return true, err
-					}
-					if batch != nil {
-						expectedManifest = batch.Manifest.String()
-					}
-				}
-				if update.Manifest != expectedManifest {
-					// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
-					mismatchErr := i18n.NewError(em.ctx, i18n.MsgManifestMismatch, status, update.Manifest)
-					log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
-					update.Error = mismatchErr.Error()
-					status = fftypes.OpStatusFailed
-				}
-			case fftypes.OpTypeDataExchangeSendBlob:
-				expectedHash := op.Input.GetString("hash")
-				if update.Hash != expectedHash {
-					// Log and map to failure for user to see that the receiver did not provide a matching hash
-					mismatchErr := i18n.NewError(em.ctx, i18n.MsgBlobHashMismatch, expectedHash, update.Hash)
-					log.L(em.ctx).Errorf("%s transfer %s: %s", dx.Name(), trackingID, mismatchErr.Error())
-					update.Error = mismatchErr.Error()
-					status = fftypes.OpStatusFailed
-				}
-			}
-		}
-
-		// Resolve the operation
-		// Note that we don't need the manifest to be kept here, as it's already in the input
-		if err := em.database.ResolveOperation(em.ctx, op.ID, status, update.Error, update.Info); err != nil {
-			return true, err // this is always retryable
-		}
-		return false, nil
-	})
-
 }

@@ -17,13 +17,16 @@ package operations
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -388,4 +391,132 @@ func TestWriteOperationFailure(t *testing.T) {
 	om.writeOperationFailure(ctx, opID, nil, fmt.Errorf("pop"), fftypes.OpStatusFailed)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestTransferResultBadUUID(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	err := om.TransferResult(mdx, "wrongun", fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+		Info:     fftypes.JSONObject{"extra": "info"},
+		Manifest: "Sally",
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestTransferResultManifestMismatch(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+	om.updater.conf.workerCount = 0
+
+	opID1 := fftypes.NewUUID()
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:   opID1,
+			Type: fftypes.OpTypeDataExchangeSendBatch,
+			Input: fftypes.JSONObject{
+				"batch": fftypes.NewUUID().String(),
+			},
+		},
+	}, nil, nil)
+	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+		return strings.Contains(errorMsg, "FF10329")
+	}), fftypes.JSONObject{
+		"extra": "info",
+	}).Return(nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(&fftypes.BatchPersisted{
+		Manifest: fftypes.JSONAnyPtr("my-manifest"),
+	}, nil)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	err := om.TransferResult(mdx, opID1.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+		Info:     fftypes.JSONObject{"extra": "info"},
+		Manifest: "Sally",
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestTransferResultHashtMismatch(t *testing.T) {
+
+	om, cancel := newTestOperations(t)
+	defer cancel()
+	om.updater.conf.workerCount = 0
+
+	opID1 := fftypes.NewUUID()
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:   opID1,
+			Type: fftypes.OpTypeDataExchangeSendBlob,
+			Input: fftypes.JSONObject{
+				"hash": "Bob",
+			},
+		},
+	}, nil, nil)
+	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+		return strings.Contains(errorMsg, "FF10348")
+	}), fftypes.JSONObject{
+		"extra": "info",
+	}).Return(nil)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	err := om.TransferResult(mdx, opID1.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+		Info: fftypes.JSONObject{"extra": "info"},
+		Hash: "Sally",
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestTransferResultBatchLookupFail(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+	om.updater.conf.workerCount = 0
+
+	opID1 := fftypes.NewUUID()
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:   opID1,
+			Type: fftypes.OpTypeDataExchangeSendBatch,
+			Input: fftypes.JSONObject{
+				"batch": fftypes.NewUUID().String(),
+			},
+		},
+	}, nil, nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	err := om.TransferResult(mdx, opID1.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
+		Info:     fftypes.JSONObject{"extra": "info"},
+		Manifest: "Sally",
+	})
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+
 }

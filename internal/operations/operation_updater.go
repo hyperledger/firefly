@@ -38,6 +38,8 @@ type OperationUpdate struct {
 	BlockchainTXID string
 	ErrorMessage   string
 	Output         fftypes.JSONObject
+	VerifyManifest bool
+	Manifest       string
 }
 
 type operationUpdaterBatch struct {
@@ -192,10 +194,13 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*Operat
 			txIDs = append(txIDs, op.Transaction)
 		}
 	}
-	txFilter := database.TransactionQueryFactory.NewFilter(ctx).In("id", txIDs)
-	transactions, _, err := ou.database.GetTransactions(ctx, txFilter)
-	if err != nil {
-		return err
+	var transactions []*fftypes.Transaction
+	if len(txIDs) > 0 {
+		txFilter := database.TransactionQueryFactory.NewFilter(ctx).In("id", txIDs)
+		transactions, _, err = ou.database.GetTransactions(ctx, txFilter)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Spin through each update seeing what DB updates we need to do
@@ -221,9 +226,6 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 	if op == nil {
 		log.L(ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", update.ID)
 		return nil
-	}
-	if err := ou.database.ResolveOperation(ctx, op.ID, update.State, update.ErrorMessage, update.Output); err != nil {
-		return err
 	}
 
 	// Match a TX we already retireved, if found add a specified Blockchain Transaction ID to it
@@ -275,6 +277,54 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 		}
 		if err := ou.database.InsertEvent(ctx, event); err != nil {
 			return err
+		}
+	}
+
+	// Special handling for data exchange manifests
+	if update.VerifyManifest {
+		if err := ou.verifyManifest(ctx, update, op); err != nil {
+			return err
+		}
+	}
+
+	if err := ou.database.ResolveOperation(ctx, op.ID, update.State, update.ErrorMessage, update.Output); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ou *operationUpdater) verifyManifest(ctx context.Context, update *OperationUpdate, op *fftypes.Operation) error {
+
+	if op.Type == fftypes.OpTypeDataExchangeSendBatch && update.State == fftypes.OpStatusSucceeded {
+		batchID, _ := fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
+		expectedManifest := ""
+		if batchID != nil {
+			batch, err := ou.database.GetBatchByID(ctx, batchID)
+			if err != nil {
+				return err
+			}
+			if batch != nil {
+				expectedManifest = batch.Manifest.String()
+			}
+		}
+		if update.Manifest != expectedManifest {
+			// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
+			mismatchErr := i18n.NewError(ctx, i18n.MsgManifestMismatch, fftypes.OpStatusSucceeded, update.Manifest)
+			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
+			update.ErrorMessage = mismatchErr.Error()
+			update.State = fftypes.OpStatusFailed
+		}
+	}
+
+	if op.Type == fftypes.OpTypeDataExchangeSendBlob && update.State == fftypes.OpStatusSucceeded {
+		expectedHash := op.Input.GetString("hash")
+		if update.Manifest != expectedHash {
+			// Log and map to failure for user to see that the receiver did not provide a matching hash
+			mismatchErr := i18n.NewError(ctx, i18n.MsgBlobHashMismatch, expectedHash, update.Manifest)
+			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
+			update.ErrorMessage = mismatchErr.Error()
+			update.State = fftypes.OpStatusFailed
 		}
 	}
 

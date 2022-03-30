@@ -5,7 +5,9 @@ package operationmocks
 import (
 	context "context"
 
+	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 
 	operations "github.com/hyperledger/firefly/internal/operations"
@@ -123,6 +125,20 @@ func (_m *Manager) SubmitOperationUpdate(update *operations.OperationUpdate) err
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*operations.OperationUpdate) error); ok {
 		r0 = rf(update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TransferResult provides a mock function with given fields: dx, opIDString, status, update
+func (_m *Manager) TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
+	ret := _m.Called(dx, opIDString, status, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
+		r0 = rf(dx, opIDString, status, update)
 	} else {
 		r0 = ret.Error(0)
 	}

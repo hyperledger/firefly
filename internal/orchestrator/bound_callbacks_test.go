@@ -69,7 +69,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
+	mom.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
 	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
 		Error: "error info", Info: info,
 	})

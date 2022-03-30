@@ -59,7 +59,7 @@ func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKe
 }
 
 func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	return bc.ei.TransferResult(bc.dx, trackingID, status, update)
+	return bc.om.TransferResult(bc.dx, trackingID, status, update)
 }
 
 func (bc *boundCallbacks) PrivateBLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {

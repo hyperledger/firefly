@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -39,6 +40,7 @@ type Manager interface {
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
 	SubmitOperationUpdate(update *OperationUpdate) error
+	TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
 	Start() error
 	WaitStop()
 }
@@ -151,6 +153,35 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 	}
 
 	return op, om.RunOperation(ctx, po)
+}
+
+func (om *operationsManager) TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
+	log.L(om.ctx).Infof("Transfer result %s=%s error='%s' manifest='%s' info='%s'", opIDString, status, update.Error, update.Manifest, update.Info)
+
+	opID, err := fftypes.ParseUUID(om.ctx, opIDString)
+	if err != nil {
+		log.L(om.ctx).Errorf("Invalid UUID for tracking ID from DX: %s", opIDString)
+		return nil
+	}
+
+	opUpdate := &OperationUpdate{
+		ID:             opID,
+		State:          status,
+		VerifyManifest: dx.Capabilities().Manifest,
+		ErrorMessage:   update.Error,
+		Output:         update.Info,
+	}
+
+	// Pass manifest verification code to the background worker, for once it has loaded the operation
+	if opUpdate.VerifyManifest {
+		if update.Manifest != "" {
+			opUpdate.Manifest = update.Manifest
+		} else if update.Hash != "" {
+			opUpdate.Manifest = update.Hash
+		}
+	}
+
+	return om.SubmitOperationUpdate(opUpdate)
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {

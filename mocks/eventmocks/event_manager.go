@@ -319,20 +319,6 @@ func (_m *EventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 	return r0
 }
 
-// TransferResult provides a mock function with given fields: dx, trackingID, status, update
-func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	ret := _m.Called(dx, trackingID, status, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
-		r0 = rf(dx, trackingID, status, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // WaitStop provides a mock function with given fields:
 func (_m *EventManager) WaitStop() {
 	_m.Called()

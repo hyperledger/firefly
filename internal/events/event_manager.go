@@ -65,7 +65,6 @@ type EventManager interface {
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
 	PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (manifest string, err error)
 

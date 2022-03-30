@@ -84,7 +84,6 @@ func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
 		assert.NoError(t, err)
 	}).Return(nil)
 	mdi.On("GetOperations", customCtx, mock.Anything, mock.Anything).Return(nil, nil, nil)
-	mdi.On("GetTransactions", customCtx, mock.Anything, mock.Anything).Return(nil, nil, nil)
 
 	err := ou.SubmitOperationUpdate(customCtx, &OperationUpdate{
 		ID: fftypes.NewUUID(),
@@ -185,7 +184,6 @@ func TestDoBatchUpdateFailUpdate(t *testing.T) {
 	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke},
 	}, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("ResolveOperation", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ou.initQueues()
@@ -205,7 +203,7 @@ func TestDoBatchUpdateFailGetTransactions(t *testing.T) {
 	opID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke},
+		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke, Transaction: fftypes.NewUUID()},
 	}, nil, nil)
 	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
@@ -244,7 +242,6 @@ func TestDoUpdateFailTransactionUpdate(t *testing.T) {
 	opID1 := fftypes.NewUUID()
 	txID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, txID1, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ou.initQueues()
@@ -268,7 +265,6 @@ func TestDoUpdateFailTransferFailTransferEventInsert(t *testing.T) {
 	opID1 := fftypes.NewUUID()
 	txID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, "", mock.Anything).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, txID1, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferOpFailed
@@ -298,7 +294,6 @@ func TestDoUpdateFailTransferFailApprovalEventInsert(t *testing.T) {
 	opID1 := fftypes.NewUUID()
 	txID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, "", mock.Anything).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, txID1, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeApprovalOpFailed

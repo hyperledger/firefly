@@ -155,12 +155,19 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, i
 // but just want to bolt on an extra blockchain TXID (if it's not there already).
 func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, blockchainTXID string) error {
 
-	newBlockchainIDs, changed := tx.BlockchainIDs.AddToSortedSet(blockchainTXID)
+	var changed bool
+	tx.BlockchainIDs, changed = tx.BlockchainIDs.AddToSortedSet(blockchainTXID)
 	if !changed {
 		return nil
 	}
 
-	return t.database.UpdateTransaction(ctx, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", newBlockchainIDs))
+	err := t.database.UpdateTransaction(ctx, tx.ID, database.TransactionQueryFactory.NewUpdate(ctx).Set("blockchainids", tx.BlockchainIDs))
+	if err != nil {
+		return err
+	}
+	t.updateTransactionsCache(tx)
+
+	return nil
 }
 
 func (t *transactionHelper) addBlockchainEventToCache(chainEvent *fftypes.BlockchainEvent) {

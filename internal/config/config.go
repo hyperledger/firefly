@@ -409,7 +409,7 @@ func Reset() {
 	viper.SetDefault(string(OpUpdateRetryInitDelay), "250ms")
 	viper.SetDefault(string(OpUpdateRetryMaxDelay), "1m")
 	viper.SetDefault(string(OpUpdateRetryFactor), 2.0)
-	viper.SetDefault(string(OpUpdateWorkerBatchTimeout), "10ms")
+	viper.SetDefault(string(OpUpdateWorkerBatchTimeout), "50ms")
 	viper.SetDefault(string(OpUpdateWorkerCount), 5)
 	viper.SetDefault(string(OpUpdateWorkerBatchMaxInserts), 200)
 	viper.SetDefault(string(OpUpdateWorkerQueueLength), 50)
