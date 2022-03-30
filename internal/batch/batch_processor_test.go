@@ -208,15 +208,19 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	<-bp.done
 }
 
-func TestCalcPinsFail(t *testing.T) {
+func TestInsertNewNonceFail(t *testing.T) {
 	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
 		return nil
 	})
 	defer cancel()
 	bp.cancelCtx()
 	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("InsertNonce", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mockRunAsGroupPassthrough(mdi)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
 
 	gid := fftypes.NewRandB32()
 	err := bp.sealBatch(&DispatchState{
@@ -227,6 +231,118 @@ func TestCalcPinsFail(t *testing.T) {
 		},
 		Messages: []*fftypes.Message{
 			{Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
+				Group:  gid,
+				Topics: fftypes.FFStringArray{"topic1"},
+			}},
+		},
+	})
+	assert.Regexp(t, "FF10158", err)
+
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+}
+
+func TestUpdateExistingNonceFail(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+		return nil
+	})
+	defer cancel()
+	bp.cancelCtx()
+	mdi := bp.database.(*databasemocks.Plugin)
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(&fftypes.Nonce{
+		Nonce: 12345,
+	}, nil)
+	mdi.On("UpdateNonce", mock.Anything, mock.MatchedBy(func(dbNonce *fftypes.Nonce) bool {
+		return dbNonce.Nonce == 12346
+	})).Return(fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
+	gid := fftypes.NewRandB32()
+	err := bp.sealBatch(&DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: gid,
+			},
+		},
+		Messages: []*fftypes.Message{
+			{Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
+				Group:  gid,
+				Topics: fftypes.FFStringArray{"topic1"},
+			}},
+		},
+	})
+	assert.Regexp(t, "FF10158", err)
+
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetNonceFail(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+		return nil
+	})
+	defer cancel()
+	bp.cancelCtx()
+	mdi := bp.database.(*databasemocks.Plugin)
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
+	gid := fftypes.NewRandB32()
+	err := bp.sealBatch(&DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: gid,
+			},
+		},
+		Messages: []*fftypes.Message{
+			{Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
+				Group:  gid,
+				Topics: fftypes.FFStringArray{"topic1"},
+			}},
+		},
+	})
+	assert.Regexp(t, "FF10158", err)
+
+	<-bp.done
+
+	mdi.AssertExpectations(t)
+}
+
+func TestGetNonceMigrationFail(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
+		return nil
+	})
+	defer cancel()
+	bp.cancelCtx()
+	mdi := bp.database.(*databasemocks.Plugin)
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, nil).Once()
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
+
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
+	gid := fftypes.NewRandB32()
+	err := bp.sealBatch(&DispatchState{
+		Persisted: fftypes.BatchPersisted{
+			BatchHeader: fftypes.BatchHeader{
+				Group: gid,
+			},
+		},
+		Messages: []*fftypes.Message{
+			{Header: fftypes.MessageHeader{
+				ID:     fftypes.NewUUID(),
 				Group:  gid,
 				Topics: fftypes.FFStringArray{"topic1"},
 			}},
@@ -319,7 +435,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	mth.AssertExpectations(t)
 }
 
-func TestMaskContextsDuplicate(t *testing.T) {
+func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
@@ -330,25 +446,47 @@ func TestMaskContextsDuplicate(t *testing.T) {
 	})
 	defer cancel()
 
-	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(&fftypes.Nonce{
+		Nonce: 12345,
+	}, nil).Once()
+	mdi.On("UpdateNonce", mock.Anything, mock.MatchedBy(func(dbNonce *fftypes.Nonce) bool {
+		return dbNonce.Nonce == 12347 // twice incremented
+	})).Return(nil).Once()
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	messages := []*fftypes.Message{
-		{
-			Header: fftypes.MessageHeader{
-				ID:     fftypes.NewUUID(),
-				Type:   fftypes.MessageTypePrivate,
-				Group:  fftypes.NewRandB32(),
-				Topics: fftypes.FFStringArray{"topic1"},
-			},
+	mdm := bp.data.(*datamocks.Manager)
+	mdm.On("UpdateMessageIfCached", mock.Anything, mock.Anything).Return()
+
+	mth := bp.txHelper.(*txcommonmocks.Helper)
+	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeBatchPin).Return(fftypes.NewUUID(), nil)
+
+	groupID := fftypes.NewRandB32()
+	msg1 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Type:   fftypes.MessageTypePrivate,
+			Group:  groupID,
+			Topics: fftypes.FFStringArray{"topic1"},
+		},
+	}
+	msg2 := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Type:   fftypes.MessageTypePrivate,
+			Group:  groupID,
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, messages)
+	state := bp.initFlushState(fftypes.NewUUID(), []*batchWork{{msg: msg1}, {msg: msg2}})
+	err := bp.sealBatch(state)
 	assert.NoError(t, err)
 
-	// 2nd time no DB ops
-	_, err = bp.maskContexts(bp.ctx, messages)
+	// Second time there should be no additional calls, because now the messages
+	// have pins in there that have been written to the database.
+	err = bp.sealBatch(state)
 	assert.NoError(t, err)
 
 	bp.cancelCtx()
@@ -357,7 +495,7 @@ func TestMaskContextsDuplicate(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestMaskContextsUpdataMessageFail(t *testing.T) {
+func TestMaskContextsUpdateMessageFail(t *testing.T) {
 	log.SetLevel("debug")
 	config.Reset()
 
@@ -368,7 +506,8 @@ func TestMaskContextsUpdataMessageFail(t *testing.T) {
 	})
 	defer cancel()
 
-	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("InsertNonce", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
 	messages := []*fftypes.Message{
@@ -382,7 +521,11 @@ func TestMaskContextsUpdataMessageFail(t *testing.T) {
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, messages)
+	_, err := bp.maskContexts(bp.ctx, &DispatchState{
+		noncesAssigned: make(map[fftypes.Bytes32]int64),
+		msgPins:        make(map[fftypes.UUID]fftypes.FFStringArray),
+		Messages:       messages,
+	})
 	assert.Regexp(t, "pop", err)
 
 	bp.cancelCtx()

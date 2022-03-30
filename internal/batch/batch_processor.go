@@ -94,10 +94,12 @@ type batchProcessor struct {
 }
 
 type DispatchState struct {
-	Persisted fftypes.BatchPersisted
-	Messages  []*fftypes.Message
-	Data      fftypes.DataArray
-	Pins      []*fftypes.Bytes32
+	Persisted      fftypes.BatchPersisted
+	Messages       []*fftypes.Message
+	Data           fftypes.DataArray
+	Pins           []*fftypes.Bytes32
+	noncesAssigned map[fftypes.Bytes32]int64
+	msgPins        map[fftypes.UUID]fftypes.FFStringArray
 }
 
 const batchSizeEstimateBase = int64(512)
@@ -392,7 +394,39 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 	return state
 }
 
-func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
+func (bp *batchProcessor) getNextNonce(ctx context.Context, state *DispatchState, nonceKeyHash *fftypes.Bytes32, contextHash *fftypes.Bytes32) (int64, error) {
+
+	// See if the nonceKeyHash is in our cached state already
+	if cached, ok := state.noncesAssigned[*nonceKeyHash]; ok {
+		nonce := cached + 1
+		state.noncesAssigned[*nonceKeyHash] = nonce
+		return nonce, nil
+	}
+
+	// Query the database for an existing record
+	dbNonce, err := bp.database.GetNonce(ctx, nonceKeyHash)
+	if err != nil {
+		return -1, err
+	}
+	if dbNonce == nil {
+		// For migration we need to query the base contextHash the first time we pass through this for a v0.14.1 or earlier migration
+		if dbNonce, err = bp.database.GetNonce(ctx, contextHash); err != nil {
+			return -1, err
+		}
+	}
+
+	// Determine if we're the first - so get nonce zero - or if we need to add one to the DB nonce
+	var nonce int64
+	if dbNonce != nil {
+		nonce = dbNonce.Nonce + 1
+	}
+
+	// Cache it either way for additional messages in this batch to the same nonceKeyHash
+	state.noncesAssigned[*nonceKeyHash] = nonce
+	return nonce, nil
+}
+
+func (bp *batchProcessor) maskContext(ctx context.Context, state *DispatchState, msg *fftypes.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
@@ -411,76 +445,106 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	// The combination of the topic and group is the context
 	contextHash := fftypes.HashResult(hashBuilder)
 
-	// Get the next nonce for this context - we're the authority in the nextwork on this,
-	// as we are the sender.
-	gc := &fftypes.Nonce{
-		Context: contextHash,
-		Group:   msg.Header.Group,
-		Topic:   topic,
-	}
-	err = bp.database.UpsertNonceNext(ctx, gc)
-	if err != nil {
-		return "", nil, err
-	}
-
 	// Now combine our sending identity, and this nonce, to produce the hash that should
 	// be expected by all members of the group as the next nonce from us on this topic.
 	// Note we use our identity DID (not signing key) for this.
 	hashBuilder.Write([]byte(msg.Header.Author))
+
+	// Our DB of nonces we own, is keyed off of the hash at this point.
+	// However, before v0.14.2 we didn't include the Author - so we need to pass the contextHash as a fallback.
+	nonceKeyHash := fftypes.HashResult(hashBuilder)
+	nonce, err := bp.getNextNonce(ctx, state, nonceKeyHash, contextHash)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Now we have the nonce, add that at the end of the hash to make it unqiue to this message
 	nonceBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(nonceBytes, uint64(gc.Nonce))
+	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
 	hashBuilder.Write(nonceBytes)
 
 	pin := fftypes.HashResult(hashBuilder)
-	pinStr := fmt.Sprintf("%s:%.16d", pin, gc.Nonce)
+	pinStr := fmt.Sprintf("%s:%.16d", pin, nonce)
 	log.L(ctx).Debugf("Assigned pin '%s' to message %s for topic '%s'", pinStr, msg.Header.ID, topic)
 	return pinStr, pin, err
 }
 
-func (bp *batchProcessor) maskContexts(ctx context.Context, messages []*fftypes.Message) ([]*fftypes.Bytes32, error) {
+func (bp *batchProcessor) maskContexts(ctx context.Context, state *DispatchState) (contextsOrPins []*fftypes.Bytes32, err error) {
 	// Calculate the sequence hashes
-	pinsAssigned := false
-	contextsOrPins := make([]*fftypes.Bytes32, 0, len(messages))
-	for _, msg := range messages {
-		if len(msg.Pins) > 0 {
+	for _, msg := range state.Messages {
+		isPrivate := msg.Header.Group != nil
+		if isPrivate && len(msg.Pins) > 0 {
 			// We have already allocated pins to this message, we cannot re-allocate.
 			log.L(ctx).Debugf("Message %s already has %d pins allocated", msg.Header.ID, len(msg.Pins))
 			continue
 		}
-		for _, topic := range msg.Header.Topics {
-			pinString, contextOrPin, err := bp.maskContext(ctx, msg, topic)
+		var pins fftypes.FFStringArray
+		if isPrivate {
+			pins = make(fftypes.FFStringArray, len(msg.Header.Topics))
+			state.msgPins[*msg.Header.ID] = pins
+		}
+		for i, topic := range msg.Header.Topics {
+			pinString, contextOrPin, err := bp.maskContext(ctx, state, msg, topic)
 			if err != nil {
 				return nil, err
 			}
 			contextsOrPins = append(contextsOrPins, contextOrPin)
-			if msg.Header.Group != nil {
-				msg.Pins = append(msg.Pins, pinString /* contains the nonce as well as the pin hash */)
-				pinsAssigned = true
-			}
-		}
-		if pinsAssigned {
-			// It's important we update the message pins at this phase, as we have "spent" a nonce
-			// on this topic from the database. So this message has grabbed a slot in our queue.
-			// If we fail the dispatch, and redo the batch sealing process, we must not allocate
-			// a second nonce to it (and as such modifiy the batch payload).
-			err := bp.database.UpdateMessage(ctx, msg.Header.ID,
-				database.MessageQueryFactory.NewUpdate(ctx).Set("pins", msg.Pins),
-			)
-			if err != nil {
-				return nil, err
+			if isPrivate {
+				pins[i] = pinString
 			}
 		}
 	}
-	return contextsOrPins, nil
+	return contextsOrPins, bp.flushNonceState(ctx, state)
+}
+
+func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchState) error {
+
+	// Flush all the assigned nonces to the DB
+	for hash, nonce := range state.noncesAssigned {
+		dbNonce := &fftypes.Nonce{
+			Hash:  &hash,
+			Nonce: nonce,
+		}
+		if nonce == 0 {
+			if err := bp.database.InsertNonce(ctx, dbNonce); err != nil {
+				return err
+			}
+		} else {
+			if err := bp.database.UpdateNonce(ctx, dbNonce); err != nil {
+				return err
+			}
+		}
+	}
+
+	// It's important we update the message pins at this phase, as we have "spent" a nonce
+	// on this topic from the database. So this message has grabbed a slot in our queue.
+	// If we fail the dispatch, and redo the batch sealing process, we must not allocate
+	// a second nonce to it (and as such modifiy the batch payload).
+	//
+	// Note to consider database transactions, we do not update the msg.Pins array, or the
+	// message cache, until after the Retry/RunAsGroup has ended in sealBatch.
+	for _, msg := range state.Messages {
+		if pins, ok := state.msgPins[*msg.Header.ID]; ok {
+			if err := bp.database.UpdateMessage(ctx, msg.Header.ID,
+				database.MessageQueryFactory.NewUpdate(ctx).Set("pins", pins),
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
+			state.noncesAssigned = make(map[fftypes.Bytes32]int64)
+			state.msgPins = make(map[fftypes.UUID]fftypes.FFStringArray)
 
 			if bp.conf.txType == fftypes.TransactionTypeBatchPin {
 				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
-				if state.Pins, err = bp.maskContexts(ctx, state.Messages); err != nil {
+				if state.Pins, err = bp.maskContexts(ctx, state); err != nil {
 					return err
 				}
 			}
@@ -503,7 +567,20 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 			return bp.database.UpsertBatch(ctx, &state.Persisted)
 		})
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Once the DB transaction is done, we need to update the messages with the pins.
+	// We do this at this point, so the logic is re-entrant in a way that avoids re-allocating Pins to messages, but
+	// means the retry loops above using the batch state function correctly.
+	for _, msg := range state.Messages {
+		if pins, ok := state.msgPins[*msg.Header.ID]; ok {
+			msg.Pins = pins
+			bp.data.UpdateMessageIfCached(bp.ctx, msg)
+		}
+	}
+	return nil
 }
 
 func (bp *batchProcessor) dispatchBatch(state *DispatchState) error {
