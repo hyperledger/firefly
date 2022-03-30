@@ -539,6 +539,8 @@ func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchSt
 func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
+
+			// Clear state from any previous retry. We need to do fresh queries against the DB for nonces.
 			state.noncesAssigned = make(map[fftypes.Bytes32]int64)
 			state.msgPins = make(map[fftypes.UUID]fftypes.FFStringArray)
 
