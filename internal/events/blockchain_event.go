@@ -87,7 +87,7 @@ func (em *eventManager) getTopicForChainListener(ctx context.Context, listenerID
 }
 
 func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
-	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
+	if err := em.txHelper.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
 	topic, err := em.getTopicForChainListener(ctx, chainEvent.Listener)

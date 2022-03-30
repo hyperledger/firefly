@@ -1098,6 +1098,11 @@ func TestUpdateMessageCacheCRORequirePins(t *testing.T) {
 		mce = dm.queryMessageCache(ctx, msgNoPins.Header.ID, CRORequirePins)
 	}
 
+	now := fftypes.Now()
+	dm.UpdateMessageStateIfCached(ctx, msgWithPins.Header.ID, fftypes.MessageStateConfirmed, now)
+	assert.Equal(t, fftypes.MessageStateConfirmed, msgWithPins.State)
+	assert.Equal(t, now, msgWithPins.Confirmed)
+
 }
 
 func TestUpdateMessageCacheCRORequireBatchID(t *testing.T) {

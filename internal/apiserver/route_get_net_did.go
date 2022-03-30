@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
@@ -28,16 +29,21 @@ var getIdentityByDID = &oapispec.Route{
 	Name:   "getIdentityByDID",
 	Path:   "network/identities/{did:.+}",
 	Method: http.MethodGet,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchverifiers", Example: "true", Description: i18n.MsgTBD, IsBool: true},
+	},
 	PathParams: []*oapispec.PathParam{
 		{Name: "did", Description: i18n.MsgTBD},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
+	JSONOutputValue: func() interface{} { return &fftypes.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, r.PP["did"])
-		return output, err
+		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+			return getOr(r.Ctx).NetworkMap().GetIdentityByDIDWithVerifiers(r.Ctx, r.PP["did"])
+		}
+		return getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, r.PP["did"])
 	},
 }

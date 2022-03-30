@@ -18,33 +18,25 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getIdentityByID = &oapispec.Route{
-	Name:   "getIdentityByID",
-	Path:   "namespaces/{ns}/identities/{iid}",
+var getDIDDocByDID = &oapispec.Route{
+	Name:   "getDIDDocByDID",
+	Path:   "network/diddocs/{did:.+}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "iid", Example: "id", Description: i18n.MsgTBD},
+		{Name: "did", Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchverifiers", Example: "true", Description: i18n.MsgTBD, IsBool: true},
-	},
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
+	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-			return getOr(r.Ctx).NetworkMap().GetIdentityByIDWithVerifiers(r.Ctx, r.PP["ns"], r.PP["iid"])
-		}
-		return getOr(r.Ctx).NetworkMap().GetIdentityByID(r.Ctx, r.PP["ns"], r.PP["iid"])
+		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByDID(r.Ctx, r.PP["did"])
 	},
 }

@@ -13,7 +13,6 @@ CREATE TABLE transactions (
   info        TEXT
 );
 
-CREATE UNIQUE INDEX transactions_id ON data(id);
 CREATE INDEX transactions_created ON transactions(created);
 CREATE INDEX transactions_protocol_id ON transactions(protocol_id);
 CREATE INDEX transactions_ref ON transactions(ref);

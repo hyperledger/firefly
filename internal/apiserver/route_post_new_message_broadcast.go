@@ -68,14 +68,9 @@ var broadcastSchema = `{
 								 "type": "string"
 							 }
 					 },
-					 "tx": {
-							"properties": {
-								 "type": {
-										"type": "string",
-										"default": "pin"
-								 }
-							},
-							"type": "object"
+					 "txtype": {
+							"type": "string",
+							"default": "pin"
 					 }
 				},
 				"type": "object"

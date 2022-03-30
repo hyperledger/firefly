@@ -75,20 +75,20 @@ func TestDownloadBatchE2EOk(t *testing.T) {
 	mss.On("Name").Return("utss")
 	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
 
+	called := make(chan struct{})
+
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
 	}).Return(nil)
 	mdi.On("ResolveOperation", mock.Anything, mock.Anything, fftypes.OpStatusSucceeded, "", fftypes.JSONObject{
 		"batch": batchID,
+	}).Run(func(args mock.Arguments) {
+		close(called)
 	}).Return(nil)
 
-	called := make(chan struct{})
-
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
-	mci.On("SharedStorageBatchDownloaded", "ns1", "ref1", []byte("some batch data")).Run(func(args mock.Arguments) {
-		close(called)
-	}).Return(batchID, nil)
+	mci.On("SharedStorageBatchDownloaded", "ns1", "ref1", []byte("some batch data")).Return(batchID, nil)
 
 	err := dm.InitiateDownloadBatch(dm.ctx, "ns1", txID, "ref1")
 	assert.NoError(t, err)
@@ -123,6 +123,8 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 	mdx := dm.dataexchange.(*dataexchangemocks.Plugin)
 	mdx.On("UploadBLOB", mock.Anything, "ns1", *dataID, mock.Anything).Return("privateRef1", blobHash, int64(12345), nil)
 
+	called := make(chan struct{})
+
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
@@ -132,15 +134,13 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 		"hash":         blobHash,
 		"size":         int64(12345),
 		"dxPayloadRef": "privateRef1",
-	}).Return(nil)
-
-	called := make(chan struct{})
+	}).Run(func(args mock.Arguments) {
+		close(called)
+	}).Return(nil).Once()
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBLOBDownloaded", *blobHash, int64(12345), "privateRef1").Return(fmt.Errorf("pop")).Twice()
-	mci.On("SharedStorageBLOBDownloaded", *blobHash, int64(12345), "privateRef1").Run(func(args mock.Arguments) {
-		close(called)
-	}).Return(nil)
+	mci.On("SharedStorageBLOBDownloaded", *blobHash, int64(12345), "privateRef1").Return(nil)
 
 	err := dm.InitiateDownloadBlob(dm.ctx, "ns1", txID, dataID, "ref1")
 	assert.NoError(t, err)

@@ -40,6 +40,7 @@ type Manager interface {
 	PeekMessageCache(ctx context.Context, id *fftypes.UUID, options ...CacheReadOption) (msg *fftypes.Message, data fftypes.DataArray)
 	UpdateMessageCache(msg *fftypes.Message, data fftypes.DataArray)
 	UpdateMessageIfCached(ctx context.Context, msg *fftypes.Message)
+	UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state fftypes.MessageState, confirmed *fftypes.FFTime)
 	ResolveInlineData(ctx context.Context, msg *NewMessage) error
 	WriteNewMessage(ctx context.Context, newMsg *NewMessage) error
 	VerifyNamespaceExists(ctx context.Context, ns string) error
@@ -277,6 +278,14 @@ func (dm *dataManager) UpdateMessageIfCached(ctx context.Context, msg *fftypes.M
 	mce := dm.queryMessageCache(ctx, msg.Header.ID)
 	if mce != nil {
 		dm.UpdateMessageCache(msg, mce.data)
+	}
+}
+
+func (dm *dataManager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state fftypes.MessageState, confirmed *fftypes.FFTime) {
+	mce := dm.queryMessageCache(ctx, id)
+	if mce != nil {
+		mce.msg.State = state
+		mce.msg.Confirmed = confirmed
 	}
 }
 

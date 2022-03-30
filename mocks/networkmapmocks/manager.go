@@ -18,6 +18,29 @@ type Manager struct {
 	mock.Mock
 }
 
+// GetDIDDocForIndentityByDID provides a mock function with given fields: ctx, did
+func (_m *Manager) GetDIDDocForIndentityByDID(ctx context.Context, did string) (*networkmap.DIDDocument, error) {
+	ret := _m.Called(ctx, did)
+
+	var r0 *networkmap.DIDDocument
+	if rf, ok := ret.Get(0).(func(context.Context, string) *networkmap.DIDDocument); ok {
+		r0 = rf(ctx, did)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*networkmap.DIDDocument)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, did)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetDIDDocForIndentityByID provides a mock function with given fields: ctx, ns, id
 func (_m *Manager) GetDIDDocForIndentityByID(ctx context.Context, ns string, id string) (*networkmap.DIDDocument, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -73,6 +96,102 @@ func (_m *Manager) GetIdentities(ctx context.Context, ns string, filter database
 	return r0, r1, r2
 }
 
+// GetIdentitiesGlobal provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetIdentitiesGlobal(ctx context.Context, filter database.AndFilter) ([]*fftypes.Identity, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.Identity); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Identity)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetIdentitiesWithVerifiers provides a mock function with given fields: ctx, ns, filter
+func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.IdentityWithVerifiers, *database.FilterResult, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.IdentityWithVerifiers
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.IdentityWithVerifiers)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetIdentitiesWithVerifiersGlobal provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetIdentitiesWithVerifiersGlobal(ctx context.Context, filter database.AndFilter) ([]*fftypes.IdentityWithVerifiers, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.IdentityWithVerifiers
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.IdentityWithVerifiers)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetIdentityByDID provides a mock function with given fields: ctx, did
 func (_m *Manager) GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx, did)
@@ -96,6 +215,29 @@ func (_m *Manager) GetIdentityByDID(ctx context.Context, did string) (*fftypes.I
 	return r0, r1
 }
 
+// GetIdentityByDIDWithVerifiers provides a mock function with given fields: ctx, did
+func (_m *Manager) GetIdentityByDIDWithVerifiers(ctx context.Context, did string) (*fftypes.IdentityWithVerifiers, error) {
+	ret := _m.Called(ctx, did)
+
+	var r0 *fftypes.IdentityWithVerifiers
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, did)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.IdentityWithVerifiers)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, did)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetIdentityByID provides a mock function with given fields: ctx, ns, id
 func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -106,6 +248,29 @@ func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetIdentityByIDWithVerifiers provides a mock function with given fields: ctx, ns, id
+func (_m *Manager) GetIdentityByIDWithVerifiers(ctx context.Context, ns string, id string) (*fftypes.IdentityWithVerifiers, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.IdentityWithVerifiers
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.IdentityWithVerifiers)
 		}
 	}
 
@@ -239,6 +404,38 @@ func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilt
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Identity)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetOrganizationsWithVerifiers provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*fftypes.IdentityWithVerifiers, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.IdentityWithVerifiers
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.IdentityWithVerifiers)
 		}
 	}
 

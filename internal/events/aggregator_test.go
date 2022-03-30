@@ -210,6 +210,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
@@ -334,6 +335,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
@@ -433,6 +435,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
@@ -527,6 +530,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed

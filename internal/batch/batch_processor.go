@@ -520,8 +520,16 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 			// Update all the messages in the batch with the batch ID
 			msgIDs := make([]driver.Value, len(state.Messages))
+			confirmTime := fftypes.Now()
 			for i, msg := range state.Messages {
 				msgIDs[i] = msg.Header.ID
+				msg.BatchID = state.Persisted.ID
+				if bp.conf.txType == fftypes.TransactionTypeBatchPin {
+					msg.State = fftypes.MessageStateSent
+				} else {
+					msg.State = fftypes.MessageStateConfirmed
+					msg.Confirmed = confirmTime
+				}
 				// We don't want to have to read the DB again if we want to query for the batch ID, or pins,
 				// so ensure the copy in our cache gets updated.
 				bp.data.UpdateMessageIfCached(ctx, msg)
@@ -543,7 +551,7 @@ func (bp *batchProcessor) markPayloadDispatched(state *DispatchState) error {
 				allMsgsUpdate = database.MessageQueryFactory.NewUpdate(ctx).
 					Set("batch", state.Persisted.ID).
 					Set("state", fftypes.MessageStateConfirmed).
-					Set("confirmed", fftypes.Now())
+					Set("confirmed", confirmTime)
 			}
 
 			if err = bp.database.UpdateMessages(ctx, filter, allMsgsUpdate); err != nil {
