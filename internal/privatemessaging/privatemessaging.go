@@ -18,6 +18,7 @@ package privatemessaging
 
 import (
 	"context"
+	"sync"
 
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -75,6 +76,12 @@ type privateMessaging struct {
 	metrics               metrics.Manager
 	operations            operations.Manager
 	orgFirstNodes         map[fftypes.UUID]*fftypes.Identity
+}
+
+type blobTransferTracker struct {
+	dataID   *fftypes.UUID
+	blobHash *fftypes.Bytes32
+	op       *fftypes.PreparedOperation
 }
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
@@ -190,39 +197,71 @@ func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, state *batc
 	return pm.sendData(ctx, tw, nodes)
 }
 
-func (pm *privateMessaging) transferBlobs(ctx context.Context, data fftypes.DataArray, txid *fftypes.UUID, node *fftypes.Identity) error {
-	// Send all the blobs associated with this batch
-	for _, d := range data {
-		if d.Blob != nil {
-			if d.Blob.Hash == nil {
-				return i18n.NewError(ctx, i18n.MsgDataMissingBlobHash, d.ID)
-			}
+func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data fftypes.DataArray, txid *fftypes.UUID, node *fftypes.Identity) ([]*blobTransferTracker, error) {
 
-			blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
-			if err != nil {
-				return err
-			}
-			if blob == nil {
-				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
-			}
+	operations := make([]*blobTransferTracker, 0)
 
-			op := fftypes.NewOperation(
-				pm.exchange,
-				d.Namespace,
-				txid,
-				fftypes.OpTypeDataExchangeSendBlob)
-			addTransferBlobInputs(op, node.ID, blob.Hash)
-			log.L(ctx).Debugf("Transferring blob %s for data %s in operation %s", d.Blob.Hash, d.ID, op.ID)
-			if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
-				return err
-			}
+	// Build all the operations needed to send the blobs in a single DB transaction
+	err := pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		for _, d := range data {
+			if d.Blob != nil {
+				if d.Blob.Hash == nil {
+					return i18n.NewError(ctx, i18n.MsgDataMissingBlobHash, d.ID)
+				}
 
-			if err = pm.operations.RunOperation(ctx, opSendBlob(op, node, blob)); err != nil {
-				return err
+				blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+				if err != nil {
+					return err
+				}
+				if blob == nil {
+					return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
+				}
+
+				op := fftypes.NewOperation(
+					pm.exchange,
+					d.Namespace,
+					txid,
+					fftypes.OpTypeDataExchangeSendBlob)
+				addTransferBlobInputs(op, node.ID, blob.Hash)
+				if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
+					return err
+				}
+
+				// Check the operation isn't already successful from a previous run
+				operations = append(operations, &blobTransferTracker{
+					dataID:   d.ID,
+					blobHash: blob.Hash,
+					op:       opSendBlob(op, node, blob),
+				})
 			}
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	return operations, err
+}
+
+func (pm *privateMessaging) submitBlobTransfersToDX(ctx context.Context, trackers []*blobTransferTracker) error {
+	// Initiate all the sends. We use parallel go routines here as these are blocking API calls
+	wg := sync.WaitGroup{}
+	wg.Add(len(trackers))
+	var firstError error
+	for _, tracker := range trackers {
+		go func(tracker *blobTransferTracker) {
+			defer wg.Done()
+			log.L(ctx).Debugf("Initiating DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
+			if err := pm.operations.RunOperation(ctx, tracker.op); err != nil {
+				log.L(ctx).Errorf("Failed to initiate DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
+				if firstError == nil {
+					firstError = err
+				}
+			}
+		}(tracker)
+	}
+	wg.Wait()
+	return firstError
 }
 
 func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportWrapper, nodes []*fftypes.Identity) (err error) {
@@ -245,25 +284,45 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 
 		l.Debugf("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 
-		// Initiate transfer of any blobs first
-		if err = pm.transferBlobs(ctx, batch.Payload.Data, batch.Payload.TX.ID, node); err != nil {
+		var blobTrackers []*blobTransferTracker
+		var sendBatchOp *fftypes.PreparedOperation
+
+		// Use a DB group for preparing all the operations needed for this batch
+		err := pm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+			blobTrackers, err = pm.prepareBlobTransfers(ctx, batch.Payload.Data, batch.Payload.TX.ID, node)
+			if err != nil {
+				return err
+			}
+
+			op := fftypes.NewOperation(
+				pm.exchange,
+				batch.Namespace,
+				batch.Payload.TX.ID,
+				fftypes.OpTypeDataExchangeSendBatch)
+			var groupHash *fftypes.Bytes32
+			if tw.Group != nil {
+				groupHash = tw.Group.Hash
+			}
+			addBatchSendInputs(op, node.ID, groupHash, batch.ID)
+			if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
+				return err
+			}
+			sendBatchOp = opSendBatch(op, node, tw)
+			return nil
+		})
+		if err != nil {
 			return err
 		}
 
-		op := fftypes.NewOperation(
-			pm.exchange,
-			batch.Namespace,
-			batch.Payload.TX.ID,
-			fftypes.OpTypeDataExchangeSendBatch)
-		var groupHash *fftypes.Bytes32
-		if tw.Group != nil {
-			groupHash = tw.Group.Hash
+		// Initiate transfer of any blobs first
+		if len(blobTrackers) > 0 {
+			if err = pm.submitBlobTransfersToDX(ctx, blobTrackers); err != nil {
+				return err
+			}
 		}
-		addBatchSendInputs(op, node.ID, groupHash, batch.ID)
-		if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
-			return err
-		}
-		if err = pm.operations.RunOperation(ctx, opSendBatch(op, node, tw)); err != nil {
+
+		// Then initiate th transfer
+		if err = pm.operations.RunOperation(ctx, sendBatchOp); err != nil {
 			return err
 		}
 	}
