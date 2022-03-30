@@ -34,7 +34,7 @@ import (
 // OperationUpdate is dispatched asynchronously to perform an update.
 type OperationUpdate struct {
 	ID             *fftypes.UUID
-	State          fftypes.OpStatus
+	Status         fftypes.OpStatus
 	BlockchainTXID string
 	ErrorMessage   string
 	Output         fftypes.JSONObject
@@ -95,7 +95,7 @@ func newOperationUpdater(ctx context.Context, di database.Plugin, txHelper txcom
 // pickWorker ensures multiple updates for the same ID go to the same worker
 func (ou *operationUpdater) pickWorker(ctx context.Context, update *OperationUpdate) chan *OperationUpdate {
 	worker := update.ID.HashBucket(ou.conf.workerCount)
-	log.L(ctx).Debugf("Submitting operation update id=%s status=%s blockchainTX=%s worker=opu_%.3d", update.ID, update.State, update.BlockchainTXID, worker)
+	log.L(ctx).Debugf("Submitting operation update id=%s status=%s blockchainTX=%s worker=opu_%.3d", update.ID, update.Status, update.BlockchainTXID, worker)
 	return ou.workQueues[worker]
 }
 
@@ -245,7 +245,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 	}
 
 	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
-	if op.Type == fftypes.OpTypeTokenTransfer && update.State == fftypes.OpStatusFailed {
+	if op.Type == fftypes.OpTypeTokenTransfer && update.Status == fftypes.OpStatusFailed {
 		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
 		topic := ""
 		if tokenTransfer != nil {
@@ -263,7 +263,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 	}
 
 	// Special handling for OpTypeTokenApproval, which writes an event when it fails
-	if op.Type == fftypes.OpTypeTokenApproval && update.State == fftypes.OpStatusFailed {
+	if op.Type == fftypes.OpTypeTokenApproval && update.Status == fftypes.OpStatusFailed {
 		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
 		topic := ""
 		if tokenApproval != nil {
@@ -287,7 +287,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 		}
 	}
 
-	if err := ou.database.ResolveOperation(ctx, op.ID, update.State, update.ErrorMessage, update.Output); err != nil {
+	if err := ou.database.ResolveOperation(ctx, op.ID, update.Status, update.ErrorMessage, update.Output); err != nil {
 		return err
 	}
 
@@ -296,7 +296,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 
 func (ou *operationUpdater) verifyManifest(ctx context.Context, update *OperationUpdate, op *fftypes.Operation) error {
 
-	if op.Type == fftypes.OpTypeDataExchangeSendBatch && update.State == fftypes.OpStatusSucceeded {
+	if op.Type == fftypes.OpTypeDataExchangeSendBatch && update.Status == fftypes.OpStatusSucceeded {
 		batchID, _ := fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 		expectedManifest := ""
 		if batchID != nil {
@@ -313,18 +313,18 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 			mismatchErr := i18n.NewError(ctx, i18n.MsgManifestMismatch, fftypes.OpStatusSucceeded, update.Manifest)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
-			update.State = fftypes.OpStatusFailed
+			update.Status = fftypes.OpStatusFailed
 		}
 	}
 
-	if op.Type == fftypes.OpTypeDataExchangeSendBlob && update.State == fftypes.OpStatusSucceeded {
+	if op.Type == fftypes.OpTypeDataExchangeSendBlob && update.Status == fftypes.OpStatusSucceeded {
 		expectedHash := op.Input.GetString("hash")
 		if update.Manifest != expectedHash {
 			// Log and map to failure for user to see that the receiver did not provide a matching hash
 			mismatchErr := i18n.NewError(ctx, i18n.MsgBlobHashMismatch, expectedHash, update.Manifest)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
-			update.State = fftypes.OpStatusFailed
+			update.Status = fftypes.OpStatusFailed
 		}
 	}
 

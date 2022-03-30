@@ -18,6 +18,7 @@ package operations
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
@@ -39,7 +40,7 @@ type Manager interface {
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
-	SubmitOperationUpdate(update *OperationUpdate) error
+	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) error
 	TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
 	Start() error
 	WaitStop()
@@ -166,7 +167,7 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, opIDString s
 
 	opUpdate := &OperationUpdate{
 		ID:             opID,
-		State:          status,
+		Status:         status,
 		VerifyManifest: dx.Capabilities().Manifest,
 		ErrorMessage:   update.Error,
 		Output:         update.Info,
@@ -181,7 +182,7 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, opIDString s
 		}
 	}
 
-	return om.SubmitOperationUpdate(opUpdate)
+	return om.SubmitOperationUpdate(dx, opUpdate)
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {
@@ -190,13 +191,18 @@ func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *ff
 	}
 }
 
-func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newState fftypes.OpStatus) {
-	if err := om.database.ResolveOperation(ctx, opID, newState, err.Error(), outputs); err != nil {
+func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus fftypes.OpStatus) {
+	if err := om.database.ResolveOperation(ctx, opID, newStatus, err.Error(), outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
-func (om *operationsManager) SubmitOperationUpdate(update *OperationUpdate) error {
+func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) error {
+	errString := ""
+	if update.ErrorMessage != "" {
+		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)
+	}
+	log.L(om.ctx).Debugf("%s updating operation %s status=%s%s", plugin.Name(), update.ID, update.Status, errString)
 	return om.updater.SubmitOperationUpdate(om.ctx, update)
 }
 

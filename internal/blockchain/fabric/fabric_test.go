@@ -925,6 +925,7 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 	}`)
 	em := e.callbacks.(*blockchainmocks.Callbacks)
 	txsu := em.On("BlockchainOpUpdate",
+		e,
 		operationID,
 		fftypes.OpStatusFailed,
 		"",
@@ -969,6 +970,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
   }`)
 
 	em.On("BlockchainOpUpdate",
+		e,
 		operationID,
 		fftypes.OpStatusSucceeded,
 		"ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
@@ -1057,6 +1059,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
   }`)
 
 	em.On("BlockchainOpUpdate",
+		e,
 		operationID,
 		fftypes.OpStatusFailed,
 		"ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",

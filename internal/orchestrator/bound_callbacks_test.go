@@ -55,15 +55,15 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	mom.On("SubmitOperationUpdate", &operations.OperationUpdate{
+	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{
 		ID:             opID,
-		State:          fftypes.OpStatusFailed,
+		Status:         fftypes.OpStatusFailed,
 		BlockchainTXID: "0xffffeeee",
 		ErrorMessage:   "error info",
 		Output:         info,
 	}).Return(fmt.Errorf("pop"))
 
-	err = bc.BlockchainOpUpdate(opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
+	err = bc.BlockchainOpUpdate(mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 	assert.EqualError(t, err, "pop")
 
 	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)

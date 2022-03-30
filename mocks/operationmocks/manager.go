@@ -118,13 +118,13 @@ func (_m *Manager) Start() error {
 	return r0
 }
 
-// SubmitOperationUpdate provides a mock function with given fields: update
-func (_m *Manager) SubmitOperationUpdate(update *operations.OperationUpdate) error {
-	ret := _m.Called(update)
+// SubmitOperationUpdate provides a mock function with given fields: plugin, update
+func (_m *Manager) SubmitOperationUpdate(plugin fftypes.Named, update *operations.OperationUpdate) error {
+	ret := _m.Called(plugin, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*operations.OperationUpdate) error); ok {
-		r0 = rf(update)
+	if rf, ok := ret.Get(0).(func(fftypes.Named, *operations.OperationUpdate) error); ok {
+		r0 = rf(plugin, update)
 	} else {
 		r0 = ret.Error(0)
 	}

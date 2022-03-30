@@ -32,6 +32,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+type mockplug struct{}
+
+func (mp *mockplug) Name() string {
+	return "unittest"
+}
+
 func newTestOperationUpdater(t *testing.T) *operationUpdater {
 	return newTestOperationUpdaterCommon(t, &database.Capabilities{Concurrency: true})
 }
@@ -128,22 +134,22 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 
 	om.Start()
 
-	err := om.SubmitOperationUpdate(&OperationUpdate{
+	err := om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:             opID1,
-		State:          fftypes.OpStatusSucceeded,
+		Status:         fftypes.OpStatusSucceeded,
 		BlockchainTXID: "tx12345",
 	})
 	assert.NoError(t, err)
-	err = om.SubmitOperationUpdate(&OperationUpdate{
+	err = om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:           opID2,
-		State:        fftypes.OpStatusFailed,
+		Status:       fftypes.OpStatusFailed,
 		ErrorMessage: "err1",
 		Output:       fftypes.JSONObject{"test": true},
 	})
 	assert.NoError(t, err)
-	err = om.SubmitOperationUpdate(&OperationUpdate{
+	err = om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:           opID3,
-		State:        fftypes.OpStatusFailed,
+		Status:       fftypes.OpStatusFailed,
 		ErrorMessage: "err2",
 	})
 	assert.NoError(t, err)
@@ -189,7 +195,7 @@ func TestDoBatchUpdateFailUpdate(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{ID: opID1, State: fftypes.OpStatusSucceeded},
+		{ID: opID1, Status: fftypes.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -210,7 +216,7 @@ func TestDoBatchUpdateFailGetTransactions(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{ID: opID1, State: fftypes.OpStatusSucceeded},
+		{ID: opID1, Status: fftypes.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -228,7 +234,7 @@ func TestDoBatchUpdateFailGetOperations(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{ID: opID1, State: fftypes.OpStatusSucceeded},
+		{ID: opID1, Status: fftypes.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -247,7 +253,7 @@ func TestDoUpdateFailTransactionUpdate(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		ID: opID1, State: fftypes.OpStatusSucceeded, BlockchainTXID: "0x12345",
+		ID: opID1, Status: fftypes.OpStatusSucceeded, BlockchainTXID: "0x12345",
 	}, []*fftypes.Operation{
 		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke, Transaction: txID1},
 	}, []*fftypes.Transaction{
@@ -273,7 +279,7 @@ func TestDoUpdateFailTransferFailTransferEventInsert(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		ID: opID1, State: fftypes.OpStatusFailed, BlockchainTXID: "0x12345",
+		ID: opID1, Status: fftypes.OpStatusFailed, BlockchainTXID: "0x12345",
 	}, []*fftypes.Operation{
 		{ID: opID1, Type: fftypes.OpTypeTokenTransfer, Transaction: txID1, Input: fftypes.JSONObject{
 			"localId": fftypes.NewUUID().String(),
@@ -302,7 +308,7 @@ func TestDoUpdateFailTransferFailApprovalEventInsert(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		ID: opID1, State: fftypes.OpStatusFailed, BlockchainTXID: "0x12345",
+		ID: opID1, Status: fftypes.OpStatusFailed, BlockchainTXID: "0x12345",
 	}, []*fftypes.Operation{
 		{ID: opID1, Type: fftypes.OpTypeTokenApproval, Transaction: txID1, Input: fftypes.JSONObject{
 			"localId": fftypes.NewUUID().String(),

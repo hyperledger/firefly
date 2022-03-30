@@ -34,10 +34,10 @@ type boundCallbacks struct {
 	om operations.Manager
 }
 
-func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.om.SubmitOperationUpdate(&operations.OperationUpdate{
+func (bc *boundCallbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
 		ID:             operationID,
-		State:          txState,
+		Status:         txState,
 		BlockchainTXID: blockchainTXID,
 		ErrorMessage:   errorMessage,
 		Output:         opOutput,
@@ -45,9 +45,9 @@ func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState 
 }
 
 func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.om.SubmitOperationUpdate(&operations.OperationUpdate{
+	return bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
 		ID:             operationID,
-		State:          txState,
+		Status:         txState,
 		BlockchainTXID: blockchainTXID,
 		ErrorMessage:   errorMessage,
 		Output:         opOutput,
