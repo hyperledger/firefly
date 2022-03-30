@@ -77,6 +77,8 @@ func NewResty(t *testing.T) *resty.Client {
 		if resp.IsError() {
 			t.Logf("<!! %s", resp.String())
 			t.Logf("Headers: %+v", resp.Header())
+			t.Logf("URL: %s", resp.Request.URL)
+			t.Logf("URL: %s", resp.Request.Body)
 		}
 		return nil
 	})
@@ -473,6 +475,10 @@ func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool
 		SetResult(&poolOut).
 		Post(path)
 	require.NoError(t, err)
+	t.Logf("test create token pool here")
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
 	expected := 202
 	if confirm {
 		expected = 200
@@ -483,6 +489,7 @@ func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool
 
 func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (pools []*fftypes.TokenPool) {
 	path := urlTokenPools
+	t.Logf(fmt.Sprintf(">%d", startTime.UnixNano()))
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&pools).
@@ -501,6 +508,10 @@ func MintTokens(t *testing.T, client *resty.Client, mint *fftypes.TokenTransferI
 		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
+	t.Logf("test mint tokens here")
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
 	expected := 202
 	if confirm {
 		expected = 200
@@ -534,7 +545,12 @@ func TransferTokens(t *testing.T, client *resty.Client, transfer *fftypes.TokenT
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		SetResult(&transferOut).
 		Post(path)
+	t.Logf("transfer mint tokens here")
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
 	require.NoError(t, err)
+
 	expected := 202
 	if confirm {
 		expected = 200
@@ -563,6 +579,11 @@ func TokenApproval(t *testing.T, client *resty.Client, approval *fftypes.TokenAp
 		SetResult(&approvalOut).
 		Post(path)
 	require.NoError(t, err)
+	t.Logf("test post approval here")
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
+	t.Log("request body", resp.Request.Body)
 	expected := 202
 	if confirm {
 		expected = 200
@@ -577,8 +598,16 @@ func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 		SetQueryParam("pool", poolID.String()).
 		SetResult(&approvals).
 		Get(path)
+	t.Logf(resp.Request.URL)
+	t.Logf(resp.Request.RawRequest.URL.RawQuery)
 	require.NoError(t, err)
+	t.Logf("test here")
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	t.Logf(approvals[0].Pool.String())
+	t.Logf("num approvals: %d", len(approvals))
 	return approvals
 }
 
@@ -612,6 +641,10 @@ func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, t
 		SetQueryParam("key", key).
 		SetResult(&accounts).
 		Get(path)
+	t.Logf("Get token balance")
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	require.Equal(t, len(accounts), 1)
@@ -633,6 +666,10 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 		SetBody(&body).
 		SetResult(&sub).
 		Post(path)
+	t.Logf("Create contract listener")
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &sub

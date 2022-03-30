@@ -25,11 +25,11 @@ type Stack struct {
 	Name                  string    `json:"name,omitempty"`
 	ExposedBlockchainPort int       `json:"exposedGethPort,omitempty"`
 	BlockchainProvider    string    `json:"blockchainProvider"`
-	BlockchainHostname    string    `json:"blockchainHostname,omitempty"`
-	BlockchainUsername    string    `json:"blockchainUsername,omitempty"`
-	BlockchainPassword    string    `json:"blockchainPassword,omitempty"`
 	TokenProviders        []string  `json:"tokenProviders"`
 	Members               []*Member `json:"members,omitempty"`
+	EthConnectHostname    string    `json:"ethConnectHostname"`
+	EthConnectUsername    string    `json:"ethConnectUsername"`
+	EthConnectPassword    string    `json:"ethConnectPassword"`
 }
 
 type Member struct {
@@ -40,6 +40,9 @@ type Member struct {
 	UseHTTPS             bool   `json:"useHttps,omitempty"`
 	ExposedConnectorPort int    `json:"exposedConnectorPort,omitempty"`
 	OrgName              string `json:"orgName,omitempty"`
+	BlockchainHostname   string `json:"blockchainHostname,omitempty"`
+	BlockchainUsername   string `json:"blockchainUsername,omitempty"`
+	BlockchainPassword   string `json:"blockchainPassword,omitempty"`
 }
 
 func GetMemberPort(filename string, n int) (int, error) {
@@ -89,11 +92,9 @@ func ReadStack(filename string) (*Stack, error) {
 		if member.FireflyHostname == "" {
 			member.FireflyHostname = "127.0.0.1"
 		}
-
-	}
-
-	if stack.BlockchainHostname == "" {
-		stack.BlockchainHostname = "127.0.0.1"
+		if member.BlockchainHostname == "" {
+			member.BlockchainHostname = "127.0.0.1"
+		}
 	}
 
 	return stack, nil

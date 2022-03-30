@@ -47,7 +47,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	totalIdentities := 3
 	keys := make([]string, totalIdentities)
 	for i := 0; i < totalIdentities; i++ {
-		keys[i] = CreateEthAccount(suite.T(), suite.testState.ethNode)
+		keys[i] = CreateEthAccount(suite.T(), suite.testState.ethNode1)
 	}
 
 	ts := time.Now().Unix()
@@ -101,8 +101,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	received2, _ := wsReader(suite.testState.ws2, false)
 
 	// Create an identity on both sides
-	org1Key := CreateEthAccount(suite.T(), suite.testState.ethNode)
-	org2Key := CreateEthAccount(suite.T(), suite.testState.ethNode)
+	org1Key := CreateEthAccount(suite.T(), suite.testState.ethNode1)
+	org2Key := CreateEthAccount(suite.T(), suite.testState.ethNode2)
 
 	ts := time.Now().Unix()
 	custom1 := ClaimCustomIdentity(suite.T(),

@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -63,7 +64,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	received2, _ := wsReader(suite.testState.ws2, false)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
-	poolName := fmt.Sprintf("pool%d", len(pools))
+	rand.Seed(time.Now().UnixNano())
+	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &fftypes.TokenPool{
@@ -101,6 +103,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			Key:      suite.testState.org1key.Value,
 			Operator: suite.testState.org2key.Value,
 			Approved: true,
+			Pool:     poolID,
 		},
 		Pool: poolName,
 	}
@@ -135,7 +138,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), fftypes.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(suite.T(), int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(suite.T(), suite.testState.client2, poolID, "", map[string]int64{
-		suite.testState.org1key.Value: 1,
+		suite.testState.org2key.Value: 1,
 	})
 
 	transfer = &fftypes.TokenTransferInput{
@@ -155,6 +158,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		},
 	}
 	transferOut = TransferTokens(suite.T(), suite.testState.client1, transfer, false)
+	suite.T().Logf("transfer out message: %s", transferOut.Message)
 
 	waitForEvent(suite.T(), received1, fftypes.EventTypeMessageConfirmed, transferOut.Message)
 	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolID)
@@ -233,7 +237,8 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	received2, _ := wsReader(suite.testState.ws2, false)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
-	poolName := fmt.Sprintf("pool%d", len(pools))
+	rand.Seed(time.Now().UnixNano())
+	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &fftypes.TokenPool{
@@ -267,6 +272,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			Key:      suite.testState.org1key.Value,
 			Operator: suite.testState.org2key.Value,
 			Approved: true,
+			Pool:     poolID,
 		},
 		Pool: poolName,
 	}

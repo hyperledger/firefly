@@ -41,7 +41,8 @@ type testState struct {
 	t         *testing.T
 	client1   *resty.Client
 	client2   *resty.Client
-	ethNode   *resty.Client
+	ethNode1  *resty.Client
+	ethNode2  *resty.Client
 	ws1       *websocket.Conn
 	ws2       *websocket.Conn
 	org1      *fftypes.Identity
@@ -203,16 +204,25 @@ func beforeE2ETest(t *testing.T) *testState {
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
 	if stack.BlockchainProvider == "geth" {
-		ethNodeURL := fmt.Sprintf("%s://%s", httpProtocolClient1, stack.BlockchainHostname)
-		t.Logf("Ethereum node URL: %s", ethNodeURL)
-		ts.ethNode = NewResty(t)
-		ts.ethNode.SetBaseURL(ethNodeURL)
-		if stack.BlockchainUsername != "" && stack.BlockchainPassword != "" {
+		ethNodeURL1 := fmt.Sprintf("%s://%s", httpProtocolClient1, stack.Members[0].BlockchainHostname)
+		t.Logf("Ethereum node 1 URL: %s", ethNodeURL1)
+
+		ethNodeURL2 := fmt.Sprintf("%s://%s", httpProtocolClient1, stack.Members[1].BlockchainHostname)
+		t.Logf("Ethereum node 2 URL: %s", ethNodeURL2)
+		ts.ethNode1 = NewResty(t)
+		ts.ethNode2 = NewResty(t)
+
+		ts.ethNode1.SetBaseURL(ethNodeURL1)
+		ts.ethNode2.SetBaseURL(ethNodeURL2)
+
+		if stack.Members[0].BlockchainUsername != "" && stack.Members[0].BlockchainPassword != "" {
 			t.Log("Setting auth for Ethereum node")
-			ts.ethNode.SetBasicAuth(stack.BlockchainUsername, stack.BlockchainPassword)
-			authHeader1 = http.Header{
-				"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.BlockchainUsername, stack.BlockchainPassword))))},
-			}
+			ts.ethNode1.SetBasicAuth(stack.Members[0].BlockchainUsername, stack.Members[0].BlockchainPassword)
+		}
+
+		if stack.Members[1].BlockchainUsername != "" && stack.Members[1].BlockchainPassword != "" {
+			t.Log("Setting auth for Ethereum node")
+			ts.ethNode2.SetBasicAuth(stack.Members[1].BlockchainUsername, stack.Members[1].BlockchainPassword)
 		}
 	}
 
