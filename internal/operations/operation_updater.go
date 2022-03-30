@@ -39,7 +39,8 @@ type OperationUpdate struct {
 	ErrorMessage   string
 	Output         fftypes.JSONObject
 	VerifyManifest bool
-	Manifest       string
+	DXManifest     string
+	DXHash         string
 }
 
 type operationUpdaterBatch struct {
@@ -308,9 +309,9 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 				expectedManifest = batch.Manifest.String()
 			}
 		}
-		if update.Manifest != expectedManifest {
+		if update.DXManifest != expectedManifest {
 			// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
-			mismatchErr := i18n.NewError(ctx, i18n.MsgManifestMismatch, fftypes.OpStatusSucceeded, update.Manifest)
+			mismatchErr := i18n.NewError(ctx, i18n.MsgManifestMismatch, fftypes.OpStatusSucceeded, update.DXManifest)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
 			update.Status = fftypes.OpStatusFailed
@@ -319,9 +320,9 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 
 	if op.Type == fftypes.OpTypeDataExchangeSendBlob && update.Status == fftypes.OpStatusSucceeded {
 		expectedHash := op.Input.GetString("hash")
-		if update.Manifest != expectedHash {
+		if update.DXHash != expectedHash {
 			// Log and map to failure for user to see that the receiver did not provide a matching hash
-			mismatchErr := i18n.NewError(ctx, i18n.MsgBlobHashMismatch, expectedHash, update.Manifest)
+			mismatchErr := i18n.NewError(ctx, i18n.MsgBlobHashMismatch, expectedHash, update.DXHash)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
 			update.Status = fftypes.OpStatusFailed

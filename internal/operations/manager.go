@@ -176,9 +176,11 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, opIDString s
 	// Pass manifest verification code to the background worker, for once it has loaded the operation
 	if opUpdate.VerifyManifest {
 		if update.Manifest != "" {
-			opUpdate.Manifest = update.Manifest
+			// For batches DX passes us a manifest to compare.
+			opUpdate.DXManifest = update.Manifest
 		} else if update.Hash != "" {
-			opUpdate.Manifest = update.Hash
+			// For blobs DX passes us a hash to compare.
+			opUpdate.DXHash = update.Hash
 		}
 	}
 
