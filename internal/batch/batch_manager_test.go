@@ -195,8 +195,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
-			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "000000000000303a",
-		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12346) */
+			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "0000000000003039",
+		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12345) */
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
@@ -253,12 +253,10 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("( id IN ['%s'] ) && ( state == 'ready' )", msg.Header.ID.String()), fi.String())
 		return true
 	}), mock.Anything).Return(nil)
-	ugcn := mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil)
-	nextNonce := int64(12345)
-	ugcn.RunFn = func(a mock.Arguments) {
-		a[1].(*fftypes.Nonce).Nonce = nextNonce
-		nextNonce++
-	}
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(&fftypes.Nonce{
+		Nonce: int64(12344),
+	}, nil).Twice()
+	mdi.On("UpdateNonce", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 

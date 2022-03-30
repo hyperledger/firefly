@@ -314,8 +314,11 @@ type iGroupCollection interface {
 }
 
 type iNonceCollection interface {
-	// UpsertNonceNext - Upsert a context, assigning zero if not found, or the next nonce if it is
-	UpsertNonceNext(ctx context.Context, context *fftypes.Nonce) (err error)
+	// InsertNonce - Inserts a new nonce. Caller (batch processor) is responsible for ensuring it is the only active thread charge of assigning nonces to this context
+	InsertNonce(ctx context.Context, nonce *fftypes.Nonce) (err error)
+
+	// UpdateNonce - Updates an existing nonce. Caller (batch processor) is responsible for ensuring it is the only active thread charge of assigning nonces to this context
+	UpdateNonce(ctx context.Context, nonce *fftypes.Nonce) (err error)
 
 	// GetNonce - Get a context by hash
 	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
@@ -865,10 +868,8 @@ var GroupQueryFactory = &queryFields{
 
 // NonceQueryFactory filter fields for nodes
 var NonceQueryFactory = &queryFields{
-	"context": &StringField{},
-	"nonce":   &Int64Field{},
-	"group":   &Bytes32Field{},
-	"topic":   &StringField{},
+	"hash":  &StringField{},
+	"nonce": &Int64Field{},
 }
 
 // NextPinQueryFactory filter fields for nodes
