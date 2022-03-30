@@ -227,7 +227,6 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data fftyp
 					return err
 				}
 
-				// Check the operation isn't already successful from a previous run
 				operations = append(operations, &blobTransferTracker{
 					dataID:   d.ID,
 					blobHash: blob.Hash,
@@ -321,7 +320,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 			}
 		}
 
-		// Then initiate th transfer
+		// Then initiate the batch transfer
 		if err = pm.operations.RunOperation(ctx, sendBatchOp); err != nil {
 			return err
 		}
