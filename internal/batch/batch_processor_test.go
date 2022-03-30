@@ -504,29 +504,25 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 		dispatched <- state
 		return nil
 	})
-	defer cancel()
+	cancel()
 
+	mockRunAsGroupPassthrough(mdi)
 	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("InsertNonce", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
-	messages := []*fftypes.Message{
-		{
-			Header: fftypes.MessageHeader{
-				ID:     fftypes.NewUUID(),
-				Type:   fftypes.MessageTypePrivate,
-				Group:  fftypes.NewRandB32(),
-				Topics: fftypes.FFStringArray{"topic1"},
-			},
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Type:   fftypes.MessageTypePrivate,
+			Group:  fftypes.NewRandB32(),
+			Topics: fftypes.FFStringArray{"topic1"},
 		},
 	}
 
-	_, err := bp.maskContexts(bp.ctx, &DispatchState{
-		noncesAssigned: make(map[fftypes.Bytes32]int64),
-		msgPins:        make(map[fftypes.UUID]fftypes.FFStringArray),
-		Messages:       messages,
-	})
-	assert.Regexp(t, "pop", err)
+	state := bp.initFlushState(fftypes.NewUUID(), []*batchWork{{msg: msg}})
+	err := bp.sealBatch(state)
+	assert.Regexp(t, "FF10158", err)
 
 	bp.cancelCtx()
 	<-bp.done

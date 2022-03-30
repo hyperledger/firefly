@@ -494,7 +494,7 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, state *DispatchState
 			}
 		}
 	}
-	return contextsOrPins, bp.flushNonceState(ctx, state)
+	return contextsOrPins, nil
 }
 
 func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchState) error {
@@ -547,6 +547,10 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 			if bp.conf.txType == fftypes.TransactionTypeBatchPin {
 				// Generate a new Transaction, which will be used to record status of the associated transaction as it happens
 				if state.Pins, err = bp.maskContexts(ctx, state); err != nil {
+					return err
+				}
+				// Flush the state for all allocated nonces to the database
+				if err = bp.flushNonceState(ctx, state); err != nil {
 					return err
 				}
 			}
