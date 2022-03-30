@@ -93,12 +93,17 @@ type batchProcessor struct {
 	conf               *batchProcessorConf
 }
 
+type nonceState struct {
+	latest int64
+	new    bool
+}
+
 type DispatchState struct {
 	Persisted      fftypes.BatchPersisted
 	Messages       []*fftypes.Message
 	Data           fftypes.DataArray
 	Pins           []*fftypes.Bytes32
-	noncesAssigned map[fftypes.Bytes32]int64
+	noncesAssigned map[fftypes.Bytes32]*nonceState
 	msgPins        map[fftypes.UUID]fftypes.FFStringArray
 }
 
@@ -398,9 +403,8 @@ func (bp *batchProcessor) getNextNonce(ctx context.Context, state *DispatchState
 
 	// See if the nonceKeyHash is in our cached state already
 	if cached, ok := state.noncesAssigned[*nonceKeyHash]; ok {
-		nonce := cached + 1
-		state.noncesAssigned[*nonceKeyHash] = nonce
-		return nonce, nil
+		cached.latest++
+		return cached.latest, nil
 	}
 
 	// Query the database for an existing record
@@ -416,14 +420,16 @@ func (bp *batchProcessor) getNextNonce(ctx context.Context, state *DispatchState
 	}
 
 	// Determine if we're the first - so get nonce zero - or if we need to add one to the DB nonce
-	var nonce int64
-	if dbNonce != nil {
-		nonce = dbNonce.Nonce + 1
+	nonceState := &nonceState{}
+	if dbNonce == nil {
+		nonceState.new = true
+	} else {
+		nonceState.latest = dbNonce.Nonce + 1
 	}
 
 	// Cache it either way for additional messages in this batch to the same nonceKeyHash
-	state.noncesAssigned[*nonceKeyHash] = nonce
-	return nonce, nil
+	state.noncesAssigned[*nonceKeyHash] = nonceState
+	return nonceState.latest, nil
 }
 
 func (bp *batchProcessor) maskContext(ctx context.Context, state *DispatchState, msg *fftypes.Message, topic string) (msgPinString string, contextOrPin *fftypes.Bytes32, err error) {
@@ -500,12 +506,12 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, state *DispatchState
 func (bp *batchProcessor) flushNonceState(ctx context.Context, state *DispatchState) error {
 
 	// Flush all the assigned nonces to the DB
-	for hash, nonce := range state.noncesAssigned {
+	for hash, nonceState := range state.noncesAssigned {
 		dbNonce := &fftypes.Nonce{
 			Hash:  &hash,
-			Nonce: nonce,
+			Nonce: nonceState.latest,
 		}
-		if nonce == 0 {
+		if nonceState.new {
 			if err := bp.database.InsertNonce(ctx, dbNonce); err != nil {
 				return err
 			}
@@ -541,7 +547,7 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 		return true, bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 
 			// Clear state from any previous retry. We need to do fresh queries against the DB for nonces.
-			state.noncesAssigned = make(map[fftypes.Bytes32]int64)
+			state.noncesAssigned = make(map[fftypes.Bytes32]*nonceState)
 			state.msgPins = make(map[fftypes.UUID]fftypes.FFStringArray)
 
 			if bp.conf.txType == fftypes.TransactionTypeBatchPin {
