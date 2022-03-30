@@ -205,6 +205,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
 	or.bc.ss = or.sharedstorage
+	or.bc.om = or.operations
 	return err
 }
 
@@ -225,6 +226,9 @@ func (or *orchestrator) Start() error {
 	}
 	if err == nil {
 		err = or.messaging.Start()
+	}
+	if err == nil {
+		err = or.operations.Start()
 	}
 	if err == nil {
 		err = or.sharedDownload.Start()
@@ -262,6 +266,10 @@ func (or *orchestrator) WaitStop() {
 	if or.sharedDownload != nil {
 		or.sharedDownload.WaitStop()
 		or.sharedDownload = nil
+	}
+	if or.operations != nil {
+		or.operations.WaitStop()
+		or.operations = nil
 	}
 	or.started = false
 }
@@ -499,7 +507,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.operations == nil {
-		if or.operations, err = operations.NewOperationsManager(ctx, or.database); err != nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.database, or.txHelper); err != nil {
 			return err
 		}
 	}

@@ -196,20 +196,6 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
-// OperationUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *EventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(fftypes.Named, *fftypes.UUID, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // PrivateBLOBReceived provides a mock function with given fields: dx, peerID, hash, size, payloadRef
 func (_m *EventManager) PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
 	ret := _m.Called(dx, peerID, hash, size, payloadRef)
@@ -326,20 +312,6 @@ func (_m *EventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 	var r0 error
 	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenTransfer) error); ok {
 		r0 = rf(ti, transfer)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TransferResult provides a mock function with given fields: dx, trackingID, status, update
-func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	ret := _m.Called(dx, trackingID, status, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
-		r0 = rf(dx, trackingID, status, update)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -411,7 +411,7 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
-	return e.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
+	return e.callbacks.BlockchainOpUpdate(e, operationID, updateType, txHash, message, reply)
 }
 
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {

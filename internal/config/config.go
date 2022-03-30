@@ -232,6 +232,20 @@ var (
 	NodeName = rootKey("node.name")
 	// NodeDescription is a description for the node
 	NodeDescription = rootKey("node.description")
+	// OpUpdateRetryInitDelay is the initial retry delay
+	OpUpdateRetryInitDelay = rootKey("opupdate.retry.initialDelay")
+	// OpUpdatedRetryMaxDelay is the maximum retry delay
+	OpUpdateRetryMaxDelay = rootKey("opupdate.retry.maxDelay")
+	// OpUpdateRetryFactor is the backoff factor to use for retries
+	OpUpdateRetryFactor = rootKey("opupdate.retry.factor")
+	// OpUpdateWorkerCount
+	OpUpdateWorkerCount = rootKey("opupdate.worker.count")
+	// OpUpdateWorkerBatchTimeout
+	OpUpdateWorkerBatchTimeout = rootKey("opupdate.worker.batchTimeout")
+	// OpUpdateWorkerBatchMaxInserts
+	OpUpdateWorkerBatchMaxInserts = rootKey("opupdate.worker.batchMaxInserts")
+	// OpUpdateWorkerQueueLength
+	OpUpdateWorkerQueueLength = rootKey("opupdate.worker.queueLength")
 	// OrgName is the short name o the org
 	OrgName = rootKey("org.name")
 	// OrgIdentityDeprecated deprecated synonym to org.key
@@ -392,6 +406,13 @@ func Reset() {
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
+	viper.SetDefault(string(OpUpdateRetryInitDelay), "250ms")
+	viper.SetDefault(string(OpUpdateRetryMaxDelay), "1m")
+	viper.SetDefault(string(OpUpdateRetryFactor), 2.0)
+	viper.SetDefault(string(OpUpdateWorkerBatchTimeout), "50ms")
+	viper.SetDefault(string(OpUpdateWorkerCount), 5)
+	viper.SetDefault(string(OpUpdateWorkerBatchMaxInserts), 200)
+	viper.SetDefault(string(OpUpdateWorkerQueueLength), 50)
 	viper.SetDefault(string(PrivateMessagingRetryFactor), 2.0)
 	viper.SetDefault(string(PrivateMessagingRetryInitDelay), "100ms")
 	viper.SetDefault(string(PrivateMessagingRetryMaxDelay), "30s")

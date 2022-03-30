@@ -5,7 +5,9 @@ package operationmocks
 import (
 	context "context"
 
+	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 
 	operations "github.com/hyperledger/firefly/internal/operations"
@@ -100,4 +102,51 @@ func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperati
 	}
 
 	return r0
+}
+
+// Start provides a mock function with given fields:
+func (_m *Manager) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SubmitOperationUpdate provides a mock function with given fields: plugin, update
+func (_m *Manager) SubmitOperationUpdate(plugin fftypes.Named, update *operations.OperationUpdate) error {
+	ret := _m.Called(plugin, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(fftypes.Named, *operations.OperationUpdate) error); ok {
+		r0 = rf(plugin, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TransferResult provides a mock function with given fields: dx, opIDString, status, update
+func (_m *Manager) TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
+	ret := _m.Called(dx, opIDString, status, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
+		r0 = rf(dx, opIDString, status, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WaitStop provides a mock function with given fields:
+func (_m *Manager) WaitStop() {
+	_m.Called()
 }
