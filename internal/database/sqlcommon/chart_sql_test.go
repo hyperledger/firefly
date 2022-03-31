@@ -102,7 +102,9 @@ func TestGetChartHistogramValidCollectionNameWithTypes(t *testing.T) {
 		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollectionsWithTypes[i]))
 
 		assert.NoError(t, err)
-		assert.Equal(t, histogram, expectedHistogramResult)
+		assert.Equal(t, histogram[0].Count, expectedHistogramResult[0].Count)
+		assert.Equal(t, histogram[0].Timestamp, expectedHistogramResult[0].Timestamp)
+		assert.ElementsMatch(t, histogram[0].Types, expectedHistogramResult[0].Types)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	}
 }
