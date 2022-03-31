@@ -51,6 +51,22 @@ var (
 			},
 		},
 	}
+	expectedHistogramResultReverseType = []*fftypes.ChartHistogram{
+		{
+			Count:     "10",
+			Timestamp: fftypes.UnixTime(1000000000),
+			Types: []*fftypes.ChartHistogramType{
+				{
+					Count: "5",
+					Type:  "typeB",
+				},
+				{
+					Count: "5",
+					Type:  "typeA",
+				},
+			},
+		},
+	}
 	expectedHistogramResultNoTypes = []*fftypes.ChartHistogram{
 		{
 			Count:     "10",
@@ -102,8 +118,16 @@ func TestGetChartHistogramValidCollectionNameWithTypes(t *testing.T) {
 		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollectionsWithTypes[i]))
 
 		assert.NoError(t, err)
-		assert.Equal(t, histogram, expectedHistogramResult)
-		assert.NoError(t, mock.ExpectationsWereMet())
+
+		if histogram[0].Types[0].Type == "typeA" {
+			assert.Equal(t, histogram, expectedHistogramResult)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		} else {
+			// Needed since maps are unordered in Go.
+			// API response is not dependant on order of types
+			assert.Equal(t, histogram, expectedHistogramResultReverseType)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		}
 	}
 }
 
