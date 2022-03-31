@@ -97,13 +97,13 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
+	suite.T().Logf("Pool created ID : %s", poolResp.ID)
 
 	approval := &fftypes.TokenApprovalInput{
 		TokenApproval: fftypes.TokenApproval{
 			Key:      suite.testState.org1key.Value,
 			Operator: suite.testState.org2key.Value,
 			Approved: true,
-			Pool:     poolID,
 		},
 		Pool: poolName,
 	}
