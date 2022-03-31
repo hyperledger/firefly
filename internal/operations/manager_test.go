@@ -402,12 +402,16 @@ func TestTransferResultBadUUID(t *testing.T) {
 	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
 		Manifest: true,
 	})
-	err := om.TransferResult(mdx, "wrongun", fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-		Info:     fftypes.JSONObject{"extra": "info"},
-		Manifest: "Sally",
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: "wrongun",
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info:     fftypes.JSONObject{"extra": "info"},
+			Manifest: "Sally",
+		},
 	})
-	assert.NoError(t, err)
-
+	om.TransferResult(mdx, mde)
 }
 
 func TestTransferResultManifestMismatch(t *testing.T) {
@@ -440,20 +444,25 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
 		Manifest: true,
 	})
-	err := om.TransferResult(mdx, opID1.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-		Info:     fftypes.JSONObject{"extra": "info"},
-		Manifest: "Sally",
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID1.String(),
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info:     fftypes.JSONObject{"extra": "info"},
+			Manifest: "Sally",
+		},
 	})
-	assert.NoError(t, err)
+	om.TransferResult(mdx, mde)
 
 	mdi.AssertExpectations(t)
 
 }
 
-func TestTransferResultHashtMismatch(t *testing.T) {
+func TestTransferResultHashMismatch(t *testing.T) {
 
 	om, cancel := newTestOperations(t)
-	defer cancel()
+	cancel()
 	om.updater.conf.workerCount = 0
 
 	opID1 := fftypes.NewUUID()
@@ -478,11 +487,16 @@ func TestTransferResultHashtMismatch(t *testing.T) {
 	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
 		Manifest: true,
 	})
-	err := om.TransferResult(mdx, opID1.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-		Info: fftypes.JSONObject{"extra": "info"},
-		Hash: "Sally",
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID1.String(),
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info: fftypes.JSONObject{"extra": "info"},
+			Hash: "Sally",
+		},
 	})
-	assert.NoError(t, err)
+	om.TransferResult(mdx, mde)
 
 	mdi.AssertExpectations(t)
 
@@ -490,7 +504,7 @@ func TestTransferResultHashtMismatch(t *testing.T) {
 
 func TestTransferResultBatchLookupFail(t *testing.T) {
 	om, cancel := newTestOperations(t)
-	defer cancel()
+	cancel()
 	om.updater.conf.workerCount = 0
 
 	opID1 := fftypes.NewUUID()
@@ -511,11 +525,16 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
 		Manifest: true,
 	})
-	err := om.TransferResult(mdx, opID1.String(), fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-		Info:     fftypes.JSONObject{"extra": "info"},
-		Manifest: "Sally",
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID1.String(),
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info:     fftypes.JSONObject{"extra": "info"},
+			Manifest: "Sally",
+		},
 	})
-	assert.Regexp(t, "pop", err)
+	om.TransferResult(mdx, mde)
 
 	mdi.AssertExpectations(t)
 

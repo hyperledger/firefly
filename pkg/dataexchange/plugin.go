@@ -93,15 +93,45 @@ type Plugin interface {
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
 type Callbacks interface {
+	// Event has sub-types as defined below, and can be processed and ack'd asynchronously
+	DXEvent(event DXEvent)
+}
 
-	// MessageReceived notifies of a message received from another node in the network
-	MessageReceived(peerID string, data []byte) (manifest string, err error)
+type DXEventType int
 
-	// PrivateBLOBReceived notifies of the ID of a BLOB that has been stored by DX after being received from another node in the network
-	PrivateBLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
+// DXEvent is a single interface that can be passed to all events
+type DXEvent interface {
+	ID() string
+	Ack()
+	AckWithManifest(manifest string)
+	Type() DXEventType
+	MessageReceived() *MessageReceived
+	PrivateBLOBReceived() *PrivateBLOBReceived
+	TransferResult() *TransferResult
+}
 
-	// TransferResult notifies of a status update of a transfer (can have multiple status updates).
-	TransferResult(trackingID string, status fftypes.OpStatus, info fftypes.TransportStatusUpdate) error
+const (
+	DXEventTypeMessageReceived DXEventType = iota
+	DXEventTypePrivateBLOBReceived
+	DXEventTypeTransferResult
+)
+
+type MessageReceived struct {
+	PeerID string
+	Data   []byte
+}
+
+type PrivateBLOBReceived struct {
+	PeerID     string
+	Hash       fftypes.Bytes32
+	Size       int64
+	PayloadRef string
+}
+
+type TransferResult struct {
+	TrackingID string
+	Status     fftypes.OpStatus
+	fftypes.TransportStatusUpdate
 }
 
 // Capabilities the supported featureset of the data exchange

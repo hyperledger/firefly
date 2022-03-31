@@ -40,8 +40,8 @@ type Manager interface {
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
-	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) error
-	TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
+	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate)
+	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
 	Start() error
 	WaitStop()
 }
@@ -156,35 +156,37 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 	return op, om.RunOperation(ctx, po)
 }
 
-func (om *operationsManager) TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	log.L(om.ctx).Infof("Transfer result %s=%s error='%s' manifest='%s' info='%s'", opIDString, status, update.Error, update.Manifest, update.Info)
+func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent) {
 
-	opID, err := fftypes.ParseUUID(om.ctx, opIDString)
+	tr := event.TransferResult()
+
+	log.L(om.ctx).Infof("Transfer result %s=%s error='%s' manifest='%s' info='%s'", tr.TrackingID, tr.Status, tr.Error, tr.Manifest, tr.Info)
+	opID, err := fftypes.ParseUUID(om.ctx, tr.TrackingID)
 	if err != nil {
-		log.L(om.ctx).Errorf("Invalid UUID for tracking ID from DX: %s", opIDString)
-		return nil
+		log.L(om.ctx).Errorf("Invalid UUID for tracking ID from DX: %s", tr.TrackingID)
+		return
 	}
 
 	opUpdate := &OperationUpdate{
 		ID:             opID,
-		Status:         status,
+		Status:         tr.Status,
 		VerifyManifest: dx.Capabilities().Manifest,
-		ErrorMessage:   update.Error,
-		Output:         update.Info,
+		ErrorMessage:   tr.Error,
+		Output:         tr.Info,
 	}
 
 	// Pass manifest verification code to the background worker, for once it has loaded the operation
 	if opUpdate.VerifyManifest {
-		if update.Manifest != "" {
+		if tr.Manifest != "" {
 			// For batches DX passes us a manifest to compare.
-			opUpdate.DXManifest = update.Manifest
-		} else if update.Hash != "" {
+			opUpdate.DXManifest = tr.Manifest
+		} else if tr.Hash != "" {
 			// For blobs DX passes us a hash to compare.
-			opUpdate.DXHash = update.Hash
+			opUpdate.DXHash = tr.Hash
 		}
 	}
 
-	return om.SubmitOperationUpdate(dx, opUpdate)
+	om.SubmitOperationUpdate(dx, opUpdate)
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {
@@ -199,13 +201,13 @@ func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *ff
 	}
 }
 
-func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) error {
+func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) {
 	errString := ""
 	if update.ErrorMessage != "" {
 		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)
 	}
 	log.L(om.ctx).Debugf("%s updating operation %s status=%s%s", plugin.Name(), update.ID, update.Status, errString)
-	return om.updater.SubmitOperationUpdate(om.ctx, update)
+	om.updater.SubmitOperationUpdate(om.ctx, update)
 }
 
 func (om *operationsManager) Start() error {

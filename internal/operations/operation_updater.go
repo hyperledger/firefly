@@ -100,19 +100,24 @@ func (ou *operationUpdater) pickWorker(ctx context.Context, update *OperationUpd
 	return ou.workQueues[worker]
 }
 
-func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *OperationUpdate) error {
+func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *OperationUpdate) {
 	if ou.conf.workerCount > 0 {
 		select {
 		case ou.pickWorker(ctx, update) <- update:
 		case <-ou.ctx.Done():
-			return i18n.NewError(ctx, i18n.MsgContextCanceled)
+			log.L(ctx).Debugf("Not submitting operation update due to cancelled context")
 		}
-		return nil
+		return
 	}
 	// Otherwise do it in-line on this context
-	return ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return ou.doBatchUpdate(ctx, []*OperationUpdate{update})
+	err := ou.retry.Do(ctx, "operation update", func(attempt int) (retry bool, err error) {
+		return true, ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
+			return ou.doBatchUpdate(ctx, []*OperationUpdate{update})
+		})
 	})
+	if err != nil {
+		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
+	}
 }
 
 func (ou *operationUpdater) initQueues() {

@@ -63,24 +63,12 @@ func TestBoundCallbacks(t *testing.T) {
 		Output:         info,
 	}).Return(fmt.Errorf("pop"))
 
-	err = bc.BlockchainOpUpdate(mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
-	assert.EqualError(t, err, "pop")
+	bc.BlockchainOpUpdate(mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 
-	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
-	assert.EqualError(t, err, "pop")
+	bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 
-	mom.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
-	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
-		Error: "error info", Info: info,
-	})
-	assert.EqualError(t, err, "pop")
-
-	mei.On("PrivateBLOBReceived", mdx, "peer1", *hash, int64(12345), "ns1/id1").Return(fmt.Errorf("pop"))
-	err = bc.PrivateBLOBReceived("peer1", *hash, 12345, "ns1/id1")
-	assert.EqualError(t, err, "pop")
-
-	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return("manifest data", fmt.Errorf("pop"))
-	_, err = bc.MessageReceived("peer1", []byte{})
+	mde := &dataexchangemocks.DXEvent{}
+	mom.On("DXEvent", mdx, mde).Return()
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TokenPoolCreated", mti, pool).Return(fmt.Errorf("pop"))

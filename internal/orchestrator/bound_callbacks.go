@@ -34,8 +34,8 @@ type boundCallbacks struct {
 	om operations.Manager
 }
 
-func (bc *boundCallbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
+func (bc *boundCallbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
 		ID:             operationID,
 		Status:         txState,
 		BlockchainTXID: blockchainTXID,
@@ -44,8 +44,8 @@ func (bc *boundCallbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operation
 	})
 }
 
-func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
+func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	bc.om.SubmitOperationUpdate(plugin, &operations.OperationUpdate{
 		ID:             operationID,
 		Status:         txState,
 		BlockchainTXID: blockchainTXID,
@@ -58,16 +58,11 @@ func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKe
 	return bc.ei.BatchPinComplete(bc.bi, batch, signingKey)
 }
 
-func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	return bc.om.TransferResult(bc.dx, trackingID, status, update)
-}
-
-func (bc *boundCallbacks) PrivateBLOBReceived(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
-	return bc.ei.PrivateBLOBReceived(bc.dx, peerID, hash, size, payloadRef)
-}
-
-func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) (manifest string, err error) {
-	return bc.ei.MessageReceived(bc.dx, peerID, data)
+func (bc *boundCallbacks) DXEvent(event dataexchange.DXEvent) {
+	switch event.Type() {
+	case dataexchange.DXEventTypeTransferResult:
+		bc.om.TransferResult(bc.dx, event)
+	}
 }
 
 func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool) error {

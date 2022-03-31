@@ -73,7 +73,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should only be returned in shutdown scenarios
-	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
+	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.

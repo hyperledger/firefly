@@ -119,31 +119,13 @@ func (_m *Manager) Start() error {
 }
 
 // SubmitOperationUpdate provides a mock function with given fields: plugin, update
-func (_m *Manager) SubmitOperationUpdate(plugin fftypes.Named, update *operations.OperationUpdate) error {
-	ret := _m.Called(plugin, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(fftypes.Named, *operations.OperationUpdate) error); ok {
-		r0 = rf(plugin, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Manager) SubmitOperationUpdate(plugin fftypes.Named, update *operations.OperationUpdate) {
+	_m.Called(plugin, update)
 }
 
-// TransferResult provides a mock function with given fields: dx, opIDString, status, update
-func (_m *Manager) TransferResult(dx dataexchange.Plugin, opIDString string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	ret := _m.Called(dx, opIDString, status, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
-		r0 = rf(dx, opIDString, status, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+// TransferResult provides a mock function with given fields: dx, event
+func (_m *Manager) TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent) {
+	_m.Called(dx, event)
 }
 
 // WaitStop provides a mock function with given fields:
