@@ -32,8 +32,8 @@ func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *fftyp
 	return r0
 }
 
-// DownloadBLOB provides a mock function with given fields: ctx, ns, dataID
-func (_m *Manager) DownloadBLOB(ctx context.Context, ns string, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
+// DownloadBlob provides a mock function with given fields: ctx, ns, dataID
+func (_m *Manager) DownloadBlob(ctx context.Context, ns string, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
 	ret := _m.Called(ctx, ns, dataID)
 
 	var r0 *fftypes.Blob
@@ -231,8 +231,8 @@ func (_m *Manager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.U
 	_m.Called(ctx, id, state, confirmed)
 }
 
-// UploadBLOB provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
-func (_m *Manager) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+// UploadBlob provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
+func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
 	ret := _m.Called(ctx, ns, inData, blob, autoMeta)
 
 	var r0 *fftypes.Data

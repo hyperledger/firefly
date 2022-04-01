@@ -62,6 +62,8 @@ func (bc *boundCallbacks) DXEvent(event dataexchange.DXEvent) {
 	switch event.Type() {
 	case dataexchange.DXEventTypeTransferResult:
 		bc.om.TransferResult(bc.dx, event)
+	default:
+		bc.ei.DXEvent(bc.dx, event)
 	}
 }
 
@@ -85,6 +87,6 @@ func (bc *boundCallbacks) SharedStorageBatchDownloaded(ns, payloadRef string, da
 	return bc.ei.SharedStorageBatchDownloaded(bc.ss, ns, payloadRef, data)
 }
 
-func (bc *boundCallbacks) SharedStorageBLOBDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) error {
-	return bc.ei.SharedStorageBLOBDownloaded(bc.ss, hash, size, payloadRef)
+func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) {
+	bc.ei.SharedStorageBlobDownloaded(bc.ss, hash, size, payloadRef)
 }

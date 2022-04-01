@@ -173,6 +173,9 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataex
 		VerifyManifest: dx.Capabilities().Manifest,
 		ErrorMessage:   tr.Error,
 		Output:         tr.Info,
+		OnComplete: func() {
+			event.Ack()
+		},
 	}
 
 	// Pass manifest verification code to the background worker, for once it has loaded the operation

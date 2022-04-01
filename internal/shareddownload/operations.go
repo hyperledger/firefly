@@ -152,17 +152,14 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	defer reader.Close()
 
 	// ... to data exchange
-	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBLOB(ctx, data.Namespace, *data.DataID, reader)
+	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, data.Namespace, *data.DataID, reader)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, i18n.MsgDownloadSharedFailed, data.PayloadRef)
 	}
 	log.L(ctx).Infof("Transferred blob '%s' (%s) from shared storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.PayloadRef, dxPayloadRef)
 
 	// then callback to store metadata
-	err = dm.callbacks.SharedStorageBLOBDownloaded(*hash, blobSize, dxPayloadRef)
-	if err != nil {
-		return nil, false, err
-	}
+	dm.callbacks.SharedStorageBlobDownloaded(*hash, blobSize, dxPayloadRef)
 
 	return getDownloadBlobOutputs(hash, blobSize, dxPayloadRef), true, nil
 }

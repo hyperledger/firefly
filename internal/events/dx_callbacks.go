@@ -27,38 +27,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (manifest string, err error) {
-
-	l := log.L(em.ctx)
-
-	// De-serializae the transport wrapper
-	var wrapper *fftypes.TransportWrapper
-	err = json.Unmarshal(data, &wrapper)
-	if err != nil {
-		l.Errorf("Invalid transmission from %s peer '%s': %s", dx.Name(), peerID, err)
-		return "", nil
-	}
-	if wrapper.Batch == nil {
-		l.Errorf("Invalid transmission: nil batch")
-		return "", nil
-	}
-	l.Infof("Private batch received from %s peer '%s' (len=%d)", dx.Name(), peerID, len(data))
-
-	if wrapper.Batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
-		valid, err := em.definitions.EnsureLocalGroup(em.ctx, wrapper.Group)
-		if err != nil {
-			return "", err
-		}
-		if !valid {
-			l.Errorf("Invalid transmission: invalid group")
-			return "", nil
-		}
-	}
-
-	manifestString, err := em.privateBatchReceived(peerID, wrapper.Batch)
-	return manifestString, err
-}
-
 // Check data exchange peer the data came from, has been registered to the org listed in the batch.
 // Note the on-chain identity check is performed separately by the aggregator (across broadcast and private consistently).
 func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string) (node *fftypes.Identity, err error) {
@@ -108,12 +76,23 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerI
 	return node, nil
 }
 
-func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch) (manifest string, err error) {
+func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch, wrapperGroup *fftypes.Group) (manifest string, err error) {
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
 		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			l := log.L(ctx)
+
+			if wrapperGroup != nil && batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
+				valid, err := em.definitions.EnsureLocalGroup(em.ctx, wrapperGroup)
+				if err != nil {
+					return err
+				}
+				if !valid {
+					l.Errorf("Invalid transmission: invalid group: %+v", wrapperGroup)
+					return nil
+				}
+			}
 
 			node, err := em.checkReceivedOffchainIdentity(ctx, peerID, batch.Author)
 			if err != nil {
@@ -140,8 +119,11 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 			return nil
 		})
 	})
+	if err != nil {
+		return "", err
+	}
 	// Poke the aggregator to do its stuff - after we have committed the transaction so the pins are visible
-	if err == nil && batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
+	if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
 		log.L(em.ctx).Debugf("Rewinding for persisted private batch %s", batch.ID)
 		em.aggregator.rewindBatches <- *batch.ID
 	}
@@ -185,35 +167,69 @@ func (em *eventManager) markUnpinnedMessagesConfirmed(ctx context.Context, batch
 	return nil
 }
 
-func (em *eventManager) PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
-	l := log.L(em.ctx)
-	l.Infof("Blob received event from data exchange %s: Peer='%s' Hash='%v' PayloadRef='%s'", dx.Name(), peerID, &hash, payloadRef)
-
-	if peerID == "" || len(peerID) > 256 || payloadRef == "" || len(payloadRef) > 1024 {
-		l.Errorf("Invalid blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", peerID, &hash, payloadRef)
-		return nil // we consume the event still
+func (em *eventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent) {
+	switch event.Type() {
+	case dataexchange.DXEventTypePrivateBlobReceived:
+		em.privateBlobReceived(dx, event)
+	case dataexchange.DXEventTypeMessageReceived:
+		// Batches are significant items of work in their own right, so get dispatched to their own routines
+		go em.messageReceived(dx, event)
+	default:
+		log.L(em.ctx).Errorf("Invalid DX event type from %s: %d", dx.Name(), event.Type())
+		event.Ack() // still ack
 	}
-
-	return em.blobReceivedCommon(peerID, hash, size, payloadRef)
 }
 
-func (em *eventManager) blobReceivedCommon(peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
-	// We process the event in a retry loop (which will break only if the context is closed), so that
-	// we only confirm consumption of the event to the plugin once we've processed it.
-	return em.retry.Do(em.ctx, "blob reference insert", func(attempt int) (retry bool, err error) {
-		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			// Insert the blob into the detabase
-			err := em.database.InsertBlob(ctx, &fftypes.Blob{
-				Peer:       peerID,
-				PayloadRef: payloadRef,
-				Hash:       &hash,
-				Size:       size,
-				Created:    fftypes.Now(),
-			})
-			if err != nil {
-				return err
-			}
-			return em.aggregator.rewindForBlobArrival(ctx, &hash)
-		})
+func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchange.DXEvent) {
+	l := log.L(em.ctx)
+
+	mr := event.MessageReceived()
+
+	// De-serializae the transport wrapper
+	var wrapper *fftypes.TransportWrapper
+	err := json.Unmarshal(mr.Data, &wrapper)
+	if err != nil {
+		l.Errorf("Invalid transmission from %s peer '%s': %s", dx.Name(), mr.PeerID, err)
+		event.AckWithManifest("")
+		return
+	}
+	if wrapper.Batch == nil {
+		l.Errorf("Invalid transmission: nil batch")
+		event.AckWithManifest("")
+		return
+	}
+	l.Infof("Private batch received from %s peer '%s' (len=%d)", dx.Name(), mr.PeerID, len(mr.Data))
+
+	manifestString, err := em.privateBatchReceived(mr.PeerID, wrapper.Batch, wrapper.Group)
+	if err != nil {
+		l.Warnf("Exited while persisting batch: %s", err)
+		// We do NOT ack here as we broke out of the retry
+		return
+	}
+	event.AckWithManifest(manifestString)
+}
+
+func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataexchange.DXEvent) {
+	br := event.PrivateBlobReceived()
+	log.L(em.ctx).Infof("Blob received event from data exchange %s: Peer='%s' Hash='%v' PayloadRef='%s'", dx.Name(), br.PeerID, &br.Hash, br.PayloadRef)
+
+	if br.PeerID == "" || len(br.PeerID) > 256 || br.PayloadRef == "" || len(br.PayloadRef) > 1024 {
+		log.L(em.ctx).Errorf("Invalid blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", br.PeerID, &br.Hash, br.PayloadRef)
+		event.Ack() // Still confirm the event
+		return
+	}
+
+	// Dispatch to the blob receiver for efficient batch DB operations
+	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
+		blob: &fftypes.Blob{
+			Peer:       br.PeerID,
+			PayloadRef: br.PayloadRef,
+			Hash:       &br.Hash,
+			Size:       br.Size,
+			Created:    fftypes.Now(),
+		},
+		onComplete: func() {
+			event.Ack()
+		},
 	})
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -79,11 +80,64 @@ func newTestNode(name string, owner *fftypes.Identity) *fftypes.Identity {
 	return identity
 }
 
+func newMessageReceivedNoAck(peerID string, data []byte) *dataexchangemocks.DXEvent {
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("MessageReceived").Return(&dataexchange.MessageReceived{
+		PeerID: peerID,
+		Data:   data,
+	})
+	mde.On("Type").Return(dataexchange.DXEventTypeMessageReceived).Maybe()
+	return mde
+}
+
+func newMessageReceived(peerID string, data []byte, expectedManifest string) *dataexchangemocks.DXEvent {
+	mde := newMessageReceivedNoAck(peerID, data)
+	mde.On("AckWithManifest", expectedManifest).Return()
+	return mde
+}
+
+func newPrivateBlobReceivedNoAck(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string) *dataexchangemocks.DXEvent {
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("PrivateBlobReceived").Return(&dataexchange.PrivateBlobReceived{
+		PeerID:     peerID,
+		Hash:       *hash,
+		Size:       size,
+		PayloadRef: payloadRef,
+	})
+	mde.On("Type").Return(dataexchange.DXEventTypePrivateBlobReceived).Maybe()
+	return mde
+}
+
+func newPrivateBlobReceived(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string) *dataexchangemocks.DXEvent {
+	mde := newPrivateBlobReceivedNoAck(peerID, hash, size, payloadRef)
+	mde.On("Ack").Return()
+	return mde
+}
+
+func TestUnknownEvent(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	done := make(chan struct{})
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx").Maybe()
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("Type").Return(dataexchange.DXEventType(99)).Maybe()
+	mde.On("Ack").Run(func(args mock.Arguments) {
+		close(done)
+	})
+	em.DXEvent(mdx, mde)
+	<-done
+
+	mde.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+}
+
 func TestPinnedReceiveOK(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
+	batch, b := sampleBatchTransfer(t, fftypes.TransactionTypeBatchPin)
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
@@ -102,10 +156,15 @@ func TestPinnedReceiveOK(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.NotNil(t, m)
+	done := make(chan struct{})
+	mde := newMessageReceivedNoAck("peer1", b)
+	mde.On("AckWithManifest", batch.Payload.Manifest(batch.ID).String()).Run(func(args mock.Arguments) {
+		close(done)
+	})
+	em.DXEvent(mdx, mde)
+	<-done
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -136,10 +195,10 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -162,10 +221,12 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
 
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -177,9 +238,11 @@ func TestMessageReceivedBadData(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	m, err := em.MessageReceived(mdx, "peer1", []byte(`!{}`))
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+
+	mde := newMessageReceived("peer1", []byte(`!{}`), "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 
 }
 
@@ -189,12 +252,13 @@ func TestMessageReceivedUnknownType(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
-		"type": "unknown"
-	}`))
-	assert.NoError(t, err)
-	assert.Empty(t, m)
 
+	mde := newMessageReceived("peer1", []byte(`{
+		"type": "unknown"
+	}`), "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceivedNilBatch(t *testing.T) {
@@ -203,12 +267,13 @@ func TestMessageReceivedNilBatch(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
-		"type": "batch"
-	}`))
-	assert.NoError(t, err)
-	assert.Empty(t, m)
 
+	mde := newMessageReceived("peer1", []byte(`{
+		"type": "batch"
+	}`), "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceivedNilMessage(t *testing.T) {
@@ -217,12 +282,13 @@ func TestMessageReceivedNilMessage(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
-		"type": "message"
-	}`))
-	assert.NoError(t, err)
-	assert.Empty(t, m)
 
+	mde := newMessageReceived("peer1", []byte(`{
+		"type": "message"
+	}`), "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceivedNilGroup(t *testing.T) {
@@ -231,12 +297,14 @@ func TestMessageReceivedNilGroup(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	m, err := em.MessageReceived(mdx, "peer1", []byte(`{
+
+	mde := newMessageReceived("peer1", []byte(`{
 		"type": "message",
 		"message": {}
-	}`))
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+	}`), "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceiveNodeLookupError(t *testing.T) {
@@ -256,9 +324,12 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
+
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
@@ -278,10 +349,12 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(nil, true, fmt.Errorf("pop"))
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
 
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
@@ -303,10 +376,10 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(nil, false, nil)
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
@@ -328,15 +401,15 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 		Value: "peer1",
 	}).Return(node1, nil)
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(newTestOrg("org2"), false, nil)
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
 
-func TestPrivateBLOBReceivedTriggersRewindOk(t *testing.T) {
+func TestPrivateBlobReceivedTriggersRewindOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	hash := fftypes.NewRandB32()
@@ -347,7 +420,8 @@ func TestPrivateBLOBReceivedTriggersRewindOk(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
+	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
+	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID},
 	}, nil, nil)
@@ -355,27 +429,34 @@ func TestPrivateBLOBReceivedTriggersRewindOk(t *testing.T) {
 		{BatchID: batchID},
 	}, nil, nil)
 
-	err := em.PrivateBLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
-	assert.NoError(t, err)
+	done := make(chan struct{})
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	mde.On("Ack").Run(func(args mock.Arguments) {
+		close(done)
+	})
+	em.DXEvent(mdx, mde)
+	<-done
 
 	bid := <-em.aggregator.rewindBatches
 	assert.Equal(t, *batchID, bid)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
-func TestPrivateBLOBReceivedBadEvent(t *testing.T) {
+func TestPrivateBlobReceivedBadEvent(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	err := em.PrivateBLOBReceived(mdx, "", fftypes.Bytes32{}, 12345, "")
-	assert.NoError(t, err)
+	mde := newPrivateBlobReceived("", fftypes.NewRandB32(), 12345, "")
+	em.privateBlobReceived(mdx, mde)
+	mde.AssertExpectations(t)
 }
 
-func TestPrivateBLOBReceivedGetMessagesFail(t *testing.T) {
+func TestPrivateBlobReceivedGetMessagesFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // retryable error
 	hash := fftypes.NewRandB32()
@@ -385,19 +466,22 @@ func TestPrivateBLOBReceivedGetMessagesFail(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
+	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
+	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID},
 	}, nil, nil)
 	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	err := em.PrivateBLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
-	assert.Regexp(t, "FF10158", err)
+	// no ack as we are simulating termination mid retry
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	em.privateBlobReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
-func TestPrivateBLOBReceivedGetDataRefsFail(t *testing.T) {
+func TestPrivateBlobReceivedGetDataRefsFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // retryable error
 	hash := fftypes.NewRandB32()
@@ -406,16 +490,19 @@ func TestPrivateBLOBReceivedGetDataRefsFail(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
+	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
+	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	err := em.PrivateBLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
-	assert.Regexp(t, "FF10158", err)
+	// no ack as we are simulating termination mid retry
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	em.privateBlobReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
-func TestPrivateBLOBReceivedInsertBlobFails(t *testing.T) {
+func TestPrivateBlobReceivedInsertBlobFails(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // retryable error
 	hash := fftypes.NewRandB32()
@@ -424,11 +511,33 @@ func TestPrivateBLOBReceivedInsertBlobFails(t *testing.T) {
 	mdx.On("Name").Return("utdx")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
+	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := em.PrivateBLOBReceived(mdx, "peer1", *hash, 12345, "ns1/path1")
-	assert.Regexp(t, "FF10158", err)
+	// no ack as we are simulating termination mid retry
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	em.privateBlobReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestPrivateBlobReceivedGetBlobsFails(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+	hash := fftypes.NewRandB32()
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobs", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	// no ack as we are simulating termination mid retry
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	em.privateBlobReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -456,10 +565,11 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org2, false, nil)
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, fmt.Errorf("pop"))
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -488,10 +598,10 @@ func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org2, false, nil)
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(nil, nil)
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -521,10 +631,10 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org2, false, nil)
 	mim.On("CachedIdentityLookupByID", em.ctx, org2.Parent).Return(org3, nil)
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -555,10 +665,11 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(fmt.Errorf("optimization fail"))
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
@@ -588,10 +699,11 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertData", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
@@ -600,7 +712,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to avoid infinite retry
 
-	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
+	batch, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
@@ -625,10 +737,10 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, m)
+	mde := newMessageReceived("peer1", b, batch.Payload.Manifest(batch.ID).String())
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -662,10 +774,11 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -700,10 +813,11 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "FF10158", err)
-	assert.Empty(t, m)
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -722,10 +836,11 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.Regexp(t, "pop", err)
-	assert.Empty(t, m)
+	// no ack as we are simulating termination mid retry
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
@@ -743,10 +858,10 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, nil)
 
-	m, err := em.MessageReceived(mdx, "peer1", b)
-	assert.NoError(t, err)
-	assert.Empty(t, m)
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }

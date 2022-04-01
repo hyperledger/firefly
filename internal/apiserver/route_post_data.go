@@ -74,7 +74,7 @@ var postData = &oapispec.Route{
 			}
 			data.Value = fftypes.JSONAnyPtr(metadata)
 		}
-		output, err = getOr(r.Ctx).Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
+		output, err = getOr(r.Ctx).Data().UploadBlob(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err
 	},
 }

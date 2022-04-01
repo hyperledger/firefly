@@ -211,7 +211,7 @@ func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error)
 	return nil
 }
 
-func (h *FFDX) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
+func (h *FFDX) UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
 	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
 	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
@@ -228,7 +228,7 @@ func (h *FFDX) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, conte
 	return payloadRef, hash, upload.Size, nil
 }
 
-func (h *FFDX) DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
+func (h *FFDX) DownloadBlob(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
 	res, err := h.client.R().SetContext(ctx).
 		SetDoNotParseResponse(true).
 		Get(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
@@ -261,7 +261,7 @@ func (h *FFDX) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID strin
 	return nil
 }
 
-func (h *FFDX) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID, payloadRef string) (err error) {
+func (h *FFDX) TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID, payloadRef string) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func (h *FFDX) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID, pay
 	return nil
 }
 
-func (h *FFDX) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
+func (h *FFDX) CheckBlobReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetResult(&responseData).

@@ -41,6 +41,7 @@ type OperationUpdate struct {
 	VerifyManifest bool
 	DXManifest     string
 	DXHash         string
+	OnComplete     func()
 }
 
 type operationUpdaterBatch struct {
@@ -110,11 +111,7 @@ func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *O
 		return
 	}
 	// Otherwise do it in-line on this context
-	err := ou.retry.Do(ctx, "operation update", func(attempt int) (retry bool, err error) {
-		return true, ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
-			return ou.doBatchUpdate(ctx, []*OperationUpdate{update})
-		})
-	})
+	err := ou.doBatchUpdateWithRetry(ctx, []*OperationUpdate{update})
 	if err != nil {
 		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
 	}
@@ -166,11 +163,7 @@ func (ou *operationUpdater) updaterLoop(index int) {
 
 		if batch != nil && (timedOut || len(batch.updates) >= ou.conf.maxInserts) {
 			batch.timeoutCancel()
-			err := ou.retry.Do(ctx, "operation batch update", func(attempt int) (retry bool, err error) {
-				return true, ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
-					return ou.doBatchUpdate(ctx, batch.updates)
-				})
-			})
+			err := ou.doBatchUpdateWithRetry(ctx, batch.updates)
 			if err != nil {
 				log.L(ctx).Debugf("Operation update worker exiting: %s", err)
 				return
@@ -178,6 +171,23 @@ func (ou *operationUpdater) updaterLoop(index int) {
 			batch = nil
 		}
 	}
+}
+
+func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates []*OperationUpdate) error {
+	return ou.retry.Do(ctx, "operation update", func(attempt int) (retry bool, err error) {
+		err = ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
+			return ou.doBatchUpdate(ctx, updates)
+		})
+		if err != nil {
+			return true, err
+		}
+		for _, update := range updates {
+			if update.OnComplete != nil {
+				update.OnComplete()
+			}
+		}
+		return false, nil
+	})
 }
 
 func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*OperationUpdate) error {

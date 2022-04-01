@@ -55,7 +55,7 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash).Return(blob, nil)
-	mdx.On("TransferBLOB", context.Background(), op.ID, "peer1", "payload").Return(nil)
+	mdx.On("TransferBlob", context.Background(), op.ID, "peer1", "payload").Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)

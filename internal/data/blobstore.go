@@ -38,7 +38,7 @@ type blobStore struct {
 	exchange      dataexchange.Plugin
 }
 
-func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftypes.UUID, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
+func (bs *blobStore) uploadVerifyBlob(ctx context.Context, ns string, id *fftypes.UUID, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
 	hashCalc := sha256.New()
 	dxReader, dx := io.Pipe()
 	storeAndHash := io.MultiWriter(hashCalc, dx)
@@ -47,12 +47,12 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 	go func() {
 		var err error
 		written, err = io.Copy(storeAndHash, reader)
-		log.L(ctx).Debugf("Upload BLOB streamed %d bytes (err=%v)", written, err)
+		log.L(ctx).Debugf("Upload Blob streamed %d bytes (err=%v)", written, err)
 		_ = dx.Close()
 		copyDone <- err
 	}()
 
-	payloadRef, uploadHash, uploadSize, dxErr := bs.exchange.UploadBLOB(ctx, ns, *id, dxReader)
+	payloadRef, uploadHash, uploadSize, dxErr := bs.exchange.UploadBlob(ctx, ns, *id, dxReader)
 	dxReader.Close()
 	copyErr := <-copyDone
 	if dxErr != nil {
@@ -63,7 +63,7 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 	}
 
 	hash = fftypes.HashResult(hashCalc)
-	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v) size=%d", written, hash, uploadHash, uploadSize, written)
+	log.L(ctx).Debugf("Upload Blob size=%d hashes: calculated=%s upload=%s (expected=%v) size=%d", written, hash, uploadHash, uploadSize, written)
 
 	if !uploadHash.Equals(hash) {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, hash)
@@ -76,7 +76,7 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 
 }
 
-func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, mpart *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, mpart *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
 
 	data := &fftypes.Data{
 		ID:        fftypes.NewUUID(),
@@ -91,7 +91,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	data.Namespace = ns
 	data.Created = fftypes.Now()
 
-	hash, blobSize, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, mpart.Data)
+	hash, blobSize, payloadRef, err := bs.uploadVerifyBlob(ctx, ns, data.ID, mpart.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	if err != nil {
 		return nil, err
 	}
-	log.L(ctx).Infof("Uploaded BLOB blobhash=%s hash=%s (%s)", data.Blob.Hash, data.Hash, units.HumanSizeWithPrecision(float64(blobSize), 2))
+	log.L(ctx).Infof("Uploaded Blob blobhash=%s hash=%s (%s)", data.Blob.Hash, data.Hash, units.HumanSizeWithPrecision(float64(blobSize), 2))
 
 	err = bs.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		err := bs.database.UpsertData(ctx, data, database.UpsertOptimizationNew)
@@ -139,7 +139,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	return data, nil
 }
 
-func (bs *blobStore) DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
+func (bs *blobStore) DownloadBlob(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
 
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
@@ -168,6 +168,6 @@ func (bs *blobStore) DownloadBLOB(ctx context.Context, ns, dataID string) (*ffty
 		return nil, nil, i18n.NewError(ctx, i18n.MsgBlobNotFound, data.Blob.Hash)
 	}
 
-	reader, err := bs.exchange.DownloadBLOB(ctx, blob.PayloadRef)
+	reader, err := bs.exchange.DownloadBlob(ctx, blob.PayloadRef)
 	return blob, reader, err
 }

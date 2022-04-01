@@ -445,6 +445,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
 		Status:     fftypes.OpStatusSucceeded,
@@ -455,6 +456,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	})
 	om.TransferResult(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 
 }
@@ -488,6 +490,7 @@ func TestTransferResultHashMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
 		Status:     fftypes.OpStatusSucceeded,
@@ -498,6 +501,7 @@ func TestTransferResultHashMismatch(t *testing.T) {
 	})
 	om.TransferResult(mdx, mde)
 
+	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 
 }

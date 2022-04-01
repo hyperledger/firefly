@@ -43,7 +43,7 @@ type dxEvent struct {
 	id                  string
 	dxType              dataexchange.DXEventType
 	messageReceived     *dataexchange.MessageReceived
-	privateBLOBReceived *dataexchange.PrivateBLOBReceived
+	privateBlobReceived *dataexchange.PrivateBlobReceived
 	transferResult      *dataexchange.TransferResult
 }
 
@@ -74,8 +74,8 @@ func (e *dxEvent) MessageReceived() *dataexchange.MessageReceived {
 	return e.messageReceived
 }
 
-func (e *dxEvent) PrivateBLOBReceived() *dataexchange.PrivateBLOBReceived {
-	return e.privateBLOBReceived
+func (e *dxEvent) PrivateBlobReceived() *dataexchange.PrivateBlobReceived {
+	return e.privateBlobReceived
 }
 
 func (e *dxEvent) TransferResult() *dataexchange.TransferResult {
@@ -152,8 +152,8 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
 		if err == nil {
-			e.dxType = dataexchange.DXEventTypePrivateBLOBReceived
-			e.privateBLOBReceived = &dataexchange.PrivateBLOBReceived{
+			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
+			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
 				PeerID:     msg.Sender,
 				Hash:       *hash,
 				Size:       msg.Size,

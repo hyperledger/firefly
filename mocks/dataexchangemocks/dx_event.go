@@ -52,16 +52,16 @@ func (_m *DXEvent) MessageReceived() *dataexchange.MessageReceived {
 	return r0
 }
 
-// PrivateBLOBReceived provides a mock function with given fields:
-func (_m *DXEvent) PrivateBLOBReceived() *dataexchange.PrivateBLOBReceived {
+// PrivateBlobReceived provides a mock function with given fields:
+func (_m *DXEvent) PrivateBlobReceived() *dataexchange.PrivateBlobReceived {
 	ret := _m.Called()
 
-	var r0 *dataexchange.PrivateBLOBReceived
-	if rf, ok := ret.Get(0).(func() *dataexchange.PrivateBLOBReceived); ok {
+	var r0 *dataexchange.PrivateBlobReceived
+	if rf, ok := ret.Get(0).(func() *dataexchange.PrivateBlobReceived); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*dataexchange.PrivateBLOBReceived)
+			r0 = ret.Get(0).(*dataexchange.PrivateBlobReceived)
 		}
 	}
 
