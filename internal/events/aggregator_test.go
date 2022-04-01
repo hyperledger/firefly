@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
@@ -698,6 +699,9 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 
 func TestShutdownOnCancel(t *testing.T) {
 	ag, cancel := newTestAggregator()
+	ag.queuedRewinds = map[fftypes.UUID]bool{
+		*fftypes.NewUUID(): true,
+	}
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
 		Type:    fftypes.OffsetTypeAggregator,
@@ -716,6 +720,9 @@ func TestShutdownOnCancel(t *testing.T) {
 func TestProcessPinsDBGroupFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	ag.queuedRewinds = map[fftypes.UUID]bool{
+		*fftypes.NewUUID(): true,
+	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	rag := mdi.On("RunAsGroup", ag.ctx, mock.Anything)
@@ -1921,9 +1928,13 @@ func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
 	ag.rewindBatches <- *fftypes.NewUUID()
 	ag.rewindBatches <- *fftypes.NewUUID()
 
+	for len(ag.queuedRewinds) < 4 {
+		time.Sleep(1 * time.Microsecond)
+	}
+
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
-		{Sequence: 12345},
+		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, nil, nil)
 
 	rewind, offset := ag.rewindOffchainBatches()
@@ -1937,7 +1948,9 @@ func TestRewindOffchainBatchesBatchesError(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	cancel()
 
-	ag.queuedRewinds <- *fftypes.NewUUID()
+	ag.queuedRewinds = map[fftypes.UUID]bool{
+		*fftypes.NewUUID(): true,
+	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
