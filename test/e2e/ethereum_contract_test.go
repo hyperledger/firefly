@@ -110,10 +110,19 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 func invokeEthContract(t *testing.T, client *resty.Client, identity, contractAddress, method string, body interface{}) {
 	path := "/contracts/" + contractAddress + "/" + method
 	resp, err := client.R().
-		SetHeader("x-firefly-from", identity).
-		SetHeader("x-firefly-sync", "true").
+		SetHeader("kld-from", identity).
+		SetHeader("kld-sync", "true").
+		SetQueryParam("kld-from", identity).
+		SetQueryParam("kld-sync", "true").
 		SetBody(body).
 		Post(path)
+	t.Logf("test invoke eth contract here")
+	t.Log("headers", resp.Request.RawRequest.Header)
+	t.Log("path:", path)
+	t.Log("statusCode:", resp.StatusCode())
+	t.Log("response:", resp.String())
+	t.Log("request:", resp.Request.Body)
+	t.Log("URL", resp.Request.URL)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
@@ -131,17 +140,23 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
 	stack := readStackFile(suite.T())
 	suite.ethClient = NewResty(suite.T())
-	// suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
-	suite.ethClient.SetBaseURL(fmt.Sprintf("https://%s", stack.EthConnectHostname))
+	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 
-	if stack.EthConnectUsername != "" && stack.EthConnectPassword != "" {
-		suite.T().Log("Setting auth for Ethconnect")
-		suite.ethClient.SetBasicAuth(stack.EthConnectUsername, stack.EthConnectPassword)
+	// In case of hosted firefly set ethconnect override base url
+	if stack.Members[0].EthConnectHostname != "" {
+		suite.ethClient.SetBaseURL(fmt.Sprintf("https://%s", stack.Members[0].EthConnectHostname))
+	}
+
+	if stack.Members[0].EthConnectUsername != "" && stack.Members[0].EthConnectPassword != "" {
+		suite.T().Log("Setting auth for Ethconnect 1")
+		suite.ethClient.SetBasicAuth(stack.Members[0].EthConnectUsername, stack.Members[0].EthConnectPassword)
 	}
 
 	suite.ethIdentity = suite.testState.org1key.Value
 	suite.contractAddress = os.Getenv("CONTRACT_ADDRESS")
-	if suite.contractAddress == "" {
+	if suite.contractAddress == "" && stack.ContractAddress != "" {
+		suite.contractAddress = stack.ContractAddress
+	} else {
 		suite.T().Fatal("CONTRACT_ADDRESS must be set")
 	}
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
