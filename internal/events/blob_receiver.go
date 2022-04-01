@@ -117,6 +117,7 @@ func (br *blobReceiver) start() {
 }
 
 func (br *blobReceiver) stop() {
+	br.closed = true
 	br.cancelFunc()
 	for _, workerDone := range br.workersDone {
 		<-workerDone
@@ -156,9 +157,6 @@ func (br *blobReceiver) blobReceiverLoop(index int) {
 				return
 			}
 			batch = nil
-		} else if batch == nil && timedOut {
-			log.L(ctx).Debugf("Blob receiver worker exiting")
-			return
 		}
 	}
 }

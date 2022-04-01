@@ -82,7 +82,7 @@ func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) (err
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	if s.features.MultiRowInsert {
-		query := sq.Insert("blobs").Columns(dataColumnsWithValue...)
+		query := sq.Insert("blobs").Columns(blobColumns...)
 		for _, blob := range blobs {
 			query = s.setBlobInsertValues(query, blob)
 		}
