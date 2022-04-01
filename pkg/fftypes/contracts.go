@@ -28,12 +28,12 @@ var (
 )
 
 type ContractCallRequest struct {
-	Type      ContractCallType       `json:"type,omitempty" ffenum:"contractcalltype"`
-	Interface *UUID                  `json:"interface,omitempty"`
+	Type      ContractCallType       `json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
+	Interface *UUID                  `json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery,postContractInterfaceInvoke,postContractInterfaceQuery"`
 	Ledger    *JSONAny               `json:"ledger,omitempty"`
 	Location  *JSONAny               `json:"location,omitempty"`
 	Key       string                 `json:"key,omitempty"`
-	Method    *FFIMethod             `json:"method,omitempty"`
+	Method    *FFIMethod             `json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	Input     map[string]interface{} `json:"input"`
 }
 
@@ -53,14 +53,14 @@ type ContractURLs struct {
 }
 
 type ContractAPI struct {
-	ID        *UUID         `json:"id,omitempty"`
-	Namespace string        `json:"namespace,omitempty"`
+	ID        *UUID         `json:"id,omitempty" ffexcludeinput:"true"`
+	Namespace string        `json:"namespace,omitempty" ffexcludeinput:"true"`
 	Interface *FFIReference `json:"interface"`
 	Ledger    *JSONAny      `json:"ledger,omitempty"`
 	Location  *JSONAny      `json:"location,omitempty"`
 	Name      string        `json:"name"`
-	Message   *UUID         `json:"message,omitempty"`
-	URLs      ContractURLs  `json:"urls"`
+	Message   *UUID         `json:"message,omitempty" ffexcludeinput:"true"`
+	URLs      ContractURLs  `json:"urls" ffexcludeinput:"true"`
 }
 
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {

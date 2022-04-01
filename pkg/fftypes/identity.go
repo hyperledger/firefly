@@ -53,9 +53,9 @@ type IdentityMessages struct {
 
 // IdentityBase are the immutable fields of an identity that determine what the identity itself is
 type IdentityBase struct {
-	ID        *UUID        `json:"id"`
+	ID        *UUID        `json:"id" ffexcludeinput:"true"`
 	DID       string       `json:"did"`
-	Type      IdentityType `json:"type" ffenum:"identitytype"`
+	Type      IdentityType `json:"type" ffenum:"identitytype" ffexcludeinput:"true"`
 	Parent    *UUID        `json:"parent,omitempty"`
 	Namespace string       `json:"namespace"`
 	Name      string       `json:"name,omitempty"`
@@ -71,8 +71,8 @@ type IdentityProfile struct {
 type Identity struct {
 	IdentityBase
 	IdentityProfile
-	Messages IdentityMessages `json:"messages,omitempty"`
-	Created  *FFTime          `json:"created,omitempty"`
+	Messages IdentityMessages `json:"messages,omitempty" ffexcludeinput:"true"`
+	Created  *FFTime          `json:"created,omitempty" ffexcludeinput:"true"`
 	Updated  *FFTime          `json:"updated,omitempty"`
 }
 

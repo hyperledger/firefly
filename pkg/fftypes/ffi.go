@@ -38,9 +38,9 @@ type FFIReference struct {
 }
 
 type FFI struct {
-	ID          *UUID        `json:"id,omitempty"`
-	Message     *UUID        `json:"message,omitempty"`
-	Namespace   string       `json:"namespace,omitempty"`
+	ID          *UUID        `json:"id,omitempty" ffexcludeinput:"true"`
+	Message     *UUID        `json:"message,omitempty" ffexcludeinput:"true"`
+	Namespace   string       `json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name        string       `json:"name"`
 	Description string       `json:"description"`
 	Version     string       `json:"version"`

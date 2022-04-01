@@ -25,13 +25,13 @@ import (
 )
 
 type ContractListener struct {
-	ID         *UUID                    `json:"id,omitempty"`
+	ID         *UUID                    `json:"id,omitempty" ffexcludeinput:"true"`
 	Interface  *FFIReference            `json:"interface,omitempty"`
-	Namespace  string                   `json:"namespace,omitempty"`
+	Namespace  string                   `json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name       string                   `json:"name,omitempty"`
-	ProtocolID string                   `json:"protocolId,omitempty"`
+	ProtocolID string                   `json:"protocolId,omitempty" ffexcludeinput:"true"`
 	Location   *JSONAny                 `json:"location,omitempty"`
-	Created    *FFTime                  `json:"created,omitempty"`
+	Created    *FFTime                  `json:"created,omitempty" ffexcludeinput:"true"`
 	Event      *FFISerializedEvent      `json:"event,omitempty"`
 	Topic      string                   `json:"topic,omitempty"`
 	Options    *ContractListenerOptions `json:"options,omitempty"`

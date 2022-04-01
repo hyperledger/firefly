@@ -17,7 +17,6 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -26,58 +25,6 @@ import (
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-var broadcastSchema = `{
-	"properties": {
-		 "data": {
-				"items": {
-					 "properties": {
-							"id": {"type": "string"},
-							"hash": {"type": "string"},
-							"validator": {"type": "string"},
-							"datatype": {
-								"type": "object",
-								"properties": {
-									"name": {"type": "string"},
-									"version": {"type": "string"}
-								}
-							},
-							"value": {
-								"type": "object"
-							}
-					 },
-					 "type": "object"
-				},
-				"type": "array"
-		 },
-		 "header": {
-				"properties": {
-					 "author": {
-							"type": "string"
-					 },
-					 "cid": {},
-					 "context": {
-							"type": "string"
-					 },
-					 "group": {},
-					 "tag": {
-							"type": "string"
-					 },
-					 "topics": {
-						 	"items": {
-								 "type": "string"
-							 }
-					 },
-					 "txtype": {
-							"type": "string",
-							"default": "pin"
-					 }
-				},
-				"type": "object"
-		 }
-	},
-	"type": "object"
-}`
 
 var postNewMessageBroadcast = &oapispec.Route{
 	Name:   "postNewMessageBroadcast",
@@ -92,7 +39,6 @@ var postNewMessageBroadcast = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-	JSONInputSchema: func(ctx context.Context) string { return broadcastSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

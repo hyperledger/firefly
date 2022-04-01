@@ -38,12 +38,12 @@ var (
 // Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	ID          *UUID         `json:"id"`
-	Message     *UUID         `json:"message,omitempty"`
+	ID          *UUID         `json:"id" ffexcludeinput:"true"`
+	Message     *UUID         `json:"message,omitempty" ffexcludeinput:"true"`
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
-	Type        NamespaceType `json:"type" ffenum:"namespacetype"`
-	Created     *FFTime       `json:"created"`
+	Type        NamespaceType `json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
+	Created     *FFTime       `json:"created" ffexcludeinput:"true"`
 }
 
 func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {

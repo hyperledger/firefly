@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,39 +43,18 @@ var testRoutes = []*Route{
 		FilterFactory:   nil,
 		Description:     i18n.MsgTBD,
 		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-		JSONInputMask:   nil,
 		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
-		Name:           "op2",
-		Path:           "example2",
-		Method:         http.MethodGet,
-		PathParams:     nil,
-		QueryParams:    nil,
-		FilterFactory:  database.MessageQueryFactory,
-		Description:    i18n.MsgTBD,
-		JSONInputValue: func() interface{} { return nil },
-		JSONInputSchema: func(ctx context.Context) string {
-			return `{
-			"type": "object",
-			"properties": {
-				"id": {
-					"type": "string"
-				}
-			}
-		}`
-		},
-		JSONOutputSchema: func(ctx context.Context) string {
-			return `{
-			"type": "object",
-			"properties": {
-				"id": {
-					"type": "string"
-				}
-			}
-		}`
-		},
+		Name:            "op2",
+		Path:            "example2",
+		Method:          http.MethodGet,
+		PathParams:      nil,
+		QueryParams:     nil,
+		FilterFactory:   database.MessageQueryFactory,
+		Description:     i18n.MsgTBD,
+		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
@@ -121,7 +100,6 @@ var testRoutes = []*Route{
 		FilterFactory:   nil,
 		Description:     i18n.MsgTBD,
 		JSONInputValue:  func() interface{} { return &fftypes.Data{} },
-		JSONInputMask:   []string{"id"},
 		JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	},
@@ -156,29 +134,6 @@ func TestDuplicateOperationIDCheck(t *testing.T) {
 	})
 }
 
-func TestBadCustomSchema(t *testing.T) {
-
-	config.Reset()
-	routes := []*Route{
-		{
-			Name:            "op1",
-			Path:            "namespaces/{ns}/example1/{id}",
-			Method:          http.MethodPost,
-			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
-			JSONInputMask:   []string{"id"},
-			JSONOutputCodes: []int{http.StatusOK},
-			JSONInputSchema: func(ctx context.Context) string { return `!json` },
-		},
-	}
-	assert.PanicsWithValue(t, "invalid schema for *fftypes.Message: invalid character '!' looking for beginning of value", func() {
-		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
-			Title:   "UnitTest",
-			Version: "1.0",
-			BaseURL: "http://localhost:12345/api/v1",
-		})
-	})
-}
-
 func TestWildcards(t *testing.T) {
 
 	config.Reset()
@@ -188,7 +143,6 @@ func TestWildcards(t *testing.T) {
 			Path:            "namespaces/{ns}/example1/{id:.*wildcard.*}",
 			Method:          http.MethodPost,
 			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
-			JSONInputMask:   []string{"id"},
 			JSONOutputCodes: []int{http.StatusOK},
 		},
 	}

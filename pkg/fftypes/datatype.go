@@ -35,14 +35,14 @@ var (
 
 // Datatype is the structure defining a data definition, such as a JSON schema
 type Datatype struct {
-	ID        *UUID         `json:"id,omitempty"`
-	Message   *UUID         `json:"message,omitempty"`
+	ID        *UUID         `json:"id,omitempty" ffexcludeinput:"true"`
+	Message   *UUID         `json:"message,omitempty" ffexcludeinput:"true"`
 	Validator ValidatorType `json:"validator" ffenum:"validatortype"`
-	Namespace string        `json:"namespace,omitempty"`
+	Namespace string        `json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name      string        `json:"name,omitempty"`
 	Version   string        `json:"version,omitempty"`
-	Hash      *Bytes32      `json:"hash,omitempty"`
-	Created   *FFTime       `json:"created,omitempty"`
+	Hash      *Bytes32      `json:"hash,omitempty" ffexcludeinput:"true"`
+	Created   *FFTime       `json:"created,omitempty" ffexcludeinput:"true"`
 	Value     *JSONAny      `json:"value,omitempty"`
 }
 

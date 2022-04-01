@@ -90,21 +90,23 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  description:
-                    type: string
-                  id: {}
-                  message: {}
-                  name:
-                    type: string
-                  type:
-                    enum:
-                    - local
-                    - broadcast
-                    - system
-                    type: string
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    description:
+                      type: string
+                    id: {}
+                    message: {}
+                    name:
+                      type: string
+                    type:
+                      enum:
+                      - local
+                      - broadcast
+                      - system
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -586,12 +588,44 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
+                interface: {}
                 key:
                   type: string
                 ledger:
                   type: string
                 location:
                   type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
               type: object
       responses:
         "200":
@@ -643,18 +677,52 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
+                interface: {}
                 key:
                   type: string
                 ledger:
                   type: string
                 location:
                   type: string
+                method:
+                  properties:
+                    contract: {}
+                    description:
+                      type: string
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    params:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                    pathname:
+                      type: string
+                    returns:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          schema:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
               type: object
       responses:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                additionalProperties: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -900,34 +968,36 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  author:
-                    type: string
-                  confirmed: {}
-                  created: {}
-                  hash: {}
-                  id: {}
-                  key:
-                    type: string
-                  manifest:
-                    type: string
-                  namespace:
-                    type: string
-                  node: {}
-                  payloadRef:
-                    type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
-                  type:
-                    enum:
-                    - broadcast
-                    - private
-                    type: string
-                type: object
+                items:
+                  properties:
+                    author:
+                      type: string
+                    confirmed: {}
+                    created: {}
+                    hash: {}
+                    id: {}
+                    key:
+                      type: string
+                    manifest:
+                      type: string
+                    namespace:
+                      type: string
+                    node: {}
+                    payloadRef:
+                      type: string
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                    type:
+                      enum:
+                      - broadcast
+                      - private
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -1095,34 +1165,36 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  id: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  listener: {}
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  output:
-                    additionalProperties: {}
-                    type: object
-                  protocolId:
-                    type: string
-                  sequence:
-                    format: int64
-                    type: integer
-                  source:
-                    type: string
-                  timestamp: {}
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
-                type: object
+                items:
+                  properties:
+                    id: {}
+                    info:
+                      additionalProperties: {}
+                      type: object
+                    listener: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
+                    protocolId:
+                      type: string
+                    sequence:
+                      format: int64
+                      type: integer
+                    source:
+                      type: string
+                    timestamp: {}
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -1232,20 +1304,22 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  count:
-                    type: string
-                  timestamp: {}
-                  types:
-                    items:
-                      properties:
-                        count:
-                          type: string
-                        type:
-                          type: string
-                      type: object
-                    type: array
-                type: object
+                items:
+                  properties:
+                    count:
+                      type: string
+                    timestamp: {}
+                    types:
+                      items:
+                        properties:
+                          count:
+                            type: string
+                          type:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -1722,6 +1796,7 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
+                interface: {}
                 key:
                   type: string
                 ledger:
@@ -1810,6 +1885,7 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
+                interface: {}
                 key:
                   type: string
                 ledger:
@@ -1852,7 +1928,9 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                additionalProperties: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -2242,49 +2320,51 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  event:
-                    properties:
-                      description:
-                        type: string
-                      name:
-                        type: string
-                      params:
-                        items:
-                          properties:
-                            name:
-                              type: string
-                            schema:
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  id: {}
-                  interface:
-                    properties:
-                      id: {}
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  location:
-                    type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  options:
-                    properties:
-                      firstEvent:
-                        type: string
-                    type: object
-                  protocolId:
-                    type: string
-                  topic:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    event:
+                      properties:
+                        description:
+                          type: string
+                        name:
+                          type: string
+                        params:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              schema:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    id: {}
+                    interface:
+                      properties:
+                        id: {}
+                        name:
+                          type: string
+                        version:
+                          type: string
+                      type: object
+                    location:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    options:
+                      properties:
+                        firstEvent:
+                          type: string
+                      type: object
+                    protocolId:
+                      type: string
+                    topic:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -2311,7 +2391,6 @@ paths:
           application/json:
             schema:
               properties:
-                created: {}
                 event:
                   properties:
                     description:
@@ -2329,7 +2408,6 @@ paths:
                       type: array
                   type: object
                 eventId: {}
-                id: {}
                 interface:
                   properties:
                     id: {}
@@ -2342,15 +2420,11 @@ paths:
                   type: string
                 name:
                   type: string
-                namespace:
-                  type: string
                 options:
                   properties:
                     firstEvent:
                       type: string
                   type: object
-                protocolId:
-                  type: string
                 topic:
                   type: string
               type: object
@@ -2578,7 +2652,9 @@ paths:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                additionalProperties: {}
+                type: object
           description: Success
         default:
           description: ""
@@ -2700,35 +2776,37 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  blob:
-                    properties:
-                      hash: {}
-                      name:
-                        type: string
-                      public:
-                        type: string
-                      size:
-                        format: int64
-                        type: integer
-                    type: object
-                  created: {}
-                  datatype:
-                    properties:
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  hash: {}
-                  id: {}
-                  namespace:
-                    type: string
-                  validator:
-                    type: string
-                  value:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    blob:
+                      properties:
+                        hash: {}
+                        name:
+                          type: string
+                        public:
+                          type: string
+                        size:
+                          format: int64
+                          type: integer
+                      type: object
+                    created: {}
+                    datatype:
+                      properties:
+                        name:
+                          type: string
+                        version:
+                          type: string
+                      type: object
+                    hash: {}
+                    id: {}
+                    namespace:
+                      type: string
+                    validator:
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -3050,9 +3128,8 @@ paths:
           content:
             application/json:
               schema:
-                maximum: 255
-                minimum: 0
-                type: integer
+                format: byte
+                type: string
           description: Success
         default:
           description: ""
@@ -3207,37 +3284,58 @@ paths:
               schema:
                 properties:
                   batch: {}
-                  confirmed: {}
+                  confirmed:
+                    description: The timestamp of when the message was confirmed
                   data:
+                    description: The list of data elements attached to the message
                     items:
+                      description: The list of data elements attached to the message
                       properties:
                         hash: {}
                         id: {}
                       type: object
                     type: array
-                  hash: {}
+                  hash:
+                    description: The hash of the entire message, including data elements
+                      and headers
                   header:
+                    description: The message header
                     properties:
                       author:
                         type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
+                      cid:
+                        description: The CID of the message
+                      created:
+                        description: The creation time of the message
+                      datahash:
+                        description: The hash of all of the data items attached to
+                          this message.
+                      group:
+                        description: The group of recipients for a private message
+                      id:
+                        description: The UUID of the message
                       key:
                         type: string
                       namespace:
+                        description: The namespace of the message
                         type: string
                       tag:
+                        description: The message tag. Useful for indicating the purpose
+                          of the message to other nodes.
                         type: string
                       topics:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         items:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           type: string
                         type: array
                       txtype:
+                        description: The type of transaction
                         type: string
                       type:
+                        description: The type of the message
                         enum:
                         - definition
                         - broadcast
@@ -3248,10 +3346,13 @@ paths:
                         type: string
                     type: object
                   pins:
+                    description: The list of pins from this message
                     items:
+                      description: The list of pins from this message
                       type: string
                     type: array
                   state:
+                    description: The current state of the message
                     enum:
                     - staged
                     - ready
@@ -3357,26 +3458,28 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  hash: {}
-                  id: {}
-                  message: {}
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  validator:
-                    enum:
-                    - json
-                    - none
-                    - definition
-                    type: string
-                  value:
-                    type: string
-                  version:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    hash: {}
+                    id: {}
+                    message: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    validator:
+                      enum:
+                      - json
+                      - none
+                      - definition
+                      type: string
+                    value:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -3643,38 +3746,40 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  correlator: {}
-                  created: {}
-                  id: {}
-                  namespace:
-                    type: string
-                  reference: {}
-                  sequence:
-                    format: int64
-                    type: integer
-                  topic:
-                    type: string
-                  tx: {}
-                  type:
-                    enum:
-                    - transaction_submitted
-                    - message_confirmed
-                    - message_rejected
-                    - namespace_confirmed
-                    - datatype_confirmed
-                    - identity_confirmed
-                    - identity_updated
-                    - token_pool_confirmed
-                    - token_transfer_confirmed
-                    - token_transfer_op_failed
-                    - token_approval_confirmed
-                    - token_approval_op_failed
-                    - contract_interface_confirmed
-                    - contract_api_confirmed
-                    - blockchain_event_received
-                    type: string
-                type: object
+                items:
+                  properties:
+                    correlator: {}
+                    created: {}
+                    id: {}
+                    namespace:
+                      type: string
+                    reference: {}
+                    sequence:
+                      format: int64
+                      type: integer
+                    topic:
+                      type: string
+                    tx: {}
+                    type:
+                      enum:
+                      - transaction_submitted
+                      - message_confirmed
+                      - message_rejected
+                      - namespace_confirmed
+                      - datatype_confirmed
+                      - identity_confirmed
+                      - identity_updated
+                      - token_pool_confirmed
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
+                      - token_approval_confirmed
+                      - token_approval_op_failed
+                      - contract_interface_confirmed
+                      - contract_api_confirmed
+                      - blockchain_event_received
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -3831,24 +3936,26 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  hash: {}
-                  ledger: {}
-                  members:
-                    items:
-                      properties:
-                        identity:
-                          type: string
-                        node: {}
-                      type: object
-                    type: array
-                  message: {}
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    hash: {}
+                    ledger: {}
+                    members:
+                      items:
+                        properties:
+                          identity:
+                            type: string
+                          node: {}
+                        type: object
+                      type: array
+                    message: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -4106,6 +4213,20 @@ paths:
         content:
           application/json:
             schema:
+              properties:
+                description:
+                  type: string
+                key:
+                  type: string
+                name:
+                  type: string
+                parent:
+                  type: string
+                profile:
+                  additionalProperties: {}
+                  type: object
+                type:
+                  type: string
               type: object
       responses:
         "200":
@@ -4573,62 +4694,88 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  batch: {}
-                  confirmed: {}
-                  data:
-                    items:
+                items:
+                  properties:
+                    batch: {}
+                    confirmed:
+                      description: The timestamp of when the message was confirmed
+                    data:
+                      description: The list of data elements attached to the message
+                      items:
+                        description: The list of data elements attached to the message
+                        properties:
+                          hash: {}
+                          id: {}
+                        type: object
+                      type: array
+                    hash:
+                      description: The hash of the entire message, including data
+                        elements and headers
+                    header:
+                      description: The message header
                       properties:
-                        hash: {}
-                        id: {}
-                      type: object
-                    type: array
-                  hash: {}
-                  header:
-                    properties:
-                      author:
-                        type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
-                      key:
-                        type: string
-                      namespace:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        items:
+                        author:
                           type: string
-                        type: array
-                      txtype:
+                        cid:
+                          description: The CID of the message
+                        created:
+                          description: The creation time of the message
+                        datahash:
+                          description: The hash of all of the data items attached
+                            to this message.
+                        group:
+                          description: The group of recipients for a private message
+                        id:
+                          description: The UUID of the message
+                        key:
+                          type: string
+                        namespace:
+                          description: The namespace of the message
+                          type: string
+                        tag:
+                          description: The message tag. Useful for indicating the
+                            purpose of the message to other nodes.
+                          type: string
+                        topics:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
+                          items:
+                            description: The message topics. Messages will be ordered
+                              within a given topic or combination of topics
+                            type: string
+                          type: array
+                        txtype:
+                          description: The type of transaction
+                          type: string
+                        type:
+                          description: The type of the message
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer_broadcast
+                          - transfer_private
+                          type: string
+                      type: object
+                    pins:
+                      description: The list of pins from this message
+                      items:
+                        description: The list of pins from this message
                         type: string
-                      type:
-                        enum:
-                        - definition
-                        - broadcast
-                        - private
-                        - groupinit
-                        - transfer_broadcast
-                        - transfer_private
-                        type: string
-                    type: object
-                  pins:
-                    items:
+                      type: array
+                    state:
+                      description: The current state of the message
+                      enum:
+                      - staged
+                      - ready
+                      - sent
+                      - pending
+                      - confirmed
+                      - rejected
                       type: string
-                    type: array
-                  state:
-                    enum:
-                    - staged
-                    - ready
-                    - sent
-                    - pending
-                    - confirmed
-                    - rejected
-                    type: string
-                type: object
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -4669,9 +4816,12 @@ paths:
               schema:
                 properties:
                   batch: {}
-                  confirmed: {}
+                  confirmed:
+                    description: The timestamp of when the message was confirmed
                   data:
+                    description: The list of data elements attached to the message
                     items:
+                      description: The list of data elements attached to the message
                       properties:
                         hash: {}
                         id: {}
@@ -4692,29 +4842,47 @@ paths:
                       name:
                         type: string
                     type: object
-                  hash: {}
+                  hash:
+                    description: The hash of the entire message, including data elements
+                      and headers
                   header:
+                    description: The message header
                     properties:
                       author:
                         type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
+                      cid:
+                        description: The CID of the message
+                      created:
+                        description: The creation time of the message
+                      datahash:
+                        description: The hash of all of the data items attached to
+                          this message.
+                      group:
+                        description: The group of recipients for a private message
+                      id:
+                        description: The UUID of the message
                       key:
                         type: string
                       namespace:
+                        description: The namespace of the message
                         type: string
                       tag:
+                        description: The message tag. Useful for indicating the purpose
+                          of the message to other nodes.
                         type: string
                       topics:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         items:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           type: string
                         type: array
                       txtype:
+                        description: The type of transaction
                         type: string
                       type:
+                        description: The type of the message
                         enum:
                         - definition
                         - broadcast
@@ -4725,10 +4893,13 @@ paths:
                         type: string
                     type: object
                   pins:
+                    description: The list of pins from this message
                     items:
+                      description: The list of pins from this message
                       type: string
                     type: array
                   state:
+                    description: The current state of the message
                     enum:
                     - staged
                     - ready
@@ -4771,35 +4942,37 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  blob:
-                    properties:
-                      hash: {}
-                      name:
-                        type: string
-                      public:
-                        type: string
-                      size:
-                        format: int64
-                        type: integer
-                    type: object
-                  created: {}
-                  datatype:
-                    properties:
-                      name:
-                        type: string
-                      version:
-                        type: string
-                    type: object
-                  hash: {}
-                  id: {}
-                  namespace:
-                    type: string
-                  validator:
-                    type: string
-                  value:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    blob:
+                      properties:
+                        hash: {}
+                        name:
+                          type: string
+                        public:
+                          type: string
+                        size:
+                          format: int64
+                          type: integer
+                      type: object
+                    created: {}
+                    datatype:
+                      properties:
+                        name:
+                          type: string
+                        version:
+                          type: string
+                      type: object
+                    hash: {}
+                    id: {}
+                    namespace:
+                      type: string
+                    validator:
+                      type: string
+                    value:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -4912,38 +5085,40 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  correlator: {}
-                  created: {}
-                  id: {}
-                  namespace:
-                    type: string
-                  reference: {}
-                  sequence:
-                    format: int64
-                    type: integer
-                  topic:
-                    type: string
-                  tx: {}
-                  type:
-                    enum:
-                    - transaction_submitted
-                    - message_confirmed
-                    - message_rejected
-                    - namespace_confirmed
-                    - datatype_confirmed
-                    - identity_confirmed
-                    - identity_updated
-                    - token_pool_confirmed
-                    - token_transfer_confirmed
-                    - token_transfer_op_failed
-                    - token_approval_confirmed
-                    - token_approval_op_failed
-                    - contract_interface_confirmed
-                    - contract_api_confirmed
-                    - blockchain_event_received
-                    type: string
-                type: object
+                items:
+                  properties:
+                    correlator: {}
+                    created: {}
+                    id: {}
+                    namespace:
+                      type: string
+                    reference: {}
+                    sequence:
+                      format: int64
+                      type: integer
+                    topic:
+                      type: string
+                    tx: {}
+                    type:
+                      enum:
+                      - transaction_submitted
+                      - message_confirmed
+                      - message_rejected
+                      - namespace_confirmed
+                      - datatype_confirmed
+                      - identity_confirmed
+                      - identity_updated
+                      - token_pool_confirmed
+                      - token_transfer_confirmed
+                      - token_transfer_op_failed
+                      - token_approval_confirmed
+                      - token_approval_op_failed
+                      - contract_interface_confirmed
+                      - contract_api_confirmed
+                      - blockchain_event_received
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -5029,43 +5204,82 @@ paths:
           application/json:
             schema:
               properties:
+                batch: {}
+                confirmed:
+                  description: The timestamp of when the message was confirmed
                 data:
+                  description: The list of data elements attached to the message
                   items:
+                    description: The list of data elements attached to the message
                     properties:
-                      datatype:
-                        properties:
-                          name:
-                            type: string
-                          version:
-                            type: string
-                        type: object
-                      hash:
-                        type: string
-                      id:
-                        type: string
-                      validator:
-                        type: string
-                      value:
-                        type: object
+                      hash: {}
+                      id: {}
                     type: object
                   type: array
+                hash:
+                  description: The hash of the entire message, including data elements
+                    and headers
                 header:
+                  description: The message header
                   properties:
                     author:
                       type: string
-                    cid: {}
-                    context:
+                    cid:
+                      description: The CID of the message
+                    created:
+                      description: The creation time of the message
+                    datahash:
+                      description: The hash of all of the data items attached to this
+                        message.
+                    id:
+                      description: The UUID of the message
+                    key:
                       type: string
-                    group: {}
+                    namespace:
+                      description: The namespace of the message
+                      type: string
                     tag:
+                      description: The message tag. Useful for indicating the purpose
+                        of the message to other nodes.
                       type: string
                     topics:
+                      description: The message topics. Messages will be ordered within
+                        a given topic or combination of topics
                       items:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         type: string
+                      type: array
                     txtype:
-                      default: pin
+                      description: The type of transaction
+                      type: string
+                    type:
+                      description: The type of the message
+                      enum:
+                      - definition
+                      - broadcast
+                      - private
+                      - groupinit
+                      - transfer_broadcast
+                      - transfer_private
                       type: string
                   type: object
+                pins:
+                  description: The list of pins from this message
+                  items:
+                    description: The list of pins from this message
+                    type: string
+                  type: array
+                state:
+                  description: The current state of the message
+                  enum:
+                  - staged
+                  - ready
+                  - sent
+                  - pending
+                  - confirmed
+                  - rejected
+                  type: string
               type: object
       responses:
         "200":
@@ -5074,37 +5288,56 @@ paths:
               schema:
                 properties:
                   batch: {}
-                  confirmed: {}
+                  confirmed:
+                    description: The timestamp of when the message was confirmed
                   data:
+                    description: The list of data elements attached to the message
                     items:
+                      description: The list of data elements attached to the message
                       properties:
                         hash: {}
                         id: {}
                       type: object
                     type: array
-                  hash: {}
+                  hash:
+                    description: The hash of the entire message, including data elements
+                      and headers
                   header:
+                    description: The message header
                     properties:
                       author:
                         type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
+                      cid:
+                        description: The CID of the message
+                      created:
+                        description: The creation time of the message
+                      datahash:
+                        description: The hash of all of the data items attached to
+                          this message.
+                      id:
+                        description: The UUID of the message
                       key:
                         type: string
                       namespace:
+                        description: The namespace of the message
                         type: string
                       tag:
+                        description: The message tag. Useful for indicating the purpose
+                          of the message to other nodes.
                         type: string
                       topics:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         items:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           type: string
                         type: array
                       txtype:
+                        description: The type of transaction
                         type: string
                       type:
+                        description: The type of the message
                         enum:
                         - definition
                         - broadcast
@@ -5115,10 +5348,13 @@ paths:
                         type: string
                     type: object
                   pins:
+                    description: The list of pins from this message
                     items:
+                      description: The list of pins from this message
                       type: string
                     type: array
                   state:
+                    description: The current state of the message
                     enum:
                     - staged
                     - ready
@@ -5135,37 +5371,56 @@ paths:
               schema:
                 properties:
                   batch: {}
-                  confirmed: {}
+                  confirmed:
+                    description: The timestamp of when the message was confirmed
                   data:
+                    description: The list of data elements attached to the message
                     items:
+                      description: The list of data elements attached to the message
                       properties:
                         hash: {}
                         id: {}
                       type: object
                     type: array
-                  hash: {}
+                  hash:
+                    description: The hash of the entire message, including data elements
+                      and headers
                   header:
+                    description: The message header
                     properties:
                       author:
                         type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
+                      cid:
+                        description: The CID of the message
+                      created:
+                        description: The creation time of the message
+                      datahash:
+                        description: The hash of all of the data items attached to
+                          this message.
+                      id:
+                        description: The UUID of the message
                       key:
                         type: string
                       namespace:
+                        description: The namespace of the message
                         type: string
                       tag:
+                        description: The message tag. Useful for indicating the purpose
+                          of the message to other nodes.
                         type: string
                       topics:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         items:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           type: string
                         type: array
                       txtype:
+                        description: The type of transaction
                         type: string
                       type:
+                        description: The type of the message
                         enum:
                         - definition
                         - broadcast
@@ -5176,10 +5431,13 @@ paths:
                         type: string
                     type: object
                   pins:
+                    description: The list of pins from this message
                     items:
+                      description: The list of pins from this message
                       type: string
                     type: array
                   state:
+                    description: The current state of the message
                     enum:
                     - staged
                     - ready
@@ -5221,24 +5479,21 @@ paths:
           application/json:
             schema:
               properties:
+                batch: {}
+                confirmed:
+                  description: The timestamp of when the message was confirmed
                 data:
+                  description: The list of data elements attached to the message
                   items:
+                    description: The list of data elements attached to the message
                     properties:
-                      datatype:
-                        properties:
-                          name:
-                            type: string
-                          version:
-                            type: string
-                        type: object
-                      validator:
-                        type: string
-                      value:
-                        type: object
+                      hash: {}
+                      id: {}
                     type: object
                   type: array
                 group:
                   properties:
+                    ledger: {}
                     members:
                       items:
                         properties:
@@ -5246,32 +5501,77 @@ paths:
                             type: string
                           node:
                             type: string
-                        required:
-                        - identity
                         type: object
                       type: array
                     name:
                       type: string
-                  required:
-                  - members
                   type: object
+                hash:
+                  description: The hash of the entire message, including data elements
+                    and headers
                 header:
+                  description: The message header
                   properties:
                     author:
                       type: string
-                    cid: {}
-                    context:
+                    cid:
+                      description: The CID of the message
+                    created:
+                      description: The creation time of the message
+                    datahash:
+                      description: The hash of all of the data items attached to this
+                        message.
+                    group:
+                      description: The group of recipients for a private message
+                    id:
+                      description: The UUID of the message
+                    key:
                       type: string
-                    group: {}
+                    namespace:
+                      description: The namespace of the message
+                      type: string
                     tag:
+                      description: The message tag. Useful for indicating the purpose
+                        of the message to other nodes.
                       type: string
                     topics:
+                      description: The message topics. Messages will be ordered within
+                        a given topic or combination of topics
                       items:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         type: string
+                      type: array
                     txtype:
-                      default: pin
+                      description: The type of transaction
+                      type: string
+                    type:
+                      description: The type of the message
+                      enum:
+                      - definition
+                      - broadcast
+                      - private
+                      - groupinit
+                      - transfer_broadcast
+                      - transfer_private
                       type: string
                   type: object
+                pins:
+                  description: The list of pins from this message
+                  items:
+                    description: The list of pins from this message
+                    type: string
+                  type: array
+                state:
+                  description: The current state of the message
+                  enum:
+                  - staged
+                  - ready
+                  - sent
+                  - pending
+                  - confirmed
+                  - rejected
+                  type: string
               type: object
       responses:
         "200":
@@ -5280,37 +5580,58 @@ paths:
               schema:
                 properties:
                   batch: {}
-                  confirmed: {}
+                  confirmed:
+                    description: The timestamp of when the message was confirmed
                   data:
+                    description: The list of data elements attached to the message
                     items:
+                      description: The list of data elements attached to the message
                       properties:
                         hash: {}
                         id: {}
                       type: object
                     type: array
-                  hash: {}
+                  hash:
+                    description: The hash of the entire message, including data elements
+                      and headers
                   header:
+                    description: The message header
                     properties:
                       author:
                         type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
+                      cid:
+                        description: The CID of the message
+                      created:
+                        description: The creation time of the message
+                      datahash:
+                        description: The hash of all of the data items attached to
+                          this message.
+                      group:
+                        description: The group of recipients for a private message
+                      id:
+                        description: The UUID of the message
                       key:
                         type: string
                       namespace:
+                        description: The namespace of the message
                         type: string
                       tag:
+                        description: The message tag. Useful for indicating the purpose
+                          of the message to other nodes.
                         type: string
                       topics:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         items:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           type: string
                         type: array
                       txtype:
+                        description: The type of transaction
                         type: string
                       type:
+                        description: The type of the message
                         enum:
                         - definition
                         - broadcast
@@ -5321,10 +5642,13 @@ paths:
                         type: string
                     type: object
                   pins:
+                    description: The list of pins from this message
                     items:
+                      description: The list of pins from this message
                       type: string
                     type: array
                   state:
+                    description: The current state of the message
                     enum:
                     - staged
                     - ready
@@ -5341,37 +5665,58 @@ paths:
               schema:
                 properties:
                   batch: {}
-                  confirmed: {}
+                  confirmed:
+                    description: The timestamp of when the message was confirmed
                   data:
+                    description: The list of data elements attached to the message
                     items:
+                      description: The list of data elements attached to the message
                       properties:
                         hash: {}
                         id: {}
                       type: object
                     type: array
-                  hash: {}
+                  hash:
+                    description: The hash of the entire message, including data elements
+                      and headers
                   header:
+                    description: The message header
                     properties:
                       author:
                         type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
+                      cid:
+                        description: The CID of the message
+                      created:
+                        description: The creation time of the message
+                      datahash:
+                        description: The hash of all of the data items attached to
+                          this message.
+                      group:
+                        description: The group of recipients for a private message
+                      id:
+                        description: The UUID of the message
                       key:
                         type: string
                       namespace:
+                        description: The namespace of the message
                         type: string
                       tag:
+                        description: The message tag. Useful for indicating the purpose
+                          of the message to other nodes.
                         type: string
                       topics:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         items:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           type: string
                         type: array
                       txtype:
+                        description: The type of transaction
                         type: string
                       type:
+                        description: The type of the message
                         enum:
                         - definition
                         - broadcast
@@ -5382,10 +5727,13 @@ paths:
                         type: string
                     type: object
                   pins:
+                    description: The list of pins from this message
                     items:
+                      description: The list of pins from this message
                       type: string
                     type: array
                   state:
+                    description: The current state of the message
                     enum:
                     - staged
                     - ready
@@ -5422,24 +5770,21 @@ paths:
           application/json:
             schema:
               properties:
+                batch: {}
+                confirmed:
+                  description: The timestamp of when the message was confirmed
                 data:
+                  description: The list of data elements attached to the message
                   items:
+                    description: The list of data elements attached to the message
                     properties:
-                      datatype:
-                        properties:
-                          name:
-                            type: string
-                          version:
-                            type: string
-                        type: object
-                      validator:
-                        type: string
-                      value:
-                        type: object
+                      hash: {}
+                      id: {}
                     type: object
                   type: array
                 group:
                   properties:
+                    ledger: {}
                     members:
                       items:
                         properties:
@@ -5447,32 +5792,77 @@ paths:
                             type: string
                           node:
                             type: string
-                        required:
-                        - identity
                         type: object
                       type: array
                     name:
                       type: string
-                  required:
-                  - members
                   type: object
+                hash:
+                  description: The hash of the entire message, including data elements
+                    and headers
                 header:
+                  description: The message header
                   properties:
                     author:
                       type: string
-                    cid: {}
-                    context:
+                    cid:
+                      description: The CID of the message
+                    created:
+                      description: The creation time of the message
+                    datahash:
+                      description: The hash of all of the data items attached to this
+                        message.
+                    group:
+                      description: The group of recipients for a private message
+                    id:
+                      description: The UUID of the message
+                    key:
                       type: string
-                    group: {}
+                    namespace:
+                      description: The namespace of the message
+                      type: string
                     tag:
+                      description: The message tag. Useful for indicating the purpose
+                        of the message to other nodes.
                       type: string
                     topics:
+                      description: The message topics. Messages will be ordered within
+                        a given topic or combination of topics
                       items:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         type: string
+                      type: array
                     txtype:
-                      default: pin
+                      description: The type of transaction
+                      type: string
+                    type:
+                      description: The type of the message
+                      enum:
+                      - definition
+                      - broadcast
+                      - private
+                      - groupinit
+                      - transfer_broadcast
+                      - transfer_private
                       type: string
                   type: object
+                pins:
+                  description: The list of pins from this message
+                  items:
+                    description: The list of pins from this message
+                    type: string
+                  type: array
+                state:
+                  description: The current state of the message
+                  enum:
+                  - staged
+                  - ready
+                  - sent
+                  - pending
+                  - confirmed
+                  - rejected
+                  type: string
               type: object
       responses:
         "200":
@@ -5481,9 +5871,12 @@ paths:
               schema:
                 properties:
                   batch: {}
-                  confirmed: {}
+                  confirmed:
+                    description: The timestamp of when the message was confirmed
                   data:
+                    description: The list of data elements attached to the message
                     items:
+                      description: The list of data elements attached to the message
                       properties:
                         hash: {}
                         id: {}
@@ -5504,29 +5897,47 @@ paths:
                       name:
                         type: string
                     type: object
-                  hash: {}
+                  hash:
+                    description: The hash of the entire message, including data elements
+                      and headers
                   header:
+                    description: The message header
                     properties:
                       author:
                         type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
+                      cid:
+                        description: The CID of the message
+                      created:
+                        description: The creation time of the message
+                      datahash:
+                        description: The hash of all of the data items attached to
+                          this message.
+                      group:
+                        description: The group of recipients for a private message
+                      id:
+                        description: The UUID of the message
                       key:
                         type: string
                       namespace:
+                        description: The namespace of the message
                         type: string
                       tag:
+                        description: The message tag. Useful for indicating the purpose
+                          of the message to other nodes.
                         type: string
                       topics:
+                        description: The message topics. Messages will be ordered
+                          within a given topic or combination of topics
                         items:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           type: string
                         type: array
                       txtype:
+                        description: The type of transaction
                         type: string
                       type:
+                        description: The type of the message
                         enum:
                         - definition
                         - broadcast
@@ -5537,10 +5948,13 @@ paths:
                         type: string
                     type: object
                   pins:
+                    description: The list of pins from this message
                     items:
+                      description: The list of pins from this message
                       type: string
                     type: array
                   state:
+                    description: The current state of the message
                     enum:
                     - staged
                     - ready
@@ -5671,42 +6085,44 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  error:
-                    type: string
-                  id: {}
-                  input:
-                    additionalProperties: {}
-                    type: object
-                  namespace:
-                    type: string
-                  output:
-                    additionalProperties: {}
-                    type: object
-                  plugin:
-                    type: string
-                  retry: {}
-                  status:
-                    type: string
-                  tx: {}
-                  type:
-                    enum:
-                    - blockchain_pin_batch
-                    - blockchain_invoke
-                    - sharedstorage_upload_batch
-                    - sharedstorage_upload_blob
-                    - sharedstorage_download_batch
-                    - sharedstorage_download_blob
-                    - dataexchange_send_batch
-                    - dataexchange_send_blob
-                    - token_create_pool
-                    - token_activate_pool
-                    - token_transfer
-                    - token_approval
-                    type: string
-                  updated: {}
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    error:
+                      type: string
+                    id: {}
+                    input:
+                      additionalProperties: {}
+                      type: object
+                    namespace:
+                      type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
+                    plugin:
+                      type: string
+                    retry: {}
+                    status:
+                      type: string
+                    tx: {}
+                    type:
+                      enum:
+                      - blockchain_pin_batch
+                      - blockchain_invoke
+                      - sharedstorage_upload_batch
+                      - sharedstorage_upload_blob
+                      - sharedstorage_download_batch
+                      - sharedstorage_download_blob
+                      - dataexchange_send_batch
+                      - dataexchange_send_blob
+                      - token_create_pool
+                      - token_activate_pool
+                      - token_transfer
+                      - token_approval
+                      type: string
+                    updated: {}
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -5807,8 +6223,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              type: object
+            schema: {}
       responses:
         "202":
           content:
@@ -5951,66 +6366,68 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  ephemeral:
-                    type: boolean
-                  filter:
-                    properties:
-                      author:
-                        type: string
-                      blockchainevent:
-                        properties:
-                          listener:
-                            type: string
-                          name:
-                            type: string
-                        type: object
-                      events:
-                        type: string
-                      group:
-                        type: string
-                      message:
-                        properties:
-                          author:
-                            type: string
-                          group:
-                            type: string
-                          tag:
-                            type: string
-                        type: object
-                      tag:
-                        type: string
-                      topic:
-                        type: string
-                      topics:
-                        type: string
-                      transaction:
-                        properties:
-                          type:
-                            type: string
-                        type: object
-                    type: object
-                  id: {}
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  options:
-                    properties:
-                      firstEvent:
-                        type: string
-                      readAhead:
-                        maximum: 65535
-                        minimum: 0
-                        type: integer
-                      withData:
-                        type: boolean
-                    type: object
-                  transport:
-                    type: string
-                  updated: {}
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    ephemeral:
+                      type: boolean
+                    filter:
+                      properties:
+                        author:
+                          type: string
+                        blockchainevent:
+                          properties:
+                            listener:
+                              type: string
+                            name:
+                              type: string
+                          type: object
+                        events:
+                          type: string
+                        group:
+                          type: string
+                        message:
+                          properties:
+                            author:
+                              type: string
+                            group:
+                              type: string
+                            tag:
+                              type: string
+                          type: object
+                        tag:
+                          type: string
+                        topic:
+                          type: string
+                        topics:
+                          type: string
+                        transaction:
+                          properties:
+                            type:
+                              type: string
+                          type: object
+                      type: object
+                    id: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    options:
+                      properties:
+                        firstEvent:
+                          type: string
+                        readAhead:
+                          maximum: 65535
+                          minimum: 0
+                          type: integer
+                        withData:
+                          type: boolean
+                      type: object
+                    transport:
+                      type: string
+                    updated: {}
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -6037,6 +6454,9 @@ paths:
           application/json:
             schema:
               properties:
+                created: {}
+                ephemeral:
+                  type: boolean
                 filter:
                   properties:
                     author:
@@ -6073,108 +6493,22 @@ paths:
                           type: string
                       type: object
                   type: object
+                id: {}
                 name:
                   type: string
+                namespace:
+                  type: string
                 options:
-                  oneOf:
-                  - properties:
-                      firstEvent:
-                        anyOf:
-                        - enum:
-                          - oldest
-                          - newest
-                          type: string
-                        - type: integer
-                      readAhead:
-                        maximum: 65536
-                        minimum: 0
-                        type: integer
-                      type:
-                        pattern: websockets
-                        type: string
-                      withData:
-                        type: boolean
-                  - properties:
-                      fastack:
-                        description: When true the event will be acknowledged before
-                          the webhook is invoked, allowing parallel invocations
-                        type: boolean
-                      firstEvent:
-                        anyOf:
-                        - enum:
-                          - oldest
-                          - newest
-                          type: string
-                        - type: integer
-                      headers:
-                        additionalProperties:
-                          type: string
-                        description: Static headers to set on the webhook request
-                        type: object
-                      input:
-                        description: A set of options to extract data from the first
-                          JSON input data in the incoming message. Only applies if
-                          withData=true
-                        properties:
-                          body:
-                            description: A top-level property of the first data input,
-                              to use for the request body. Default is the whole first
-                              body
-                            type: string
-                          headers:
-                            description: A top-level property of the first data input,
-                              to use for headers
-                            type: string
-                          path:
-                            description: A top-level property of the first data input,
-                              to use for a path to append with escaping to the webhook
-                              path
-                            type: string
-                          query:
-                            description: A top-level property of the first data input,
-                              to use for query parameters
-                            type: string
-                          replytx:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
-                            type: string
-                        type: object
-                      json:
-                        description: Whether to assume the response body is JSON,
-                          regardless of the returned Content-Type
-                        type: boolean
-                      method:
-                        description: Webhook method to invoke. Default=POST
-                        type: string
-                      query:
-                        additionalProperties:
-                          type: string
-                        description: Static query params to set on the webhook request
-                        type: object
-                      readAhead:
-                        maximum: 65536
-                        minimum: 0
-                        type: integer
-                      reply:
-                        description: Whether to automatically send a reply event,
-                          using the body returned by the webhook
-                        type: boolean
-                      replytag:
-                        description: The tag to set on the reply message
-                        type: string
-                      replytx:
-                        description: The transaction type to set on the reply message
-                        type: string
-                      type:
-                        pattern: webhooks
-                        type: string
-                      url:
-                        description: Webhook url to invoke. Can be relative if a base
-                          URL is set in the webhook plugin config
-                        type: string
-                      withData:
-                        type: boolean
+                  properties:
+                    firstEvent:
+                      type: string
+                    readAhead:
+                      maximum: 65535
+                      minimum: 0
+                      type: integer
+                    withData:
+                      type: boolean
+                  type: object
                 transport:
                   type: string
                 updated: {}
@@ -6270,6 +6604,9 @@ paths:
           application/json:
             schema:
               properties:
+                created: {}
+                ephemeral:
+                  type: boolean
                 filter:
                   properties:
                     author:
@@ -6306,108 +6643,22 @@ paths:
                           type: string
                       type: object
                   type: object
+                id: {}
                 name:
                   type: string
+                namespace:
+                  type: string
                 options:
-                  oneOf:
-                  - properties:
-                      firstEvent:
-                        anyOf:
-                        - enum:
-                          - oldest
-                          - newest
-                          type: string
-                        - type: integer
-                      readAhead:
-                        maximum: 65536
-                        minimum: 0
-                        type: integer
-                      type:
-                        pattern: websockets
-                        type: string
-                      withData:
-                        type: boolean
-                  - properties:
-                      fastack:
-                        description: When true the event will be acknowledged before
-                          the webhook is invoked, allowing parallel invocations
-                        type: boolean
-                      firstEvent:
-                        anyOf:
-                        - enum:
-                          - oldest
-                          - newest
-                          type: string
-                        - type: integer
-                      headers:
-                        additionalProperties:
-                          type: string
-                        description: Static headers to set on the webhook request
-                        type: object
-                      input:
-                        description: A set of options to extract data from the first
-                          JSON input data in the incoming message. Only applies if
-                          withData=true
-                        properties:
-                          body:
-                            description: A top-level property of the first data input,
-                              to use for the request body. Default is the whole first
-                              body
-                            type: string
-                          headers:
-                            description: A top-level property of the first data input,
-                              to use for headers
-                            type: string
-                          path:
-                            description: A top-level property of the first data input,
-                              to use for a path to append with escaping to the webhook
-                              path
-                            type: string
-                          query:
-                            description: A top-level property of the first data input,
-                              to use for query parameters
-                            type: string
-                          replytx:
-                            description: A top-level property of the first data input,
-                              to use to dynamically set whether to pin the response
-                              (so the requester can choose)
-                            type: string
-                        type: object
-                      json:
-                        description: Whether to assume the response body is JSON,
-                          regardless of the returned Content-Type
-                        type: boolean
-                      method:
-                        description: Webhook method to invoke. Default=POST
-                        type: string
-                      query:
-                        additionalProperties:
-                          type: string
-                        description: Static query params to set on the webhook request
-                        type: object
-                      readAhead:
-                        maximum: 65536
-                        minimum: 0
-                        type: integer
-                      reply:
-                        description: Whether to automatically send a reply event,
-                          using the body returned by the webhook
-                        type: boolean
-                      replytag:
-                        description: The tag to set on the reply message
-                        type: string
-                      replytx:
-                        description: The transaction type to set on the reply message
-                        type: string
-                      type:
-                        pattern: webhooks
-                        type: string
-                      url:
-                        description: Webhook url to invoke. Can be relative if a base
-                          URL is set in the webhook plugin config
-                        type: string
-                      withData:
-                        type: boolean
+                  properties:
+                    firstEvent:
+                      type: string
+                    readAhead:
+                      maximum: 65535
+                      minimum: 0
+                      type: integer
+                    withData:
+                      type: boolean
+                  type: object
                 transport:
                   type: string
                 updated: {}
@@ -6673,10 +6924,12 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  key:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    key:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -6759,9 +7012,11 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  pool: {}
-                type: object
+                items:
+                  properties:
+                    pool: {}
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -6883,38 +7138,40 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  approved:
-                    type: boolean
-                  blockchainEvent: {}
-                  config:
-                    additionalProperties: {}
-                    type: object
-                  connector:
-                    type: string
-                  created: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  key:
-                    type: string
-                  localId: {}
-                  namespace:
-                    type: string
-                  operator:
-                    type: string
-                  pool: {}
-                  protocolId:
-                    type: string
-                  tokenIndex:
-                    type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
-                type: object
+                items:
+                  properties:
+                    approved:
+                      type: boolean
+                    blockchainEvent: {}
+                    config:
+                      additionalProperties: {}
+                      type: object
+                    connector:
+                      type: string
+                    created: {}
+                    info:
+                      additionalProperties: {}
+                      type: object
+                    key:
+                      type: string
+                    localId: {}
+                    namespace:
+                      type: string
+                    operator:
+                      type: string
+                    pool: {}
+                    protocolId:
+                      type: string
+                    tokenIndex:
+                      type: string
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -7153,21 +7410,23 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  balance: {}
-                  connector:
-                    type: string
-                  key:
-                    type: string
-                  namespace:
-                    type: string
-                  pool: {}
-                  tokenIndex:
-                    type: string
-                  updated: {}
-                  uri:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    balance: {}
+                    connector:
+                      type: string
+                    key:
+                      type: string
+                    namespace:
+                      type: string
+                    pool: {}
+                    tokenIndex:
+                      type: string
+                    updated: {}
+                    uri:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -7204,18 +7463,19 @@ paths:
                 blockchainEvent: {}
                 connector:
                   type: string
-                created: {}
                 from:
                   type: string
                 key:
                   type: string
-                localId: {}
                 message:
                   properties:
                     batch: {}
-                    confirmed: {}
+                    confirmed:
+                      description: The timestamp of when the message was confirmed
                     data:
+                      description: The list of data elements attached to the message
                       items:
+                        description: The list of data elements attached to the message
                         properties:
                           hash: {}
                           id: {}
@@ -7236,29 +7496,47 @@ paths:
                         name:
                           type: string
                       type: object
-                    hash: {}
+                    hash:
+                      description: The hash of the entire message, including data
+                        elements and headers
                     header:
+                      description: The message header
                       properties:
                         author:
                           type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
+                        cid:
+                          description: The CID of the message
+                        created:
+                          description: The creation time of the message
+                        datahash:
+                          description: The hash of all of the data items attached
+                            to this message.
+                        group:
+                          description: The group of recipients for a private message
+                        id:
+                          description: The UUID of the message
                         key:
                           type: string
                         namespace:
+                          description: The namespace of the message
                           type: string
                         tag:
+                          description: The message tag. Useful for indicating the
+                            purpose of the message to other nodes.
                           type: string
                         topics:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           items:
+                            description: The message topics. Messages will be ordered
+                              within a given topic or combination of topics
                             type: string
                           type: array
                         txtype:
+                          description: The type of transaction
                           type: string
                         type:
+                          description: The type of the message
                           enum:
                           - definition
                           - broadcast
@@ -7269,10 +7547,13 @@ paths:
                           type: string
                       type: object
                     pins:
+                      description: The list of pins from this message
                       items:
+                        description: The list of pins from this message
                         type: string
                       type: array
                     state:
+                      description: The current state of the message
                       enum:
                       - staged
                       - ready
@@ -7282,30 +7563,11 @@ paths:
                       - rejected
                       type: string
                   type: object
-                messageHash: {}
-                namespace:
-                  type: string
                 pool:
-                  type: string
-                protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
-                  type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
-                type:
-                  enum:
-                  - mint
-                  - burn
-                  - transfer
-                  type: string
-                uri:
                   type: string
               type: object
       responses:
@@ -7419,10 +7681,12 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  name:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    name:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -7459,18 +7723,19 @@ paths:
                 blockchainEvent: {}
                 connector:
                   type: string
-                created: {}
                 from:
                   type: string
                 key:
                   type: string
-                localId: {}
                 message:
                   properties:
                     batch: {}
-                    confirmed: {}
+                    confirmed:
+                      description: The timestamp of when the message was confirmed
                     data:
+                      description: The list of data elements attached to the message
                       items:
+                        description: The list of data elements attached to the message
                         properties:
                           hash: {}
                           id: {}
@@ -7491,29 +7756,47 @@ paths:
                         name:
                           type: string
                       type: object
-                    hash: {}
+                    hash:
+                      description: The hash of the entire message, including data
+                        elements and headers
                     header:
+                      description: The message header
                       properties:
                         author:
                           type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
+                        cid:
+                          description: The CID of the message
+                        created:
+                          description: The creation time of the message
+                        datahash:
+                          description: The hash of all of the data items attached
+                            to this message.
+                        group:
+                          description: The group of recipients for a private message
+                        id:
+                          description: The UUID of the message
                         key:
                           type: string
                         namespace:
+                          description: The namespace of the message
                           type: string
                         tag:
+                          description: The message tag. Useful for indicating the
+                            purpose of the message to other nodes.
                           type: string
                         topics:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           items:
+                            description: The message topics. Messages will be ordered
+                              within a given topic or combination of topics
                             type: string
                           type: array
                         txtype:
+                          description: The type of transaction
                           type: string
                         type:
+                          description: The type of the message
                           enum:
                           - definition
                           - broadcast
@@ -7524,10 +7807,13 @@ paths:
                           type: string
                       type: object
                     pins:
+                      description: The list of pins from this message
                       items:
+                        description: The list of pins from this message
                         type: string
                       type: array
                     state:
+                      description: The current state of the message
                       enum:
                       - staged
                       - ready
@@ -7537,30 +7823,11 @@ paths:
                       - rejected
                       type: string
                   type: object
-                messageHash: {}
-                namespace:
-                  type: string
                 pool:
-                  type: string
-                protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
-                  type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
-                type:
-                  enum:
-                  - mint
-                  - burn
-                  - transfer
-                  type: string
-                uri:
                   type: string
               type: object
       responses:
@@ -7773,48 +8040,50 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  config:
-                    additionalProperties: {}
-                    type: object
-                  connector:
-                    type: string
-                  created: {}
-                  id: {}
-                  info:
-                    additionalProperties: {}
-                    type: object
-                  key:
-                    type: string
-                  message: {}
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  protocolId:
-                    type: string
-                  standard:
-                    type: string
-                  state:
-                    enum:
-                    - unknown
-                    - pending
-                    - confirmed
-                    type: string
-                  symbol:
-                    type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
-                  type:
-                    enum:
-                    - fungible
-                    - nonfungible
-                    type: string
-                type: object
+                items:
+                  properties:
+                    config:
+                      additionalProperties: {}
+                      type: object
+                    connector:
+                      type: string
+                    created: {}
+                    id: {}
+                    info:
+                      additionalProperties: {}
+                      type: object
+                    key:
+                      type: string
+                    message: {}
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    protocolId:
+                      type: string
+                    standard:
+                      type: string
+                    state:
+                      enum:
+                      - unknown
+                      - pending
+                      - confirmed
+                      type: string
+                    symbol:
+                      type: string
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                    type:
+                      enum:
+                      - fungible
+                      - nonfungible
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -8188,43 +8457,45 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  amount: {}
-                  blockchainEvent: {}
-                  connector:
-                    type: string
-                  created: {}
-                  from:
-                    type: string
-                  key:
-                    type: string
-                  localId: {}
-                  message: {}
-                  messageHash: {}
-                  namespace:
-                    type: string
-                  pool: {}
-                  protocolId:
-                    type: string
-                  to:
-                    type: string
-                  tokenIndex:
-                    type: string
-                  tx:
-                    properties:
-                      id: {}
-                      type:
-                        type: string
-                    type: object
-                  type:
-                    enum:
-                    - mint
-                    - burn
-                    - transfer
-                    type: string
-                  uri:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    amount: {}
+                    blockchainEvent: {}
+                    connector:
+                      type: string
+                    created: {}
+                    from:
+                      type: string
+                    key:
+                      type: string
+                    localId: {}
+                    message: {}
+                    messageHash: {}
+                    namespace:
+                      type: string
+                    pool: {}
+                    protocolId:
+                      type: string
+                    to:
+                      type: string
+                    tokenIndex:
+                      type: string
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                    type:
+                      enum:
+                      - mint
+                      - burn
+                      - transfer
+                      type: string
+                    uri:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -8260,18 +8531,19 @@ paths:
                 blockchainEvent: {}
                 connector:
                   type: string
-                created: {}
                 from:
                   type: string
                 key:
                   type: string
-                localId: {}
                 message:
                   properties:
                     batch: {}
-                    confirmed: {}
+                    confirmed:
+                      description: The timestamp of when the message was confirmed
                     data:
+                      description: The list of data elements attached to the message
                       items:
+                        description: The list of data elements attached to the message
                         properties:
                           hash: {}
                           id: {}
@@ -8292,29 +8564,47 @@ paths:
                         name:
                           type: string
                       type: object
-                    hash: {}
+                    hash:
+                      description: The hash of the entire message, including data
+                        elements and headers
                     header:
+                      description: The message header
                       properties:
                         author:
                           type: string
-                        cid: {}
-                        created: {}
-                        datahash: {}
-                        group: {}
-                        id: {}
+                        cid:
+                          description: The CID of the message
+                        created:
+                          description: The creation time of the message
+                        datahash:
+                          description: The hash of all of the data items attached
+                            to this message.
+                        group:
+                          description: The group of recipients for a private message
+                        id:
+                          description: The UUID of the message
                         key:
                           type: string
                         namespace:
+                          description: The namespace of the message
                           type: string
                         tag:
+                          description: The message tag. Useful for indicating the
+                            purpose of the message to other nodes.
                           type: string
                         topics:
+                          description: The message topics. Messages will be ordered
+                            within a given topic or combination of topics
                           items:
+                            description: The message topics. Messages will be ordered
+                              within a given topic or combination of topics
                             type: string
                           type: array
                         txtype:
+                          description: The type of transaction
                           type: string
                         type:
+                          description: The type of the message
                           enum:
                           - definition
                           - broadcast
@@ -8325,10 +8615,13 @@ paths:
                           type: string
                       type: object
                     pins:
+                      description: The list of pins from this message
                       items:
+                        description: The list of pins from this message
                         type: string
                       type: array
                     state:
+                      description: The current state of the message
                       enum:
                       - staged
                       - ready
@@ -8338,30 +8631,11 @@ paths:
                       - rejected
                       type: string
                   type: object
-                messageHash: {}
-                namespace:
-                  type: string
                 pool:
-                  type: string
-                protocolId:
                   type: string
                 to:
                   type: string
                 tokenIndex:
-                  type: string
-                tx:
-                  properties:
-                    id: {}
-                    type:
-                      type: string
-                  type: object
-                type:
-                  enum:
-                  - mint
-                  - burn
-                  - transfer
-                  type: string
-                uri:
                   type: string
               type: object
       responses:
@@ -8604,26 +8878,28 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  blockchainIds:
-                    items:
+                items:
+                  properties:
+                    blockchainIds:
+                      items:
+                        type: string
+                      type: array
+                    created: {}
+                    id: {}
+                    namespace:
                       type: string
-                    type: array
-                  created: {}
-                  id: {}
-                  namespace:
-                    type: string
-                  type:
-                    enum:
-                    - none
-                    - unpinned
-                    - batch_pin
-                    - token_pool
-                    - token_transfer
-                    - contract_invoke
-                    - token_approval
-                    type: string
-                type: object
+                    type:
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -9499,35 +9775,37 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  description:
-                    type: string
-                  did:
-                    type: string
-                  id: {}
-                  messages:
-                    properties:
-                      claim: {}
-                      update: {}
-                      verification: {}
-                    type: object
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  parent: {}
-                  profile:
-                    additionalProperties: {}
-                    type: object
-                  type:
-                    enum:
-                    - org
-                    - node
-                    - custom
-                    type: string
-                  updated: {}
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    description:
+                      type: string
+                    did:
+                      type: string
+                    id: {}
+                    messages:
+                      properties:
+                        claim: {}
+                        update: {}
+                        verification: {}
+                      type: object
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    parent: {}
+                    profile:
+                      additionalProperties: {}
+                      type: object
+                    type:
+                      enum:
+                      - org
+                      - node
+                      - custom
+                      type: string
+                    updated: {}
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -9607,8 +9885,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              type: object
+            schema: {}
       responses:
         "200":
           content:
@@ -9796,35 +10073,37 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  created: {}
-                  description:
-                    type: string
-                  did:
-                    type: string
-                  id: {}
-                  messages:
-                    properties:
-                      claim: {}
-                      update: {}
-                      verification: {}
-                    type: object
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  parent: {}
-                  profile:
-                    additionalProperties: {}
-                    type: object
-                  type:
-                    enum:
-                    - org
-                    - node
-                    - custom
-                    type: string
-                  updated: {}
-                type: object
+                items:
+                  properties:
+                    created: {}
+                    description:
+                      type: string
+                    did:
+                      type: string
+                    id: {}
+                    messages:
+                      properties:
+                        claim: {}
+                        update: {}
+                        verification: {}
+                      type: object
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    parent: {}
+                    profile:
+                      additionalProperties: {}
+                      type: object
+                    type:
+                      enum:
+                      - org
+                      - node
+                      - custom
+                      type: string
+                    updated: {}
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
@@ -9861,6 +10140,8 @@ paths:
                 profile:
                   additionalProperties: {}
                   type: object
+                type:
+                  type: string
               type: object
       responses:
         "200":
@@ -10009,8 +10290,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              type: object
+            schema: {}
       responses:
         "200":
           content:
@@ -10285,24 +10565,26 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  batch: {}
-                  batchHash: {}
-                  created: {}
-                  dispatched:
-                    type: boolean
-                  hash: {}
-                  index:
-                    format: int64
-                    type: integer
-                  masked:
-                    type: boolean
-                  sequence:
-                    format: int64
-                    type: integer
-                  signer:
-                    type: string
-                type: object
+                items:
+                  properties:
+                    batch: {}
+                    batchHash: {}
+                    created: {}
+                    dispatched:
+                      type: boolean
+                    hash: {}
+                    index:
+                      format: int64
+                      type: integer
+                    masked:
+                      type: boolean
+                    sequence:
+                      format: int64
+                      type: integer
+                    signer:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""

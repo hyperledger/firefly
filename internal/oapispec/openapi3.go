@@ -18,7 +18,6 @@ package oapispec
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -96,30 +95,56 @@ func initInput(op *openapi3.Operation) {
 	}
 }
 
-func ffTagHandler(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+func ffInputTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema) error {
+	if tag.Get("ffexcludeinput") == "true" {
+		return &openapi3gen.ExcludeSchemaSentinel{}
+	}
+	return ffTagHandler(ctx, route, name, tag, schema)
+}
+
+func ffOutputTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema) error {
+	return ffTagHandler(ctx, route, name, tag, schema)
+}
+
+func ffTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema) error {
 	if ffEnum := tag.Get("ffenum"); ffEnum != "" {
 		schema.Enum = fftypes.FFEnumValues(ffEnum)
+	}
+	if tag.Get("ffexclude") == "true" {
+		return &openapi3gen.ExcludeSchemaSentinel{}
+	}
+	if taggedRoutes, ok := tag.Lookup("ffexclude"); ok {
+		for _, r := range strings.Split(taggedRoutes, ",") {
+			if route.Name == r {
+				return &openapi3gen.ExcludeSchemaSentinel{}
+			}
+		}
+	}
+	if structName, ok := tag.Lookup("ffstruct"); ok {
+		key := fmt.Sprintf("%s.%s", structName, name)
+		description := i18n.Expand(ctx, i18n.MessageKey(key))
+		// They will be equal if no translation was found
+		if description != key {
+			schema.Description = description
+		}
 	}
 	return nil
 }
 
-func genSchemaRef(ctx context.Context, doc *openapi3.T, obj interface{}, mask []string, schemaDef func(context.Context) string) *openapi3.SchemaRef {
+func genSchemaRef(doc *openapi3.T, obj interface{}, schemaCustomizerFn openapi3gen.SchemaCustomizerFn) *openapi3.SchemaRef {
 	var schemaRef *openapi3.SchemaRef
-	if schemaDef != nil {
-		err := json.Unmarshal([]byte(schemaDef(ctx)), &schemaRef)
-		if err != nil {
-			panic(fmt.Sprintf("invalid schema for %T: %s", obj, err))
-		}
-	}
 	if schemaRef == nil {
-		schemaRef, _ = openapi3gen.NewSchemaRefForValue(maskFields(obj, mask), doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
+		schemaRef, _ = openapi3gen.NewSchemaRefForValue(obj, doc.Components.Schemas, openapi3gen.SchemaCustomizer(schemaCustomizerFn))
 	}
 	return schemaRef
 }
 
-func addInput(ctx context.Context, doc *openapi3.T, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
+func addInput(ctx context.Context, doc *openapi3.T, route *Route, input interface{}, op *openapi3.Operation) {
+	schemaCustomizer := func(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+		return ffInputTagHandler(ctx, route, name, tag, schema)
+	}
 	op.RequestBody.Value.Content["application/json"] = &openapi3.MediaType{
-		Schema: genSchemaRef(ctx, doc, input, mask, schemaDef),
+		Schema: genSchemaRef(doc, input, schemaCustomizer),
 	}
 }
 
@@ -151,15 +176,18 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 	}
 }
 
-func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, schemaDef func(context.Context) string, op *openapi3.Operation) {
+func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, op *openapi3.Operation) {
 	s := i18n.Expand(ctx, i18n.MsgSuccessResponse)
+	schemaCustomizer := func(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+		return ffOutputTagHandler(ctx, route, name, tag, schema)
+	}
 	for _, code := range route.JSONOutputCodes {
 		op.Responses[strconv.FormatInt(int64(code), 10)] = &openapi3.ResponseRef{
 			Value: &openapi3.Response{
 				Description: &s,
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
-						Schema: genSchemaRef(ctx, doc, output, nil, schemaDef),
+						Schema: genSchemaRef(doc, output, schemaCustomizer),
 					},
 				},
 			},
@@ -212,8 +240,8 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 			input = route.JSONInputValue()
 		}
 		initInput(op)
-		if input != nil || route.JSONInputSchema != nil {
-			addInput(ctx, doc, input, route.JSONInputMask, route.JSONInputSchema, op)
+		if input != nil {
+			addInput(ctx, doc, route, input, op)
 		}
 		if route.FormUploadHandler != nil {
 			addFormInput(ctx, op, route.FormParams)
@@ -223,8 +251,8 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 	if route.JSONOutputValue != nil {
 		output = route.JSONOutputValue()
 	}
-	if output != nil || route.JSONOutputSchema != nil {
-		addOutput(ctx, doc, route, output, route.JSONOutputSchema, op)
+	if output != nil {
+		addOutput(ctx, doc, route, output, op)
 	}
 	for _, p := range route.PathParams {
 		example := p.Example
@@ -264,29 +292,4 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 	case http.MethodDelete:
 		pi.Delete = op
 	}
-}
-
-func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
-	if mask == nil {
-		return t
-	}
-	fieldCount := t.NumField()
-	newFields := make([]reflect.StructField, fieldCount)
-	for i := 0; i < fieldCount; i++ {
-		field := t.FieldByIndex([]int{i})
-		for _, m := range mask {
-			if strings.EqualFold(field.Name, m) {
-				field.Tag = "`json:-`"
-			}
-		}
-		newFields[i] = field
-	}
-	return reflect.StructOf(newFields)
-}
-
-func maskFields(input interface{}, mask []string) interface{} {
-	t := reflect.TypeOf(input)
-	newStruct := maskFieldsOnStruct(t.Elem(), mask)
-	i := reflect.New(newStruct).Interface()
-	return i
 }
