@@ -17,7 +17,18 @@
 package i18n
 
 //revive:disable
+
+/*
+This file contains the English field level descriptions that are used in
+OpenAPI Spec generation. Each struct field that wants to use one of these
+needs to have an ffstruct tag on it, indicating the name of the struct.
+That will be combined with the JSON field name (note, it is not the GO
+field name, but the JSON serialized name), separated by a "." This is the
+key used to lookup the translation below. If it is not found, the description
+is left blank in the OpenAPI spec
+*/
 var (
+	// MessageHeader field descriptions
 	MessageHeaderID        = ffm("MessageHeader.id", "The UUID of the message")
 	MessageHeaderCID       = ffm("MessageHeader.cid", "The CID of the message")
 	MessageHeaderType      = ffm("MessageHeader.type", "The type of the message")
@@ -29,6 +40,7 @@ var (
 	MessageHeaderTag       = ffm("MessageHeader.tag", "The message tag. Useful for indicating the purpose of the message to other nodes.")
 	MessageHeaderDataHash  = ffm("MessageHeader.datahash", "The hash of all of the data items attached to this message.")
 
+	// Message field descriptions
 	MessageHeader    = ffm("Message.header", "The message header")
 	MessageHash      = ffm("Message.hash", "The hash of the entire message, including data elements and headers")
 	MessageBatchID   = ffm("Messages.batch", "The UUID of the batch in which the message was processed")
