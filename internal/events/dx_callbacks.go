@@ -84,7 +84,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 			l := log.L(ctx)
 
 			if wrapperGroup != nil && batch.Payload.TX.Type == fftypes.TransactionTypeUnpinned {
-				valid, err := em.definitions.EnsureLocalGroup(em.ctx, wrapperGroup)
+				valid, err := em.definitions.EnsureLocalGroup(ctx, wrapperGroup)
 				if err != nil {
 					return err
 				}
