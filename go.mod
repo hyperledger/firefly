@@ -9,7 +9,7 @@ require (
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
 	github.com/containerd/containerd v1.5.10 // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/getkin/kin-openapi v0.87.0
+	github.com/getkin/kin-openapi v0.94.1-0.20220401165309-136a868a30c2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.7.0
@@ -53,5 +53,3 @@ require (
 	golang.org/x/text v0.3.7
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
-
-replace github.com/getkin/kin-openapi => ../kin-openapi

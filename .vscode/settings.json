@@ -4,7 +4,13 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
-    "fftypes"
+    "Debugf",
+    "FFDX",
+    "ffstruct",
+    "fftypes",
+    "IPFS",
+    "txtype",
+    "Warnf"
   ],
   "go.testTimeout": "10s"
 }

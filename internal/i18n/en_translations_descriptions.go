@@ -36,14 +36,14 @@ var (
 	MessageHeaderCreated   = ffm("MessageHeader.created", "The creation time of the message")
 	MessageHeaderNamespace = ffm("MessageHeader.namespace", "The namespace of the message")
 	MessageHeaderGroup     = ffm("MessageHeader.group", "Private messages only - the identifier hash of the privacy group. Derived from the name and member list of the group")
-	MessageHeaderTopics    = ffm("MessageHeader.topics", "A message topic associates this mesasge with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged")
+	MessageHeaderTopics    = ffm("MessageHeader.topics", "A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged")
 	MessageHeaderTag       = ffm("MessageHeader.tag", "The message tag indicates the purpose of the message to the applications that process it")
 	MessageHeaderDataHash  = ffm("MessageHeader.datahash", "A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message")
 
 	// Message field descriptions
 	MessageHeader    = ffm("Message.header", "The message header contains all fields that are used to build the message hash")
 	MessageHash      = ffm("Message.hash", "The hash of the message. Derived from the header, which includes the data hash")
-	MessageBatchID   = ffm("Message.batch", "The UUID of the batch in which the message was pinned/transferred")
+	MessageBatchID   = ffm("Messages.batch", "The UUID of the batch in which the message was pinned/transferred")
 	MessageState     = ffm("Message.state", "The current state of the message")
 	MessageConfirmed = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
 	MessageData      = ffm("Message.data", "The list of data elements attached to the message")
@@ -75,14 +75,6 @@ var (
 	GroupHash      = ffm("Group.hash", "The identifier hash of this group. Derived from the name and group members")
 	GroupCreated   = ffm("Group.created", "The time when the group was first used to send a message in the network")
 
-	// Member field descriptions
-	MemberIdentity = ffm("Member.identity", "The DID of the group member")
-	MemberNode     = ffm("Member.node", "The ID of the group member's node")
-
-	// MemberInput field descriptions
-	MemberInputIdentity = ffm("MemberInput.identity", "The DID of the group member")
-	MemberInputNode     = ffm("MemberInput.node", "The ID of the group member's node")
-
 	// DataRef field descriptions
 	DataRefID   = ffm("DataRef.id", "The UUID of the referenced data resource")
 	DataRefHash = ffm("DataRef.hash", "The hash of the referenced data")
@@ -103,32 +95,43 @@ var (
 	DataValue     = ffm("Data.value", "The value for the data, stored in the FireFly core database. Can be any JSON type - object, array, string, number or boolean. Can be combined with a binary blob attachment")
 	DataBlob      = ffm("Data.blob", "An optional hash reference to a binary blob attachment")
 
-	// DatatypeRef field descriptions
-	DatatypeRefName    = ffm("DatatypeRef.name", "The name of the data type")
-	DatatypeRefVersion = ffm("DatatypeRef.version", "The version of the data type")
+	// SignerRef field descriptions
+	SignerRefAuthor = ffm("SignerRef.author", "The DID of identity of the submitter")
+	SignerRefKey    = ffm("SignerRef.key", "The on-chain signing key used to sign the transaction")
 
-	// Batch field descriptions
-	BatchHash    = ffm("Batch.hash", "The hash of the batch")
-	BatchPayload = ffm("Batch.payload", "The payload of the batch")
+	// IdentityClaim field descriptions
+	IdentityClaimIdentity = ffm("IdentityClaim.identity", "The identity being claimed")
+
+	// IdentityVerification field descriptions
+	IdentityVerificationClaim    = ffm("IdentityVerification.claim", "The UUID of the message containing the identity claim being verified")
+	IdentityVerificationIdentity = ffm("IdentityVerification.identity", "The identity being verified")
+
+	// IdentityUpdate field descriptions
+	IdentityUpdateIdentity = ffm("IdentityUpdate.identity", "The identity being updated")
+	IdentityUpdateProfile  = ffm("IdentityUpdate.profile", "The new profile, which is replaced in its entirety when the update is confirmed")
+
+	// MessageManifestEntry field descriptions
+	MessageManifestEntry = ffm("MessageManifestEntry.topics", "The count of topics in the message")
 
 	// BatchHeader field descriptions
 	BatchHeaderID        = ffm("BatchHeader.id", "The UUID of the batch")
 	BatchHeaderType      = ffm("BatchHeader.type", "The type of the batch")
 	BatchHeaderNamespace = ffm("BatchHeader.namespace", "The namespace of the batch")
-	BatchHeaderNode      = ffm("BatchHeader.node", "The ID of the node that processed the batch")
-	BatchHeaderGroup     = ffm("BatchHeader.group", "The the group to which the batch was sent")
-	BatchHeaderCreated   = ffm("BatchHeader.created", "The creation time of the batch")
+	BatchHeaderNode      = ffm("BatchHeader.node", "The UUID of the node that generated the batch")
+	BatchHeaderGroup     = ffm("BatchHeader.group", "The privacy group the batch is sent to, for private batches")
+	BatchHeaderCreated   = ffm("BatchHeader.create", "The time the batch was sealed")
 
-	// BatchPayload field descriptions
-	BatchPayloadTX       = ffm("BatchPayload.tx", "The transaction in which the batch was pinned")
-	BatchPayloadMessages = ffm("BatchPayload.messages", "The messages contained in the batch")
-	BatchPayloadData     = ffm("BatchPayload.Data", "The list of data elements in the batch")
+	// BatchManifest field descriptions
+	BatchManifestVersion  = ffm("BatchManifest.version", "The version of the manifest generated")
+	BatchManifestID       = ffm("BatchManifest.id", "The UUID of the batch")
+	BatchManifestTX       = ffm("BatchManifest.tx", "The FireFly transaction associated with this batch")
+	BatchManifestMessages = ffm("BatchManifest.messages", "Array of manifest entries, succinctly summarizing the messages in the batch")
+	BatchManifestData     = ffm("BatchManifest.data", "Array of manifest entries, succinctly summarizing the data in the batch")
 
-	// SignerRef field descriptions
-	SignerRefAuthor = ffm("SignerRef.author", "The author of the message")
-	SignerRefKey    = ffm("SignerRef.key", "The signing key used to sign the message")
-
-	// TransactionRef field descriptions
-	TransactionRefType = ffm("TransactionRef.type", "The type of the transaction")
-	TransactionRefID   = ffm("TransactionRef.id", "The UUID of the transaction")
+	// BatchPersisted field descriptions
+	BatchPersistedHash       = ffm("BatchPersisted.version", "The hash of the manifest of the batch")
+	BatchPersistedManifest   = ffm("BatchPersisted.manifest", "The manifest of the batch")
+	BatchPersistedTX         = ffm("BatchPersisted.tx", "The FireFly transaction associated with this batch")
+	BatchPersistedPayloadRef = ffm("BatchPersisted.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
+	BatchPersistedConfirmed  = ffm("BatchPersisted.confirmed", "The time when the batch was confirmed")
 )
