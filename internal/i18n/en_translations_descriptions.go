@@ -43,7 +43,7 @@ var (
 	// Message field descriptions
 	MessageHeader    = ffm("Message.header", "The message header contains all fields that are used to build the message hash")
 	MessageHash      = ffm("Message.hash", "The hash of the message. Derived from the header, which includes the data hash")
-	MessageBatchID   = ffm("Messages.batch", "The UUID of the batch in which the message was pinned/transferred")
+	MessageBatchID   = ffm("Message.batch", "The UUID of the batch in which the message was pinned/transferred")
 	MessageState     = ffm("Message.state", "The current state of the message")
 	MessageConfirmed = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
 	MessageData      = ffm("Message.data", "The list of data elements attached to the message")
@@ -241,4 +241,42 @@ var (
 
 	// ContractListenerOptions field descriptions
 	ContractListenerOptionsFirstEvent = ffm("ContractListenerOptions.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest'")
+
+	// DIDDocument field descriptions
+	DIDDocumentContext            = ffm("DIDDocument.@context", "See https://www.w3.org/TR/did-core/#json-ld")
+	DIDDocumentID                 = ffm("DIDDocument.id", "See https://www.w3.org/TR/did-core/#did-document-properties")
+	DIDDocumentAuthentication     = ffm("DIDDocument.authentication", "See https://www.w3.org/TR/did-core/#did-document-properties")
+	DIDDocumentVerificationMethod = ffm("DIDDocument.verificationMethod", "See https://www.w3.org/TR/did-core/#did-document-properties")
+
+	// DIDVerificationMethod field descriptions
+	DIDVerificationMethodID                  = ffm("DIDVerificationMethod.id", "See https://www.w3.org/TR/did-core/#service-properties")
+	DIDVerificationMethodController          = ffm("DIDVerificationMethod.controller", "See https://www.w3.org/TR/did-core/#service-properties")
+	DIDVerificationMethodType                = ffm("DIDVerificationMethod.type", "See https://www.w3.org/TR/did-core/#service-properties")
+	DIDVerificationMethodBlockchainAccountID = ffm("DIDVerificationMethod.blockchainAcountId", "For blockchains like Ethereum that represent signing identities directly by their public key summarized in an account string")
+	DIDVerificationMethodMSPIdentityString   = ffm("DIDVerificationMethod.mspIdentityString", "For Hyperledger Fabric where the signing identity is represented by an MSP identifier (containing X509 certificate DN strings) that were validated by your local MSP")
+	DIDVerificationMethodDataExchangePeerID  = ffm("DIDVerificationMethod.dataExchangePeerID", "A string provided by your Data Exchange plugin, that it uses a technology specific mechanism to validate against when messages arrive from this identity")
+
+	// Event field descriptions
+	EventID          = ffm("Event.id", "The UUID assigned to this event by your local FireFly node")
+	EventSequence    = ffm("Event.sequence", "A sequence indicating the order in which events are delivered to your application. Assure to be unique per event in your local FireFly database (unlike the created timestamp)")
+	EventType        = ffm("Event.type", "All interesting activity in FireFly is emitted as a FireFly event, of a given type. The 'type' combined with the 'reference' can be used to determine how to process the event within your application")
+	EventNamespace   = ffm("Event.namespace", "The namespace of the event. Your application must subscribe to events within a namespace")
+	EventReference   = ffm("Event.reference", "The UUID of an resource that is the subject of this event. The event type determines what type of resource is referenced, and whether this field might be unset")
+	EventCorrelator  = ffm("Event.correlator", "For message events, this is the 'header.cid' field from the referenced message. For certain other event types, a secondary object is referenced such as a token pool")
+	EventTransaction = ffm("Event.tx", "The UUID of a transaction that is event is part of. Not all events are part of a transaction")
+	EventTopic       = ffm("Event.topic", "A stream of information this event relates to. For message confirmation events, a separate event is emitted for each topic in the message. For blockchain events, the listener specifies the topic. Rules exist for how the topic is set for other event types")
+	EventCreated     = ffm("Event.created", "The time the event was emitted. Not guaranteed to be unique, or to increase between events in the same order as the final sequence events are delivered to your application. As such, the 'sequence' field should be used instead of the 'created' field for querying events in the exact order they are delivered to applications")
+
+	// EnrichedEvent field descriptions
+	EnrichedEventBlockchainEvent   = ffm("EnrichedEvent.blockchainevent", "A blockchain event if referenced by the FireFly event")
+	EnrichedEventContractAPI       = ffm("EnrichedEvent.contractAPI", "A Contract API if referenced by the FireFly event")
+	EnrichedEventContractInterface = ffm("EnrichedEvent.contractInterface", "A Contract Interface (FFI) if referenced by the FireFly event")
+	EnrichedEventDatatype          = ffm("EnrichedEvent.datatype", "A Datatype if referenced by the FireFly event")
+	EnrichedEventIdentity          = ffm("EnrichedEvent.identity", "An Identity if referenced by the FireFly event")
+	EnrichedEventMessage           = ffm("EnrichedEvent.message", "A Message if  referenced by the FireFly event")
+	EnrichedEventNamespaceDetails  = ffm("EnrichedEvent.namespaceDetails", "Full resource detail of a Namespace if referenced by the FireFly event")
+	EnrichedEventTokenApproval     = ffm("EnrichedEvent.tokenApproval", "A Token Approval if referenced by the FireFly event")
+	EnrichedEventTokenPool         = ffm("EnrichedEvent.tokenPool", "A Token Pool if referenced by the FireFly event")
+	EnrichedEventTokenTransfer     = ffm("EnrichedEvent.tokenTransfer", "A Token Transfer if associated with the FireFly event")
+	EnrichedEventTransaction       = ffm("EnrichedEvent.transaction", "A Transaction if associated with the FireFly event")
 )
