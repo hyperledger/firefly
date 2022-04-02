@@ -149,6 +149,16 @@ func TestGetEndpointInfoError(t *testing.T) {
 	assert.Regexp(t, "FF10229", err)
 }
 
+func TestAckClosed(t *testing.T) {
+	h, _, _, _, done := newTestFFDX(t, false)
+	done()
+
+	dxe := &dxEvent{
+		ffdx: h,
+	}
+	dxe.AckWithManifest("")
+}
+
 func TestAddPeer(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
