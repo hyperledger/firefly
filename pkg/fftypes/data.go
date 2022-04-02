@@ -95,8 +95,8 @@ type DataAndBlob struct {
 }
 
 type DatatypeRef struct {
-	Name    string `json:"name,omitempty"`
-	Version string `json:"version,omitempty"`
+	Name    string `ffstruct:"DatatypeRef" json:"name,omitempty"`
+	Version string `ffstruct:"DatatypeRef" json:"version,omitempty"`
 }
 
 func (dr *DatatypeRef) String() string {

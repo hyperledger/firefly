@@ -72,7 +72,6 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 			Name:      "group1",
 			Namespace: "ns1",
 			Members:   group.Members,
-			Ledger:    fftypes.NewUUID(),
 		},
 		Created: fftypes.Now(),
 		Message: fftypes.NewUUID(),
@@ -95,7 +94,6 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		fb.Eq("hash", groupUpdated.Hash),
 		fb.Eq("namespace", groupUpdated.Namespace),
 		fb.Eq("message", groupUpdated.Message),
-		fb.Eq("ledger", groupUpdated.Ledger),
 		fb.Gt("created", "0"),
 	)
 	groups, _, err := s.GetGroups(ctx, filter)

@@ -39,8 +39,8 @@ var (
 
 // TransactionRef refers to a transaction, in other types
 type TransactionRef struct {
-	Type TransactionType `json:"type"`
-	ID   *UUID           `json:"id,omitempty"`
+	Type TransactionType `ffstruct:"TransactionRef" json:"type"`
+	ID   *UUID           `ffstruct:"TransactionRef" json:"id,omitempty"`
 }
 
 // Transaction is a unit of work sent or received by this node

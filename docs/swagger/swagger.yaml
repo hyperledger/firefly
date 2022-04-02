@@ -588,44 +588,12 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
-                interface: {}
                 key:
                   type: string
                 ledger:
                   type: string
                 location:
                   type: string
-                method:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                    returns:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
               type: object
       responses:
         "200":
@@ -677,44 +645,12 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
-                interface: {}
                 key:
                   type: string
                 ledger:
                   type: string
                 location:
                   type: string
-                method:
-                  properties:
-                    contract: {}
-                    description:
-                      type: string
-                    id: {}
-                    name:
-                      type: string
-                    namespace:
-                      type: string
-                    params:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                    pathname:
-                      type: string
-                    returns:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          schema:
-                            type: string
-                        type: object
-                      type: array
-                  type: object
               type: object
       responses:
         "200":
@@ -971,27 +907,38 @@ paths:
                 items:
                   properties:
                     author:
+                      description: The author of the message
                       type: string
                     confirmed: {}
-                    created: {}
+                    created:
+                      description: The creation time of the batch
+                    group:
+                      description: The the group to which the batch was sent
                     hash: {}
-                    id: {}
+                    id:
+                      description: The UUID of the batch
                     key:
+                      description: The signing key used to sign the message
                       type: string
                     manifest:
                       type: string
                     namespace:
+                      description: The namespace of the batch
                       type: string
-                    node: {}
+                    node:
+                      description: The ID of the node that processed the batch
                     payloadRef:
                       type: string
                     tx:
                       properties:
-                        id: {}
+                        id:
+                          description: The UUID of the transaction
                         type:
+                          description: The type of the transaction
                           type: string
                       type: object
                     type:
+                      description: The type of the batch
                       enum:
                       - broadcast
                       - private
@@ -1033,27 +980,38 @@ paths:
               schema:
                 properties:
                   author:
+                    description: The author of the message
                     type: string
                   confirmed: {}
-                  created: {}
+                  created:
+                    description: The creation time of the batch
+                  group:
+                    description: The the group to which the batch was sent
                   hash: {}
-                  id: {}
+                  id:
+                    description: The UUID of the batch
                   key:
+                    description: The signing key used to sign the message
                     type: string
                   manifest:
                     type: string
                   namespace:
+                    description: The namespace of the batch
                     type: string
-                  node: {}
+                  node:
+                    description: The ID of the node that processed the batch
                   payloadRef:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
+                    description: The type of the batch
                     enum:
                     - broadcast
                     - private
@@ -1189,8 +1147,10 @@ paths:
                     timestamp: {}
                     tx:
                       properties:
-                        id: {}
+                        id:
+                          description: The UUID of the transaction
                         type:
+                          description: The type of the transaction
                           type: string
                       type: object
                   type: object
@@ -1251,8 +1211,10 @@ paths:
                   timestamp: {}
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                 type: object
@@ -1796,7 +1758,6 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
-                interface: {}
                 key:
                   type: string
                 ledger:
@@ -1885,7 +1846,6 @@ paths:
                 input:
                   additionalProperties: {}
                   type: object
-                interface: {}
                 key:
                   type: string
                 ledger:
@@ -2505,6 +2465,10 @@ paths:
           default: 120s
           type: string
       responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
         default:
           description: ""
     get:
@@ -2779,31 +2743,53 @@ paths:
                 items:
                   properties:
                     blob:
+                      description: An optional hash reference to a binary blob attachment
                       properties:
-                        hash: {}
+                        hash:
+                          description: The hash of the binary blob data
                         name:
+                          description: The name field from the metadata attached to
+                            the blob, commonly used as a path/filename, and indexed
+                            for search
                           type: string
                         public:
+                          description: If this data has been published to shared storage,
+                            this field is the id of the data in the shared storage
+                            plugin (IPFS hash etc.)
                           type: string
                         size:
+                          description: The size of the binary data
                           format: int64
                           type: integer
                       type: object
-                    created: {}
+                    created:
+                      description: The creation time of the data resource
                     datatype:
+                      description: The optional datatype to use of validation of this
+                        data
                       properties:
                         name:
+                          description: The name of the data type
                           type: string
                         version:
+                          description: The version of the data type
                           type: string
                       type: object
-                    hash: {}
-                    id: {}
+                    hash:
+                      description: The hash of the data resource. Derived from the
+                        value and the hash of any binary blob attachment
+                    id:
+                      description: The UUID of the data resource
                     namespace:
+                      description: The namespace of the data resource
                       type: string
                     validator:
+                      description: The data validator type
                       type: string
                     value:
+                      description: The value for the data, stored in the FireFly core
+                        database. Can be any JSON type - object, array, string, number
+                        or boolean. Can be combined with a binary blob attachment
                       type: string
                   type: object
                 type: array
@@ -2834,28 +2820,46 @@ paths:
             schema:
               properties:
                 blob:
+                  description: An optional in-line hash reference to a previously
+                    uploaded binary data blob
                   properties:
-                    hash: {}
+                    hash:
+                      description: The hash of the binary blob data
                     name:
+                      description: The name field from the metadata attached to the
+                        blob, commonly used as a path/filename, and indexed for search
                       type: string
                     public:
+                      description: If this data has been published to shared storage,
+                        this field is the id of the data in the shared storage plugin
+                        (IPFS hash etc.)
                       type: string
                     size:
+                      description: The size of the binary data
                       format: int64
                       type: integer
                   type: object
                 datatype:
+                  description: The optional datatype to use for validation of the
+                    in-line data
                   properties:
                     name:
+                      description: The name of the data type
                       type: string
                     version:
+                      description: The version of the data type
                       type: string
                   type: object
-                hash: {}
-                id: {}
+                hash:
+                  description: The hash of the referenced data
+                id:
+                  description: The UUID of the referenced data resource
                 validator:
+                  description: The data validator type to use for in-line data
                   type: string
                 value:
+                  description: The in-line value for the data. Can be any JSON type
+                    - object, array, string, number or boolean
                   type: string
               type: object
           multipart/form-data:
@@ -2887,31 +2891,53 @@ paths:
               schema:
                 properties:
                   blob:
+                    description: An optional hash reference to a binary blob attachment
                     properties:
-                      hash: {}
+                      hash:
+                        description: The hash of the binary blob data
                       name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
                         type: string
                       public:
+                        description: If this data has been published to shared storage,
+                          this field is the id of the data in the shared storage plugin
+                          (IPFS hash etc.)
                         type: string
                       size:
+                        description: The size of the binary data
                         format: int64
                         type: integer
                     type: object
-                  created: {}
+                  created:
+                    description: The creation time of the data resource
                   datatype:
+                    description: The optional datatype to use of validation of this
+                      data
                     properties:
                       name:
+                        description: The name of the data type
                         type: string
                       version:
+                        description: The version of the data type
                         type: string
                     type: object
-                  hash: {}
-                  id: {}
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                  id:
+                    description: The UUID of the data resource
                   namespace:
+                    description: The namespace of the data resource
                     type: string
                   validator:
+                    description: The data validator type
                     type: string
                   value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
                     type: string
                 type: object
           description: Success
@@ -2949,31 +2975,53 @@ paths:
               schema:
                 properties:
                   blob:
+                    description: An optional hash reference to a binary blob attachment
                     properties:
-                      hash: {}
+                      hash:
+                        description: The hash of the binary blob data
                       name:
+                        description: The name field from the metadata attached to
+                          the blob, commonly used as a path/filename, and indexed
+                          for search
                         type: string
                       public:
+                        description: If this data has been published to shared storage,
+                          this field is the id of the data in the shared storage plugin
+                          (IPFS hash etc.)
                         type: string
                       size:
+                        description: The size of the binary data
                         format: int64
                         type: integer
                     type: object
-                  created: {}
+                  created:
+                    description: The creation time of the data resource
                   datatype:
+                    description: The optional datatype to use of validation of this
+                      data
                     properties:
                       name:
+                        description: The name of the data type
                         type: string
                       version:
+                        description: The version of the data type
                         type: string
                     type: object
-                  hash: {}
-                  id: {}
+                  hash:
+                    description: The hash of the data resource. Derived from the value
+                      and the hash of any binary blob attachment
+                  id:
+                    description: The UUID of the data resource
                   namespace:
+                    description: The namespace of the data resource
                     type: string
                   validator:
+                    description: The data validator type
                     type: string
                   value:
+                    description: The value for the data, stored in the FireFly core
+                      database. Can be any JSON type - object, array, string, number
+                      or boolean. Can be combined with a binary blob attachment
                     type: string
                 type: object
           description: Success
@@ -3283,56 +3331,69 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
+                  batch:
+                    description: The UUID of the batch in which the message was pinned/transferred
                   confirmed:
-                    description: The timestamp of when the message was confirmed
+                    description: The timestamp of when the message was confirmed/rejected
                   data:
                     description: The list of data elements attached to the message
                     items:
                       description: The list of data elements attached to the message
                       properties:
-                        hash: {}
-                        id: {}
+                        hash:
+                          description: The hash of the referenced data
+                        id:
+                          description: The UUID of the referenced data resource
                       type: object
                     type: array
                   hash:
-                    description: The hash of the entire message, including data elements
-                      and headers
+                    description: The hash of the message. Derived from the header,
+                      which includes the data hash
                   header:
-                    description: The message header
+                    description: The message header contains all fields that are used
+                      to build the message hash
                     properties:
                       author:
+                        description: The author of the message
                         type: string
                       cid:
-                        description: The CID of the message
+                        description: The correlation ID of the message. Set this when
+                          a message is a response to another message
                       created:
                         description: The creation time of the message
                       datahash:
-                        description: The hash of all of the data items attached to
-                          this message.
+                        description: A single hash representing all data in the message.
+                          Derived from the array of data ids+hashes attached to this
+                          message
                       group:
-                        description: The group of recipients for a private message
+                        description: Private messages only - the identifier hash of
+                          the privacy group. Derived from the name and member list
+                          of the group
                       id:
-                        description: The UUID of the message
+                        description: The UUID of the message. Unique to each message
                       key:
+                        description: The signing key used to sign the message
                         type: string
                       namespace:
                         description: The namespace of the message
                         type: string
                       tag:
-                        description: The message tag. Useful for indicating the purpose
-                          of the message to other nodes.
+                        description: The message tag indicates the purpose of the
+                          message to the applications that process it
                         type: string
                       topics:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         items:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           type: string
                         type: array
                       txtype:
-                        description: The type of transaction
+                        description: The type of transaction used to order/deliver
+                          this message
                         type: string
                       type:
                         description: The type of the message
@@ -3346,9 +3407,11 @@ paths:
                         type: string
                     type: object
                   pins:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     items:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       type: string
                     type: array
                   state:
@@ -3938,21 +4001,32 @@ paths:
               schema:
                 items:
                   properties:
-                    created: {}
-                    hash: {}
-                    ledger: {}
+                    created:
+                      description: The time when the group was first used to send
+                        a message in the network
+                    hash:
+                      description: The identifier hash of this group. Derived from
+                        the name and group members
                     members:
+                      description: GroupIdentity.members
                       items:
+                        description: GroupIdentity.members
                         properties:
                           identity:
+                            description: The DID of the group member
                             type: string
-                          node: {}
+                          node:
+                            description: The ID of the group member's node
                         type: object
                       type: array
-                    message: {}
+                    message:
+                      description: The message used to broadcast this group privately
+                        to the members
                     name:
+                      description: GroupIdentity.name
                       type: string
                     namespace:
+                      description: GroupIdentity.namespace
                       type: string
                   type: object
                 type: array
@@ -3990,21 +4064,32 @@ paths:
             application/json:
               schema:
                 properties:
-                  created: {}
-                  hash: {}
-                  ledger: {}
+                  created:
+                    description: The time when the group was first used to send a
+                      message in the network
+                  hash:
+                    description: The identifier hash of this group. Derived from the
+                      name and group members
                   members:
+                    description: GroupIdentity.members
                     items:
+                      description: GroupIdentity.members
                       properties:
                         identity:
+                          description: The DID of the group member
                           type: string
-                        node: {}
+                        node:
+                          description: The ID of the group member's node
                       type: object
                     type: array
-                  message: {}
+                  message:
+                    description: The message used to broadcast this group privately
+                      to the members
                   name:
+                    description: GroupIdentity.name
                     type: string
                   namespace:
+                    description: GroupIdentity.namespace
                     type: string
                 type: object
           description: Success
@@ -4696,56 +4781,70 @@ paths:
               schema:
                 items:
                   properties:
-                    batch: {}
+                    batch:
+                      description: The UUID of the batch in which the message was
+                        pinned/transferred
                     confirmed:
-                      description: The timestamp of when the message was confirmed
+                      description: The timestamp of when the message was confirmed/rejected
                     data:
                       description: The list of data elements attached to the message
                       items:
                         description: The list of data elements attached to the message
                         properties:
-                          hash: {}
-                          id: {}
+                          hash:
+                            description: The hash of the referenced data
+                          id:
+                            description: The UUID of the referenced data resource
                         type: object
                       type: array
                     hash:
-                      description: The hash of the entire message, including data
-                        elements and headers
+                      description: The hash of the message. Derived from the header,
+                        which includes the data hash
                     header:
-                      description: The message header
+                      description: The message header contains all fields that are
+                        used to build the message hash
                       properties:
                         author:
+                          description: The author of the message
                           type: string
                         cid:
-                          description: The CID of the message
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
                         created:
                           description: The creation time of the message
                         datahash:
-                          description: The hash of all of the data items attached
-                            to this message.
+                          description: A single hash representing all data in the
+                            message. Derived from the array of data ids+hashes attached
+                            to this message
                         group:
-                          description: The group of recipients for a private message
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
                         id:
-                          description: The UUID of the message
+                          description: The UUID of the message. Unique to each message
                         key:
+                          description: The signing key used to sign the message
                           type: string
                         namespace:
                           description: The namespace of the message
                           type: string
                         tag:
-                          description: The message tag. Useful for indicating the
-                            purpose of the message to other nodes.
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
                           type: string
                         topics:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           items:
-                            description: The message topics. Messages will be ordered
-                              within a given topic or combination of topics
+                            description: A message topic associates this mesasge with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
                             type: string
                           type: array
                         txtype:
-                          description: The type of transaction
+                          description: The type of transaction used to order/deliver
+                            this message
                           type: string
                         type:
                           description: The type of the message
@@ -4759,9 +4858,11 @@ paths:
                           type: string
                       type: object
                     pins:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       items:
-                        description: The list of pins from this message
+                        description: For private messages, a unique pin hash:nonce
+                          is assigned for each topic
                         type: string
                       type: array
                     state:
@@ -4815,71 +4916,97 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
+                  batch:
+                    description: The UUID of the batch in which the message was pinned/transferred
                   confirmed:
-                    description: The timestamp of when the message was confirmed
+                    description: The timestamp of when the message was confirmed/rejected
                   data:
                     description: The list of data elements attached to the message
                     items:
                       description: The list of data elements attached to the message
                       properties:
-                        hash: {}
-                        id: {}
+                        hash:
+                          description: The hash of the referenced data
+                        id:
+                          description: The UUID of the referenced data resource
                       type: object
                     type: array
                   group:
+                    description: Allows you to specify details of the private group
+                      of recipients in-line in the message. Alternative to using the
+                      header.group to specify the hash of a group that has been previously
+                      resolved
                     properties:
-                      ledger: {}
                       members:
+                        description: An array of members of the group. If no identities
+                          local to the sending node are included, then the organization
+                          owner of the local node is added automatically
                         items:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
                           properties:
                             identity:
+                              description: The DID of the group member
                               type: string
                             node:
+                              description: The ID of the group member's node
                               type: string
                           type: object
                         type: array
                       name:
+                        description: Optional name for the group. Allows you to have
+                          multiple separate groups with the same list of participants
                         type: string
                     type: object
                   hash:
-                    description: The hash of the entire message, including data elements
-                      and headers
+                    description: The hash of the message. Derived from the header,
+                      which includes the data hash
                   header:
-                    description: The message header
+                    description: The message header contains all fields that are used
+                      to build the message hash
                     properties:
                       author:
+                        description: The author of the message
                         type: string
                       cid:
-                        description: The CID of the message
+                        description: The correlation ID of the message. Set this when
+                          a message is a response to another message
                       created:
                         description: The creation time of the message
                       datahash:
-                        description: The hash of all of the data items attached to
-                          this message.
+                        description: A single hash representing all data in the message.
+                          Derived from the array of data ids+hashes attached to this
+                          message
                       group:
-                        description: The group of recipients for a private message
+                        description: Private messages only - the identifier hash of
+                          the privacy group. Derived from the name and member list
+                          of the group
                       id:
-                        description: The UUID of the message
+                        description: The UUID of the message. Unique to each message
                       key:
+                        description: The signing key used to sign the message
                         type: string
                       namespace:
                         description: The namespace of the message
                         type: string
                       tag:
-                        description: The message tag. Useful for indicating the purpose
-                          of the message to other nodes.
+                        description: The message tag indicates the purpose of the
+                          message to the applications that process it
                         type: string
                       topics:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         items:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           type: string
                         type: array
                       txtype:
-                        description: The type of transaction
+                        description: The type of transaction used to order/deliver
+                          this message
                         type: string
                       type:
                         description: The type of the message
@@ -4893,9 +5020,11 @@ paths:
                         type: string
                     type: object
                   pins:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     items:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       type: string
                     type: array
                   state:
@@ -4945,31 +5074,53 @@ paths:
                 items:
                   properties:
                     blob:
+                      description: An optional hash reference to a binary blob attachment
                       properties:
-                        hash: {}
+                        hash:
+                          description: The hash of the binary blob data
                         name:
+                          description: The name field from the metadata attached to
+                            the blob, commonly used as a path/filename, and indexed
+                            for search
                           type: string
                         public:
+                          description: If this data has been published to shared storage,
+                            this field is the id of the data in the shared storage
+                            plugin (IPFS hash etc.)
                           type: string
                         size:
+                          description: The size of the binary data
                           format: int64
                           type: integer
                       type: object
-                    created: {}
+                    created:
+                      description: The creation time of the data resource
                     datatype:
+                      description: The optional datatype to use of validation of this
+                        data
                       properties:
                         name:
+                          description: The name of the data type
                           type: string
                         version:
+                          description: The version of the data type
                           type: string
                       type: object
-                    hash: {}
-                    id: {}
+                    hash:
+                      description: The hash of the data resource. Derived from the
+                        value and the hash of any binary blob attachment
+                    id:
+                      description: The UUID of the data resource
                     namespace:
+                      description: The namespace of the data resource
                       type: string
                     validator:
+                      description: The data validator type
                       type: string
                     value:
+                      description: The value for the data, stored in the FireFly core
+                        database. Can be any JSON type - object, array, string, number
+                        or boolean. Can be combined with a binary blob attachment
                       type: string
                   type: object
                 type: array
@@ -5204,54 +5355,65 @@ paths:
           application/json:
             schema:
               properties:
-                batch: {}
+                batch:
+                  description: The UUID of the batch in which the message was pinned/transferred
                 confirmed:
-                  description: The timestamp of when the message was confirmed
+                  description: The timestamp of when the message was confirmed/rejected
                 data:
                   description: The list of data elements attached to the message
                   items:
                     description: The list of data elements attached to the message
                     properties:
-                      hash: {}
-                      id: {}
+                      hash:
+                        description: The hash of the referenced data
+                      id:
+                        description: The UUID of the referenced data resource
                     type: object
                   type: array
                 hash:
-                  description: The hash of the entire message, including data elements
-                    and headers
+                  description: The hash of the message. Derived from the header, which
+                    includes the data hash
                 header:
-                  description: The message header
+                  description: The message header contains all fields that are used
+                    to build the message hash
                   properties:
                     author:
+                      description: The author of the message
                       type: string
                     cid:
-                      description: The CID of the message
+                      description: The correlation ID of the message. Set this when
+                        a message is a response to another message
                     created:
                       description: The creation time of the message
                     datahash:
-                      description: The hash of all of the data items attached to this
-                        message.
+                      description: A single hash representing all data in the message.
+                        Derived from the array of data ids+hashes attached to this
+                        message
                     id:
-                      description: The UUID of the message
+                      description: The UUID of the message. Unique to each message
                     key:
+                      description: The signing key used to sign the message
                       type: string
                     namespace:
                       description: The namespace of the message
                       type: string
                     tag:
-                      description: The message tag. Useful for indicating the purpose
-                        of the message to other nodes.
+                      description: The message tag indicates the purpose of the message
+                        to the applications that process it
                       type: string
                     topics:
-                      description: The message topics. Messages will be ordered within
-                        a given topic or combination of topics
+                      description: A message topic associates this mesasge with an
+                        ordered stream of data. A custom topic should be assigned
+                        - using the default topic is discouraged
                       items:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         type: string
                       type: array
                     txtype:
-                      description: The type of transaction
+                      description: The type of transaction used to order/deliver this
+                        message
                       type: string
                     type:
                       description: The type of the message
@@ -5265,9 +5427,11 @@ paths:
                       type: string
                   type: object
                 pins:
-                  description: The list of pins from this message
+                  description: For private messages, a unique pin hash:nonce is assigned
+                    for each topic
                   items:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     type: string
                   type: array
                 state:
@@ -5287,54 +5451,65 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
+                  batch:
+                    description: The UUID of the batch in which the message was pinned/transferred
                   confirmed:
-                    description: The timestamp of when the message was confirmed
+                    description: The timestamp of when the message was confirmed/rejected
                   data:
                     description: The list of data elements attached to the message
                     items:
                       description: The list of data elements attached to the message
                       properties:
-                        hash: {}
-                        id: {}
+                        hash:
+                          description: The hash of the referenced data
+                        id:
+                          description: The UUID of the referenced data resource
                       type: object
                     type: array
                   hash:
-                    description: The hash of the entire message, including data elements
-                      and headers
+                    description: The hash of the message. Derived from the header,
+                      which includes the data hash
                   header:
-                    description: The message header
+                    description: The message header contains all fields that are used
+                      to build the message hash
                     properties:
                       author:
+                        description: The author of the message
                         type: string
                       cid:
-                        description: The CID of the message
+                        description: The correlation ID of the message. Set this when
+                          a message is a response to another message
                       created:
                         description: The creation time of the message
                       datahash:
-                        description: The hash of all of the data items attached to
-                          this message.
+                        description: A single hash representing all data in the message.
+                          Derived from the array of data ids+hashes attached to this
+                          message
                       id:
-                        description: The UUID of the message
+                        description: The UUID of the message. Unique to each message
                       key:
+                        description: The signing key used to sign the message
                         type: string
                       namespace:
                         description: The namespace of the message
                         type: string
                       tag:
-                        description: The message tag. Useful for indicating the purpose
-                          of the message to other nodes.
+                        description: The message tag indicates the purpose of the
+                          message to the applications that process it
                         type: string
                       topics:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         items:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           type: string
                         type: array
                       txtype:
-                        description: The type of transaction
+                        description: The type of transaction used to order/deliver
+                          this message
                         type: string
                       type:
                         description: The type of the message
@@ -5348,9 +5523,11 @@ paths:
                         type: string
                     type: object
                   pins:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     items:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       type: string
                     type: array
                   state:
@@ -5370,54 +5547,65 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
+                  batch:
+                    description: The UUID of the batch in which the message was pinned/transferred
                   confirmed:
-                    description: The timestamp of when the message was confirmed
+                    description: The timestamp of when the message was confirmed/rejected
                   data:
                     description: The list of data elements attached to the message
                     items:
                       description: The list of data elements attached to the message
                       properties:
-                        hash: {}
-                        id: {}
+                        hash:
+                          description: The hash of the referenced data
+                        id:
+                          description: The UUID of the referenced data resource
                       type: object
                     type: array
                   hash:
-                    description: The hash of the entire message, including data elements
-                      and headers
+                    description: The hash of the message. Derived from the header,
+                      which includes the data hash
                   header:
-                    description: The message header
+                    description: The message header contains all fields that are used
+                      to build the message hash
                     properties:
                       author:
+                        description: The author of the message
                         type: string
                       cid:
-                        description: The CID of the message
+                        description: The correlation ID of the message. Set this when
+                          a message is a response to another message
                       created:
                         description: The creation time of the message
                       datahash:
-                        description: The hash of all of the data items attached to
-                          this message.
+                        description: A single hash representing all data in the message.
+                          Derived from the array of data ids+hashes attached to this
+                          message
                       id:
-                        description: The UUID of the message
+                        description: The UUID of the message. Unique to each message
                       key:
+                        description: The signing key used to sign the message
                         type: string
                       namespace:
                         description: The namespace of the message
                         type: string
                       tag:
-                        description: The message tag. Useful for indicating the purpose
-                          of the message to other nodes.
+                        description: The message tag indicates the purpose of the
+                          message to the applications that process it
                         type: string
                       topics:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         items:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           type: string
                         type: array
                       txtype:
-                        description: The type of transaction
+                        description: The type of transaction used to order/deliver
+                          this message
                         type: string
                       type:
                         description: The type of the message
@@ -5431,9 +5619,11 @@ paths:
                         type: string
                     type: object
                   pins:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     items:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       type: string
                     type: array
                   state:
@@ -5479,71 +5669,97 @@ paths:
           application/json:
             schema:
               properties:
-                batch: {}
+                batch:
+                  description: The UUID of the batch in which the message was pinned/transferred
                 confirmed:
-                  description: The timestamp of when the message was confirmed
+                  description: The timestamp of when the message was confirmed/rejected
                 data:
                   description: The list of data elements attached to the message
                   items:
                     description: The list of data elements attached to the message
                     properties:
-                      hash: {}
-                      id: {}
+                      hash:
+                        description: The hash of the referenced data
+                      id:
+                        description: The UUID of the referenced data resource
                     type: object
                   type: array
                 group:
+                  description: Allows you to specify details of the private group
+                    of recipients in-line in the message. Alternative to using the
+                    header.group to specify the hash of a group that has been previously
+                    resolved
                   properties:
-                    ledger: {}
                     members:
+                      description: An array of members of the group. If no identities
+                        local to the sending node are included, then the organization
+                        owner of the local node is added automatically
                       items:
+                        description: An array of members of the group. If no identities
+                          local to the sending node are included, then the organization
+                          owner of the local node is added automatically
                         properties:
                           identity:
+                            description: The DID of the group member
                             type: string
                           node:
+                            description: The ID of the group member's node
                             type: string
                         type: object
                       type: array
                     name:
+                      description: Optional name for the group. Allows you to have
+                        multiple separate groups with the same list of participants
                       type: string
                   type: object
                 hash:
-                  description: The hash of the entire message, including data elements
-                    and headers
+                  description: The hash of the message. Derived from the header, which
+                    includes the data hash
                 header:
-                  description: The message header
+                  description: The message header contains all fields that are used
+                    to build the message hash
                   properties:
                     author:
+                      description: The author of the message
                       type: string
                     cid:
-                      description: The CID of the message
+                      description: The correlation ID of the message. Set this when
+                        a message is a response to another message
                     created:
                       description: The creation time of the message
                     datahash:
-                      description: The hash of all of the data items attached to this
-                        message.
+                      description: A single hash representing all data in the message.
+                        Derived from the array of data ids+hashes attached to this
+                        message
                     group:
-                      description: The group of recipients for a private message
+                      description: Private messages only - the identifier hash of
+                        the privacy group. Derived from the name and member list of
+                        the group
                     id:
-                      description: The UUID of the message
+                      description: The UUID of the message. Unique to each message
                     key:
+                      description: The signing key used to sign the message
                       type: string
                     namespace:
                       description: The namespace of the message
                       type: string
                     tag:
-                      description: The message tag. Useful for indicating the purpose
-                        of the message to other nodes.
+                      description: The message tag indicates the purpose of the message
+                        to the applications that process it
                       type: string
                     topics:
-                      description: The message topics. Messages will be ordered within
-                        a given topic or combination of topics
+                      description: A message topic associates this mesasge with an
+                        ordered stream of data. A custom topic should be assigned
+                        - using the default topic is discouraged
                       items:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         type: string
                       type: array
                     txtype:
-                      description: The type of transaction
+                      description: The type of transaction used to order/deliver this
+                        message
                       type: string
                     type:
                       description: The type of the message
@@ -5557,9 +5773,11 @@ paths:
                       type: string
                   type: object
                 pins:
-                  description: The list of pins from this message
+                  description: For private messages, a unique pin hash:nonce is assigned
+                    for each topic
                   items:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     type: string
                   type: array
                 state:
@@ -5579,56 +5797,69 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
+                  batch:
+                    description: The UUID of the batch in which the message was pinned/transferred
                   confirmed:
-                    description: The timestamp of when the message was confirmed
+                    description: The timestamp of when the message was confirmed/rejected
                   data:
                     description: The list of data elements attached to the message
                     items:
                       description: The list of data elements attached to the message
                       properties:
-                        hash: {}
-                        id: {}
+                        hash:
+                          description: The hash of the referenced data
+                        id:
+                          description: The UUID of the referenced data resource
                       type: object
                     type: array
                   hash:
-                    description: The hash of the entire message, including data elements
-                      and headers
+                    description: The hash of the message. Derived from the header,
+                      which includes the data hash
                   header:
-                    description: The message header
+                    description: The message header contains all fields that are used
+                      to build the message hash
                     properties:
                       author:
+                        description: The author of the message
                         type: string
                       cid:
-                        description: The CID of the message
+                        description: The correlation ID of the message. Set this when
+                          a message is a response to another message
                       created:
                         description: The creation time of the message
                       datahash:
-                        description: The hash of all of the data items attached to
-                          this message.
+                        description: A single hash representing all data in the message.
+                          Derived from the array of data ids+hashes attached to this
+                          message
                       group:
-                        description: The group of recipients for a private message
+                        description: Private messages only - the identifier hash of
+                          the privacy group. Derived from the name and member list
+                          of the group
                       id:
-                        description: The UUID of the message
+                        description: The UUID of the message. Unique to each message
                       key:
+                        description: The signing key used to sign the message
                         type: string
                       namespace:
                         description: The namespace of the message
                         type: string
                       tag:
-                        description: The message tag. Useful for indicating the purpose
-                          of the message to other nodes.
+                        description: The message tag indicates the purpose of the
+                          message to the applications that process it
                         type: string
                       topics:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         items:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           type: string
                         type: array
                       txtype:
-                        description: The type of transaction
+                        description: The type of transaction used to order/deliver
+                          this message
                         type: string
                       type:
                         description: The type of the message
@@ -5642,9 +5873,11 @@ paths:
                         type: string
                     type: object
                   pins:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     items:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       type: string
                     type: array
                   state:
@@ -5664,56 +5897,69 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
+                  batch:
+                    description: The UUID of the batch in which the message was pinned/transferred
                   confirmed:
-                    description: The timestamp of when the message was confirmed
+                    description: The timestamp of when the message was confirmed/rejected
                   data:
                     description: The list of data elements attached to the message
                     items:
                       description: The list of data elements attached to the message
                       properties:
-                        hash: {}
-                        id: {}
+                        hash:
+                          description: The hash of the referenced data
+                        id:
+                          description: The UUID of the referenced data resource
                       type: object
                     type: array
                   hash:
-                    description: The hash of the entire message, including data elements
-                      and headers
+                    description: The hash of the message. Derived from the header,
+                      which includes the data hash
                   header:
-                    description: The message header
+                    description: The message header contains all fields that are used
+                      to build the message hash
                     properties:
                       author:
+                        description: The author of the message
                         type: string
                       cid:
-                        description: The CID of the message
+                        description: The correlation ID of the message. Set this when
+                          a message is a response to another message
                       created:
                         description: The creation time of the message
                       datahash:
-                        description: The hash of all of the data items attached to
-                          this message.
+                        description: A single hash representing all data in the message.
+                          Derived from the array of data ids+hashes attached to this
+                          message
                       group:
-                        description: The group of recipients for a private message
+                        description: Private messages only - the identifier hash of
+                          the privacy group. Derived from the name and member list
+                          of the group
                       id:
-                        description: The UUID of the message
+                        description: The UUID of the message. Unique to each message
                       key:
+                        description: The signing key used to sign the message
                         type: string
                       namespace:
                         description: The namespace of the message
                         type: string
                       tag:
-                        description: The message tag. Useful for indicating the purpose
-                          of the message to other nodes.
+                        description: The message tag indicates the purpose of the
+                          message to the applications that process it
                         type: string
                       topics:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         items:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           type: string
                         type: array
                       txtype:
-                        description: The type of transaction
+                        description: The type of transaction used to order/deliver
+                          this message
                         type: string
                       type:
                         description: The type of the message
@@ -5727,9 +5973,11 @@ paths:
                         type: string
                     type: object
                   pins:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     items:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       type: string
                     type: array
                   state:
@@ -5770,71 +6018,97 @@ paths:
           application/json:
             schema:
               properties:
-                batch: {}
+                batch:
+                  description: The UUID of the batch in which the message was pinned/transferred
                 confirmed:
-                  description: The timestamp of when the message was confirmed
+                  description: The timestamp of when the message was confirmed/rejected
                 data:
                   description: The list of data elements attached to the message
                   items:
                     description: The list of data elements attached to the message
                     properties:
-                      hash: {}
-                      id: {}
+                      hash:
+                        description: The hash of the referenced data
+                      id:
+                        description: The UUID of the referenced data resource
                     type: object
                   type: array
                 group:
+                  description: Allows you to specify details of the private group
+                    of recipients in-line in the message. Alternative to using the
+                    header.group to specify the hash of a group that has been previously
+                    resolved
                   properties:
-                    ledger: {}
                     members:
+                      description: An array of members of the group. If no identities
+                        local to the sending node are included, then the organization
+                        owner of the local node is added automatically
                       items:
+                        description: An array of members of the group. If no identities
+                          local to the sending node are included, then the organization
+                          owner of the local node is added automatically
                         properties:
                           identity:
+                            description: The DID of the group member
                             type: string
                           node:
+                            description: The ID of the group member's node
                             type: string
                         type: object
                       type: array
                     name:
+                      description: Optional name for the group. Allows you to have
+                        multiple separate groups with the same list of participants
                       type: string
                   type: object
                 hash:
-                  description: The hash of the entire message, including data elements
-                    and headers
+                  description: The hash of the message. Derived from the header, which
+                    includes the data hash
                 header:
-                  description: The message header
+                  description: The message header contains all fields that are used
+                    to build the message hash
                   properties:
                     author:
+                      description: The author of the message
                       type: string
                     cid:
-                      description: The CID of the message
+                      description: The correlation ID of the message. Set this when
+                        a message is a response to another message
                     created:
                       description: The creation time of the message
                     datahash:
-                      description: The hash of all of the data items attached to this
-                        message.
+                      description: A single hash representing all data in the message.
+                        Derived from the array of data ids+hashes attached to this
+                        message
                     group:
-                      description: The group of recipients for a private message
+                      description: Private messages only - the identifier hash of
+                        the privacy group. Derived from the name and member list of
+                        the group
                     id:
-                      description: The UUID of the message
+                      description: The UUID of the message. Unique to each message
                     key:
+                      description: The signing key used to sign the message
                       type: string
                     namespace:
                       description: The namespace of the message
                       type: string
                     tag:
-                      description: The message tag. Useful for indicating the purpose
-                        of the message to other nodes.
+                      description: The message tag indicates the purpose of the message
+                        to the applications that process it
                       type: string
                     topics:
-                      description: The message topics. Messages will be ordered within
-                        a given topic or combination of topics
+                      description: A message topic associates this mesasge with an
+                        ordered stream of data. A custom topic should be assigned
+                        - using the default topic is discouraged
                       items:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         type: string
                       type: array
                     txtype:
-                      description: The type of transaction
+                      description: The type of transaction used to order/deliver this
+                        message
                       type: string
                     type:
                       description: The type of the message
@@ -5848,9 +6122,11 @@ paths:
                       type: string
                   type: object
                 pins:
-                  description: The list of pins from this message
+                  description: For private messages, a unique pin hash:nonce is assigned
+                    for each topic
                   items:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     type: string
                   type: array
                 state:
@@ -5870,71 +6146,97 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
+                  batch:
+                    description: The UUID of the batch in which the message was pinned/transferred
                   confirmed:
-                    description: The timestamp of when the message was confirmed
+                    description: The timestamp of when the message was confirmed/rejected
                   data:
                     description: The list of data elements attached to the message
                     items:
                       description: The list of data elements attached to the message
                       properties:
-                        hash: {}
-                        id: {}
+                        hash:
+                          description: The hash of the referenced data
+                        id:
+                          description: The UUID of the referenced data resource
                       type: object
                     type: array
                   group:
+                    description: Allows you to specify details of the private group
+                      of recipients in-line in the message. Alternative to using the
+                      header.group to specify the hash of a group that has been previously
+                      resolved
                     properties:
-                      ledger: {}
                       members:
+                        description: An array of members of the group. If no identities
+                          local to the sending node are included, then the organization
+                          owner of the local node is added automatically
                         items:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
                           properties:
                             identity:
+                              description: The DID of the group member
                               type: string
                             node:
+                              description: The ID of the group member's node
                               type: string
                           type: object
                         type: array
                       name:
+                        description: Optional name for the group. Allows you to have
+                          multiple separate groups with the same list of participants
                         type: string
                     type: object
                   hash:
-                    description: The hash of the entire message, including data elements
-                      and headers
+                    description: The hash of the message. Derived from the header,
+                      which includes the data hash
                   header:
-                    description: The message header
+                    description: The message header contains all fields that are used
+                      to build the message hash
                     properties:
                       author:
+                        description: The author of the message
                         type: string
                       cid:
-                        description: The CID of the message
+                        description: The correlation ID of the message. Set this when
+                          a message is a response to another message
                       created:
                         description: The creation time of the message
                       datahash:
-                        description: The hash of all of the data items attached to
-                          this message.
+                        description: A single hash representing all data in the message.
+                          Derived from the array of data ids+hashes attached to this
+                          message
                       group:
-                        description: The group of recipients for a private message
+                        description: Private messages only - the identifier hash of
+                          the privacy group. Derived from the name and member list
+                          of the group
                       id:
-                        description: The UUID of the message
+                        description: The UUID of the message. Unique to each message
                       key:
+                        description: The signing key used to sign the message
                         type: string
                       namespace:
                         description: The namespace of the message
                         type: string
                       tag:
-                        description: The message tag. Useful for indicating the purpose
-                          of the message to other nodes.
+                        description: The message tag indicates the purpose of the
+                          message to the applications that process it
                         type: string
                       topics:
-                        description: The message topics. Messages will be ordered
-                          within a given topic or combination of topics
+                        description: A message topic associates this mesasge with
+                          an ordered stream of data. A custom topic should be assigned
+                          - using the default topic is discouraged
                         items:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           type: string
                         type: array
                       txtype:
-                        description: The type of transaction
+                        description: The type of transaction used to order/deliver
+                          this message
                         type: string
                       type:
                         description: The type of the message
@@ -5948,9 +6250,11 @@ paths:
                         type: string
                     type: object
                   pins:
-                    description: The list of pins from this message
+                    description: For private messages, a unique pin hash:nonce is
+                      assigned for each topic
                     items:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       type: string
                     type: array
                   state:
@@ -6757,6 +7061,10 @@ paths:
           default: 120s
           type: string
       responses:
+        "204":
+          content:
+            application/json: {}
+          description: Success
         default:
           description: ""
     get:
@@ -7166,8 +7474,10 @@ paths:
                       type: string
                     tx:
                       properties:
-                        id: {}
+                        id:
+                          description: The UUID of the transaction
                         type:
+                          description: The type of the transaction
                           type: string
                       type: object
                   type: object
@@ -7230,8 +7540,10 @@ paths:
                   type: string
                 tx:
                   properties:
-                    id: {}
+                    id:
+                      description: The UUID of the transaction
                     type:
+                      description: The type of the transaction
                       type: string
                   type: object
               type: object
@@ -7267,8 +7579,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                 type: object
@@ -7304,8 +7618,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                 type: object
@@ -7469,71 +7785,98 @@ paths:
                   type: string
                 message:
                   properties:
-                    batch: {}
+                    batch:
+                      description: The UUID of the batch in which the message was
+                        pinned/transferred
                     confirmed:
-                      description: The timestamp of when the message was confirmed
+                      description: The timestamp of when the message was confirmed/rejected
                     data:
                       description: The list of data elements attached to the message
                       items:
                         description: The list of data elements attached to the message
                         properties:
-                          hash: {}
-                          id: {}
+                          hash:
+                            description: The hash of the referenced data
+                          id:
+                            description: The UUID of the referenced data resource
                         type: object
                       type: array
                     group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
                       properties:
-                        ledger: {}
                         members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
                           items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
                             properties:
                               identity:
+                                description: The DID of the group member
                                 type: string
                               node:
+                                description: The ID of the group member's node
                                 type: string
                             type: object
                           type: array
                         name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
                           type: string
                       type: object
                     hash:
-                      description: The hash of the entire message, including data
-                        elements and headers
+                      description: The hash of the message. Derived from the header,
+                        which includes the data hash
                     header:
-                      description: The message header
+                      description: The message header contains all fields that are
+                        used to build the message hash
                       properties:
                         author:
+                          description: The author of the message
                           type: string
                         cid:
-                          description: The CID of the message
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
                         created:
                           description: The creation time of the message
                         datahash:
-                          description: The hash of all of the data items attached
-                            to this message.
+                          description: A single hash representing all data in the
+                            message. Derived from the array of data ids+hashes attached
+                            to this message
                         group:
-                          description: The group of recipients for a private message
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
                         id:
-                          description: The UUID of the message
+                          description: The UUID of the message. Unique to each message
                         key:
+                          description: The signing key used to sign the message
                           type: string
                         namespace:
                           description: The namespace of the message
                           type: string
                         tag:
-                          description: The message tag. Useful for indicating the
-                            purpose of the message to other nodes.
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
                           type: string
                         topics:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           items:
-                            description: The message topics. Messages will be ordered
-                              within a given topic or combination of topics
+                            description: A message topic associates this mesasge with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
                             type: string
                           type: array
                         txtype:
-                          description: The type of transaction
+                          description: The type of transaction used to order/deliver
+                            this message
                           type: string
                         type:
                           description: The type of the message
@@ -7547,9 +7890,11 @@ paths:
                           type: string
                       type: object
                     pins:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       items:
-                        description: The list of pins from this message
+                        description: For private messages, a unique pin hash:nonce
+                          is assigned for each topic
                         type: string
                       type: array
                     state:
@@ -7564,8 +7909,6 @@ paths:
                       type: string
                   type: object
                 pool:
-                  type: string
-                to:
                   type: string
                 tokenIndex:
                   type: string
@@ -7599,8 +7942,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -7641,8 +7986,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -7723,77 +8070,102 @@ paths:
                 blockchainEvent: {}
                 connector:
                   type: string
-                from:
-                  type: string
                 key:
                   type: string
                 message:
                   properties:
-                    batch: {}
+                    batch:
+                      description: The UUID of the batch in which the message was
+                        pinned/transferred
                     confirmed:
-                      description: The timestamp of when the message was confirmed
+                      description: The timestamp of when the message was confirmed/rejected
                     data:
                       description: The list of data elements attached to the message
                       items:
                         description: The list of data elements attached to the message
                         properties:
-                          hash: {}
-                          id: {}
+                          hash:
+                            description: The hash of the referenced data
+                          id:
+                            description: The UUID of the referenced data resource
                         type: object
                       type: array
                     group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
                       properties:
-                        ledger: {}
                         members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
                           items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
                             properties:
                               identity:
+                                description: The DID of the group member
                                 type: string
                               node:
+                                description: The ID of the group member's node
                                 type: string
                             type: object
                           type: array
                         name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
                           type: string
                       type: object
                     hash:
-                      description: The hash of the entire message, including data
-                        elements and headers
+                      description: The hash of the message. Derived from the header,
+                        which includes the data hash
                     header:
-                      description: The message header
+                      description: The message header contains all fields that are
+                        used to build the message hash
                       properties:
                         author:
+                          description: The author of the message
                           type: string
                         cid:
-                          description: The CID of the message
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
                         created:
                           description: The creation time of the message
                         datahash:
-                          description: The hash of all of the data items attached
-                            to this message.
+                          description: A single hash representing all data in the
+                            message. Derived from the array of data ids+hashes attached
+                            to this message
                         group:
-                          description: The group of recipients for a private message
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
                         id:
-                          description: The UUID of the message
+                          description: The UUID of the message. Unique to each message
                         key:
+                          description: The signing key used to sign the message
                           type: string
                         namespace:
                           description: The namespace of the message
                           type: string
                         tag:
-                          description: The message tag. Useful for indicating the
-                            purpose of the message to other nodes.
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
                           type: string
                         topics:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           items:
-                            description: The message topics. Messages will be ordered
-                              within a given topic or combination of topics
+                            description: A message topic associates this mesasge with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
                             type: string
                           type: array
                         txtype:
-                          description: The type of transaction
+                          description: The type of transaction used to order/deliver
+                            this message
                           type: string
                         type:
                           description: The type of the message
@@ -7807,9 +8179,11 @@ paths:
                           type: string
                       type: object
                     pins:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       items:
-                        description: The list of pins from this message
+                        description: For private messages, a unique pin hash:nonce
+                          is assigned for each topic
                         type: string
                       type: array
                     state:
@@ -7859,8 +8233,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -7901,8 +8277,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -8073,8 +8451,10 @@ paths:
                       type: string
                     tx:
                       properties:
-                        id: {}
+                        id:
+                          description: The UUID of the transaction
                         type:
+                          description: The type of the transaction
                           type: string
                       type: object
                     type:
@@ -8169,8 +8549,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -8216,8 +8598,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -8291,8 +8675,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -8482,8 +8868,10 @@ paths:
                       type: string
                     tx:
                       properties:
-                        id: {}
+                        id:
+                          description: The UUID of the transaction
                         type:
+                          description: The type of the transaction
                           type: string
                       type: object
                     type:
@@ -8537,71 +8925,98 @@ paths:
                   type: string
                 message:
                   properties:
-                    batch: {}
+                    batch:
+                      description: The UUID of the batch in which the message was
+                        pinned/transferred
                     confirmed:
-                      description: The timestamp of when the message was confirmed
+                      description: The timestamp of when the message was confirmed/rejected
                     data:
                       description: The list of data elements attached to the message
                       items:
                         description: The list of data elements attached to the message
                         properties:
-                          hash: {}
-                          id: {}
+                          hash:
+                            description: The hash of the referenced data
+                          id:
+                            description: The UUID of the referenced data resource
                         type: object
                       type: array
                     group:
+                      description: Allows you to specify details of the private group
+                        of recipients in-line in the message. Alternative to using
+                        the header.group to specify the hash of a group that has been
+                        previously resolved
                       properties:
-                        ledger: {}
                         members:
+                          description: An array of members of the group. If no identities
+                            local to the sending node are included, then the organization
+                            owner of the local node is added automatically
                           items:
+                            description: An array of members of the group. If no identities
+                              local to the sending node are included, then the organization
+                              owner of the local node is added automatically
                             properties:
                               identity:
+                                description: The DID of the group member
                                 type: string
                               node:
+                                description: The ID of the group member's node
                                 type: string
                             type: object
                           type: array
                         name:
+                          description: Optional name for the group. Allows you to
+                            have multiple separate groups with the same list of participants
                           type: string
                       type: object
                     hash:
-                      description: The hash of the entire message, including data
-                        elements and headers
+                      description: The hash of the message. Derived from the header,
+                        which includes the data hash
                     header:
-                      description: The message header
+                      description: The message header contains all fields that are
+                        used to build the message hash
                       properties:
                         author:
+                          description: The author of the message
                           type: string
                         cid:
-                          description: The CID of the message
+                          description: The correlation ID of the message. Set this
+                            when a message is a response to another message
                         created:
                           description: The creation time of the message
                         datahash:
-                          description: The hash of all of the data items attached
-                            to this message.
+                          description: A single hash representing all data in the
+                            message. Derived from the array of data ids+hashes attached
+                            to this message
                         group:
-                          description: The group of recipients for a private message
+                          description: Private messages only - the identifier hash
+                            of the privacy group. Derived from the name and member
+                            list of the group
                         id:
-                          description: The UUID of the message
+                          description: The UUID of the message. Unique to each message
                         key:
+                          description: The signing key used to sign the message
                           type: string
                         namespace:
                           description: The namespace of the message
                           type: string
                         tag:
-                          description: The message tag. Useful for indicating the
-                            purpose of the message to other nodes.
+                          description: The message tag indicates the purpose of the
+                            message to the applications that process it
                           type: string
                         topics:
-                          description: The message topics. Messages will be ordered
-                            within a given topic or combination of topics
+                          description: A message topic associates this mesasge with
+                            an ordered stream of data. A custom topic should be assigned
+                            - using the default topic is discouraged
                           items:
-                            description: The message topics. Messages will be ordered
-                              within a given topic or combination of topics
+                            description: A message topic associates this mesasge with
+                              an ordered stream of data. A custom topic should be
+                              assigned - using the default topic is discouraged
                             type: string
                           type: array
                         txtype:
-                          description: The type of transaction
+                          description: The type of transaction used to order/deliver
+                            this message
                           type: string
                         type:
                           description: The type of the message
@@ -8615,9 +9030,11 @@ paths:
                           type: string
                       type: object
                     pins:
-                      description: The list of pins from this message
+                      description: For private messages, a unique pin hash:nonce is
+                        assigned for each topic
                       items:
-                        description: The list of pins from this message
+                        description: For private messages, a unique pin hash:nonce
+                          is assigned for each topic
                         type: string
                       type: array
                     state:
@@ -8667,8 +9084,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -8709,8 +9128,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -8779,8 +9200,10 @@ paths:
                     type: string
                   tx:
                     properties:
-                      id: {}
+                      id:
+                        description: The UUID of the transaction
                       type:
+                        description: The type of the transaction
                         type: string
                     type: object
                   type:
@@ -9069,8 +9492,10 @@ paths:
                     timestamp: {}
                     tx:
                       properties:
-                        id: {}
+                        id:
+                          description: The UUID of the transaction
                         type:
+                          description: The type of the transaction
                           type: string
                       type: object
                   type: object

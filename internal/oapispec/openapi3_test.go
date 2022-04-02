@@ -105,7 +105,22 @@ var testRoutes = []*Route{
 	},
 }
 
+type TestInOutType struct {
+	Length           float64 `ffstruct:"TestInOutType" json:"length"`
+	Width            float64 `ffstruct:"TestInOutType" json:"width"`
+	Height           float64 `ffstruct:"TestInOutType" json:"height"`
+	Volume           float64 `ffstruct:"TestInOutType" json:"volume" ffexcludeinput:"true"`
+	Secret           string  `ffstruct:"TestInOutType" json:"secret" ffexclude:"true"`
+	Conditional      string  `ffstruct:"TestInOutType" json:"conditional" ffexclude:"PostTagTest"`
+	ConditionalInput string  `ffstruct:"TestInOutType" json:"conditionalInput" ffexcludeinput:"PostTagTest"`
+}
+
+type TestNonTaggedType struct {
+	NoFFStructTag string `json:"noFFStructTag"`
+}
+
 func TestOpenAPI3SwaggerGen(t *testing.T) {
+
 	config.Reset()
 
 	doc := SwaggerGen(context.Background(), testRoutes, &SwaggerGenConfig{
@@ -119,6 +134,51 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
 	fmt.Print(string(b))
+}
+
+func TestBadCustomInputSchema(t *testing.T) {
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:             "op6",
+			Path:             "namespaces/{ns}/example1/{id}",
+			Method:           http.MethodPost,
+			JSONInputValue:   func() interface{} { return &fftypes.Message{} },
+			JSONInputMask:    []string{"id"},
+			JSONOutputCodes:  []int{http.StatusOK},
+			JSONInputSchema:  func(ctx context.Context) string { return `!json` },
+			JSONOutputSchema: func(ctx context.Context) string { return `!json` },
+		},
+	}
+	assert.PanicsWithValue(t, "invalid schema: invalid character '!' looking for beginning of value", func() {
+		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+			Title:   "UnitTest",
+			Version: "1.0",
+			BaseURL: "http://localhost:12345/api/v1",
+		})
+	})
+}
+
+func TestBadCustomOutputSchema(t *testing.T) {
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:            "op7",
+			Path:            "namespaces/{ns}/example1/{id}",
+			Method:          http.MethodGet,
+			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+			JSONInputMask:   []string{"id"},
+			JSONOutputCodes: []int{http.StatusOK}, JSONInputSchema: func(ctx context.Context) string { return `!json` },
+			JSONOutputSchema: func(ctx context.Context) string { return `!json` },
+		},
+	}
+	assert.PanicsWithValue(t, "invalid schema: invalid character '!' looking for beginning of value", func() {
+		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+			Title:   "UnitTest",
+			Version: "1.0",
+			BaseURL: "http://localhost:12345/api/v1",
+		})
+	})
 }
 
 func TestDuplicateOperationIDCheck(t *testing.T) {
@@ -135,7 +195,6 @@ func TestDuplicateOperationIDCheck(t *testing.T) {
 }
 
 func TestWildcards(t *testing.T) {
-
 	config.Reset()
 	routes := []*Route{
 		{
@@ -152,4 +211,105 @@ func TestWildcards(t *testing.T) {
 		BaseURL: "http://localhost:12345/api/v1",
 	})
 	assert.NotNil(t, swagger.Paths["/namespaces/{ns}/example1/{id}"])
+}
+
+func TestFFExcludeTag(t *testing.T) {
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:            "PostTagTest",
+			Path:            "namespaces/{ns}/example1/test",
+			Method:          http.MethodPost,
+			JSONInputValue:  func() interface{} { return &TestInOutType{} },
+			JSONOutputValue: func() interface{} { return &TestInOutType{} },
+			JSONOutputCodes: []int{http.StatusOK},
+		},
+	}
+	swagger := SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+		Title:   "UnitTest",
+		Version: "1.0",
+		BaseURL: "http://localhost:12345/api/v1",
+	})
+	assert.NotNil(t, swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value)
+	length, err := swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value.Properties.JSONLookup("length")
+	assert.NoError(t, err)
+	assert.NotNil(t, length)
+	width, err := swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value.Properties.JSONLookup("width")
+	assert.NoError(t, err)
+	assert.NotNil(t, width)
+	_, err = swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value.Properties.JSONLookup("secret")
+	assert.Regexp(t, "object has no field", err)
+	_, err = swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value.Properties.JSONLookup("conditional")
+	assert.Regexp(t, "object has no field", err)
+	_, err = swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value.Properties.JSONLookup("conditionalInput")
+	assert.Regexp(t, "object has no field", err)
+}
+
+func TestCustomSchema(t *testing.T) {
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:   "PostCustomSchema",
+			Path:   "namespaces/{ns}/example1/test",
+			Method: http.MethodPost,
+			JSONInputSchema: func(ctx context.Context) string {
+				return `{"properties": {"foo": {"type": "string", "description": "a custom foo"}}}`
+			},
+			JSONOutputSchema: func(ctx context.Context) string {
+				return `{"properties": {"bar": {"type": "string", "description": "a custom bar"}}}`
+			},
+		},
+	}
+	swagger := SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+		Title:   "UnitTest",
+		Version: "1.0",
+		BaseURL: "http://localhost:12345/api/v1",
+	})
+	assert.NotNil(t, swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value)
+	length, err := swagger.Paths["/namespaces/{ns}/example1/test"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value.Properties.JSONLookup("foo")
+	assert.NoError(t, err)
+	assert.NotNil(t, length)
+}
+
+func TestPanicOnMissingDescription(t *testing.T) {
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:            "PostPanicOnMissingDescription",
+			Path:            "namespaces/{ns}/example1/test",
+			Method:          http.MethodPost,
+			JSONInputValue:  func() interface{} { return &TestInOutType{} },
+			JSONOutputValue: func() interface{} { return &TestInOutType{} },
+			JSONOutputCodes: []int{http.StatusOK},
+		},
+	}
+	assert.PanicsWithValue(t, "invalid schema: FF10381: Field description missing for 'TestInOutType.conditional' on route 'PostPanicOnMissingDescription'", func() {
+		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+			Title:                     "UnitTest",
+			Version:                   "1.0",
+			BaseURL:                   "http://localhost:12345/api/v1",
+			PanicOnMissingDescription: true,
+		})
+	})
+}
+
+func TestPanicOnMissingFFStructTag(t *testing.T) {
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:            "GetPanicOnMissingFFStructTag",
+			Path:            "namespaces/{ns}/example1/test",
+			Method:          http.MethodGet,
+			JSONOutputValue: func() interface{} { return &TestNonTaggedType{} },
+			JSONOutputCodes: []int{http.StatusOK},
+		},
+	}
+	assert.PanicsWithValue(t, "invalid schema: FF10382: ffstruct tag is missing for 'noFFStructTag' on route 'GetPanicOnMissingFFStructTag'", func() {
+		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+			Title:                     "UnitTest",
+			Version:                   "1.0",
+			BaseURL:                   "http://localhost:12345/api/v1",
+			PanicOnMissingDescription: true,
+		})
+	})
 }

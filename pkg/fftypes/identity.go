@@ -102,8 +102,8 @@ type IdentityUpdateDTO struct {
 // SignerRef is the nested structure representing the identity that signed a message.
 // It might comprise a resolvable by FireFly identity DID, a blockchain signing key, or both.
 type SignerRef struct {
-	Author string `json:"author,omitempty"`
-	Key    string `json:"key,omitempty"`
+	Author string `ffstruct:"SignerRef" json:"author,omitempty"`
+	Key    string `ffstruct:"SignerRef" json:"key,omitempty"`
 }
 
 // IdentityClaim is the data payload used in a message to broadcast an intent to publish a new identity.

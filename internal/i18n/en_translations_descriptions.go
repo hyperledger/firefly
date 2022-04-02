@@ -43,7 +43,7 @@ var (
 	// Message field descriptions
 	MessageHeader    = ffm("Message.header", "The message header contains all fields that are used to build the message hash")
 	MessageHash      = ffm("Message.hash", "The hash of the message. Derived from the header, which includes the data hash")
-	MessageBatchID   = ffm("Messages.batch", "The UUID of the batch in which the message was pinned/transferred")
+	MessageBatchID   = ffm("Message.batch", "The UUID of the batch in which the message was pinned/transferred")
 	MessageState     = ffm("Message.state", "The current state of the message")
 	MessageConfirmed = ffm("Message.confirmed", "The timestamp of when the message was confirmed/rejected")
 	MessageData      = ffm("Message.data", "The list of data elements attached to the message")
@@ -59,9 +59,9 @@ var (
 
 	// DataRefOrValue field descriptions
 	DataRefOrValueValidator = ffm("DataRefOrValue.validator", "The data validator type to use for in-line data")
-	DataRefOrValueValidator = ffm("DataRefOrValue.datatype", "The optional datatype to use for validation of the in-line data")
-	DataRefOrValueValidator = ffm("DataRefOrValue.value", "The in-line value for the data. Can be any JSON type - object, array, string, number or boolean")
-	DataRefOrValueValidator = ffm("DataRefOrValue.blob", "An optional in-line hash reference to a previously uploaded binary data blob")
+	DataRefOrValueDatatype  = ffm("DataRefOrValue.datatype", "The optional datatype to use for validation of the in-line data")
+	DataRefOrValueValue     = ffm("DataRefOrValue.value", "The in-line value for the data. Can be any JSON type - object, array, string, number or boolean")
+	DataRefOrValueBlob      = ffm("DataRefOrValue.blob", "An optional in-line hash reference to a previously uploaded binary data blob")
 
 	// MessageRef field descriptions
 	MessageRefID   = ffm("MessageRef.id", "The UUID of the referenced message")
@@ -69,11 +69,19 @@ var (
 
 	// Group field descriptions
 	GroupNamespace = ffm("Group.namespace", "The namespace of the group")
-	GroupyName     = ffm("Group.name", "The optional name of the group, allowing multiple unique groups to exist with the same list of recipients")
+	GroupName      = ffm("Group.name", "The optional name of the group, allowing multiple unique groups to exist with the same list of recipients")
 	GroupMembers   = ffm("Group.members", "The list of members in this privacy group")
 	GroupMessage   = ffm("Group.message", "The message used to broadcast this group privately to the members")
-	GroupHash      = ffm("Group.hash", "The identifier hash of this group. Defived from the name and group members")
+	GroupHash      = ffm("Group.hash", "The identifier hash of this group. Derived from the name and group members")
 	GroupCreated   = ffm("Group.created", "The time when the group was first used to send a message in the network")
+
+	// Member field descriptions
+	MemberIdentity = ffm("Member.identity", "The DID of the group member")
+	MemberNode     = ffm("Member.node", "The ID of the group member's node")
+
+	// MemberInput field descriptions
+	MemberInputIdentity = ffm("MemberInput.identity", "The DID of the group member")
+	MemberInputNode     = ffm("MemberInput.node", "The ID of the group member's node")
 
 	// DataRef field descriptions
 	DataRefID   = ffm("DataRef.id", "The UUID of the referenced data resource")
@@ -83,7 +91,7 @@ var (
 	BlobRefHash   = ffm("BlobRef.hash", "The hash of the binary blob data")
 	BlobRefSize   = ffm("BlobRef.size", "The size of the binary data")
 	BlobRefName   = ffm("BlobRef.name", "The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search")
-	BlobRefPublic = ffm("BlobRef.public", "If this data has been pubished to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
+	BlobRefPublic = ffm("BlobRef.public", "If this data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.)")
 
 	// Data field descriptions
 	DataID        = ffm("Data.id", "The UUID of the data resource")
@@ -94,4 +102,33 @@ var (
 	DataDatatype  = ffm("Data.datatype", "The optional datatype to use of validation of this data")
 	DataValue     = ffm("Data.value", "The value for the data, stored in the FireFly core database. Can be any JSON type - object, array, string, number or boolean. Can be combined with a binary blob attachment")
 	DataBlob      = ffm("Data.blob", "An optional hash reference to a binary blob attachment")
+
+	// DatatypeRef field descriptions
+	DatatypeRefName    = ffm("DatatypeRef.name", "The name of the data type")
+	DatatypeRefVersion = ffm("DatatypeRef.version", "The version of the data type")
+
+	// Batch field descriptions
+	BatchHash    = ffm("Batch.hash", "The hash of the batch")
+	BatchPayload = ffm("Batch.payload", "The payload of the batch")
+
+	// BatchHeader field descriptions
+	BatchHeaderID        = ffm("BatchHeader.id", "The UUID of the batch")
+	BatchHeaderType      = ffm("BatchHeader.type", "The type of the batch")
+	BatchHeaderNamespace = ffm("BatchHeader.namespace", "The namespace of the batch")
+	BatchHeaderNode      = ffm("BatchHeader.node", "The ID of the node that processed the batch")
+	BatchHeaderGroup     = ffm("BatchHeader.group", "The the group to which the batch was sent")
+	BatchHeaderCreated   = ffm("BatchHeader.created", "The creation time of the batch")
+
+	// BatchPayload field descriptions
+	BatchPayloadTX       = ffm("BatchPayload.tx", "The transaction in which the batch was pinned")
+	BatchPayloadMessages = ffm("BatchPayload.messages", "The messages contained in the batch")
+	BatchPayloadData     = ffm("BatchPayload.Data", "The list of data elements in the batch")
+
+	// SignerRef field descriptions
+	SignerRefAuthor = ffm("SignerRef.author", "The author of the message")
+	SignerRefKey    = ffm("SignerRef.key", "The signing key used to sign the message")
+
+	// TransactionRef field descriptions
+	TransactionRefType = ffm("TransactionRef.type", "The type of the transaction")
+	TransactionRefID   = ffm("TransactionRef.id", "The UUID of the transaction")
 )
