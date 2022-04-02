@@ -27,10 +27,9 @@ import (
 )
 
 type GroupIdentity struct {
-	Ledger    *UUID   `json:"ledger,omitempty"`
-	Namespace string  `json:"namespace,omitempty"`
-	Name      string  `json:"name"`
-	Members   Members `json:"members"`
+	Namespace string  `ffstruct:"Group" json:"namespace,omitempty"`
+	Name      string  `ffstruct:"Group" json:"name"`
+	Members   Members `ffstruct:"Group" json:"members"`
 }
 
 type Group struct {

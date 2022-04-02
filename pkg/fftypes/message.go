@@ -118,7 +118,6 @@ type MessageInOut struct {
 // InputGroup declares a group in-line for automatic resolution, without having to define a group up-front
 type InputGroup struct {
 	Name    string        `ffstruct:"InputGroup" json:"name,omitempty"`
-	Ledger  *UUID         `ffstruct:"InputGroup" json:"ledger,omitempty"`
 	Members []MemberInput `ffstruct:"InputGroup" json:"members"`
 }
 
