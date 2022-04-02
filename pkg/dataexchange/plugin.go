@@ -42,7 +42,7 @@ import (
 // - Must drive events on the target node that contain the input data
 // - No requirement to retain the data beyond the confirmation of receipt of the event at the target
 //
-// BlobS
+// Blobs
 // - Can be stored and retrieved separately from their transfer
 // - Transfers are initiated via reference (not in-line data)
 // - Are hashed by the DX plugin using the same hashing algorithm as FireFly (SHA256)
