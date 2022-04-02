@@ -93,7 +93,7 @@ func (br *blobReceiver) blobReceived(ctx context.Context, notification *blobNoti
 		return
 	}
 	// Otherwise do it in-line on this context
-	err := br.handleBlobNoficiationsRetry(ctx, []*blobNotification{notification})
+	err := br.handleBlobNotificationsRetry(ctx, []*blobNotification{notification})
 	if err != nil {
 		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
 	}
@@ -151,7 +151,7 @@ func (br *blobReceiver) blobReceiverLoop(index int) {
 
 		if batch != nil && (timedOut || len(batch.notifications) >= br.conf.maxInserts) {
 			batch.timeoutCancel()
-			err := br.handleBlobNoficiationsRetry(ctx, batch.notifications)
+			err := br.handleBlobNotificationsRetry(ctx, batch.notifications)
 			if err != nil {
 				log.L(ctx).Debugf("Blob receiver worker exiting: %s", err)
 				return
@@ -161,12 +161,12 @@ func (br *blobReceiver) blobReceiverLoop(index int) {
 	}
 }
 
-func (br *blobReceiver) handleBlobNoficiationsRetry(ctx context.Context, notifications []*blobNotification) error {
+func (br *blobReceiver) handleBlobNotificationsRetry(ctx context.Context, notifications []*blobNotification) error {
 	// We process the event in a retry loop (which will break only if the context is closed), so that
 	// we only confirm consumption of the event to the plugin once we've processed it.
 	err := br.retry.Do(ctx, "blob reference insert", func(attempt int) (retry bool, err error) {
 		return true, br.database.RunAsGroup(ctx, func(ctx context.Context) error {
-			return br.handleBlobNoficiations(ctx, notifications)
+			return br.handleBlobNotifications(ctx, notifications)
 		})
 	})
 	// We only get an error here if we're exiting
@@ -233,7 +233,7 @@ func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blo
 
 }
 
-func (br *blobReceiver) handleBlobNoficiations(ctx context.Context, notifications []*blobNotification) error {
+func (br *blobReceiver) handleBlobNotifications(ctx context.Context, notifications []*blobNotification) error {
 
 	l := log.L(br.ctx)
 
