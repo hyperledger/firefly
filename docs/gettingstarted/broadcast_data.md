@@ -24,7 +24,7 @@ nav_order: 4
   - Can be sent in-line, uploaded in advanced, or received from other parties
   - Can include smaller JSON payloads suitable for database storage
     - These can be verified against a `datatype`
-  - Can include references to large (multi megabyte/gigabyte) BLOB data
+  - Can include references to large (multi megabyte/gigabyte) Blob data
 - Sequenced via the blockchain
   - The blockchain does not contain any data, just a hash pin
 - Batched for efficiency
@@ -125,7 +125,7 @@ Here we make two API calls.
 
 2. Broadcast a message referring to that data
 
-- The BLOB attachment gets published to shared storage
+- The Blob attachment gets published to shared storage
   - This happens the first time a broadcast happens on a data attachment
 - A pin goes to the blockchain
 - The metadata goes into a batch with the message
@@ -144,7 +144,7 @@ curl -sLo - https://github.com/hyperledger/firefly/raw/main/docs/firefly_logo.pn
    http://localhost:5000/api/v1/namespaces/default/data
 ```
 
-### Example data response from BLOB upload
+### Example data response from Blob upload
 
 Status: `200 OK` - your data is uploaded to your local FireFly node
 

@@ -47,24 +47,65 @@ func (s *SQLCommon) InsertBlob(ctx context.Context, blob *fftypes.Blob) (err err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	sequence, err := s.insertTx(ctx, tx,
-		sq.Insert("blobs").
-			Columns(blobColumns...).
-			Values(
-				blob.Hash,
-				blob.PayloadRef,
-				blob.Peer,
-				blob.Created,
-				blob.Size,
-			),
-		nil, // no change events for blobs
-	)
+	err = s.attemptBlobInsert(ctx, tx, blob)
 	if err != nil {
 		return err
 	}
-	blob.Sequence = sequence
 
 	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) setBlobInsertValues(query sq.InsertBuilder, blob *fftypes.Blob) sq.InsertBuilder {
+	return query.Values(
+		blob.Hash,
+		blob.PayloadRef,
+		blob.Peer,
+		blob.Created,
+		blob.Size,
+	)
+}
+
+func (s *SQLCommon) attemptBlobInsert(ctx context.Context, tx *txWrapper, blob *fftypes.Blob) (err error) {
+	blob.Sequence, err = s.insertTx(ctx, tx,
+		s.setBlobInsertValues(sq.Insert("blobs").Columns(blobColumns...), blob),
+		nil, // no change events for blobs
+	)
+	return err
+}
+
+func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	if s.features.MultiRowInsert {
+		query := sq.Insert("blobs").Columns(blobColumns...)
+		for _, blob := range blobs {
+			query = s.setBlobInsertValues(query, blob)
+		}
+		sequences := make([]int64, len(blobs))
+		err := s.insertTxRows(ctx, tx, query,
+			nil, /* no change events for blobs */
+			sequences,
+			true /* we want the caller to be able to retry with individual upserts */)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Fall back to individual inserts grouped in a TX
+		for _, blob := range blobs {
+			err := s.attemptBlobInsert(ctx, tx, blob)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+
 }
 
 func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*fftypes.Blob, error) {

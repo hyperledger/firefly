@@ -522,7 +522,7 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	mom := pm.operations.(*operationmocks.Manager)
 
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(&fftypes.Blob{PayloadRef: "blob/1"}, nil)
-	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "peer1", "blob/1").Return(nil)
+	mdx.On("TransferBlob", pm.ctx, mock.Anything, "peer1", "blob/1").Return(nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := pm.prepareBlobTransfers(pm.ctx, fftypes.DataArray{

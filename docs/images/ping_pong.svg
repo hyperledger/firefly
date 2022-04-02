@@ -1344,7 +1344,7 @@
                id="text7051"><tspan
                  x="0 3.5718842 6.5783997 7.8193359 10.78273 13.511353 16.517868 17.792343 20.971344 23.517899 27.338928 30.517929 31.792404 34.755798 36.418365 37.692841 39.424881 42.436188 45.188766 46.463242 49.191864 51.527603 53.259644 56.27095 58.999573 60.240509 61.514984 64.5215 67.250122 68.982162"
                  y="0"
-                 id="tspan7049">Upload BLOB of the actual data</tspan></text></g><g
+                 id="tspan7049">Upload Blob of the actual data</tspan></text></g><g
              id="g7053"
              transform="matrix(3.1364255,0,0,3.1257248,239.1142,113.90139)"><text
                transform="translate(25.344463,26.048477)"
@@ -1835,7 +1835,7 @@
                id="text7565"><tspan
                  x="0 1.8527374 3.3368835 5.563797"
                  y="0"
-                 id="tspan7563">BLOB</tspan></text></g><g
+                 id="tspan7563">Blob</tspan></text></g><g
              id="g7567"
              transform="matrix(0.64117032,0,0,0.64182717,348.53629,513.02515)"><path
                d="M 0,0.79999995 C 0,19.494141 0,28.841209 0,47.535351"
@@ -1862,7 +1862,7 @@
                id="text7597"><tspan
                  x="0 1.8527374 3.3368835 5.563797"
                  y="0"
-                 id="tspan7595">BLOB</tspan></text></g><g
+                 id="tspan7595">Blob</tspan></text></g><g
              id="g7599"
              transform="matrix(3.1392717,0,0,3.1257246,323.68564,610.8446)"><text
                transform="translate(4.3746152,7.7793746)"
@@ -4067,7 +4067,7 @@
                id="text10217"><tspan
                  x="0 1.8527374 3.3368835 5.563797"
                  y="0"
-                 id="tspan10215">BLOB</tspan></text></g><g
+                 id="tspan10215">Blob</tspan></text></g><g
              id="g10219"
              transform="matrix(3.1392717,0,0,3.1257246,658.92004,860.2774)"><text
                transform="translate(4.3746152,7.7793746)"
@@ -4331,7 +4331,7 @@
                id="text10511"><tspan
                  x="0 1.7522125 3.3424683 4.3519135 5.9421692 6.6849365 8.31987 9.0626373 10.915375 12.399521 14.626434 16.479172 17.221939 19.30365 21.071213"
                  y="0"
-                 id="tspan10509">data + BLOB URL</tspan></text></g></g></g><g
+                 id="tspan10509">data + Blob URL</tspan></text></g></g></g><g
          id="g10513"><g
            id="g10515"
            clip-path="url(#clipPath10519)"><g
@@ -4497,7 +4497,7 @@
                id="text10721"><tspan
                  x="0 1.8527374 3.3368835 5.563797"
                  y="0"
-                 id="tspan10719">BLOB</tspan></text></g><g
+                 id="tspan10719">Blob</tspan></text></g><g
              id="g10723"
              transform="matrix(3.1392717,0,0,3.1257246,1930.5686,858.37073)"><text
                transform="translate(4.3746152,7.7793746)"
@@ -4577,7 +4577,7 @@
                id="text10793"><tspan
                  x="0 1.8527374 3.3368835 5.563797"
                  y="0"
-                 id="tspan10791">BLOB</tspan></text></g><g
+                 id="tspan10791">Blob</tspan></text></g><g
              id="g10795"
              transform="matrix(3.1392717,0,0,3.1257246,1929.5693,611.00085)"><text
                transform="translate(4.3746152,7.7793746)"

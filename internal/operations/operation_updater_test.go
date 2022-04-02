@@ -73,10 +73,9 @@ func TestSubmitUpdateClosed(t *testing.T) {
 		make(chan *OperationUpdate),
 	}
 	ou.cancelFunc()
-	err := ou.SubmitOperationUpdate(ou.ctx, &OperationUpdate{
+	ou.SubmitOperationUpdate(ou.ctx, &OperationUpdate{
 		ID: fftypes.NewUUID(),
 	})
-	assert.Regexp(t, "FF10158", err)
 }
 
 func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
@@ -91,11 +90,10 @@ func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
 	}).Return(nil)
 	mdi.On("GetOperations", customCtx, mock.Anything, mock.Anything).Return(nil, nil, nil)
 
-	err := ou.SubmitOperationUpdate(customCtx, &OperationUpdate{
+	ou.SubmitOperationUpdate(customCtx, &OperationUpdate{
 		ID: fftypes.NewUUID(),
 	})
 
-	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
 
@@ -134,29 +132,25 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 
 	om.Start()
 
-	err := om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
+	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:             opID1,
 		Status:         fftypes.OpStatusSucceeded,
 		BlockchainTXID: "tx12345",
 	})
-	assert.NoError(t, err)
-	err = om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
+	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:           opID2,
 		Status:       fftypes.OpStatusFailed,
 		ErrorMessage: "err1",
 		Output:       fftypes.JSONObject{"test": true},
 	})
-	assert.NoError(t, err)
-	err = om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
+	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:           opID3,
 		Status:       fftypes.OpStatusFailed,
 		ErrorMessage: "err2",
 	})
-	assert.NoError(t, err)
 
 	<-done
 
-	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
 
@@ -171,10 +165,9 @@ func TestUpdateLoopExitRetryCancelledContext(t *testing.T) {
 		ou.cancelFunc()
 	})
 
-	err := ou.SubmitOperationUpdate(ou.ctx, &OperationUpdate{
+	ou.SubmitOperationUpdate(ou.ctx, &OperationUpdate{
 		ID: fftypes.NewUUID(),
 	})
-	assert.NoError(t, err)
 
 	ou.updaterLoop(0)
 

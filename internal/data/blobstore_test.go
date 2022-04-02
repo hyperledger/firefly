@@ -57,7 +57,7 @@ func TestUploadBlobOk(t *testing.T) {
 
 	dxID := make(chan fftypes.UUID, 1)
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything)
+	dxUpload := mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		readBytes, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
@@ -68,7 +68,7 @@ func TestUploadBlobOk(t *testing.T) {
 		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, int64(len(b)), err}
 	}
 
-	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader(b)}, false)
+	data, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader(b)}, false)
 	assert.NoError(t, err)
 
 	// Check the hashes and other details of the data
@@ -99,7 +99,7 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 
 	dxID := make(chan fftypes.UUID, 1)
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything)
+	dxUpload := mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		readBytes, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
@@ -109,7 +109,7 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, int64(len(readBytes)), err}
 	}
 
-	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{
+	data, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`{"custom": "value1"}`),
 	}, &fftypes.Multipart{
 		Data:     bytes.NewReader([]byte(`hello`)),
@@ -134,7 +134,7 @@ func TestUploadBlobBadValidator(t *testing.T) {
 
 	dxID := make(chan fftypes.UUID, 1)
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything)
+	dxUpload := mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		readBytes, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
@@ -144,7 +144,7 @@ func TestUploadBlobBadValidator(t *testing.T) {
 		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, int64(len(readBytes)), err}
 	}
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{
+	_, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{
 		Value:     fftypes.JSONAnyPtr(`{"custom": "value1"}`),
 		Validator: "wrong",
 	}, &fftypes.Multipart{
@@ -164,13 +164,13 @@ func TestUploadBlobReadFail(t *testing.T) {
 	defer cancel()
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", fftypes.NewRandB32(), int64(0), nil)
+	dxUpload := mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything).Return("", fftypes.NewRandB32(), int64(0), nil)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		_, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.NoError(t, err)
 	}
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: iotest.ErrReader(fmt.Errorf("pop"))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: iotest.ErrReader(fmt.Errorf("pop"))}, false)
 	assert.Regexp(t, "FF10217.*pop", err)
 
 }
@@ -181,9 +181,9 @@ func TestUploadBlobWriteFailDoesNotRead(t *testing.T) {
 	defer cancel()
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", nil, int64(0), fmt.Errorf("pop"))
+	mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything).Return("", nil, int64(0), fmt.Errorf("pop"))
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -195,13 +195,13 @@ func TestUploadBlobHashMismatchCalculated(t *testing.T) {
 	b := []byte(`any old data`)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", fftypes.NewRandB32(), int64(12345), nil)
+	dxUpload := mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything).Return("", fftypes.NewRandB32(), int64(12345), nil)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		_, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
 	}
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "FF10238", err)
 
 }
@@ -214,13 +214,13 @@ func TestUploadBlobSizeMismatch(t *testing.T) {
 	var hash fftypes.Bytes32 = sha256.Sum256(b)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", &hash, int64(12345), nil)
+	dxUpload := mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything).Return("", &hash, int64(12345), nil)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		_, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
 	}
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "FF10323", err)
 
 }
@@ -233,7 +233,7 @@ func TestUploadBlobUpsertFail(t *testing.T) {
 	var hash fftypes.Bytes32 = sha256.Sum256(b)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", &hash, int64(len(b)), nil)
+	dxUpload := mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything).Return("", &hash, int64(len(b)), nil)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		_, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
@@ -241,7 +241,7 @@ func TestUploadBlobUpsertFail(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -268,11 +268,11 @@ func TestDownloadBlobOk(t *testing.T) {
 	}, nil)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("DownloadBLOB", ctx, "ns1/blob1").Return(
+	mdx.On("DownloadBlob", ctx, "ns1/blob1").Return(
 		ioutil.NopCloser(bytes.NewReader([]byte("some blob"))),
 		nil)
 
-	blob, reader, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	blob, reader, err := dm.DownloadBlob(ctx, "ns1", dataID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, blobHash.String(), blob.Hash.String())
 	b, err := ioutil.ReadAll(reader)
@@ -299,7 +299,7 @@ func TestDownloadBlobNotFound(t *testing.T) {
 	}, nil)
 	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(nil, nil)
 
-	_, _, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	_, _, err := dm.DownloadBlob(ctx, "ns1", dataID.String())
 	assert.Regexp(t, "FF10239", err)
 
 }
@@ -322,7 +322,7 @@ func TestDownloadBlobLookupErr(t *testing.T) {
 	}, nil)
 	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(nil, fmt.Errorf("pop"))
 
-	_, _, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	_, _, err := dm.DownloadBlob(ctx, "ns1", dataID.String())
 	assert.Regexp(t, "pop", err)
 
 }
@@ -341,7 +341,7 @@ func TestDownloadBlobNoBlob(t *testing.T) {
 		Blob:      &fftypes.BlobRef{},
 	}, nil)
 
-	_, _, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	_, _, err := dm.DownloadBlob(ctx, "ns1", dataID.String())
 	assert.Regexp(t, "FF10241", err)
 
 }
@@ -360,7 +360,7 @@ func TestDownloadBlobNSMismatch(t *testing.T) {
 		Blob:      &fftypes.BlobRef{},
 	}, nil)
 
-	_, _, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	_, _, err := dm.DownloadBlob(ctx, "ns1", dataID.String())
 	assert.Regexp(t, "FF10143", err)
 
 }
@@ -375,7 +375,7 @@ func TestDownloadBlobDataLookupErr(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", ctx, dataID, false).Return(nil, fmt.Errorf("pop"))
 
-	_, _, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	_, _, err := dm.DownloadBlob(ctx, "ns1", dataID.String())
 	assert.Regexp(t, "pop", err)
 
 }
@@ -387,7 +387,7 @@ func TestDownloadBlobBadNS(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 
-	_, _, err := dm.DownloadBLOB(ctx, "!wrong", dataID.String())
+	_, _, err := dm.DownloadBlob(ctx, "!wrong", dataID.String())
 	assert.Regexp(t, "FF10131.*namespace", err)
 
 }
@@ -397,7 +397,7 @@ func TestDownloadBlobBadID(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 
-	_, _, err := dm.DownloadBLOB(ctx, "ns1", "!uuid")
+	_, _, err := dm.DownloadBlob(ctx, "ns1", "!uuid")
 	assert.Regexp(t, "FF10142", err)
 
 }

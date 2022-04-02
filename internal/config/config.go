@@ -70,6 +70,18 @@ var (
 	BatchRetryInitDelay = rootKey("batch.retry.initDelay")
 	// BatchRetryMaxDelay is the maximum delay between retry attempts
 	BatchRetryMaxDelay = rootKey("batch.retry.maxDelay")
+	// BlobReceiverRetryInitDelay is the initial retry delay
+	BlobReceiverRetryInitDelay = rootKey("blobreceiver.retry.initialDelay")
+	// BlobReceiverRetryMaxDelay is the maximum retry delay
+	BlobReceiverRetryMaxDelay = rootKey("blobreceiver.retry.maxDelay")
+	// BlobReceiverRetryFactor is the backoff factor to use for retries
+	BlobReceiverRetryFactor = rootKey("blobreceiver.retry.factor")
+	// BlobReceiverWorkerCount
+	BlobReceiverWorkerCount = rootKey("blobreceiver.worker.count")
+	// BlobReceiverWorkerBatchTimeout
+	BlobReceiverWorkerBatchTimeout = rootKey("blobreceiver.worker.batchTimeout")
+	// BlobReceiverWorkerBatchMaxInserts
+	BlobReceiverWorkerBatchMaxInserts = rootKey("blobreceiver.worker.batchMaxInserts")
 	// BlockchainEventCacheSize size of cache for blockchain events
 	BlockchainEventCacheSize = rootKey("blockchainevent.cache.size")
 	// BlockchainEventCacheTTL time to live of cache for blockchain events
@@ -356,6 +368,12 @@ func Reset() {
 	viper.SetDefault(string(BatchRetryInitDelay), "250ms")
 	viper.SetDefault(string(BatchRetryMaxDelay), "30s")
 	viper.SetDefault(string(BatchRetryMaxDelay), "30s")
+	viper.SetDefault(string(BlobReceiverRetryInitDelay), "250ms")
+	viper.SetDefault(string(BlobReceiverRetryMaxDelay), "1m")
+	viper.SetDefault(string(BlobReceiverRetryFactor), 2.0)
+	viper.SetDefault(string(BlobReceiverWorkerBatchTimeout), "50ms")
+	viper.SetDefault(string(BlobReceiverWorkerCount), 5)
+	viper.SetDefault(string(BlobReceiverWorkerBatchMaxInserts), 200)
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
