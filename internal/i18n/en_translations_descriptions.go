@@ -95,6 +95,21 @@ var (
 	DataValue     = ffm("Data.value", "The value for the data, stored in the FireFly core database. Can be any JSON type - object, array, string, number or boolean. Can be combined with a binary blob attachment")
 	DataBlob      = ffm("Data.blob", "An optional hash reference to a binary blob attachment")
 
+	// DatatypeRef field descriptions
+	DatatypeRefName    = ffm("DatatypeRef.name", "The name of the datatype")
+	DatatypeRefVersion = ffm("DatatypeRef.version", "The version of the datatype. Semantic versioning is encouraged, such as v1.0.1")
+
+	// Datatype field descriptions
+	DatatypeID        = ffm("Datatype.id", "The UUID of the datatype")
+	DatatypeMessage   = ffm("Datatype.message", "The UUID of the broadcast message that was used to publish this datatype to the network")
+	DatatypeValidator = ffm("Datatype.validator", "The validator that should be used to verify this datatype")
+	DatatypeNamespace = ffm("Datatype.namespace", "The namespace of the datatype. Data resources can only be created referencing datatypes in the same namespace")
+	DatatypeName      = ffm("Datatype.name", "The name of the datatype")
+	DatatypeVersion   = ffm("Datatype.version", "The version of the datatype. Multiple versions can exist with the same name. Use of semantic versioning is encourages, such as v1.0.1")
+	DatatypeHash      = ffm("Datatype.hash", "The hash of the value, such as the JSON schema. Allows all parties to be confident they have the exact same rules for verifying data created against a datatype")
+	DatatypeCreated   = ffm("Datatype.created", "The time the datatype was created")
+	DatatypeValue     = ffm("Datatype.value", "The definition of the datatype, in the syntax supported by the validator. Such as a JSON Schema definition")
+
 	// SignerRef field descriptions
 	SignerRefAuthor = ffm("SignerRef.author", "The DID of identity of the submitter")
 	SignerRefKey    = ffm("SignerRef.key", "The on-chain signing key used to sign the transaction")

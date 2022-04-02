@@ -35,15 +35,15 @@ var (
 
 // Datatype is the structure defining a data definition, such as a JSON schema
 type Datatype struct {
-	ID        *UUID         `json:"id,omitempty" ffexcludeinput:"true"`
-	Message   *UUID         `json:"message,omitempty" ffexcludeinput:"true"`
-	Validator ValidatorType `json:"validator" ffenum:"validatortype"`
-	Namespace string        `json:"namespace,omitempty" ffexcludeinput:"true"`
-	Name      string        `json:"name,omitempty"`
-	Version   string        `json:"version,omitempty"`
-	Hash      *Bytes32      `json:"hash,omitempty" ffexcludeinput:"true"`
-	Created   *FFTime       `json:"created,omitempty" ffexcludeinput:"true"`
-	Value     *JSONAny      `json:"value,omitempty"`
+	ID        *UUID         `ffstruct:"Datatype" json:"id,omitempty" ffexcludeinput:"true"`
+	Message   *UUID         `ffstruct:"Datatype" json:"message,omitempty" ffexcludeinput:"true"`
+	Validator ValidatorType `ffstruct:"Datatype" json:"validator" ffenum:"validatortype"`
+	Namespace string        `ffstruct:"Datatype" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Name      string        `ffstruct:"Datatype" json:"name,omitempty"`
+	Version   string        `ffstruct:"Datatype" json:"version,omitempty"`
+	Hash      *Bytes32      `ffstruct:"Datatype" json:"hash,omitempty" ffexcludeinput:"true"`
+	Created   *FFTime       `ffstruct:"Datatype" json:"created,omitempty" ffexcludeinput:"true"`
+	Value     *JSONAny      `ffstruct:"Datatype" json:"value,omitempty"`
 }
 
 func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
