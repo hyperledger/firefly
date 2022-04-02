@@ -37,7 +37,7 @@ func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, nu
 	return intervals
 }
 
-func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*fftypes.ChartHistogramBucket, error) {
 	if buckets > fftypes.ChartHistogramMaxBuckets || buckets < fftypes.ChartHistogramMinBuckets {
 		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, fftypes.ChartHistogramMinBuckets, fftypes.ChartHistogramMaxBuckets)
 	}

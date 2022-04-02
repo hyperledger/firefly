@@ -505,7 +505,7 @@ type iBlockchainEventCollection interface {
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
 type iChartCollection interface {
 	// GetChartHistogram - Get charting data for a histogram
-	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
+	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogramBucket, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -584,9 +584,8 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages         OrderedUUIDCollectionNS = "messages"
-	CollectionEvents           OrderedUUIDCollectionNS = "events"
-	CollectionBlockchainEvents OrderedUUIDCollectionNS = "blockchainevents"
+	CollectionMessages OrderedUUIDCollectionNS = "messages"
+	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -603,6 +602,7 @@ type UUIDCollectionNS CollectionName
 
 const (
 	CollectionBatches           UUIDCollectionNS = "batches"
+	CollectionBlockchainEvents  UUIDCollectionNS = "blockchainevents"
 	CollectionData              UUIDCollectionNS = "data"
 	CollectionDataTypes         UUIDCollectionNS = "datatypes"
 	CollectionOperations        UUIDCollectionNS = "operations"

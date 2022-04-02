@@ -327,15 +327,15 @@ func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filte
 }
 
 // GetChartHistogram provides a mock function with given fields: ctx, ns, intervals, collection
-func (_m *Plugin) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+func (_m *Plugin) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) ([]*fftypes.ChartHistogramBucket, error) {
 	ret := _m.Called(ctx, ns, intervals, collection)
 
-	var r0 []*fftypes.ChartHistogram
-	if rf, ok := ret.Get(0).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) []*fftypes.ChartHistogram); ok {
+	var r0 []*fftypes.ChartHistogramBucket
+	if rf, ok := ret.Get(0).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) []*fftypes.ChartHistogramBucket); ok {
 		r0 = rf(ctx, ns, intervals, collection)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ChartHistogram)
+			r0 = ret.Get(0).([]*fftypes.ChartHistogramBucket)
 		}
 	}
 

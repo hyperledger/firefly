@@ -317,15 +317,15 @@ func (_m *Orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filt
 }
 
 // GetChartHistogram provides a mock function with given fields: ctx, ns, startTime, endTime, buckets, tableName
-func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogramBucket, error) {
 	ret := _m.Called(ctx, ns, startTime, endTime, buckets, tableName)
 
-	var r0 []*fftypes.ChartHistogram
-	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, int64, database.CollectionName) []*fftypes.ChartHistogram); ok {
+	var r0 []*fftypes.ChartHistogramBucket
+	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, int64, database.CollectionName) []*fftypes.ChartHistogramBucket); ok {
 		r0 = rf(ctx, ns, startTime, endTime, buckets, tableName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ChartHistogram)
+			r0 = ret.Get(0).([]*fftypes.ChartHistogramBucket)
 		}
 	}
 

@@ -100,7 +100,7 @@ func (s *SQLCommon) histogramResult(ctx context.Context, tableName string, rows 
 	return typeMap, strconv.Itoa(total), nil
 }
 
-func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogramList []*fftypes.ChartHistogram, err error) {
+func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogramList []*fftypes.ChartHistogramBucket, err error) {
 	tableName, fieldMap, err := s.getTableNameFromCollection(ctx, collection)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 		}
 
 		histTypes := make([]*fftypes.ChartHistogramType, 0)
-		histBucket := fftypes.ChartHistogram{
+		histBucket := fftypes.ChartHistogramBucket{
 			Count:     total,
 			Timestamp: intervals[i].StartTime,
 			Types:     histTypes,

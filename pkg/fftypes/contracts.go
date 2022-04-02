@@ -48,19 +48,19 @@ type ContractSubscribeRequest struct {
 }
 
 type ContractURLs struct {
-	OpenAPI string `json:"openapi"`
-	UI      string `json:"ui"`
+	OpenAPI string `ffstruct:"ContractURLs" json:"openapi"`
+	UI      string `ffstruct:"ContractURLs" json:"ui"`
 }
 
 type ContractAPI struct {
-	ID        *UUID         `json:"id,omitempty" ffexcludeinput:"true"`
-	Namespace string        `json:"namespace,omitempty" ffexcludeinput:"true"`
-	Interface *FFIReference `json:"interface"`
-	Ledger    *JSONAny      `json:"ledger,omitempty"`
-	Location  *JSONAny      `json:"location,omitempty"`
-	Name      string        `json:"name"`
-	Message   *UUID         `json:"message,omitempty" ffexcludeinput:"true"`
-	URLs      ContractURLs  `json:"urls" ffexcludeinput:"true"`
+	ID        *UUID         `ffstruct:"ContractAPI" json:"id,omitempty" ffexcludeinput:"true"`
+	Namespace string        `ffstruct:"ContractAPI" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Interface *FFIReference `ffstruct:"ContractAPI" json:"interface"`
+	Ledger    *JSONAny      `ffstruct:"ContractAPI" json:"ledger,omitempty"`
+	Location  *JSONAny      `ffstruct:"ContractAPI" json:"location,omitempty"`
+	Name      string        `ffstruct:"ContractAPI" json:"name"`
+	Message   *UUID         `ffstruct:"ContractAPI" json:"message,omitempty" ffexcludeinput:"true"`
+	URLs      ContractURLs  `ffstruct:"ContractAPI" json:"urls" ffexcludeinput:"true"`
 }
 
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {

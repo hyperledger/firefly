@@ -28,14 +28,14 @@ import (
 )
 
 var (
-	emptyHistogramResult = []*fftypes.ChartHistogram{
+	emptyHistogramResult = []*fftypes.ChartHistogramBucket{
 		{
 			Count:     "0",
 			Timestamp: fftypes.UnixTime(1000000000),
 			Types:     make([]*fftypes.ChartHistogramType, 0),
 		},
 	}
-	expectedHistogramResult = []*fftypes.ChartHistogram{
+	expectedHistogramResult = []*fftypes.ChartHistogramBucket{
 		{
 			Count:     "10",
 			Timestamp: fftypes.UnixTime(1000000000),
@@ -51,7 +51,7 @@ var (
 			},
 		},
 	}
-	expectedHistogramResultNoTypes = []*fftypes.ChartHistogram{
+	expectedHistogramResultNoTypes = []*fftypes.ChartHistogramBucket{
 		{
 			Count:     "10",
 			Timestamp: fftypes.UnixTime(1000000000),

@@ -341,7 +341,7 @@ func TestGetGroupByIDLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "name1", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "name1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetGroupByHash(context.Background(), groupID)
 	assert.Regexp(t, "FF10115", err)
@@ -376,7 +376,7 @@ func TestGetGroupsReadGroupFail(t *testing.T) {
 func TestGetGroupsLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "group1", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "group1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Gt("created", "0")
 	_, _, err := s.GetGroups(context.Background(), f)
