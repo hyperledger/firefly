@@ -34,7 +34,7 @@ This builds on the APIs to query and filter messages, described below
 ### Example 1: Query confirmed messages
 
 These are the messages ready to be processed in your application.
-All data associated with the message (including BLOB attachments) is available,
+All data associated with the message (including Blob attachments) is available,
 and if they are sequenced by the blockchain, then those blockchain transactions
 are complete.
 

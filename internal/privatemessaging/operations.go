@@ -127,7 +127,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 func (pm *privateMessaging) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
-		return nil, false, pm.exchange.TransferBLOB(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
+		return nil, false, pm.exchange.TransferBlob(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
 
 	case batchSendData:
 		payload, err := json.Marshal(data.Transport)

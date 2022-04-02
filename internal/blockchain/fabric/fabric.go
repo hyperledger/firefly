@@ -370,7 +370,7 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	return f.callbacks.BlockchainEvent(event)
 }
 
-func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
+func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 	l := log.L(ctx)
 
 	headers := reply.GetObject("headers")
@@ -380,19 +380,19 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) er
 	message := reply.GetString("errorMessage")
 	if requestID == "" || replyType == "" {
 		l.Errorf("Reply cannot be processed: %+v", reply)
-		return nil // Swallow this and move on
+		return
 	}
 	operationID, err := fftypes.ParseUUID(ctx, requestID)
 	if err != nil {
 		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
-		return nil // Swallow this and move on
+		return
 	}
 	updateType := fftypes.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	return f.callbacks.BlockchainOpUpdate(f, operationID, updateType, txHash, message, reply)
+	f.callbacks.BlockchainOpUpdate(f, operationID, updateType, txHash, message, reply)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -460,7 +460,7 @@ func (f *Fabric) eventLoop() {
 					err = f.wsconn.Send(ctx, ack)
 				}
 			case map[string]interface{}:
-				err = f.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+				f.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
 				continue

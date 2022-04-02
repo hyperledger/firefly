@@ -354,6 +354,9 @@ type iBlobCollection interface {
 	// InsertBlob - insert a blob
 	InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error)
 
+	// InsertBlobs performs a batch insert of blobs assured to be new records - fails if they already exist, so caller can fall back to upsert individually
+	InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) (err error)
+
 	// GetBlobMatchingHash - lookup first blob batching a hash
 	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)
 

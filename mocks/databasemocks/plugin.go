@@ -2253,6 +2253,20 @@ func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
 	return r0
 }
 
+// InsertBlobs provides a mock function with given fields: ctx, blobs
+func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) error {
+	ret := _m.Called(ctx, blobs)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Blob) error); ok {
+		r0 = rf(ctx, blobs)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertBlockchainEvent provides a mock function with given fields: ctx, event
 func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) error {
 	ret := _m.Called(ctx, event)

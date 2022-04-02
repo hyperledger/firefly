@@ -163,7 +163,7 @@ func (ft *FFTokens) Capabilities() *tokens.Capabilities {
 	return ft.capabilities
 }
 
-func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
+func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) {
 	l := log.L(ctx)
 
 	requestID := data.GetString("id")
@@ -172,19 +172,19 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 	transactionHash := data.GetString("transactionHash")
 	if requestID == "" {
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
-		return nil // Swallow this and move on
+		return
 	}
 	opID, err := fftypes.ParseUUID(ctx, requestID)
 	if err != nil {
 		l.Errorf("Reply cannot be processed - bad ID: %+v", data)
-		return nil // Swallow this and move on
+		return
 	}
 	replyType := fftypes.OpStatusSucceeded
 	if !success {
 		replyType = fftypes.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	return ft.callbacks.TokenOpUpdate(ft, opID, replyType, transactionHash, message, data)
+	ft.callbacks.TokenOpUpdate(ft, opID, replyType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -446,7 +446,7 @@ func (ft *FFTokens) eventLoop() {
 			l.Debugf("Received %s event %s", msg.Event, msg.ID)
 			switch msg.Event {
 			case messageReceipt:
-				err = ft.handleReceipt(ctx, msg.Data)
+				ft.handleReceipt(ctx, msg.Data)
 			case messageTokenPool:
 				err = ft.handleTokenPoolCreate(ctx, msg.Data)
 			case messageTokenMint:

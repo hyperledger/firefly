@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/jarcoal/httpmock"
@@ -59,12 +60,14 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	nodes := make([]fftypes.JSONObject, 0)
 	h.InitPrefix(utConfPrefix)
 
-	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	dxCtx, dxCancel := context.WithCancel(context.Background())
+	err := h.Init(dxCtx, utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
 	return h, toServer, fromServer, httpURL, func() {
 		cancel()
+		dxCancel()
 		httpmock.DeactivateAndReset()
 	}
 }
@@ -86,6 +89,18 @@ func TestInitMissingURL(t *testing.T) {
 	h.InitPrefix(utConfPrefix)
 	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
+}
+
+func acker() func(args mock.Arguments) {
+	return func(args mock.Arguments) {
+		args[0].(dataexchange.DXEvent).Ack()
+	}
+}
+
+func manifestAcker(manifest string) func(args mock.Arguments) {
+	return func(args mock.Arguments) {
+		args[0].(dataexchange.DXEvent).AckWithManifest(manifest)
+	}
 }
 
 func TestGetEndpointInfo(t *testing.T) {
@@ -162,7 +177,7 @@ func TestAddPeerError(t *testing.T) {
 	assert.Regexp(t, "FF10229", err)
 }
 
-func TestUploadBLOB(t *testing.T) {
+func TestUploadBlob(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -185,14 +200,14 @@ func TestUploadBLOB(t *testing.T) {
 			return res, nil
 		})
 
-	payloadRef, hashReturned, sizeReturned, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
+	payloadRef, hashReturned, sizeReturned, err := h.UploadBlob(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("ns1/%s", u.String()), payloadRef)
 	assert.Equal(t, *hash, *hashReturned)
 	assert.Equal(t, int64(12345), sizeReturned)
 }
 
-func TestUploadBLOBBadHash(t *testing.T) {
+func TestUploadBlobBadHash(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -210,11 +225,11 @@ func TestUploadBLOBBadHash(t *testing.T) {
 			return res, nil
 		})
 
-	_, _, _, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
+	_, _, _, err := h.UploadBlob(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
 	assert.Regexp(t, "FF10237", err)
 }
 
-func TestUploadBLOBError(t *testing.T) {
+func TestUploadBlobError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
 
@@ -222,11 +237,11 @@ func TestUploadBLOBError(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/blobs/ns1/%s", httpURL, u),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, _, _, err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
+	_, _, _, err := h.UploadBlob(context.Background(), "ns1", *u, bytes.NewReader([]byte(`{}`)))
 	assert.Regexp(t, "FF10229", err)
 }
 
-func TestCheckBLOBReceivedOk(t *testing.T) {
+func TestCheckBlobReceivedOk(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -245,13 +260,13 @@ func TestCheckBLOBReceivedOk(t *testing.T) {
 			return res, nil
 		})
 
-	hashReturned, size, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	hashReturned, size, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
 	assert.NoError(t, err)
 	assert.Equal(t, *hash, *hashReturned)
 	assert.Equal(t, int64(size), size)
 }
 
-func TestCheckBLOBReceivedBadHash(t *testing.T) {
+func TestCheckBlobReceivedBadHash(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -268,11 +283,11 @@ func TestCheckBLOBReceivedBadHash(t *testing.T) {
 			return res, nil
 		})
 
-	_, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	_, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
 	assert.Regexp(t, "FF10237", err)
 }
 
-func TestCheckBLOBReceivedBadSize(t *testing.T) {
+func TestCheckBlobReceivedBadSize(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -291,11 +306,11 @@ func TestCheckBLOBReceivedBadSize(t *testing.T) {
 			return res, nil
 		})
 
-	_, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	_, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
 	assert.Regexp(t, "FF10237", err)
 }
 
-func TestCheckBLOBReceivedNotFound(t *testing.T) {
+func TestCheckBlobReceivedNotFound(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -309,12 +324,12 @@ func TestCheckBLOBReceivedNotFound(t *testing.T) {
 			return res, nil
 		})
 
-	hashReturned, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	hashReturned, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
 	assert.NoError(t, err)
 	assert.Nil(t, hashReturned)
 }
 
-func TestCheckBLOBReceivedError(t *testing.T) {
+func TestCheckBlobReceivedError(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -328,11 +343,11 @@ func TestCheckBLOBReceivedError(t *testing.T) {
 			return res, nil
 		})
 
-	_, _, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	_, _, err := h.CheckBlobReceived(context.Background(), "peer1", "ns1", *u)
 	assert.Regexp(t, "FF10229", err)
 }
 
-func TestDownloadBLOB(t *testing.T) {
+func TestDownloadBlob(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -341,21 +356,21 @@ func TestDownloadBLOB(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/blobs/ns1/%s", httpURL, u),
 		httpmock.NewBytesResponder(200, []byte(`some data`)))
 
-	rc, err := h.DownloadBLOB(context.Background(), fmt.Sprintf("ns1/%s", u))
+	rc, err := h.DownloadBlob(context.Background(), fmt.Sprintf("ns1/%s", u))
 	assert.NoError(t, err)
 	b, err := ioutil.ReadAll(rc)
 	rc.Close()
 	assert.Equal(t, `some data`, string(b))
 }
 
-func TestDownloadBLOBError(t *testing.T) {
+func TestDownloadBlobError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/blobs/bad", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, err := h.DownloadBLOB(context.Background(), "bad")
+	_, err := h.DownloadBlob(context.Background(), "bad")
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -382,7 +397,7 @@ func TestSendMessageError(t *testing.T) {
 	assert.Regexp(t, "FF10229", err)
 }
 
-func TestTransferBLOB(t *testing.T) {
+func TestTransferBlob(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
@@ -390,18 +405,18 @@ func TestTransferBLOB(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	err := h.TransferBlob(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
 	assert.NoError(t, err)
 }
 
-func TestTransferBLOBError(t *testing.T) {
+func TestTransferBlobError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFDX(t, false)
 	defer done()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	err := h.TransferBlob(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -413,72 +428,107 @@ func TestEvents(t *testing.T) {
 	err := h.Start()
 	assert.NoError(t, err)
 
-	fromServer <- `!}` // ignored
-	fromServer <- `{}` // ignored
+	fromServer <- `!}`         // ignored without ack
+	fromServer <- `{"id":"0"}` // ignored with ack
 	msg := <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
 	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
-		return "pop" == ts.Error
-	})).Return(nil)
-	fromServer <- `{"type":"message-failed","requestID":"tx12345","error":"pop"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "1" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().Status == fftypes.OpStatusFailed &&
+			ev.TransferResult().Error == "pop"
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"1","type":"message-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.Anything).Return(nil)
-	fromServer <- `{"type":"message-delivered","requestID":"tx12345"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "2" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().Status == fftypes.OpStatusSucceeded
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"2","type":"message-delivered","requestID":"tx12345"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
-		return ts.Manifest == `{"manifest":true}` && ts.Info.String() == `{"signatures":"and stuff"}`
-	})).Return(nil)
-	fromServer <- `{"type":"message-acknowledged","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "3" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().Status == fftypes.OpStatusSucceeded &&
+			ev.TransferResult().Manifest == `{"manifest":true}` &&
+			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"3","type":"message-acknowledged","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
-	mcb.On("MessageReceived", "peer1", []byte("message1")).Return(`{"manifest":true}`, nil)
-	fromServer <- `{"type":"message-received","sender":"peer1","message":"message1"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "4" &&
+			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
+			ev.MessageReceived().PeerID == "peer1" &&
+			string(ev.MessageReceived().Data) == "message1"
+	})).Run(manifestAcker(`{"manifest":true}`)).Return(nil)
+	fromServer <- `{"id":"4","type":"message-received","sender":"peer1","message":"message1"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit","manifest":"{\"manifest\":true}"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
-		return "pop" == ts.Error
-	})).Return(nil)
-	fromServer <- `{"type":"blob-failed","requestID":"tx12345","error":"pop"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "5" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().Status == fftypes.OpStatusFailed &&
+			ev.TransferResult().Error == "pop"
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"5","type":"blob-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.Anything).Return(nil)
-	fromServer <- `{"type":"blob-delivered","requestID":"tx12345"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "6" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().Status == fftypes.OpStatusSucceeded &&
+			ev.TransferResult().Info.String() == `{"some":"details"}`
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"6","type":"blob-delivered","requestID":"tx12345","info":{"some":"details"}}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"6"}`, string(msg))
 
-	fromServer <- `{"type":"blob-received","sender":"peer1","path":"ns1/! not a UUID"}`
+	fromServer <- `{"id":"7","type":"blob-received","sender":"peer1","path":"ns1/! not a UUID"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"7"}`, string(msg))
 
 	u := fftypes.NewUUID()
-	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"!wrong","size":-1}`, u.String())
+	fromServer <- fmt.Sprintf(`{"id":"8","type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"!wrong","size":-1}`, u.String())
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"8"}`, string(msg))
 
 	hash := fftypes.NewRandB32()
-	mcb.On("PrivateBLOBReceived", mock.Anything, mock.MatchedBy(func(b32 fftypes.Bytes32) bool {
-		return b32 == *hash
-	}), int64(12345), fmt.Sprintf("ns1/%s", u.String())).Return(nil)
-	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"%s","size":12345}`, u.String(), hash.String())
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "9" &&
+			ev.Type() == dataexchange.DXEventTypePrivateBlobReceived &&
+			ev.PrivateBlobReceived().Hash.Equals(hash)
+	})).Run(acker()).Return(nil)
+	fromServer <- fmt.Sprintf(`{"id":"9","type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"%s","size":12345}`, u.String(), hash.String())
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, mock.MatchedBy(func(ts fftypes.TransportStatusUpdate) bool {
-		return ts.Manifest == `{"manifest":true}` && ts.Info.String() == `{"signatures":"and stuff"}`
-	})).Return(nil)
-	fromServer <- `{"type":"blob-acknowledged","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "10" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().Status == fftypes.OpStatusSucceeded &&
+			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"10","type":"blob-acknowledged","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"10"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }
@@ -491,22 +541,30 @@ func TestEventsWithManifest(t *testing.T) {
 	err := h.Start()
 	assert.NoError(t, err)
 
-	fromServer <- `!}` // ignored
-	fromServer <- `{}` // ignored
+	fromServer <- `!}`         // ignored without ack
+	fromServer <- `{"id":"0"}` // ignored with ack
 	msg := <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
 	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusPending, mock.Anything).Return(nil)
-	fromServer <- `{"type":"message-delivered","requestID":"tx12345"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "1" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().Status == fftypes.OpStatusPending
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"1","type":"message-delivered","requestID":"tx12345"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusPending, mock.Anything).Return(nil)
-	fromServer <- `{"type":"blob-delivered","requestID":"tx12345"}`
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.ID() == "2" &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().Status == fftypes.OpStatusPending
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"2","type":"blob-delivered","requestID":"tx12345"}`
 	msg = <-toServer
-	assert.Equal(t, `{"action":"commit"}`, string(msg))
+	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }
@@ -529,17 +587,21 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 func TestEventLoopSendClosed(t *testing.T) {
 	dxc := &dataexchangemocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
+	ctx, cancelCtx := context.WithCancel(context.Background())
 	h := &FFDX{
-		ctx:       context.Background(),
-		callbacks: dxc,
-		wsconn:    wsm,
+		ctx:        ctx,
+		callbacks:  dxc,
+		wsconn:     wsm,
+		ackChannel: make(chan *ack, 1),
 	}
-	r := make(chan []byte, 1)
-	r <- []byte(`{}`)
+	h.ackChannel <- &ack{
+		eventID: "12345",
+	}
 	wsm.On("Close").Return()
-	wsm.On("Receive").Return((<-chan []byte)(r))
-	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	h.eventLoop() // we're simply looking for it exiting
+	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Run(func(args mock.Arguments) {
+		cancelCtx()
+	})
+	h.ackLoop() // we're simply looking for it exiting
 }
 
 func TestEventLoopClosedContext(t *testing.T) {
@@ -627,7 +689,7 @@ func TestDXUninitialized(t *testing.T) {
 	err = h.AddPeer(context.Background(), fftypes.JSONObject{})
 	assert.Regexp(t, "FF10342", err)
 
-	err = h.TransferBLOB(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	err = h.TransferBlob(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10342", err)
 
 	err = h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))

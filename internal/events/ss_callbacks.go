@@ -63,9 +63,18 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	return batch.ID, nil
 }
 
-func (em *eventManager) SharedStorageBLOBDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) error {
+func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) {
 	l := log.L(em.ctx)
 	l.Infof("Blob received event from public storage %s: Hash='%v'", ss.Name(), hash)
 
-	return em.blobReceivedCommon("", hash, size, payloadRef)
+	// Dispatch to the blob receiver for efficient batch DB operations
+	blobHash := hash
+	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
+		blob: &fftypes.Blob{
+			PayloadRef: payloadRef,
+			Hash:       &blobHash,
+			Size:       size,
+			Created:    fftypes.Now(),
+		},
+	})
 }
