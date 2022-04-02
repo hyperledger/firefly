@@ -164,8 +164,7 @@ var (
 	ContractAPIID        = ffm("ContractAPI.id", "The UUID of the contract API")
 	ContractAPINamespace = ffm("ContractAPI.namespace", "The namespace of the contract API")
 	ContractAPIInterface = ffm("ContractAPI.interface", "Reference to the FireFly Interface definition associated with the contract API")
-	ContractAPILedger    = ffm("ContractAPI.ledger", "If this API is tied to an individual instance of a smart contract, this field can include a blockchain specific ledger identifier. For example a Hyperledger Fabric channel name")
-	ContractAPILocation  = ffm("ContractAPI.location", "If this API is tied to an individual instance of a smart contract, this field can include a blockchain specific contract identifier. For example an Ethereum contract address")
+	ContractAPILocation  = ffm("ContractAPI.location", "If this API is tied to an individual instance of a smart contract, this field can include a blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
 	ContractAPIName      = ffm("ContractAPI.name", "The name that is used in the URL to access the API")
 	ContractAPIMessage   = ffm("ContractAPI.message", "The UUID of the broadcast message that was used to publish this API to the network")
 	ContractAPIURLs      = ffm("ContractAPI.urls", "The URLs to use to access the API")
@@ -211,4 +210,20 @@ var (
 	// FFIParam field descriptions
 	FFIParamName   = ffm("FFIParam.name", "The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract")
 	FFIParamSchema = ffm("FFIParam.schema", "FireFly uses an extended subset of JSON Schema to describe parameters, similar to OpenAPI/Swagger. Converters are available for native blockchain interface definitions / type systems - such as an Ethereum ABI. See the documentation for more detail")
+
+	// ContractListener field descriptions
+	ContractListenerID         = ffm("ContractListener.id", "The UUID of the smart contract listener")
+	ContractListenerInterface  = ffm("ContractListener.interface", "A reference to an existing FFI, containing pre-registered type information for the event")
+	ContractListenerNamespace  = ffm("ContractListener.namespace", "The namespace of the listener, which defines the namespace of all blockchain events detected by this listener")
+	ContractListenerName       = ffm("ContractListener.name", "A descriptive name for the listener")
+	ContractListenerProtocolID = ffm("ContractListener.protocolId", "An ID assigned by the blockchain connector to this listener")
+	ContractListenerLocation   = ffm("ContractListener.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ContractListenerCreated    = ffm("ContractListener.created", "The creation time of the listener")
+	ContractListenerEvent      = ffm("ContractListener.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
+	ContractListenerTopic      = ffm("ContractListener.topic", "A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need")
+	ContractListenerOptions    = ffm("ContractListener.options", "Options that control how the listener subscribes to events from the underlying blockchain")
+	ContractListenerEventID    = ffm("ContractListener.eventId", "When creating a listener from an existing FFI, this is the UUID of the event on that FFI that will be detected by this listener")
+
+	// ContractListenerOptions field descriptions
+	ContractListenerOptionsFirstEvent = ffm("ContractListenerOptions.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest'")
 )

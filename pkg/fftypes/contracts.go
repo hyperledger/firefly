@@ -56,7 +56,6 @@ type ContractAPI struct {
 	ID        *UUID         `ffstruct:"ContractAPI" json:"id,omitempty" ffexcludeinput:"true"`
 	Namespace string        `ffstruct:"ContractAPI" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Interface *FFIReference `ffstruct:"ContractAPI" json:"interface"`
-	Ledger    *JSONAny      `ffstruct:"ContractAPI" json:"ledger,omitempty"`
 	Location  *JSONAny      `ffstruct:"ContractAPI" json:"location,omitempty"`
 	Name      string        `ffstruct:"ContractAPI" json:"name"`
 	Message   *UUID         `ffstruct:"ContractAPI" json:"message,omitempty" ffexcludeinput:"true"`
@@ -85,5 +84,5 @@ func (c *ContractAPI) LocationAndLedgerEquals(a *ContractAPI) bool {
 	if c == nil || a == nil {
 		return false
 	}
-	return c.Location.Hash().Equals(a.Location.Hash()) && c.Ledger.Hash().Equals(a.Ledger.Hash())
+	return c.Location.Hash().Equals(a.Location.Hash())
 }
