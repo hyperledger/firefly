@@ -75,6 +75,14 @@ var (
 	GroupHash      = ffm("Group.hash", "The identifier hash of this group. Derived from the name and group members")
 	GroupCreated   = ffm("Group.created", "The time when the group was first used to send a message in the network")
 
+	// MemberInput field descriptions
+	MemberInputIdentity = ffm("MemberInput.identity", "The DID of the group member. On input can be a UUID or org name, and will be resolved to a DID")
+	MemberInputNode     = ffm("MemberInput.node", "The UUID of the node that will receive a copy of the off-chain message for the identity. The first applicable node for the identity will be picked automatically on input if not specified")
+
+	// Member field descriptions
+	MemberIdentity = ffm("Member.identity", "The DID of the group member")
+	MembertNode    = ffm("Member.node", "The UUID of the node that receives a copy of the off-chain message for the identity")
+
 	// DataRef field descriptions
 	DataRefID   = ffm("DataRef.id", "The UUID of the referenced data resource")
 	DataRefHash = ffm("DataRef.hash", "The hash of the referenced data")
@@ -114,17 +122,6 @@ var (
 	SignerRefAuthor = ffm("SignerRef.author", "The DID of identity of the submitter")
 	SignerRefKey    = ffm("SignerRef.key", "The on-chain signing key used to sign the transaction")
 
-	// IdentityClaim field descriptions
-	IdentityClaimIdentity = ffm("IdentityClaim.identity", "The identity being claimed")
-
-	// IdentityVerification field descriptions
-	IdentityVerificationClaim    = ffm("IdentityVerification.claim", "The UUID of the message containing the identity claim being verified")
-	IdentityVerificationIdentity = ffm("IdentityVerification.identity", "The identity being verified")
-
-	// IdentityUpdate field descriptions
-	IdentityUpdateIdentity = ffm("IdentityUpdate.identity", "The identity being updated")
-	IdentityUpdateProfile  = ffm("IdentityUpdate.profile", "The new profile, which is replaced in its entirety when the update is confirmed")
-
 	// MessageManifestEntry field descriptions
 	MessageManifestEntry = ffm("MessageManifestEntry.topics", "The count of topics in the message")
 
@@ -150,9 +147,26 @@ var (
 	BatchPersistedPayloadRef = ffm("BatchPersisted.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
 	BatchPersistedConfirmed  = ffm("BatchPersisted.confirmed", "The time when the batch was confirmed")
 
-	// TransactionRef field descriptions
-	TransactionRef = ffm("TransactionRef.type", "The type of the FireFly transaction")
-	TransactionID  = ffm("TransactionRef.id", "The UUID of the FireFly transaction")
+	// Transaction field descriptions
+	TransactionID            = ffm("Transaction.id", "The UUID of the FireFly transaction")
+	TransactionType          = ffm("Transaction.type", "The type of the FireFly transaction")
+	TransactionNamespace     = ffm("Transaction.namespace", "The namespace of the FireFly transaction")
+	TransactionCreated       = ffm("Transaction.created", "The time the transaction was created on this node. Note the transaction is individually created with the same UUID on each participant in the FireFly transaction")
+	TransactionBlockchainIDs = ffm("Transaction.blockchainIds", "The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain. FireFly transactions are extensible to support multiple blockchain transactions")
+
+	// Operation field description
+	OperationID          = ffm("Operation.id", "The UUID of the operation")
+	OperationNamespace   = ffm("Operation.namespace", "The namespace of the operation")
+	OperationTransaction = ffm("Operation.tx", "The UUID of the FireFly transaction the operation is part of")
+	OperationType        = ffm("Operation.type", "The type of the operation")
+	OperationStatus      = ffm("Operation.status", "The current status of the operation")
+	OperationPlugin      = ffm("Operation.plugin", "The plugin responsible for performing the operation")
+	OperationInput       = ffm("Operation.input", "The input to this operation")
+	OperationOutput      = ffm("Operation.output", "Any output reported back from the plugin for this operation")
+	OperationError       = ffm("Operation.error", "Any error reported back from the plugin for this operation")
+	OperationCreated     = ffm("Operation.created", "The time the operation was created")
+	OperationUpdated     = ffm("Operation.updated", "The last update time of the operation")
+	OperationRetry       = ffm("Operation.retry", "If this operation was initiated as a retry to a previous operation, this field points to the UUID of the operation being retried")
 
 	// BlockchainEvent field descriptions
 	BlockchainEventID         = ffm("BlockchainEvent.id", "The UUID assigned to the event by FireFly")
@@ -277,6 +291,151 @@ var (
 	EnrichedEventNamespaceDetails  = ffm("EnrichedEvent.namespaceDetails", "Full resource detail of a Namespace if referenced by the FireFly event")
 	EnrichedEventTokenApproval     = ffm("EnrichedEvent.tokenApproval", "A Token Approval if referenced by the FireFly event")
 	EnrichedEventTokenPool         = ffm("EnrichedEvent.tokenPool", "A Token Pool if referenced by the FireFly event")
-	EnrichedEventTokenTransfer     = ffm("EnrichedEvent.tokenTransfer", "A Token Transfer if associated with the FireFly event")
+	EnrichedEventTokenTransfer     = ffm("EnrichedEvent.tokenTransfer", "A Token Transfer if referenced by the FireFly event")
 	EnrichedEventTransaction       = ffm("EnrichedEvent.transaction", "A Transaction if associated with the FireFly event")
+
+	// IdentityMessages field descriptions
+	IdentityMessagesClaim        = ffm("IdentityMessages.claim", "The UUID of claim message")
+	IdentityMessagesVerification = ffm("IdentityMessages.verification", "The UUID of claim message. Unset for root organization identities")
+	IdentityMessagesUpdate       = ffm("IdentityMessages.update", "The UUID of the most recently applied update message. Unset if no updates have been confirmed")
+
+	// Identity field descriptions
+	IdentityID        = ffm("Identity.id", "The UUID of the identity")
+	IdentityDID       = ffm("Identity.did", "The DID of the identity. Unique across namespaces within a FireFly network")
+	IdentityType      = ffm("Identity.type", "The type of the identity")
+	IdentityParent    = ffm("Identity.parent", "The UUID of the parent identity. Unset for root organization identities")
+	IdentityNamespace = ffm("Identity.namespace", "The namespace of the identity. Organization and node identities are always defined in the ff_system namespace")
+	IdentityName      = ffm("Identity.name", "The name of the identity. The name must be unique within the type and namespace")
+	IdentityMessages  = ffm("Identity.messages", "References to the broadcast messages that established this identity and proved ownership of the associated verifiers (keys)")
+	IdentityCreated   = ffm("Identity.created", "The creation time of the identity")
+	IdentityUpdated   = ffm("Identity.updated", "The last update time of the identity profile")
+
+	// IdentityProfile field descriptions
+	IdentityProfileProfile     = ffm("IdentityProfile.profile", "A set of metadata for the identity. Part of the updatable profile information of an identity")
+	IdentityProfileDescription = ffm("IdentityProfile.description", "A description of the identity. Part of the updatable profile information of an identity")
+
+	// IdentityWithVerifiers field descriptions
+	IdentityWithVerifiersVerifiers = ffm("IdentityWithVerifiers.verifiers", "The verifiers, such as blockchain signing keys, that have been bound to this identity and can be used to prove data orignates from that identity")
+
+	// IdentityCreateDTO field descriptions
+	IdentityCreateDTOParent = ffm("IdentityCreateDTO.parent", "On input the parent can be specified directly as the UUID of and existing identity, or as a DID to resolve to that identity, or an organization name. The parent must already have been registered, and its blockchain signing key must be available to the local node to sign the verification")
+	IdentityCreateDTOKey    = ffm("IdentityCreateDTO.key", "The blockchain signing key to use to make the claim to the identity. Must be available to the local node to sign the identity claim. Will become a verifier on the established identity")
+
+	// IdentityClaim field descriptions
+	IdentityClaimIdentity = ffm("IdentityClaim.identity", "The identity being claimed")
+
+	// IdentityVerification field descriptions
+	IdentityVerificationClaim    = ffm("IdentityVerification.claim", "The UUID of the message containing the identity claim being verified")
+	IdentityVerificationIdentity = ffm("IdentityVerification.identity", "The identity being verified")
+
+	// IdentityUpdate field descriptions
+	IdentityUpdateIdentity = ffm("IdentityUpdate.identity", "The identity being updated")
+	IdentityUpdateProfile  = ffm("IdentityUpdate.profile", "The new profile, which is replaced in its entirety when the update is confirmed")
+
+	// Verifier field descriptions
+	VerifierHash      = ffm("Verifier.hash", "Hash used as a globally consistent identifier for this namespace + type + value combination on every node in the network")
+	VerifierIdentity  = ffm("Verifier.identity", "The UUID of the parent identity that has claimed this verifier")
+	VerifierType      = ffm("Verifier.type", "The type of the verifier")
+	VerifierValue     = ffm("Verifier.value", "The verifier string, such as an Ethereum address, or Fabric MSP identifier")
+	VerifierNamespace = ffm("Verifier.namespace", "The namespace of the verifier")
+	VerifierCreated   = ffm("Verifier.created", "The time this verifier was created on this node")
+
+	// Namespace field descriptions
+	NamespaceID          = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
+	NamespaceMessage     = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
+	NamespaceName        = ffm("Namespace.name", "The namespace name")
+	NamespaceDescription = ffm("Namespace.description", "A description of the namespace")
+	NamespaceType        = ffm("Namespace.type", "The type of the namespace")
+	NamespaceCreated     = ffm("Namespace.created", "The time the namespace was created")
+
+	// NodeStatus field descriptions
+	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
+	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
+	NodeDefaults   = ffm("NodeStatus.defaults", "Information about defaults configured on this node that appplications might need to query on startup")
+
+	// NodeStatusNode field descriptions
+	NodeStatusNodeName       = ffm("NodeStatusNode.name", "The name of this node, as specified in the local configuration")
+	NodeStatusNodeRegistered = ffm("NodeStatusNode.registered", "Whether the node has been successfully registered")
+	NodeStatusNodeID         = ffm("NodeStatusNode.id", "The UUID of the node, if registered")
+
+	// NodeStatusOrg field descriptions
+	NodeStatusOrgName       = ffm("NodeStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
+	NodeStatusOrgRegistered = ffm("NodeStatusOrg.registered", "Whether the organization has been successfully registered")
+	NodeStatusOrgDID        = ffm("NodeStatusOrg.did", "The DID of the organization identity, if registered")
+	NodeStatusOrgID         = ffm("NodeStatusOrg.id", "The UUID of the organization, if registered")
+	NodeStatusOrgVerifiers  = ffm("NodeStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
+
+	// NodeStatusDefaults field descriptions
+	NodeStatusDefaultsNamespace = ffm("NodeStatusDefaults.namespace", "The default namespace on this node")
+
+	// BatchManagerStatus field descriptions
+	BatchManagerStatusProcessors = ffm("BatchManagerStatus.processors", "An array of currently active batch processors")
+
+	// BatchProcessorStatus field descriptions
+	BatchProcessorStatusDispatcher = ffm("BatchProcessorStatus.dispatcher", "The type of dispatcher for this processor")
+	BatchProcessorStatusName       = ffm("BatchProcessorStatus.name", "The name of the processor, which includes details of the attributes of message are allocated to this processor")
+	BatchProcessorStatusStatus     = ffm("BatchProcessorStatus.status", "The flush status for this batch processor")
+
+	// BatchFlushStatus field descriptions
+	BatchFlushStatusLastFlushTime        = ffm("BatchFlushStatus.lastFlushStartTime", "The last time a flush was performed")
+	BatchFlushStatusFlushing             = ffm("BatchFlushStatus.flushing", "If a flush is in progress, this is the UUID of the batch being flushed")
+	BatchFlushStatusBlocked              = ffm("BatchFlushStatus.blocked", "True if the batch flush is in a retry loop, due to errors being returned by the plugins")
+	BatchFlushStatusLastFlushError       = ffm("BatchFlushStatus.lastFlushError", "The last error received by this batch processor while flushing")
+	BatchFlushStatusLastFlushErrorTime   = ffm("BatchFlushStatus.lastFlushErrorTime", "The time of the last flush")
+	BatchFlushStatusAverageBatchBytes    = ffm("BatchFlushStatus.averageBatchBytes", "The average byte size of each batch")
+	BatchFlushStatusAverageBatchMessages = ffm("BatchFlushStatus.averageBatchMessages", "The average number of messages included in each batch")
+	BatchFlushStatusAverageBatchData     = ffm("BatchFlushStatus.averageBatchData", "The average number of data attachments included in each batch")
+	BatchFlushStatusAverageFlushTimeMS   = ffm("BatchFlushStatus.averageFlushTimeMS", "The average amount of time spent flushing each batch")
+	BatchFlushStatusTotalBatches         = ffm("BatchFlushStatus.totalBatches", "The total count of batches flushed by this processor since it started")
+	BatchFlushStatusTotalErrors          = ffm("BatchFlushStatus.totalErrors", "The total count of error flushed encountered by this processor since it started")
+
+	// Pin field descriptions
+	PinSequence   = ffm("Pin.sequence", "The order of the pin in the local FireFly database, which matches the order in which pins were delivered to FireFly by the blockchain connector event stream")
+	PinMasked     = ffm("Pin.masked", "True if the pin is for a private message, and hence is masked with the group ID and salted with a nonce so observers of the blockchain cannot use pin hash to match this transaction to other transactions or participants")
+	PinHash       = ffm("Pin.hash", "The hash represents a topic within a message in the batch. If a message has multiple topics, then multiple pins are created. If the message is private, the hash is masked for privacy")
+	PinBatch      = ffm("Pin.batch", "The UUID of the batch of messages this pin is part of")
+	PinBatchHash  = ffm("Pin.batchHash", "The manifest hash batch of messages this pin is part of")
+	PinIndex      = ffm("Pin.index", "The index of this pin within the batch. One pin is created for each topic, of each mesage in the batch")
+	PinDispatched = ffm("Pin.dispatched", "Once true, this pin as been processed and will not be processed again")
+	PinSigner     = ffm("Pin.signer", "The blockchain signing key that submitted this transaction, as passed through to FireFly by the smart contract that emitted the blockchain event")
+	PinCreated    = ffm("Pin.created", "The time the FireFly node created the pin")
+
+	// Subscription field descriptions
+	SubscriptionID        = ffm("Subscription.id", "The UUID of the subscription")
+	SubscriptionNamespace = ffm("Subscription.namespace", "The namespace of the subscription. A subscription will only receive events generated in the namespace of the subscription")
+	SubscriptionName      = ffm("Subscription.name", "The name of the subscription. The application specifies this name when it connects, in order to attach to the subscription and receive events that arrived while it was disconnected. If multiple apps connect to the same subscription, events are workload balanced across the connected application instances")
+	SubscriptionTransport = ffm("Subscription.transport", "The transport plugin responsible for event delivery (WebSockets, Webhooks, JMS, NATS etc.)")
+	SubscriptionFilter    = ffm("Subscription.filter", "Server-side filter to apply to events")
+	SubscriptionOptions   = ffm("Subscription.options", "Subscription options")
+	SubscriptionEphemeral = ffm("Subscription.ephemeral", "Ephemeral subscriptions only exist as long as the application is connected, and as such will miss events that occur while the application is disconnected, and cannot be created administratively. You can create one over over a connected WebSocket connection")
+	SubscriptionCreated   = ffm("Subscription.created", "Creation time of the subscription")
+	SubscriptionUpdated   = ffm("Subscription.updated", "Last time the subscription was updated")
+
+	// SubscriptionFilter field descriptions
+	SubscriptionFilterEvents           = ffm("SubscriptionFilter.events", "Regular expression to apply to the event type, to subscribe to a subset of event types")
+	SubscriptionFilterTopic            = ffm("SubscriptionFilter.topic", "Regular expression to apply to the topic of the event, to subscribe to a subset of topics. Note for messages sent with multiple topics, a separate event is emitted for each topic")
+	SubscriptionFilterMessage          = ffm("SubscriptionFilter.message", "Filters specific to message events. If an event is not a message event, these filters are ignored")
+	SubscriptionFilterTransaction      = ffm("SubscriptionFilter.transaction", "Filters specific to events with a transaction. If an event is not associated with a transaction, this filter is ignored")
+	SubscriptionFilterBlockchainEvent  = ffm("SubscriptionFilter.blockchainevent", "Filters specific to blockchain events. If an event is not a blockchain event, these filters are ignored")
+	SubscriptionFilterDeprecatedTopics = ffm("SubscriptionFilter.topics", "Deprecated: Please use 'topic' instead")
+	SubscriptionFilterDeprecatedTag    = ffm("SubscriptionFilter.tag", "Deprecated: Please use 'message.tag' instead")
+	SubscriptionFilterDeprecatedGroup  = ffm("SubscriptionFilter.group", "Deprecated: Please use 'message.group' instead")
+	SubscriptionFilterDeprecatedAuthor = ffm("SubscriptionFilter.author", "Deprecated: Please use 'message.author' instead")
+
+	// SubscriptionMessageFilter field descriptions
+	SubscriptionMessageFilterTag    = ffm("SubscriptionMessageFilter.tag", "Regular expression to apply to the message 'header.tag' field")
+	SubscriptionMessageFilterGroup  = ffm("SubscriptionMessageFilter.group", "Regular expression to apply to the message 'header.group' field")
+	SubscriptionMessageFilterAuthor = ffm("SubscriptionMessageFilter.author", "Regular expression to apply to the message 'header.author' field")
+
+	// SubscriptionTransactionFilter field descriptions
+	SubscriptionTransactionFilterType = ffm("SubscriptionTransactionFilter.type", "Regular expression to apply to the transaction 'type' field")
+
+	// SubscriptionBlockchainEventFilter field descriptions
+	SubscriptionBlockchainEventFilterName     = ffm("SubscriptionBlockchainEventFilter.name", "Regular expression to apply to the blockchain event 'name' field, which is the name of the event in the underlying blockchain smart contract")
+	SubscriptionBlockchainEventFilterListener = ffm("SubscriptionBlockchainEventFilter.listener", "Regular expression to apply to the blockchain event 'listener' field, which is the UUID of the event listener. So you can restrict your subscription to certain blockchain listeners. Alternatively to avoid your application need to know listener UUIDs you can set the 'topic' field of blockchain event listeners, and use a topic filter on your subscriptions")
+
+	// SubscriptionCoreOptions field descriptions
+	SubscriptionCoreOptionsFirstEvent = ffm("SubscriptionCoreOptions.firstEvent", "Whether your appplication would like to receive events from the 'earliest' event emitted by your FireFly node (from the beginning of time), the 'latest' event (from now), or a specific event sequence. Default is 'latest'")
+	SubscriptionCoreOptionsReadAhead  = ffm("SubscriptionCoreOptions.readAhead", "The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts")
+	SubscriptionCoreOptionsWithData   = ffm("SubscriptionCoreOptions.withData", "Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data")
 )

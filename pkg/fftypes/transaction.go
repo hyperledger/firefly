@@ -39,18 +39,18 @@ var (
 
 // TransactionRef refers to a transaction, in other types
 type TransactionRef struct {
-	Type TransactionType `ffstruct:"TransactionRef" json:"type"`
-	ID   *UUID           `ffstruct:"TransactionRef" json:"id,omitempty"`
+	Type TransactionType `ffstruct:"Transaction" json:"type"`
+	ID   *UUID           `ffstruct:"Transaction" json:"id,omitempty"`
 }
 
 // Transaction is a unit of work sent or received by this node
 // It serves as a container for one or more Operations, BlockchainEvents, and other related objects
 type Transaction struct {
-	ID            *UUID           `json:"id,omitempty"`
-	Namespace     string          `json:"namespace,omitempty"`
-	Type          TransactionType `json:"type" ffenum:"txtype"`
-	Created       *FFTime         `json:"created"`
-	BlockchainIDs FFStringArray   `json:"blockchainIds,omitempty"`
+	ID            *UUID           `ffstruct:"Transaction" json:"id,omitempty"`
+	Namespace     string          `ffstruct:"Transaction" json:"namespace,omitempty"`
+	Type          TransactionType `ffstruct:"Transaction" json:"type" ffenum:"txtype"`
+	Created       *FFTime         `ffstruct:"Transaction" json:"created"`
+	BlockchainIDs FFStringArray   `ffstruct:"Transaction" json:"blockchainIds,omitempty"`
 }
 
 type TransactionStatusType string

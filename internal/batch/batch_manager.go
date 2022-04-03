@@ -77,13 +77,13 @@ type Manager interface {
 }
 
 type ManagerStatus struct {
-	Processors []*ProcessorStatus `json:"processors"`
+	Processors []*ProcessorStatus `ffstruct:"BatchManagerStatus" json:"processors"`
 }
 
 type ProcessorStatus struct {
-	Dispatcher string      `json:"dispatcher"`
-	Name       string      `json:"name"`
-	Status     FlushStatus `json:"status"`
+	Dispatcher string      `ffstruct:"BatchProcessorStatus" json:"dispatcher"`
+	Name       string      `ffstruct:"BatchProcessorStatus" json:"name"`
+	Status     FlushStatus `ffstruct:"BatchProcessorStatus" json:"status"`
 }
 
 type batchManager struct {
@@ -246,7 +246,7 @@ func (bm *batchManager) filterFlushed(entries []*fftypes.IDAndSequence) []*fftyp
 	return unflushedEntries
 }
 
-// nofifyFlushed is called by a processor, when it's finished updating the database to record a set
+// notifyFlushed is called by a processor, when it's finished updating the database to record a set
 // of messages as sent. So it's safe to remove these sequences from the inflight map on the next
 // page read.
 func (bm *batchManager) notifyFlushed(sequences []int64) {
@@ -412,7 +412,7 @@ func (bm *batchManager) reapQuiescing() {
 	for _, d := range bm.allDispatchers {
 		for k, p := range d.processors {
 			select {
-			case <-p.quescing:
+			case <-p.quiescing:
 				// This is called on the goroutine where we dispatch the work, so it's safe to cleanup
 				delete(d.processors, k)
 				close(p.newWork)

@@ -27,9 +27,9 @@ import (
 )
 
 type GroupIdentity struct {
-	Namespace string  `ffstruct:"GroupIdentity" json:"namespace,omitempty"`
-	Name      string  `ffstruct:"GroupIdentity" json:"name"`
-	Members   Members `ffstruct:"GroupIdentity" json:"members"`
+	Namespace string  `ffstruct:"Group" json:"namespace,omitempty"`
+	Name      string  `ffstruct:"Group" json:"name"`
+	Members   Members `ffstruct:"Group" json:"members"`
 }
 
 type Group struct {
