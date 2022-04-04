@@ -18,7 +18,7 @@ package fftypes
 
 type TokenApprovalInput struct {
 	TokenApproval
-	Pool string `json:"pool,omitempty"`
+	Pool string `ffstruct:"TokenApprovalInput" json:"pool,omitempty"`
 }
 
 type TokenApproval struct {

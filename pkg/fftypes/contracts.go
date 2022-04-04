@@ -37,7 +37,7 @@ type ContractCallRequest struct {
 }
 
 type ContractCallResponse struct {
-	ID *UUID `json:"id"`
+	ID *UUID `ffstruct:"ContractCallResponse" json:"id"`
 }
 
 type ContractSubscribeRequest struct {

@@ -240,6 +240,13 @@ var (
 	FFIParamName   = ffm("FFIParam.name", "The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract")
 	FFIParamSchema = ffm("FFIParam.schema", "FireFly uses an extended subset of JSON Schema to describe parameters, similar to OpenAPI/Swagger. Converters are available for native blockchain interface definitions / type systems - such as an Ethereum ABI. See the documentation for more detail")
 
+	// FFIGenerationRequest field descriptions
+	FFIGenerationRequestNamespace   = ffm("FFIGenerationRequest.namespace", "The namespace into which the FFI will be generated")
+	FFIGenerationRequestName        = ffm("FFIGenerationRequest.name", "The name of the FFI to generate")
+	FFIGenerationRequestDescription = ffm("FFIGenerationRequest.description", "The description of the FFI to be generated. Defaults to the description extracted by the blockchain specific converter utility")
+	FFIGenerationRequestVersion     = ffm("FFIGenerationRequest.version", "The version of the FFI to generate")
+	FFIGenerationRequestInput       = ffm("FFIGenerationRequest.input", "A blockchain connector specific payload. For example in Ethereum this is a JSON structure containing an 'abi' array, and optionally a 'devdocs' array.")
+
 	// ContractListener field descriptions
 	ContractListenerID         = ffm("ContractListener.id", "The UUID of the smart contract listener")
 	ContractListenerInterface  = ffm("ContractListener.interface", "A reference to an existing FFI, containing pre-registered type information for the event")
@@ -455,6 +462,9 @@ var (
 	TokenApprovalBlockchainEvent = ffm("TokenApproval.blockchainEvent", "The UUID of the blockchain event")
 	TokenApprovalConfig          = ffm("TokenApproval.config", "Input only field, with token connector specific configuration of the approval.  See your chosen token connector documentation for details")
 
+	// TokenApprovalInputInput field descriptions
+	TokenApprovalInputInputPool = ffm("TokenApprovalInput.pool", "The name or UUID of a token pool")
+
 	// TokenBalance field descriptions
 	TokenBalancePool       = ffm("TokenBalance.pool", "The UUID the token pool this balance entry applies to")
 	TokenBalanceTokenIndex = ffm("TokenBalance.tokenIndex", "The index of the token within the pool that this balance applies to")
@@ -527,4 +537,8 @@ var (
 	ContractCallRequestLocation  = ffm("ContractCallRequest.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
 	ContractCallRequestKey       = ffm("ContractCallRequest.key", "The blockchain signing key that will sign the invocation. Defaults to the first signing key of the organization that operates the node")
 	ContractCallRequestMethod    = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
+	ContractCallRequestInput     = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
+
+	// ContractCallResponse field descriptions
+	ContractCallResponseID = ffm("ContractCallResponse.id", "The UUID of the operation created to track the transaction submission through to completion")
 )

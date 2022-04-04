@@ -81,11 +81,11 @@ type FFIParam struct {
 type FFIParams []*FFIParam
 
 type FFIGenerationRequest struct {
-	Namespace   string   `json:"namespace,omitempty"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Version     string   `json:"version"`
-	Input       *JSONAny `json:"input"`
+	Namespace   string   `ffstruct:"FFIGenerationRequest" json:"namespace,omitempty"`
+	Name        string   `ffstruct:"FFIGenerationRequest" json:"name"`
+	Description string   `ffstruct:"FFIGenerationRequest" json:"description"`
+	Version     string   `ffstruct:"FFIGenerationRequest" json:"version"`
+	Input       *JSONAny `ffstruct:"FFIGenerationRequest" json:"input"`
 }
 
 func (f *FFI) Validate(ctx context.Context, existing bool) (err error) {
