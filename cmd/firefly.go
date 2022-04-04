@@ -59,6 +59,8 @@ var showConfigCommand = &cobra.Command{
 		_ = config.ReadConfig(cfgFile)
 
 		// Print it all out
+		fmt.Printf("%-64s %v\n", "Key", "Value")
+		fmt.Print("-----------------------------------------------------------------------------------\n")
 		for _, k := range config.GetKnownKeys() {
 			fmt.Printf("%-64s %v\n", k, config.Get(config.RootKey(k)))
 		}

@@ -826,3 +826,83 @@ func SetupLogging(ctx context.Context) {
 	log.SetLevel(GetString(LogLevel))
 	log.L(ctx).Debugf("Log level: %s", logrus.GetLevel())
 }
+
+func GenerateConfigMarkdown(ctx context.Context) ([]byte, error) {
+	b := bytes.NewBuffer([]byte{})
+
+	rootKeyHeaderLevel := 2
+	// currentHeaderHierarchy := make([]string, 0)
+
+	b.WriteString(configDocHeader)
+
+	keys := GetKnownKeys()
+	configObjects := make(map[string][]string)
+	configObjectNames := make([]string, 0)
+
+	for _, fullKey := range keys {
+		splitKey := strings.Split(fullKey, ".")
+		if len(splitKey) > 1 {
+			configObjectName := strings.Join(splitKey[:len(splitKey)-1], ".")
+			keyName := splitKey[len(splitKey)-1]
+			if _, ok := configObjects[configObjectName]; !ok {
+				configObjects[configObjectName] = make([]string, 0)
+				configObjectNames = append(configObjectNames, configObjectName)
+			}
+			configObjects[configObjectName] = append(configObjects[configObjectName], keyName)
+		}
+	}
+	sort.Strings(configObjectNames)
+	for _, configObjectName := range configObjectNames {
+		b.WriteString(fmt.Sprintf("\n\n%s %s", strings.Repeat("#", rootKeyHeaderLevel), configObjectName))
+		b.WriteString("\n\n|Key|Default Value|Description|")
+		b.WriteString("\n|---|-------------|-----------|")
+		sort.Strings(configObjects[configObjectName])
+		for _, key := range configObjects[configObjectName] {
+			fullKey := fmt.Sprintf("%s.%s", configObjectName, key)
+			b.WriteString(fmt.Sprintf("\n|%s|`%v`|%s|", key, Get(rootKey(fullKey)), getDescriptionForConfigKey(ctx, fullKey)))
+		}
+	}
+	return b.Bytes(), nil
+}
+
+func getDescriptionForConfigKey(ctx context.Context, key string) string {
+	configDescriptionKey := "config." + key
+	description := i18n.Expand(ctx, i18n.MessageKey(configDescriptionKey))
+	if description != configDescriptionKey {
+		return description
+	}
+	return getGlobalDescriptionforConfigKey(ctx, key)
+}
+
+func getGlobalDescriptionforConfigKey(ctx context.Context, key string) string {
+	// No specific description was found, look for a global
+	splitKey := strings.Split(key, ".")
+	// Walk through the key structure starting with the most specific key possible, working to the most generic
+	for i := 0; i < len(splitKey); i++ {
+		configDescriptionKey := "config.global." + strings.Join(splitKey[i:], ".")
+		description := i18n.Expand(ctx, i18n.MessageKey(configDescriptionKey))
+		if description != configDescriptionKey {
+			return description
+		}
+	}
+	panic(fmt.Sprintf("Translation for config key '%s' was not found", key))
+}
+
+const configDocHeader = `---
+layout: default
+title: Configuration Reference
+parent: Reference
+nav_order: 3
+---
+
+# Configuration Reference
+{: .no_toc }
+
+<!-- ## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc} -->
+
+---
+`
