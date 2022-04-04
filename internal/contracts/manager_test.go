@@ -1279,7 +1279,6 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 
 	req := &fftypes.ContractCallRequest{
 		Type:     fftypes.CallTypeInvoke,
-		Ledger:   fftypes.JSONAnyPtr(""),
 		Location: fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name: "sum",

@@ -69,7 +69,7 @@ type Event struct {
 // EnrichedEvent adds the referred object to an event
 type EnrichedEvent struct {
 	Event
-	BlockchainEvent   *BlockchainEvent `ffstruct:"EnrichedEvent" json:"blockchainevent,omitempty"`
+	BlockchainEvent   *BlockchainEvent `ffstruct:"EnrichedEvent" json:"blockchainEvent,omitempty"`
 	ContractAPI       *ContractAPI     `ffstruct:"EnrichedEvent" json:"contractAPI,omitempty"`
 	ContractInterface *FFI             `ffstruct:"EnrichedEvent" json:"contractInterface,omitempty"`
 	Datatype          *Datatype        `ffstruct:"EnrichedEvent" json:"datatype,omitempty"`

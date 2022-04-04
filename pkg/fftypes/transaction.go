@@ -65,18 +65,18 @@ var (
 )
 
 type TransactionStatusDetails struct {
-	Type      TransactionStatusType `json:"type"`
-	SubType   string                `json:"subtype,omitempty"`
-	Status    OpStatus              `json:"status"`
-	Timestamp *FFTime               `json:"timestamp,omitempty"`
-	ID        *UUID                 `json:"id,omitempty"`
-	Error     string                `json:"error,omitempty"`
-	Info      JSONObject            `json:"info,omitempty"`
+	Type      TransactionStatusType `ffstruct:"TransactionStatusDetails" json:"type"`
+	SubType   string                `ffstruct:"TransactionStatusDetails" json:"subtype,omitempty"`
+	Status    OpStatus              `ffstruct:"TransactionStatusDetails" json:"status"`
+	Timestamp *FFTime               `ffstruct:"TransactionStatusDetails" json:"timestamp,omitempty"`
+	ID        *UUID                 `ffstruct:"TransactionStatusDetails" json:"id,omitempty"`
+	Error     string                `ffstruct:"TransactionStatusDetails" json:"error,omitempty"`
+	Info      JSONObject            `ffstruct:"TransactionStatusDetails" json:"info,omitempty"`
 }
 
 type TransactionStatus struct {
-	Status  OpStatus                    `json:"status"`
-	Details []*TransactionStatusDetails `json:"details"`
+	Status  OpStatus                    `ffstruct:"TransactionStatus" json:"status"`
+	Details []*TransactionStatusDetails `ffstruct:"TransactionStatus" json:"details"`
 }
 
 func (tx *Transaction) Size() int64 {

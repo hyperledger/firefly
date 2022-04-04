@@ -97,8 +97,12 @@ func initInput(op *openapi3.Operation) {
 	}
 }
 
+func isTrue(str string) bool {
+	return strings.EqualFold(str, "true")
+}
+
 func ffInputTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema, conf *SwaggerGenConfig) error {
-	if tag.Get("ffexcludeinput") == "true" {
+	if isTrue(tag.Get("ffexcludeinput")) {
 		return &openapi3gen.ExcludeSchemaSentinel{}
 	}
 	if taggedRoutes, ok := tag.Lookup("ffexcludeinput"); ok {
@@ -112,6 +116,9 @@ func ffInputTagHandler(ctx context.Context, route *Route, name string, tag refle
 }
 
 func ffOutputTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema, conf *SwaggerGenConfig) error {
+	if isTrue(tag.Get("ffexcludeoutput")) {
+		return &openapi3gen.ExcludeSchemaSentinel{}
+	}
 	return ffTagHandler(ctx, route, name, tag, schema, conf)
 }
 
@@ -119,7 +126,7 @@ func ffTagHandler(ctx context.Context, route *Route, name string, tag reflect.St
 	if ffEnum := tag.Get("ffenum"); ffEnum != "" {
 		schema.Enum = fftypes.FFEnumValues(ffEnum)
 	}
-	if tag.Get("ffexclude") == "true" {
+	if isTrue(tag.Get("ffexclude")) {
 		return &openapi3gen.ExcludeSchemaSentinel{}
 	}
 	if taggedRoutes, ok := tag.Lookup("ffexclude"); ok {

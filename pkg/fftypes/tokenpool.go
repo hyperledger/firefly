@@ -41,21 +41,21 @@ var (
 )
 
 type TokenPool struct {
-	ID         *UUID          `json:"id,omitempty" ffexcludeinput:"true"`
-	Type       TokenType      `json:"type" ffenum:"tokentype"`
-	Namespace  string         `json:"namespace,omitempty" ffexcludeinput:"true"`
-	Name       string         `json:"name,omitempty"`
-	Standard   string         `json:"standard,omitempty" ffexcludeinput:"true"`
-	ProtocolID string         `json:"protocolId,omitempty" ffexcludeinput:"true"`
-	Key        string         `json:"key,omitempty"`
-	Symbol     string         `json:"symbol,omitempty"`
-	Connector  string         `json:"connector,omitempty"`
-	Message    *UUID          `json:"message,omitempty" ffexcludeinput:"true"`
-	State      TokenPoolState `json:"state,omitempty" ffenum:"tokenpoolstate" ffexcludeinput:"true"`
-	Created    *FFTime        `json:"created,omitempty" ffexcludeinput:"true"`
-	Config     JSONObject     `json:"config,omitempty"` // for REST calls only (not stored)
-	Info       JSONObject     `json:"info,omitempty" ffexcludeinput:"true"`
-	TX         TransactionRef `json:"tx,omitempty" ffexcludeinput:"true"`
+	ID         *UUID          `ffstruct:"TokenPool" json:"id,omitempty" ffexcludeinput:"true"`
+	Type       TokenType      `ffstruct:"TokenPool" json:"type" ffenum:"tokentype"`
+	Namespace  string         `ffstruct:"TokenPool" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Name       string         `ffstruct:"TokenPool" json:"name,omitempty"`
+	Standard   string         `ffstruct:"TokenPool" json:"standard,omitempty" ffexcludeinput:"true"`
+	ProtocolID string         `ffstruct:"TokenPool" json:"protocolId,omitempty" ffexcludeinput:"true"`
+	Key        string         `ffstruct:"TokenPool" json:"key,omitempty"`
+	Symbol     string         `ffstruct:"TokenPool" json:"symbol,omitempty"`
+	Connector  string         `ffstruct:"TokenPool" json:"connector,omitempty"`
+	Message    *UUID          `ffstruct:"TokenPool" json:"message,omitempty" ffexcludeinput:"true"`
+	State      TokenPoolState `ffstruct:"TokenPool" json:"state,omitempty" ffenum:"tokenpoolstate" ffexcludeinput:"true"`
+	Created    *FFTime        `ffstruct:"TokenPool" json:"created,omitempty" ffexcludeinput:"true"`
+	Config     JSONObject     `ffstruct:"TokenPool" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
+	Info       JSONObject     `ffstruct:"TokenPool" json:"info,omitempty" ffexcludeinput:"true"`
+	TX         TransactionRef `ffstruct:"TokenPool" json:"tx,omitempty" ffexcludeinput:"true"`
 }
 
 type TokenPoolAnnouncement struct {

@@ -282,7 +282,7 @@ var (
 	EventCreated     = ffm("Event.created", "The time the event was emitted. Not guaranteed to be unique, or to increase between events in the same order as the final sequence events are delivered to your application. As such, the 'sequence' field should be used instead of the 'created' field for querying events in the exact order they are delivered to applications")
 
 	// EnrichedEvent field descriptions
-	EnrichedEventBlockchainEvent   = ffm("EnrichedEvent.blockchainevent", "A blockchain event if referenced by the FireFly event")
+	EnrichedEventBlockchainEvent   = ffm("EnrichedEvent.blockchainEvent", "A blockchain event if referenced by the FireFly event")
 	EnrichedEventContractAPI       = ffm("EnrichedEvent.contractAPI", "A Contract API if referenced by the FireFly event")
 	EnrichedEventContractInterface = ffm("EnrichedEvent.contractInterface", "A Contract Interface (FFI) if referenced by the FireFly event")
 	EnrichedEventDatatype          = ffm("EnrichedEvent.datatype", "A Datatype if referenced by the FireFly event")
@@ -438,4 +438,93 @@ var (
 	SubscriptionCoreOptionsFirstEvent = ffm("SubscriptionCoreOptions.firstEvent", "Whether your appplication would like to receive events from the 'earliest' event emitted by your FireFly node (from the beginning of time), the 'latest' event (from now), or a specific event sequence. Default is 'latest'")
 	SubscriptionCoreOptionsReadAhead  = ffm("SubscriptionCoreOptions.readAhead", "The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts")
 	SubscriptionCoreOptionsWithData   = ffm("SubscriptionCoreOptions.withData", "Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data")
+
+	// TokenApproval field descriptions
+	TokenApprovalLocalID         = ffm("TokenApproval.localId", "The UUID of this token approval, in the local FireFly node")
+	TokenApprovalPool            = ffm("TokenApproval.pool", "The UUID the token pool this approval applies to")
+	TokenApprovalTokenIndex      = ffm("TokenApproval.tokenIndex", "The index of the token within the pool that this approval applies to")
+	TokenApprovalConnector       = ffm("TokenApproval.connector", "The token connector. Required on input when there are more than one token connectors configured")
+	TokenApprovalKey             = ffm("TokenApproval.key", "The blockchain signing key for the approval request. On input defaults to the first signing key of the organization that operates the node")
+	TokenApprovalOperator        = ffm("TokenApproval.operator", "The blockchain identity that is granted the approval")
+	TokenApprovalApproved        = ffm("TokenApproval.approved", "Whether this record grants permission for an operator to perform actions on the token balance (true), or revokes permission (false)")
+	TokenApprovalInfo            = ffm("TokenApproval.info", "Token connector specific information about the approval operation, such as whether it applied to a limited balance of a fungible token. See your chosen token connector documentation for details")
+	TokenApprovalNamespace       = ffm("TokenApproval.namespace", "The namespace for the approval, which must match the namespace of the token pool")
+	TokenApprovalProtocolID      = ffm("TokenApproval.protocolId", "The protocol identifier of the blockchain event for the token approval. See the 'protocolId' field on blockchain events for more information")
+	TokenApprovalCreated         = ffm("TokenApproval.created", "The creation time of the token approval")
+	TokenApprovalTX              = ffm("TokenApproval.tx", "If submitted via FireFly through the local node, this will reference the UUID of the FireFly transaction")
+	TokenApprovalBlockchainEvent = ffm("TokenApproval.blockchainEvent", "The UUID of the blockchain event")
+	TokenApprovalConfig          = ffm("TokenApproval.config", "Input only field, with token connector specific configuration of the approval.  See your chosen token connector documentation for details")
+
+	// TokenBalance field descriptions
+	TokenBalancePool       = ffm("TokenBalance.pool", "The UUID the token pool this balance entry applies to")
+	TokenBalanceTokenIndex = ffm("TokenBalance.tokenIndex", "The index of the token within the pool that this balance applies to")
+	TokenBalanceURI        = ffm("TokenBalance.uri", "The URI of the token this balance entry applies to")
+	TokenBalanceConnector  = ffm("TokenBalance.connector", "The token connector that is responsible for the token pool of this balance entry")
+	TokenBalanceNamespace  = ffm("TokenBalance.namespace", "The namespace of the token pool for this balance entry")
+	TokenBalanceKey        = ffm("TokenBalance.key", "The blockchain signing identity this balance applies to")
+	TokenBalanceBalance    = ffm("TokenBalance.balance", "The numeric balance. For non-fungible tokens will always be 1. For fungible tokens, the number of decimals for the token pool should be considered when interpreting the balance. For example, with 18 decimals a fractional balance of 10.234 will be returned as 10,234,000,000,000,000,000")
+	TokenBalanceUpdated    = ffm("TokenBalance.updated", "The last time the balance was updated by applying a transfer event")
+
+	// TokenBalance field descriptions
+	TokenConnectorName = ffm("TokenConnector.name", "The name of the token connector, as configured in the FireFly core configuration file")
+
+	// TokenPool field descriptions
+	TokenPoolID         = ffm("TokenPool.id", "The UUID of the token pool")
+	TokenPoolType       = ffm("TokenPool.type", "The type of token the pool contains, such as fungible/non-fungible")
+	TokenPoolNamespace  = ffm("TokenPool.namespace", "The namespace for the token pool")
+	TokenPoolName       = ffm("TokenPool.name", "The name of the token pool. Note the name is not validated against the description of the token on the blockchain")
+	TokenPoolStandard   = ffm("TokenPool.standard", "The ERC standard the token pool conforms to, as reported by the token connector")
+	TokenPoolProtocolID = ffm("TokenPool.protocolId", "The protocol identifier of the blockchain event that established the existence of the pool on-chain. See the 'protocolId' field on blockchain events for more information")
+	TokenPoolKey        = ffm("TokenPool.key", "The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain")
+	TokenPoolSymbol     = ffm("TokenPool.symbol", "The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information")
+	TokenPoolConnector  = ffm("TokenPool.connector", "The token connector that is responsible for the token pool. Required on input when multiple token connectors are configured")
+	TokenPoolMessage    = ffm("TokenPool.message", "The UUID of the broadcast message used to inform the network to index this pool")
+	TokenPoolState      = ffm("TokenPool.state", "The current state of the token pool")
+	TokenPoolCreated    = ffm("TokenPool.created", "The creation time of the pool")
+	TokenPoolConfig     = ffm("TokenPool.config", "Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details")
+	TokenPoolInfo       = ffm("TokenPool.info", "Token connector specific information about the pool. See your chosen token connector documentation for details")
+	TokenPoolTX         = ffm("TokenPool.tx", "Reference to the FireFly transaction used to create and broadcast this pool to the network")
+
+	// TokenTransfer field descriptions
+	TokenTransferType            = ffm("TokenTransfer.type", "The type of transfer such as mint/burn/transfer")
+	TokenTransferLocalID         = ffm("TokenTransfer.localId", "The UUID of this token transfer, in the local FireFly node")
+	TokenTransferPool            = ffm("TokenTransfer.pool", "The UUID the token pool this transfer applies to")
+	TokenTransferTokenIndex      = ffm("TokenTransfer.tokenIndex", "The index of the token within the pool that this transfer applies to")
+	TokenTransferURI             = ffm("TokenTransfer.uri", "The URI of the token this transfer applies to")
+	TokenTransferConnector       = ffm("TokenTransfer.connector", "The token connector. Required on input when there are more than one token connectors configured")
+	TokenTransferNamespace       = ffm("TokenTransfer.namespace", "The namespace for the transfer, which must match the namespace of the token pool")
+	TokenTransferKey             = ffm("TokenTransfer.key", "The blockchain signing key for the transfer. On input defaults to the first signing key of the organization that operates the node")
+	TokenTransferFrom            = ffm("TokenTransfer.from", "The source account for the transfer. On input defaults to the value of 'key'")
+	TokenTransferTo              = ffm("TokenTransfer.to", "The target account for the transfer. Required on input")
+	TokenTransferAmount          = ffm("TokenTransfer.amount", "The amount for the transfer. For non-fungible tokens will always be 1. For fungible tokens, the number of decimals for the token pool should be considered when inputting the amount. For example, with 18 decimals a fractional balance of 10.234 will be specified as 10,234,000,000,000,000,000")
+	TokenTransferProtocolID      = ffm("TokenTransfer.protocolId", "The protocol identifier of the blockchain event for the token transfer. See the 'protocolId' field on blockchain events for more information")
+	TokenTransferMessage         = ffm("TokenTransfer.message", "The UUID of a message that has been correlated with this transfer using the data field of the transfer in a compatible token connector")
+	TokenTransferMessageHash     = ffm("TokenTransfer.messageHash", "The hash of a message that has been correlated with this transfer using the data field of the transfer in a compatible token connector")
+	TokenTransferCreated         = ffm("TokenTransfer.created", "The creation time of the transfer")
+	TokenTransferTX              = ffm("TokenTransfer.tx", "If submitted via FireFly through the local node, this will reference the UUID of the FireFly transaction")
+	TokenTransferBlockchainEvent = ffm("TokenTransfer.blockchainEvent", "The UUID of the blockchain event")
+
+	// TokenTransferInput field descriptions
+	TokenTransferInputMessage = ffm("TokenTransferInput.message", "You can specify a message to correlate with the transfer, which can be of type broadcast or private. Your chosen token connector and on-chain smart contract must support on-chain/off-chain correlation by taking a `data` input on the transfer")
+	TokenTransferInputPool    = ffm("TokenTransferInput.pool", "The name or UUID of a token pool")
+
+	// TransactionStatus field descriptions
+	TransactionStatusStatus  = ffm("TransactionStatus.status", "The overall computed status of the transaction, after analyzing the details during the API call")
+	TransactionStatusDetails = ffm("TransactionStatus.details", "A set of records describing the activities within the transaction known by the local FireFly node")
+
+	// TransactionStatusDetails field descriptions
+	TransactionStatusDetailsType      = ffm("TransactionStatusDetails.type", "The type of the transaction status detail record")
+	TransactionStatusDetailsSubType   = ffm("TransactionStatusDetails.subtype", "A sub-type, such as an operation type, or an event type")
+	TransactionStatusDetailsStatus    = ffm("TransactionStatusDetails.status", "The status of the detail record. Cases where an event is required for completion, but has not arrived yet are marked with a 'pending' record")
+	TransactionStatusDetailsTimestamp = ffm("TransactionStatusDetails.timestamp", "The time relevant to when the record was updated, such as the time an event was created, or the last update time of an operation")
+	TransactionStatusDetailsID        = ffm("TransactionStatusDetails.id", "The UUID of the entry referenced by this detail. The type of this record can be inferred from the entry type")
+	TransactionStatusDetailsError     = ffm("TransactionStatusDetails.error", "If an error occurred related to the detail entry, it is included here")
+	TransactionStatusDetailsInfo      = ffm("TransactionStatusDetails.info", "Input data for operations, and output data for events")
+
+	// ContractCallRequest field descriptions
+	ContractCallRequestType      = ffm("ContractCallRequest.type", "Invocations cause transactions on the blockchain. Whereas queries simply execute logic in your local node to query data at a given current/historical block")
+	ContractCallRequestInterface = ffm("ContractCallRequest.interface", "The UUID of a method within a pre-configured FireFly interface (FFI) definition for a smart contract. Required if the 'method' is omitted. Also see Contract APIs as a way to configure a dedicated API for your FFI, including all methods and an OpenAPI/Swagger interface")
+	ContractCallRequestLocation  = ffm("ContractCallRequest.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ContractCallRequestKey       = ffm("ContractCallRequest.key", "The blockchain signing key that will sign the invocation. Defaults to the first signing key of the organization that operates the node")
+	ContractCallRequestMethod    = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
 )

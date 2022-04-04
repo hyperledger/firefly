@@ -17,5 +17,5 @@
 package fftypes
 
 type TokenConnector struct {
-	Name string `json:"name,omitempty"`
+	Name string `ffstruct:"TokenConnector" json:"name,omitempty"`
 }

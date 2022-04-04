@@ -17,14 +17,14 @@
 package fftypes
 
 type TokenBalance struct {
-	Pool       *UUID    `json:"pool,omitempty"`
-	TokenIndex string   `json:"tokenIndex,omitempty"`
-	URI        string   `json:"uri,omitempty"`
-	Connector  string   `json:"connector,omitempty"`
-	Namespace  string   `json:"namespace,omitempty"`
-	Key        string   `json:"key,omitempty"`
-	Balance    FFBigInt `json:"balance"`
-	Updated    *FFTime  `json:"updated,omitempty"`
+	Pool       *UUID    `ffstruct:"TokenBalance" json:"pool,omitempty"`
+	TokenIndex string   `ffstruct:"TokenBalance" json:"tokenIndex,omitempty"`
+	URI        string   `ffstruct:"TokenBalance" json:"uri,omitempty"`
+	Connector  string   `ffstruct:"TokenBalance" json:"connector,omitempty"`
+	Namespace  string   `ffstruct:"TokenBalance" json:"namespace,omitempty"`
+	Key        string   `ffstruct:"TokenBalance" json:"key,omitempty"`
+	Balance    FFBigInt `ffstruct:"TokenBalance" json:"balance"`
+	Updated    *FFTime  `ffstruct:"TokenBalance" json:"updated,omitempty"`
 }
 
 func TokenBalanceIdentifier(pool *UUID, tokenIndex, identity string) string {
@@ -38,8 +38,8 @@ func (t *TokenBalance) Identifier() string {
 // Currently these types are just filtered views of TokenBalance.
 // If more fields/aggregation become needed, they might merit a new table in the database.
 type TokenAccount struct {
-	Key string `json:"key,omitempty"`
+	Key string `ffstruct:"TokenBalance" json:"key,omitempty"`
 }
 type TokenAccountPool struct {
-	Pool *UUID `json:"pool,omitempty"`
+	Pool *UUID `ffstruct:"TokenBalance" json:"pool,omitempty"`
 }

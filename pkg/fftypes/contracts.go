@@ -28,13 +28,12 @@ var (
 )
 
 type ContractCallRequest struct {
-	Type      ContractCallType       `json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
-	Interface *UUID                  `json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery,postContractInterfaceInvoke,postContractInterfaceQuery"`
-	Ledger    *JSONAny               `json:"ledger,omitempty"`
-	Location  *JSONAny               `json:"location,omitempty"`
-	Key       string                 `json:"key,omitempty"`
-	Method    *FFIMethod             `json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
-	Input     map[string]interface{} `json:"input"`
+	Type      ContractCallType       `ffstruct:"ContractCallRequest" json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
+	Interface *UUID                  `ffstruct:"ContractCallRequest" json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery,postContractInterfaceInvoke,postContractInterfaceQuery"`
+	Location  *JSONAny               `ffstruct:"ContractCallRequest" json:"location,omitempty"`
+	Key       string                 `ffstruct:"ContractCallRequest" json:"key,omitempty"`
+	Method    *FFIMethod             `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	Input     map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
 }
 
 type ContractCallResponse struct {
