@@ -75,6 +75,19 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	approvalReadJson, _ = json.Marshal(&approvalRead)
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
 
+	//query back token approval by Protcol ID and Pool ID
+	approvalRead, err = s.GetTokenApprovalByProtocolID(ctx, approval.Connector, approval.ProtocolID)
+	assert.NoError(t, err)
+	assert.NotNil(t, approvalRead)
+	approvalReadJson, _ = json.Marshal(&approvalRead)
+	assert.Equal(t, string(approvalJson), string(approvalReadJson))
+
+	approvalRead, err = s.GetTokenApprovalByProtocolIDAndPoolID(ctx, approval.Connector, approval.ProtocolID, approval.Pool)
+	assert.NoError(t, err)
+	assert.NotNil(t, approvalRead)
+	approvalReadJson, _ = json.Marshal(&approvalRead)
+	assert.Equal(t, string(approvalJson), string(approvalReadJson))
+
 	// Query back token approval by query filter
 	fb := database.TokenApprovalQueryFacory.NewFilter(ctx)
 	filter := fb.And(
