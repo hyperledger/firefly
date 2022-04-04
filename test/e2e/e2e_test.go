@@ -352,6 +352,17 @@ func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes
 	}
 }
 
+func waitForApprovalEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, txID *fftypes.UUID) {
+	for {
+		ed := <-c
+		if ed.Type == fftypes.EventTypeApprovalConfirmed && (txID == nil || *txID == *ed.TokenApproval.TX.ID) {
+			t.Logf("Detected '%s' event for ref '%s'", ed.Type, ed.Reference)
+			return
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
+}
+
 func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgType fftypes.MessageType) *fftypes.EventDelivery {
 	for {
 		ed := <-c

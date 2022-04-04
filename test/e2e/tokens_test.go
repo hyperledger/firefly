@@ -106,7 +106,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	}
 	approvalOut := TokenApproval(suite.T(), suite.testState.client1, approval, false)
 
-	waitForEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.TX.ID)
+	waitForApprovalEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.TX.ID)
 	approvals := GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
 	assert.Equal(suite.T(), 1, len(approvals))
 	assert.Equal(suite.T(), suite.connector, approvals[0].Connector)
