@@ -187,6 +187,14 @@ func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, connector,
 	})
 }
 
+func (s *SQLCommon) GetTokenApprovalByProtocolIDAndPoolID(ctx context.Context, connector, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error) {
+	return s.getTokenApprovalPred(ctx, protocolID, sq.And{
+		sq.Eq{"connector": connector},
+		sq.Eq{"pool_id": poolID},
+		sq.Eq{"protocol_id": protocolID},
+	})
+}
+
 func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filter) (messages []*fftypes.TokenApproval, fr *database.FilterResult, err error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenApprovalColumns...).From("tokenapproval"), filter, tokenApprovalFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
