@@ -95,6 +95,10 @@ func (rw *rewinder) rewindLoop1() {
 			rw.mux.Lock()
 			rw.queuedRewinds = append(rw.queuedRewinds, &rewind)
 			rw.mux.Unlock()
+
+			// Shoulder tap at this point, to get the event loop to pop and tell us
+			// we can move the queued rewinds to staged
+			rw.aggregator.eventPoller.shoulderTap()
 		case <-rw.ctx.Done():
 			log.L(rw.ctx).Debugf("Rewind loop 1 stopping")
 			return
@@ -128,8 +132,11 @@ func (rw *rewinder) rewindLoop2() {
 			timerCancel()
 			timerCtx = nil
 			timerCancel = nil
-			rw.processStagedRewinds()
-			rw.aggregator.eventPoller.shoulderTap()
+			if rw.processStagedRewinds() {
+				// Shoulder tap at this point, to get the event loop to pop and retrieve
+				// the rewinds we have just derived batch IDs from
+				rw.aggregator.eventPoller.shoulderTap()
+			}
 		case <-rw.loop2ShoulderTap:
 			if timerCtx == nil {
 				// We've been told at least one rewind is available, so start a timer
@@ -140,7 +147,7 @@ func (rw *rewinder) rewindLoop2() {
 	}
 }
 
-func (rw *rewinder) processStagedRewinds() {
+func (rw *rewinder) processStagedRewinds() bool {
 	batchIDs := make(map[fftypes.UUID]bool)
 	var msgRewinds []*fftypes.UUID
 	var newBlobHashes []driver.Value
@@ -186,6 +193,8 @@ func (rw *rewinder) processStagedRewinds() {
 		rw.readyRewinds[batchID] = true
 	}
 	rw.mux.Unlock()
+
+	return len(batchIDs) > 0
 }
 
 // popRewinds is the function called by aggregator each time round its loop
