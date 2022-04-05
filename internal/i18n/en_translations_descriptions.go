@@ -26,6 +26,15 @@ That will be combined with the JSON field name (note, it is not the GO
 field name, but the JSON serialized name), separated by a "." This is the
 key used to lookup the translation below. If it is not found, the description
 is left blank in the OpenAPI spec
+
+Example:
+// message.go
+type Message struct {
+	Header    MessageHeader `ffstruct:"Message" json:"header"`
+
+// en_translations_descriptions.go
+MessageHeader    = ffm("Message.header", "The message header")
+
 */
 var (
 	// MessageHeader field descriptions
