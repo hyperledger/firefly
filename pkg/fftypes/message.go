@@ -75,7 +75,7 @@ type MessageHeader struct {
 	SignerRef
 	Created   *FFTime       `ffstruct:"MessageHeader" json:"created,omitempty"`
 	Namespace string        `ffstruct:"MessageHeader" json:"namespace,omitempty"`
-	Group     *Bytes32      `ffstruct:"MessageHeader" json:"group,omitempty" ffexclude:"postNewMessageBroadcast" ffrequired:"postNewMessagePrivate"`
+	Group     *Bytes32      `ffstruct:"MessageHeader" json:"group,omitempty" ffexclude:"postNewMessageBroadcast"`
 	Topics    FFStringArray `ffstruct:"MessageHeader" json:"topics,omitempty"`
 	Tag       string        `ffstruct:"MessageHeader" json:"tag,omitempty"`
 	DataHash  *Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty"`

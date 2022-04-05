@@ -1375,7 +1375,7 @@ paths:
                       type: object
                     listener:
                       description: The UUID of the listener that detected this event,
-                        or nil for the built-in BatchPin events in the system namespace
+                        or nil for built-in events in the system namespace
                     name:
                       description: The name of the event in the blockchain smart contract
                       type: string
@@ -1460,7 +1460,7 @@ paths:
                     type: object
                   listener:
                     description: The UUID of the listener that detected this event,
-                      or nil for the built-in BatchPin events in the system namespace
+                      or nil for built-in events in the system namespace
                   name:
                     description: The name of the event in the blockchain smart contract
                     type: string
@@ -1550,7 +1550,7 @@ paths:
                 items:
                   properties:
                     count:
-                      description: Total count of entires in this time bucket within
+                      description: Total count of entries in this time bucket within
                         the histogram
                       type: string
                     timestamp:
@@ -1563,7 +1563,7 @@ paths:
                           of record within the bucket
                         properties:
                           count:
-                            description: Count of entires of a given type within a
+                            description: Count of entries of a given type within a
                               bucket
                             type: string
                           type:
@@ -4559,7 +4559,7 @@ paths:
                       type: string
                     value:
                       description: The definition of the datatype, in the syntax supported
-                        by the validator. Such as a JSON Schema definition
+                        by the validator (such as a JSON Schema definition)
                       type: string
                     version:
                       description: The version of the datatype. Multiple versions
@@ -4612,7 +4612,7 @@ paths:
                   type: string
                 value:
                   description: The definition of the datatype, in the syntax supported
-                    by the validator. Such as a JSON Schema definition
+                    by the validator (such as a JSON Schema definition)
                   type: string
                 version:
                   description: The version of the datatype. Multiple versions can
@@ -4654,7 +4654,7 @@ paths:
                     type: string
                   value:
                     description: The definition of the datatype, in the syntax supported
-                      by the validator. Such as a JSON Schema definition
+                      by the validator (such as a JSON Schema definition)
                     type: string
                   version:
                     description: The version of the datatype. Multiple versions can
@@ -4696,7 +4696,7 @@ paths:
                     type: string
                   value:
                     description: The definition of the datatype, in the syntax supported
-                      by the validator. Such as a JSON Schema definition
+                      by the validator (such as a JSON Schema definition)
                     type: string
                   version:
                     description: The version of the datatype. Multiple versions can
@@ -4772,7 +4772,7 @@ paths:
                     type: string
                   value:
                     description: The definition of the datatype, in the syntax supported
-                      by the validator. Such as a JSON Schema definition
+                      by the validator (such as a JSON Schema definition)
                     type: string
                   version:
                     description: The version of the datatype. Multiple versions can
@@ -8200,9 +8200,9 @@ paths:
                       properties:
                         firstEvent:
                           description: Whether your appplication would like to receive
-                            events from the 'earliest' event emitted by your FireFly
-                            node (from the beginning of time), the 'latest' event
-                            (from now), or a specific event sequence. Default is 'latest'
+                            events from the 'oldest' event emitted by your FireFly
+                            node (from the beginning of time), or the 'newest' event
+                            (from now), or a specific event sequence. Default is 'newest'
                           type: string
                         readAhead:
                           description: The number of events to stream ahead to your
@@ -8218,7 +8218,8 @@ paths:
                           description: Whether message events delivered over the subscription,
                             should be packaged with the full data of those messages
                             in-line as part of the event JSON payload. Or if the application
-                            should make separate REST calls to download that data
+                            should make separate REST calls to download that data.
+                            May not be supported on some transports.
                           type: boolean
                       type: object
                     transport:
@@ -8343,9 +8344,9 @@ paths:
                   properties:
                     firstEvent:
                       description: Whether your appplication would like to receive
-                        events from the 'earliest' event emitted by your FireFly node
-                        (from the beginning of time), the 'latest' event (from now),
-                        or a specific event sequence. Default is 'latest'
+                        events from the 'oldest' event emitted by your FireFly node
+                        (from the beginning of time), or the 'newest' event (from
+                        now), or a specific event sequence. Default is 'newest'
                       type: string
                     readAhead:
                       description: The number of events to stream ahead to your application,
@@ -8360,7 +8361,8 @@ paths:
                       description: Whether message events delivered over the subscription,
                         should be packaged with the full data of those messages in-line
                         as part of the event JSON payload. Or if the application should
-                        make separate REST calls to download that data
+                        make separate REST calls to download that data. May not be
+                        supported on some transports.
                       type: boolean
                   type: object
                 transport:
@@ -8473,9 +8475,9 @@ paths:
                     properties:
                       firstEvent:
                         description: Whether your appplication would like to receive
-                          events from the 'earliest' event emitted by your FireFly
-                          node (from the beginning of time), the 'latest' event (from
-                          now), or a specific event sequence. Default is 'latest'
+                          events from the 'oldest' event emitted by your FireFly node
+                          (from the beginning of time), or the 'newest' event (from
+                          now), or a specific event sequence. Default is 'newest'
                         type: string
                       readAhead:
                         description: The number of events to stream ahead to your
@@ -8491,7 +8493,8 @@ paths:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
                           in-line as part of the event JSON payload. Or if the application
-                          should make separate REST calls to download that data
+                          should make separate REST calls to download that data. May
+                          not be supported on some transports.
                         type: boolean
                     type: object
                   transport:
@@ -8615,9 +8618,9 @@ paths:
                   properties:
                     firstEvent:
                       description: Whether your appplication would like to receive
-                        events from the 'earliest' event emitted by your FireFly node
-                        (from the beginning of time), the 'latest' event (from now),
-                        or a specific event sequence. Default is 'latest'
+                        events from the 'oldest' event emitted by your FireFly node
+                        (from the beginning of time), or the 'newest' event (from
+                        now), or a specific event sequence. Default is 'newest'
                       type: string
                     readAhead:
                       description: The number of events to stream ahead to your application,
@@ -8632,7 +8635,8 @@ paths:
                       description: Whether message events delivered over the subscription,
                         should be packaged with the full data of those messages in-line
                         as part of the event JSON payload. Or if the application should
-                        make separate REST calls to download that data
+                        make separate REST calls to download that data. May not be
+                        supported on some transports.
                       type: boolean
                   type: object
                 transport:
@@ -8745,9 +8749,9 @@ paths:
                     properties:
                       firstEvent:
                         description: Whether your appplication would like to receive
-                          events from the 'earliest' event emitted by your FireFly
-                          node (from the beginning of time), the 'latest' event (from
-                          now), or a specific event sequence. Default is 'latest'
+                          events from the 'oldest' event emitted by your FireFly node
+                          (from the beginning of time), or the 'newest' event (from
+                          now), or a specific event sequence. Default is 'newest'
                         type: string
                       readAhead:
                         description: The number of events to stream ahead to your
@@ -8763,7 +8767,8 @@ paths:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
                           in-line as part of the event JSON payload. Or if the application
-                          should make separate REST calls to download that data
+                          should make separate REST calls to download that data. May
+                          not be supported on some transports.
                         type: boolean
                     type: object
                   transport:
@@ -8937,9 +8942,9 @@ paths:
                     properties:
                       firstEvent:
                         description: Whether your appplication would like to receive
-                          events from the 'earliest' event emitted by your FireFly
-                          node (from the beginning of time), the 'latest' event (from
-                          now), or a specific event sequence. Default is 'latest'
+                          events from the 'oldest' event emitted by your FireFly node
+                          (from the beginning of time), or the 'newest' event (from
+                          now), or a specific event sequence. Default is 'newest'
                         type: string
                       readAhead:
                         description: The number of events to stream ahead to your
@@ -8955,7 +8960,8 @@ paths:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
                           in-line as part of the event JSON payload. Or if the application
-                          should make separate REST calls to download that data
+                          should make separate REST calls to download that data. May
+                          not be supported on some transports.
                         type: boolean
                     type: object
                   transport:
@@ -9269,8 +9275,9 @@ paths:
                     blockchainEvent:
                       description: The UUID of the blockchain event
                     connector:
-                      description: The token connector. Required on input when there
-                        are more than one token connectors configured
+                      description: The name of the token connector, as specified in
+                        the FireFly core configuration file. Required on input when
+                        there are more than one token connectors configured
                       type: string
                     created:
                       description: The creation time of the token approval
@@ -9303,17 +9310,17 @@ paths:
                     pool:
                       description: The UUID the token pool this approval applies to
                     protocolId:
-                      description: The protocol identifier of the blockchain event
-                        for the token approval. See the 'protocolId' field on blockchain
-                        events for more information
+                      description: A unique identifier for this approval, as provided
+                        by the token connector
                       type: string
                     tokenIndex:
                       description: The index of the token within the pool that this
                         approval applies to
                       type: string
                     tx:
-                      description: If submitted via FireFly through the local node,
-                        this will reference the UUID of the FireFly transaction
+                      description: If submitted via FireFly, this will reference the
+                        UUID of the FireFly transaction (if the token connector in
+                        use supports attaching data)
                       properties:
                         id:
                           description: The UUID of the FireFly transaction
@@ -9369,8 +9376,9 @@ paths:
                     for details
                   type: object
                 connector:
-                  description: The token connector. Required on input when there are
-                    more than one token connectors configured
+                  description: The name of the token connector, as specified in the
+                    FireFly core configuration file. Required on input when there
+                    are more than one token connectors configured
                   type: string
                 info:
                   additionalProperties:
@@ -9396,7 +9404,8 @@ paths:
                   description: The blockchain identity that is granted the approval
                   type: string
                 pool:
-                  description: The name or UUID of a token pool
+                  description: The name or UUID of a token pool. Required if more
+                    than one pool exists.
                   type: string
                 tokenIndex:
                   description: The index of the token within the pool that this approval
@@ -9417,8 +9426,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the token approval
@@ -9451,17 +9461,17 @@ paths:
                   pool:
                     description: The UUID the token pool this approval applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token approval. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this approval, as provided
+                      by the token connector
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
                       approval applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -9484,8 +9494,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the token approval
@@ -9518,17 +9529,17 @@ paths:
                   pool:
                     description: The UUID the token pool this approval applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token approval. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this approval, as provided
+                      by the token connector
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
                       approval applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -9712,11 +9723,10 @@ paths:
                     for the token pool should be considered when inputting the amount.
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
-                blockchainEvent:
-                  description: The UUID of the blockchain event
                 connector:
-                  description: The token connector. Required on input when there are
-                    more than one token connectors configured
+                  description: The name of the token connector, as specified in the
+                    FireFly core configuration file. Required on input when there
+                    are more than one token connectors configured
                   type: string
                 from:
                   description: The source account for the transfer. On input defaults
@@ -9884,8 +9894,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the transfer
@@ -9916,9 +9927,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token transfer. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this transfer, as provided
+                      by the token connector
                     type: string
                   to:
                     description: The target account for the transfer. Required on
@@ -9929,8 +9939,9 @@ paths:
                       transfer applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -9964,8 +9975,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the transfer
@@ -9996,9 +10008,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token transfer. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this transfer, as provided
+                      by the token connector
                     type: string
                   to:
                     description: The target account for the transfer. Required on
@@ -10009,8 +10020,9 @@ paths:
                       transfer applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -10102,11 +10114,10 @@ paths:
                     for the token pool should be considered when inputting the amount.
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
-                blockchainEvent:
-                  description: The UUID of the blockchain event
                 connector:
-                  description: The token connector. Required on input when there are
-                    more than one token connectors configured
+                  description: The name of the token connector, as specified in the
+                    FireFly core configuration file. Required on input when there
+                    are more than one token connectors configured
                   type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
@@ -10273,8 +10284,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the transfer
@@ -10305,9 +10317,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token transfer. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this transfer, as provided
+                      by the token connector
                     type: string
                   to:
                     description: The target account for the transfer. Required on
@@ -10318,8 +10329,9 @@ paths:
                       transfer applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -10353,8 +10365,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the transfer
@@ -10385,9 +10398,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token transfer. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this transfer, as provided
+                      by the token connector
                     type: string
                   to:
                     description: The target account for the transfer. Required on
@@ -10398,8 +10410,9 @@ paths:
                       transfer applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -10547,8 +10560,9 @@ paths:
                 items:
                   properties:
                     connector:
-                      description: The token connector that is responsible for the
-                        token pool. Required on input when multiple token connectors
+                      description: The name of the token connector, as specified in
+                        the FireFly core configuration file that is responsible for
+                        the token pool. Required on input when multiple token connectors
                         are configured
                       type: string
                     created:
@@ -10580,9 +10594,8 @@ paths:
                       description: The namespace for the token pool
                       type: string
                     protocolId:
-                      description: The protocol identifier of the blockchain event
-                        that established the existence of the pool on-chain. See the
-                        'protocolId' field on blockchain events for more information
+                      description: A unique identifier for the pool, as provided by
+                        the token connector
                       type: string
                     standard:
                       description: The ERC standard the token pool conforms to, as
@@ -10660,7 +10673,8 @@ paths:
                     for details
                   type: object
                 connector:
-                  description: The token connector that is responsible for the token
+                  description: The name of the token connector, as specified in the
+                    FireFly core configuration file that is responsible for the token
                     pool. Required on input when multiple token connectors are configured
                   type: string
                 key:
@@ -10691,8 +10705,10 @@ paths:
               schema:
                 properties:
                   connector:
-                    description: The token connector that is responsible for the token
-                      pool. Required on input when multiple token connectors are configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file that is responsible for
+                      the token pool. Required on input when multiple token connectors
+                      are configured
                     type: string
                   created:
                     description: The creation time of the pool
@@ -10722,9 +10738,8 @@ paths:
                     description: The namespace for the token pool
                     type: string
                   protocolId:
-                    description: The protocol identifier of the blockchain event that
-                      established the existence of the pool on-chain. See the 'protocolId'
-                      field on blockchain events for more information
+                    description: A unique identifier for the pool, as provided by
+                      the token connector
                     type: string
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
@@ -10765,8 +10780,10 @@ paths:
               schema:
                 properties:
                   connector:
-                    description: The token connector that is responsible for the token
-                      pool. Required on input when multiple token connectors are configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file that is responsible for
+                      the token pool. Required on input when multiple token connectors
+                      are configured
                     type: string
                   created:
                     description: The creation time of the pool
@@ -10796,9 +10813,8 @@ paths:
                     description: The namespace for the token pool
                     type: string
                   protocolId:
-                    description: The protocol identifier of the blockchain event that
-                      established the existence of the pool on-chain. See the 'protocolId'
-                      field on blockchain events for more information
+                    description: A unique identifier for the pool, as provided by
+                      the token connector
                     type: string
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
@@ -10867,8 +10883,10 @@ paths:
               schema:
                 properties:
                   connector:
-                    description: The token connector that is responsible for the token
-                      pool. Required on input when multiple token connectors are configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file that is responsible for
+                      the token pool. Required on input when multiple token connectors
+                      are configured
                     type: string
                   created:
                     description: The creation time of the pool
@@ -10898,9 +10916,8 @@ paths:
                     description: The namespace for the token pool
                     type: string
                   protocolId:
-                    description: The protocol identifier of the blockchain event that
-                      established the existence of the pool on-chain. See the 'protocolId'
-                      field on blockchain events for more information
+                    description: A unique identifier for the pool, as provided by
+                      the token connector
                     type: string
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
@@ -11101,8 +11118,9 @@ paths:
                     blockchainEvent:
                       description: The UUID of the blockchain event
                     connector:
-                      description: The token connector. Required on input when there
-                        are more than one token connectors configured
+                      description: The name of the token connector, as specified in
+                        the FireFly core configuration file. Required on input when
+                        there are more than one token connectors configured
                       type: string
                     created:
                       description: The creation time of the transfer
@@ -11133,9 +11151,8 @@ paths:
                     pool:
                       description: The UUID the token pool this transfer applies to
                     protocolId:
-                      description: The protocol identifier of the blockchain event
-                        for the token transfer. See the 'protocolId' field on blockchain
-                        events for more information
+                      description: A unique identifier for this transfer, as provided
+                        by the token connector
                       type: string
                     to:
                       description: The target account for the transfer. Required on
@@ -11146,8 +11163,9 @@ paths:
                         transfer applies to
                       type: string
                     tx:
-                      description: If submitted via FireFly through the local node,
-                        this will reference the UUID of the FireFly transaction
+                      description: If submitted via FireFly, this will reference the
+                        UUID of the FireFly transaction (if the token connector in
+                        use supports attaching data)
                       properties:
                         id:
                           description: The UUID of the FireFly transaction
@@ -11204,11 +11222,10 @@ paths:
                     for the token pool should be considered when inputting the amount.
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
-                blockchainEvent:
-                  description: The UUID of the blockchain event
                 connector:
-                  description: The token connector. Required on input when there are
-                    more than one token connectors configured
+                  description: The name of the token connector, as specified in the
+                    FireFly core configuration file. Required on input when there
+                    are more than one token connectors configured
                   type: string
                 from:
                   description: The source account for the transfer. On input defaults
@@ -11379,8 +11396,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the transfer
@@ -11411,9 +11429,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token transfer. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this transfer, as provided
+                      by the token connector
                     type: string
                   to:
                     description: The target account for the transfer. Required on
@@ -11424,8 +11441,9 @@ paths:
                       transfer applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -11459,8 +11477,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the transfer
@@ -11491,9 +11510,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token transfer. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this transfer, as provided
+                      by the token connector
                     type: string
                   to:
                     description: The target account for the transfer. Required on
@@ -11504,8 +11522,9 @@ paths:
                       transfer applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -11567,8 +11586,9 @@ paths:
                   blockchainEvent:
                     description: The UUID of the blockchain event
                   connector:
-                    description: The token connector. Required on input when there
-                      are more than one token connectors configured
+                    description: The name of the token connector, as specified in
+                      the FireFly core configuration file. Required on input when
+                      there are more than one token connectors configured
                     type: string
                   created:
                     description: The creation time of the transfer
@@ -11599,9 +11619,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: The protocol identifier of the blockchain event for
-                      the token transfer. See the 'protocolId' field on blockchain
-                      events for more information
+                    description: A unique identifier for this transfer, as provided
+                      by the token connector
                     type: string
                   to:
                     description: The target account for the transfer. Required on
@@ -11612,8 +11631,9 @@ paths:
                       transfer applies to
                     type: string
                   tx:
-                    description: If submitted via FireFly through the local node,
-                      this will reference the UUID of the FireFly transaction
+                    description: If submitted via FireFly, this will reference the
+                      UUID of the FireFly transaction (if the token connector in use
+                      supports attaching data)
                     properties:
                       id:
                         description: The UUID of the FireFly transaction
@@ -11927,7 +11947,7 @@ paths:
                       type: object
                     listener:
                       description: The UUID of the listener that detected this event,
-                        or nil for the built-in BatchPin events in the system namespace
+                        or nil for built-in events in the system namespace
                     name:
                       description: The name of the event in the blockchain smart contract
                       type: string
@@ -13946,7 +13966,7 @@ paths:
                     created:
                       description: The time the FireFly node created the pin
                     dispatched:
-                      description: Once true, this pin as been processed and will
+                      description: Once true, this pin has been processed and will
                         not be processed again
                       type: boolean
                     hash:
@@ -13956,7 +13976,7 @@ paths:
                         for privacy
                     index:
                       description: The index of this pin within the batch. One pin
-                        is created for each topic, of each mesage in the batch
+                        is created for each topic, of each message in the batch
                       format: int64
                       type: integer
                     masked:

@@ -41,7 +41,7 @@ type TokenTransfer struct {
 	MessageHash     *Bytes32          `ffstruct:"TokenTransfer" json:"messageHash,omitempty" ffexcludeinput:"true"`
 	Created         *FFTime           `ffstruct:"TokenTransfer" json:"created,omitempty" ffexcludeinput:"true"`
 	TX              TransactionRef    `ffstruct:"TokenTransfer" json:"tx" ffexcludeinput:"true"`
-	BlockchainEvent *UUID             `ffstruct:"TokenTransfer" json:"blockchainEvent,omitempty"`
+	BlockchainEvent *UUID             `ffstruct:"TokenTransfer" json:"blockchainEvent,omitempty" ffexcludeinput:"true"`
 }
 
 type TokenTransferInput struct {
