@@ -165,6 +165,16 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, msg.Header.ID, &msgIDs[0].ID)
 	assert.Equal(t, msg.Sequence, msgIDs[0].Sequence)
 
+	batchIDs, err := s.GetMessageBatchIDs(ctx, []driver.Value{msg.Header.ID})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(batchIDs))
+	assert.Equal(t, *msgUpdated.BatchID, *batchIDs[0])
+
+	batchIDs, err = s.GetMessagesBatchIDsForDataIDs(ctx, []driver.Value{dataID2})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(batchIDs))
+	assert.Equal(t, *msgUpdated.BatchID, *batchIDs[0])
+
 	// Check we can get it with a filter on only mesasges with a particular data ref
 	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
@@ -642,4 +652,22 @@ func TestMessageUpdateFail(t *testing.T) {
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("group", fftypes.NewRandB32())
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
+}
+
+func TestGetMessageBatchIDsSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msgID := fftypes.NewUUID()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetMessageBatchIDs(context.Background(), []driver.Value{msgID})
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessageBatchIDsScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msgID := fftypes.NewUUID()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"batch_id"}).AddRow("not a UUID"))
+	_, err := s.GetMessageBatchIDs(context.Background(), []driver.Value{msgID})
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

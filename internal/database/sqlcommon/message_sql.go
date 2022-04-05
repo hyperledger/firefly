@@ -19,6 +19,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -496,6 +497,37 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (
 		ids = append(ids, &id)
 	}
 	return ids, nil
+}
+
+func (s *SQLCommon) GetMessagesBatchIDsForDataIDs(ctx context.Context, dataIDs []driver.Value) (batchIDs []*fftypes.UUID, err error) {
+	query := sq.Select("m.batch_id").From("messages_data AS md").LeftJoin("messages AS m ON m.id = md.message_id").Where(sq.Eq{"md.data_id": dataIDs})
+	return s.queryBatchIDs(ctx, query)
+}
+
+func (s *SQLCommon) GetMessageBatchIDs(ctx context.Context, msgIDs []driver.Value) (batchIDs []*fftypes.UUID, err error) {
+	return s.queryBatchIDs(ctx, sq.Select("batch_id").From("messages").Where(sq.Eq{"id": msgIDs}))
+}
+
+func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (batchIDs []*fftypes.UUID, err error) {
+	rows, _, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	batchIDs = []*fftypes.UUID{}
+	for rows.Next() {
+		var batchID *fftypes.UUID
+		err = rows.Scan(&batchID)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
+		}
+		// Only append non-nil batch IDs
+		if batchID != nil {
+			batchIDs = append(batchIDs, batchID)
+		}
+	}
+	return batchIDs, nil
 }
 
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, fr *database.FilterResult, err error) {

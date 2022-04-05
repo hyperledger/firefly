@@ -4,7 +4,10 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
-    "fftypes"
+    "ccache",
+    "Debugf",
+    "fftypes",
+    "txid"
   ],
   "go.testTimeout": "10s"
 }

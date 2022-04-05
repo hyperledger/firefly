@@ -18,6 +18,7 @@ package database
 
 import (
 	"context"
+	"database/sql/driver"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -104,6 +105,12 @@ type iMessageCollection interface {
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
+
+	// GetMessageBatchIDs - an optimized query to retrieve any non-null batch IDs for a list of message IDs
+	GetMessageBatchIDs(ctx context.Context, msgIDs []driver.Value) (batchIDs []*fftypes.UUID, err error)
+
+	// GetMessagesBatchIDsForDataIDs - an optimized query to retrieve any non-null batch IDs for a list of data IDs that might be attached to messages in batches
+	GetMessagesBatchIDsForDataIDs(ctx context.Context, dataIDs []driver.Value) (batchIDs []*fftypes.UUID, err error)
 }
 
 type iDataCollection interface {
