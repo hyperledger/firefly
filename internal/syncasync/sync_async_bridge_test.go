@@ -460,7 +460,7 @@ func TestEventCallbackTokenApprovalLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenApproval", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		EnrichedEvent: fftypes.EnrichedEvent{
@@ -624,7 +624,7 @@ func TestEventCallbackTokenApprovalNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenApproval", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		EnrichedEvent: fftypes.EnrichedEvent{
@@ -912,7 +912,7 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenApproval", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		approval := &fftypes.TokenApproval{
 			LocalID:    requestID,

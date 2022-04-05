@@ -219,7 +219,7 @@ func (sa *syncAsyncBridge) getTransferFromEvent(event *fftypes.EventDelivery) (t
 }
 
 func (sa *syncAsyncBridge) getApprovalFromEvent(event *fftypes.EventDelivery) (approval *fftypes.TokenApproval, err error) {
-	if approval, err = sa.database.GetTokenApproval(sa.ctx, event.Reference); err != nil {
+	if approval, err = sa.database.GetTokenApprovalByID(sa.ctx, event.Reference); err != nil {
 		return nil, err
 	}
 

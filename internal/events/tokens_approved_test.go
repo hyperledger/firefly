@@ -193,7 +193,7 @@ func TestPersistApprovalGetUniqueApprovalFail(t *testing.T) {
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenApprovalByProtocolIDAndPoolID", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
 	assert.False(t, valid)
@@ -220,11 +220,11 @@ func TestPersistApprovalGetApprovalFail(t *testing.T) {
 		},
 	}}
 
-	mdi.On("GetTokenApprovalByProtocolIDAndPoolID", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenApproval", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
 	assert.False(t, valid)
@@ -269,11 +269,11 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 		},
 	}}
 
-	mdi.On("GetTokenApprovalByProtocolIDAndPoolID", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenApproval", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
+	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil)
@@ -311,11 +311,11 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 		},
 	}}
 
-	mdi.On("GetTokenApprovalByProtocolIDAndPoolID", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenApproval", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
+	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(fmt.Errorf("pop"))
@@ -350,8 +350,8 @@ func TestUpdateExistingTokenApproval(t *testing.T) {
 		LocalID: fftypes.NewUUID(),
 	}
 
-	mdi.On("GetTokenApprovalByProtocolIDAndPoolID", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(existingApproval, nil)
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(existingApproval, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {

@@ -74,14 +74,14 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 			return valid, err
 		}
 
-		existing, err := em.database.GetTokenApprovalByProtocolIDAndPoolID(ctx, approval.Connector, approval.ProtocolID, pool.ID)
+		existing, err := em.database.GetTokenApproval(ctx, approval.Connector, approval.ProtocolID, pool.ID)
 		if err != nil {
 			return false, err
 		}
 
 		// If there's not an existing approval, look for approvals with a matching local ID
 		if existing == nil {
-			existingLocal, err := em.database.GetTokenApproval(ctx, approval.LocalID)
+			existingLocal, err := em.database.GetTokenApprovalByID(ctx, approval.LocalID)
 			if err != nil {
 				return false, err
 			}
