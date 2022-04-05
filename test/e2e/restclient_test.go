@@ -584,6 +584,8 @@ func TokenApproval(t *testing.T, client *resty.Client, approval *fftypes.TokenAp
 	t.Log("statusCode:", resp.StatusCode())
 	t.Log("response:", resp.String())
 	t.Log("request body", resp.Request.Body)
+	t.Logf("URL: %s", resp.Request.URL)
+	t.Logf("URL: %s", resp.Request.Body)
 	expected := 202
 	if confirm {
 		expected = 200
@@ -666,10 +668,6 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 		SetBody(&body).
 		SetResult(&sub).
 		Post(path)
-	t.Logf("Create contract listener")
-	t.Log("path:", path)
-	t.Log("statusCode:", resp.StatusCode())
-	t.Log("response:", resp.String())
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return &sub

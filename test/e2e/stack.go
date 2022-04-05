@@ -27,9 +27,7 @@ type Stack struct {
 	BlockchainProvider    string    `json:"blockchainProvider"`
 	TokenProviders        []string  `json:"tokenProviders"`
 	Members               []*Member `json:"members,omitempty"`
-	EthConnectHostname    string    `json:"ethConnectHostname"`
-	EthConnectUsername    string    `json:"ethConnectUsername"`
-	EthConnectPassword    string    `json:"ethConnectPassword"`
+	ContractAddress       string    `json:"contractAddress"`
 }
 
 type Member struct {
@@ -43,6 +41,9 @@ type Member struct {
 	BlockchainHostname   string `json:"blockchainHostname,omitempty"`
 	BlockchainUsername   string `json:"blockchainUsername,omitempty"`
 	BlockchainPassword   string `json:"blockchainPassword,omitempty"`
+	EthConnectHostname   string `json:"ethConnectHostname"`
+	EthConnectUsername   string `json:"ethConnectUsername"`
+	EthConnectPassword   string `json:"ethConnectPassword"`
 }
 
 func GetMemberPort(filename string, n int) (int, error) {
