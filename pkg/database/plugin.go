@@ -434,11 +434,11 @@ type iTokenApprovalCollection interface {
 	// UpsertTokenApproval - Upsert a token approval
 	UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error
 
-	// GetTokenApproval - Get a token approval by ID
-	GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
+	// GetTokenApprovalByID - Get a token approval by ID
+	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
-	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenApproval, error)
+	// GetTokenApproval - Get a token approval by connector, protocolID, and poolID
+	GetTokenApproval(ctx context.Context, connector, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, filter Filter) ([]*fftypes.TokenApproval, *FilterResult, error)
