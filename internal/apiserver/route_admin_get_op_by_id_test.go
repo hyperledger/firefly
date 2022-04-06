@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2021 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,14 +25,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetBlockchainEventByID(t *testing.T) {
-	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/blockchainevents/id12345", nil)
+func TestAdminGetOperationByID(t *testing.T) {
+	o, r := newTestAdminServer()
+	req := httptest.NewRequest("GET", "/admin/api/v1/operations/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetBlockchainEventByID", mock.Anything, "mynamespace", "id12345").
-		Return(&fftypes.BlockchainEvent{}, nil)
+	o.On("GetOperationByID", mock.Anything, "abcd12345").
+		Return(&fftypes.Operation{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

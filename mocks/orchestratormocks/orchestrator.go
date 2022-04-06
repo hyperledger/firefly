@@ -261,13 +261,13 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	return r0, r1, r2
 }
 
-// GetBlockchainEventByID provides a mock function with given fields: ctx, id
-func (_m *Orchestrator) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
-	ret := _m.Called(ctx, id)
+// GetBlockchainEventByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetBlockchainEventByID(ctx context.Context, ns string, id string) (*fftypes.BlockchainEvent, error) {
+	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BlockchainEvent); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.BlockchainEvent); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
@@ -275,8 +275,8 @@ func (_m *Orchestrator) GetBlockchainEventByID(ctx context.Context, id *fftypes.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -937,8 +937,31 @@ func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFi
 	return r0, r1, r2
 }
 
-// GetOperationByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetOperationByID(ctx context.Context, ns string, id string) (*fftypes.Operation, error) {
+// GetOperationByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*fftypes.Operation, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Operation); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOperationByIDNamespaced provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetOperationByIDNamespaced(ctx context.Context, ns string, id string) (*fftypes.Operation, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Operation
@@ -960,8 +983,40 @@ func (_m *Orchestrator) GetOperationByID(ctx context.Context, ns string, id stri
 	return r0, r1
 }
 
-// GetOperations provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
+// GetOperations provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.Operation); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Operation)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetOperationsNamespaced provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Operation

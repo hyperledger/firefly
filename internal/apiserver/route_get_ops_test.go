@@ -31,7 +31,7 @@ func TestGetOperations(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperations", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetOperationsNamespaced", mock.Anything, "mynamespace", mock.Anything).
 		Return([]*fftypes.Operation{}, nil, nil)
 	r.ServeHTTP(res, req)
 

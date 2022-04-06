@@ -21,25 +21,24 @@ import (
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var adminGetConfigRecord = &oapispec.Route{
-	Name:   "adminGetConfigRecord",
-	Path:   "config/records/{key}",
+var adminGetOpByID = &oapispec.Route{
+	Name:   "adminGetOpByID",
+	Path:   "operations/{opid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: i18n.MsgTBD},
+		{Name: "opid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.ConfigRecordQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return fftypes.JSONAnyPtr("{}") },
+	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		configRecord, err := getOr(r.Ctx).GetConfigRecord(r.Ctx, r.PP["key"])
-		return configRecord.Value, err
+		output, err = getOr(r.Ctx).GetOperationByID(r.Ctx, r.PP["opid"])
+		return output, err
 	},
 }

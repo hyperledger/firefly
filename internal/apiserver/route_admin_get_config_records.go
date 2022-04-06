@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getConfigRecords = &oapispec.Route{
-	Name:            "getConfigRecords",
+var adminGetConfigRecords = &oapispec.Route{
+	Name:            "adminGetConfigRecords",
 	Path:            "config/records",
 	Method:          http.MethodGet,
 	PathParams:      nil,

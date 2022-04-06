@@ -25,21 +25,17 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var adminGetConfigRecord = &oapispec.Route{
-	Name:   "adminGetConfigRecord",
-	Path:   "config/records/{key}",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: i18n.MsgTBD},
-	},
+var adminGetOps = &oapispec.Route{
+	Name:            "adminGetOps",
+	Path:            "operations",
+	Method:          http.MethodGet,
 	QueryParams:     nil,
-	FilterFactory:   database.ConfigRecordQueryFactory,
+	FilterFactory:   database.OperationQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return fftypes.JSONAnyPtr("{}") },
+	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		configRecord, err := getOr(r.Ctx).GetConfigRecord(r.Ctx, r.PP["key"])
-		return configRecord.Value, err
+		return filterResult(getOr(r.Ctx).GetOperations(r.Ctx, r.Filter))
 	},
 }
