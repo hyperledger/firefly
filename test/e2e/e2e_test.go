@@ -216,12 +216,12 @@ func beforeE2ETest(t *testing.T) *testState {
 		ts.ethNode2.SetBaseURL(ethNodeURL2)
 
 		if stack.Members[0].BlockchainUsername != "" && stack.Members[0].BlockchainPassword != "" {
-			t.Log("Setting auth for Ethereum node")
+			t.Log("Setting auth for Ethereum node 1")
 			ts.ethNode1.SetBasicAuth(stack.Members[0].BlockchainUsername, stack.Members[0].BlockchainPassword)
 		}
 
 		if stack.Members[1].BlockchainUsername != "" && stack.Members[1].BlockchainPassword != "" {
-			t.Log("Setting auth for Ethereum node")
+			t.Log("Setting auth for Ethereum node 2")
 			ts.ethNode2.SetBasicAuth(stack.Members[1].BlockchainUsername, stack.Members[1].BlockchainPassword)
 		}
 	}

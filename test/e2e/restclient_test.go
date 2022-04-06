@@ -574,11 +574,8 @@ func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 		SetQueryParam("pool", poolID.String()).
 		SetResult(&approvals).
 		Get(path)
-	t.Logf(resp.Request.URL)
-	t.Logf(resp.Request.RawRequest.URL.RawQuery)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	t.Logf("num approvals: %d", len(approvals))
 	return approvals
 }
 
