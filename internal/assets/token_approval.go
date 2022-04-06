@@ -122,7 +122,8 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) err
 		return err
 	}
 
-	return s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
+	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
+	return err
 }
 
 func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) (err error) {

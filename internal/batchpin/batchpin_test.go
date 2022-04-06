@@ -96,7 +96,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchPinData)
 		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts, "payload1")
 	assert.NoError(t, err)
@@ -139,7 +139,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchPinData)
 		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts, "payload1")
 	assert.NoError(t, err)

@@ -74,7 +74,7 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.NoError(t, err)
@@ -112,7 +112,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.NoError(t, err)
@@ -243,7 +243,7 @@ func TestApprovalUnknownPoolSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == tokenPools[0] && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.NoError(t, err)
@@ -381,7 +381,7 @@ func TestApprovalFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.EqualError(t, err, "pop")
@@ -482,7 +482,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	msa.On("WaitForTokenApproval", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {

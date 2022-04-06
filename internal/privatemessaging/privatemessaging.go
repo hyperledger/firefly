@@ -251,7 +251,7 @@ func (pm *privateMessaging) submitBlobTransfersToDX(ctx context.Context, tracker
 		go func(tracker *blobTransferTracker) {
 			defer wg.Done()
 			log.L(ctx).Debugf("Initiating DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
-			if err := pm.operations.RunOperation(ctx, tracker.op); err != nil {
+			if _, err := pm.operations.RunOperation(ctx, tracker.op); err != nil {
 				log.L(ctx).Errorf("Failed to initiate DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
 				if firstError == nil {
 					firstError = err
@@ -321,7 +321,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 		}
 
 		// Then initiate the batch transfer
-		if err = pm.operations.RunOperation(ctx, sendBatchOp); err != nil {
+		if _, err = pm.operations.RunOperation(ctx, sendBatchOp); err != nil {
 			return err
 		}
 	}

@@ -168,14 +168,14 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		}
 		data := op.Data.(transferBlobData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil)
+	})).Return(nil, nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		if op.Type != fftypes.OpTypeDataExchangeSendBatch {
 			return false
 		}
 		data := op.Data.(batchSendData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(nil)
 
@@ -392,7 +392,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferBlobData)
 		return op.Type == fftypes.OpTypeDataExchangeSendBlob && *data.Node.ID == *node2.ID
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: fftypes.BatchPersisted{
@@ -449,14 +449,14 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 		}
 		data := op.Data.(transferBlobData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil)
+	})).Return(nil, nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		if op.Type != fftypes.OpTypeDataExchangeSendBatch {
 			return false
 		}
 		data := op.Data.(batchSendData)
 		return *data.Node.ID == *node2.ID
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	mdi.On("GetBlobMatchingHash", pm.ctx, blob1).Return(&fftypes.Blob{
 		Hash:       blob1,

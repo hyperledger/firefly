@@ -82,5 +82,6 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	if bp.metrics.IsMetricsEnabled() {
 		bp.metrics.CountBatchPin()
 	}
-	return bp.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, "payloadRef"))
+	_, err := bp.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, payloadRef))
+	return err
 }
