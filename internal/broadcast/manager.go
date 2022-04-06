@@ -147,8 +147,9 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	if err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch, &state.Persisted), operations.RemainPendingOnFailure); err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payload=%s", batch.ID, batch.Author, batch.Key, state.Persisted.PayloadRef)
-	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
+	payloadRef := op.Output.GetString("payloadRef")
+	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payloadRef=%s", batch.ID, batch.Author, batch.Key, payloadRef)
+	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, payloadRef)
 }
 
 func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data fftypes.DataArray) error {

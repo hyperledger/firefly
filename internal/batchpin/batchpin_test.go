@@ -89,6 +89,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 		assert.Equal(t, fftypes.OpTypeBlockchainPinBatch, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.TX.ID, *op.Transaction)
+		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
 		return true
 	})).Return(nil)
 	mmi.On("IsMetricsEnabled").Return(false)
@@ -97,7 +98,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil)
 
-	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
+	err := bp.SubmitPinnedBatch(ctx, batch, contexts, "payload1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -131,6 +132,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 		assert.Equal(t, fftypes.OpTypeBlockchainPinBatch, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.TX.ID, *op.Transaction)
+		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
 		return true
 	})).Return(nil)
 	mmi.On("IsMetricsEnabled").Return(true)
@@ -139,7 +141,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil)
 
-	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
+	err := bp.SubmitPinnedBatch(ctx, batch, contexts, "payload1")
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -170,7 +172,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 
 	mom.On("AddOrReuseOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mmi.On("IsMetricsEnabled").Return(false)
-	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
+	err := bp.SubmitPinnedBatch(ctx, batch, contexts, "payload1")
 	assert.Regexp(t, "pop", err)
 
 }

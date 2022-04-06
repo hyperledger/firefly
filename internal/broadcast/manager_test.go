@@ -248,11 +248,15 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mom := bm.operations.(*operationmocks.Manager)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
-		data := op.Data.(uploadBatchData)
-		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
+	var op *fftypes.Operation
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		op = args[1].(*fftypes.Operation)
+	})
+	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(nil)
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(pop *fftypes.PreparedOperation) bool {
+		data := pop.Data.(uploadBatchData)
+		op.Output = getUploadBatchOutputs("payload1")
+		return pop.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
 	}), operations.RemainPendingOnFailure).Return(nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
@@ -280,11 +284,15 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mom := bm.operations.(*operationmocks.Manager)
-	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
-		data := op.Data.(uploadBatchData)
-		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
+	var op *fftypes.Operation
+	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		op = args[1].(*fftypes.Operation)
+	})
+	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(fmt.Errorf("pop"))
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(pop *fftypes.PreparedOperation) bool {
+		data := pop.Data.(uploadBatchData)
+		op.Output = getUploadBatchOutputs("payload1")
+		return pop.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
 	}), operations.RemainPendingOnFailure).Return(nil)
 
 	err := bm.dispatchBatch(context.Background(), state)

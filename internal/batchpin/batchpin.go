@@ -31,7 +31,7 @@ import (
 type Submitter interface {
 	fftypes.Named
 
-	SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) error
+	SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
@@ -67,14 +67,14 @@ func (bp *batchPinSubmitter) Name() string {
 	return "BatchPinSubmitter"
 }
 
-func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) error {
+func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
 	// The pending blockchain transaction
 	op := fftypes.NewOperation(
 		bp.blockchain,
 		batch.Namespace,
 		batch.TX.ID,
 		fftypes.OpTypeBlockchainPinBatch)
-	addBatchPinInputs(op, batch.ID, contexts)
+	addBatchPinInputs(op, batch.ID, contexts, payloadRef)
 	if err := bp.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
@@ -82,5 +82,5 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	if bp.metrics.IsMetricsEnabled() {
 		bp.metrics.CountBatchPin()
 	}
-	return bp.operations.RunOperation(ctx, opBatchPin(op, batch, contexts))
+	return bp.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, "payloadRef"))
 }

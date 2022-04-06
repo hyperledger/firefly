@@ -177,7 +177,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		return *data.Node.ID == *node2.ID
 	})).Return(nil)
 
-	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
+	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(nil)
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: fftypes.BatchPersisted{
@@ -233,7 +233,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
-	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: fftypes.BatchPersisted{
@@ -464,7 +464,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	}, nil)
 
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
-	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: fftypes.BatchPersisted{

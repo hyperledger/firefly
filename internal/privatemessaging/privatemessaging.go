@@ -169,7 +169,7 @@ func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, state *batc
 	}
 
 	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", state.Persisted.ID, state.Persisted.Author, state.Persisted.Key, state.Persisted.Group)
-	return pm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
+	return pm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, "" /* no payloadRef for private */)
 }
 
 func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *batch.DispatchState) error {

@@ -43,7 +43,7 @@ type BatchHeader struct {
 	Namespace string    `json:"namespace"`
 	Node      *UUID     `json:"node,omitempty"`
 	SignerRef
-	Group   *Bytes32 `jdon:"group,omitempty"`
+	Group   *Bytes32 `json:"group,omitempty"`
 	Created *FFTime  `json:"created"`
 }
 
@@ -76,11 +76,10 @@ type Batch struct {
 // BatchPersisted is the structure written to the database
 type BatchPersisted struct {
 	BatchHeader
-	Hash       *Bytes32       `json:"hash"`
-	Manifest   *JSONAny       `json:"manifest"`
-	TX         TransactionRef `json:"tx"`
-	PayloadRef string         `json:"payloadRef,omitempty"`
-	Confirmed  *FFTime        `json:"confirmed"`
+	Hash      *Bytes32       `json:"hash"`
+	Manifest  *JSONAny       `json:"manifest"`
+	TX        TransactionRef `json:"tx"`
+	Confirmed *FFTime        `json:"confirmed"`
 }
 
 // BatchPayload contains the full JSON of the messages and data, but
