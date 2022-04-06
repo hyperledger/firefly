@@ -24,7 +24,7 @@ nav_order: 4
   - Can be sent in-line, uploaded in advanced, or received from other parties
   - Can include smaller JSON payloads suitable for database storage
     - These can be verified against a `datatype`
-  - Can include references to large (multi megabyte/gigabyte) BLOB data
+  - Can include references to large (multi megabyte/gigabyte) Blob data
 - A `group` specifies who has visibility to the data
   - The author must be included in the group - auto-added if omitted
   - Can be specified in-line in the message by listing recipients directly
@@ -210,7 +210,7 @@ Here we make two API calls.
 
 2. Privately send a message referring to that data
 
-- The BLOB is sent privately to each party
+- The Blob is sent privately to each party
 - A pin goes to the blockchain
 - The metadata goes into a batch with the message
 
@@ -228,7 +228,7 @@ curl -sLo - https://github.com/hyperledger/firefly/raw/main/docs/firefly_logo.pn
    http://localhost:5000/api/v1/namespaces/default/data
 ```
 
-### Example data response from BLOB upload
+### Example data response from Blob upload
 
 Status: `200 OK` - your data is uploaded to your local FireFly node
 

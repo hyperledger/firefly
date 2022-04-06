@@ -495,6 +495,14 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitOperationComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.operations = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
@@ -597,6 +605,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.mpm.On("Start").Return(nil)
 	or.mam.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
+	or.mom.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -614,6 +623,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mti.On("Start").Return(nil)
 	or.mmi.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
+	or.mom.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
@@ -622,6 +632,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mti.On("WaitStop").Return(nil)
 	or.mdm.On("WaitStop").Return(nil)
 	or.msd.On("WaitStop").Return(nil)
+	or.mom.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()

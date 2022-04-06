@@ -38,7 +38,9 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -46,15 +48,22 @@ import (
 var testNodeID = fftypes.NewUUID()
 
 func newTestEventManager(t *testing.T) (*eventManager, func()) {
-	return newTestEventManagerCommon(t, false)
+	return newTestEventManagerCommon(t, false, false)
 }
 
 func newTestEventManagerWithMetrics(t *testing.T) (*eventManager, func()) {
-	return newTestEventManagerCommon(t, true)
+	return newTestEventManagerCommon(t, true, false)
 }
 
-func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func()) {
+func newTestEventManagerWithDBConcurrency(t *testing.T) (*eventManager, func()) {
+	return newTestEventManagerCommon(t, false, true)
+}
+
+func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*eventManager, func()) {
 	config.Reset()
+	config.Set(config.BlobReceiverWorkerCount, 1)
+	config.Set(config.BlobReceiverWorkerBatchTimeout, "1s")
+	logrus.SetLevel(logrus.DebugLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
@@ -77,15 +86,21 @@ func newTestEventManagerCommon(t *testing.T, metrics bool) (*eventManager, func(
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
+	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
+	mockRunAsGroupPassthrough(mdi)
 	assert.NoError(t, err)
 	return em, cancel
+}
+
+func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		fn := a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
 }
 
 func TestStartStop(t *testing.T) {
@@ -129,6 +144,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	msd := &shareddownloadmocks.Manager{}
 	mm := &metricsmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false}).Maybe()
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
 	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper)
 	assert.Regexp(t, "FF10172", err)

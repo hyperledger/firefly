@@ -20,12 +20,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +41,8 @@ func TestBoundCallbacks(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mti := &tokenmocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}
-	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, ss: mss}
+	mom := &operationmocks.Manager{}
+	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, ss: mss, om: mom}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
@@ -52,27 +56,27 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.BlockchainOpUpdate(opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
-	assert.EqualError(t, err, "pop")
+	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{
+		ID:             opID,
+		Status:         fftypes.OpStatusFailed,
+		BlockchainTXID: "0xffffeeee",
+		ErrorMessage:   "error info",
+		Output:         info,
+	}).Return()
 
-	mei.On("OperationUpdate", mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
-	assert.EqualError(t, err, "pop")
+	bc.BlockchainOpUpdate(mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 
-	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, mock.Anything).Return(fmt.Errorf("pop"))
-	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
-		Error: "error info", Info: info,
-	})
-	assert.EqualError(t, err, "pop")
+	bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
 
-	mei.On("PrivateBLOBReceived", mdx, "peer1", *hash, int64(12345), "ns1/id1").Return(fmt.Errorf("pop"))
-	err = bc.PrivateBLOBReceived("peer1", *hash, 12345, "ns1/id1")
-	assert.EqualError(t, err, "pop")
+	mde := &dataexchangemocks.DXEvent{}
+	mom.On("TransferResult", mdx, mde).Return()
+	mei.On("DXEvent", mdx, mde).Return()
 
-	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return("manifest data", fmt.Errorf("pop"))
-	_, err = bc.MessageReceived("peer1", []byte{})
-	assert.EqualError(t, err, "pop")
+	mde.On("Type").Return(dataexchange.DXEventTypeTransferResult).Once()
+	bc.DXEvent(mde)
+
+	mde.On("Type").Return(dataexchange.DXEventTypeMessageReceived).Once()
+	bc.DXEvent(mde)
 
 	mei.On("TokenPoolCreated", mti, pool).Return(fmt.Errorf("pop"))
 	err = bc.TokenPoolCreated(mti, pool)
@@ -94,7 +98,6 @@ func TestBoundCallbacks(t *testing.T) {
 	_, err = bc.SharedStorageBatchDownloaded("ns1", "payload1", []byte(`{}`))
 	assert.EqualError(t, err, "pop")
 
-	mei.On("SharedStorageBLOBDownloaded", mss, *hash, int64(12345), "payload1").Return(fmt.Errorf("pop"))
-	err = bc.SharedStorageBLOBDownloaded(*hash, 12345, "payload1")
-	assert.EqualError(t, err, "pop")
+	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1").Return()
+	bc.SharedStorageBlobDownloaded(*hash, 12345, "payload1")
 }

@@ -1775,8 +1775,31 @@ func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
-// GetTokenApproval provides a mock function with given fields: ctx, localID
-func (_m *Plugin) GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
+// GetTokenApproval provides a mock function with given fields: ctx, connector, protocolID, poolID
+func (_m *Plugin) GetTokenApproval(ctx context.Context, connector string, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error) {
+	ret := _m.Called(ctx, connector, protocolID, poolID)
+
+	var r0 *fftypes.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.UUID) *fftypes.TokenApproval); ok {
+		r0 = rf(ctx, connector, protocolID, poolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenApproval)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, connector, protocolID, poolID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenApprovalByID provides a mock function with given fields: ctx, localID
+func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
 	ret := _m.Called(ctx, localID)
 
 	var r0 *fftypes.TokenApproval
@@ -1791,29 +1814,6 @@ func (_m *Plugin) GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, localID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, connector, protocolID
-func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenApproval, error) {
-	ret := _m.Called(ctx, connector, protocolID)
-
-	var r0 *fftypes.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenApproval); ok {
-		r0 = rf(ctx, connector, protocolID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenApproval)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, connector, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2253,6 +2253,20 @@ func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
 	return r0
 }
 
+// InsertBlobs provides a mock function with given fields: ctx, blobs
+func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) error {
+	ret := _m.Called(ctx, blobs)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Blob) error); ok {
+		r0 = rf(ctx, blobs)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertBlockchainEvent provides a mock function with given fields: ctx, event
 func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) error {
 	ret := _m.Called(ctx, event)
@@ -2316,6 +2330,20 @@ func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) e
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.NextPin) error); ok {
 		r0 = rf(ctx, nextpin)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// InsertNonce provides a mock function with given fields: ctx, nonce
+func (_m *Plugin) InsertNonce(ctx context.Context, nonce *fftypes.Nonce) error {
+	ret := _m.Called(ctx, nonce)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
+		r0 = rf(ctx, nonce)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2547,6 +2575,20 @@ func (_m *Plugin) UpdateNextPin(ctx context.Context, sequence int64, update data
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64, database.Update) error); ok {
 		r0 = rf(ctx, sequence, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateNonce provides a mock function with given fields: ctx, nonce
+func (_m *Plugin) UpdateNonce(ctx context.Context, nonce *fftypes.Nonce) error {
+	ret := _m.Called(ctx, nonce)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
+		r0 = rf(ctx, nonce)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2827,20 +2869,6 @@ func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace, 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertNonceNext provides a mock function with given fields: ctx, _a1
-func (_m *Plugin) UpsertNonceNext(ctx context.Context, _a1 *fftypes.Nonce) error {
-	ret := _m.Called(ctx, _a1)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
-		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}

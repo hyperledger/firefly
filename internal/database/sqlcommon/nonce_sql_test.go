@@ -38,36 +38,32 @@ func TestNoncesE2EWithDB(t *testing.T) {
 
 	// Create a new nonce entry
 	nonceZero := &fftypes.Nonce{
-		Context: fftypes.NewRandB32(),
-		Group:   fftypes.NewRandB32(),
-		Topic:   "topic12345",
+		Hash: fftypes.NewRandB32(),
 	}
-	err := s.UpsertNonceNext(ctx, nonceZero)
+	err := s.InsertNonce(ctx, nonceZero)
 	assert.NoError(t, err)
 
 	// Check we get the exact same nonce back
-	nonceRead, err := s.GetNonce(ctx, nonceZero.Context)
+	nonceRead, err := s.GetNonce(ctx, nonceZero.Hash)
 	assert.NoError(t, err)
 	assert.NotNil(t, nonceRead)
 	nonceJson, _ := json.Marshal(&nonceZero)
 	nonceReadJson, _ := json.Marshal(&nonceRead)
 	assert.Equal(t, string(nonceJson), string(nonceReadJson))
 
-	// Update the nonce (this is testing what's possible at the database layer,
-	// and does not account for the verification that happens at the higher level)
-	var nonceUpdated fftypes.Nonce
-	nonceUpdated = *nonceZero
+	// Update the nonce
+	nonceUpdated := fftypes.Nonce{
+		Hash:  nonceZero.Hash,
+		Nonce: 12345,
+	}
 
-	// Increment a couple of times
-	err = s.UpsertNonceNext(context.Background(), &nonceUpdated)
+	// Update nonce
+	err = s.UpdateNonce(context.Background(), &nonceUpdated)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), nonceUpdated.Nonce)
-	err = s.UpsertNonceNext(context.Background(), &nonceUpdated)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(2), nonceUpdated.Nonce)
+	assert.Equal(t, int64(12345), nonceUpdated.Nonce)
 
 	// Check we get the exact same data back
-	nonceRead, err = s.GetNonce(ctx, nonceUpdated.Context)
+	nonceRead, err = s.GetNonce(ctx, nonceUpdated.Hash)
 	assert.NoError(t, err)
 	nonceJson, _ = json.Marshal(&nonceUpdated)
 	nonceReadJson, _ = json.Marshal(&nonceRead)
@@ -76,10 +72,8 @@ func TestNoncesE2EWithDB(t *testing.T) {
 	// Query back the nonce
 	fb := database.NonceQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("context", nonceUpdated.Context),
+		fb.Eq("hash", nonceUpdated.Hash),
 		fb.Eq("nonce", nonceUpdated.Nonce),
-		fb.Eq("group", nonceUpdated.Group),
-		fb.Eq("topic", nonceUpdated.Topic),
 	)
 	nonceRes, res, err := s.GetNonces(ctx, filter.Count(true))
 	assert.NoError(t, err)
@@ -89,7 +83,7 @@ func TestNoncesE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(nonceJson), string(nonceReadJson))
 
 	// Test delete
-	err = s.DeleteNonce(ctx, nonceUpdated.Context)
+	err = s.DeleteNonce(ctx, nonceUpdated.Hash)
 	assert.NoError(t, err)
 	nonces, _, err := s.GetNonces(ctx, filter)
 	assert.NoError(t, err)
@@ -97,52 +91,38 @@ func TestNoncesE2EWithDB(t *testing.T) {
 
 }
 
-func TestUpsertNonceFailBegin(t *testing.T) {
+func TestInsertNonceFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertNonceNext(context.Background(), &fftypes.Nonce{})
+	err := s.InsertNonce(context.Background(), &fftypes.Nonce{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertNonceFailSelect(t *testing.T) {
+func TestInsertNonceFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	err := s.UpsertNonceNext(context.Background(), &fftypes.Nonce{Context: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10115", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertNonceFailInsert(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNonceNext(context.Background(), &fftypes.Nonce{Context: fftypes.NewRandB32()})
+	err := s.InsertNonce(context.Background(), &fftypes.Nonce{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertNonceFailScan(t *testing.T) {
+func TestUpdateNonceFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}).AddRow())
-	mock.ExpectRollback()
-	err := s.UpsertNonceNext(context.Background(), &fftypes.Nonce{Context: fftypes.NewRandB32()})
-	assert.Regexp(t, "FF10121", err)
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.UpdateNonce(context.Background(), &fftypes.Nonce{})
+	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertNonceFailUpdate(t *testing.T) {
+func TestUpdateNonceFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"nonce", "sequence"}).AddRow(int64(12345), int64(11111)))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNonceNext(context.Background(), &fftypes.Nonce{Context: fftypes.NewRandB32()})
+	err := s.UpdateNonce(context.Background(), &fftypes.Nonce{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -157,7 +137,7 @@ func TestGetNonceSelectFail(t *testing.T) {
 
 func TestGetNonceNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context", "nonce", "group_hash", "topic"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash", "nonce", "group_hash", "topic"}))
 	msg, err := s.GetNonce(context.Background(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
@@ -166,7 +146,7 @@ func TestGetNonceNotFound(t *testing.T) {
 
 func TestGetNonceScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
 	_, err := s.GetNonce(context.Background(), fftypes.NewRandB32())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -175,7 +155,7 @@ func TestGetNonceScanFail(t *testing.T) {
 func TestGetNonceQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("context", "")
+	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("hash", "")
 	_, _, err := s.GetNonces(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -183,15 +163,15 @@ func TestGetNonceQueryFail(t *testing.T) {
 
 func TestGetNonceBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("context", map[bool]bool{true: false})
+	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	_, _, err := s.GetNonces(context.Background(), f)
-	assert.Regexp(t, "FF10149.*context", err)
+	assert.Regexp(t, "FF10149.*hash", err)
 }
 
 func TestGetNonceReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
-	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("topic", "")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
+	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("hash", "")
 	_, _, err := s.GetNonces(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())

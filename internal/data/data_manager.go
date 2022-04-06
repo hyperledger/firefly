@@ -46,8 +46,8 @@ type Manager interface {
 	VerifyNamespaceExists(ctx context.Context, ns string) error
 
 	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
-	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
-	DownloadBLOB(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error)
+	UploadBlob(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
+	DownloadBlob(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error)
 	HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error)
 	WaitStop()
 }

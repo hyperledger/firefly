@@ -26,8 +26,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -45,7 +47,12 @@ func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
 	mss := &sharedstoragemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mci := &shareddownloadmocks.Callbacks{}
-	operations, err := operations.NewOperationsManager(context.Background(), mdi)
+	mdm := &datamocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: false,
+	})
+	operations, err := operations.NewOperationsManager(context.Background(), mdi, txHelper)
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -121,7 +128,8 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
 
 	mdx := dm.dataexchange.(*dataexchangemocks.Plugin)
-	mdx.On("UploadBLOB", mock.Anything, "ns1", *dataID, mock.Anything).Return("privateRef1", blobHash, int64(12345), nil)
+	mdx.On("UploadBlob", mock.Anything, "ns1", *dataID, mock.Anything).Return("", nil, int64(-1), fmt.Errorf("pop")).Twice()
+	mdx.On("UploadBlob", mock.Anything, "ns1", *dataID, mock.Anything).Return("privateRef1", blobHash, int64(12345), nil)
 
 	called := make(chan struct{})
 
@@ -129,7 +137,7 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
 	}).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, mock.Anything, fftypes.OpStatusPending, "pop", mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, mock.Anything, fftypes.OpStatusPending, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("ResolveOperation", mock.Anything, mock.Anything, fftypes.OpStatusSucceeded, "", fftypes.JSONObject{
 		"hash":         blobHash,
 		"size":         int64(12345),
@@ -139,8 +147,7 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 	}).Return(nil).Once()
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
-	mci.On("SharedStorageBLOBDownloaded", *blobHash, int64(12345), "privateRef1").Return(fmt.Errorf("pop")).Twice()
-	mci.On("SharedStorageBLOBDownloaded", *blobHash, int64(12345), "privateRef1").Return(nil)
+	mci.On("SharedStorageBlobDownloaded", *blobHash, int64(12345), "privateRef1").Return()
 
 	err := dm.InitiateDownloadBlob(dm.ctx, "ns1", txID, dataID, "ref1")
 	assert.NoError(t, err)

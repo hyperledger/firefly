@@ -54,6 +54,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mbp := &batchpinmocks.Submitter{}
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
+	mockRunAsGroupPassthrough(mdi)
 
 	mba.On("RegisterDispatcher",
 		pinnedPrivateDispatcherName,
@@ -82,6 +83,14 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mbi.On("Name").Return("utblk").Maybe()
 
 	return pm.(*privateMessaging), cancel
+}
+
+func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		fn := a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
 }
 
 func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
@@ -482,7 +491,7 @@ func TestTransferBlobsNoHash(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
+	_, err := pm.prepareBlobTransfers(pm.ctx, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{}},
 	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
 	assert.Regexp(t, "FF10379", err)
@@ -496,7 +505,7 @@ func TestTransferBlobsNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, nil)
 
-	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
+	_, err := pm.prepareBlobTransfers(pm.ctx, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
 	assert.Regexp(t, "FF10239", err)
@@ -513,10 +522,10 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	mom := pm.operations.(*operationmocks.Manager)
 
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(&fftypes.Blob{PayloadRef: "blob/1"}, nil)
-	mdx.On("TransferBLOB", pm.ctx, mock.Anything, "peer1", "blob/1").Return(nil)
+	mdx.On("TransferBlob", pm.ctx, mock.Anything, "peer1", "blob/1").Return(nil)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.transferBlobs(pm.ctx, fftypes.DataArray{
+	_, err := pm.prepareBlobTransfers(pm.ctx, fftypes.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 	}, fftypes.NewUUID(), newTestNode("node1", newTestOrg("org1")))
 	assert.Regexp(t, "pop", err)

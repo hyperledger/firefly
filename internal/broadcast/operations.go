@@ -148,7 +148,7 @@ func (bm *broadcastManager) uploadBatch(ctx context.Context, data uploadBatchDat
 func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData) (outputs fftypes.JSONObject, complete bool, err error) {
 
 	// Stream from the local data exchange ...
-	reader, err := bm.exchange.DownloadBLOB(ctx, data.Blob.PayloadRef)
+	reader, err := bm.exchange.DownloadBlob(ctx, data.Blob.PayloadRef)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, i18n.MsgDownloadBlobFailed, data.Blob.PayloadRef)
 	}

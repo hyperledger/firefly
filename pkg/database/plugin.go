@@ -314,8 +314,11 @@ type iGroupCollection interface {
 }
 
 type iNonceCollection interface {
-	// UpsertNonceNext - Upsert a context, assigning zero if not found, or the next nonce if it is
-	UpsertNonceNext(ctx context.Context, context *fftypes.Nonce) (err error)
+	// InsertNonce - Inserts a new nonce. Caller (batch processor) is responsible for ensuring it is the only active thread charge of assigning nonces to this context
+	InsertNonce(ctx context.Context, nonce *fftypes.Nonce) (err error)
+
+	// UpdateNonce - Updates an existing nonce. Caller (batch processor) is responsible for ensuring it is the only active thread charge of assigning nonces to this context
+	UpdateNonce(ctx context.Context, nonce *fftypes.Nonce) (err error)
 
 	// GetNonce - Get a context by hash
 	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
@@ -350,6 +353,9 @@ type iNextPinCollection interface {
 type iBlobCollection interface {
 	// InsertBlob - insert a blob
 	InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error)
+
+	// InsertBlobs performs a batch insert of blobs assured to be new records - fails if they already exist, so caller can fall back to upsert individually
+	InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) (err error)
 
 	// GetBlobMatchingHash - lookup first blob batching a hash
 	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)
@@ -428,11 +434,11 @@ type iTokenApprovalCollection interface {
 	// UpsertTokenApproval - Upsert a token approval
 	UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error
 
-	// GetTokenApproval - Get a token approval by ID
-	GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
+	// GetTokenApprovalByID - Get a token approval by ID
+	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
-	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenApproval, error)
+	// GetTokenApproval - Get a token approval by connector, protocolID, and poolID
+	GetTokenApproval(ctx context.Context, connector, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, filter Filter) ([]*fftypes.TokenApproval, *FilterResult, error)
@@ -865,10 +871,8 @@ var GroupQueryFactory = &queryFields{
 
 // NonceQueryFactory filter fields for nodes
 var NonceQueryFactory = &queryFields{
-	"context": &StringField{},
-	"nonce":   &Int64Field{},
-	"group":   &Bytes32Field{},
-	"topic":   &StringField{},
+	"hash":  &StringField{},
+	"nonce": &Int64Field{},
 }
 
 // NextPinQueryFactory filter fields for nodes

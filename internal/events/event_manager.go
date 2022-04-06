@@ -61,18 +61,15 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error
-	PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error
-	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (manifest string, err error)
+	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)
 
 	// Bound sharedstorage callbacks
 	SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns, payloadRef string, data []byte) (*fftypes.UUID, error)
-	SharedStorageBLOBDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) error
+	SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string)
 
 	// Bound token callbacks
 	TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) error
@@ -99,6 +96,7 @@ type eventManager struct {
 	messaging             privatemessaging.Manager
 	assets                assets.Manager
 	sharedDownload        shareddownload.Manager
+	blobReceiver          *blobReceiver
 	newEventNotifier      *eventNotifier
 	newPinNotifier        *eventNotifier
 	opCorrelationRetries  int
@@ -144,6 +142,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
+	em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 
 	var err error
 	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh, txHelper); err != nil {
@@ -157,6 +156,7 @@ func (em *eventManager) Start() (err error) {
 	err = em.subManager.start()
 	if err == nil {
 		em.aggregator.start()
+		em.blobReceiver.start()
 	}
 	return err
 }
@@ -187,6 +187,7 @@ func (em *eventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
 
 func (em *eventManager) WaitStop() {
 	em.subManager.close()
+	em.blobReceiver.stop()
 	<-em.aggregator.eventPoller.closed
 }
 

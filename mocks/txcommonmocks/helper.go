@@ -14,13 +14,13 @@ type Helper struct {
 	mock.Mock
 }
 
-// AddBlockchainTX provides a mock function with given fields: ctx, id, blockchainTXID
-func (_m *Helper) AddBlockchainTX(ctx context.Context, id *fftypes.UUID, blockchainTXID string) error {
-	ret := _m.Called(ctx, id, blockchainTXID)
+// AddBlockchainTX provides a mock function with given fields: ctx, tx, blockchainTXID
+func (_m *Helper) AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, blockchainTXID string) error {
+	ret := _m.Called(ctx, tx, blockchainTXID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string) error); ok {
-		r0 = rf(ctx, id, blockchainTXID)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction, string) error); ok {
+		r0 = rf(ctx, tx, blockchainTXID)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -1067,6 +1067,7 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
+	wsm.AssertExpectations(t)
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {
@@ -1079,19 +1080,24 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
+	wsm.AssertExpectations(t)
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
 	e, cancel := newTestEthereum()
-	cancel()
+	s := make(chan []byte, 1)
+	s <- []byte(`[]`)
 	r := make(chan []byte)
 	wsm := e.wsconn.(*wsmocks.WSClient)
-	close(r)
-	wsm.On("Receive").Return((<-chan []byte)(r))
-	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	wsm.On("Receive").Return((<-chan []byte)(s))
+	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		go cancel()
+		close(r)
+	}).Return(fmt.Errorf("pop"))
 	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
+	wsm.AssertExpectations(t)
 }
 
 func TestHandleReceiptTXSuccess(t *testing.T) {
@@ -1130,6 +1136,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
   }`)
 
 	em.On("BlockchainOpUpdate",
+		e,
 		operationID,
 		fftypes.OpStatusSucceeded,
 		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
@@ -1138,8 +1145,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	err = e.handleReceipt(context.Background(), reply)
-	assert.NoError(t, err)
+	e.handleReceipt(context.Background(), reply)
 
 }
 
@@ -1170,6 +1176,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 
 	em := e.callbacks.(*blockchainmocks.Callbacks)
 	txsu := em.On("BlockchainOpUpdate",
+		e,
 		operationID,
 		fftypes.OpStatusFailed,
 		"",
@@ -1187,7 +1194,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	<-done
 }
 
-func TestHandleReceiptNoRequestID(t *testing.T) {
+func TestHandleMsgBatchBadDAta(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
@@ -1201,8 +1208,7 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	err = e.handleReceipt(context.Background(), reply)
-	assert.NoError(t, err)
+	e.handleReceipt(context.Background(), reply)
 }
 
 func TestHandleReceiptBadRequestID(t *testing.T) {
@@ -1219,8 +1225,7 @@ func TestHandleReceiptBadRequestID(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	err = e.handleReceipt(context.Background(), reply)
-	assert.NoError(t, err)
+	e.handleReceipt(context.Background(), reply)
 }
 
 func TestFormatNil(t *testing.T) {

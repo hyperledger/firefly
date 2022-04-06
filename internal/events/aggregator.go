@@ -22,6 +22,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -42,19 +43,20 @@ const (
 )
 
 type aggregator struct {
-	ctx           context.Context
-	database      database.Plugin
-	definitions   definitions.DefinitionHandlers
-	identity      identity.Manager
-	data          data.Manager
-	eventPoller   *eventPoller
-	verifierType  fftypes.VerifierType
-	rewindBatches chan fftypes.UUID
-	queuedRewinds chan fftypes.UUID
-	retry         *retry.Retry
-	metrics       metrics.Manager
-	batchCache    *ccache.Cache
-	batchCacheTTL time.Duration
+	ctx              context.Context
+	database         database.Plugin
+	definitions      definitions.DefinitionHandlers
+	identity         identity.Manager
+	data             data.Manager
+	eventPoller      *eventPoller
+	verifierType     fftypes.VerifierType
+	rewindBatches    chan fftypes.UUID
+	queuedRewindsMux sync.Mutex
+	queuedRewinds    map[fftypes.UUID]bool
+	retry            *retry.Retry
+	metrics          metrics.Manager
+	batchCache       *ccache.Cache
+	batchCacheTTL    time.Duration
 }
 
 type batchCacheEntry struct {
@@ -72,7 +74,6 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 		data:          dm,
 		verifierType:  bi.VerifierType(),
 		rewindBatches: make(chan fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
-		queuedRewinds: make(chan fftypes.UUID, batchSize),
 		metrics:       mm,
 		batchCacheTTL: config.GetDuration(config.BatchCacheTTL),
 	}
@@ -117,7 +118,12 @@ func (ag *aggregator) batchRewindListener() {
 	for {
 		select {
 		case uuid := <-ag.rewindBatches:
-			ag.queuedRewinds <- uuid
+			ag.queuedRewindsMux.Lock()
+			if ag.queuedRewinds == nil {
+				ag.queuedRewinds = make(map[fftypes.UUID]bool)
+			}
+			ag.queuedRewinds[uuid] = true
+			ag.queuedRewindsMux.Unlock()
 			ag.eventPoller.shoulderTap()
 		case <-ag.ctx.Done():
 			return
@@ -125,39 +131,49 @@ func (ag *aggregator) batchRewindListener() {
 	}
 }
 
-func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
-	l := log.L(ag.ctx)
-	var batchIDs []driver.Value
-	draining := true
-	for draining {
-		select {
-		case batchID := <-ag.queuedRewinds:
+func (ag *aggregator) popRewindBatchIDs() (batchIDs []driver.Value) {
+	ag.queuedRewindsMux.Lock()
+	if len(ag.queuedRewinds) > 0 {
+		batchIDs = make([]driver.Value, 0, len(ag.queuedRewinds))
+		for batchID := range ag.queuedRewinds {
 			batchIDs = append(batchIDs, batchID)
-			l.Debugf("Rewinding for batch %s", &batchID)
-		default:
-			draining = false
 		}
+		ag.queuedRewinds = nil
 	}
+	ag.queuedRewindsMux.Unlock()
+	return batchIDs
+}
+
+func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
+
+	batchIDs := ag.popRewindBatchIDs()
+	if len(batchIDs) == 0 {
+		return false, 0
+	}
+
 	// Retry idefinitely for database errors (until the context closes)
+	var rewindBatch *fftypes.UUID
+	var offset int64
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
-		if len(batchIDs) > 0 {
-			fb := database.PinQueryFactory.NewFilter(ag.ctx)
-			filter := fb.And(
-				fb.In("batch", batchIDs),
-				fb.Eq("dispatched", false),
-			).Sort("sequence").Limit(1) // only need the one oldest sequence
-			sequences, _, err := ag.database.GetPins(ag.ctx, filter)
-			if err != nil {
-				return true, err
-			}
-			if len(sequences) > 0 {
-				rewind = true
-				offset = sequences[0].Sequence - 1 // offset is set to the last event we saw (so one behind the next pin we want)
-			}
+		fb := database.PinQueryFactory.NewFilter(ag.ctx)
+		filter := fb.And(
+			fb.In("batch", batchIDs),
+			fb.Eq("dispatched", false),
+		).Sort("sequence").Limit(1) // only need the one oldest sequence
+		sequences, _, err := ag.database.GetPins(ag.ctx, filter)
+		if err != nil {
+			return true, err
+		}
+		if len(sequences) > 0 {
+			rewindBatch = sequences[0].Batch
+			offset = sequences[0].Sequence - 1 // offset is set to the last event we saw (so one behind the next pin we want)
 		}
 		return false, nil
 	})
-	return rewind, offset
+	if rewindBatch != nil {
+		log.L(ag.ctx).Debugf("Aggregator popped rewind to pin %d for batch %s", offset, rewindBatch)
+	}
+	return rewindBatch != nil, offset
 }
 
 func (ag *aggregator) processWithBatchState(callback func(ctx context.Context, state *batchState) error) error {
@@ -590,45 +606,4 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data fftypes.DataArray) 
 
 	return true, nil
 
-}
-
-func (ag *aggregator) rewindForBlobArrival(ctx context.Context, blobHash *fftypes.Bytes32) error {
-
-	batchIDs := make(map[fftypes.UUID]bool)
-
-	// We need to work out what pins potentially are unblocked by the arrival of this data
-
-	// Find any data associated with this blob
-	var data []*fftypes.DataRef
-	filter := database.DataQueryFactory.NewFilter(ctx).Eq("blob.hash", blobHash)
-	data, _, err := ag.database.GetDataRefs(ctx, filter)
-	if err != nil {
-		return err
-	}
-
-	// Find the messages assocated with that data
-	var messages []*fftypes.Message
-	for _, data := range data {
-		fb := database.MessageQueryFactory.NewFilter(ctx)
-		filter := fb.And(fb.Eq("confirmed", nil))
-		messages, _, err = ag.database.GetMessagesForData(ctx, data.ID, filter)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Find the unique batch IDs for all the messages
-	for _, msg := range messages {
-		if msg.BatchID != nil {
-			batchIDs[*msg.BatchID] = true
-		}
-	}
-
-	// Initiate rewinds for all the batchIDs that are potentially completed by the arrival of this data
-	for bid := range batchIDs {
-		var batchID = bid // cannot use the address of the loop var
-		log.L(ag.ctx).Infof("Batch '%s' contains reference to received blob %s", &bid, blobHash)
-		ag.rewindBatches <- batchID
-	}
-	return nil
 }

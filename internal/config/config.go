@@ -70,6 +70,18 @@ var (
 	BatchRetryInitDelay = rootKey("batch.retry.initDelay")
 	// BatchRetryMaxDelay is the maximum delay between retry attempts
 	BatchRetryMaxDelay = rootKey("batch.retry.maxDelay")
+	// BlobReceiverRetryInitDelay is the initial retry delay
+	BlobReceiverRetryInitDelay = rootKey("blobreceiver.retry.initialDelay")
+	// BlobReceiverRetryMaxDelay is the maximum retry delay
+	BlobReceiverRetryMaxDelay = rootKey("blobreceiver.retry.maxDelay")
+	// BlobReceiverRetryFactor is the backoff factor to use for retries
+	BlobReceiverRetryFactor = rootKey("blobreceiver.retry.factor")
+	// BlobReceiverWorkerCount
+	BlobReceiverWorkerCount = rootKey("blobreceiver.worker.count")
+	// BlobReceiverWorkerBatchTimeout
+	BlobReceiverWorkerBatchTimeout = rootKey("blobreceiver.worker.batchTimeout")
+	// BlobReceiverWorkerBatchMaxInserts
+	BlobReceiverWorkerBatchMaxInserts = rootKey("blobreceiver.worker.batchMaxInserts")
 	// BlockchainEventCacheSize size of cache for blockchain events
 	BlockchainEventCacheSize = rootKey("blockchainevent.cache.size")
 	// BlockchainEventCacheTTL time to live of cache for blockchain events
@@ -131,6 +143,8 @@ var (
 	DataexchangeType = rootKey("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
 	DatabaseType = rootKey("database.type")
+	// DatabaseMaxChartRows the maximum rows to fetch for each histogram bucket
+	DatabaseMaxChartRows = rootKey("database.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
 	TokensList = rootKey("tokens")
 	// DebugPort a HTTP port on which to enable the go debugger
@@ -232,6 +246,20 @@ var (
 	NodeName = rootKey("node.name")
 	// NodeDescription is a description for the node
 	NodeDescription = rootKey("node.description")
+	// OpUpdateRetryInitDelay is the initial retry delay
+	OpUpdateRetryInitDelay = rootKey("opupdate.retry.initialDelay")
+	// OpUpdatedRetryMaxDelay is the maximum retry delay
+	OpUpdateRetryMaxDelay = rootKey("opupdate.retry.maxDelay")
+	// OpUpdateRetryFactor is the backoff factor to use for retries
+	OpUpdateRetryFactor = rootKey("opupdate.retry.factor")
+	// OpUpdateWorkerCount
+	OpUpdateWorkerCount = rootKey("opupdate.worker.count")
+	// OpUpdateWorkerBatchTimeout
+	OpUpdateWorkerBatchTimeout = rootKey("opupdate.worker.batchTimeout")
+	// OpUpdateWorkerBatchMaxInserts
+	OpUpdateWorkerBatchMaxInserts = rootKey("opupdate.worker.batchMaxInserts")
+	// OpUpdateWorkerQueueLength
+	OpUpdateWorkerQueueLength = rootKey("opupdate.worker.queueLength")
 	// OrgName is the short name o the org
 	OrgName = rootKey("org.name")
 	// OrgIdentityDeprecated deprecated synonym to org.key
@@ -340,6 +368,12 @@ func Reset() {
 	viper.SetDefault(string(BatchRetryInitDelay), "250ms")
 	viper.SetDefault(string(BatchRetryMaxDelay), "30s")
 	viper.SetDefault(string(BatchRetryMaxDelay), "30s")
+	viper.SetDefault(string(BlobReceiverRetryInitDelay), "250ms")
+	viper.SetDefault(string(BlobReceiverRetryMaxDelay), "1m")
+	viper.SetDefault(string(BlobReceiverRetryFactor), 2.0)
+	viper.SetDefault(string(BlobReceiverWorkerBatchTimeout), "50ms")
+	viper.SetDefault(string(BlobReceiverWorkerCount), 5)
+	viper.SetDefault(string(BlobReceiverWorkerBatchMaxInserts), 200)
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
@@ -351,6 +385,7 @@ func Reset() {
 	viper.SetDefault(string(CorsEnabled), true)
 	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DataexchangeType), "ffdx")
+	viper.SetDefault(string(DatabaseMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
 	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)
@@ -392,6 +427,13 @@ func Reset() {
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
+	viper.SetDefault(string(OpUpdateRetryInitDelay), "250ms")
+	viper.SetDefault(string(OpUpdateRetryMaxDelay), "1m")
+	viper.SetDefault(string(OpUpdateRetryFactor), 2.0)
+	viper.SetDefault(string(OpUpdateWorkerBatchTimeout), "50ms")
+	viper.SetDefault(string(OpUpdateWorkerCount), 5)
+	viper.SetDefault(string(OpUpdateWorkerBatchMaxInserts), 200)
+	viper.SetDefault(string(OpUpdateWorkerQueueLength), 50)
 	viper.SetDefault(string(PrivateMessagingRetryFactor), 2.0)
 	viper.SetDefault(string(PrivateMessagingRetryInitDelay), "100ms")
 	viper.SetDefault(string(PrivateMessagingRetryMaxDelay), "30s")

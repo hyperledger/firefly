@@ -43,6 +43,7 @@ $(eval $(call makemock, pkg/events,                Callbacks,          eventsmoc
 $(eval $(call makemock, pkg/identity,              Plugin,             identitymocks))
 $(eval $(call makemock, pkg/identity,              Callbacks,          identitymocks))
 $(eval $(call makemock, pkg/dataexchange,          Plugin,             dataexchangemocks))
+$(eval $(call makemock, pkg/dataexchange,          DXEvent,            dataexchangemocks))
 $(eval $(call makemock, pkg/dataexchange,          Callbacks,          dataexchangemocks))
 $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmocks))
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))

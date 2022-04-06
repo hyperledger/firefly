@@ -179,7 +179,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
 	// which is swallowed without error as we cannot retry (it is logged of course)
-	fn := mdi.Calls[0].Arguments[1].(func(ctx context.Context) error)
+	fn := mdi.Calls[1].Arguments[1].(func(ctx context.Context) error)
 	err = fn(context.Background())
 	assert.NoError(t, err)
 

@@ -274,7 +274,7 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 	mdi.On("GetDataByID", mock.Anything, data.ID, false).Return(data, nil)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
-	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, nil)
+	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
 	mdi.On("UpdateData", context.Background(), data.ID, mock.MatchedBy(func(update database.Update) bool {
 		info, _ := update.Finalize()
 		assert.Equal(t, 1, len(info.SetOperations))
@@ -440,7 +440,7 @@ func TestRunOperationUploadBlobUpdateFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
-	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, nil)
+	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdi.On("UpdateData", context.Background(), data.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -473,7 +473,7 @@ func TestRunOperationUploadBlobUploadFail(t *testing.T) {
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
-	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, nil)
+	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
 	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
@@ -504,7 +504,7 @@ func TestRunOperationUploadBlobDownloadFail(t *testing.T) {
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
-	mdx.On("DownloadBLOB", context.Background(), mock.Anything).Return(reader, fmt.Errorf("pop"))
+	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, fmt.Errorf("pop"))
 
 	_, complete, err := bm.RunOperation(context.Background(), opUploadBlob(op, data, blob))
 

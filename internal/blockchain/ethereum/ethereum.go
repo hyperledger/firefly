@@ -389,7 +389,7 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	return e.callbacks.BlockchainEvent(event)
 }
 
-func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
+func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 	l := log.L(ctx)
 
 	headers := reply.GetObject("headers")
@@ -399,19 +399,19 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 	message := reply.GetString("errorMessage")
 	if requestID == "" || replyType == "" {
 		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
-		return nil // Swallow this and move on
+		return
 	}
 	operationID, err := fftypes.ParseUUID(ctx, requestID)
 	if err != nil {
 		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
-		return nil // Swallow this and move on
+		return
 	}
 	updateType := fftypes.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
-	return e.callbacks.BlockchainOpUpdate(operationID, updateType, txHash, message, reply)
+	e.callbacks.BlockchainOpUpdate(e, operationID, updateType, txHash, message, reply)
 }
 
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
@@ -483,7 +483,7 @@ func (e *Ethereum) eventLoop() {
 					err = e.wsconn.Send(ctx, ack)
 				}
 			case map[string]interface{}:
-				err = e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+				e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
 				continue
