@@ -431,6 +431,7 @@ func Reset() {
 	viper.SetDefault(string(AdminWebSocketReadBufferSize), "16Kb")
 	viper.SetDefault(string(AdminWebSocketWriteBufferSize), "16Kb")
 	viper.SetDefault(string(AdminWebSocketBlockedWarnInterval), "1m")
+	viper.SetDefault(string(AdminWebSocketEventQueueLength), 250)
 	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")

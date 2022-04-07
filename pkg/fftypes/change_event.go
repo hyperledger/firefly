@@ -25,7 +25,7 @@ const (
 	ChangeEventTypeDeleted ChangeEventType = "deleted"
 )
 
-type WSChangeEventCommandType FFEnum
+type WSChangeEventCommandType = FFEnum
 
 var (
 	// WSChangeEventCommandTypeStart is the command to start listening

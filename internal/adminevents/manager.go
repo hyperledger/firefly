@@ -103,7 +103,7 @@ func (ae *adminEventManager) WaitStop() {
 }
 
 func (ae *adminEventManager) makeDirtyReadList() {
-	ae.dirtyReadList = make([]*webSocket, len(ae.activeWebsockets))
+	ae.dirtyReadList = make([]*webSocket, 0, len(ae.activeWebsockets))
 	for _, ws := range ae.activeWebsockets {
 		ae.dirtyReadList = append(ae.dirtyReadList, ws)
 	}

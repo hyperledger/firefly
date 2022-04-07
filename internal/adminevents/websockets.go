@@ -102,6 +102,18 @@ func (wc *webSocket) eventMatches(changeEvent *fftypes.ChangeEvent) bool {
 	return true
 }
 
+func (wc *webSocket) writeObject(obj interface{}) {
+	writer, err := wc.wsConn.NextWriter(websocket.TextMessage)
+	if err == nil {
+		err = json.NewEncoder(writer).Encode(obj)
+		_ = writer.Close()
+	}
+	if err != nil {
+		// Log and continue - the receiver closing will be what ends our loop
+		log.L(wc.ctx).Errorf("Write failed on socket: %s", err)
+	}
+}
+
 func (wc *webSocket) sendLoop() {
 	l := log.L(wc.ctx)
 	defer close(wc.senderDone)
@@ -113,15 +125,7 @@ func (wc *webSocket) sendLoop() {
 				continue
 			}
 			l.Tracef("Sending: %+v", changeEvent)
-			writer, err := wc.wsConn.NextWriter(websocket.TextMessage)
-			if err == nil {
-				err = json.NewEncoder(writer).Encode(changeEvent)
-				_ = writer.Close()
-			}
-			if err != nil {
-				l.Errorf("Write failed on socket: %s", err)
-				return
-			}
+			wc.writeObject(changeEvent)
 		case <-wc.receiverDone:
 			l.Debugf("Sender closing - receiver completed")
 			return
@@ -151,7 +155,7 @@ func (wc *webSocket) receiveLoop() {
 		}
 		l.Tracef("Received: %s", string(msgData))
 		switch cmd.Type {
-		case fftypes.WSChangeEventCommandType(fftypes.WSChangeEventCommandTypeStart):
+		case fftypes.WSChangeEventCommandTypeStart:
 			wc.handleStart(&cmd)
 		default:
 			l.Errorf("Invalid request sent on socket: %+v", cmd)
