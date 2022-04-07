@@ -322,7 +322,8 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -353,7 +354,8 @@ func TestConfirmPoolGetOpsFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -390,7 +392,8 @@ func TestConfirmPoolResolveOpFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -429,7 +432,8 @@ func TestConfirmPoolTxFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -465,7 +469,8 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
