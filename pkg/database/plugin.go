@@ -590,9 +590,8 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages         OrderedUUIDCollectionNS = "messages"
-	CollectionEvents           OrderedUUIDCollectionNS = "events"
-	CollectionBlockchainEvents OrderedUUIDCollectionNS = "blockchainevents"
+	CollectionMessages OrderedUUIDCollectionNS = "messages"
+	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -609,6 +608,7 @@ type UUIDCollectionNS CollectionName
 
 const (
 	CollectionBatches           UUIDCollectionNS = "batches"
+	CollectionBlockchainEvents  UUIDCollectionNS = "blockchainevents"
 	CollectionData              UUIDCollectionNS = "data"
 	CollectionDataTypes         UUIDCollectionNS = "datatypes"
 	CollectionOperations        UUIDCollectionNS = "operations"

@@ -27,20 +27,20 @@ import (
 
 // DIDDocument - see https://www.w3.org/TR/did-core/#core-properties
 type DIDDocument struct {
-	Context             []string              `json:"@context"`
-	ID                  string                `json:"id"`
-	Authentication      []string              `json:"authentication"`
-	VerificationMethods []*VerificationMethod `json:"verificationMethod"`
+	Context             []string              `ffstruct:"DIDDocument" json:"@context"`
+	ID                  string                `ffstruct:"DIDDocument" json:"id"`
+	Authentication      []string              `ffstruct:"DIDDocument" json:"authentication"`
+	VerificationMethods []*VerificationMethod `ffstruct:"DIDDocument" json:"verificationMethod"`
 }
 
 type VerificationMethod struct {
-	ID         string `json:"id"`
-	Type       string `json:"type"`
-	Controller string `json:"controller"`
-	// Controler specific fields
-	BlockchainAccountID string `json:"blockchainAcountId,omitempty"`
-	MSPIdentityString   string `json:"mspIdentityString,omitempty"`
-	DataExchangePeerID  string `json:"dataExchangePeerID,omitempty"`
+	ID         string `ffstruct:"DIDVerificationMethod" json:"id"`
+	Type       string `ffstruct:"DIDVerificationMethod" json:"type"`
+	Controller string `ffstruct:"DIDVerificationMethod" json:"controller"`
+	// Controller specific fields
+	BlockchainAccountID string `ffstruct:"DIDVerificationMethod" json:"blockchainAcountId,omitempty"`
+	MSPIdentityString   string `ffstruct:"DIDVerificationMethod" json:"mspIdentityString,omitempty"`
+	DataExchangePeerID  string `ffstruct:"DIDVerificationMethod" json:"dataExchangePeerID,omitempty"`
 }
 
 func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *fftypes.Identity) (doc *DIDDocument, err error) {

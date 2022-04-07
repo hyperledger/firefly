@@ -4,6 +4,7 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
+<<<<<<< HEAD
     "Debugf",
     "ffenum",
     "ffexcludeinput",
@@ -12,15 +13,42 @@
     "upgrader",
     "Warnf"
     "ccache",
+=======
+    "APIID",
+>>>>>>> b839ea56c5b8f71d5de5e36477ef4894df221ca0
     "Debugf",
+    "devdocs",
+    "FFDX",
+    "ffenum",
+    "ffexclude",
+    "ffexcludeinput",
+    "ffexcludeoutput",
+    "ffievents",
+    "FFIID",
+    "ffimethods",
+    "ffstruct",
     "fftypes",
-    "txid"
+    "finalizers",
+    "IPFS",
+    "NATS",
+    "oapispec",
+    "optype",
+    "protocolid",
+    "santhosh",
+    "secp",
+    "stretchr",
+    "sysmessaging",
+    "tekuri",
+    "txcommon",
+    "txcommonmocks",
+    "txtype",
+    "unflushed",
+    "Warnf",
+    "ccache",
+    "txid",
     "dataexchange",
     "ethconnect",
     "fabconnect",
-    "ffenum",
-    "fftypes",
-    "hyperledger"
   ],
   "go.testTimeout": "10s"
 }

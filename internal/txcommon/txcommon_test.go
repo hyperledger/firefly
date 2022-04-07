@@ -20,14 +20,36 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func NewTestTransactionHelper(di database.Plugin, dm data.Manager) (Helper, *ccache.Cache, *ccache.Cache) {
+	t := &transactionHelper{
+		database: di,
+		data:     dm,
+	}
+	t.transactionCache = ccache.New(
+		// We use a LRU cache with a size-aware max
+		ccache.Configure().
+			MaxSize(config.GetByteSize(config.TransactionCacheSize)),
+	)
+	t.blockchainEventCache = ccache.New(
+		// We use a LRU cache with a size-aware max
+		ccache.Configure().
+			MaxSize(config.GetByteSize(config.BlockchainEventCacheSize)),
+	)
+	return t, t.transactionCache, t.blockchainEventCache
+}
 
 func TestSubmitNewTransactionOK(t *testing.T) {
 
@@ -375,7 +397,7 @@ func TestGetTransactionByIDCached(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper, txCache, _ := NewTestTransactionHelper(mdi, mdm)
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
@@ -387,9 +409,15 @@ func TestGetTransactionByIDCached(t *testing.T) {
 		BlockchainIDs: fftypes.FFStringArray{"0x111111"},
 	}, nil).Once()
 
+	previousTxCacheSize := txCache.ItemCount()
+
 	tx, err := txHelper.GetTransactionByIDCached(ctx, txid)
 	assert.NoError(t, err)
 	assert.Equal(t, txid, tx.ID)
+
+	for txCache.ItemCount() <= previousTxCacheSize {
+		time.Sleep(time.Millisecond * 1)
+	}
 
 	tx, err = txHelper.GetTransactionByIDCached(ctx, txid)
 	assert.NoError(t, err)

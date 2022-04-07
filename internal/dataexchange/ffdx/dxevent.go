@@ -171,7 +171,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			},
 		}
 	default:
-		err = i18n.NewError(h.ctx, i18n.MsgUnpexectedDXMessageType, msg.Type)
+		err = i18n.NewError(h.ctx, i18n.MsgUnexpectedDXMessageType, msg.Type)
 	}
 	// If we couldn't dispatch the event we received, we still ack it
 	if err != nil {

@@ -81,18 +81,18 @@ func NewOperation(plugin Named, namespace string, tx *UUID, opType OpType) *Oper
 
 // Operation is a description of an action performed as part of a transaction submitted by this node
 type Operation struct {
-	ID          *UUID      `json:"id" ffexcludeinput:"true"`
-	Namespace   string     `json:"namespace" ffexcludeinput:"true"`
-	Transaction *UUID      `json:"tx" ffexcludeinput:"true"`
-	Type        OpType     `json:"type" ffenum:"optype" ffexcludeinput:"true"`
-	Status      OpStatus   `json:"status"`
-	Error       string     `json:"error,omitempty"`
-	Plugin      string     `json:"plugin" ffexcludeinput:"true"`
-	Input       JSONObject `json:"input,omitempty" ffexcludeinput:"true"`
-	Output      JSONObject `json:"output,omitempty"`
-	Created     *FFTime    `json:"created,omitempty" ffexcludeinput:"true"`
-	Updated     *FFTime    `json:"updated,omitempty" ffexcludeinput:"true"`
-	Retry       *UUID      `json:"retry,omitempty" ffexcludeinput:"true"`
+	ID          *UUID      `ffstruct:"Operation" json:"id" ffexcludeinput:"true"`
+	Namespace   string     `ffstruct:"Operation" json:"namespace" ffexcludeinput:"true"`
+	Transaction *UUID      `ffstruct:"Operation" json:"tx" ffexcludeinput:"true"`
+	Type        OpType     `ffstruct:"Operation" json:"type" ffenum:"optype" ffexcludeinput:"true"`
+	Status      OpStatus   `ffstruct:"Operation" json:"status"`
+	Plugin      string     `ffstruct:"Operation" json:"plugin" ffexcludeinput:"true"`
+	Input       JSONObject `ffstruct:"Operation" json:"input,omitempty" ffexcludeinput:"true"`
+	Output      JSONObject `ffstruct:"Operation" json:"output,omitempty"`
+	Error       string     `ffstruct:"Operation" json:"error,omitempty"`
+	Created     *FFTime    `ffstruct:"Operation" json:"created,omitempty" ffexcludeinput:"true"`
+	Updated     *FFTime    `ffstruct:"Operation" json:"updated,omitempty" ffexcludeinput:"true"`
+	Retry       *UUID      `ffstruct:"Operation" json:"retry,omitempty" ffexcludeinput:"true"`
 }
 
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin

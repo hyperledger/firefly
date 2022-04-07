@@ -31,10 +31,13 @@ import (
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly/internal/config"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDiffSwaggerYAML(t *testing.T) {
+	config.Set(config.APIOASPanicOnMissingDescription, true)
 	as := &apiServer{}
 	handler := as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:5000")))
 	s := httptest.NewServer(http.HandlerFunc(handler))
