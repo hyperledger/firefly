@@ -86,10 +86,10 @@ type tokenApproval struct {
 }
 
 type activatePool struct {
-	PoolID      string             `json:"poolId"`
-	PoolConfig  fftypes.JSONObject `json:"poolConfig"`
-	Transaction fftypes.JSONObject `json:"transaction"`
-	RequestID   string             `json:"requestId,omitempty"`
+	PoolID    string             `json:"poolId"`
+	Config    fftypes.JSONObject `json:"config"`
+	Locator   fftypes.JSONObject `json:"locator"`
+	RequestID string             `json:"requestId,omitempty"`
 }
 
 type mintTokens struct {
@@ -505,10 +505,10 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) (complete bool, err error) {
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
-			RequestID:   opID.String(),
-			PoolID:      pool.ProtocolID,
-			PoolConfig:  pool.Config,
-			Transaction: blockchainInfo,
+			RequestID: opID.String(),
+			PoolID:    pool.ProtocolID,
+			Config:    pool.Config,
+			Locator:   blockchainInfo,
 		}).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {

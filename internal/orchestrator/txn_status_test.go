@@ -328,10 +328,6 @@ func TestGetTransactionStatusTokenPoolPending(t *testing.T) {
 				"info": {"transactionHash": "0x100"}
 			},
 			{
-				"type": "BlockchainEvent",
-				"status": "Pending"
-			},
-			{
 				"type": "TokenPool",
 				"status": "Pending"
 			}
@@ -385,10 +381,6 @@ func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
 				"status": "Succeeded",
 				"id": "` + ops[0].ID.String() + `",
 				"info": {"transactionHash": "0x100"}
-			},
-			{
-				"type": "BlockchainEvent",
-				"status": "Pending"
 			},
 			{
 				"type": "TokenPool",

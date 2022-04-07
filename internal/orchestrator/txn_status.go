@@ -132,6 +132,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 				SubType: pools[0].Type.String(),
 				ID:      pools[0].ID,
 			})
+			updateStatus(result, fftypes.OpStatusPending)
 		default:
 			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
 				Status:    fftypes.OpStatusSucceeded,
