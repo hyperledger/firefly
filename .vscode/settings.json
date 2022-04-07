@@ -4,7 +4,12 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
-    "fftypes"
+    "Debugf",
+    "ffenum",
+    "fftypes",
+    "Tracef",
+    "upgrader",
+    "Warnf"
   ],
   "go.testTimeout": "10s"
 }

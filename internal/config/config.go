@@ -196,6 +196,14 @@ var (
 	AdminEnabled = rootKey("admin.enabled")
 	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
 	AdminPreinit = rootKey("admin.preinit")
+	// AdminWebSocketEventQueueLength is the maximum number of events that will queue up on the server side of each WebSocket connection before events start being dropped
+	AdminWebSocketEventQueueLength = rootKey("admin.websocket.eventQueueLength")
+	// AdminWebSocketBlockedWarnInterval how often to emit a warning if an admin websocket is blocked and not receiving events
+	AdminWebSocketBlockedWarnInterval = rootKey("admin.websocket.blockedWarnInterval")
+	// AdminWebSocketReadBufferSize is the WebSocket read buffer size for the admin change-event WebSocket
+	AdminWebSocketReadBufferSize = rootKey("admin.websocket.readBufferSize")
+	// AdminWebSocketWriteBufferSize is the WebSocket write buffer size for the admin change-event WebSocket
+	AdminWebSocketWriteBufferSize = rootKey("admin.websocket.writeBufferSize")
 	// IdentityType the type of the identity plugin in use
 	IdentityType = rootKey("identity.type")
 	// IdentityManagerCacheTTL the identity manager cache time to live
@@ -411,6 +419,9 @@ func Reset() {
 	viper.SetDefault(string(GroupCacheSize), "1Mb")
 	viper.SetDefault(string(GroupCacheTTL), "1h")
 	viper.SetDefault(string(AdminEnabled), false)
+	viper.SetDefault(string(AdminWebSocketReadBufferSize), "16Kb")
+	viper.SetDefault(string(AdminWebSocketWriteBufferSize), "16Kb")
+	viper.SetDefault(string(AdminWebSocketBlockedWarnInterval), "1m")
 	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")

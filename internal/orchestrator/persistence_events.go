@@ -17,20 +17,9 @@
 package orchestrator
 
 import (
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-func (or *orchestrator) attemptChangeEventDispatch(ev *fftypes.ChangeEvent) {
-	// For change events we're not processing as a system, we don't block our processing to dispatch
-	// them remotely. So if the queue is full, we discard the event rather than blocking.
-	select {
-	case or.events.ChangeEvents() <- ev:
-	default:
-		log.L(or.ctx).Warnf("Database change event queue is exhausted")
-	}
-}
 
 func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
 	switch {
@@ -44,7 +33,7 @@ func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUI
 		// Sequence is only provided on create events
 		ces = &sequence
 	}
-	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+	or.changeevents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,
@@ -57,7 +46,7 @@ func (or *orchestrator) OrderedCollectionEvent(resType database.OrderedCollectio
 	if eventType == fftypes.ChangeEventTypeCreated && resType == database.CollectionPins {
 		or.events.NewPins() <- sequence
 	}
-	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+	or.changeevents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Sequence:   &sequence,
@@ -73,7 +62,7 @@ func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS,
 	case eventType == fftypes.ChangeEventTypeUpdated && resType == database.CollectionSubscriptions:
 		or.events.SubscriptionUpdates() <- id
 	}
-	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+	or.changeevents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,

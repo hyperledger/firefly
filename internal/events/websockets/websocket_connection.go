@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -37,20 +36,19 @@ type websocketStartedSub struct {
 }
 
 type websocketConnection struct {
-	ctx                context.Context
-	ws                 *WebSockets
-	wsConn             *websocket.Conn
-	cancelCtx          func()
-	connID             string
-	sendMessages       chan interface{}
-	senderDone         chan struct{}
-	receiverDone       chan struct{}
-	autoAck            bool
-	started            []*websocketStartedSub
-	inflight           []*fftypes.EventDeliveryResponse
-	mux                sync.Mutex
-	closed             bool
-	changeEventMatcher *regexp.Regexp
+	ctx          context.Context
+	ws           *WebSockets
+	wsConn       *websocket.Conn
+	cancelCtx    func()
+	connID       string
+	sendMessages chan interface{}
+	senderDone   chan struct{}
+	receiverDone chan struct{}
+	autoAck      bool
+	started      []*websocketStartedSub
+	inflight     []*fftypes.EventDeliveryResponse
+	mux          sync.Mutex
+	closed       bool
 }
 
 func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn) *websocketConnection {
@@ -83,12 +81,11 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 	if hasEphemeral || hasName {
 		filter := fftypes.NewSubscriptionFilterFromQuery(query)
 		err := wc.handleStart(&fftypes.WSClientActionStartPayload{
-			AutoAck:      &isAutoack,
-			Ephemeral:    isEphemeral,
-			Namespace:    query.Get("namespace"),
-			Name:         query.Get("name"),
-			Filter:       filter,
-			ChangeEvents: query.Get("changeevents"),
+			AutoAck:   &isAutoack,
+			Ephemeral: isEphemeral,
+			Namespace: query.Get("namespace"),
+			Name:      query.Get("name"),
+			Filter:    filter,
 		})
 		if err != nil {
 			wc.protocolError(err)
@@ -169,19 +166,6 @@ func (wc *websocketConnection) receiveLoop() {
 	}
 }
 
-func (wc *websocketConnection) dispatchChangeEvent(ce *fftypes.ChangeEvent) error {
-	if wc.changeEventMatcher == nil || !wc.changeEventMatcher.MatchString(ce.Collection) {
-		return nil
-	}
-	// Change events do *NOT* require an ack
-	return wc.send(&fftypes.WSChangeNotification{
-		WSClientActionBase: fftypes.WSClientActionBase{
-			Type: fftypes.WSClientActionChangeNotifcation,
-		},
-		ChangeEvent: ce,
-	})
-}
-
 func (wc *websocketConnection) dispatch(event *fftypes.EventDelivery) error {
 	inflight := &fftypes.EventDeliveryResponse{
 		ID:           event.ID,
@@ -235,33 +219,18 @@ func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPay
 	wc.mux.Lock()
 	if start.AutoAck != nil {
 		if *start.AutoAck != wc.autoAck && len(wc.started) > 0 {
+			wc.mux.Unlock()
 			return i18n.NewError(wc.ctx, i18n.MsgWSAutoAckChanged)
 		}
 		wc.autoAck = *start.AutoAck
 	}
-	wc.mux.Unlock()
-
-	if start.ChangeEvents != "" {
-		wc.changeEventMatcher, err = regexp.Compile(start.ChangeEvents)
-		if err != nil {
-			log.L(wc.ctx).Errorf("Unable to compile change events regular expression '%s': %s", start.ChangeEvents, err)
-		} else {
-			start.Options.ChangeEvents = true
-		}
-	}
-
-	wc.mux.Lock()
 	wc.started = append(wc.started, &websocketStartedSub{
 		ephemeral: start.Ephemeral,
 		namespace: start.Namespace,
 		name:      start.Name,
 	})
 	wc.mux.Unlock()
-	err = wc.ws.start(wc, start)
-	if err != nil {
-		return err
-	}
-	return nil
+	return wc.ws.start(wc, start)
 }
 
 func (wc *websocketConnection) durableSubMatcher(sr fftypes.SubscriptionRef) bool {

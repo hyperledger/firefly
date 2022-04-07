@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -24,6 +24,26 @@ const (
 	ChangeEventTypeUpdated ChangeEventType = "updated" // note bulk updates might not results in change events.
 	ChangeEventTypeDeleted ChangeEventType = "deleted"
 )
+
+type WSChangeEventCommandType FFEnum
+
+var (
+	// WSChangeEventCommandTypeStart is the command to start listening
+	WSChangeEventCommandTypeStart = ffEnum("changeevent_cmd_type", "start")
+)
+
+// WSChangeEventCommand is the WebSocket command to send to start listening for change events.
+// Replaces any previous start requests.
+type WSChangeEventCommand struct {
+	Type        WSChangeEventCommandType `json:"type" ffenum:"changeevent_cmd_type"`
+	Collections []string                 `json:"collections"`
+	Filter      ChangeEventFilter        `json:"filter"`
+}
+
+type ChangeEventFilter struct {
+	Types      []ChangeEventType `json:"types,omitempty"`
+	Namespaces []string          `json:"namespaces,omitempty"`
+}
 
 // ChangeEvent is a change to the local FireFly core node.
 type ChangeEvent struct {
