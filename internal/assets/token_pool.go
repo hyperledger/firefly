@@ -32,6 +32,11 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
+	if existing, err := am.database.GetTokenPool(ctx, ns, pool.Name); err != nil {
+		return nil, err
+	} else if existing != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgTokenPoolDuplicate, pool.Name)
+	}
 	pool.ID = fftypes.NewUUID()
 	pool.Namespace = ns
 
