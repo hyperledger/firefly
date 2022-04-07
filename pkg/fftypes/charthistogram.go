@@ -27,6 +27,8 @@ const (
 type ChartHistogram struct {
 	// Count for entire timestamp in histogram
 	Count string `json:"count"`
+	// IsCapped if one or more buckets are limited by config.DatabaseMaxChartRows
+	IsCapped bool `json:"isCapped"`
 	// Timestamp of bucket
 	Timestamp *FFTime `json:"timestamp"`
 	// Types list of histogram types and their count

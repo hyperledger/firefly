@@ -143,6 +143,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 			Count:     total,
 			Timestamp: intervals[i].StartTime,
 			Types:     histTypes,
+			IsCapped:  total == config.GetString(config.DatabaseMaxChartRows),
 		}
 
 		// If the bucket has types, add their counts

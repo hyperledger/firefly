@@ -74,10 +74,24 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 			return valid, err
 		}
 
-		if existing, err := em.database.GetTokenApproval(ctx, approval.LocalID); err != nil {
+		existing, err := em.database.GetTokenApproval(ctx, approval.Connector, approval.ProtocolID, pool.ID)
+		if err != nil {
 			return false, err
-		} else if existing != nil {
-			approval.LocalID = fftypes.NewUUID()
+		}
+
+		// If there's not an existing approval, look for approvals with a matching local ID
+		if existing == nil {
+			existingLocal, err := em.database.GetTokenApprovalByID(ctx, approval.LocalID)
+			if err != nil {
+				return false, err
+			}
+
+			if existingLocal != nil {
+				approval.LocalID = fftypes.NewUUID()
+			}
+		} else {
+			log.L(ctx).Infof("Updating existing approval with local ID: %s", existing.LocalID)
+			approval.LocalID = existing.LocalID
 		}
 	} else {
 		approval.LocalID = fftypes.NewUUID()
@@ -89,6 +103,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		return false, err
 	}
 	em.emitBlockchainEventMetric(&approval.Event)
+
 	if err := em.database.UpsertTokenApproval(ctx, &approval.TokenApproval); err != nil {
 		log.L(ctx).Errorf("Failed to record token approval '%s': %s", approval.ProtocolID, err)
 		return false, err
