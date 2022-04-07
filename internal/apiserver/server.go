@@ -540,6 +540,9 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
+	ae := o.AdminEvents()
+	r.HandleFunc(`/ws`, ae.ServeHTTPWebSocketListener)
+
 	return r
 }
 

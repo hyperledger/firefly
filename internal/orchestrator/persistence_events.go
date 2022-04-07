@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,7 +33,7 @@ func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUI
 		// Sequence is only provided on create events
 		ces = &sequence
 	}
-	or.changeevents.Dispatch(&fftypes.ChangeEvent{
+	or.adminEvents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,
@@ -46,7 +46,7 @@ func (or *orchestrator) OrderedCollectionEvent(resType database.OrderedCollectio
 	if eventType == fftypes.ChangeEventTypeCreated && resType == database.CollectionPins {
 		or.events.NewPins() <- sequence
 	}
-	or.changeevents.Dispatch(&fftypes.ChangeEvent{
+	or.adminEvents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Sequence:   &sequence,
@@ -62,7 +62,7 @@ func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS,
 	case eventType == fftypes.ChangeEventTypeUpdated && resType == database.CollectionSubscriptions:
 		or.events.SubscriptionUpdates() <- id
 	}
-	or.changeevents.Dispatch(&fftypes.ChangeEvent{
+	or.adminEvents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,
@@ -71,7 +71,7 @@ func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS,
 }
 
 func (or *orchestrator) UUIDCollectionEvent(resType database.UUIDCollection, eventType fftypes.ChangeEventType, id *fftypes.UUID) {
-	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+	or.adminEvents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		ID:         id,
@@ -79,7 +79,7 @@ func (or *orchestrator) UUIDCollectionEvent(resType database.UUIDCollection, eve
 }
 
 func (or *orchestrator) HashCollectionNSEvent(resType database.HashCollectionNS, eventType fftypes.ChangeEventType, ns string, hash *fftypes.Bytes32) {
-	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+	or.adminEvents.Dispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,

@@ -30,7 +30,7 @@ import (
 
 type webSocket struct {
 	ctx          context.Context
-	manager      *changeEventManager
+	manager      *adminEventManager
 	wsConn       *websocket.Conn
 	cancelCtx    func()
 	connID       string
@@ -45,17 +45,17 @@ type webSocket struct {
 	lastWarnTime *fftypes.FFTime
 }
 
-func newWebSocket(ce *changeEventManager, wsConn *websocket.Conn) *webSocket {
+func newWebSocket(ae *adminEventManager, wsConn *websocket.Conn) *webSocket {
 	connID := fftypes.NewUUID().String()
-	ctx := log.WithLogField(ce.ctx, "admin-websocket", connID)
+	ctx := log.WithLogField(ae.ctx, "admin-websocket", connID)
 	ctx, cancelCtx := context.WithCancel(ctx)
 	wc := &webSocket{
 		ctx:          ctx,
-		manager:      ce,
+		manager:      ae,
 		wsConn:       wsConn,
 		cancelCtx:    cancelCtx,
 		connID:       connID,
-		events:       make(chan *fftypes.ChangeEvent, ce.queueLength),
+		events:       make(chan *fftypes.ChangeEvent, ae.queueLength),
 		senderDone:   make(chan struct{}),
 		receiverDone: make(chan struct{}),
 	}

@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/oapiffimocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
@@ -61,6 +62,8 @@ func newTestAPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 
 func newTestAdminServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 	mor, as := newTestServer()
+	mae := &admineventsmocks.Manager{}
+	mor.On("AdminEvents").Return(mae)
 	r := as.createAdminMuxRouter(mor)
 	return mor, r
 }
@@ -78,6 +81,8 @@ func TestStartStopServer(t *testing.T) {
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(false)
+	mae := &admineventsmocks.Manager{}
+	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
 	assert.NoError(t, err)
 }
@@ -107,6 +112,8 @@ func TestStartAdminFail(t *testing.T) {
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(true)
+	mae := &admineventsmocks.Manager{}
+	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
 }
@@ -122,6 +129,8 @@ func TestStartMetricsFail(t *testing.T) {
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
 	mor.On("IsPreInit").Return(true)
+	mae := &admineventsmocks.Manager{}
+	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF10104", err)
 }

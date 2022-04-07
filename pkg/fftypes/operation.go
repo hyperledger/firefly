@@ -81,18 +81,18 @@ func NewOperation(plugin Named, namespace string, tx *UUID, opType OpType) *Oper
 
 // Operation is a description of an action performed as part of a transaction submitted by this node
 type Operation struct {
-	ID          *UUID      `json:"id"`
-	Namespace   string     `json:"namespace"`
-	Transaction *UUID      `json:"tx"`
-	Type        OpType     `json:"type" ffenum:"optype"`
+	ID          *UUID      `json:"id" ffexcludeinput:"true"`
+	Namespace   string     `json:"namespace" ffexcludeinput:"true"`
+	Transaction *UUID      `json:"tx" ffexcludeinput:"true"`
+	Type        OpType     `json:"type" ffenum:"optype" ffexcludeinput:"true"`
 	Status      OpStatus   `json:"status"`
 	Error       string     `json:"error,omitempty"`
-	Plugin      string     `json:"plugin"`
-	Input       JSONObject `json:"input,omitempty"`
+	Plugin      string     `json:"plugin" ffexcludeinput:"true"`
+	Input       JSONObject `json:"input,omitempty" ffexcludeinput:"true"`
 	Output      JSONObject `json:"output,omitempty"`
-	Created     *FFTime    `json:"created,omitempty"`
-	Updated     *FFTime    `json:"updated,omitempty"`
-	Retry       *UUID      `json:"retry,omitempty"`
+	Created     *FFTime    `json:"created,omitempty" ffexcludeinput:"true"`
+	Updated     *FFTime    `json:"updated,omitempty" ffexcludeinput:"true"`
+	Retry       *UUID      `json:"retry,omitempty" ffexcludeinput:"true"`
 }
 
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin

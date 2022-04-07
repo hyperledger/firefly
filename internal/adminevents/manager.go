@@ -28,13 +28,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-type ChangeEventManager interface {
+type Manager interface {
 	Dispatch(changeEvent *fftypes.ChangeEvent)
 	ServeHTTPWebSocketListener(res http.ResponseWriter, req *http.Request)
-	WaitClose()
+	WaitStop()
 }
 
-type changeEventManager struct {
+type adminEventManager struct {
 	ctx              context.Context
 	cancelCtx        func()
 	activeWebsockets map[string]*webSocket
@@ -46,8 +46,8 @@ type changeEventManager struct {
 	blockedWarnInterval time.Duration
 }
 
-func NewChangeEventManager(ctx context.Context) ChangeEventManager {
-	ce := &changeEventManager{
+func NewAdminEventManager(ctx context.Context) Manager {
+	ae := &adminEventManager{
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  int(config.GetByteSize(config.AdminWebSocketReadBufferSize)),
 			WriteBufferSize: int(config.GetByteSize(config.AdminWebSocketWriteBufferSize)),
@@ -59,59 +59,59 @@ func NewChangeEventManager(ctx context.Context) ChangeEventManager {
 		queueLength:         config.GetInt(config.AdminWebSocketEventQueueLength),
 		blockedWarnInterval: config.GetDuration(config.AdminWebSocketBlockedWarnInterval),
 	}
-	ce.ctx, ce.cancelCtx = context.WithCancel(
+	ae.ctx, ae.cancelCtx = context.WithCancel(
 		log.WithLogField(ctx, "role", "change-event-manager"),
 	)
-	return ce
+	return ae
 }
 
-func (ce *changeEventManager) ServeHTTPWebSocketListener(res http.ResponseWriter, req *http.Request) {
-	wsConn, err := ce.upgrader.Upgrade(res, req, nil)
+func (ae *adminEventManager) ServeHTTPWebSocketListener(res http.ResponseWriter, req *http.Request) {
+	wsConn, err := ae.upgrader.Upgrade(res, req, nil)
 	if err != nil {
-		log.L(ce.ctx).Errorf("WebSocket upgrade failed: %s", err)
+		log.L(ae.ctx).Errorf("WebSocket upgrade failed: %s", err)
 		return
 	}
 
-	ce.mux.Lock()
-	wc := newWebSocket(ce, wsConn)
-	ce.activeWebsockets[wc.connID] = wc
-	ce.makeDirtyReadList()
-	ce.mux.Unlock()
+	ae.mux.Lock()
+	wc := newWebSocket(ae, wsConn)
+	ae.activeWebsockets[wc.connID] = wc
+	ae.makeDirtyReadList()
+	ae.mux.Unlock()
 }
 
-func (ce *changeEventManager) wsClosed(connID string) {
-	ce.mux.Lock()
-	delete(ce.activeWebsockets, connID)
-	ce.makeDirtyReadList()
-	ce.mux.Unlock()
+func (ae *adminEventManager) wsClosed(connID string) {
+	ae.mux.Lock()
+	delete(ae.activeWebsockets, connID)
+	ae.makeDirtyReadList()
+	ae.mux.Unlock()
 }
 
-func (ce *changeEventManager) WaitClose() {
-	ce.cancelCtx()
+func (ae *adminEventManager) WaitStop() {
+	ae.cancelCtx()
 
-	ce.mux.Lock()
-	activeWebsockets := make([]*webSocket, 0, len(ce.activeWebsockets))
-	for _, ws := range ce.activeWebsockets {
+	ae.mux.Lock()
+	activeWebsockets := make([]*webSocket, 0, len(ae.activeWebsockets))
+	for _, ws := range ae.activeWebsockets {
 		activeWebsockets = append(activeWebsockets, ws)
 	}
-	ce.mux.Unlock()
+	ae.mux.Unlock()
 
 	for _, ws := range activeWebsockets {
 		ws.waitClose()
 	}
 }
 
-func (ce *changeEventManager) makeDirtyReadList() {
-	ce.dirtyReadList = make([]*webSocket, len(ce.activeWebsockets))
-	for _, ws := range ce.activeWebsockets {
-		ce.dirtyReadList = append(ce.dirtyReadList, ws)
+func (ae *adminEventManager) makeDirtyReadList() {
+	ae.dirtyReadList = make([]*webSocket, len(ae.activeWebsockets))
+	for _, ws := range ae.activeWebsockets {
+		ae.dirtyReadList = append(ae.dirtyReadList, ws)
 	}
 }
 
-func (ce *changeEventManager) Dispatch(changeEvent *fftypes.ChangeEvent) {
+func (ae *adminEventManager) Dispatch(changeEvent *fftypes.ChangeEvent) {
 	// We don't lock here, as this is a critical path function.
 	// We use a dirty copy of the connection list, updated on add/remove
-	for _, ws := range ce.dirtyReadList {
+	for _, ws := range ae.dirtyReadList {
 		ws.dispatch(changeEvent)
 	}
 }
