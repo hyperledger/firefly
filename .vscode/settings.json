@@ -4,6 +4,10 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
+    "ccache",
+    "Debugf",
+    "fftypes",
+    "txid"
     "dataexchange",
     "ethconnect",
     "fabconnect",
