@@ -905,6 +905,7 @@ paths:
                     type: string
                   confirmed: {}
                   created: {}
+                  group: {}
                   hash: {}
                   id: {}
                   key:
@@ -914,8 +915,6 @@ paths:
                   namespace:
                     type: string
                   node: {}
-                  payloadRef:
-                    type: string
                   tx:
                     properties:
                       id: {}
@@ -966,6 +965,7 @@ paths:
                     type: string
                   confirmed: {}
                   created: {}
+                  group: {}
                   hash: {}
                   id: {}
                   key:
@@ -975,8 +975,6 @@ paths:
                   namespace:
                     type: string
                   node: {}
-                  payloadRef:
-                    type: string
                   tx:
                     properties:
                       id: {}

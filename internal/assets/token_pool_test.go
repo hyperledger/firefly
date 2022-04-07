@@ -67,7 +67,7 @@ func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -215,7 +215,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -299,7 +299,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -332,7 +332,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -372,7 +372,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, true)
 	assert.NoError(t, err)
@@ -407,7 +407,7 @@ func TestActivateTokenPool(t *testing.T) {
 		data := op.Data.(activatePoolData)
 		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
 	assert.NoError(t, err)
@@ -473,7 +473,7 @@ func TestActivateTokenPoolFail(t *testing.T) {
 		data := op.Data.(activatePoolData)
 		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
 	assert.EqualError(t, err, "pop")
@@ -505,7 +505,7 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 		data := op.Data.(activatePoolData)
 		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
 	assert.NoError(t, err)
