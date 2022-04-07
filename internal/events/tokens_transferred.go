@@ -120,7 +120,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 }
 
 func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error {
-	var batchID *fftypes.UUID
+	var msgIDforRewind *fftypes.UUID
 
 	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
@@ -129,19 +129,19 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 			}
 
 			if transfer.Message != nil {
-				if msg, err := em.database.GetMessageByID(ctx, transfer.Message); err != nil {
+				msg, err := em.database.GetMessageByID(ctx, transfer.Message)
+				switch {
+				case err != nil:
 					return err
-				} else if msg != nil {
-					if msg.State == fftypes.MessageStateStaged {
-						// Message can now be sent
-						msg.State = fftypes.MessageStateReady
-						if err := em.database.ReplaceMessage(ctx, msg); err != nil {
-							return err
-						}
-					} else {
-						// Message was already received - aggregator will need to be rewound
-						batchID = msg.BatchID
+				case msg != nil && msg.State == fftypes.MessageStateStaged:
+					// Message can now be sent
+					msg.State = fftypes.MessageStateReady
+					if err := em.database.ReplaceMessage(ctx, msg); err != nil {
+						return err
 					}
+				default:
+					// Message might already have been received, we need to rewind
+					msgIDforRewind = transfer.Message
 				}
 			}
 			em.emitBlockchainEventMetric(&transfer.Event)
@@ -153,9 +153,8 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 	})
 
 	// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
-	if err == nil && batchID != nil {
-		log.L(em.ctx).Infof("Batch '%s' contains reference to received transfer. Transfer='%s' Message='%s'", batchID, transfer.ProtocolID, transfer.Message)
-		em.aggregator.rewindBatches <- *batchID
+	if err == nil && msgIDforRewind != nil {
+		em.aggregator.queueMessageRewind(msgIDforRewind)
 	}
 
 	return err

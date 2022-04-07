@@ -66,7 +66,7 @@ func TestGetHistogramFailDB(t *testing.T) {
 func TestGetHistogramSuccess(t *testing.T) {
 	or := newTestOrchestrator()
 	intervals := makeTestIntervals(1000000000, 10)
-	mockHistogram := []*fftypes.ChartHistogramBucket{}
+	mockHistogram := []*fftypes.ChartHistogram{}
 
 	or.mdi.On("GetChartHistogram", mock.Anything, "ns1", intervals, database.CollectionName("test")).Return(mockHistogram, nil)
 	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))

@@ -127,7 +127,7 @@ type Orchestrator interface {
 	GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error)
 
 	// Charts
-	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogramBucket, error)
+	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogram, error)
 
 	// Config Management
 	GetConfig(ctx context.Context) fftypes.JSONObject

@@ -23,11 +23,12 @@ const (
 	ChartHistogramMinBuckets = 1
 )
 
-// ChartHistogramBucket is a list of buckets with types
-type ChartHistogramBucket struct {
-	Count     string                `ffstruct:"ChartHistogramBucket" json:"count"`
-	Timestamp *FFTime               `ffstruct:"ChartHistogramBucket" json:"timestamp"`
-	Types     []*ChartHistogramType `ffstruct:"ChartHistogramBucket" json:"types"`
+// ChartHistogram is a list of buckets with types
+type ChartHistogram struct {
+	Count     string                `ffstruct:"ChartHistogram" json:"count"`
+	Timestamp *FFTime               `ffstruct:"ChartHistogram" json:"timestamp"`
+	Types     []*ChartHistogramType `ffstruct:"ChartHistogram" json:"types"`
+	IsCapped  bool                  `ffstruct:"ChartHistogram" json:"isCapped"`
 }
 
 // ChartHistogramType is a type and count

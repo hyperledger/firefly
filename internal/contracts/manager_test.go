@@ -1161,7 +1161,7 @@ func TestInvokeContract(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(blockchainInvokeData)
 		return op.Type == fftypes.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1200,7 +1200,7 @@ func TestInvokeContractFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(blockchainInvokeData)
 		return op.Type == fftypes.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1556,7 +1556,7 @@ func TestInvokeContractAPI(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(blockchainInvokeData)
 		return op.Type == fftypes.OpTypeBlockchainInvoke && data.Request == req
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req)
 

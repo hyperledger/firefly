@@ -169,7 +169,7 @@ func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, state *batc
 	}
 
 	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", state.Persisted.ID, state.Persisted.Author, state.Persisted.Key, state.Persisted.Group)
-	return pm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
+	return pm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, "" /* no payloadRef for private */)
 }
 
 func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *batch.DispatchState) error {
@@ -251,7 +251,7 @@ func (pm *privateMessaging) submitBlobTransfersToDX(ctx context.Context, tracker
 		go func(tracker *blobTransferTracker) {
 			defer wg.Done()
 			log.L(ctx).Debugf("Initiating DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
-			if err := pm.operations.RunOperation(ctx, tracker.op); err != nil {
+			if _, err := pm.operations.RunOperation(ctx, tracker.op); err != nil {
 				log.L(ctx).Errorf("Failed to initiate DX transfer blob=%s data=%s operation=%s", tracker.blobHash, tracker.dataID, tracker.op.ID)
 				if firstError == nil {
 					firstError = err
@@ -298,11 +298,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 				batch.Namespace,
 				batch.Payload.TX.ID,
 				fftypes.OpTypeDataExchangeSendBatch)
-			var groupHash *fftypes.Bytes32
-			if tw.Group != nil {
-				groupHash = tw.Group.Hash
-			}
-			addBatchSendInputs(op, node.ID, groupHash, batch.ID)
+			addBatchSendInputs(op, node.ID, batch.Group, batch.ID)
 			if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 				return err
 			}
@@ -321,7 +317,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 		}
 
 		// Then initiate the batch transfer
-		if err = pm.operations.RunOperation(ctx, sendBatchOp); err != nil {
+		if _, err = pm.operations.RunOperation(ctx, sendBatchOp); err != nil {
 			return err
 		}
 	}

@@ -31,18 +31,9 @@ func TestBlobReceiverBackgroundDispatchOK(t *testing.T) {
 	defer cancel()
 	em.blobReceiver.start()
 
-	dataID := fftypes.NewUUID()
-	batchID := fftypes.NewUUID()
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
 	mdi.On("InsertBlobs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(fftypes.DataRefs{
-		{ID: dataID},
-	}, nil, nil)
-	mdi.On("GetMessagesForData", mock.Anything, dataID, mock.Anything).Return([]*fftypes.Message{
-		{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}, BatchID: batchID},
-	}, nil, nil)
 
 	blobHash := fftypes.NewRandB32()
 	done := make(chan struct{})

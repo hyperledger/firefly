@@ -43,7 +43,7 @@ var getChartHistogram = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.ChartHistogramBucket{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.ChartHistogram{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		startTime, err := fftypes.ParseTimeString(r.QP["startTime"])

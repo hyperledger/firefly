@@ -104,6 +104,12 @@ type iMessageCollection interface {
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
+
+	// GetBatchIDsForMessages - an optimized query to retrieve any non-null batch IDs for a list of message IDs
+	GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
+
+	// GetBatchIDsForDataAttachments - an optimized query to retrieve any non-null batch IDs for a list of data IDs that might be attached to messages in batches
+	GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
 }
 
 type iDataCollection interface {
@@ -434,11 +440,11 @@ type iTokenApprovalCollection interface {
 	// UpsertTokenApproval - Upsert a token approval
 	UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error
 
-	// GetTokenApproval - Get a token approval by ID
-	GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
+	// GetTokenApprovalByID - Get a token approval by ID
+	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
-	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenApproval, error)
+	// GetTokenApproval - Get a token approval by connector, protocolID, and poolID
+	GetTokenApproval(ctx context.Context, connector, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, filter Filter) ([]*fftypes.TokenApproval, *FilterResult, error)
@@ -505,7 +511,7 @@ type iBlockchainEventCollection interface {
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
 type iChartCollection interface {
 	// GetChartHistogram - Get charting data for a histogram
-	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogramBucket, error)
+	GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection CollectionName) ([]*fftypes.ChartHistogram, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.

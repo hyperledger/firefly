@@ -189,10 +189,11 @@ var (
 	BlockchainEventTimestamp  = ffm("BlockchainEvent.timestamp", "The time allocated to this event by the blockchain. This is the block timestamp for most blockchain connectors")
 	BlockchainEventTX         = ffm("BlockchainEvent.tx", "If this blockchain event is coorelated to FireFly transaction such as a FireFly submitted token transfer, this field is set to the UUID of the FireFly transaction")
 
-	// ChartHistogramBucket field descriptions
-	ChartHistogramBucketCount     = ffm("ChartHistogramBucket.count", "Total count of entries in this time bucket within the histogram")
-	ChartHistogramBucketTimestamp = ffm("ChartHistogramBucket.timestamp", "Starting timestamp for the bucket")
-	ChartHistogramBucketTypes     = ffm("ChartHistogramBucket.types", "Array of separate counts for individual types of record within the bucket")
+	// ChartHistogram field descriptions
+	ChartHistogramCount     = ffm("ChartHistogram.count", "Total count of entries in this time bucket within the histogram")
+	ChartHistogramTimestamp = ffm("ChartHistogram.timestamp", "Starting timestamp for the bucket")
+	ChartHistogramTypes     = ffm("ChartHistogram.types", "Array of separate counts for individual types of record within the bucket")
+	ChartHistogramIsCapped  = ffm("ChartHistogram.isCapped", "Indicates whether there are more results in this bucket that are not being displayed")
 
 	// ChartHistogramType field descriptions
 	ChartHistogramTypeCount = ffm("ChartHistogramType.count", "Count of entries of a given type within a bucket")

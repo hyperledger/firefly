@@ -32,7 +32,12 @@
     "txcommonmocks",
     "txtype",
     "unflushed",
-    "Warnf"
+    "Warnf",
+    "ccache",
+    "txid",
+    "dataexchange",
+    "ethconnect",
+    "fabconnect",
   ],
   "go.testTimeout": "10s"
 }

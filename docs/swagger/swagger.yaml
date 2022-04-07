@@ -1553,6 +1553,10 @@ paths:
                       description: Total count of entries in this time bucket within
                         the histogram
                       type: string
+                    isCapped:
+                      description: Indicates whether there are more results in this
+                        bucket that are not being displayed
+                      type: boolean
                     timestamp:
                       description: Starting timestamp for the bucket
                     types:
@@ -9931,8 +9935,8 @@ paths:
                       by the token connector
                     type: string
                   to:
-                    description: The target account for the transfer. Required on
-                      input
+                    description: The target account for the transfer. On input defaults
+                      to the value of 'key'
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -10012,8 +10016,8 @@ paths:
                       by the token connector
                     type: string
                   to:
-                    description: The target account for the transfer. Required on
-                      input
+                    description: The target account for the transfer. On input defaults
+                      to the value of 'key'
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -10262,7 +10266,8 @@ paths:
                   description: The name or UUID of a token pool
                   type: string
                 to:
-                  description: The target account for the transfer. Required on input
+                  description: The target account for the transfer. On input defaults
+                    to the value of 'key'
                   type: string
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
@@ -10321,8 +10326,8 @@ paths:
                       by the token connector
                     type: string
                   to:
-                    description: The target account for the transfer. Required on
-                      input
+                    description: The target account for the transfer. On input defaults
+                      to the value of 'key'
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -10402,8 +10407,8 @@ paths:
                       by the token connector
                     type: string
                   to:
-                    description: The target account for the transfer. Required on
-                      input
+                    description: The target account for the transfer. On input defaults
+                      to the value of 'key'
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -11155,8 +11160,8 @@ paths:
                         by the token connector
                       type: string
                     to:
-                      description: The target account for the transfer. Required on
-                        input
+                      description: The target account for the transfer. On input defaults
+                        to the value of 'key'
                       type: string
                     tokenIndex:
                       description: The index of the token within the pool that this
@@ -11374,7 +11379,8 @@ paths:
                   description: The name or UUID of a token pool
                   type: string
                 to:
-                  description: The target account for the transfer. Required on input
+                  description: The target account for the transfer. On input defaults
+                    to the value of 'key'
                   type: string
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
@@ -11433,8 +11439,8 @@ paths:
                       by the token connector
                     type: string
                   to:
-                    description: The target account for the transfer. Required on
-                      input
+                    description: The target account for the transfer. On input defaults
+                      to the value of 'key'
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -11514,8 +11520,8 @@ paths:
                       by the token connector
                     type: string
                   to:
-                    description: The target account for the transfer. Required on
-                      input
+                    description: The target account for the transfer. On input defaults
+                      to the value of 'key'
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -11623,8 +11629,8 @@ paths:
                       by the token connector
                     type: string
                   to:
-                    description: The target account for the transfer. Required on
-                      input
+                    description: The target account for the transfer. On input defaults
+                      to the value of 'key'
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -12129,10 +12135,8 @@ paths:
                             type
                         info:
                           additionalProperties:
-                            description: Input data for operations, and output data
-                              for events
-                          description: Input data for operations, and output data
-                            for events
+                            description: Output details for this entry
+                          description: Output details for this entry
                           type: object
                         status:
                           description: The status of the detail record. Cases where
