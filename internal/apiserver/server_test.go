@@ -118,6 +118,26 @@ func TestStartAdminFail(t *testing.T) {
 	assert.Regexp(t, "FF10104", err)
 }
 
+func TestStartAdminWSHandler(t *testing.T) {
+	config.Reset()
+	metrics.Clear()
+	InitConfig()
+	adminConfigPrefix.Set(HTTPConfAddress, "...://")
+	config.Set(config.AdminEnabled, true)
+	as := NewAPIServer().(*apiServer)
+	mor := &orchestratormocks.Orchestrator{}
+	mor.On("IsPreInit").Return(true)
+	mae := &admineventsmocks.Manager{}
+	mor.On("AdminEvents").Return(mae)
+	mae.On("ServeHTTPWebSocketListener", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		res := args[0].(http.ResponseWriter)
+		res.WriteHeader(200)
+	}).Return()
+	res := httptest.NewRecorder()
+	as.adminWSHandler(mor).ServeHTTP(res, httptest.NewRequest("GET", "/", nil))
+	assert.Equal(t, 200, res.Result().StatusCode)
+}
+
 func TestStartMetricsFail(t *testing.T) {
 	config.Reset()
 	metrics.Clear()
