@@ -298,11 +298,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *fftypes.TransportW
 				batch.Namespace,
 				batch.Payload.TX.ID,
 				fftypes.OpTypeDataExchangeSendBatch)
-			var groupHash *fftypes.Bytes32
-			if tw.Group != nil {
-				groupHash = tw.Group.Hash
-			}
-			addBatchSendInputs(op, node.ID, groupHash, batch.ID)
+			addBatchSendInputs(op, node.ID, batch.Group, batch.ID)
 			if err = pm.operations.AddOrReuseOperation(ctx, op); err != nil {
 				return err
 			}
