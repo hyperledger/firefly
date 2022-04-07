@@ -12,7 +12,7 @@
       "program": "${workspaceFolder}/test/e2e",
       "args": ["-test.run"],
       "env": {
-        "STACK_FILE": "{env:HOME}/.firefly/stacks/firefly-e2e/stack.json"
+        "STACK_FILE": "{env:HOME}/.firefly/stacks/firefly_e2e/stack.json"
       },
       "showLog": true
     },

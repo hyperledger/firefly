@@ -63,7 +63,6 @@ fi
 cd $CWD
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI remove -f firefly-e2e  # TODO: remove
   $CLI remove -f $STACK_NAME
 fi
 
