@@ -18,22 +18,22 @@ package fftypes
 
 type TokenApprovalInput struct {
 	TokenApproval
-	Pool string `json:"pool,omitempty"`
+	Pool string `ffstruct:"TokenApprovalInput" json:"pool,omitempty"`
 }
 
 type TokenApproval struct {
-	LocalID         *UUID          `json:"localId,omitempty"`
-	Pool            *UUID          `json:"pool,omitempty"`
-	TokenIndex      string         `json:"tokenIndex,omitempty"`
-	Connector       string         `json:"connector,omitempty"`
-	Key             string         `json:"key,omitempty"`
-	Operator        string         `json:"operator,omitempty"`
-	Approved        bool           `json:"approved"`
-	Info            JSONObject     `json:"info,omitempty"`
-	Namespace       string         `json:"namespace,omitempty"`
-	ProtocolID      string         `json:"protocolId,omitempty"`
-	Created         *FFTime        `json:"created,omitempty"`
-	TX              TransactionRef `json:"tx"`
-	BlockchainEvent *UUID          `json:"blockchainEvent,omitempty"`
-	Config          JSONObject     `json:"config,omitempty"` // for REST calls only (not stored)
+	LocalID         *UUID          `ffstruct:"TokenApproval" json:"localId,omitempty" ffexcludeinput:"true"`
+	Pool            *UUID          `ffstruct:"TokenApproval" json:"pool,omitempty"`
+	TokenIndex      string         `ffstruct:"TokenApproval" json:"tokenIndex,omitempty"`
+	Connector       string         `ffstruct:"TokenApproval" json:"connector,omitempty"`
+	Key             string         `ffstruct:"TokenApproval" json:"key,omitempty"`
+	Operator        string         `ffstruct:"TokenApproval" json:"operator,omitempty"`
+	Approved        bool           `ffstruct:"TokenApproval" json:"approved"`
+	Info            JSONObject     `ffstruct:"TokenApproval" json:"info,omitempty"`
+	Namespace       string         `ffstruct:"TokenApproval" json:"namespace,omitempty"`
+	ProtocolID      string         `ffstruct:"TokenApproval" json:"protocolId,omitempty" ffexcludeinput:"true"`
+	Created         *FFTime        `ffstruct:"TokenApproval" json:"created,omitempty" ffexcludeinput:"true"`
+	TX              TransactionRef `ffstruct:"TokenApproval" json:"tx" ffexcludeinput:"true"`
+	BlockchainEvent *UUID          `ffstruct:"TokenApproval" json:"blockchainEvent,omitempty" ffexcludeinput:"true"`
+	Config          JSONObject     `ffstruct:"TokenApproval" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
 }

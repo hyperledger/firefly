@@ -24,7 +24,7 @@
       "program": "${workspaceFolder}/main.go",
       "args": [
         "-f",
-        "${env:HOME}/.firefly/stacks/dev/configs/firefly_core_0.yml"
+        "${env:HOME}/.firefly/stacks/dev/runtime/config/firefly_core_0.yml"
       ]
     }
   ]

@@ -1111,7 +1111,7 @@ func TestGetFFIByIDWithChildrenFFILookupFail(t *testing.T) {
 	mdb.AssertExpectations(t)
 }
 
-func TestGetFFIByIDWithChildrenFFINotFoundl(t *testing.T) {
+func TestGetFFIByIDWithChildrenFFINotFound(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 
@@ -1144,7 +1144,6 @@ func TestInvokeContract(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
@@ -1184,7 +1183,6 @@ func TestInvokeContractFail(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
@@ -1221,7 +1219,6 @@ func TestInvokeContractFailNormalizeSigningKey(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 	}
 
@@ -1240,7 +1237,6 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 	}
 
@@ -1260,7 +1256,6 @@ func TestInvokeContractTXFail(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
@@ -1284,7 +1279,6 @@ func TestInvokeContractNoMethodSignature(t *testing.T) {
 
 	req := &fftypes.ContractCallRequest{
 		Type:     fftypes.CallTypeInvoke,
-		Ledger:   fftypes.JSONAnyPtr(""),
 		Location: fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
@@ -1306,7 +1300,6 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
@@ -1328,7 +1321,6 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name: "sum",
@@ -1367,7 +1359,6 @@ func TestQueryContract(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeQuery,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
@@ -1397,7 +1388,6 @@ func TestCallContractInvalidType(t *testing.T) {
 
 	req := &fftypes.ContractCallRequest{
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
@@ -1543,7 +1533,6 @@ func TestInvokeContractAPI(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
@@ -1587,7 +1576,6 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
@@ -1609,7 +1597,6 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 	req := &fftypes.ContractCallRequest{
 		Type:      fftypes.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
@@ -1675,7 +1662,6 @@ func TestBroadcastContractAPI(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1706,7 +1692,6 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	existing := &fftypes.ContractAPI{
 		ID:        apiID,
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1716,7 +1701,6 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        apiID,
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1744,7 +1728,6 @@ func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
 	existing := &fftypes.ContractAPI{
 		ID:        apiID,
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(`"old"`),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1754,7 +1737,6 @@ func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        apiID,
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(`"new"`),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1781,7 +1763,6 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1806,7 +1787,6 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1827,7 +1807,6 @@ func TestBroadcastContractAPINoInterface(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 	}
@@ -1843,7 +1822,6 @@ func TestBroadcastContractAPIInterfaceIDFail(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1863,7 +1841,6 @@ func TestBroadcastContractAPIInterfaceIDNotFound(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1883,7 +1860,6 @@ func TestBroadcastContractAPIInterfaceNameFail(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1904,7 +1880,6 @@ func TestBroadcastContractAPIInterfaceNameNotFound(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{
@@ -1925,7 +1900,6 @@ func TestBroadcastContractAPIInterfaceNoVersion(t *testing.T) {
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		Ledger:    fftypes.JSONAnyPtr(""),
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
 		Interface: &fftypes.FFIReference{

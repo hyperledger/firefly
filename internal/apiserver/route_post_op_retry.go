@@ -17,7 +17,6 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -38,8 +37,6 @@ var postOpRetry = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
-	JSONInputMask:   nil,
-	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

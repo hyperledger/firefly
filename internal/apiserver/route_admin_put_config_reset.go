@@ -17,7 +17,6 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -36,7 +35,6 @@ var postResetConfig = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return fftypes.JSONAnyPtr("{}") },
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},
-	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		getOr(r.Ctx).ResetConfig(r.Ctx)
 		return nil, nil

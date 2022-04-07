@@ -35,7 +35,6 @@ var postNewNamespace = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
-	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Namespace{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

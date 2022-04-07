@@ -70,48 +70,30 @@ func TestLocationAndLedgerEquals(t *testing.T) {
 	c1 = &ContractAPI{
 		ID:       NewUUID(),
 		Location: JSONAnyPtr("abc"),
-		Ledger:   JSONAnyPtr("def"),
 	}
 	c2 = &ContractAPI{
 		ID:       NewUUID(),
 		Location: JSONAnyPtr("abc"),
-		Ledger:   JSONAnyPtr("def"),
 	}
 	assert.True(t, c1.LocationAndLedgerEquals(c2))
 
 	c1 = &ContractAPI{
 		ID:       NewUUID(),
-		Location: JSONAnyPtr("abc"),
-		Ledger:   JSONAnyPtr("fff"),
-	}
-	c2 = &ContractAPI{
-		ID:       NewUUID(),
-		Location: JSONAnyPtr("abc"),
-		Ledger:   JSONAnyPtr("def"),
-	}
-	assert.False(t, c1.LocationAndLedgerEquals(c2))
-
-	c1 = &ContractAPI{
-		ID:       NewUUID(),
 		Location: JSONAnyPtr("fff"),
-		Ledger:   JSONAnyPtr("def"),
 	}
 	c2 = &ContractAPI{
 		ID:       NewUUID(),
 		Location: JSONAnyPtr("abc"),
-		Ledger:   JSONAnyPtr("def"),
 	}
 	assert.False(t, c1.LocationAndLedgerEquals(c2))
 
 	c1 = &ContractAPI{
 		ID:       NewUUID(),
 		Location: nil,
-		Ledger:   nil,
 	}
 	c2 = &ContractAPI{
 		ID:       NewUUID(),
 		Location: nil,
-		Ledger:   nil,
 	}
 	assert.True(t, c1.LocationAndLedgerEquals(c2))
 }

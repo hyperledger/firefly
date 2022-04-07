@@ -36,7 +36,6 @@ var deleteContractListener = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONInputMask:   nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

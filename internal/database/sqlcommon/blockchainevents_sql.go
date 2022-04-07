@@ -56,7 +56,7 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	if event.Sequence, err = s.insertTx(ctx, tx,
+	if _, err = s.insertTx(ctx, tx,
 		sq.Insert("blockchainevents").
 			Columns(blockchainEventColumns...).
 			Values(
@@ -73,7 +73,7 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 				event.TX.ID,
 			),
 		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID)
 		},
 	); err != nil {
 		return err
@@ -96,8 +96,6 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 		&event.Timestamp,
 		&event.TX.Type,
 		&event.TX.ID,
-		// Must be added to the list of columns in all selects
-		&event.Sequence,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "blockchainevents")
@@ -106,11 +104,8 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 }
 
 func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.BlockchainEvent, error) {
-	cols := append([]string{}, blockchainEventColumns...)
-	cols = append(cols, sequenceColumn)
-
 	rows, _, err := s.query(ctx,
-		sq.Select(cols...).
+		sq.Select(blockchainEventColumns...).
 			From("blockchainevents").
 			Where(pred),
 	)
@@ -137,11 +132,9 @@ func (s *SQLCommon) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID
 }
 
 func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
-	cols := append([]string{}, blockchainEventColumns...)
-	cols = append(cols, sequenceColumn)
 
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(cols...).From("blockchainevents"),
+		sq.Select(blockchainEventColumns...).From("blockchainevents"),
 		filter, blockchainEventFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
