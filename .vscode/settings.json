@@ -4,20 +4,13 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
-<<<<<<< HEAD
-    "Debugf",
-    "ffenum",
-    "ffexcludeinput",
-    "fftypes",
-    "Tracef",
-    "upgrader",
-    "Warnf"
-    "ccache",
-=======
     "APIID",
->>>>>>> b839ea56c5b8f71d5de5e36477ef4894df221ca0
+    "ccache",
+    "dataexchange",
     "Debugf",
     "devdocs",
+    "ethconnect",
+    "fabconnect",
     "FFDX",
     "ffenum",
     "ffexclude",
@@ -39,16 +32,16 @@
     "stretchr",
     "sysmessaging",
     "tekuri",
+    "Tracef",
     "txcommon",
     "txcommonmocks",
+    "txid",
     "txtype",
     "unflushed",
+    "upgrader",
     "Warnf",
-    "ccache",
-    "txid",
-    "dataexchange",
-    "ethconnect",
-    "fabconnect",
+    "wsclient",
+    "wsconfig"
   ],
   "go.testTimeout": "10s"
 }
