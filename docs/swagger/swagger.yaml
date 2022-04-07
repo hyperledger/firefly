@@ -1235,6 +1235,8 @@ paths:
                 properties:
                   count:
                     type: string
+                  isCapped:
+                    type: boolean
                   timestamp: {}
                   types:
                     items:
