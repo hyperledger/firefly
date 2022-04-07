@@ -164,6 +164,10 @@ var (
 	EventAggregatorOpCorrelationRetries = rootKey("event.aggregator.opCorrelationRetries")
 	// EventAggregatorPollTimeout the time to wait without a notification of new events, before trying a select on the table
 	EventAggregatorPollTimeout = rootKey("event.aggregator.pollTimeout")
+	// EventAggregatorRewindTimeout the minimum time to wait for rewinds to accumulate before resolving them
+	EventAggregatorRewindTimeout = rootKey("event.aggregator.rewindTimeout")
+	// EventAggregatorRewindQueueLength the size of the queue into the rewind dispatcher
+	EventAggregatorRewindQueueLength = rootKey("event.aggregator.rewindQueueLength")
 	// EventAggregatorRetryFactor the backoff factor to use for retry of database operations
 	EventAggregatorRetryFactor = rootKey("event.aggregator.retry.factor")
 	// EventAggregatorRetryInitDelay the initial delay to use for retry of data base operations
@@ -404,6 +408,8 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
+	viper.SetDefault(string(EventAggregatorRewindTimeout), "50ms")
+	viper.SetDefault(string(EventAggregatorRewindQueueLength), 10)
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")

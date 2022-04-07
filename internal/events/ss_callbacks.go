@@ -29,7 +29,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 
 	l := log.L(em.ctx)
 
-	// De-serializae the batch
+	// De-serialize the batch
 	var batch *fftypes.Batch
 	err := json.Unmarshal(data, &batch)
 	if err != nil {
@@ -58,8 +58,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	}
 
 	// Rewind the aggregator to this batch - after the DB updates are complete
-	log.L(em.ctx).Debugf("Rewinding for downloaded broadcast batch %s", batch.ID)
-	em.aggregator.rewindBatches <- *batch.ID
+	em.aggregator.queueBatchRewind(batch.ID)
 	return batch.ID, nil
 }
 

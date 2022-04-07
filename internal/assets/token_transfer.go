@@ -270,7 +270,8 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		}
 	}
 
-	return s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))
+	_, err = s.mgr.operations.RunOperation(ctx, opTransfer(op, pool, &s.transfer.TokenTransfer))
+	return err
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {

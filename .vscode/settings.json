@@ -11,6 +11,16 @@
     "Tracef",
     "upgrader",
     "Warnf"
+    "ccache",
+    "Debugf",
+    "fftypes",
+    "txid"
+    "dataexchange",
+    "ethconnect",
+    "fabconnect",
+    "ffenum",
+    "fftypes",
+    "hyperledger"
   ],
   "go.testTimeout": "10s"
 }

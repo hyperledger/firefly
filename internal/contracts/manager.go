@@ -222,7 +222,8 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 	switch req.Type {
 	case fftypes.CallTypeInvoke:
 		res = &fftypes.ContractCallResponse{ID: op.ID}
-		return res, cm.operations.RunOperation(ctx, opBlockchainInvoke(op, req))
+		_, err := cm.operations.RunOperation(ctx, opBlockchainInvoke(op, req))
+		return res, err
 	case fftypes.CallTypeQuery:
 		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
 	default:
