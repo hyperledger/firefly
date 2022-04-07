@@ -9,8 +9,6 @@ import (
 
 	database "github.com/hyperledger/firefly/pkg/database"
 
-	driver "database/sql/driver"
-
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
@@ -179,6 +177,52 @@ func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBatchIDsForDataAttachments provides a mock function with given fields: ctx, dataIDs
+func (_m *Plugin) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, dataIDs)
+
+	var r0 []*fftypes.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, dataIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, dataIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBatchIDsForMessages provides a mock function with given fields: ctx, msgIDs
+func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, msgIDs)
+
+	var r0 []*fftypes.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, msgIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, msgIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1172,29 +1216,6 @@ func (_m *Plugin) GetIdentityByName(ctx context.Context, iType fftypes.FFEnum, n
 	return r0, r1
 }
 
-// GetMessageBatchIDs provides a mock function with given fields: ctx, msgIDs
-func (_m *Plugin) GetMessageBatchIDs(ctx context.Context, msgIDs []driver.Value) ([]*fftypes.UUID, error) {
-	ret := _m.Called(ctx, msgIDs)
-
-	var r0 []*fftypes.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, []driver.Value) []*fftypes.UUID); ok {
-		r0 = rf(ctx, msgIDs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.UUID)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []driver.Value) error); ok {
-		r1 = rf(ctx, msgIDs)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetMessageByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, id)
@@ -1271,29 +1292,6 @@ func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*f
 	}
 
 	return r0, r1, r2
-}
-
-// GetMessagesBatchIDsForDataIDs provides a mock function with given fields: ctx, dataIDs
-func (_m *Plugin) GetMessagesBatchIDsForDataIDs(ctx context.Context, dataIDs []driver.Value) ([]*fftypes.UUID, error) {
-	ret := _m.Called(ctx, dataIDs)
-
-	var r0 []*fftypes.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, []driver.Value) []*fftypes.UUID); ok {
-		r0 = rf(ctx, dataIDs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.UUID)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []driver.Value) error); ok {
-		r1 = rf(ctx, dataIDs)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetMessagesForData provides a mock function with given fields: ctx, dataID, filter

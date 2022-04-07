@@ -17,7 +17,6 @@
 package events
 
 import (
-	"database/sql/driver"
 	"fmt"
 	"testing"
 	"time"
@@ -45,10 +44,10 @@ func TestRewinderE2E(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).
 		Return(fftypes.DataRefs{{ID: dataID}}, nil, nil)
-	mdi.On("GetMessagesBatchIDsForDataIDs", mock.Anything, []driver.Value{dataID}).
+	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, []*fftypes.UUID{dataID}).
 		Return([]*fftypes.UUID{batchID2}, nil)
 	mdm.On("PeekMessageCache", mock.Anything, mock.Anything, data.CRORequireBatchID).Return(nil, nil)
-	mdi.On("GetMessageBatchIDs", mock.Anything, mock.Anything).
+	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).
 		Return([]*fftypes.UUID{batchID3}, nil)
 
 	ag.rewinder.start()
@@ -89,7 +88,7 @@ func TestPrcessStagedRewindsErrorMessages(t *testing.T) {
 
 	mockRunAsGroupPassthrough(mdi)
 	mdm.On("PeekMessageCache", mock.Anything, mock.Anything, data.CRORequireBatchID).Return(nil, nil)
-	mdi.On("GetMessageBatchIDs", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	ag.rewinder.stagedRewinds = []*rewind{
 		{rewindType: rewindMessage},
@@ -136,7 +135,7 @@ func TestPrcessStagedRewindsErrorBlobBatchIDs(t *testing.T) {
 	mockRunAsGroupPassthrough(mdi)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).
 		Return(fftypes.DataRefs{{ID: dataID}}, nil, nil)
-	mdi.On("GetMessagesBatchIDsForDataIDs", mock.Anything, []driver.Value{dataID}).
+	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, []*fftypes.UUID{dataID}).
 		Return(nil, fmt.Errorf("pop"))
 
 	ag.rewinder.stagedRewinds = []*rewind{

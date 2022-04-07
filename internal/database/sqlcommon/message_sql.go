@@ -19,7 +19,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -499,12 +498,12 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (
 	return ids, nil
 }
 
-func (s *SQLCommon) GetMessagesBatchIDsForDataIDs(ctx context.Context, dataIDs []driver.Value) (batchIDs []*fftypes.UUID, err error) {
+func (s *SQLCommon) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
 	query := sq.Select("m.batch_id").From("messages_data AS md").LeftJoin("messages AS m ON m.id = md.message_id").Where(sq.Eq{"md.data_id": dataIDs})
 	return s.queryBatchIDs(ctx, query)
 }
 
-func (s *SQLCommon) GetMessageBatchIDs(ctx context.Context, msgIDs []driver.Value) (batchIDs []*fftypes.UUID, err error) {
+func (s *SQLCommon) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
 	return s.queryBatchIDs(ctx, sq.Select("batch_id").From("messages").Where(sq.Eq{"id": msgIDs}))
 }
 

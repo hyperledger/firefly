@@ -78,15 +78,15 @@ func newRewinder(ag *aggregator) *rewinder {
 }
 
 func (rw *rewinder) start() {
-	go rw.rewindLoop1()
-	go rw.rewindLoop2()
+	go rw.rewindReceiveLoop()
+	go rw.rewindProcessLoop()
 }
 
-// rewindLoop1 is responsible from taking requests to the aggregator for rewinds, from other
+// rewindReceiveLoop is responsible for taking requests to the aggregator for rewinds, from other
 // event loops that execute completely independently.
 // It takes them in as fast as possible, and puts them in a staging area ready for the aggregator
 // itself to mark it's finished processing anything in-flight
-func (rw *rewinder) rewindLoop1() {
+func (rw *rewinder) rewindReceiveLoop() {
 	defer close(rw.loop1Done)
 
 	for {
@@ -100,16 +100,16 @@ func (rw *rewinder) rewindLoop1() {
 			// we can move the queued rewinds to staged
 			rw.aggregator.eventPoller.shoulderTap()
 		case <-rw.ctx.Done():
-			log.L(rw.ctx).Debugf("Rewind loop 1 stopping")
+			log.L(rw.ctx).Debugf("Rewind Receiver Loop stopping")
 			return
 		}
 	}
 }
 
-// rewindLoop2 does the heavy lifting of taking rewinds that the aggregator has marked staged,
+// rewindProcessLoop does the heavy lifting of taking rewinds that the aggregator has marked staged,
 // and doing the DB queries required to find out what BatchIDs need to be resolved.
 // These then go to the readyRewinds map, ready for the aggregator to pop them
-func (rw *rewinder) rewindLoop2() {
+func (rw *rewinder) rewindProcessLoop() {
 	defer close(rw.loop2Done)
 
 	var timerCtx context.Context
@@ -126,7 +126,7 @@ func (rw *rewinder) rewindLoop2() {
 		select {
 		case <-popCtx.Done():
 			if timerCtx == nil && timerCancel == nil {
-				log.L(rw.ctx).Debugf("Rewind loop 2 stopping")
+				log.L(rw.ctx).Debugf("Rewind Processor Loop stopping")
 				return
 			}
 			timerCancel()
@@ -227,7 +227,7 @@ func (rw *rewinder) getRewindsForMessages(ctx context.Context, msgRewinds []*fft
 
 	// We use the data manager cache to look up each message, specifying that we need there to be a batch ID in order
 	// for us to consider it a cache hit. For any misses we do a single targeted query against the DB for just the batch IDs
-	var cacheMisses []driver.Value
+	var cacheMisses []*fftypes.UUID
 	for _, msgID := range msgRewinds {
 		msg, _ := rw.data.PeekMessageCache(ctx, msgID, data.CRORequireBatchID)
 		if msg != nil && msg.BatchID != nil {
@@ -239,7 +239,7 @@ func (rw *rewinder) getRewindsForMessages(ctx context.Context, msgRewinds []*fft
 
 	if len(cacheMisses) > 0 {
 		log.L(ctx).Debugf("Cache misses for message rewinds: %v", cacheMisses)
-		msgBatchIDs, err := rw.database.GetMessageBatchIDs(ctx, cacheMisses)
+		msgBatchIDs, err := rw.database.GetBatchIDsForMessages(ctx, cacheMisses)
 		if err != nil {
 			return err
 		}
@@ -265,11 +265,11 @@ func (rw *rewinder) getRewindsForBlobs(ctx context.Context, newHashes []driver.V
 	// Find the batch IDs of all messages with these data IDs as attachments
 	if len(data) > 0 {
 
-		dataIDs := make([]driver.Value, len(data))
+		dataIDs := make([]*fftypes.UUID, len(data))
 		for i, d := range data {
 			dataIDs[i] = d.ID
 		}
-		msgBatchIDs, err := rw.database.GetMessagesBatchIDsForDataIDs(ctx, dataIDs)
+		msgBatchIDs, err := rw.database.GetBatchIDsForDataAttachments(ctx, dataIDs)
 		if err != nil {
 			return err
 		}
