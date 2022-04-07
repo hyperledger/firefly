@@ -38,7 +38,7 @@ import (
 
 func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mdi := &databasemocks.Plugin{}
-	mei := &eventsmocks.PluginAll{}
+	mei := &eventsmocks.Plugin{}
 	mei.On("Capabilities").Return(&events.Capabilities{}).Maybe()
 	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
@@ -159,7 +159,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	go ed.deliverEvents()
 	ed.eventPoller.offsetCommitted = make(chan int64, 3)
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdm := ed.data.(*datamocks.Manager)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
@@ -255,7 +255,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mdm := ed.data.(*datamocks.Manager)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -586,7 +586,7 @@ func TestEnrichTransactionEvents(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -675,7 +675,7 @@ func TestEnrichBlockchainEventEvents(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -798,7 +798,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -818,7 +818,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -863,7 +863,7 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	ed.readAhead = 50
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 

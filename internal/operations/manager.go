@@ -212,8 +212,8 @@ func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string
 	if err != nil {
 		return nil, err
 	}
-	om.database.ResolveOperation(ctx, u, op.Status, op.Error, op.Output)
-	return op, nil
+	err = om.database.ResolveOperation(ctx, u, op.Status, op.Error, op.Output)
+	return op, err
 }
 
 func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) {

@@ -56,6 +56,7 @@ func NewAdminEventManager(ctx context.Context) Manager {
 				return true
 			},
 		},
+		activeWebsockets:    make(map[string]*webSocket),
 		queueLength:         config.GetInt(config.AdminWebSocketEventQueueLength),
 		blockedWarnInterval: config.GetDuration(config.AdminWebSocketBlockedWarnInterval),
 	}
