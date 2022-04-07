@@ -514,7 +514,7 @@ var (
 	TokenTransferNamespace       = ffm("TokenTransfer.namespace", "The namespace for the transfer, which must match the namespace of the token pool")
 	TokenTransferKey             = ffm("TokenTransfer.key", "The blockchain signing key for the transfer. On input defaults to the first signing key of the organization that operates the node")
 	TokenTransferFrom            = ffm("TokenTransfer.from", "The source account for the transfer. On input defaults to the value of 'key'")
-	TokenTransferTo              = ffm("TokenTransfer.to", "The target account for the transfer. Required on input")
+	TokenTransferTo              = ffm("TokenTransfer.to", "The target account for the transfer. On input defaults to the value of 'key'")
 	TokenTransferAmount          = ffm("TokenTransfer.amount", "The amount for the transfer. For non-fungible tokens will always be 1. For fungible tokens, the number of decimals for the token pool should be considered when inputting the amount. For example, with 18 decimals a fractional balance of 10.234 will be specified as 10,234,000,000,000,000,000")
 	TokenTransferProtocolID      = ffm("TokenTransfer.protocolId", "A unique identifier for this transfer, as provided by the token connector")
 	TokenTransferMessage         = ffm("TokenTransfer.message", "The UUID of a message that has been correlated with this transfer using the data field of the transfer in a compatible token connector")
@@ -538,7 +538,7 @@ var (
 	TransactionStatusDetailsTimestamp = ffm("TransactionStatusDetails.timestamp", "The time relevant to when the record was updated, such as the time an event was created, or the last update time of an operation")
 	TransactionStatusDetailsID        = ffm("TransactionStatusDetails.id", "The UUID of the entry referenced by this detail. The type of this record can be inferred from the entry type")
 	TransactionStatusDetailsError     = ffm("TransactionStatusDetails.error", "If an error occurred related to the detail entry, it is included here")
-	TransactionStatusDetailsInfo      = ffm("TransactionStatusDetails.info", "Input data for operations, and output data for events")
+	TransactionStatusDetailsInfo      = ffm("TransactionStatusDetails.info", "Output details for this entry")
 
 	// ContractCallRequest field descriptions
 	ContractCallRequestType      = ffm("ContractCallRequest.type", "Invocations cause transactions on the blockchain. Whereas queries simply execute logic in your local node to query data at a given current/historical block")
