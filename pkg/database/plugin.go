@@ -81,7 +81,7 @@ type iMessageCollection interface {
 	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
 	// InsertMessages performs a batch insert of messages assured to be new records - fails if they already exist, so caller can fall back to upsert individually
-	InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error)
+	InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...PostCompletionHook) (err error)
 
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)

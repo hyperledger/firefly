@@ -4,7 +4,9 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
-    "fftypes"
+    "Debugf",
+    "fftypes",
+    "upserts"
   ],
   "go.testTimeout": "10s"
 }

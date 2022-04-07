@@ -185,7 +185,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error) {
+func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...database.PostCompletionHook) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -242,6 +242,10 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 				return err
 			}
 		}
+	}
+
+	for _, hook := range hooks {
+		s.postCommitEvent(tx, hook)
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)

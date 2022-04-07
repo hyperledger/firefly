@@ -2309,13 +2309,20 @@ func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	return r0
 }
 
-// InsertMessages provides a mock function with given fields: ctx, messages
-func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Message) error {
-	ret := _m.Called(ctx, messages)
+// InsertMessages provides a mock function with given fields: ctx, messages, hooks
+func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, messages)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Message) error); ok {
-		r0 = rf(ctx, messages)
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Message, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, messages, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}

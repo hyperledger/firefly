@@ -151,7 +151,9 @@ func TestPinnedReceiveOK(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdx.On("Name").Return("utdx").Maybe()
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
@@ -662,7 +664,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(fmt.Errorf("optimization fail"))
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization fail"))
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
@@ -731,7 +733,9 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdm := em.data.(*datamocks.Manager)
@@ -769,7 +773,9 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
@@ -807,7 +813,9 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)

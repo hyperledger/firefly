@@ -175,7 +175,9 @@ func TestPersistBatchContentSentByNil(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
@@ -199,7 +201,9 @@ func TestPersistBatchContentSentByUsNotFoundFallback(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
@@ -228,7 +232,7 @@ func TestPersistBatchContentSentByUsFoundMismatch(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", mock.Anything, mock.Anything).Return(fmt.Errorf("optimization miss"))
+	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(database.HashMismatch)
 
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
