@@ -18,6 +18,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -26,6 +27,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -301,9 +303,42 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, "info", conf.GetObject("log").GetString("level"))
 }
 
-// func TestGenerateConfigMarkdown(t *testing.T) {
-// 	RootConfigReset()
-// 	_, err := GenerateConfigMarkdown(context.Background())
-// 	assert.NoError(t, err)
+func TestGenerateConfigMarkdown(t *testing.T) {
 
-// }
+	key1 := AddRootKey("level1_1.level2_1.level3_1")
+	key2 := AddRootKey("level1_1.level2_1.level3_2")
+	key3 := AddRootKey("level1_1.level2_2.level3")
+	key4 := AddRootKey("level1_2.level2.level3")
+
+	i18n.FFM(fmt.Sprintf("config.%s", key1), "Description 1")
+	i18n.FFM(fmt.Sprintf("config.%s", key2), "Description 2")
+	i18n.FFM("config.global.level2_2.level3", "Description 3")
+	i18n.FFM(fmt.Sprintf("config.%s", key4), "Description 4")
+
+	RootConfigReset(func() {
+		viper.SetDefault(string(key1), "val1")
+		viper.SetDefault(string(key2), "val2")
+		viper.SetDefault(string(key3), "val3")
+		viper.SetDefault(string(key4), "val4")
+	})
+
+	_, err := GenerateConfigMarkdown(context.Background(), []string{
+		string(key1), string(key2), string(key3), string(key4),
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestGenerateConfigMarkdownPanic(t *testing.T) {
+
+	key1 := AddRootKey("bad.key.no.description")
+
+	RootConfigReset()
+
+	assert.Panics(t, func() {
+		_, _ = GenerateConfigMarkdown(context.Background(), []string{
+			string(key1),
+		})
+	})
+
+}

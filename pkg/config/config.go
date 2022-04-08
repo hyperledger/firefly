@@ -500,7 +500,7 @@ func SetupLogging(ctx context.Context) {
 	log.L(ctx).Debugf("Log level: %s", logrus.GetLevel())
 }
 
-func GenerateConfigMarkdown(ctx context.Context) ([]byte, error) {
+func GenerateConfigMarkdown(ctx context.Context, keys []string) ([]byte, error) {
 	b := bytes.NewBuffer([]byte{})
 
 	rootKeyHeaderLevel := 2
@@ -508,7 +508,6 @@ func GenerateConfigMarkdown(ctx context.Context) ([]byte, error) {
 
 	b.WriteString(configDocHeader)
 
-	keys := GetKnownKeys()
 	configObjects := make(map[string][]string)
 	configObjectNames := make([]string, 0)
 
