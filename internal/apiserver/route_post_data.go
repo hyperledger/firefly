@@ -46,7 +46,6 @@ var postData = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.DataRefOrValue{} },
-	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 	JSONOutputCodes: []int{http.StatusCreated},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

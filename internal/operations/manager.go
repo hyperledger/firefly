@@ -38,7 +38,7 @@ type OperationHandler interface {
 type Manager interface {
 	RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType)
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
 	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate)
@@ -88,7 +88,7 @@ func (om *operationsManager) PrepareOperation(ctx context.Context, op *fftypes.O
 	return handler.PrepareOperation(ctx, op)
 }
 
-func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error {
+func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {
 	failState := fftypes.OpStatusFailed
 	for _, o := range options {
 		if o == RemainPendingOnFailure {
@@ -98,17 +98,18 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 
 	handler, ok := om.handlers[op.Type]
 	if !ok {
-		return i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 	log.L(ctx).Infof("Executing %s operation %s via handler %s", op.Type, op.ID, handler.Name())
 	log.L(ctx).Tracef("Operation detail: %+v", op)
-	if outputs, complete, err := handler.RunOperation(ctx, op); err != nil {
+	outputs, complete, err := handler.RunOperation(ctx, op)
+	if err != nil {
 		om.writeOperationFailure(ctx, op.ID, outputs, err, failState)
-		return err
+		return nil, err
 	} else if complete {
 		om.writeOperationSuccess(ctx, op.ID, outputs)
 	}
-	return nil
+	return outputs, nil
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
@@ -154,7 +155,8 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 		return nil, err
 	}
 
-	return op, om.RunOperation(ctx, po)
+	_, err = om.RunOperation(ctx, po)
+	return op, err
 }
 
 func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent) {

@@ -64,7 +64,7 @@ func (dw *downloadWorker) attemptWork(work *downloadWork) {
 		options = []operations.RunOperationOption{}
 	}
 
-	err := dw.dm.operations.RunOperation(dw.ctx, work.preparedOp, options...)
+	_, err := dw.dm.operations.RunOperation(dw.ctx, work.preparedOp, options...)
 	if err != nil {
 		log.L(dw.ctx).Errorf("Download operation %s/%s attempt=%d/%d failed: %s", work.preparedOp.Type, work.preparedOp.ID, work.attempts, dw.dm.retryMaxAttempts, err)
 		if !isLastAttempt {

@@ -432,9 +432,10 @@ func (as *apiServer) getPublicURL(conf config.Prefix, pathPrefix string) string 
 
 func (as *apiServer) swaggerGenConf(apiBaseURL string) *oapispec.SwaggerGenConfig {
 	return &oapispec.SwaggerGenConfig{
-		BaseURL: apiBaseURL,
-		Title:   "FireFly",
-		Version: "1.0",
+		BaseURL:                   apiBaseURL,
+		Title:                     "FireFly",
+		Version:                   "1.0",
+		PanicOnMissingDescription: config.GetBool(coreconfig.APIOASPanicOnMissingDescription),
 	}
 }
 

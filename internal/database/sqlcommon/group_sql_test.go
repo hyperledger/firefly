@@ -72,7 +72,6 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 			Name:      "group1",
 			Namespace: "ns1",
 			Members:   group.Members,
-			Ledger:    fftypes.NewUUID(),
 		},
 		Created: fftypes.Now(),
 		Message: fftypes.NewUUID(),
@@ -95,7 +94,6 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		fb.Eq("hash", groupUpdated.Hash),
 		fb.Eq("namespace", groupUpdated.Namespace),
 		fb.Eq("message", groupUpdated.Message),
-		fb.Eq("ledger", groupUpdated.Ledger),
 		fb.Gt("created", "0"),
 	)
 	groups, _, err := s.GetGroups(ctx, filter)
@@ -343,7 +341,7 @@ func TestGetGroupByIDLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "name1", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "name1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetGroupByHash(context.Background(), groupID)
 	assert.Regexp(t, "FF10115", err)
@@ -378,7 +376,7 @@ func TestGetGroupsReadGroupFail(t *testing.T) {
 func TestGetGroupsLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "group1", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "group1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Gt("created", "0")
 	_, _, err := s.GetGroups(context.Background(), f)

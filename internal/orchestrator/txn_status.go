@@ -118,10 +118,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		}
 
 	case fftypes.TransactionTypeTokenPool:
-		if len(events) == 0 {
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
-			updateStatus(result, fftypes.OpStatusPending)
-		}
+		// Note: no assumptions about blockchain events here (may or may not contain one)
 		f := database.TokenPoolQueryFactory.NewFilter(ctx)
 		switch pools, _, err := or.database.GetTokenPools(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
@@ -136,6 +133,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 				SubType: pools[0].Type.String(),
 				ID:      pools[0].ID,
 			})
+			updateStatus(result, fftypes.OpStatusPending)
 		default:
 			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
 				Status:    fftypes.OpStatusSucceeded,

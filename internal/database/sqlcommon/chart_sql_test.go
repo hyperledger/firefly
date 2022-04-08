@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +33,7 @@ var (
 	emptyHistogramResult = []*fftypes.ChartHistogram{
 		{
 			Count:     "0",
+			IsCapped:  false,
 			Timestamp: fftypes.UnixTime(1000000000),
 			Types:     make([]*fftypes.ChartHistogramType, 0),
 		},
@@ -38,6 +41,24 @@ var (
 	expectedHistogramResult = []*fftypes.ChartHistogram{
 		{
 			Count:     "10",
+			IsCapped:  false,
+			Timestamp: fftypes.UnixTime(1000000000),
+			Types: []*fftypes.ChartHistogramType{
+				{
+					Count: "5",
+					Type:  "typeA",
+				},
+				{
+					Count: "5",
+					Type:  "typeB",
+				},
+			},
+		},
+	}
+	expectedHistogramResultIsCapped = []*fftypes.ChartHistogram{
+		{
+			Count:     "10",
+			IsCapped:  true,
 			Timestamp: fftypes.UnixTime(1000000000),
 			Types: []*fftypes.ChartHistogramType{
 				{
@@ -54,6 +75,7 @@ var (
 	expectedHistogramResultNoTypes = []*fftypes.ChartHistogram{
 		{
 			Count:     "10",
+			IsCapped:  false,
 			Timestamp: fftypes.UnixTime(1000000000),
 			Types:     make([]*fftypes.ChartHistogramType, 0),
 		},
@@ -85,8 +107,8 @@ func TestGetChartHistogramInvalidCollectionName(t *testing.T) {
 }
 
 func TestGetChartHistogramValidCollectionNameWithTypes(t *testing.T) {
+	s, mock := newMockProvider().init()
 	for i := range validCollectionsWithTypes {
-		s, mock := newMockProvider().init()
 		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"timestamp", "type"}).
 			AddRow(fftypes.UnixTime(1000000000), "typeA").
 			AddRow(fftypes.UnixTime(1000000000), "typeA").
@@ -102,9 +124,38 @@ func TestGetChartHistogramValidCollectionNameWithTypes(t *testing.T) {
 		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollectionsWithTypes[i]))
 
 		assert.NoError(t, err)
-		assert.Equal(t, histogram[0].Count, expectedHistogramResult[0].Count)
-		assert.Equal(t, histogram[0].Timestamp, expectedHistogramResult[0].Timestamp)
-		assert.ElementsMatch(t, histogram[0].Types, expectedHistogramResult[0].Types)
+		assert.Equal(t, expectedHistogramResult[0].Count, histogram[0].Count)
+		assert.Equal(t, expectedHistogramResult[0].IsCapped, histogram[0].IsCapped)
+		assert.Equal(t, expectedHistogramResult[0].Timestamp, histogram[0].Timestamp)
+		assert.ElementsMatch(t, expectedHistogramResult[0].Types, histogram[0].Types)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	}
+}
+
+func TestGetChartHistogramValidCollectionNameWithTypesAndCapped(t *testing.T) {
+	s, mock := newMockProvider().init()
+	coreconfig.Reset()
+	config.Set(coreconfig.DatabaseMaxChartRows, 10)
+	for i := range validCollectionsWithTypes {
+		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"timestamp", "type"}).
+			AddRow(fftypes.UnixTime(1000000000), "typeA").
+			AddRow(fftypes.UnixTime(1000000000), "typeA").
+			AddRow(fftypes.UnixTime(1000000000), "typeA").
+			AddRow(fftypes.UnixTime(1000000000), "typeA").
+			AddRow(fftypes.UnixTime(1000000000), "typeA").
+			AddRow(fftypes.UnixTime(1000000000), "typeB").
+			AddRow(fftypes.UnixTime(1000000000), "typeB").
+			AddRow(fftypes.UnixTime(1000000000), "typeB").
+			AddRow(fftypes.UnixTime(1000000000), "typeB").
+			AddRow(fftypes.UnixTime(1000000000), "typeB"))
+
+		histogram, err := s.GetChartHistogram(context.Background(), "ns1", mockHistogramInterval, database.CollectionName(validCollectionsWithTypes[i]))
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedHistogramResultIsCapped[0].Count, histogram[0].Count)
+		assert.Equal(t, expectedHistogramResultIsCapped[0].IsCapped, histogram[0].IsCapped)
+		assert.Equal(t, expectedHistogramResultIsCapped[0].Timestamp, histogram[0].Timestamp)
+		assert.ElementsMatch(t, histogram[0].Types, expectedHistogramResultIsCapped[0].Types)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	}
 }

@@ -146,11 +146,13 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	// We are in an (indefinite) retry cycle from the batch processor to dispatch this batch, that is only
 	// termianted with shutdown. So we leave the operation pending on failure, as it is still being retried.
 	// The user will still have the failure details recorded.
-	if err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch, &state.Persisted), operations.RemainPendingOnFailure); err != nil {
+	outputs, err := bm.operations.RunOperation(ctx, opUploadBatch(op, batch, &state.Persisted), operations.RemainPendingOnFailure)
+	if err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payload=%s", batch.ID, batch.Author, batch.Key, state.Persisted.PayloadRef)
-	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins)
+	payloadRef := outputs.GetString("payloadRef")
+	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payloadRef=%s", batch.ID, batch.Author, batch.Key, payloadRef)
+	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, payloadRef)
 }
 
 func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data fftypes.DataArray) error {
@@ -172,7 +174,7 @@ func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, d
 				return i18n.NewError(ctx, coremsgs.MsgBlobNotFound, d.Blob.Hash)
 			}
 
-			err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blob))
+			_, err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blob))
 			if err != nil {
 				return err
 			}

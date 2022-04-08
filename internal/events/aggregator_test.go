@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
@@ -37,12 +36,14 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	coreconfig.Reset()
+	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
@@ -56,7 +57,10 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
 	ctx, cancel := context.WithCancel(context.Background())
 	ag := newAggregator(ctx, mdi, mbi, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
-	return ag, cancel
+	return ag, func() {
+		cancel()
+		ag.batchCache.Stop()
+	}
 }
 
 func newTestAggregatorWithMetrics() (*aggregator, func()) {
@@ -700,9 +704,6 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 
 func TestShutdownOnCancel(t *testing.T) {
 	ag, cancel := newTestAggregator()
-	ag.queuedRewinds = map[fftypes.UUID]bool{
-		*fftypes.NewUUID(): true,
-	}
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
 		Type:    fftypes.OffsetTypeAggregator,
@@ -716,14 +717,13 @@ func TestShutdownOnCancel(t *testing.T) {
 	ag.eventPoller.eventNotifier.newEvents <- 12345
 	cancel()
 	<-ag.eventPoller.closed
+	<-ag.rewinder.loop1Done
+	<-ag.rewinder.loop2Done
 }
 
 func TestProcessPinsDBGroupFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	ag.queuedRewinds = map[fftypes.UUID]bool{
-		*fftypes.NewUUID(): true,
-	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	rag := mdi.On("RunAsGroup", ag.ctx, mock.Anything)
@@ -1902,38 +1902,28 @@ func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	go ag.batchRewindListener()
-
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.False(t, rewind)
 	assert.Equal(t, int64(0), offset)
 }
 
-func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
+func TestRewindOffchainBatchesAndTXRewind(t *testing.T) {
 	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	go ag.batchRewindListener()
 
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-
-	for len(ag.queuedRewinds) < 4 {
-		time.Sleep(1 * time.Microsecond)
+	batchID := fftypes.NewUUID()
+	ag.rewinder.readyRewinds = map[fftypes.UUID]bool{
+		*batchID: true,
 	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
+		fftypes.NewUUID(),
+	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, nil, nil)
@@ -1941,23 +1931,34 @@ func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.True(t, rewind)
 	assert.Equal(t, int64(12344) /* one before the batch */, offset)
+
 }
 
-func TestRewindOffchainBatchesBatchesError(t *testing.T) {
+func TestRewindOffchainBatchesError(t *testing.T) {
 	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	cancel()
 
-	ag.queuedRewinds = map[fftypes.UUID]bool{
-		*fftypes.NewUUID(): true,
+	batchID := fftypes.NewUUID()
+	ag.rewinder.readyRewinds = map[fftypes.UUID]bool{
+		*batchID: true,
 	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
+		fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
+		{Sequence: 12345, Batch: fftypes.NewUUID()},
+	}, nil, fmt.Errorf("pop"))
 
-	rewind, _ := ag.rewindOffchainBatches()
+	// We will return 0, as context ended so retry will exit after error
+	rewind, offset := ag.rewindOffchainBatches()
 	assert.False(t, rewind)
+	assert.Equal(t, int64(0), offset)
+
 }
 
 func TestResolveBlobsNoop(t *testing.T) {

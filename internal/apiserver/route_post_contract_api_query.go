@@ -38,7 +38,6 @@ var postContractAPIQuery = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
-	JSONInputMask:   []string{"Type", "Interface", "Method"},
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

@@ -177,13 +177,14 @@ func (s *SQLCommon) getTokenApprovalPred(ctx context.Context, desc string, pred 
 	return approval, nil
 }
 
-func (s *SQLCommon) GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
+func (s *SQLCommon) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
 	return s.getTokenApprovalPred(ctx, localID.String(), sq.Eq{"local_id": localID})
 }
 
-func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenApproval, error) {
+func (s *SQLCommon) GetTokenApproval(ctx context.Context, connector, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error) {
 	return s.getTokenApprovalPred(ctx, protocolID, sq.And{
 		sq.Eq{"connector": connector},
+		sq.Eq{"pool_id": poolID},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }

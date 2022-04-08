@@ -17,35 +17,12 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-const anyJSONSchema = `{
-	"anyOf": [
-		{
-			"type": "string"
-		},
-		{
-			"type": "number"
-		},
-		{
-			"type": "object",
-			"additionalProperties": true
-		},
-		{
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": true
-			}
-		}
-	]
-}`
 
 var putConfigRecord = &oapispec.Route{
 	Name:   "putConfigRecord",
@@ -60,7 +37,6 @@ var putConfigRecord = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return fftypes.JSONAnyPtr("{}") },
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONInputSchema: func(ctx context.Context) string { return anyJSONSchema },
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = getOr(r.Ctx).PutConfigRecord(r.Ctx, r.PP["key"], r.Input.(*fftypes.JSONAny))
 		return output, err

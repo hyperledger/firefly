@@ -26,28 +26,28 @@ import (
 )
 
 type DataRef struct {
-	ID   *UUID    `json:"id,omitempty"`
-	Hash *Bytes32 `json:"hash,omitempty"`
+	ID   *UUID    `ffstruct:"DataRef" json:"id,omitempty"`
+	Hash *Bytes32 `ffstruct:"DataRef" json:"hash,omitempty"`
 
 	ValueSize int64 `json:"-"` // used internally for message size calculation, without full payload retrieval
 }
 
 type BlobRef struct {
-	Hash   *Bytes32 `json:"hash"`
-	Size   int64    `json:"size"`
-	Name   string   `json:"name"`
-	Public string   `json:"public,omitempty"`
+	Hash   *Bytes32 `ffstruct:"BlobRef" json:"hash"`
+	Size   int64    `ffstruct:"BlobRef" json:"size"`
+	Name   string   `ffstruct:"BlobRef" json:"name"`
+	Public string   `ffstruct:"BlobRef" json:"public,omitempty"`
 }
 
 type Data struct {
-	ID        *UUID         `json:"id,omitempty"`
-	Validator ValidatorType `json:"validator"`
-	Namespace string        `json:"namespace,omitempty"`
-	Hash      *Bytes32      `json:"hash,omitempty"`
-	Created   *FFTime       `json:"created,omitempty"`
-	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     *JSONAny      `json:"value"`
-	Blob      *BlobRef      `json:"blob,omitempty"`
+	ID        *UUID         `ffstruct:"Data" json:"id,omitempty"`
+	Validator ValidatorType `ffstruct:"Data" json:"validator"`
+	Namespace string        `ffstruct:"Data" json:"namespace,omitempty"`
+	Hash      *Bytes32      `ffstruct:"Data" json:"hash,omitempty"`
+	Created   *FFTime       `ffstruct:"Data" json:"created,omitempty"`
+	Datatype  *DatatypeRef  `ffstruct:"Data" json:"datatype,omitempty"`
+	Value     *JSONAny      `ffstruct:"Data" json:"value"`
+	Blob      *BlobRef      `ffstruct:"Data" json:"blob,omitempty"`
 
 	ValueSize int64 `json:"-"` // Used internally for message size calcuation, without full payload retrieval
 }
@@ -95,8 +95,8 @@ type DataAndBlob struct {
 }
 
 type DatatypeRef struct {
-	Name    string `json:"name,omitempty"`
-	Version string `json:"version,omitempty"`
+	Name    string `ffstruct:"DatatypeRef" json:"name,omitempty"`
+	Version string `ffstruct:"DatatypeRef" json:"version,omitempty"`
 }
 
 func (dr *DatatypeRef) String() string {

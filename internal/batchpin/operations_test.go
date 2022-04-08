@@ -45,7 +45,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 		fftypes.NewRandB32(),
 		fftypes.NewRandB32(),
 	}
-	addBatchPinInputs(op, batch.ID, contexts)
+	addBatchPinInputs(op, batch.ID, contexts, "payload1")
 
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
@@ -56,7 +56,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, batch, po.Data.(batchPinData).Batch)
 
-	_, complete, err := bp.RunOperation(context.Background(), opBatchPin(op, batch, contexts))
+	_, complete, err := bp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
 
 	assert.False(t, complete)
 	assert.NoError(t, err)

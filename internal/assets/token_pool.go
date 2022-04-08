@@ -33,6 +33,11 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
+	if existing, err := am.database.GetTokenPool(ctx, ns, pool.Name); err != nil {
+		return nil, err
+	} else if existing != nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolDuplicate, pool.Name)
+	}
 	pool.ID = fftypes.NewUUID()
 	pool.Namespace = ns
 
@@ -89,7 +94,8 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		return nil, err
 	}
 
-	return pool, am.operations.RunOperation(ctx, opCreatePool(op, pool))
+	_, err = am.operations.RunOperation(ctx, opCreatePool(op, pool))
+	return pool, err
 }
 
 func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) error {
@@ -108,7 +114,8 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 		return err
 	}
 
-	return am.operations.RunOperation(ctx, opActivatePool(op, pool, blockchainInfo))
+	_, err = am.operations.RunOperation(ctx, opActivatePool(op, pool, blockchainInfo))
+	return err
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {

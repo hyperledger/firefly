@@ -151,8 +151,8 @@ func TestContractAPIDBNoRows(t *testing.T) {
 func TestGetContractAPIs(t *testing.T) {
 	fb := database.ContractAPIQueryFactory.NewFilter(context.Background())
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "namespace", "message_id"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, nil, "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "namespace", "message_id"}).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetContractAPIs(context.Background(), "ns1", fb.And())
 	assert.NoError(t, err)
@@ -178,9 +178,9 @@ func TestGetContractAPIsQueryFail(t *testing.T) {
 func TestGetContractAPIsQueryResultFail(t *testing.T) {
 	fb := database.ContractAPIQueryFactory.NewFilter(context.Background())
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "namespace", "message_id"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, nil, "apple", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f").
-		AddRow("69851ca3-e9f9-489b-8731-dc6a7d990291", "4db4952e-4669-4243-a387-8f0f609e92bd", nil, nil, "orange", nil, "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "namespace", "message_id"}).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "apple", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f").
+		AddRow("69851ca3-e9f9-489b-8731-dc6a7d990291", "4db4952e-4669-4243-a387-8f0f609e92bd", nil, "orange", nil, "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetContractAPIs(context.Background(), "ns1", fb.And())
 	assert.Regexp(t, "FF10121", err)
@@ -189,8 +189,8 @@ func TestGetContractAPIsQueryResultFail(t *testing.T) {
 
 func TestGetContractAPIByName(t *testing.T) {
 	s, mock := newMockProvider().init()
-	rows := sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "namespace", "message_id"}).
-		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, nil, "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
+	rows := sqlmock.NewRows([]string{"id", "interface_id", "location", "name", "namespace", "message_id"}).
+		AddRow("7e2c001c-e270-4fd7-9e82-9dacee843dc2", "8fcc4938-7d8b-4c00-a71b-1b46837c8ab1", nil, "banana", "ns1", "acfe07a2-117f-46b7-8d47-e3beb7cc382f")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	api, err := s.GetContractAPIByName(context.Background(), "ns1", "banana")
 	assert.NotNil(t, api)

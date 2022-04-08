@@ -17,7 +17,6 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -40,8 +39,6 @@ var postNewIdentity = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.IdentityCreateDTO{} },
-	JSONInputMask:   nil,
-	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

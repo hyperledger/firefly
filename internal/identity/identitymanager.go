@@ -402,7 +402,13 @@ func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLoo
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("did=%s", didLookupStr)
 	defer func() {
-		log.L(ctx).Debugf("Resolved DID '%s' to identity: %v (err=%v)", didLookupStr, identity, err)
+		didResolved := ""
+		var uuidResolved *fftypes.UUID
+		if identity != nil {
+			didResolved = identity.DID
+			uuidResolved = identity.ID
+		}
+		log.L(ctx).Debugf("Resolved DID '%s' to identity: %s / %s (err=%v)", didLookupStr, uuidResolved, didResolved, err)
 	}()
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -49,11 +48,14 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event, blockchainTXID string) error {
-	chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
-	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
-		return err
+	if ev.ProtocolID != "" || ev.BlockchainTXID != "" {
+		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
+		chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
+		if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+			return err
+		}
+		em.emitBlockchainEventMetric(ev)
 	}
-	em.emitBlockchainEventMetric(ev)
 	if op, err := em.findTXOperation(ctx, pool.TX.ID, fftypes.OpTypeTokenActivatePool); err != nil {
 		return err
 	} else if op == nil {
@@ -135,7 +137,7 @@ func (em *eventManager) shouldAnnounce(ctx context.Context, pool *tokens.TokenPo
 // It will be invoked on every node (including the submitter) after the pool is announced+activated, to trigger confirmation of the pool.
 // When received in any other scenario, it should be ignored.
 func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPool) (err error) {
-	var batchID *fftypes.UUID
+	var msgIDforRewind *fftypes.UUID
 	var announcePool *fftypes.TokenPool
 
 	err = em.retry.Do(em.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
@@ -149,11 +151,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				if existingPool.State == fftypes.TokenPoolStateConfirmed {
 					return nil // already confirmed
 				}
-				if msg, _, _, err := em.data.GetMessageWithDataCached(ctx, existingPool.Message, data.CRORequireBatchID); err != nil {
-					return err
-				} else if msg != nil {
-					batchID = msg.BatchID // trigger rewind after completion of database transaction
-				}
+				msgIDforRewind = existingPool.Message
 				return em.confirmPool(ctx, existingPool, &pool.Event, pool.Event.BlockchainTXID)
 			} else if pool.TX.ID == nil {
 				// TransactionID is required if the pool doesn't exist yet
@@ -178,9 +176,8 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 
 	if err == nil {
 		// Initiate a rewind if a batch was potentially completed by the arrival of this transaction
-		if batchID != nil {
-			log.L(em.ctx).Infof("Batch '%s' contains reference to received pool '%s'", batchID, pool.ProtocolID)
-			em.aggregator.rewindBatches <- *batchID
+		if msgIDforRewind != nil {
+			em.aggregator.queueMessageRewind(msgIDforRewind)
 		}
 
 		// Announce the details of the new token pool with the blockchain event details

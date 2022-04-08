@@ -115,7 +115,6 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 	gi = &fftypes.GroupIdentity{
 		Namespace: in.Message.Header.Namespace,
 		Name:      in.Group.Name,
-		Ledger:    in.Group.Ledger,
 		Members:   make(fftypes.Members, len(in.Group.Members)),
 	}
 	for i, rInput := range in.Group.Members {

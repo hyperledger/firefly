@@ -186,7 +186,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error) {
+func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...database.PostCompletionHook) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -243,6 +243,10 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 				return err
 			}
 		}
+	}
+
+	for _, hook := range hooks {
+		s.postCommitEvent(tx, hook)
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
@@ -497,6 +501,37 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (
 		ids = append(ids, &id)
 	}
 	return ids, nil
+}
+
+func (s *SQLCommon) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
+	query := sq.Select("m.batch_id").From("messages_data AS md").LeftJoin("messages AS m ON m.id = md.message_id").Where(sq.Eq{"md.data_id": dataIDs})
+	return s.queryBatchIDs(ctx, query)
+}
+
+func (s *SQLCommon) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
+	return s.queryBatchIDs(ctx, sq.Select("batch_id").From("messages").Where(sq.Eq{"id": msgIDs}))
+}
+
+func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (batchIDs []*fftypes.UUID, err error) {
+	rows, _, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	batchIDs = []*fftypes.UUID{}
+	for rows.Next() {
+		var batchID *fftypes.UUID
+		err = rows.Scan(&batchID)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages")
+		}
+		// Only append non-nil batch IDs
+		if batchID != nil {
+			batchIDs = append(batchIDs, batchID)
+		}
+	}
+	return batchIDs, nil
 }
 
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, fr *database.FilterResult, err error) {

@@ -138,11 +138,7 @@ func (bm *broadcastManager) uploadBatch(ctx context.Context, data uploadBatchDat
 		return nil, false, err
 	}
 	log.L(ctx).Infof("Published batch '%s' to shared storage: '%s'", data.Batch.ID, payloadRef)
-
-	// Update the batch to store the payloadRef
-	data.BatchPersisted.PayloadRef = payloadRef
-	update := database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", payloadRef)
-	return getUploadBatchOutputs(payloadRef), true, bm.database.UpdateBatch(ctx, data.Batch.ID, update)
+	return getUploadBatchOutputs(payloadRef), true, nil
 }
 
 // uploadBlob streams a blob from the local data exchange, to public storage

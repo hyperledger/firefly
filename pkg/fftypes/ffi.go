@@ -32,60 +32,60 @@ type FFIParamValidator interface {
 }
 
 type FFIReference struct {
-	ID      *UUID  `json:"id,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Version string `json:"version,omitempty"`
+	ID      *UUID  `ffstruct:"FFIReference" json:"id,omitempty"`
+	Name    string `ffstruct:"FFIReference" json:"name,omitempty"`
+	Version string `ffstruct:"FFIReference" json:"version,omitempty"`
 }
 
 type FFI struct {
-	ID          *UUID        `json:"id,omitempty"`
-	Message     *UUID        `json:"message,omitempty"`
-	Namespace   string       `json:"namespace,omitempty"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Version     string       `json:"version"`
-	Methods     []*FFIMethod `json:"methods,omitempty"`
-	Events      []*FFIEvent  `json:"events,omitempty"`
+	ID          *UUID        `ffstruct:"FFI" json:"id,omitempty" ffexcludeinput:"true"`
+	Message     *UUID        `ffstruct:"FFI" json:"message,omitempty" ffexcludeinput:"true"`
+	Namespace   string       `ffstruct:"FFI" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Name        string       `ffstruct:"FFI" json:"name"`
+	Description string       `ffstruct:"FFI" json:"description"`
+	Version     string       `ffstruct:"FFI" json:"version"`
+	Methods     []*FFIMethod `ffstruct:"FFI" json:"methods,omitempty"`
+	Events      []*FFIEvent  `ffstruct:"FFI" json:"events,omitempty"`
 }
 
 type FFIMethod struct {
-	ID          *UUID     `json:"id,omitempty"`
-	Contract    *UUID     `json:"contract,omitempty"`
-	Name        string    `json:"name"`
-	Namespace   string    `json:"namespace,omitempty"`
-	Pathname    string    `json:"pathname"`
-	Description string    `json:"description"`
-	Params      FFIParams `json:"params"`
-	Returns     FFIParams `json:"returns"`
+	ID          *UUID     `ffstruct:"FFIMethod" json:"id,omitempty"`
+	Contract    *UUID     `ffstruct:"FFIMethod" json:"contract,omitempty"`
+	Name        string    `ffstruct:"FFIMethod" json:"name"`
+	Namespace   string    `ffstruct:"FFIMethod" json:"namespace,omitempty"`
+	Pathname    string    `ffstruct:"FFIMethod" json:"pathname"`
+	Description string    `ffstruct:"FFIMethod" json:"description"`
+	Params      FFIParams `ffstruct:"FFIMethod" json:"params"`
+	Returns     FFIParams `ffstruct:"FFIMethod" json:"returns"`
 }
 
 type FFIEventDefinition struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Params      FFIParams `json:"params"`
+	Name        string    `ffstruct:"FFIEvent" json:"name"`
+	Description string    `ffstruct:"FFIEvent" json:"description"`
+	Params      FFIParams `ffstruct:"FFIEvent" json:"params"`
 }
 
 type FFIEvent struct {
-	ID        *UUID  `json:"id,omitempty"`
-	Contract  *UUID  `json:"contract,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
-	Pathname  string `json:"pathname,omitempty"`
+	ID        *UUID  `ffstruct:"FFIEvent" json:"id,omitempty"`
+	Contract  *UUID  `ffstruct:"FFIEvent" json:"contract,omitempty"`
+	Namespace string `ffstruct:"FFIEvent" json:"namespace,omitempty"`
+	Pathname  string `ffstruct:"FFIEvent" json:"pathname,omitempty"`
 	FFIEventDefinition
 }
 
 type FFIParam struct {
-	Name   string   `json:"name"`
-	Schema *JSONAny `json:"schema,omitempty"`
+	Name   string   `ffstruct:"FFIParam" json:"name"`
+	Schema *JSONAny `ffstruct:"FFIParam" json:"schema,omitempty"`
 }
 
 type FFIParams []*FFIParam
 
 type FFIGenerationRequest struct {
-	Namespace   string   `json:"namespace,omitempty"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Version     string   `json:"version"`
-	Input       *JSONAny `json:"input"`
+	Namespace   string   `ffstruct:"FFIGenerationRequest" json:"namespace,omitempty"`
+	Name        string   `ffstruct:"FFIGenerationRequest" json:"name"`
+	Description string   `ffstruct:"FFIGenerationRequest" json:"description"`
+	Version     string   `ffstruct:"FFIGenerationRequest" json:"version"`
+	Input       *JSONAny `ffstruct:"FFIGenerationRequest" json:"input"`
 }
 
 func (f *FFI) Validate(ctx context.Context, existing bool) (err error) {

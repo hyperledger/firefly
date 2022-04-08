@@ -49,17 +49,12 @@ func (s *approveSender) SendAndWait(ctx context.Context) error {
 	return s.sendInternal(ctx, methodSendAndWait)
 }
 
-func (s *approveSender) setDefaults() {
-	s.approval.LocalID = fftypes.NewUUID()
-}
-
 func (am *assetManager) NewApproval(ns string, approval *fftypes.TokenApprovalInput) sysmessaging.MessageSender {
 	sender := &approveSender{
 		mgr:       am,
 		namespace: ns,
 		approval:  approval,
 	}
-	sender.setDefaults()
 	return sender
 }
 
@@ -128,7 +123,8 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) err
 		return err
 	}
 
-	return s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
+	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
+	return err
 }
 
 func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) (err error) {

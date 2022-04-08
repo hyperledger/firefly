@@ -151,7 +151,9 @@ func TestPinnedReceiveOK(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdx.On("Name").Return("utdx").Maybe()
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
@@ -413,8 +415,6 @@ func TestPrivateBlobReceivedTriggersRewindOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	hash := fftypes.NewRandB32()
-	dataID := fftypes.NewUUID()
-	batchID := fftypes.NewUUID()
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -422,12 +422,6 @@ func TestPrivateBlobReceivedTriggersRewindOk(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
 	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
-	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
-		{ID: dataID},
-	}, nil, nil)
-	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return([]*fftypes.Message{
-		{BatchID: batchID},
-	}, nil, nil)
 
 	done := make(chan struct{})
 	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
@@ -437,8 +431,8 @@ func TestPrivateBlobReceivedTriggersRewindOk(t *testing.T) {
 	em.DXEvent(mdx, mde)
 	<-done
 
-	bid := <-em.aggregator.rewindBatches
-	assert.Equal(t, *batchID, bid)
+	brw := <-em.aggregator.rewinder.rewindRequests
+	assert.Equal(t, rewind{hash: *hash, rewindType: rewindBlob}, brw)
 
 	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -454,52 +448,6 @@ func TestPrivateBlobReceivedBadEvent(t *testing.T) {
 	mde := newPrivateBlobReceived("", fftypes.NewRandB32(), 12345, "")
 	em.privateBlobReceived(mdx, mde)
 	mde.AssertExpectations(t)
-}
-
-func TestPrivateBlobReceivedGetMessagesFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	cancel() // retryable error
-	hash := fftypes.NewRandB32()
-	dataID := fftypes.NewUUID()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
-	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
-	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
-		{ID: dataID},
-	}, nil, nil)
-	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-
-	// no ack as we are simulating termination mid retry
-	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
-	em.privateBlobReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestPrivateBlobReceivedGetDataRefsFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	cancel() // retryable error
-	hash := fftypes.NewRandB32()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
-	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil)
-	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-
-	// no ack as we are simulating termination mid retry
-	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
-	em.privateBlobReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestPrivateBlobReceivedInsertBlobFails(t *testing.T) {
@@ -662,7 +610,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(fmt.Errorf("optimization fail"))
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization fail"))
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
@@ -731,7 +679,9 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdm := em.data.(*datamocks.Manager)
@@ -769,7 +719,9 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
@@ -807,7 +759,9 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mim.On("CachedIdentityLookupMustExist", em.ctx, "signingOrg").Return(org1, false, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mdi.On("UpdateMessages", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm := em.data.(*datamocks.Manager)

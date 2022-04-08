@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -131,12 +130,9 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 			ID:   txID,
 		},
 	}
-	storedMessage := &fftypes.Message{
-		BatchID: fftypes.NewUUID(),
-	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil).Times(2)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == chainPool.Event.Name
 	})).Return(nil).Once()
@@ -152,8 +148,6 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
 	})).Return(nil).Once()
-	mdm.On("GetMessageWithDataCached", em.ctx, storedPool.Message, data.CRORequireBatchID).Return(nil, nil, false, fmt.Errorf("pop")).Once()
-	mdm.On("GetMessageWithDataCached", em.ctx, storedPool.Message, data.CRORequireBatchID).Return(storedMessage, nil, true, nil).Once()
 
 	err := em.TokenPoolCreated(mti, chainPool)
 	assert.NoError(t, err)
@@ -286,9 +280,6 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 			ID:   txID,
 		},
 	}
-	storedMessage := &fftypes.Message{
-		BatchID: fftypes.NewUUID(),
-	}
 
 	mdi.On("GetTokenPoolByProtocolID", em.ctx, "magic-tokens", "123").Return(storedPool, nil).Times(2)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -305,7 +296,6 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	})).Return(nil).Once()
 	mam.On("ActivateTokenPool", em.ctx, storedPool, info).Return(fmt.Errorf("pop")).Once()
 	mam.On("ActivateTokenPool", em.ctx, storedPool, info).Return(nil).Once()
-	mdm.On("GetMessageWithDataCached", em.ctx, storedPool.Message, data.CRORequireBatchID).Return(storedMessage, nil, true, nil).Once()
 
 	err := em.TokenPoolCreated(mti, chainPool)
 	assert.NoError(t, err)
@@ -332,7 +322,8 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -363,7 +354,8 @@ func TestConfirmPoolGetOpsFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -400,7 +392,8 @@ func TestConfirmPoolResolveOpFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -439,7 +432,8 @@ func TestConfirmPoolTxFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -475,7 +469,8 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 		},
 	}
 	event := &blockchain.Event{
-		Name: "TokenPool",
+		BlockchainTXID: "0xffffeeee",
+		Name:           "TokenPool",
 	}
 
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {

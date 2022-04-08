@@ -41,6 +41,8 @@ var (
 	APIRequestMaxTimeout = ffc("api.requestMaxTimeout")
 	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
 	APIShutdownTimeout = ffc("api.shutdownTimeout")
+	// APIOASPanicOnMissingDescription controls whether the OpenAPI Spec generator will strongly enforce descriptions on every field or not
+	APIOASPanicOnMissingDescription = ffc("api.oas.panicOnMissingDescription")
 	// BatchCacheSize
 	BatchCacheSize = ffc("batch.cache.size")
 	// BatchCacheSize
@@ -151,6 +153,10 @@ var (
 	EventAggregatorOpCorrelationRetries = ffc("event.aggregator.opCorrelationRetries")
 	// EventAggregatorPollTimeout the time to wait without a notification of new events, before trying a select on the table
 	EventAggregatorPollTimeout = ffc("event.aggregator.pollTimeout")
+	// EventAggregatorRewindTimeout the minimum time to wait for rewinds to accumulate before resolving them
+	EventAggregatorRewindTimeout = ffc("event.aggregator.rewindTimeout")
+	// EventAggregatorRewindQueueLength the size of the queue into the rewind dispatcher
+	EventAggregatorRewindQueueLength = ffc("event.aggregator.rewindQueueLength")
 	// EventAggregatorRetryFactor the backoff factor to use for retry of database operations
 	EventAggregatorRetryFactor = ffc("event.aggregator.retry.factor")
 	// EventAggregatorRetryInitDelay the initial delay to use for retry of data base operations
@@ -314,6 +320,8 @@ func setDefaults() {
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
+	viper.SetDefault(string(EventAggregatorRewindTimeout), "50ms")
+	viper.SetDefault(string(EventAggregatorRewindQueueLength), 10)
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")

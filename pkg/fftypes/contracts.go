@@ -28,17 +28,16 @@ var (
 )
 
 type ContractCallRequest struct {
-	Type      ContractCallType       `json:"type,omitempty" ffenum:"contractcalltype"`
-	Interface *UUID                  `json:"interface,omitempty"`
-	Ledger    *JSONAny               `json:"ledger,omitempty"`
-	Location  *JSONAny               `json:"location,omitempty"`
-	Key       string                 `json:"key,omitempty"`
-	Method    *FFIMethod             `json:"method,omitempty"`
-	Input     map[string]interface{} `json:"input"`
+	Type      ContractCallType       `ffstruct:"ContractCallRequest" json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
+	Interface *UUID                  `ffstruct:"ContractCallRequest" json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery,postContractInterfaceInvoke,postContractInterfaceQuery"`
+	Location  *JSONAny               `ffstruct:"ContractCallRequest" json:"location,omitempty"`
+	Key       string                 `ffstruct:"ContractCallRequest" json:"key,omitempty"`
+	Method    *FFIMethod             `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	Input     map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
 }
 
 type ContractCallResponse struct {
-	ID *UUID `json:"id"`
+	ID *UUID `ffstruct:"ContractCallResponse" json:"id"`
 }
 
 type ContractSubscribeRequest struct {
@@ -48,19 +47,18 @@ type ContractSubscribeRequest struct {
 }
 
 type ContractURLs struct {
-	OpenAPI string `json:"openapi"`
-	UI      string `json:"ui"`
+	OpenAPI string `ffstruct:"ContractURLs" json:"openapi"`
+	UI      string `ffstruct:"ContractURLs" json:"ui"`
 }
 
 type ContractAPI struct {
-	ID        *UUID         `json:"id,omitempty"`
-	Namespace string        `json:"namespace,omitempty"`
-	Interface *FFIReference `json:"interface"`
-	Ledger    *JSONAny      `json:"ledger,omitempty"`
-	Location  *JSONAny      `json:"location,omitempty"`
-	Name      string        `json:"name"`
-	Message   *UUID         `json:"message,omitempty"`
-	URLs      ContractURLs  `json:"urls"`
+	ID        *UUID         `ffstruct:"ContractAPI" json:"id,omitempty" ffexcludeinput:"true"`
+	Namespace string        `ffstruct:"ContractAPI" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Interface *FFIReference `ffstruct:"ContractAPI" json:"interface"`
+	Location  *JSONAny      `ffstruct:"ContractAPI" json:"location,omitempty"`
+	Name      string        `ffstruct:"ContractAPI" json:"name"`
+	Message   *UUID         `ffstruct:"ContractAPI" json:"message,omitempty" ffexcludeinput:"true"`
+	URLs      ContractURLs  `ffstruct:"ContractAPI" json:"urls" ffexcludeinput:"true"`
 }
 
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
@@ -85,5 +83,5 @@ func (c *ContractAPI) LocationAndLedgerEquals(a *ContractAPI) bool {
 	if c == nil || a == nil {
 		return false
 	}
-	return c.Location.Hash().Equals(a.Location.Hash()) && c.Ledger.Hash().Equals(a.Ledger.Hash())
+	return c.Location.Hash().Equals(a.Location.Hash())
 }

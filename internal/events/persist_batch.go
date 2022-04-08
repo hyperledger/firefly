@@ -109,7 +109,7 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 	}
 
 	// We require that the batch contains exactly the set of data that is in the messages - no more or less.
-	// While this means an edge case inefficiencly of re-transmission of data when sent in multiple messages,
+	// While this means an edge case inefficiency of re-transmission of data when sent in multiple messages,
 	// that is outweighed by the efficiency it allows in the insertion logic in the majority case.
 	matchedData := make(map[fftypes.UUID]bool)
 	matchedMsgs := make([]*messageAndData, len(batch.Payload.Messages))
@@ -277,7 +277,15 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 	// Then the same one-shot insert of all the mesages, on the basis they are likely unique (even if
 	// one of the data elements wasn't unique). Likely reasons for exceptions here are idempotent replay,
 	// or a root broadcast where "em.sentByUs" returned false, but we actually sent it.
-	err = em.database.InsertMessages(ctx, batch.Payload.Messages)
+	err = em.database.InsertMessages(ctx, batch.Payload.Messages, func() {
+		// If all is well, update the cache when the runAsGroup closes out.
+		// It isn't safe to do this before the messages themselves are safely in the database, because the aggregator
+		// might wake up and notice the cache before we're written the messages. Meaning we'll clash and override the
+		// confirmed updates with un-confirmed batch messages.
+		for _, mm := range matchedMsgs {
+			em.data.UpdateMessageCache(mm.message, mm.data)
+		}
+	})
 	if err != nil {
 		log.L(ctx).Debugf("Batch message insert optimization failed for batch '%s': %s", batch.ID, err)
 		// Fall back to individual upserts
@@ -293,9 +301,5 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 		}
 	}
 
-	// If all is well, update the cache before we return
-	for _, mm := range matchedMsgs {
-		em.data.UpdateMessageCache(mm.message, mm.data)
-	}
 	return true, nil
 }

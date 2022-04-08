@@ -62,14 +62,14 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	approvalJson, _ := json.Marshal(&approval)
 
 	// Query back token approval by ID
-	approvalRead, err := s.GetTokenApproval(ctx, approval.LocalID)
+	approvalRead, err := s.GetTokenApprovalByID(ctx, approval.LocalID)
 	assert.NoError(t, err)
 	assert.NotNil(t, approvalRead)
 	approvalReadJson, _ := json.Marshal(&approvalRead)
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
 
-	// Query back token approval by Protocol ID
-	approvalRead, err = s.GetTokenApprovalByProtocolID(ctx, approval.Connector, approval.ProtocolID)
+	//query back token approval by Protcol ID and Pool ID
+	approvalRead, err = s.GetTokenApproval(ctx, approval.Connector, approval.ProtocolID, approval.Pool)
 	assert.NoError(t, err)
 	assert.NotNil(t, approvalRead)
 	approvalReadJson, _ = json.Marshal(&approvalRead)
@@ -97,7 +97,7 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Query back token approval by ID
-	approvalRead, err = s.GetTokenApproval(ctx, approval.LocalID)
+	approvalRead, err = s.GetTokenApprovalByID(ctx, approval.LocalID)
 	assert.NoError(t, err)
 	assert.NotNil(t, approvalRead)
 	approvalJson, _ = json.Marshal(&approval)
@@ -158,7 +158,7 @@ func TestUpsertApprovalFailCommit(t *testing.T) {
 func TestGetApprovalByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetTokenApproval(context.Background(), fftypes.NewUUID())
+	_, err := s.GetTokenApprovalByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -166,7 +166,7 @@ func TestGetApprovalByIDSelectFail(t *testing.T) {
 func TestGetApprovalByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
-	a, err := s.GetTokenApproval(context.Background(), fftypes.NewUUID())
+	a, err := s.GetTokenApprovalByID(context.Background(), fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, a)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -175,7 +175,7 @@ func TestGetApprovalByIDNotFound(t *testing.T) {
 func TestGetApprovalByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("1"))
-	_, err := s.GetTokenApproval(context.Background(), fftypes.NewUUID())
+	_, err := s.GetTokenApprovalByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

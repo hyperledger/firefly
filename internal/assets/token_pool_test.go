@@ -47,6 +47,44 @@ func TestCreateTokenPoolBadName(t *testing.T) {
 	assert.Regexp(t, "FF00140", err)
 }
 
+func TestCreateTokenPoolGetError(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Name: "testpool",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, fmt.Errorf("pop"))
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+
+	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestCreateTokenPoolDuplicateName(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		Name: "testpool",
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(&fftypes.TokenPool{}, nil)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
+
+	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
+	assert.Regexp(t, "FF10275.*testpool", err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -60,6 +98,7 @@ func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
@@ -67,7 +106,7 @@ func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -89,12 +128,15 @@ func TestCreateTokenPoolUnknownConnectorNoConnectors(t *testing.T) {
 
 	am.tokens = make(map[string]tokens.Plugin)
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "FF10292", err)
 
+	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
 
@@ -109,12 +151,15 @@ func TestCreateTokenPoolUnknownConnectorMultipleConnectors(t *testing.T) {
 	am.tokens["magic-tokens"] = nil
 	am.tokens["magic-tokens2"] = nil
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "FF10292", err)
 
+	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
 
@@ -144,12 +189,15 @@ func TestCreateTokenPoolNoConnectors(t *testing.T) {
 		Name: "testpool",
 	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "FF10292", err)
 
+	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
 
@@ -161,14 +209,17 @@ func TestCreateTokenPoolIdentityFail(t *testing.T) {
 		Name: "testpool",
 	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.EqualError(t, err, "pop")
 
+	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -182,14 +233,17 @@ func TestCreateTokenPoolWrongConnector(t *testing.T) {
 		Name:      "testpool",
 	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
 	mim := am.identity.(*identitymanagermocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "FF10272", err)
 
+	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
@@ -208,6 +262,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
@@ -215,7 +270,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -236,9 +291,11 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 		Name:      "testpool",
 	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(nil, fmt.Errorf("pop"))
@@ -246,6 +303,7 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
 
+	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mth.AssertExpectations(t)
@@ -264,6 +322,7 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	mdm := am.data.(*datamocks.Manager)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
@@ -292,6 +351,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
@@ -299,7 +359,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -325,6 +385,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
@@ -332,7 +393,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
@@ -359,6 +420,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
@@ -372,7 +434,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
 		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, true)
 	assert.NoError(t, err)
@@ -407,7 +469,7 @@ func TestActivateTokenPool(t *testing.T) {
 		data := op.Data.(activatePoolData)
 		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
 	assert.NoError(t, err)
@@ -473,7 +535,7 @@ func TestActivateTokenPoolFail(t *testing.T) {
 		data := op.Data.(activatePoolData)
 		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
 	assert.EqualError(t, err, "pop")
@@ -505,7 +567,7 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 		data := op.Data.(activatePoolData)
 		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool, info)
 	assert.NoError(t, err)
