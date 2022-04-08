@@ -34,7 +34,7 @@ func TestGenerateConfigDocs(t *testing.T) {
 	apiserver.InitConfig()
 	f, err := os.Create(filepath.Join("reference", "config.md"))
 	assert.NoError(t, err)
-	generatedConfig, err := config.GenerateConfigMarkdown(context.Background())
+	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), config.GetKnownKeys())
 	assert.NoError(t, err)
 	_, err = f.Write(generatedConfig)
 	assert.NoError(t, err)

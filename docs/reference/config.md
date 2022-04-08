@@ -49,6 +49,12 @@ nav_order: 3
 |requestTimeout|`<nil>`|The maximum amount of time, in milliseconds that a request is allowed to remain open|
 |shutdownTimeout|`<nil>`|The maximum amount of time, in milliseconds to wait for any open HTTP requests to finish before shutting down the HTTP server|
 
+## api.oas
+
+|Key|Default Value|Description|
+|---|-------------|-----------|
+|panicOnMissingDescription|`<nil>`|Used when building FireFly to verify all structures and APIs have documentation|
+
 ## asset.manager
 
 |Key|Default Value|Description|
@@ -408,6 +414,8 @@ nav_order: 3
 |firstEvent|`<nil>`|TBD|
 |opCorrelationRetries|`<nil>`|TBD|
 |pollTimeout|`<nil>`|TBD|
+|rewindQueueLength|`<nil>`|TBD|
+|rewindTimeout|`<nil>`|TBD|
 
 ## event.aggregator.retry
 

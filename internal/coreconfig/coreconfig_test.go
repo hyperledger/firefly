@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/pkg/config"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 const configDir = "../../test/data/config"
