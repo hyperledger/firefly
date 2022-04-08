@@ -504,7 +504,6 @@ func GenerateConfigMarkdown(ctx context.Context, keys []string) ([]byte, error) 
 	b := bytes.NewBuffer([]byte{})
 
 	rootKeyHeaderLevel := 2
-	// currentHeaderHierarchy := make([]string, 0)
 
 	b.WriteString(configDocHeader)
 

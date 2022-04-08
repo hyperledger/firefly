@@ -18,7 +18,7 @@ package i18n
 
 //revive:disable
 var (
-	ConfigLang          = FFM("lang", "Default language for translation (API calls may support language override using headers)")
+	ConfigLang          = FFM("config.lang", "Default language for translation (API calls may support language override using headers)")
 	ConfigLogCompress   = FFM("config.log.compress", "Determines if the rotated log files should be compressed using gzip")
 	ConfigLogFilename   = FFM("config.log.filename", "Filename is the file to write logs to.  Backup log files will be retained in the same directory")
 	ConfigLogFilesize   = FFM("config.log.filesize", "MaxSize is the maximum size the log file before it gets rotated")
