@@ -640,3 +640,30 @@ func TestWebsocketSendAfterClose(t *testing.T) {
 	err = connection.send(map[string]string{"foo": "bar"})
 	assert.Regexp(t, "FF10290", err)
 }
+
+func TestWebsocketStatus(t *testing.T) {
+	ws := &WebSockets{
+		ctx:         context.Background(),
+		connections: make(map[string]*websocketConnection),
+	}
+	ws.connections["id1"] = &websocketConnection{
+		connID: "id1",
+		started: []*websocketStartedSub{
+			{ephemeral: false, name: "name1", namespace: "ns1"},
+		},
+		remoteAddr: "otherhost",
+		userAgent:  "user",
+	}
+
+	status := ws.GetStatus()
+
+	assert.Equal(t, true, status.Enabled)
+	assert.Len(t, status.Connections, 1)
+	assert.Equal(t, "id1", status.Connections[0].ID)
+	assert.Equal(t, "otherhost", status.Connections[0].RemoteAddress)
+	assert.Equal(t, "user", status.Connections[0].UserAgent)
+	assert.Len(t, status.Connections[0].Subscriptions, 1)
+	assert.Equal(t, false, status.Connections[0].Subscriptions[0].Ephemeral)
+	assert.Equal(t, "ns1", status.Connections[0].Subscriptions[0].Namespace)
+	assert.Equal(t, "name1", status.Connections[0].Subscriptions[0].Name)
+}

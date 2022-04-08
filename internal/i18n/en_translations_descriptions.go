@@ -551,4 +551,19 @@ var (
 
 	// ContractCallResponse field descriptions
 	ContractCallResponseID = ffm("ContractCallResponse.id", "The UUID of the operation created to track the transaction submission through to completion")
+
+	// WebSocketStatus field descriptions
+	WebSocketStatusEnabled     = ffm("WebSocketStatus.enabled", "Indicates whether the websockets plugin is enabled")
+	WebSocketStatusConnections = ffm("WebSocketStatus.connections", "List of currently active websocket client connections")
+
+	// WSConnectionStatus field descriptions
+	WSConnectionStatusID            = ffm("WSConnectionStatus.id", "The unique ID assigned to this client connection")
+	WSConnectionStatusRemoteAddress = ffm("WSConnectionStatus.remoteAddress", "The remote address of the connected client (if available)")
+	WSConnectionStatusUserAgent     = ffm("WSConnectionStatus.userAgent", "The user agent of the connected client (if available)")
+	WSConnectionStatusSubscriptions = ffm("WSConnectionStatus.subscriptions", "List of subscriptions currently started by this client")
+
+	// WSSubscriptionStatus field descriptions
+	WSSubscriptionStatusEphemeral = ffm("WSSubscriptionStatus.ephemeral", "Indicates whether the subscription is ephemeral (vs durable)")
+	WSSubscriptionStatusNamespace = ffm("WSSubscriptionStatus.namespace", "The subscription namespace")
+	WSSubscriptionStatusName      = ffm("WSSubscriptionStatus.name", "The subscription name (for durable subscriptions only)")
 )

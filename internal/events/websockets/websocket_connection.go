@@ -51,9 +51,11 @@ type websocketConnection struct {
 	mux                sync.Mutex
 	closed             bool
 	changeEventMatcher *regexp.Regexp
+	remoteAddr         string
+	userAgent          string
 }
 
-func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn) *websocketConnection {
+func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn, req *http.Request) *websocketConnection {
 	connID := fftypes.NewUUID().String()
 	ctx := log.WithLogField(pCtx, "websocket", connID)
 	ctx, cancelCtx := context.WithCancel(ctx)
@@ -66,6 +68,8 @@ func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn)
 		sendMessages: make(chan interface{}),
 		senderDone:   make(chan struct{}),
 		receiverDone: make(chan struct{}),
+		remoteAddr:   req.RemoteAddr,
+		userAgent:    req.UserAgent(),
 	}
 	go wc.sendLoop()
 	go wc.receiveLoop()

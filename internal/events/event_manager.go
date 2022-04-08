@@ -57,6 +57,7 @@ type EventManager interface {
 	ChangeEvents() chan<- *fftypes.ChangeEvent
 	DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) (err error)
+	GetWebSocketStatus() *fftypes.WebSocketStatus
 	Start() error
 	WaitStop()
 
@@ -245,4 +246,8 @@ func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *f
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {
 	return em.internalEvents.AddListener(ns, el)
+}
+
+func (em *eventManager) GetWebSocketStatus() *fftypes.WebSocketStatus {
+	return em.subManager.getWebSocketStatus()
 }

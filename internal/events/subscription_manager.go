@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
@@ -221,7 +222,7 @@ func (sm *subscriptionManager) newOrUpdatedDurableSubscription(id *fftypes.UUID)
 			return
 		}
 		// Need to close the old one
-		loaded, dispatchers := sm.closeDurabeSubscriptionLocked(subDef.ID)
+		loaded, dispatchers := sm.closeDurableSubscriptionLocked(subDef.ID)
 		if loaded {
 			// Outside the lock, close out the active dispatchers
 			sm.mux.Unlock()
@@ -237,7 +238,7 @@ func (sm *subscriptionManager) newOrUpdatedDurableSubscription(id *fftypes.UUID)
 	}
 }
 
-func (sm *subscriptionManager) closeDurabeSubscriptionLocked(id *fftypes.UUID) (bool, []*eventDispatcher) {
+func (sm *subscriptionManager) closeDurableSubscriptionLocked(id *fftypes.UUID) (bool, []*eventDispatcher) {
 	var dispatchers []*eventDispatcher
 	// Remove it from the list of durable subs (if there)
 	_, loaded := sm.durableSubs[*id]
@@ -257,7 +258,7 @@ func (sm *subscriptionManager) closeDurabeSubscriptionLocked(id *fftypes.UUID) (
 
 func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 	sm.mux.Lock()
-	loaded, dispatchers := sm.closeDurabeSubscriptionLocked(id)
+	loaded, dispatchers := sm.closeDurableSubscriptionLocked(id)
 	sm.mux.Unlock()
 
 	log.L(sm.ctx).Infof("Cleaning up subscription %s loaded=%t dispatchers=%d", id, loaded, len(dispatchers))
@@ -565,4 +566,12 @@ func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string,
 	}
 	sm.mux.Unlock()
 	dispatcher.deliveryResponse(inflight)
+}
+
+func (sm *subscriptionManager) getWebSocketStatus() *fftypes.WebSocketStatus {
+	pluginName := (*websockets.WebSockets)(nil).Name()
+	if plugin, ok := sm.transports[pluginName]; ok {
+		return plugin.(*websockets.WebSockets).GetStatus()
+	}
+	return &fftypes.WebSocketStatus{Enabled: false}
 }

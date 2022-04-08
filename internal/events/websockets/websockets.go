@@ -108,7 +108,7 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 
 	ws.connMux.Lock()
-	wc := newConnection(ws.ctx, ws, wsConn)
+	wc := newConnection(ws.ctx, ws, wsConn, req)
 	ws.connections[wc.connID] = wc
 	ws.connMux.Unlock()
 
@@ -150,4 +150,29 @@ func (ws *WebSockets) WaitClosed() {
 	for _, ws := range closedConnections {
 		ws.waitClose()
 	}
+}
+
+func (ws *WebSockets) GetStatus() *fftypes.WebSocketStatus {
+	status := &fftypes.WebSocketStatus{
+		Enabled:     true,
+		Connections: make([]*fftypes.WSConnectionStatus, 0),
+	}
+	for _, c := range ws.connections {
+		conn := &fftypes.WSConnectionStatus{
+			ID:            c.connID,
+			RemoteAddress: c.remoteAddr,
+			UserAgent:     c.userAgent,
+			Subscriptions: make([]*fftypes.WSSubscriptionStatus, 0),
+		}
+		status.Connections = append(status.Connections, conn)
+		for _, s := range c.started {
+			sub := &fftypes.WSSubscriptionStatus{
+				Name:      s.name,
+				Namespace: s.namespace,
+				Ephemeral: s.ephemeral,
+			}
+			conn.Subscriptions = append(conn.Subscriptions, sub)
+		}
+	}
+	return status
 }

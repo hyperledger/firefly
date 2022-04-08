@@ -66,6 +66,7 @@ var routes = []*oapispec.Route{
 	getStatus,
 	getStatusBatchManager,
 	getStatusPins,
+	getStatusWebSockets,
 	getSubscriptionByID,
 	getSubscriptions,
 	getTokenAccountPools,

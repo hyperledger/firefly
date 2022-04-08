@@ -39,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -404,4 +405,16 @@ func TestAddInternalListener(t *testing.T) {
 	assert.NoError(t, err)
 
 	cbs.AssertExpectations(t)
+}
+
+func TestGetWebSocketStatus(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	status := em.GetWebSocketStatus()
+	assert.Equal(t, true, status.Enabled)
+
+	em.subManager.transports = make(map[string]events.Plugin)
+	status = em.GetWebSocketStatus()
+	assert.Equal(t, false, status.Enabled)
 }
