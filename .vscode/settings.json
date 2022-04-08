@@ -21,6 +21,7 @@
     "ffimethods",
     "ffstruct",
     "fftypes",
+    "fftypes",
     "finalizers",
     "IPFS",
     "NATS",
@@ -41,7 +42,9 @@
     "upgrader",
     "Warnf",
     "wsclient",
-    "wsconfig"
+    "wsconfig",
+    "upserts",
+    "Warnf"
   ],
   "go.testTimeout": "10s"
 }

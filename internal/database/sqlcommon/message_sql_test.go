@@ -321,7 +321,11 @@ func TestInsertMessagesMultiRowOK(t *testing.T) {
 		AddRow(int64(1004)),
 	)
 	mock.ExpectCommit()
-	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1, msg2})
+	hookCalled := make(chan struct{}, 1)
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1, msg2}, func() {
+		close(hookCalled)
+	})
+	<-hookCalled
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
