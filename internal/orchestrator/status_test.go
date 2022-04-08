@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,10 +32,10 @@ import (
 func TestGetStatusRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -85,10 +86,10 @@ func TestGetStatusRegistered(t *testing.T) {
 func TestGetStatusVerifierLookupFail(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -119,10 +120,10 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 func TestGetStatusWrongNodeOwner(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -169,10 +170,10 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 func TestGetStatusUnregistered(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
@@ -195,10 +196,10 @@ func TestGetStatusUnregistered(t *testing.T) {
 func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -238,10 +239,10 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 func TestGetStatusNodeError(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 

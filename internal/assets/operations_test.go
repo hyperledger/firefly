@@ -185,7 +185,7 @@ func TestPrepareOperationCreatePoolBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestPrepareOperationActivatePoolBadInput(t *testing.T) {
@@ -198,7 +198,7 @@ func TestPrepareOperationActivatePoolBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationActivatePoolError(t *testing.T) {
@@ -249,7 +249,7 @@ func TestPrepareOperationTransferBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestPrepareOperationTransferError(t *testing.T) {
@@ -300,7 +300,7 @@ func TestPrepareOperationApprovalBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestPrepareOperationApprovalError(t *testing.T) {

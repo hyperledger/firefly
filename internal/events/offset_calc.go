@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,10 +20,11 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *fftypes.SubOptsFirstEvent) (firstOffset int64, err error) {
@@ -41,10 +42,10 @@ func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *fftypes.SubOp
 	default:
 		specificSequence, err := strconv.ParseInt(string(firstEvent), 10, 64)
 		if err != nil {
-			return -1, i18n.WrapError(ctx, err, i18n.MsgInvalidFirstEvent, firstEvent)
+			return -1, i18n.WrapError(ctx, err, coremsgs.MsgInvalidFirstEvent, firstEvent)
 		}
 		if specificSequence < -1 {
-			return -1, i18n.NewError(ctx, i18n.MsgNumberMustBeGreaterEqual, -1)
+			return -1, i18n.NewError(ctx, coremsgs.MsgNumberMustBeGreaterEqual, -1)
 		}
 		firstOffset = specificSequence
 		useNewest = false

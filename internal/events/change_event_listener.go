@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,7 +20,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -34,7 +35,7 @@ type changeEventListener struct {
 func newChangeEventListener(ctx context.Context) *changeEventListener {
 	return &changeEventListener{
 		ctx:          ctx,
-		changeEvents: make(chan *fftypes.ChangeEvent, config.GetInt(config.EventDBEventsBufferSize)),
+		changeEvents: make(chan *fftypes.ChangeEvent, config.GetInt(coreconfig.EventDBEventsBufferSize)),
 		dispatchers:  make(map[fftypes.UUID]*eventDispatcher),
 	}
 }

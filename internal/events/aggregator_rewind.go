@@ -22,12 +22,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type rewindType int
@@ -70,9 +71,9 @@ func newRewinder(ag *aggregator) *rewinder {
 		retry:            ag.retry,
 		loop1Done:        make(chan struct{}),
 		loop2Done:        make(chan struct{}),
-		rewindRequests:   make(chan rewind, config.GetInt(config.EventAggregatorRewindQueueLength)),
+		rewindRequests:   make(chan rewind, config.GetInt(coreconfig.EventAggregatorRewindQueueLength)),
 		loop2ShoulderTap: make(chan bool, 1),
-		minRewindTimeout: config.GetDuration(config.EventAggregatorRewindTimeout),
+		minRewindTimeout: config.GetDuration(coreconfig.EventAggregatorRewindTimeout),
 		readyRewinds:     make(map[fftypes.UUID]bool),
 	}
 }

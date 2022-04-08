@@ -20,7 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -33,10 +34,10 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 
 	nodeRequest := &fftypes.IdentityCreateDTO{
 		Parent: nodeOwningOrg.ID.String(),
-		Name:   config.GetString(config.NodeName),
+		Name:   config.GetString(coreconfig.NodeName),
 		Type:   fftypes.IdentityTypeNode,
 		IdentityProfile: fftypes.IdentityProfile{
-			Description: config.GetString(config.NodeDescription),
+			Description: config.GetString(coreconfig.NodeDescription),
 		},
 	}
 	if nodeRequest.Name == "" {

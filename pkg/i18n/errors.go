@@ -23,14 +23,14 @@ import (
 )
 
 // NewError creates a new error
-func NewError(ctx context.Context, msg MessageKey, inserts ...interface{}) error {
-	return errors.Errorf(SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
+func NewError(ctx context.Context, msg ErrorMessageKey, inserts ...interface{}) error {
+	return errors.Errorf(SanitizeLimit(ExpandWithCode(ctx, MessageKey(msg), inserts...), 2048))
 }
 
 // WrapError wraps an error
-func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...interface{}) error {
+func WrapError(ctx context.Context, err error, msg ErrorMessageKey, inserts ...interface{}) error {
 	if err == nil {
 		return NewError(ctx, msg, inserts...)
 	}
-	return errors.Wrap(err, SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
+	return errors.Wrap(err, SanitizeLimit(ExpandWithCode(ctx, MessageKey(msg), inserts...), 2048))
 }

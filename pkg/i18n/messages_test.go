@@ -24,29 +24,41 @@ import (
 	"golang.org/x/text/language"
 )
 
+var (
+	TestError1 = FFE("FF99900", "Test error 1: %s")
+	TestError2 = FFE("FF99901", "Test error 2: %s")
+	TestError3 = FFE("FF99902", "Test error 3", 400)
+)
+
 func TestExpand(t *testing.T) {
 	lang := language.Make("en")
 	ctx := WithLang(context.Background(), lang)
-	str := Expand(ctx, MsgWebsocketClientError, "myinsert")
-	assert.Equal(t, "Error received from WebSocket client: myinsert", str)
+	str := Expand(ctx, MessageKey(TestError1), "myinsert")
+	assert.Equal(t, "Test error 1: myinsert", str)
 }
 
 func TestExpandWithCode(t *testing.T) {
 	lang := language.Make("en")
 	ctx := WithLang(context.Background(), lang)
-	str := ExpandWithCode(ctx, MsgWebsocketClientError, "myinsert")
-	assert.Equal(t, "FF10108: Error received from WebSocket client: myinsert", str)
+	str := ExpandWithCode(ctx, MessageKey(TestError2), "myinsert")
+	assert.Equal(t, "FF99901: Test error 2: myinsert", str)
 }
 
 func TestGetStatusHint(t *testing.T) {
-	code, ok := GetStatusHint(string(MsgResponseMarshalError))
+	code, ok := GetStatusHint(string(TestError3))
 	assert.True(t, ok)
 	assert.Equal(t, 400, code)
 }
 
 func TestDuplicateKey(t *testing.T) {
-	ffm("ABCD1234", "test1")
+	FFM("FF109999", "test1")
 	assert.Panics(t, func() {
-		ffm("ABCD1234", "test2")
+		FFM("FF109999", "test2")
+	})
+}
+
+func TestInvalidPrefixKey(t *testing.T) {
+	assert.Panics(t, func() {
+		FFE("ABCD1234", "test1")
 	})
 }

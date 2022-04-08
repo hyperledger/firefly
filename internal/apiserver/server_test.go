@@ -29,14 +29,16 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/oapiffimocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -66,13 +68,13 @@ func newTestAdminServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 }
 
 func TestStartStopServer(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	apiConfigPrefix.Set(HTTPConfPort, 0)
 	adminConfigPrefix.Set(HTTPConfPort, 0)
-	config.Set(config.UIPath, "test")
-	config.Set(config.AdminEnabled, true)
+	config.Set(coreconfig.UIPath, "test")
+	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
@@ -83,7 +85,7 @@ func TestStartStopServer(t *testing.T) {
 }
 
 func TestStartAPIFail(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	apiConfigPrefix.Set(HTTPConfAddress, "...://")
@@ -97,11 +99,11 @@ func TestStartAPIFail(t *testing.T) {
 }
 
 func TestStartAdminFail(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	adminConfigPrefix.Set(HTTPConfAddress, "...://")
-	config.Set(config.AdminEnabled, true)
+	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
@@ -112,11 +114,11 @@ func TestStartAdminFail(t *testing.T) {
 }
 
 func TestStartMetricsFail(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	metricsConfigPrefix.Set(HTTPConfAddress, "...://")
-	config.Set(config.MetricsEnabled, true)
+	config.Set(coreconfig.MetricsEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
@@ -237,7 +239,7 @@ func TestStatusCodeHintMapping(t *testing.T) {
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCodes: []int{200},
 		JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-			return nil, i18n.NewError(r.Ctx, i18n.MsgResponseMarshalError)
+			return nil, i18n.NewError(r.Ctx, coremsgs.MsgResponseMarshalError)
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))

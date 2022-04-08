@@ -152,7 +152,7 @@ func TestUploadBlobBadValidator(t *testing.T) {
 		Filename: "myfile.csv",
 		Mimetype: "text/csv",
 	}, true)
-	assert.Regexp(t, "FF10200", err)
+	assert.Regexp(t, "FF00108", err)
 
 	mdx.AssertExpectations(t)
 
@@ -388,7 +388,7 @@ func TestDownloadBlobBadNS(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	_, _, err := dm.DownloadBlob(ctx, "!wrong", dataID.String())
-	assert.Regexp(t, "FF10131.*namespace", err)
+	assert.Regexp(t, "FF00140.*namespace", err)
 
 }
 
@@ -398,6 +398,6 @@ func TestDownloadBlobBadID(t *testing.T) {
 	defer cancel()
 
 	_, _, err := dm.DownloadBlob(ctx, "ns1", "!uuid")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 
 }

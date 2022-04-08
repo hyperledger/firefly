@@ -22,10 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/karlseguin/ccache"
@@ -41,12 +42,12 @@ func NewTestTransactionHelper(di database.Plugin, dm data.Manager) (Helper, *cca
 	t.transactionCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.TransactionCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.TransactionCacheSize)),
 	)
 	t.blockchainEventCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.BlockchainEventCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.BlockchainEventCacheSize)),
 	)
 	return t, t.transactionCache, t.blockchainEventCache
 }

@@ -23,8 +23,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,7 +33,7 @@ import (
 var utConfPrefix = config.NewPluginConfig("http_unit_tests")
 
 func resetConf() {
-	config.Reset()
+	coreconfig.Reset()
 	InitPrefix(utConfPrefix)
 }
 
@@ -90,7 +91,7 @@ func TestRequestRetry(t *testing.T) {
 	assert.Equal(t, 500, resp.StatusCode())
 	assert.Equal(t, 6, httpmock.GetTotalCallCount())
 
-	err = WrapRestErr(ctx, resp, err, i18n.MsgEthconnectRESTErr)
+	err = WrapRestErr(ctx, resp, err, coremsgs.MsgEthconnectRESTErr)
 	assert.Error(t, err)
 
 }
@@ -128,7 +129,7 @@ func TestLongResponse(t *testing.T) {
 		httpmock.NewStringResponder(500, resText.String()))
 
 	resp, err := c.R().Get("/test")
-	err = WrapRestErr(ctx, resp, err, i18n.MsgEthconnectRESTErr)
+	err = WrapRestErr(ctx, resp, err, coremsgs.MsgEthconnectRESTErr)
 	assert.Error(t, err)
 }
 
@@ -152,7 +153,7 @@ func TestErrResponse(t *testing.T) {
 		httpmock.NewErrorResponder(fmt.Errorf("pop")))
 
 	resp, err := c.R().Get("/test")
-	err = WrapRestErr(ctx, resp, err, i18n.MsgEthconnectRESTErr)
+	err = WrapRestErr(ctx, resp, err, coremsgs.MsgEthconnectRESTErr)
 	assert.Error(t, err)
 }
 

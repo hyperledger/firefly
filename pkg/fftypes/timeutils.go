@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // FFTime is serialized to JSON on the API in RFC3339 nanosecond UTC time
@@ -128,7 +128,7 @@ func (ft *FFTime) Scan(src interface{}) error {
 		return nil
 
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, ft)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, ft)
 	}
 
 }
@@ -232,7 +232,7 @@ func (fd *FFDuration) Scan(src interface{}) error {
 		return nil
 
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, fd)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, fd)
 	}
 
 }

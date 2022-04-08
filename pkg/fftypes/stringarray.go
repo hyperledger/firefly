@@ -23,7 +23,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // FFStringArray is an array of strings, each conforming to the requirements of a FireFly name
@@ -76,7 +76,7 @@ func (sa *FFStringArray) Scan(src interface{}) error {
 		*sa = []string{}
 		return nil
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, sa)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, sa)
 	}
 }
 

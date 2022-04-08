@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftypes.MessageInOut) error {
@@ -34,7 +35,7 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 			return err
 		}
 		if group == nil {
-			return i18n.NewError(ctx, i18n.MsgGroupNotFound, in.Header.Group)
+			return i18n.NewError(ctx, coremsgs.MsgGroupNotFound, in.Header.Group)
 		}
 		// We have a group already resolved
 		return nil
@@ -90,7 +91,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.I
 				// This identity has a parent, maybe that org owns a node
 				identity, err = pm.identity.CachedIdentityLookupByID(ctx, identity.Parent)
 			default:
-				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFoundInOrg, inputIdentityDebugInfo)
+				return nil, i18n.NewError(ctx, coremsgs.MsgNodeNotFoundInOrg, inputIdentityDebugInfo)
 			}
 		}
 	}
@@ -98,7 +99,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.I
 		return nil, err
 	}
 	if node == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, nodeInput)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeNotFound, nodeInput)
 	}
 	return node, nil
 }
@@ -164,7 +165,7 @@ func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *ffty
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgLocalNodeResolveFailed)
+		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeResolveFailed)
 	}
 	pm.localNodeID = nodes[0].ID
 	return pm.localNodeID, nil

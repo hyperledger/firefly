@@ -236,7 +236,7 @@ func TestGetSubscriptionBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", map[bool]bool{true: false})
 	_, _, err := s.GetSubscriptions(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetSubscriptionReadMessageFail(t *testing.T) {
@@ -264,7 +264,7 @@ func TestSubscriptionUpdateBuildQueryFail(t *testing.T) {
 	)
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
-	assert.Regexp(t, "FF10149.*name", err)
+	assert.Regexp(t, "FF00143.*name", err)
 }
 
 func TestSubscriptionUpdateSelectFail(t *testing.T) {

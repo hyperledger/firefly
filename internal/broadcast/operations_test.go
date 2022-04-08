@@ -116,7 +116,7 @@ func TestPrepareOperationBatchBroadcastBadInput(t *testing.T) {
 	}
 
 	_, err := bm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationBatchBroadcastError(t *testing.T) {
@@ -398,7 +398,7 @@ func TestPrepareUploadBlobGetDataBadID(t *testing.T) {
 	}
 
 	_, err := bm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 
 }
 

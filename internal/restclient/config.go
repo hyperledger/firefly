@@ -16,7 +16,7 @@
 
 package restclient
 
-import "github.com/hyperledger/firefly/internal/config"
+import "github.com/hyperledger/firefly/pkg/config"
 
 const (
 	defaultRetryEnabled              = false

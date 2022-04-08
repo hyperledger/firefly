@@ -167,7 +167,7 @@ func TestGetTransactionsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetTransactions(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetTransactionsReadMessageFail(t *testing.T) {
@@ -192,7 +192,7 @@ func TestTransactionUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateTransaction(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestTransactionUpdateFail(t *testing.T) {

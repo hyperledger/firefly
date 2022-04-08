@@ -460,7 +460,7 @@ func TestValidateFFIFail(t *testing.T) {
 	}
 
 	err := cm.ValidateFFIAndSetPathnames(context.Background(), ffi)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestValidateFFIBadMethod(t *testing.T) {
@@ -852,7 +852,7 @@ func TestAddContractListenerBadNamespace(t *testing.T) {
 	sub := &fftypes.ContractListenerInput{}
 
 	_, err := cm.AddContractListener(context.Background(), "!bad", sub)
-	assert.Regexp(t, "FF10131.*'namespace'", err)
+	assert.Regexp(t, "FF00140.*'namespace'", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -870,7 +870,7 @@ func TestAddContractListenerBadName(t *testing.T) {
 	}
 
 	_, err := cm.AddContractListener(context.Background(), "ns", sub)
-	assert.Regexp(t, "FF10131.*'name'", err)
+	assert.Regexp(t, "FF00140.*'name'", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -1444,7 +1444,7 @@ func TestGetContractListenerBadName(t *testing.T) {
 	cm := newTestContractManager()
 
 	_, err := cm.GetContractListenerByNameOrID(context.Background(), "ns", "!bad")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetContractListenerByNameFail(t *testing.T) {

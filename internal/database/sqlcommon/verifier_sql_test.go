@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -220,7 +220,7 @@ func TestGetVerifierBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.VerifierQueryFactory.NewFilter(context.Background()).Eq("value", map[bool]bool{true: false})
 	_, _, err := s.GetVerifiers(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetVerifierReadMessageFail(t *testing.T) {
@@ -245,7 +245,7 @@ func TestVerifierUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.VerifierQueryFactory.NewUpdate(context.Background()).Set("value", map[bool]bool{true: false})
 	err := s.UpdateVerifier(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF10149.*value", err)
+	assert.Regexp(t, "FF00143.*value", err)
 }
 
 func TestVerifierUpdateFail(t *testing.T) {
