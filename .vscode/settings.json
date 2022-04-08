@@ -5,8 +5,12 @@
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
     "APIID",
+    "ccache",
+    "dataexchange",
     "Debugf",
     "devdocs",
+    "ethconnect",
+    "fabconnect",
     "FFDX",
     "ffenum",
     "ffexclude",
@@ -16,6 +20,7 @@
     "FFIID",
     "ffimethods",
     "ffstruct",
+    "fftypes",
     "fftypes",
     "finalizers",
     "IPFS",
@@ -30,14 +35,11 @@
     "tekuri",
     "txcommon",
     "txcommonmocks",
+    "txid",
     "txtype",
     "unflushed",
-    "Warnf",
-    "ccache",
-    "txid",
-    "dataexchange",
-    "ethconnect",
-    "fabconnect",
+    "upserts",
+    "Warnf"
   ],
   "go.testTimeout": "10s"
 }
