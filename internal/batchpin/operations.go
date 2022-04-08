@@ -19,9 +19,10 @@ package batchpin
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type batchPinData struct {
@@ -67,12 +68,12 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.O
 		if err != nil {
 			return nil, err
 		} else if batch == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opBatchPin(op, batch, contexts), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -90,7 +91,7 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 		})
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

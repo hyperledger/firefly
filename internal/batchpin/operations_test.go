@@ -82,7 +82,7 @@ func TestPrepareOperationBatchPinBadBatch(t *testing.T) {
 	}
 
 	_, err := bp.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationBatchPinBadContext(t *testing.T) {
@@ -97,7 +97,7 @@ func TestPrepareOperationBatchPinBadContext(t *testing.T) {
 	}
 
 	_, err := bp.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10232", err)
+	assert.Regexp(t, "FF00107", err)
 }
 
 func TestRunOperationNotSupported(t *testing.T) {

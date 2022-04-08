@@ -138,7 +138,7 @@ func TestGetBlockchainEventsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BlockchainEventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetBlockchainEvents(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetBlockchainEventsScanFail(t *testing.T) {

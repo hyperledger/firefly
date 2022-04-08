@@ -14,7 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package i18n
+package coremsgs
+
+import (
+	"github.com/hyperledger/firefly/pkg/i18n"
+)
+
+var ffm = i18n.FFM
 
 //revive:disable
 var (

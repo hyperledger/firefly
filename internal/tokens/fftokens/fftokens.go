@@ -21,13 +21,14 @@ import (
 	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 )
@@ -133,7 +134,7 @@ func (ft *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix,
 	ft.configuredName = name
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.fftokens")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
 	ft.client = restclient.New(ft.ctx, prefix)
@@ -497,7 +498,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 		}).
 		Post("/api/v1/createpool")
 	if err != nil || !res.IsSuccess() {
-		return false, restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return false, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	if res.StatusCode() == 200 {
 		// Handle synchronous response (202 will be handled by later websocket listener)
@@ -520,7 +521,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 		}).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return false, restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return false, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	if res.StatusCode() == 200 {
 		// Handle synchronous response (202 will be handled by later websocket listener)
@@ -552,7 +553,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 		}).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	return nil
 }
@@ -576,7 +577,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProt
 		}).
 		Post("/api/v1/burn")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	return nil
 }
@@ -601,7 +602,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 		}).
 		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	return nil
 }
@@ -623,7 +624,7 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, pool
 		}).
 		Post("/api/v1/approval")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	return nil
 }

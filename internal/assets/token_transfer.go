@@ -19,11 +19,12 @@ package assets
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
@@ -155,7 +156,7 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer 
 		return nil, err
 	}
 	if transfer.From == transfer.To {
-		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
+		return nil, i18n.NewError(ctx, coremsgs.MsgCannotTransferToSelf)
 	}
 
 	sender := am.NewTransfer(ns, transfer)
@@ -232,7 +233,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 			return err
 		}
 		if pool.State != fftypes.TokenPoolStateConfirmed {
-			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
+			return i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 		}
 
 		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, fftypes.TransactionTypeTokenTransfer)
@@ -287,6 +288,6 @@ func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in
 	case fftypes.MessageTypeTransferPrivate:
 		return s.mgr.messaging.NewMessage(ns, in), nil
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgInvalidMessageType, allowedTypes)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidMessageType, allowedTypes)
 	}
 }

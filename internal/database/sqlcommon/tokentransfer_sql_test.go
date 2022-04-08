@@ -202,7 +202,7 @@ func TestGetTokenTransfersBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
 	_, _, err := s.GetTokenTransfers(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetTokenTransfersScanFail(t *testing.T) {

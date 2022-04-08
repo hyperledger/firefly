@@ -4,15 +4,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
 var utConfPrefix = config.NewPluginConfig("ws")
 
 func resetConf() {
-	config.Reset()
+	coreconfig.Reset()
 	InitPrefix(utConfPrefix)
 }
 

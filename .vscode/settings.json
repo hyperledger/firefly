@@ -4,7 +4,14 @@
   ],
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
-    "fftypes"
+    "coremsgs",
+    "fftypes",
+    "msgid",
+    "myinsert",
+    "oapispec",
+    "sysmessaging",
+    "txcommon",
+    "Warnf"
   ],
   "go.testTimeout": "10s"
 }

@@ -193,7 +193,7 @@ func TestGetApprovalsBuildQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.TokenApprovalQueryFacory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
 	_, _, err := s.GetTokenApprovals(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetApprovalsScanFail(t *testing.T) {

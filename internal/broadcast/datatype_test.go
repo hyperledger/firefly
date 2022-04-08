@@ -36,7 +36,7 @@ func TestBroadcastDatatypeBadType(t *testing.T) {
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Validator: fftypes.ValidatorType("wrong"),
 	}, false)
-	assert.Regexp(t, "FF10132.*validator", err)
+	assert.Regexp(t, "FF00111.*validator", err)
 }
 
 func TestBroadcastDatatypeNSGetFail(t *testing.T) {

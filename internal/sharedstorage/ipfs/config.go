@@ -17,8 +17,8 @@
 package ipfs
 
 import (
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/config"
 )
 
 const (

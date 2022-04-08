@@ -44,7 +44,7 @@ func TestCreateTokenPoolBadName(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
@@ -564,7 +564,7 @@ func TestGetTokenPoolBadNamespace(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenPool(context.Background(), "", "magic-tokens", "")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetTokenPoolBadName(t *testing.T) {
@@ -572,7 +572,7 @@ func TestGetTokenPoolBadName(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenPool(context.Background(), "ns1", "magic-tokens", "")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetTokenPoolByID(t *testing.T) {
@@ -593,7 +593,7 @@ func TestGetTokenPoolByIDBadNamespace(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), "", "")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetTokenPoolByIDBadID(t *testing.T) {
@@ -639,7 +639,7 @@ func TestGetTokenPoolByNameBadName(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", "")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetTokenPoolByNameNilPool(t *testing.T) {
@@ -677,7 +677,7 @@ func TestGetTokenPoolsBadNamespace(t *testing.T) {
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := am.GetTokenPools(context.Background(), "", f)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetTokenPoolByNameOrIDBadNamespace(t *testing.T) {
@@ -685,5 +685,5 @@ func TestGetTokenPoolByNameOrIDBadNamespace(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), "!wrong", "magic-tokens")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }

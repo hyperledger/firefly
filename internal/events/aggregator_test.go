@@ -24,24 +24,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
-	config.Reset()
+	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
@@ -1897,7 +1898,7 @@ func TestRewindOffchainBatchesNoBatches(t *testing.T) {
 }
 
 func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
-	config.Set(config.EventAggregatorBatchSize, 10)
+	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
@@ -1917,7 +1918,7 @@ func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
 }
 
 func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
-	config.Set(config.EventAggregatorBatchSize, 10)
+	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
@@ -1943,7 +1944,7 @@ func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
 }
 
 func TestRewindOffchainBatchesBatchesError(t *testing.T) {
-	config.Set(config.EventAggregatorBatchSize, 10)
+	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	cancel()

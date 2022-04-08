@@ -44,30 +44,49 @@ func TestDefaults(t *testing.T) {
 	os.Chdir(configDir)
 	defer os.Chdir(cwd)
 
-	Reset()
+	key1 := AddRootKey("key1")
+	key2 := AddRootKey("key3")
+	key3 := AddRootKey("key3")
+	key4 := AddRootKey("key4")
+	key5 := AddRootKey("key5")
+	key6 := AddRootKey("key6")
+	key7 := AddRootKey("key7")
+	key8 := AddRootKey("key8")
+	key9 := AddRootKey("key9")
+
+	RootConfigReset(func() {
+		viper.SetDefault(string(key1), "value1")
+		viper.SetDefault(string(key2), true)
+		viper.SetDefault(string(key3), 25)
+		viper.SetDefault(string(key5), "250ms")
+		viper.SetDefault(string(key6), "2.0")
+		viper.SetDefault(string(key7), []string{"value1", "value2"})
+		viper.SetDefault(string(key8), fftypes.JSONObjectArray{{"key1": "value1"}})
+		viper.SetDefault(string(key9), "1Mb")
+	})
 	err = ReadConfig("")
 	assert.NoError(t, err)
 
-	assert.Equal(t, "info", GetString(LogLevel))
-	assert.True(t, GetBool(CorsAllowCredentials))
-	assert.Equal(t, uint(25), GetUint(APIDefaultFilterLimit))
-	assert.Equal(t, int(0), GetInt(DebugPort))
-	assert.Equal(t, int64(0), GetInt64(DebugPort))
-	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))
-	assert.Equal(t, float64(2.0), GetFloat64(EventAggregatorRetryFactor))
-	assert.Equal(t, []string{"*"}, GetStringSlice(CorsAllowedOrigins))
-	assert.NotEmpty(t, GetObjectArray(NamespacesPredefined))
-	assert.Equal(t, int64(1024*1024), GetByteSize(ValidatorCacheSize))
+	assert.Equal(t, "value1", GetString(key1))
+	assert.True(t, GetBool(key2))
+	assert.Equal(t, uint(25), GetUint(key3))
+	assert.Equal(t, int(0), GetInt(key4))
+	assert.Equal(t, int64(0), GetInt64(key4))
+	assert.Equal(t, 250*time.Millisecond, GetDuration(key5))
+	assert.Equal(t, float64(2.0), GetFloat64(key6))
+	assert.Equal(t, []string{"value1", "value2"}, GetStringSlice(key7))
+	assert.NotEmpty(t, GetObjectArray(key8))
+	assert.Equal(t, int64(1024*1024), GetByteSize(key9))
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {
-	Reset()
+	RootConfigReset()
 	err := ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 }
 
 func TestSpecificConfigFileFail(t *testing.T) {
-	Reset()
+	RootConfigReset()
 	err := ReadConfig(configDir + "/no.hope.yaml")
 	assert.Error(t, err)
 }
@@ -79,29 +98,33 @@ func TestAttemptToAccessRandomKey(t *testing.T) {
 }
 
 func TestSetGetMap(t *testing.T) {
-	defer Reset()
-	Set(BroadcastBatchSize, map[string]interface{}{"some": "map"})
-	assert.Equal(t, fftypes.JSONObject{"some": "map"}, GetObject(BroadcastBatchSize))
+	defer RootConfigReset()
+	key1 := AddRootKey("key1")
+	Set(key1, map[string]interface{}{"some": "map"})
+	assert.Equal(t, fftypes.JSONObject{"some": "map"}, GetObject(key1))
 }
 
 func TestSetGetRawInterace(t *testing.T) {
-	defer Reset()
+	defer RootConfigReset()
 	type myType struct{ name string }
-	Set(BroadcastBatchSize, &myType{name: "test"})
-	v := Get(BroadcastBatchSize)
+	key1 := AddRootKey("key1")
+	Set(key1, &myType{name: "test"})
+	v := Get(key1)
 	assert.Equal(t, myType{name: "test"}, *(v.(*myType)))
 }
 
 func TestGetBadDurationMillisDefault(t *testing.T) {
-	defer Reset()
-	Set(BroadcastBatchTimeout, "12345")
-	assert.Equal(t, time.Duration(12345)*time.Millisecond, GetDuration(BroadcastBatchTimeout))
+	defer RootConfigReset()
+	key1 := AddRootKey("key1")
+	Set(key1, "12345")
+	assert.Equal(t, time.Duration(12345)*time.Millisecond, GetDuration(key1))
 }
 
 func TestGetBadDurationZero(t *testing.T) {
-	defer Reset()
-	Set(BroadcastBatchTimeout, "!a number or duration")
-	assert.Equal(t, time.Duration(0), GetDuration(BroadcastBatchTimeout))
+	defer RootConfigReset()
+	key1 := AddRootKey("key1")
+	Set(key1, "!a number or duration")
+	assert.Equal(t, time.Duration(0), GetDuration(key1))
 }
 
 func TestPluginConfig(t *testing.T) {
@@ -117,7 +140,7 @@ func TestPluginConfigArrayInit(t *testing.T) {
 }
 
 func TestArrayOfPlugins(t *testing.T) {
-	defer Reset()
+	defer RootConfigReset()
 
 	tokPlugins := NewPluginConfig("tokens").Array()
 	tokPlugins.AddKnownKey("name")
@@ -147,7 +170,7 @@ tokens:
 }
 
 func TestMapOfAdminOverridePlugins(t *testing.T) {
-	defer Reset()
+	defer RootConfigReset()
 
 	tokPlugins := NewPluginConfig("tokens").Array()
 	tokPlugins.AddKnownKey("firstkey")
@@ -185,13 +208,13 @@ func TestSetupLoggingToFile(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	fileName := path.Join(tmpDir, "test.log")
-	Reset()
+	RootConfigReset()
 	Set(LogFilename, fileName)
 	Set(LogLevel, "debug")
 	Set(LogMaxAge, "72h")
 	SetupLogging(context.Background())
 
-	Reset()
+	RootConfigReset()
 	SetupLogging(context.Background())
 
 	b, err := ioutil.ReadFile(fileName)
@@ -273,7 +296,14 @@ func TestMergeConfigBadJSON(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	Reset()
+	RootConfigReset()
 	conf := GetConfig()
 	assert.Equal(t, "info", conf.GetObject("log").GetString("level"))
 }
+
+// func TestGenerateConfigMarkdown(t *testing.T) {
+// 	RootConfigReset()
+// 	_, err := GenerateConfigMarkdown(context.Background())
+// 	assert.NoError(t, err)
+
+// }

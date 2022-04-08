@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -209,7 +210,7 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 		member := &fftypes.Member{}
 		var idx int
 		if err = members.Scan(&groupID, &member.Identity, &member.Node, &idx); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "members")
+			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "members")
 		}
 		for _, g := range groups {
 			if g.Hash.Equals(&groupID) {
@@ -238,7 +239,7 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Gr
 		&group.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "groups")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "groups")
 	}
 	return &group, nil
 }

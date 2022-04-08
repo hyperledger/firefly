@@ -26,14 +26,15 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ var utFabconnectConf = utConfPrefix.SubPrefix(FabconnectConfigKey)
 var signer = "orgMSP::x509::CN=signer001,OU=client::CN=fabric-ca"
 
 func resetConf() {
-	config.Reset()
+	coreconfig.Reset()
 	e := &Fabric{}
 	e.InitPrefix(utConfPrefix)
 }
@@ -210,7 +211,7 @@ func TestWSInitFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.Regexp(t, "FF10162", err)
+	assert.Regexp(t, "FF00149", err)
 
 }
 
@@ -1412,7 +1413,7 @@ func TestInvokeContractBadSchema(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestInvokeContractChaincodeNotSet(t *testing.T) {
@@ -1507,7 +1508,7 @@ func TestQueryContractInputNotJSON(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestQueryContractBadLocation(t *testing.T) {
@@ -1627,7 +1628,7 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
 	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestGetFFIParamValidator(t *testing.T) {

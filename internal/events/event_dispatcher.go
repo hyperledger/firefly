@@ -21,16 +21,18 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 const (
@@ -68,7 +70,7 @@ type eventDispatcher struct {
 
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
-	readAhead := config.GetUint(config.SubscriptionDefaultsReadAhead)
+	readAhead := config.GetUint(coreconfig.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
 		readAhead = uint(*sub.definition.Options.ReadAhead)
 	}
@@ -98,14 +100,14 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 	}
 
 	pollerConf := &eventPollerConf{
-		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
-		eventBatchTimeout:          config.GetDuration(config.EventDispatcherBatchTimeout),
-		eventPollTimeout:           config.GetDuration(config.EventDispatcherPollTimeout),
+		eventBatchSize:             config.GetInt(coreconfig.EventDispatcherBufferLength),
+		eventBatchTimeout:          config.GetDuration(coreconfig.EventDispatcherBatchTimeout),
+		eventPollTimeout:           config.GetDuration(coreconfig.EventDispatcherPollTimeout),
 		startupOffsetRetryAttempts: 0, // We need to keep trying to start indefinitely
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.EventDispatcherRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.EventDispatcherRetryMaxDelay),
-			Factor:       config.GetFloat64(config.EventDispatcherRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.EventDispatcherRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.EventDispatcherRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.EventDispatcherRetryFactor),
 		},
 		namespace:  sub.definition.Namespace,
 		offsetType: fftypes.OffsetTypeSubscription,
@@ -314,7 +316,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (
 		// Block until we're closed, or woken due to a delivery response
 		select {
 		case <-ed.ctx.Done():
-			return false, i18n.NewError(ed.ctx, i18n.MsgDispatcherClosing)
+			return false, i18n.NewError(ed.ctx, coremsgs.MsgDispatcherClosing)
 		case an := <-ed.acksNacks:
 			if an.isNack {
 				nacks++

@@ -19,10 +19,11 @@ package assets
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
@@ -132,7 +133,7 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolNam
 		return nil, err
 	}
 	if pool == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return pool, nil
 }
@@ -156,7 +157,7 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolName
 		return nil, err
 	}
 	if pool == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return pool, nil
 }

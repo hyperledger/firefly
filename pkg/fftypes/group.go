@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type GroupIdentity struct {

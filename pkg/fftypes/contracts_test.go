@@ -38,14 +38,14 @@ func TestValidateInvalidContractAPI(t *testing.T) {
 		Name:      "banana",
 	}
 	err := api.Validate(context.Background(), false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 
 	api = &ContractAPI{
 		Namespace: "ns1",
 		Name:      "(%&@!^%^)",
 	}
 	err = api.Validate(context.Background(), false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestContractAPITopic(t *testing.T) {

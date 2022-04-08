@@ -30,9 +30,11 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type SwaggerGenConfig struct {
@@ -135,7 +137,7 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 	for _, fp := range formParams {
 		props[fp.Name] = &openapi3.SchemaRef{
 			Value: &openapi3.Schema{
-				Description: i18n.Expand(ctx, i18n.MsgSuccessResponse),
+				Description: i18n.Expand(ctx, coremsgs.APISuccessResponse),
 				Type:        "string",
 			},
 		}
@@ -152,7 +154,7 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 }
 
 func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, schemaDef func(context.Context) string, op *openapi3.Operation) {
-	s := i18n.Expand(ctx, i18n.MsgSuccessResponse)
+	s := i18n.Expand(ctx, coremsgs.APISuccessResponse)
 	for _, code := range route.JSONOutputCodes {
 		op.Responses[strconv.FormatInt(int64(code), 10)] = &openapi3.ResponseRef{
 			Value: &openapi3.Response{
@@ -240,19 +242,19 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		}
 		addParam(ctx, op, "query", q.Name, q.Default, example, q.Description, q.Deprecated)
 	}
-	addParam(ctx, op, "header", "Request-Timeout", config.GetString(config.APIRequestTimeout), "", i18n.MsgRequestTimeoutDesc, false)
+	addParam(ctx, op, "header", "Request-Timeout", config.GetString(coreconfig.APIRequestTimeout), "", coremsgs.APIRequestTimeoutDesc, false)
 	if route.FilterFactory != nil {
 		fields := route.FilterFactory.NewFilter(ctx).Fields()
 		sort.Strings(fields)
 		for _, field := range fields {
-			addParam(ctx, op, "query", field, "", "", i18n.MsgFilterParamDesc, false)
+			addParam(ctx, op, "query", field, "", "", coremsgs.APIFilterParamDesc, false)
 		}
-		addParam(ctx, op, "query", "sort", "", "", i18n.MsgFilterSortDesc, false)
-		addParam(ctx, op, "query", "ascending", "", "", i18n.MsgFilterAscendingDesc, false)
-		addParam(ctx, op, "query", "descending", "", "", i18n.MsgFilterDescendingDesc, false)
-		addParam(ctx, op, "query", "skip", "", "", i18n.MsgFilterSkipDesc, false, config.GetUint(config.APIMaxFilterSkip))
-		addParam(ctx, op, "query", "limit", "", config.GetString(config.APIDefaultFilterLimit), i18n.MsgFilterLimitDesc, false, config.GetUint(config.APIMaxFilterLimit))
-		addParam(ctx, op, "query", "count", "", "", i18n.MsgFilterCountDesc, false)
+		addParam(ctx, op, "query", "sort", "", "", coremsgs.APIFilterSortDesc, false)
+		addParam(ctx, op, "query", "ascending", "", "", coremsgs.APIFilterAscendingDesc, false)
+		addParam(ctx, op, "query", "descending", "", "", coremsgs.APIFilterDescendingDesc, false)
+		addParam(ctx, op, "query", "skip", "", "", coremsgs.APIFilterSkipDesc, false, config.GetUint(coreconfig.APIMaxFilterSkip))
+		addParam(ctx, op, "query", "limit", "", config.GetString(coreconfig.APIDefaultFilterLimit), coremsgs.APIFilterLimitDesc, false, config.GetUint(coreconfig.APIMaxFilterLimit))
+		addParam(ctx, op, "query", "count", "", "", coremsgs.APIFilterCountDesc, false)
 	}
 	switch route.Method {
 	case http.MethodGet:

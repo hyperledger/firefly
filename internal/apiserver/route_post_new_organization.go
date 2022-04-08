@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -31,10 +31,10 @@ var postNewOrganization = &oapispec.Route{
 	Method:     http.MethodPost,
 	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
+		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.IdentityCreateDTO{} },
 	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },

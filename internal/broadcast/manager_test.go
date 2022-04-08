@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/batch"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
@@ -42,7 +42,7 @@ import (
 )
 
 func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManager, func()) {
-	config.Reset()
+	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
@@ -162,7 +162,7 @@ func TestBroadcastMessageBad(t *testing.T) {
 		msg: newMsg,
 	}
 	err := broadcast.sendInternal(context.Background(), methodSend)
-	assert.Regexp(t, "FF10144", err)
+	assert.Regexp(t, "FF00128", err)
 
 }
 

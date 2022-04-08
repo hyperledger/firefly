@@ -183,7 +183,7 @@ func TestSendMessageBadGroup(t *testing.T) {
 		},
 		Group: &fftypes.InputGroup{},
 	}, true)
-	assert.Regexp(t, "FF10219", err)
+	assert.Regexp(t, "FF00115", err)
 
 	mim.AssertExpectations(t)
 
@@ -326,7 +326,7 @@ func TestSealFail(t *testing.T) {
 	})
 
 	err := message.(*messageSender).sendInternal(pm.ctx, methodSend)
-	assert.Regexp(t, "FF10145", err)
+	assert.Regexp(t, "FF00129", err)
 
 }
 

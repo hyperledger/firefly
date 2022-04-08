@@ -21,19 +21,21 @@ import (
 
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -76,7 +78,7 @@ type broadcastManager struct {
 
 func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
 		ctx:                   ctx,
@@ -89,17 +91,17 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		batch:                 ba,
 		syncasync:             sa,
 		batchpin:              bp,
-		maxBatchPayloadLength: config.GetByteSize(config.BroadcastBatchPayloadLimit),
+		maxBatchPayloadLength: config.GetByteSize(coreconfig.BroadcastBatchPayloadLimit),
 		metrics:               mm,
 		operations:            om,
 	}
 
 	bo := batch.DispatcherOptions{
 		BatchType:      fftypes.BatchTypeBroadcast,
-		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
+		BatchMaxSize:   config.GetUint(coreconfig.BroadcastBatchSize),
 		BatchMaxBytes:  bm.maxBatchPayloadLength,
-		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
-		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
+		BatchTimeout:   config.GetDuration(coreconfig.BroadcastBatchTimeout),
+		DisposeTimeout: config.GetDuration(coreconfig.BroadcastBatchAgentTimeout),
 	}
 
 	ba.RegisterDispatcher(broadcastDispatcherName,
@@ -167,7 +169,7 @@ func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, d
 			if err != nil {
 				return err
 			} else if blob == nil {
-				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob.Hash)
+				return i18n.NewError(ctx, coremsgs.MsgBlobNotFound, d.Blob.Hash)
 			}
 
 			err = bm.operations.RunOperation(ctx, opUploadBlob(op, d, blob))

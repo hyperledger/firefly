@@ -22,13 +22,14 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -72,11 +73,11 @@ type contractManager struct {
 
 func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || bm == nil || im == nil || bi == nil || om == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgPluginInitializationFailed)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgPluginInitializationFailed)
 	}
 
 	cm := &contractManager{
@@ -114,7 +115,7 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *fft
 
 	existing, err := cm.database.GetFFI(ctx, ffi.Namespace, ffi.Name, ffi.Version)
 	if existing != nil && err == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
 	}
 
 	for _, method := range ffi.Methods {
@@ -235,7 +236,7 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	if err != nil {
 		return nil, err
 	} else if api == nil || api.Interface == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	req.Interface = api.Interface.ID
 	req.Method = &fftypes.FFIMethod{
@@ -249,7 +250,7 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 
 func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (method *fftypes.FFIMethod, err error) {
 	if req.Method == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgContractMethodNotSet)
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractMethodNotSet)
 	}
 	method = req.Method
 
@@ -259,12 +260,12 @@ func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns 
 	}
 	if method.Pathname != "" && (method.Params == nil || method.Returns == nil) {
 		if req.Interface == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgContractNoMethodSignature)
+			return nil, i18n.NewError(ctx, coremsgs.MsgContractNoMethodSignature)
 		}
 
 		method, err = cm.database.GetFFIMethod(ctx, ns, req.Interface, method.Pathname)
 		if err != nil || method == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgContractMethodResolveError, err)
+			return nil, i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
 		}
 	}
 	return method, nil
@@ -297,14 +298,14 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL, n
 func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, ref *fftypes.FFIReference) error {
 	switch {
 	case ref == nil:
-		return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, "")
+		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, "")
 
 	case ref.ID != nil:
 		ffi, err := cm.database.GetFFIByID(ctx, ref.ID)
 		if err != nil {
 			return err
 		} else if ffi == nil {
-			return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, ref.ID)
+			return i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, ref.ID)
 		}
 		return nil
 
@@ -313,13 +314,13 @@ func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, r
 		if err != nil {
 			return err
 		} else if ffi == nil {
-			return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, ref.Name)
+			return i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, ref.Name)
 		}
 		ref.ID = ffi.ID
 		return nil
 
 	default:
-		return i18n.NewError(ctx, i18n.MsgContractInterfaceNotFound, ref.Name)
+		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, ref.Name)
 	}
 }
 
@@ -331,7 +332,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerU
 		existing, err := cm.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 		if existing != nil && err == nil {
 			if !api.LocationAndLedgerEquals(existing) {
-				return i18n.NewError(ctx, i18n.MsgContractLocationExists)
+				return i18n.NewError(ctx, coremsgs.MsgContractLocationExists)
 			}
 		}
 
@@ -394,7 +395,7 @@ func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *
 
 func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
 	if method.Name == "" {
-		return i18n.NewError(ctx, i18n.MsgMethodNameMustBeSet)
+		return i18n.NewError(ctx, coremsgs.MsgMethodNameMustBeSet)
 	}
 	for _, param := range method.Params {
 		if err := cm.validateFFIParam(ctx, param); err != nil {
@@ -412,17 +413,17 @@ func (cm *contractManager) validateFFIMethod(ctx context.Context, method *fftype
 func (cm *contractManager) validateFFIParam(ctx context.Context, param *fftypes.FFIParam) error {
 	c := cm.newFFISchemaCompiler()
 	if err := c.AddResource(param.Name, strings.NewReader(param.Schema.String())); err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgFFISchemaParseFail, param.Name)
+		return i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaParseFail, param.Name)
 	}
 	if _, err := c.Compile(param.Name); err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgFFISchemaCompileFail, param.Name)
+		return i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaCompileFail, param.Name)
 	}
 	return nil
 }
 
 func (cm *contractManager) validateFFIEvent(ctx context.Context, event *fftypes.FFIEventDefinition) error {
 	if event.Name == "" {
-		return i18n.NewError(ctx, i18n.MsgEventNameMustBeSet)
+		return i18n.NewError(ctx, coremsgs.MsgEventNameMustBeSet)
 	}
 	for _, param := range event.Params {
 		if err := cm.validateFFIParam(ctx, param); err != nil {
@@ -440,7 +441,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 	for _, param := range req.Method.Params {
 		value, ok := req.Input[param.Name]
 		if !ok {
-			return i18n.NewError(ctx, i18n.MsgContractMissingInputArgument, param.Name)
+			return i18n.NewError(ctx, coremsgs.MsgContractMissingInputArgument, param.Name)
 		}
 		if err := cm.checkParamSchema(ctx, value, param); err != nil {
 			return err
@@ -472,7 +473,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 			if existing, err := cm.database.GetContractListener(ctx, ns, listener.Name); err != nil {
 				return err
 			} else if existing != nil {
-				return i18n.NewError(ctx, i18n.MsgContractListenerExists, ns, listener.Name)
+				return i18n.NewError(ctx, coremsgs.MsgContractListenerExists, ns, listener.Name)
 			}
 		}
 
@@ -484,7 +485,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 
 		if listener.Event == nil {
 			if listener.EventID == nil {
-				return i18n.NewError(ctx, i18n.MsgListenerNoEvent)
+				return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
 			}
 
 			event, err := cm.database.GetFFIEventByID(ctx, listener.EventID)
@@ -492,7 +493,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 				return err
 			}
 			if event == nil || event.Namespace != listener.Namespace {
-				return i18n.NewError(ctx, i18n.MsgListenerEventNotFound, listener.Namespace, listener.EventID)
+				return i18n.NewError(ctx, coremsgs.MsgListenerEventNotFound, listener.Namespace, listener.EventID)
 			}
 			// Copy the event definition into the listener
 			listener.Event = &fftypes.FFISerializedEvent{
@@ -504,7 +505,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 				return err
 			}
 			if event == nil {
-				return i18n.NewError(ctx, i18n.MsgEventNotFound, listener.Event.Name)
+				return i18n.NewError(ctx, coremsgs.MsgEventNotFound, listener.Event.Name)
 			}
 			listener.Event = &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
@@ -545,7 +546,7 @@ func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, ns
 		return nil, err
 	}
 	if listener == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return listener, nil
 }
@@ -572,14 +573,14 @@ func (cm *contractManager) checkParamSchema(ctx context.Context, input interface
 	c := jsonschema.NewCompiler()
 	err := c.AddResource(param.Name, strings.NewReader(param.Schema.String()))
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgFFISchemaParseFail, param.Name)
+		return i18n.WrapError(ctx, err, coremsgs.MsgFFISchemaParseFail, param.Name)
 	}
 	schema, err := c.Compile(param.Name)
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgFFIValidationFail, param.Name, param.Schema)
+		return i18n.WrapError(ctx, err, coremsgs.MsgFFIValidationFail, param.Name, param.Schema)
 	}
 	if err := schema.Validate(input); err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgFFIValidationFail, param.Name)
+		return i18n.WrapError(ctx, err, coremsgs.MsgFFIValidationFail, param.Name)
 	}
 	return nil
 }

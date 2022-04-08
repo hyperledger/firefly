@@ -21,11 +21,12 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/karlseguin/ccache"
 )
 
@@ -50,7 +51,7 @@ type groupHashEntry struct {
 
 func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
 	if group == nil {
-		return false, i18n.NewError(ctx, i18n.MsgGroupRequired)
+		return false, i18n.NewError(ctx, coremsgs.MsgGroupRequired)
 	}
 
 	// In the case that we've received a private message for a group, it's possible (likely actually)
@@ -95,7 +96,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.SignerRef
 		}
 	}
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+		return i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 	}
 
 	// In the case of groups, we actually write the unconfirmed group directly to our database.
@@ -170,7 +171,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 		return nil, nil, err
 	}
 	if group == nil {
-		return nil, nil, i18n.NewError(ctx, i18n.MsgGroupNotFound, groupHash)
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgGroupNotFound, groupHash)
 	}
 
 	// We de-duplicate nodes in the case that the payload needs to be received by multiple org identities
@@ -183,7 +184,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 			return nil, nil, err
 		}
 		if node == nil || node.Type != fftypes.IdentityTypeNode {
-			return nil, nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, r.Node)
+			return nil, nil, i18n.NewError(ctx, coremsgs.MsgNodeNotFound, r.Node)
 		}
 		if !knownIDs[*node.ID] {
 			knownIDs[*node.ID] = true

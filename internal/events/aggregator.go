@@ -25,16 +25,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/karlseguin/ccache"
 )
 
@@ -65,7 +66,7 @@ type batchCacheEntry struct {
 }
 
 func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
-	batchSize := config.GetInt(config.EventAggregatorBatchSize)
+	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),
 		database:      di,
@@ -75,23 +76,23 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 		verifierType:  bi.VerifierType(),
 		rewindBatches: make(chan fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
 		metrics:       mm,
-		batchCacheTTL: config.GetDuration(config.BatchCacheTTL),
+		batchCacheTTL: config.GetDuration(coreconfig.BatchCacheTTL),
 	}
 	ag.batchCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.BatchCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.BatchCacheSize)),
 	)
-	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
+	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(coreconfig.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
 		eventBatchSize:             batchSize,
-		eventBatchTimeout:          config.GetDuration(config.EventAggregatorBatchTimeout),
-		eventPollTimeout:           config.GetDuration(config.EventAggregatorPollTimeout),
-		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
+		eventBatchTimeout:          config.GetDuration(coreconfig.EventAggregatorBatchTimeout),
+		eventPollTimeout:           config.GetDuration(coreconfig.EventAggregatorPollTimeout),
+		startupOffsetRetryAttempts: config.GetInt(coreconfig.OrchestratorStartupAttempts),
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
-			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.EventAggregatorRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.EventAggregatorRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
 		firstEvent:       &firstEvent,
 		namespace:        fftypes.SystemNamespace,

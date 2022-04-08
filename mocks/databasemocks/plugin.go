@@ -5,7 +5,7 @@ package databasemocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/internal/config"
+	config "github.com/hyperledger/firefly/pkg/config"
 
 	database "github.com/hyperledger/firefly/pkg/database"
 

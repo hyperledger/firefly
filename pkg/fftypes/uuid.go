@@ -22,7 +22,7 @@ import (
 	"encoding/binary"
 
 	"github.com/google/uuid"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // UUID is a wrapper on a UUID implementation, ensuring Value handles nil

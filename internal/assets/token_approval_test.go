@@ -178,7 +178,7 @@ func TestApprovalUnknownConnectorBadNamespace(t *testing.T) {
 	am.tokens = make(map[string]tokens.Plugin)
 
 	_, err := am.TokenApproval(context.Background(), "", approval, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestApprovalBadConnector(t *testing.T) {

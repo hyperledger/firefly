@@ -5029,43 +5029,75 @@ paths:
           application/json:
             schema:
               properties:
+                batch: {}
+                confirmed: {}
                 data:
                   items:
                     properties:
-                      datatype:
-                        properties:
-                          name:
-                            type: string
-                          version:
-                            type: string
-                        type: object
-                      hash:
-                        type: string
-                      id:
-                        type: string
-                      validator:
-                        type: string
-                      value:
-                        type: object
+                      hash: {}
+                      id: {}
                     type: object
                   type: array
+                group:
+                  properties:
+                    ledger: {}
+                    members:
+                      items:
+                        properties:
+                          identity:
+                            type: string
+                          node:
+                            type: string
+                        type: object
+                      type: array
+                    name:
+                      type: string
+                  type: object
+                hash: {}
                 header:
                   properties:
                     author:
                       type: string
                     cid: {}
-                    context:
-                      type: string
+                    created: {}
+                    datahash: {}
                     group: {}
+                    id: {}
+                    key:
+                      type: string
+                    namespace:
+                      type: string
                     tag:
                       type: string
                     topics:
                       items:
                         type: string
+                      type: array
                     txtype:
-                      default: pin
+                      type: string
+                    type:
+                      enum:
+                      - definition
+                      - broadcast
+                      - private
+                      - groupinit
+                      - transfer_broadcast
+                      - transfer_private
                       type: string
                   type: object
+                pins:
+                  items:
+                    type: string
+                  type: array
+                state:
+                  enum:
+                  - staged
+                  - ready
+                  - sent
+                  - pending
+                  - confirmed
+                  - rejected
+                  type: string
               type: object
       responses:
         "200":
@@ -5221,24 +5253,18 @@ paths:
           application/json:
             schema:
               properties:
+                batch: {}
+                confirmed: {}
                 data:
                   items:
                     properties:
-                      datatype:
-                        properties:
-                          name:
-                            type: string
-                          version:
-                            type: string
-                        type: object
-                      validator:
-                        type: string
-                      value:
-                        type: object
+                      hash: {}
+                      id: {}
                     type: object
                   type: array
                 group:
                   properties:
+                    ledger: {}
                     members:
                       items:
                         properties:
@@ -5246,32 +5272,56 @@ paths:
                             type: string
                           node:
                             type: string
-                        required:
-                        - identity
                         type: object
                       type: array
                     name:
                       type: string
-                  required:
-                  - members
                   type: object
+                hash: {}
                 header:
                   properties:
                     author:
                       type: string
                     cid: {}
-                    context:
-                      type: string
+                    created: {}
+                    datahash: {}
                     group: {}
+                    id: {}
+                    key:
+                      type: string
+                    namespace:
+                      type: string
                     tag:
                       type: string
                     topics:
                       items:
                         type: string
+                      type: array
                     txtype:
-                      default: pin
+                      type: string
+                    type:
+                      enum:
+                      - definition
+                      - broadcast
+                      - private
+                      - groupinit
+                      - transfer_broadcast
+                      - transfer_private
                       type: string
                   type: object
+                pins:
+                  items:
+                    type: string
+                  type: array
+                state:
+                  enum:
+                  - staged
+                  - ready
+                  - sent
+                  - pending
+                  - confirmed
+                  - rejected
+                  type: string
               type: object
       responses:
         "200":
@@ -5422,24 +5472,18 @@ paths:
           application/json:
             schema:
               properties:
+                batch: {}
+                confirmed: {}
                 data:
                   items:
                     properties:
-                      datatype:
-                        properties:
-                          name:
-                            type: string
-                          version:
-                            type: string
-                        type: object
-                      validator:
-                        type: string
-                      value:
-                        type: object
+                      hash: {}
+                      id: {}
                     type: object
                   type: array
                 group:
                   properties:
+                    ledger: {}
                     members:
                       items:
                         properties:
@@ -5447,32 +5491,56 @@ paths:
                             type: string
                           node:
                             type: string
-                        required:
-                        - identity
                         type: object
                       type: array
                     name:
                       type: string
-                  required:
-                  - members
                   type: object
+                hash: {}
                 header:
                   properties:
                     author:
                       type: string
                     cid: {}
-                    context:
-                      type: string
+                    created: {}
+                    datahash: {}
                     group: {}
+                    id: {}
+                    key:
+                      type: string
+                    namespace:
+                      type: string
                     tag:
                       type: string
                     topics:
                       items:
                         type: string
+                      type: array
                     txtype:
-                      default: pin
+                      type: string
+                    type:
+                      enum:
+                      - definition
+                      - broadcast
+                      - private
+                      - groupinit
+                      - transfer_broadcast
+                      - transfer_private
                       type: string
                   type: object
+                pins:
+                  items:
+                    type: string
+                  type: array
+                state:
+                  enum:
+                  - staged
+                  - ready
+                  - sent
+                  - pending
+                  - confirmed
+                  - rejected
+                  type: string
               type: object
       responses:
         "200":

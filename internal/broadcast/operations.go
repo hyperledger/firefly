@@ -21,10 +21,11 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type uploadBatchData struct {
@@ -80,7 +81,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 		if err != nil {
 			return nil, err
 		} else if bp == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		batch, err := bm.data.HydrateBatch(ctx, bp)
 		if err != nil {
@@ -97,18 +98,18 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 		if err != nil {
 			return nil, err
 		} else if d == nil || d.Blob == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
 		if err != nil {
 			return nil, err
 		} else if blob == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opUploadBlob(op, d, blob), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -119,7 +120,7 @@ func (bm *broadcastManager) RunOperation(ctx context.Context, op *fftypes.Prepar
 	case uploadBlobData:
 		return bm.uploadBlob(ctx, data)
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
@@ -128,7 +129,7 @@ func (bm *broadcastManager) uploadBatch(ctx context.Context, data uploadBatchDat
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	payload, err := json.Marshal(data.Batch)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 	}
 
 	// Write it to IPFS to get a payload reference
@@ -150,7 +151,7 @@ func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData)
 	// Stream from the local data exchange ...
 	reader, err := bm.exchange.DownloadBlob(ctx, data.Blob.PayloadRef)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, i18n.MsgDownloadBlobFailed, data.Blob.PayloadRef)
+		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadBlobFailed, data.Blob.PayloadRef)
 	}
 	defer reader.Close()
 

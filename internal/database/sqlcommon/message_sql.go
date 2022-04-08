@@ -22,10 +22,11 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -293,10 +294,10 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 
 	for msgDataRefIDx, msgDataRef := range message.Data {
 		if msgDataRef.ID == nil {
-			return i18n.NewError(ctx, i18n.MsgNullDataReferenceID, msgDataRefIDx)
+			return i18n.NewError(ctx, coremsgs.MsgNullDataReferenceID, msgDataRefIDx)
 		}
 		if msgDataRef.Hash == nil {
-			return i18n.NewError(ctx, i18n.MsgMissingDataHashIndex, msgDataRefIDx)
+			return i18n.NewError(ctx, coremsgs.MsgMissingDataHashIndex, msgDataRefIDx)
 		}
 		// Add the linkage
 		if _, err := s.insertTx(ctx, tx,
@@ -359,7 +360,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) e
 		var dataHash fftypes.Bytes32
 		var dataIDx int
 		if err = existingRefs.Scan(&msgID, &dataID, &dataHash, &dataIDx); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages_data")
+			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages_data")
 		}
 		for _, m := range msgs {
 			if *m.Header.ID == msgID {
@@ -404,7 +405,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages")
 	}
 	return &msg, nil
 }
@@ -443,7 +444,7 @@ func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (messa
 
 func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder, fop sq.Sqlizer, fi *database.FilterInfo, allowCount bool) (message []*fftypes.Message, fr *database.FilterResult, err error) {
 	if fi.Count && !allowCount {
-		return nil, nil, i18n.NewError(ctx, i18n.MsgFilterCountNotSupported)
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgFilterCountNotSupported)
 	}
 
 	rows, tx, err := s.query(ctx, query)
@@ -491,7 +492,7 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (
 		var id fftypes.IDAndSequence
 		err = rows.Scan(&id.ID, &id.Sequence)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages")
 		}
 		ids = append(ids, &id)
 	}

@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -234,7 +234,7 @@ func TestUpdateMembersMissingOrg(t *testing.T) {
 			Members: fftypes.Members{{Node: fftypes.NewUUID()}},
 		},
 	}, false)
-	assert.Regexp(t, "FF10220", err)
+	assert.Regexp(t, "FF00116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -249,7 +249,7 @@ func TestUpdateMembersMissingNode(t *testing.T) {
 			Members: fftypes.Members{{Identity: "0x12345"}},
 		},
 	}, false)
-	assert.Regexp(t, "FF10221", err)
+	assert.Regexp(t, "FF00117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -354,7 +354,7 @@ func TestGetGroupsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	_, _, err := s.GetGroups(context.Background(), f)
-	assert.Regexp(t, "FF10149.*hash", err)
+	assert.Regexp(t, "FF00143.*hash", err)
 }
 
 func TestGetGroupsQueryFail(t *testing.T) {
@@ -399,7 +399,7 @@ func TestGroupUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("hash", map[bool]bool{true: false})
 	err := s.UpdateGroup(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF10149.*hash", err)
+	assert.Regexp(t, "FF00143.*hash", err)
 }
 
 func TestGroupsUpdateBuildFilterFail(t *testing.T) {
@@ -408,7 +408,7 @@ func TestGroupsUpdateBuildFilterFail(t *testing.T) {
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("description", "my desc")
 	err := s.UpdateGroups(context.Background(), f, u)
-	assert.Regexp(t, "FF10149.*hash", err)
+	assert.Regexp(t, "FF00143.*hash", err)
 }
 
 func TestGroupUpdateFail(t *testing.T) {

@@ -22,9 +22,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -210,7 +210,7 @@ func TestGetPinBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	_, _, err := s.GetPins(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetPinReadMessageFail(t *testing.T) {
@@ -246,7 +246,7 @@ func TestUpdatePinsBadFilter(t *testing.T) {
 	mock.ExpectRollback()
 	ctx := context.Background()
 	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("sequence", 1), database.PinQueryFactory.NewUpdate(ctx).Set("bad", true))
-	assert.Regexp(t, "FF10148", err)
+	assert.Regexp(t, "FF00142", err)
 }
 
 func TestUpdatePinsBadUpdate(t *testing.T) {
@@ -255,7 +255,7 @@ func TestUpdatePinsBadUpdate(t *testing.T) {
 	mock.ExpectRollback()
 	ctx := context.Background()
 	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("bad", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
-	assert.Regexp(t, "FF10148", err)
+	assert.Regexp(t, "FF00142", err)
 }
 
 func TestPinDeleteBeginFail(t *testing.T) {

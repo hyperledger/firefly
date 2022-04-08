@@ -21,8 +21,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // IdentityType is the type of an identity
