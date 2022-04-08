@@ -54,7 +54,8 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, batch.ID, bid)
 
-	assert.Equal(t, *batch.ID, <-em.aggregator.rewindBatches)
+	brw := <-em.aggregator.rewinder.rewindRequests
+	assert.Equal(t, *batch.ID, brw.uuid)
 
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)
@@ -123,24 +124,17 @@ func TestSharedStorageBlobDownloadedOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	dataID := fftypes.NewUUID()
-	batchID := fftypes.NewUUID()
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mss.On("Name").Return("utsd")
 	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
 	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
-		{ID: dataID},
-	}, nil, nil)
-	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return([]*fftypes.Message{
-		{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}, BatchID: batchID},
-	}, nil, nil)
 
-	em.SharedStorageBlobDownloaded(mss, *fftypes.NewRandB32(), 12345, "payload1")
+	hash := fftypes.NewRandB32()
+	em.SharedStorageBlobDownloaded(mss, *hash, 12345, "payload1")
 
-	assert.Equal(t, *batchID, <-em.aggregator.rewindBatches)
+	brw := <-em.aggregator.rewinder.rewindRequests
+	assert.Equal(t, rewind{hash: *hash, rewindType: rewindBlob}, brw)
 
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)

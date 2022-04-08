@@ -64,13 +64,11 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 			assert.Equal(t, *localNode.ID, *group.Members[0].Node)
 			assert.Equal(t, remoteOrg.DID, group.Members[1].Identity)
 			assert.Equal(t, *remoteNode.ID, *group.Members[1].Node)
-			assert.Nil(t, group.Ledger)
 		} else {
 			assert.Equal(t, remoteOrg.DID, group.Members[1].Identity)
 			assert.Equal(t, *remoteNode.ID, *group.Members[1].Node)
 			assert.Equal(t, localOrg.DID, group.Members[0].Identity)
 			assert.Equal(t, *localNode.ID, *group.Members[0].Node)
-			assert.Nil(t, group.Ledger)
 		}
 
 		dataID = data.ID

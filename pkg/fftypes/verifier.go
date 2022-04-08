@@ -18,7 +18,7 @@ package fftypes
 
 import "crypto/sha256"
 
-// VerifierType is the type of an identity berifier. Where possible we use established DID verifier type strings
+// VerifierType is the type of an identity verifier. Where possible we use established DID verifier type strings
 type VerifierType = FFEnum
 
 var (
@@ -32,17 +32,17 @@ var (
 
 // VerifierRef is just the type + value (public key identifier etc.) from the verifier
 type VerifierRef struct {
-	Type  VerifierType `json:"type" ffenum:"verifiertype"`
-	Value string       `json:"value"`
+	Type  VerifierType `ffstruct:"Verifier" json:"type" ffenum:"verifiertype"`
+	Value string       `ffstruct:"Verifier" json:"value"`
 }
 
 // Verifier is an identity verification system that has been established for this identity, such as a blockchain signing key identifier
 type Verifier struct {
-	Hash      *Bytes32 `json:"hash"` // Used to ensure the same ID is generated on each node, but not critical for verification. In v0.13 migration was set to the ID of the parent.
-	Identity  *UUID    `json:"identity,omitempty"`
-	Namespace string   `json:"namespace,omitempty"`
+	Hash      *Bytes32 `ffstruct:"Verifier" json:"hash"` // Used to ensure the same ID is generated on each node, but not critical for verification. In v0.13 migration was set to the ID of the parent.
+	Identity  *UUID    `ffstruct:"Verifier" json:"identity,omitempty"`
+	Namespace string   `ffstruct:"Verifier" json:"namespace,omitempty"`
 	VerifierRef
-	Created *FFTime `json:"created,omitempty"`
+	Created *FFTime `ffstruct:"Verifier" json:"created,omitempty"`
 }
 
 // Seal updates the hash to be deterministically generated from the namespace+type+value, such that

@@ -39,7 +39,6 @@ var postNewDatatype = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Datatype{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Message"},
 	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

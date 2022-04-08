@@ -32,7 +32,6 @@ var (
 		"message_id",
 		"namespace",
 		"name",
-		"ledger",
 		"hash",
 		"created",
 	}
@@ -103,7 +102,6 @@ func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group
 			Set("message_id", group.Message).
 			Set("namespace", group.Namespace).
 			Set("name", group.Name).
-			Set("ledger", group.Ledger).
 			Set("hash", group.Hash).
 			Set("created", group.Created).
 			Where(sq.Eq{"hash": group.Hash}),
@@ -121,7 +119,6 @@ func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group
 				group.Message,
 				group.Namespace,
 				group.Name,
-				group.Ledger,
 				group.Hash,
 				group.Created,
 			),
@@ -233,7 +230,6 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Gr
 		&group.Message,
 		&group.Namespace,
 		&group.Name,
-		&group.Ledger,
 		&group.Hash,
 		&group.Created,
 	)

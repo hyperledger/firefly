@@ -18,28 +18,28 @@ package fftypes
 
 // NodeStatus is a set of information that represents the health, and identity of a node
 type NodeStatus struct {
-	Node     NodeStatusNode     `json:"node"`
-	Org      NodeStatusOrg      `json:"org"`
-	Defaults NodeStatusDefaults `json:"defaults"`
+	Node     NodeStatusNode     `ffstruct:"NodeStatus" json:"node"`
+	Org      NodeStatusOrg      `ffstruct:"NodeStatus" json:"org"`
+	Defaults NodeStatusDefaults `ffstruct:"NodeStatus" json:"defaults"`
 }
 
 // NodeStatusNode is the information about the local node, returned in the node status
 type NodeStatusNode struct {
-	Name       string `json:"name"`
-	Registered bool   `json:"registered"`
-	ID         *UUID  `json:"id,omitempty"`
+	Name       string `ffstruct:"NodeStatusNode" json:"name"`
+	Registered bool   `ffstruct:"NodeStatusNode" json:"registered"`
+	ID         *UUID  `ffstruct:"NodeStatusNode" json:"id,omitempty"`
 }
 
 // NodeStatusOrg is the information about the node owning org, returned in the node status
 type NodeStatusOrg struct {
-	Name       string         `json:"name"`
-	Registered bool           `json:"registered"`
-	DID        string         `json:"did,omitempty"`
-	ID         *UUID          `json:"id,omitempty"`
-	Verifiers  []*VerifierRef `json:"verifiers,omitempty"`
+	Name       string         `ffstruct:"NodeStatusOrg" json:"name"`
+	Registered bool           `ffstruct:"NodeStatusOrg" json:"registered"`
+	DID        string         `ffstruct:"NodeStatusOrg" json:"did,omitempty"`
+	ID         *UUID          `ffstruct:"NodeStatusOrg" json:"id,omitempty"`
+	Verifiers  []*VerifierRef `ffstruct:"NodeStatusOrg" json:"verifiers,omitempty"`
 }
 
 // NodeStatusDefaults is information about core configuration th
 type NodeStatusDefaults struct {
-	Namespace string `json:"namespace"`
+	Namespace string `ffstruct:"NodeStatusDefaults" json:"namespace"`
 }

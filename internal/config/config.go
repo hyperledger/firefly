@@ -54,6 +54,8 @@ var (
 	APIRequestMaxTimeout = rootKey("api.requestMaxTimeout")
 	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
 	APIShutdownTimeout = rootKey("api.shutdownTimeout")
+	// APIOASPanicOnMissingDescription controls whether the OpenAPI Spec generator will strongly enforce descriptions on every field or not
+	APIOASPanicOnMissingDescription = rootKey("api.oas.panicOnMissingDescription")
 	// BatchCacheSize
 	BatchCacheSize = rootKey("batch.cache.size")
 	// BatchCacheSize
@@ -164,6 +166,10 @@ var (
 	EventAggregatorOpCorrelationRetries = rootKey("event.aggregator.opCorrelationRetries")
 	// EventAggregatorPollTimeout the time to wait without a notification of new events, before trying a select on the table
 	EventAggregatorPollTimeout = rootKey("event.aggregator.pollTimeout")
+	// EventAggregatorRewindTimeout the minimum time to wait for rewinds to accumulate before resolving them
+	EventAggregatorRewindTimeout = rootKey("event.aggregator.rewindTimeout")
+	// EventAggregatorRewindQueueLength the size of the queue into the rewind dispatcher
+	EventAggregatorRewindQueueLength = rootKey("event.aggregator.rewindQueueLength")
 	// EventAggregatorRetryFactor the backoff factor to use for retry of database operations
 	EventAggregatorRetryFactor = rootKey("event.aggregator.retry.factor")
 	// EventAggregatorRetryInitDelay the initial delay to use for retry of data base operations
@@ -356,6 +362,7 @@ func Reset() {
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(APIShutdownTimeout), "10s")
+	viper.SetDefault(string(APIOASPanicOnMissingDescription), false)
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
 	viper.SetDefault(string(BatchCacheSize), "1Mb")
 	viper.SetDefault(string(BatchCacheTTL), "5m")
@@ -396,6 +403,8 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
+	viper.SetDefault(string(EventAggregatorRewindTimeout), "50ms")
+	viper.SetDefault(string(EventAggregatorRewindQueueLength), 10)
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")

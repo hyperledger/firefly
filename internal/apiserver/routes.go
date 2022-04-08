@@ -18,8 +18,6 @@ package apiserver
 
 import "github.com/hyperledger/firefly/internal/oapispec"
 
-const emptyObjectSchema = `{"type": "object"}`
-
 var routes = []*oapispec.Route{
 	deleteContractListener,
 	deleteSubscription,

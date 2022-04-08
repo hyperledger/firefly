@@ -184,6 +184,52 @@ func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 	return r0, r1
 }
 
+// GetBatchIDsForDataAttachments provides a mock function with given fields: ctx, dataIDs
+func (_m *Plugin) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, dataIDs)
+
+	var r0 []*fftypes.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, dataIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, dataIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBatchIDsForMessages provides a mock function with given fields: ctx, msgIDs
+func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, msgIDs)
+
+	var r0 []*fftypes.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, msgIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, msgIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBatches provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*fftypes.BatchPersisted, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

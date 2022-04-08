@@ -110,7 +110,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 
 	op := &fftypes.PreparedOperation{}
 
-	err := om.RunOperation(context.Background(), op)
+	_, err := om.RunOperation(context.Background(), op)
 	assert.Regexp(t, "FF10371", err)
 }
 
@@ -123,8 +123,9 @@ func TestRunOperationSuccess(t *testing.T) {
 		Type: fftypes.OpTypeBlockchainPinBatch,
 	}
 
-	om.RegisterHandler(ctx, &mockHandler{}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(context.Background(), op)
+	om.RegisterHandler(ctx, &mockHandler{Outputs: fftypes.JSONObject{"test": "output"}}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
+	outputs, err := om.RunOperation(context.Background(), op)
+	assert.Equal(t, "output", outputs.GetString("test"))
 
 	assert.NoError(t, err)
 }
@@ -143,7 +144,7 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Complete: true}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(ctx, op)
+	_, err := om.RunOperation(ctx, op)
 
 	assert.NoError(t, err)
 
@@ -164,7 +165,7 @@ func TestRunOperationFail(t *testing.T) {
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(ctx, op)
+	_, err := om.RunOperation(ctx, op)
 
 	assert.EqualError(t, err, "pop")
 
@@ -185,7 +186,7 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusPending, "pop", mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(ctx, op, RemainPendingOnFailure)
+	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
 
 	assert.EqualError(t, err, "pop")
 

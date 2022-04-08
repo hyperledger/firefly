@@ -46,50 +46,50 @@ const (
 )
 
 type IdentityMessages struct {
-	Claim        *UUID `json:"claim"`
-	Verification *UUID `json:"verification"`
-	Update       *UUID `json:"update"`
+	Claim        *UUID `ffstruct:"IdentityMessages" json:"claim"`
+	Verification *UUID `ffstruct:"IdentityMessages" json:"verification"`
+	Update       *UUID `ffstruct:"IdentityMessages" json:"update"`
 }
 
 // IdentityBase are the immutable fields of an identity that determine what the identity itself is
 type IdentityBase struct {
-	ID        *UUID        `json:"id"`
-	DID       string       `json:"did"`
-	Type      IdentityType `json:"type" ffenum:"identitytype"`
-	Parent    *UUID        `json:"parent,omitempty"`
-	Namespace string       `json:"namespace"`
-	Name      string       `json:"name,omitempty"`
+	ID        *UUID        `ffstruct:"Identity" json:"id" ffexcludeinput:"true"`
+	DID       string       `ffstruct:"Identity" json:"did"`
+	Type      IdentityType `ffstruct:"Identity" json:"type" ffenum:"identitytype" ffexcludeinput:"true"`
+	Parent    *UUID        `ffstruct:"Identity" json:"parent,omitempty"`
+	Namespace string       `ffstruct:"Identity" json:"namespace"`
+	Name      string       `ffstruct:"Identity" json:"name,omitempty"`
 }
 
 // IdentityProfile are the field of a profile that can be updated over time
 type IdentityProfile struct {
-	Description string     `json:"description,omitempty"`
-	Profile     JSONObject `json:"profile,omitempty"`
+	Description string     `ffstruct:"IdentityProfile" json:"description,omitempty"`
+	Profile     JSONObject `ffstruct:"IdentityProfile" json:"profile,omitempty"`
 }
 
 // Identity is the persisted structure backing all identities, including orgs, nodes and custom identities
 type Identity struct {
 	IdentityBase
 	IdentityProfile
-	Messages IdentityMessages `json:"messages,omitempty"`
-	Created  *FFTime          `json:"created,omitempty"`
-	Updated  *FFTime          `json:"updated,omitempty"`
+	Messages IdentityMessages `ffstruct:"Identity" json:"messages,omitempty" ffexcludeinput:"true"`
+	Created  *FFTime          `ffstruct:"Identity" json:"created,omitempty" ffexcludeinput:"true"`
+	Updated  *FFTime          `ffstruct:"Identity" json:"updated,omitempty"`
 }
 
 // IdentityWithVerifiers has an embedded array of verifiers
 type IdentityWithVerifiers struct {
 	Identity
-	Verifiers []*VerifierRef `json:"verifiers"`
+	Verifiers []*VerifierRef `ffstruct:"IdentityWithVerifiers" json:"verifiers"`
 }
 
 // IdentityCreateDTO is the input structure to submit to register an identity.
 // The blockchain key that will be used to establish the claim for the identity
 // needs to be provided.
 type IdentityCreateDTO struct {
-	Name   string       `json:"name"`
-	Type   IdentityType `json:"type,omitempty"`
-	Parent string       `json:"parent,omitempty"` // can be a DID for resolution, or the UUID directly
-	Key    string       `json:"key,omitempty"`
+	Name   string       `ffstruct:"Identity" json:"name"`
+	Type   IdentityType `ffstruct:"Identity" json:"type,omitempty"`
+	Parent string       `ffstruct:"IdentityCreateDTO" json:"parent,omitempty"` // can be a DID for resolution, or the UUID directly
+	Key    string       `ffstruct:"IdentityCreateDTO" json:"key,omitempty"`
 	IdentityProfile
 }
 
@@ -102,8 +102,8 @@ type IdentityUpdateDTO struct {
 // SignerRef is the nested structure representing the identity that signed a message.
 // It might comprise a resolvable by FireFly identity DID, a blockchain signing key, or both.
 type SignerRef struct {
-	Author string `json:"author,omitempty"`
-	Key    string `json:"key,omitempty"`
+	Author string `ffstruct:"SignerRef" json:"author,omitempty"`
+	Key    string `ffstruct:"SignerRef" json:"key,omitempty"`
 }
 
 // IdentityClaim is the data payload used in a message to broadcast an intent to publish a new identity.
@@ -111,14 +111,14 @@ type SignerRef struct {
 // from the parent identity to be published (on the same topic) before the identity is considered valid
 // and is stored as a confirmed identity.
 type IdentityClaim struct {
-	Identity *Identity `json:"identity"`
+	Identity *Identity `ffstruct:"IdentityClaim" json:"identity"`
 }
 
 // IdentityVerification is the data payload used in message to broadcast a verification of a child identity.
 // Must refer to the UUID and Hash of the IdentityClaim message, and must contain the same base identity data.
 type IdentityVerification struct {
-	Claim    MessageRef   `json:"claim"`
-	Identity IdentityBase `json:"identity"`
+	Claim    MessageRef   `ffstruct:"IdentityVerification" json:"claim"`
+	Identity IdentityBase `ffstruct:"IdentityVerification" json:"identity"`
 }
 
 // IdentityUpdate is the data payload used in message to broadcast an update to an identity profile.
@@ -126,8 +126,8 @@ type IdentityVerification struct {
 // and it must contain the same identity data.
 // The profile is replaced in its entirety.
 type IdentityUpdate struct {
-	Identity IdentityBase    `json:"identity"`
-	Updates  IdentityProfile `json:"updates,omitempty"`
+	Identity IdentityBase    `ffstruct:"IdentityUpdate" json:"identity"`
+	Updates  IdentityProfile `ffstruct:"IdentityUpdate" json:"updates,omitempty"`
 }
 
 func (ic *IdentityClaim) Topic() string {

@@ -81,18 +81,18 @@ func NewOperation(plugin Named, namespace string, tx *UUID, opType OpType) *Oper
 
 // Operation is a description of an action performed as part of a transaction submitted by this node
 type Operation struct {
-	ID          *UUID      `json:"id"`
-	Namespace   string     `json:"namespace"`
-	Transaction *UUID      `json:"tx"`
-	Type        OpType     `json:"type" ffenum:"optype"`
-	Status      OpStatus   `json:"status"`
-	Error       string     `json:"error,omitempty"`
-	Plugin      string     `json:"plugin"`
-	Input       JSONObject `json:"input,omitempty"`
-	Output      JSONObject `json:"output,omitempty"`
-	Created     *FFTime    `json:"created,omitempty"`
-	Updated     *FFTime    `json:"updated,omitempty"`
-	Retry       *UUID      `json:"retry,omitempty"`
+	ID          *UUID      `ffstruct:"Operation" json:"id"`
+	Namespace   string     `ffstruct:"Operation" json:"namespace"`
+	Transaction *UUID      `ffstruct:"Operation" json:"tx"`
+	Type        OpType     `ffstruct:"Operation" json:"type" ffenum:"optype"`
+	Status      OpStatus   `ffstruct:"Operation" json:"status"`
+	Plugin      string     `ffstruct:"Operation" json:"plugin"`
+	Input       JSONObject `ffstruct:"Operation" json:"input,omitempty"`
+	Output      JSONObject `ffstruct:"Operation" json:"output,omitempty"`
+	Error       string     `ffstruct:"Operation" json:"error,omitempty"`
+	Created     *FFTime    `ffstruct:"Operation" json:"created,omitempty"`
+	Updated     *FFTime    `ffstruct:"Operation" json:"updated,omitempty"`
+	Retry       *UUID      `ffstruct:"Operation" json:"retry,omitempty"`
 }
 
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin
