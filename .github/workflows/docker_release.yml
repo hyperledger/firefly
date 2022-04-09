@@ -19,7 +19,7 @@ jobs:
             --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --label tag=${GITHUB_REF##*/} \
             --tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} \
-            --tag ghcr.io/hyperledger/firefly:head \
+            --tag ghcr.io/hyperledger/firefly:head" \
             docker
 
       - name: Tag release
