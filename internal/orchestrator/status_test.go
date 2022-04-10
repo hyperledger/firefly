@@ -29,6 +29,41 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var (
+	pluginsResult = fftypes.NodeStatusPlugins{
+		Blockchain: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: "mock-bi",
+			},
+		},
+		Database: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: "mock-di",
+			},
+		},
+		DataExchange: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: "mock-dx",
+			},
+		},
+		Identity: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: "mock-ii",
+			},
+		},
+		SharedStorage: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: "mock-ps",
+			},
+		},
+		Tokens: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: "token",
+			},
+		},
+	}
+)
+
 func TestGetStatusRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 
@@ -77,6 +112,14 @@ func TestGetStatusRegistered(t *testing.T) {
 	assert.True(t, status.Node.Registered)
 	assert.Equal(t, *nodeID, *status.Node.ID)
 	assert.Equal(t, "0x12345", status.Org.Verifiers[0].Value)
+
+	// Plugins
+	assert.ElementsMatch(t, pluginsResult.Blockchain, status.Plugins.Blockchain)
+	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
+	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
+	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
+	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
+	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 
 	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID))
 	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID)) // cached
@@ -232,6 +275,14 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	assert.Equal(t, "node1", status.Node.Name)
 	assert.False(t, status.Node.Registered)
+
+	// Plugins
+	assert.ElementsMatch(t, pluginsResult.Blockchain, status.Plugins.Blockchain)
+	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
+	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
+	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
+	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
+	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 
 	assert.Nil(t, or.GetNodeUUID(or.ctx))
 }
