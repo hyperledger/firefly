@@ -232,7 +232,7 @@ var (
 	MsgContractNoMethodSignature    = ffm("FF10314", "Method signature is required if interfaceID is absent", 400)
 	MsgContractMethodResolveError   = ffm("FF10315", "Unable to resolve contract method: %s", 400)
 	MsgContractLocationExists       = ffm("FF10316", "The contract location cannot be changed after it is created", 400)
-	MsgListenerNoEvent              = ffm("FF10317", "An event name and interface reference, or in-line event definition must be supplied when creating a blockchain listener", 400)
+	MsgListenerNoEvent              = ffm("FF10317", "Either an interface reference and event path, or in-line event definition must be supplied when creating a contract listener", 400)
 	MsgListenerEventNotFound        = ffm("FF10318", "No event was found in namespace '%s' with id '%s'", 400)
 	MsgEventNameMustBeSet           = ffm("FF10319", "Event name must be set", 400)
 	MsgMethodNameMustBeSet          = ffm("FF10320", "Method name must be set", 400)

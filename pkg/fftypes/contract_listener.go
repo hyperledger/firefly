@@ -43,7 +43,7 @@ type ContractListenerOptions struct {
 
 type ContractListenerInput struct {
 	ContractListener
-	EventID *UUID `ffstruct:"ContractListener" json:"eventId,omitempty"`
+	EventPath string `ffstruct:"ContractListener" json:"eventPath,omitempty"`
 }
 
 type FFISerializedEvent struct {

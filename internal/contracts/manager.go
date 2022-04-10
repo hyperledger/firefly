@@ -484,29 +484,16 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 		}
 
 		if listener.Event == nil {
-			if listener.EventID == nil {
+			if listener.EventPath == "" || listener.Interface == nil {
 				return i18n.NewError(ctx, i18n.MsgListenerNoEvent)
 			}
-
-			event, err := cm.database.GetFFIEventByID(ctx, listener.EventID)
+			event, err := cm.database.GetFFIEvent(ctx, ns, listener.Interface.ID, listener.EventPath)
 			if err != nil {
 				return err
-			}
-			if event == nil || event.Namespace != listener.Namespace {
-				return i18n.NewError(ctx, i18n.MsgListenerEventNotFound, listener.Namespace, listener.EventID)
+			} else if event == nil {
+				return i18n.NewError(ctx, i18n.MsgEventNotFound, listener.EventPath)
 			}
 			// Copy the event definition into the listener
-			listener.Event = &fftypes.FFISerializedEvent{
-				FFIEventDefinition: event.FFIEventDefinition,
-			}
-		} else if listener.Event.Name != "" && listener.Interface != nil {
-			event, err := cm.database.GetFFIEvent(ctx, ns, listener.Interface.ID, listener.Event.Name)
-			if err != nil {
-				return err
-			}
-			if event == nil {
-				return i18n.NewError(ctx, i18n.MsgEventNotFound, listener.Event.Name)
-			}
 			listener.Event = &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			}
