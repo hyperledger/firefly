@@ -50,6 +50,7 @@ type Manager interface {
 	ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error
 
 	AddContractListener(ctx context.Context, ns string, listener *fftypes.ContractListenerInput) (output *fftypes.ContractListener, err error)
+	AddContractAPIListener(ctx context.Context, ns, apiName, eventPath string, listener *fftypes.ContractListener) (output *fftypes.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) (*fftypes.ContractListener, error)
 	GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractListener, *database.FilterResult, error)
 	DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error
@@ -531,6 +532,30 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 	}
 
 	return &listener.ContractListener, err
+}
+
+func (cm *contractManager) AddContractAPIListener(ctx context.Context, ns, apiName, eventPath string, listener *fftypes.ContractListener) (output *fftypes.ContractListener, err error) {
+	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
+	if err != nil {
+		return nil, err
+	} else if api == nil || api.Interface == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+
+	input := &fftypes.ContractListenerInput{ContractListener: *listener}
+	input.Interface = &fftypes.FFIReference{ID: api.Interface.ID}
+
+	event, err := cm.database.GetFFIEvent(ctx, ns, api.Interface.ID, eventPath)
+	if err != nil {
+		return nil, err
+	}
+	input.Event = &fftypes.FFISerializedEvent{
+		FFIEventDefinition: event.FFIEventDefinition,
+	}
+	if api.Location != nil {
+		input.Location = api.Location
+	}
+	return cm.AddContractListener(ctx, ns, input)
 }
 
 func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) (listener *fftypes.ContractListener, err error) {

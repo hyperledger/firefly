@@ -17,6 +17,29 @@ type Manager struct {
 	mock.Mock
 }
 
+// AddContractAPIListener provides a mock function with given fields: ctx, ns, apiName, eventPath, listener
+func (_m *Manager) AddContractAPIListener(ctx context.Context, ns string, apiName string, eventPath string, listener *fftypes.ContractListener) (*fftypes.ContractListener, error) {
+	ret := _m.Called(ctx, ns, apiName, eventPath, listener)
+
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractListener) *fftypes.ContractListener); ok {
+		r0 = rf(ctx, ns, apiName, eventPath, listener)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractListener)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractListener) error); ok {
+		r1 = rf(ctx, ns, apiName, eventPath, listener)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // AddContractListener provides a mock function with given fields: ctx, ns, listener
 func (_m *Manager) AddContractListener(ctx context.Context, ns string, listener *fftypes.ContractListenerInput) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, ns, listener)

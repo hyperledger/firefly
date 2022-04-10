@@ -87,6 +87,7 @@ var routes = []*oapispec.Route{
 	patchUpdateIdentity,
 	postContractAPIInvoke,
 	postContractAPIQuery,
+	postContractAPIListen,
 	postContractInterfaceGenerate,
 	postContractInterfaceInvoke,
 	postContractInterfaceQuery,
