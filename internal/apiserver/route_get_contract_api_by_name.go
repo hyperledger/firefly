@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -33,13 +34,18 @@ var getContractAPIByName = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "apiName", Description: i18n.MsgTBD},
 	},
-	QueryParams:     nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchinterface", IsBool: true, Description: i18n.MsgTBD},
+	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		if strings.EqualFold(r.QP["fetchinterface"], "true") {
+			return getOr(r.Ctx).Contracts().GetContractAPIWithInterface(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"])
+		}
 		return getOr(r.Ctx).Contracts().GetContractAPI(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"])
 	},
 }
