@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package restclient
+package ffresty
 
 import "github.com/hyperledger/firefly/pkg/config"
 
@@ -59,7 +59,7 @@ const (
 	// HTTPConnectionTimeout the connection timeout for new connections
 	HTTPConnectionTimeout = "connectionTimeout"
 	// HTTPTLSHandshakeTimeout the TLS handshake connection timeout
-	HTTTPTLSHandshakeTimeout = "tlsHandshakeTimeout"
+	HTTPTLSHandshakeTimeout = "tlsHandshakeTimeout"
 	// HTTPExpectContinueTimeout see ExpectContinueTimeout in Go docs
 	HTTPExpectContinueTimeout = "expectContinueTimeout"
 
@@ -81,7 +81,7 @@ func InitPrefix(prefix config.KeySet) {
 	prefix.AddKnownKey(HTTPIdleTimeout, defaultHTTPIdleTimeout)
 	prefix.AddKnownKey(HTTPMaxIdleConns, defaultHTTPMaxIdleConns)
 	prefix.AddKnownKey(HTTPConnectionTimeout, defaultHTTPConnectionTimeout)
-	prefix.AddKnownKey(HTTTPTLSHandshakeTimeout, defaultHTTPTLSHandshakeTimeout)
+	prefix.AddKnownKey(HTTPTLSHandshakeTimeout, defaultHTTPTLSHandshakeTimeout)
 	prefix.AddKnownKey(HTTPExpectContinueTimeout, defaultHTTPExpectContinueTimeout)
 
 	prefix.AddKnownKey(HTTPCustomClient)

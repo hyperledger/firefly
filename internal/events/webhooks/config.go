@@ -17,10 +17,10 @@
 package webhooks
 
 import (
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 )
 
 func (wh *WebHooks) InitPrefix(prefix config.Prefix) {
-	restclient.InitPrefix(prefix)
+	ffresty.InitPrefix(prefix)
 }

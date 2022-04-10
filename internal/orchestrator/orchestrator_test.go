@@ -23,7 +23,6 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -47,6 +46,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
@@ -457,7 +457,7 @@ func TestGoodTokensPlugin(t *testing.T) {
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
-	tokensConfig.AddKnownKey(restclient.HTTPConfigURL, "test")
+	tokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
