@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package restclient
+package ffresty
 
 import (
 	"context"
@@ -42,23 +42,23 @@ type retryCtx struct {
 	attempts uint
 }
 
-// OnAfterResponse when using SetDoNotParseResponse(true) for streming binary replies,
-// the caller should invoke ffrest.OnAfterResponse on the response manually.
+// OnAfterResponse when using SetDoNotParseResponse(true) for streaming binary replies,
+// the caller should invoke ffresty.OnAfterResponse on the response manually.
 // The middleware is disabled on this path :-(
 // See: https://github.com/go-resty/resty/blob/d01e8d1bac5ba1fed0d9e03c4c47ca21e94a7e8e/client.go#L912-L948
 func OnAfterResponse(c *resty.Client, resp *resty.Response) {
 	if c == nil || resp == nil {
 		return
 	}
-	rctx := resp.Request.Context()
-	rc := rctx.Value(retryCtxKey{}).(*retryCtx)
+	rCtx := resp.Request.Context()
+	rc := rCtx.Value(retryCtxKey{}).(*retryCtx)
 	elapsed := float64(time.Since(rc.start)) / float64(time.Millisecond)
 	level := logrus.DebugLevel
 	status := resp.StatusCode()
 	if status >= 300 {
 		level = logrus.ErrorLevel
 	}
-	log.L(rctx).Logf(level, "<== %s %s [%d] (%.2fms)", resp.Request.Method, resp.Request.URL, status, elapsed)
+	log.L(rCtx).Logf(level, "<== %s %s [%d] (%.2fms)", resp.Request.Method, resp.Request.URL, status, elapsed)
 }
 
 // New creates a new Resty client, using static configuration (from the config file)
@@ -86,7 +86,7 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 			ForceAttemptHTTP2:     true,
 			MaxIdleConns:          staticConfig.GetInt(HTTPMaxIdleConns),
 			IdleConnTimeout:       staticConfig.GetDuration(HTTPIdleTimeout),
-			TLSHandshakeTimeout:   staticConfig.GetDuration(HTTTPTLSHandshakeTimeout),
+			TLSHandshakeTimeout:   staticConfig.GetDuration(HTTPTLSHandshakeTimeout),
 			ExpectContinueTimeout: staticConfig.GetDuration(HTTPExpectContinueTimeout),
 		}
 		httpClient := &http.Client{
@@ -109,21 +109,21 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 	client.SetTimeout(staticConfig.GetDuration(HTTPConfigRequestTimeout))
 
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
-		rctx := req.Context()
-		rc := rctx.Value(retryCtxKey{})
+		rCtx := req.Context()
+		rc := rCtx.Value(retryCtxKey{})
 		if rc == nil {
 			// First attempt
 			r := &retryCtx{
 				id:    fftypes.ShortID(),
 				start: time.Now(),
 			}
-			rctx = context.WithValue(rctx, retryCtxKey{}, r)
+			rCtx = context.WithValue(rCtx, retryCtxKey{}, r)
 			// Create a request logger from the root logger passed into the client
 			l := log.L(ctx).WithField("breq", r.id)
-			rctx = log.WithLogger(rctx, l)
-			req.SetContext(rctx)
+			rCtx = log.WithLogger(rCtx, l)
+			req.SetContext(rCtx)
 		}
-		log.L(rctx).Debugf("==> %s %s%s", req.Method, url, req.URL)
+		log.L(rCtx).Debugf("==> %s %s%s", req.Method, url, req.URL)
 		return nil
 	})
 
@@ -155,9 +155,9 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 				if r == nil || r.IsSuccess() {
 					return false
 				}
-				rctx := r.Request.Context()
-				rc := rctx.Value(retryCtxKey{}).(*retryCtx)
-				log.L(rctx).Infof("retry %d/%d (min=%dms/max=%dms) status=%d", rc.attempts, retryCount, minTimeout.Milliseconds(), maxTimeout.Milliseconds(), r.StatusCode())
+				rCtx := r.Request.Context()
+				rc := rCtx.Value(retryCtxKey{}).(*retryCtx)
+				log.L(rCtx).Infof("retry %d/%d (min=%dms/max=%dms) status=%d", rc.attempts, retryCount, minTimeout.Milliseconds(), maxTimeout.Milliseconds(), r.StatusCode())
 				rc.attempts++
 				return true
 			})

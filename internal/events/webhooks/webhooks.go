@@ -29,9 +29,9 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -67,7 +67,7 @@ func (wh *WebHooks) Init(ctx context.Context, prefix config.Prefix, callbacks ev
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
-		client:       restclient.New(ctx, prefix),
+		client:       ffresty.New(ctx, prefix),
 		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions

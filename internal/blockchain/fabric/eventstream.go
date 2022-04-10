@@ -21,7 +21,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/log"
 )
@@ -63,7 +63,7 @@ func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventSt
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return streams, nil
 }
@@ -84,7 +84,7 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string, bat
 		SetResult(&stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return &stream, nil
 }
@@ -108,7 +108,7 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return subs, nil
 }
@@ -135,7 +135,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		SetResult(&sub).
 		Post("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return &sub, nil
 }
@@ -145,7 +145,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 		SetContext(ctx).
 		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil
 }

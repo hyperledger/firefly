@@ -24,8 +24,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/karlseguin/ccache"
@@ -34,7 +34,7 @@ import (
 // addressResolver is a REST-pluggable interface to allow arbitrary strings that reference
 // keys, to be resolved down to an Ethereum address - which will be kept in a LRU cache.
 // This supports cases where the signing device behind EthConnect is able to support keys
-// addressed using somthing like a HD Wallet heirarchical syntax.
+// addressed using somthing like a HD Wallet hierarchical syntax.
 // Once the resolver has returned the String->Address mapping, the ethconnect downstream
 // signing process must be able to process using the resolved ethereum address (meaning
 // it might have to reliably store the reverse mapping, it the case of a HD wallet).
@@ -59,7 +59,7 @@ func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressR
 		retainOriginal: prefix.GetBool(AddressResolverRetainOriginal),
 		method:         prefix.GetString(AddressResolverMethod),
 		responseField:  prefix.GetString(AddressResolverResponseField),
-		client:         restclient.New(ctx, prefix),
+		client:         ffresty.New(ctx, prefix),
 		cache:          ccache.New(ccache.Configure().MaxSize(prefix.GetInt64(AddressResolverCacheSize))),
 		cacheTTL:       prefix.GetDuration(AddressResolverCacheTTL),
 	}

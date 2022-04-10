@@ -40,7 +40,6 @@ import (
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -50,6 +49,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	idplugin "github.com/hyperledger/firefly/pkg/identity"
@@ -383,11 +383,11 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	// Migration for explicitly setting the old name ..
 	if dxPlugin == dxfactory.OldFFDXPluginName ||
 		// .. or defaulting to the new name, but without setting the mandatory URL
-		(dxPlugin == dxfactory.NewFFDXPluginName && configPrefix.GetString(restclient.HTTPConfigURL) == "") {
+		(dxPlugin == dxfactory.NewFFDXPluginName && configPrefix.GetString(ffresty.HTTPConfigURL) == "") {
 		// We need to initialize the migration prefix, and use that if it's set
 		migrationPrefix := dataexchangeConfig.SubPrefix(dxfactory.OldFFDXPluginName)
 		or.dataexchange.InitPrefix(migrationPrefix)
-		if migrationPrefix.GetString(restclient.HTTPConfigURL) != "" {
+		if migrationPrefix.GetString(ffresty.HTTPConfigURL) != "" {
 			// TODO: eventually make this fatal
 			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", coreconfig.OrgIdentityDeprecated, coreconfig.OrgKey)
 			configPrefix = migrationPrefix

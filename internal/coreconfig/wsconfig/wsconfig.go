@@ -17,15 +17,15 @@
 package wsconfig
 
 import (
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
-	defaultIntialConnectAttempts = 5
-	defaultBufferSize            = "16Kb"
-	defaultHeartbeatInterval     = "30s" // up to a minute to detect a dead connection
+	defaultInitialConnectAttempts = 5
+	defaultBufferSize             = "16Kb"
+	defaultHeartbeatInterval      = "30s" // up to a minute to detect a dead connection
 )
 
 const (
@@ -46,26 +46,26 @@ const (
 // InitPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
 // can share the same tree of configuration (and all the HTTP options apply to the initial upgrade)
 func InitPrefix(prefix config.KeySet) {
-	restclient.InitPrefix(prefix)
+	ffresty.InitPrefix(prefix)
 	prefix.AddKnownKey(WSConfigKeyWriteBufferSize, defaultBufferSize)
 	prefix.AddKnownKey(WSConfigKeyReadBufferSize, defaultBufferSize)
-	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)
+	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultInitialConnectAttempts)
 	prefix.AddKnownKey(WSConfigKeyPath)
 	prefix.AddKnownKey(WSConfigHeartbeatInterval, defaultHeartbeatInterval)
 }
 
 func GenerateConfigFromPrefix(prefix config.Prefix) *wsclient.WSConfig {
 	return &wsclient.WSConfig{
-		HTTPURL:                prefix.GetString(restclient.HTTPConfigURL),
+		HTTPURL:                prefix.GetString(ffresty.HTTPConfigURL),
 		WSKeyPath:              prefix.GetString(WSConfigKeyPath),
 		ReadBufferSize:         int(prefix.GetByteSize(WSConfigKeyReadBufferSize)),
 		WriteBufferSize:        int(prefix.GetByteSize(WSConfigKeyWriteBufferSize)),
-		InitialDelay:           prefix.GetDuration(restclient.HTTPConfigRetryInitDelay),
-		MaximumDelay:           prefix.GetDuration(restclient.HTTPConfigRetryMaxDelay),
+		InitialDelay:           prefix.GetDuration(ffresty.HTTPConfigRetryInitDelay),
+		MaximumDelay:           prefix.GetDuration(ffresty.HTTPConfigRetryMaxDelay),
 		InitialConnectAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
-		HTTPHeaders:            prefix.GetObject(restclient.HTTPConfigHeaders),
-		AuthUsername:           prefix.GetString(restclient.HTTPConfigAuthUsername),
-		AuthPassword:           prefix.GetString(restclient.HTTPConfigAuthPassword),
+		HTTPHeaders:            prefix.GetObject(ffresty.HTTPConfigHeaders),
+		AuthUsername:           prefix.GetString(ffresty.HTTPConfigAuthUsername),
+		AuthPassword:           prefix.GetString(ffresty.HTTPConfigAuthPassword),
 		HeartbeatInterval:      prefix.GetDuration(WSConfigHeartbeatInterval),
 	}
 }

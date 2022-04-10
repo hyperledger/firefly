@@ -30,9 +30,9 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -164,7 +164,7 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 
-	if fabconnectConf.GetString(restclient.HTTPConfigURL) == "" {
+	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabconnect")
 	}
 	f.defaultChannel = fabconnectConf.GetString(FabconnectConfigDefaultChannel)
@@ -182,7 +182,7 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 	f.prefixShort = fabconnectConf.GetString(FabconnectPrefixShort)
 	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
 
-	f.client = restclient.New(f.ctx, fabconnectConf)
+	f.client = ffresty.New(f.ctx, fabconnectConf)
 	f.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
@@ -567,7 +567,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 
 	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil
 }
@@ -601,7 +601,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, args)
 
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil
 }
@@ -647,7 +647,7 @@ func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, m
 		Post("/query")
 
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	output := &fabQueryNamedOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {

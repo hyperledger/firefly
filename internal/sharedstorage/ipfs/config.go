@@ -17,8 +17,8 @@
 package ipfs
 
 import (
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 )
 
 const (
@@ -29,6 +29,6 @@ const (
 )
 
 func (i *IPFS) InitPrefix(prefix config.Prefix) {
-	restclient.InitPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
-	restclient.InitPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
+	ffresty.InitPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
+	ffresty.InitPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
 }
