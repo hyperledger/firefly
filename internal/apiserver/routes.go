@@ -27,6 +27,8 @@ var routes = []*oapispec.Route{
 	getBlockchainEvents,
 	getChartHistogram,
 	getContractAPIByName,
+	getContractAPIMethod,
+	getContractAPIEvent,
 	getContractAPIs,
 	getContractInterface,
 	getContractInterfaceNameVersion,
