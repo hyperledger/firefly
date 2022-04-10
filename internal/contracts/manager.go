@@ -37,6 +37,7 @@ type Manager interface {
 
 	BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (output *fftypes.FFI, err error)
 	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
+	GetFFIWithChildren(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
@@ -143,6 +144,14 @@ func (cm *contractManager) scopeNS(ns string, filter database.AndFilter) databas
 
 func (cm *contractManager) GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
 	return cm.database.GetFFI(ctx, ns, name, version)
+}
+
+func (cm *contractManager) GetFFIWithChildren(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
+	ffi, err := cm.GetFFI(ctx, ns, name, version)
+	if err != nil {
+		return nil, err
+	}
+	return cm.GetFFIByIDWithChildren(ctx, ffi.ID)
 }
 
 func (cm *contractManager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
