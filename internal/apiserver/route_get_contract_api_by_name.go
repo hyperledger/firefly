@@ -28,7 +28,7 @@ import (
 
 var getContractAPIByName = &oapispec.Route{
 	Name:   "getContractAPIByName",
-	Path:   "namespaces/{ns}/apis/{apiName}",
+	Path:   "namespaces/{ns}/apis/{apiName}/",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},

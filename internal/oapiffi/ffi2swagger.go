@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -42,7 +43,19 @@ func NewFFISwaggerGen() FFISwaggerGen {
 func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T) {
 	hasLocation := !api.Location.IsNil()
 
-	routes := []*oapispec.Route{}
+	routes := []*oapispec.Route{
+		{
+			Name:            "apiRoot",
+			Path:            "/",
+			Method:          http.MethodGet,
+			JSONInputValue:  nil,
+			JSONOutputValue: func() interface{} { return &fftypes.ContractAPIWithInterface{} },
+			JSONOutputCodes: []int{http.StatusOK},
+			QueryParams: []*oapispec.QueryParam{
+				{Name: "fetchinterface", IsBool: true, Description: i18n.MsgTBD, Example: "true"},
+			},
+		},
+	}
 	for _, method := range ffi.Methods {
 		routes = og.addMethod(routes, method, hasLocation)
 	}
