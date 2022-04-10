@@ -21,6 +21,7 @@ type NodeStatus struct {
 	Node     NodeStatusNode     `ffstruct:"NodeStatus" json:"node"`
 	Org      NodeStatusOrg      `ffstruct:"NodeStatus" json:"org"`
 	Defaults NodeStatusDefaults `ffstruct:"NodeStatus" json:"defaults"`
+	Plugins  NodeStatusPlugins  `ffstruct:"NodeStatus" json:"plugins"`
 }
 
 // NodeStatusNode is the information about the local node, returned in the node status
@@ -42,4 +43,19 @@ type NodeStatusOrg struct {
 // NodeStatusDefaults is information about core configuration th
 type NodeStatusDefaults struct {
 	Namespace string `ffstruct:"NodeStatusDefaults" json:"namespace"`
+}
+
+// NodeStatusPlugins is a map of plugins configured on the node
+type NodeStatusPlugins struct {
+	Blockchain    []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"blockchain"`
+	Database      []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"database"`
+	DataExchange  []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"dataExchange"`
+	Identity      []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"identity"`
+	SharedStorage []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"sharedStorage"`
+	Tokens        []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"tokens"`
+}
+
+// NodeStatusPlugin is information about a plugin
+type NodeStatusPlugin struct {
+	Connection string `ffstruct:"NodeStatusPlugin" json:"connection"`
 }

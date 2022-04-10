@@ -27,6 +27,45 @@ import (
 	"github.com/hyperledger/firefly/pkg/log"
 )
 
+func (or *orchestrator) getPlugins() fftypes.NodeStatusPlugins {
+	// Tokens can have more than one name, so they must be iterated over
+	tokensArray := make([]*fftypes.NodeStatusPlugin, 0)
+	for name := range or.tokens {
+		tokensArray = append(tokensArray, &fftypes.NodeStatusPlugin{
+			Connection: name,
+		})
+	}
+
+	return fftypes.NodeStatusPlugins{
+		Blockchain: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: or.blockchain.Name(),
+			},
+		},
+		Database: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: or.database.Name(),
+			},
+		},
+		DataExchange: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: or.dataexchange.Name(),
+			},
+		},
+		Identity: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: or.identityPlugin.Name(),
+			},
+		},
+		SharedStorage: []*fftypes.NodeStatusPlugin{
+			{
+				Connection: or.sharedstorage.Name(),
+			},
+		},
+		Tokens: tokensArray,
+	}
+}
+
 func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 	if or.node != nil {
 		return or.node
@@ -60,6 +99,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStat
 		Defaults: fftypes.NodeStatusDefaults{
 			Namespace: config.GetString(coreconfig.NamespacesDefault),
 		},
+		Plugins: or.getPlugins(),
 	}
 
 	if org != nil {

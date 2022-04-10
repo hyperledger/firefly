@@ -13785,6 +13785,70 @@ paths:
                           type: object
                         type: array
                     type: object
+                  plugins:
+                    description: Information about plugins configured on this node
+                    properties:
+                      blockchain:
+                        description: The blockchain plugins on this node
+                        items:
+                          description: The blockchain plugins on this node
+                          properties:
+                            connection:
+                              description: The name of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      dataExchange:
+                        description: The data exchange plugins on this node
+                        items:
+                          description: The data exchange plugins on this node
+                          properties:
+                            connection:
+                              description: The name of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      database:
+                        description: The database plugins on this node
+                        items:
+                          description: The database plugins on this node
+                          properties:
+                            connection:
+                              description: The name of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      identity:
+                        description: The identity plugins on this node
+                        items:
+                          description: The identity plugins on this node
+                          properties:
+                            connection:
+                              description: The name of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      sharedStorage:
+                        description: The shared storage plugins on this node
+                        items:
+                          description: The shared storage plugins on this node
+                          properties:
+                            connection:
+                              description: The name of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      tokens:
+                        description: The token plugins on this node
+                        items:
+                          description: The token plugins on this node
+                          properties:
+                            connection:
+                              description: The name of the plugin
+                              type: string
+                          type: object
+                        type: array
+                    type: object
                 type: object
           description: Success
         default:
