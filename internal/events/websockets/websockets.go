@@ -22,11 +22,12 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type WebSockets struct {
@@ -69,7 +70,7 @@ func (ws *WebSockets) GetOptionsSchema(ctx context.Context) string {
 func (ws *WebSockets) ValidateOptions(options *fftypes.SubscriptionOptions) error {
 	// We don't support streaming the full data over websockets
 	if options.WithData != nil && *options.WithData {
-		return i18n.NewError(ws.ctx, i18n.MsgWebsocketsNoData)
+		return i18n.NewError(ws.ctx, coremsgs.MsgWebsocketsNoData)
 	}
 	forceFalse := false
 	options.WithData = &forceFalse
@@ -81,7 +82,7 @@ func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, 
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()
 	if !ok {
-		return i18n.NewError(ws.ctx, i18n.MsgWSConnectionNotActive, connID)
+		return i18n.NewError(ws.ctx, coremsgs.MsgWSConnectionNotActive, connID)
 	}
 	return conn.dispatch(event)
 }
@@ -107,7 +108,7 @@ func (ws *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse
 
 func (ws *WebSockets) start(wc *websocketConnection, start *fftypes.WSClientActionStartPayload) error {
 	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
-		return i18n.NewError(ws.ctx, i18n.MsgWSInvalidStartAction)
+		return i18n.NewError(ws.ctx, coremsgs.MsgWSInvalidStartAction)
 	}
 	if start.Ephemeral {
 		return ws.callbacks.EphemeralSubscription(wc.connID, start.Namespace, &start.Filter, &start.Options)
@@ -123,7 +124,7 @@ func (ws *WebSockets) connClosed(connID string) {
 	delete(ws.connections, connID)
 	ws.connMux.Unlock()
 	// Drop lock before calling back
-	ws.callbacks.ConnnectionClosed(connID)
+	ws.callbacks.ConnectionClosed(connID)
 }
 
 func (ws *WebSockets) WaitClosed() {

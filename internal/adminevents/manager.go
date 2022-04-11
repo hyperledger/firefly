@@ -23,9 +23,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type Manager interface {
@@ -49,16 +50,16 @@ type adminEventManager struct {
 func NewAdminEventManager(ctx context.Context) Manager {
 	ae := &adminEventManager{
 		upgrader: websocket.Upgrader{
-			ReadBufferSize:  int(config.GetByteSize(config.AdminWebSocketReadBufferSize)),
-			WriteBufferSize: int(config.GetByteSize(config.AdminWebSocketWriteBufferSize)),
+			ReadBufferSize:  int(config.GetByteSize(coreconfig.AdminWebSocketReadBufferSize)),
+			WriteBufferSize: int(config.GetByteSize(coreconfig.AdminWebSocketWriteBufferSize)),
 			CheckOrigin: func(r *http.Request) bool {
 				// Cors is handled by the API server that wraps this handler
 				return true
 			},
 		},
 		activeWebsockets:    make(map[string]*webSocket),
-		queueLength:         config.GetInt(config.AdminWebSocketEventQueueLength),
-		blockedWarnInterval: config.GetDuration(config.AdminWebSocketBlockedWarnInterval),
+		queueLength:         config.GetInt(coreconfig.AdminWebSocketEventQueueLength),
+		blockedWarnInterval: config.GetDuration(coreconfig.AdminWebSocketBlockedWarnInterval),
 	}
 	ae.ctx, ae.cancelCtx = context.WithCancel(
 		log.WithLogField(ctx, "role", "change-event-manager"),

@@ -19,7 +19,7 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -30,11 +30,11 @@ var adminGetConfigRecord = &oapispec.Route{
 	Path:   "config/records/{key}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: i18n.MsgTBD},
+		{Name: "key", Example: "database", Description: coremsgs.APIMessageTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.ConfigRecordQueryFactory,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return fftypes.JSONAnyPtr("{}") },
 	JSONOutputCodes: []int{http.StatusOK},

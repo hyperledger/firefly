@@ -19,7 +19,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -47,7 +47,7 @@ func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
 }
 
 func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
-	config.Reset()
+	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
@@ -134,5 +134,5 @@ func TestGetTokenConnectorsBadNamespace(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenConnectors(context.Background(), "")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }

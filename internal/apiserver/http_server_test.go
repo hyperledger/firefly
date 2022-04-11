@@ -36,8 +36,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/apiservermocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -51,7 +52,7 @@ func TestInvalidListener(t *testing.T) {
 }
 
 func TestServeFail(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	cp := config.NewPluginConfig("ut")
 	initHTTPConfPrefx(cp, 0)
 	errChan := make(chan error)
@@ -64,7 +65,7 @@ func TestServeFail(t *testing.T) {
 }
 
 func TestShutdownOk(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	cp := config.NewPluginConfig("ut")
 	initHTTPConfPrefx(cp, 0)
 	errChan := make(chan error)
@@ -76,9 +77,9 @@ func TestShutdownOk(t *testing.T) {
 
 func TestShutdownError(t *testing.T) {
 	testDone := make(chan struct{})
-	config.Reset()
+	coreconfig.Reset()
 	cp := config.NewPluginConfig("ut")
-	config.Set(config.APIShutdownTimeout, "1ms")
+	config.Set(coreconfig.APIShutdownTimeout, "1ms")
 	initHTTPConfPrefx(cp, 0)
 	errChan := make(chan error)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -145,7 +146,7 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 	pem.Encode(publicKeyFile, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 
 	// Start up a listener configured for TLS Mutual auth
-	config.Reset() // ensure APIShutdownTimeout cleared from earlier tests
+	coreconfig.Reset() // ensure APIShutdownTimeout cleared from earlier tests
 	cp := config.NewPluginConfig("ut")
 	initHTTPConfPrefx(cp, 0)
 	cp.Set(HTTPConfAddress, "127.0.0.1")

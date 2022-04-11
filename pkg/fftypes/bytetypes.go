@@ -25,7 +25,7 @@ import (
 	"hash"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // Bytes32 is a holder of a hash, that can be used to correlate onchain data with off-chain data.
@@ -107,7 +107,7 @@ func (b32 *Bytes32) Scan(src interface{}) error {
 		return nil
 
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, b32)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, b32)
 	}
 
 }

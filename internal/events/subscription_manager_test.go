@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -34,8 +35,8 @@ import (
 )
 
 func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionManager, func()) {
-	config.Reset()
-	config.Set(config.EventTransportsEnabled, []string{})
+	coreconfig.Reset()
+	config.Set(coreconfig.EventTransportsEnabled, []string{})
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -134,10 +135,10 @@ func TestRegisterEphemeralSubscriptions(t *testing.T) {
 		assert.True(t, d.subscription.definition.Ephemeral)
 	}
 
-	be.ConnnectionClosed("conn1")
+	be.ConnectionClosed("conn1")
 	assert.Nil(t, sm.connections["conn1"])
 	// Check we swallow dup closes without errors
-	be.ConnnectionClosed("conn1")
+	be.ConnectionClosed("conn1")
 	assert.Nil(t, sm.connections["conn1"])
 }
 
@@ -167,8 +168,8 @@ func TestSubManagerBadPlugin(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	config.Reset()
-	config.Set(config.EventTransportsEnabled, []string{"!unknown!"})
+	coreconfig.Reset()
+	config.Set(coreconfig.EventTransportsEnabled, []string{"!unknown!"})
 	_, err := newSubscriptionManager(context.Background(), mdi, mdm, newEventNotifier(context.Background(), "ut"), nil, txHelper)
 	assert.Regexp(t, "FF10172", err)
 }
@@ -588,7 +589,7 @@ func TestConnIDSafetyChecking(t *testing.T) {
 
 	be2.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{})
 
-	be2.ConnnectionClosed("conn1")
+	be2.ConnectionClosed("conn1")
 
 	assert.NotNil(t, sm.connections["conn1"])
 

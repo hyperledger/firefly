@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // SubscriptionFilter contains regular expressions to match against events. All must match for an event to be dispatched to a subscription
@@ -166,7 +166,7 @@ func (so *SubscriptionOptions) Scan(src interface{}) error {
 	case string:
 		return so.UnmarshalJSON([]byte(src))
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, so)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, so)
 	}
 }
 
@@ -194,6 +194,6 @@ func (sf *SubscriptionFilter) Scan(src interface{}) error {
 		return json.Unmarshal([]byte(src), &sf)
 
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, sf)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, sf)
 	}
 }

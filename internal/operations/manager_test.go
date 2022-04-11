@@ -21,11 +21,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -53,8 +54,8 @@ func (m *mockHandler) RunOperation(ctx context.Context, op *fftypes.PreparedOper
 }
 
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
-	config.Reset()
-	config.Set(config.OpUpdateWorkerCount, 1)
+	coreconfig.Reset()
+	config.Set(coreconfig.OpUpdateWorkerCount, 1)
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(&database.Capabilities{
 		Concurrency: true,
@@ -582,6 +583,6 @@ func TestResolveOperationBadID(t *testing.T) {
 
 	_, err := om.ResolveOperationByID(ctx, "badness", op)
 
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 
 }

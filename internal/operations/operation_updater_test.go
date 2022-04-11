@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/sirupsen/logrus"
@@ -47,10 +48,10 @@ func newTestOperationUpdaterNoConcrrency(t *testing.T) *operationUpdater {
 }
 
 func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabilities) *operationUpdater {
-	config.Reset()
-	config.Set(config.OpUpdateWorkerCount, 1)
-	config.Set(config.OpUpdateWorkerBatchTimeout, "1s")
-	config.Set(config.OpUpdateWorkerBatchMaxInserts, 200)
+	coreconfig.Reset()
+	config.Set(coreconfig.OpUpdateWorkerCount, 1)
+	config.Set(coreconfig.OpUpdateWorkerBatchTimeout, "1s")
+	config.Set(coreconfig.OpUpdateWorkerBatchMaxInserts, 200)
 	logrus.SetLevel(logrus.DebugLevel)
 
 	mdi := &databasemocks.Plugin{}

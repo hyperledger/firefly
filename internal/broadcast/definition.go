@@ -20,10 +20,11 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
@@ -67,7 +68,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 		err = d.Seal(ctx, nil)
 	}
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 	}
 
 	// Create a broadcast message referring to the data

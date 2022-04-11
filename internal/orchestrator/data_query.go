@@ -20,10 +20,11 @@ import (
 	"context"
 	"database/sql/driver"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) error {
@@ -33,7 +34,7 @@ func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) er
 func (or *orchestrator) checkNamespace(ctx context.Context, requiredNS, objectNS string) error {
 	if objectNS != requiredNS {
 		log.L(ctx).Warnf("Object queried by ID in wrong namespace. Required=%s Found=%s", requiredNS, objectNS)
-		return i18n.NewError(ctx, i18n.Msg404NotFound)
+		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return nil
 }
@@ -83,7 +84,7 @@ func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fft
 	}
 	msg, err := or.database.GetMessageByID(ctx, u)
 	if err == nil && msg == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	if err == nil && msg != nil {
 		err = or.checkNamespace(ctx, ns, msg.Header.Namespace)
@@ -251,21 +252,21 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 	var txID *fftypes.UUID
 	if msg.Header.TxType == fftypes.TransactionTypeBatchPin {
 		if msg.BatchID == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBatchNotSet)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotSet)
 		}
 		batch, err := or.database.GetBatchByID(ctx, msg.BatchID)
 		if err != nil {
 			return nil, err
 		}
 		if batch == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBatchNotFound, msg.BatchID)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotFound, msg.BatchID)
 		}
 		txID = batch.TX.ID
 		if txID == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBatchTXNotSet, msg.BatchID)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchTXNotSet, msg.BatchID)
 		}
 	} else {
-		return nil, i18n.NewError(ctx, i18n.MsgNoTransaction)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNoTransaction)
 	}
 	return txID, nil
 }

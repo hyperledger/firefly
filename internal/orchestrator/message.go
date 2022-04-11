@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,13 +19,14 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (or *orchestrator) RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error) {
 	if msg.Header.Group == nil && (msg.Group == nil || len(msg.Group.Members) == 0) {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestMustBePrivate)
+		return nil, i18n.NewError(ctx, coremsgs.MsgRequestMustBePrivate)
 	}
 	return or.PrivateMessaging().RequestReply(ctx, ns, msg)
 }

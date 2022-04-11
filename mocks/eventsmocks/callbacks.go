@@ -14,8 +14,8 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// ConnnectionClosed provides a mock function with given fields: connID
-func (_m *Callbacks) ConnnectionClosed(connID string) {
+// ConnectionClosed provides a mock function with given fields: connID
+func (_m *Callbacks) ConnectionClosed(connID string) {
 	_m.Called(connID)
 }
 

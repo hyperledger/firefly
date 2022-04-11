@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -70,7 +71,7 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 		err := pinRows.Scan(&pin.Sequence, &pin.Masked, &pin.Dispatched)
 		pinRows.Close()
 		if err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "pins")
+			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "pins")
 		}
 		// Pin's can only go from undispatched, to dispatched - so no update here.
 		log.L(ctx).Debugf("Existing pin returned at sequence %d", pin.Sequence)
@@ -157,7 +158,7 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 		&pin.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "pins")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "pins")
 	}
 	return &pin, nil
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,22 +20,23 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/rs/cors"
 )
 
 func wrapCorsIfEnabled(ctx context.Context, chain http.Handler) http.Handler {
-	if !config.GetBool(config.CorsEnabled) {
+	if !config.GetBool(coreconfig.CorsEnabled) {
 		return chain
 	}
 	corsOptions := cors.Options{
-		AllowedOrigins:   config.GetStringSlice(config.CorsAllowedOrigins),
-		AllowedMethods:   config.GetStringSlice(config.CorsAllowedMethods),
-		AllowedHeaders:   config.GetStringSlice(config.CorsAllowedHeaders),
-		AllowCredentials: config.GetBool(config.CorsAllowCredentials),
-		MaxAge:           config.GetInt(config.CorsMaxAge),
-		Debug:            config.GetBool(config.CorsDebug),
+		AllowedOrigins:   config.GetStringSlice(coreconfig.CorsAllowedOrigins),
+		AllowedMethods:   config.GetStringSlice(coreconfig.CorsAllowedMethods),
+		AllowedHeaders:   config.GetStringSlice(coreconfig.CorsAllowedHeaders),
+		AllowCredentials: config.GetBool(coreconfig.CorsAllowCredentials),
+		MaxAge:           config.GetInt(coreconfig.CorsMaxAge),
+		Debug:            config.GetBool(coreconfig.CorsDebug),
 	}
 	log.L(ctx).Debugf("CORS origins=%v methods=%v headers=%v creds=%t maxAge=%d",
 		corsOptions.AllowedOrigins,

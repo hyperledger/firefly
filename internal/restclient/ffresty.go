@@ -27,10 +27,10 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -166,7 +166,7 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 	return client
 }
 
-func WrapRestErr(ctx context.Context, res *resty.Response, err error, key i18n.MessageKey) error {
+func WrapRestErr(ctx context.Context, res *resty.Response, err error, key i18n.ErrorMessageKey) error {
 	var respData string
 	if res != nil {
 		if res.RawBody() != nil {

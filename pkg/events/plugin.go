@@ -19,7 +19,7 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -65,9 +65,9 @@ type Callbacks interface {
 	// EphemeralSubscription creates an ephemeral (non-durable) subscription, and associates it with a connection
 	EphemeralSubscription(connID, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error
 
-	// ConnnectionClosed is a notification that a connection has closed, and all dispatchers should be re-allocated.
+	// ConnectionClosed is a notification that a connection has closed, and all dispatchers should be re-allocated.
 	// Note the plugin must not crash if it receives PublishEvent calls on the connID after the ConnectionClosed event is fired
-	ConnnectionClosed(connID string)
+	ConnectionClosed(connID string)
 
 	// DeliveryResponse responds to a previous event delivery, to either:
 	// - Acknowledge it: the offset for the associated subscription can move forwards

@@ -71,7 +71,7 @@ func TestFFTimeJSONSerialization(t *testing.T) {
 func TestFFTimeJSONUnmarshalFail(t *testing.T) {
 	var utTimeTest UTTimeTest
 	err := json.Unmarshal([]byte(`{"t1": "!Badness"}`), &utTimeTest)
-	assert.Regexp(t, "FF10165", err)
+	assert.Regexp(t, "FF00136", err)
 }
 
 func TestNilTimeConversion(t *testing.T) {
@@ -163,7 +163,7 @@ func TestFFTimeParseValue(t *testing.T) {
 
 	// A bad string
 	err = ft.Scan("!a supported time format")
-	assert.Regexp(t, "FF10165", err)
+	assert.Regexp(t, "FF00136", err)
 
 	// Nil
 	err = ft.Scan(nil)
@@ -182,7 +182,7 @@ func TestFFTimeParseValue(t *testing.T) {
 
 	// A bad type
 	err = ft.Scan(false)
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 
 }
 
@@ -250,10 +250,10 @@ func TestFFDurationParseValue(t *testing.T) {
 	assert.Equal(t, FFDuration(12345)*FFDuration(time.Millisecond), fd)
 
 	err = fd.Scan(false)
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 
 	err = fd.Scan("1 year")
-	assert.Regexp(t, "FF10167", err)
+	assert.Regexp(t, "FF00137", err)
 
 	var pfd *FFDuration
 	v, err := pfd.Value()

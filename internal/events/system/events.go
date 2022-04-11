@@ -20,7 +20,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )

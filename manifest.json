@@ -11,18 +11,18 @@
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v0.11.0",
-    "sha": "307975fd75181bb3f8eb4510cc7f0df4b1dc8b500635ab782e9b3d547a0891fb"
+    "tag": "v0.11.1",
+    "sha": "c02c7e9cf283ae84f21eca473614b0f88f9766754339ee58ec5e951fcbe180cf"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v0.10.6",
-    "sha": "26796e1364f749608b4034f6bc2f01c89f4f90fddb7dc51b058df2db3a67cf74"
+    "tag": "v0.10.8",
+    "sha": "7deef15f636a723857adb25993d7e025a7c9f8a1f2e08322ec804c4d1fdbdc35"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v0.2.1",
-    "sha": "829df7fc94a4bdeba09925ee016a820616ffa0dadd28a9a9f19f9888c56e87c0"
+    "tag": "v0.2.3",
+    "sha": "a71b0dcc1889de74b6ae0493b5e75c9e7c75b16e81864f26d714d26c9992f326"
   },
   "build": {
     "firefly-builder": {
@@ -40,8 +40,8 @@
     }
   },
   "ui": {
-    "tag": "v0.6.9",
-    "release": "v0.6.9_d475b88"
+    "tag": "v0.6.10",
+    "release": "v0.6.10_8bc57d1"
   },
   "cli": {
     "tag": "v0.0.46"

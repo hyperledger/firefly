@@ -22,13 +22,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // Bridge translates synchronous (HTTP API) calls, into asynchronously sending a
@@ -467,7 +468,7 @@ func (sa *syncAsyncBridge) resolveConfirmed(inflight *inflightRequest, msg *ffty
 }
 
 func (sa *syncAsyncBridge) resolveRejected(inflight *inflightRequest, msgID *fftypes.UUID) {
-	err := i18n.NewError(sa.ctx, i18n.MsgRejected, msgID)
+	err := i18n.NewError(sa.ctx, coremsgs.MsgRejected, msgID)
 	log.L(sa.ctx).Errorf("Resolving message confirmation request '%s' with error: %s", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
 }
@@ -483,7 +484,7 @@ func (sa *syncAsyncBridge) resolveConfirmedTokenPool(inflight *inflightRequest, 
 }
 
 func (sa *syncAsyncBridge) resolveRejectedTokenPool(inflight *inflightRequest, poolID *fftypes.UUID) {
-	err := i18n.NewError(sa.ctx, i18n.MsgTokenPoolRejected, poolID)
+	err := i18n.NewError(sa.ctx, coremsgs.MsgTokenPoolRejected, poolID)
 	log.L(sa.ctx).Errorf("Resolving token pool confirmation request '%s' with error '%s'", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
 }
@@ -499,13 +500,13 @@ func (sa *syncAsyncBridge) resolveConfirmedTokenApproval(inflight *inflightReque
 }
 
 func (sa *syncAsyncBridge) resolveFailedTokenTransfer(inflight *inflightRequest, transferID *fftypes.UUID) {
-	err := i18n.NewError(sa.ctx, i18n.MsgTokenTransferFailed, transferID)
+	err := i18n.NewError(sa.ctx, coremsgs.MsgTokenTransferFailed, transferID)
 	log.L(sa.ctx).Debugf("Resolving token transfer confirmation request '%s' with error '%s'", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
 }
 
 func (sa *syncAsyncBridge) resolveFailedTokenApproval(inflight *inflightRequest, transferID *fftypes.UUID) {
-	err := i18n.NewError(sa.ctx, i18n.MsgTokenApprovalFailed, transferID)
+	err := i18n.NewError(sa.ctx, coremsgs.MsgTokenApprovalFailed, transferID)
 	log.L(sa.ctx).Debugf("Resolving token approval request '%s' with error '%s'", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
 }
@@ -533,7 +534,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftyp
 
 	select {
 	case <-ctx.Done():
-		return nil, i18n.NewError(ctx, i18n.MsgRequestTimeout, inflight.id, inflight.msInflight())
+		return nil, i18n.NewError(ctx, coremsgs.MsgRequestTimeout, inflight.id, inflight.msInflight())
 	case reply := <-inflight.response:
 		replyID = reply.id
 		return reply.data, reply.err

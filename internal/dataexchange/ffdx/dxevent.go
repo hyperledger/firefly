@@ -17,10 +17,11 @@
 package ffdx
 
 import (
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type wsEvent struct {
@@ -171,7 +172,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			},
 		}
 	default:
-		err = i18n.NewError(h.ctx, i18n.MsgUnexpectedDXMessageType, msg.Type)
+		err = i18n.NewError(h.ctx, coremsgs.MsgUnexpectedDXMessageType, msg.Type)
 	}
 	// If we couldn't dispatch the event we received, we still ack it
 	if err != nil {

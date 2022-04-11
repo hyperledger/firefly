@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,9 +35,9 @@ func TestRegisterNodeOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(config.OrgKey, "0x23456")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeDescription, "Node 1")
+	config.Set(coreconfig.OrgKey, "0x23456")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeDescription, "Node 1")
 
 	parentOrg := testOrg("org1")
 
@@ -71,9 +72,9 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(config.OrgKey, "0x23456")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeDescription, "Node 1")
+	config.Set(coreconfig.OrgKey, "0x23456")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeDescription, "Node 1")
 
 	parentOrg := testOrg("org1")
 

@@ -120,7 +120,7 @@ func TestScan(t *testing.T) {
 	assert.NoError(t, h.Scan(`"plainstring"`))
 	assert.Equal(t, "", h.JSONObjectNowarn().GetString("some"))
 
-	assert.Regexp(t, "FF10125", h.Scan(12345))
+	assert.Regexp(t, "FF00105", h.Scan(12345))
 
 	assert.Equal(t, "test", JSONAnyPtrBytes([]byte(`{"val": "test"}`)).JSONObject().GetString("val"))
 	assert.Nil(t, JSONAnyPtrBytes(nil))
@@ -161,7 +161,7 @@ func TestUnmarshal(t *testing.T) {
 		Key1 string `json:"key1"`
 	}
 	err := h.Unmarshal(context.Background(), &myObj)
-	assert.Regexp(t, "FF10368", err)
+	assert.Regexp(t, "FF00125", err)
 
 	h = JSONAnyPtr(`{"key1":"value1"}`)
 	err = h.Unmarshal(context.Background(), &myObj)

@@ -26,17 +26,16 @@ import (
 	"github.com/hyperledger/firefly/internal/batchpin"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/broadcast"
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/contracts"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/events"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/operations"
@@ -48,10 +47,13 @@ import (
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	idplugin "github.com/hyperledger/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
@@ -333,7 +335,7 @@ func (or *orchestrator) AdminEvents() adminevents.Manager {
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
 	if or.database == nil {
-		diType := config.GetString(config.DatabaseType)
+		diType := config.GetString(coreconfig.DatabaseType)
 		if or.database, err = difactory.GetPlugin(ctx, diType); err != nil {
 			return err
 		}
@@ -348,7 +350,7 @@ func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error
 	if configRecords, _, err = or.GetConfigRecords(ctx, filter); err != nil {
 		return err
 	}
-	if len(configRecords) == 0 && config.GetBool(config.AdminPreinit) {
+	if len(configRecords) == 0 && config.GetBool(coreconfig.AdminPreinit) {
 		or.preInitMode = true
 		return nil
 	}
@@ -356,7 +358,7 @@ func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error
 }
 
 func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
-	dxPlugin := config.GetString(config.DataexchangeType)
+	dxPlugin := config.GetString(coreconfig.DataexchangeType)
 	if or.dataexchange == nil {
 		pluginName := dxPlugin
 		if or.dataexchange, err = dxfactory.GetPlugin(ctx, pluginName); err != nil {
@@ -387,7 +389,7 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		or.dataexchange.InitPrefix(migrationPrefix)
 		if migrationPrefix.GetString(restclient.HTTPConfigURL) != "" {
 			// TODO: eventually make this fatal
-			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", config.OrgIdentityDeprecated, config.OrgKey)
+			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", coreconfig.OrgIdentityDeprecated, coreconfig.OrgKey)
 			configPrefix = migrationPrefix
 		}
 	}
@@ -408,7 +410,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	if or.identityPlugin == nil {
-		iiType := config.GetString(config.IdentityType)
+		iiType := config.GetString(coreconfig.IdentityType)
 		if or.identityPlugin, err = iifactory.GetPlugin(ctx, iiType); err != nil {
 			return err
 		}
@@ -418,7 +420,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	if or.blockchain == nil {
-		biType := config.GetString(config.BlockchainType)
+		biType := config.GetString(coreconfig.BlockchainType)
 		if or.blockchain, err = bifactory.GetPlugin(ctx, biType); err != nil {
 			return err
 		}
@@ -429,10 +431,10 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	storageConfig := sharedstorageConfig
 	if or.sharedstorage == nil {
-		ssType := config.GetString(config.SharedStorageType)
+		ssType := config.GetString(coreconfig.SharedStorageType)
 		if ssType == "" {
 			// Fallback and attempt to look for a "publicstorage" (deprecated) plugin
-			ssType = config.GetString(config.PublicStorageType)
+			ssType = config.GetString(coreconfig.PublicStorageType)
 			storageConfig = publicstorageConfig
 		}
 		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
@@ -456,7 +458,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			name := prefix.GetString(tokens.TokensConfigName)
 			pluginName := prefix.GetString(tokens.TokensConfigPlugin)
 			if name == "" {
-				return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
+				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 			}
 			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
 				return err
@@ -466,7 +468,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 				// TODO: eventually make this fatal
 				pluginName = prefix.GetString(tokens.TokensConfigConnector)
 				if pluginName == "" {
-					return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
+					return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 				}
 				log.L(ctx).Warnf("Your tokens config uses the deprecated 'connector' key - please change to 'plugin' instead")
 			}
@@ -592,13 +594,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*fftypes.Namespace, error) {
-	defaultNS := config.GetString(config.NamespacesDefault)
-	predefined := config.GetObjectArray(config.NamespacesPredefined)
+	defaultNS := config.GetString(coreconfig.NamespacesDefault)
+	predefined := config.GetObjectArray(coreconfig.NamespacesPredefined)
 	namespaces := []*fftypes.Namespace{
 		{
 			Name:        fftypes.SystemNamespace,
 			Type:        fftypes.NamespaceTypeSystem,
-			Description: i18n.Expand(ctx, i18n.MsgSystemNSDescription),
+			Description: i18n.Expand(ctx, coremsgs.CoreSystemNSDescription),
 		},
 	}
 	foundDefault := false
@@ -626,7 +628,7 @@ func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*fftype
 		}
 	}
 	if !foundDefault {
-		return nil, i18n.NewError(ctx, i18n.MsgDefaultNamespaceNotFound, defaultNS)
+		return nil, i18n.NewError(ctx, coremsgs.MsgDefaultNamespaceNotFound, defaultNS)
 	}
 	return namespaces, nil
 }

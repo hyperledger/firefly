@@ -19,8 +19,9 @@ package networkmap
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (nm *networkMap) UpdateIdentity(ctx context.Context, ns, uuidStr string, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
@@ -39,7 +40,7 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, ns string, id *fftyp
 		return nil, err
 	}
 	if identity == nil || identity.Namespace != ns {
-		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 
 	// Resolve the signer of the original claim

@@ -23,10 +23,11 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/karlseguin/ccache"
 )
 
@@ -66,14 +67,14 @@ func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressR
 	urlTemplateString := prefix.GetString(AddressResolverURLTemplate)
 	ar.urlTemplate, err = template.New(AddressResolverURLTemplate).Option("missingkey=error").Parse(urlTemplateString)
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgGoTemplateCompileFailed, AddressResolverURLTemplate, err)
+		return nil, i18n.NewError(ctx, coremsgs.MsgGoTemplateCompileFailed, AddressResolverURLTemplate, err)
 	}
 
 	bodyTemplateString := prefix.GetString(AddressResolverBodyTemplate)
 	if bodyTemplateString != "" {
 		ar.bodyTemplate, err = template.New(AddressResolverBodyTemplate).Option("missingkey=error").Parse(bodyTemplateString)
 		if err != nil {
-			return nil, i18n.NewError(ctx, i18n.MsgGoTemplateCompileFailed, AddressResolverBodyTemplate, err)
+			return nil, i18n.NewError(ctx, coremsgs.MsgGoTemplateCompileFailed, AddressResolverBodyTemplate, err)
 		}
 	}
 
@@ -94,14 +95,14 @@ func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescripto
 	urlStr := &strings.Builder{}
 	err := ar.urlTemplate.Execute(urlStr, inserts)
 	if err != nil {
-		return "", i18n.NewError(ctx, i18n.MsgGoTemplateExecuteFailed, AddressResolverURLTemplate, err)
+		return "", i18n.NewError(ctx, coremsgs.MsgGoTemplateExecuteFailed, AddressResolverURLTemplate, err)
 	}
 
 	bodyStr := &strings.Builder{}
 	if ar.bodyTemplate != nil {
 		err := ar.bodyTemplate.Execute(bodyStr, inserts)
 		if err != nil {
-			return "", i18n.NewError(ctx, i18n.MsgGoTemplateExecuteFailed, AddressResolverBodyTemplate, err)
+			return "", i18n.NewError(ctx, coremsgs.MsgGoTemplateExecuteFailed, AddressResolverBodyTemplate, err)
 		}
 	}
 
@@ -112,15 +113,15 @@ func (ar *addressResolver) NormalizeSigningKey(ctx context.Context, keyDescripto
 		SetResult(&jsonRes).
 		Execute(ar.method, urlStr.String())
 	if err != nil {
-		return "", i18n.NewError(ctx, i18n.MsgAddressResolveFailed, keyDescriptor, err)
+		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveFailed, keyDescriptor, err)
 	}
 	if res.IsError() {
-		return "", i18n.NewError(ctx, i18n.MsgAddressResolveBadStatus, keyDescriptor, res.StatusCode(), jsonRes.String())
+		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadStatus, keyDescriptor, res.StatusCode(), jsonRes.String())
 	}
 
 	address, err := validateEthAddress(ctx, jsonRes.GetString(ar.responseField))
 	if err != nil {
-		return "", i18n.NewError(ctx, i18n.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
+		return "", i18n.NewError(ctx, coremsgs.MsgAddressResolveBadResData, keyDescriptor, jsonRes.String(), err)
 	}
 
 	ar.cache.Set(keyDescriptor, address, ar.cacheTTL)

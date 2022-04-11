@@ -50,13 +50,13 @@ func TestDatatypeReference(t *testing.T) {
 
 func TestValidateBadValidator(t *testing.T) {
 	err := CheckValidatorType(context.Background(), "wrong")
-	assert.Regexp(t, "FF10200", err)
+	assert.Regexp(t, "FF00108", err)
 }
 
 func TestSealNoData(t *testing.T) {
 	d := &Data{}
 	err := d.Seal(context.Background(), nil)
-	assert.Regexp(t, "FF10199", err)
+	assert.Regexp(t, "FF00109", err)
 }
 
 func TestSealValueOnly(t *testing.T) {
@@ -150,7 +150,7 @@ func TestSealBlobMismatch1(t *testing.T) {
 	err := d.Seal(context.Background(), &Blob{
 		Hash: NewRandB32(),
 	})
-	assert.Regexp(t, "FF10324", err)
+	assert.Regexp(t, "FF00110", err)
 }
 
 func TestSealBlobMismatch2(t *testing.T) {
@@ -158,7 +158,7 @@ func TestSealBlobMismatch2(t *testing.T) {
 		Blob: &BlobRef{Hash: NewRandB32()},
 	}
 	err := d.Seal(context.Background(), nil)
-	assert.Regexp(t, "FF10324", err)
+	assert.Regexp(t, "FF00110", err)
 }
 
 func TestSealBlobAndHashOnly(t *testing.T) {

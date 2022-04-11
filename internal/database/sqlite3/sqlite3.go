@@ -27,8 +27,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	migratesqlite3 "github.com/golang-migrate/migrate/v4/database/sqlite3"
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 
 	// Import the derivation of SQLite3 CGO suported by golang-migrate

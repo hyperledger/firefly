@@ -19,11 +19,12 @@ package privatemessaging
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
@@ -53,10 +54,10 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 
 func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
 	if in.Header.Tag == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
+		return nil, i18n.NewError(ctx, coremsgs.MsgRequestReplyTagRequired)
 	}
 	if in.Header.CID != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
+		return nil, i18n.NewError(ctx, coremsgs.MsgRequestCannotHaveCID)
 	}
 	message := pm.NewMessage(ns, in)
 	return pm.syncasync.WaitForReply(ctx, ns, in.Header.ID, message.Send)
@@ -120,7 +121,7 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 		}
 		msgSizeEstimate := s.msg.Message.EstimateSize(true)
 		if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
-			return i18n.NewError(ctx, i18n.MsgTooLargePrivate, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
+			return i18n.NewError(ctx, coremsgs.MsgTooLargePrivate, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
 		}
 		s.resolved = true
 	}
@@ -132,7 +133,7 @@ func (s *messageSender) resolve(ctx context.Context) error {
 	// Resolve the sending identity
 	msg := s.msg.Message
 	if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+		return i18n.WrapError(ctx, err, coremsgs.MsgAuthorInvalid)
 	}
 
 	// Resolve the member list into a group

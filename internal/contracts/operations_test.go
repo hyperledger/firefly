@@ -82,7 +82,7 @@ func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
 	}
 
 	_, err := cm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestRunOperationNotSupported(t *testing.T) {

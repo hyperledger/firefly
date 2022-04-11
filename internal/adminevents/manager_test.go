@@ -26,16 +26,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/stretchr/testify/assert"
 )
 
 func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, ws *webSocket, wsc wsclient.WSClient, cancel func()) {
-	config.Reset()
+	coreconfig.Reset()
 
 	ae = NewAdminEventManager(context.Background()).(*adminEventManager)
 	svr := httptest.NewServer(http.HandlerFunc(ae.ServeHTTPWebSocketListener))
@@ -135,7 +136,7 @@ func TestAdminEventsE2E(t *testing.T) {
 }
 
 func TestBadUpgrade(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 
 	ae := NewAdminEventManager(context.Background()).(*adminEventManager)
 	svr := httptest.NewServer(http.HandlerFunc(ae.ServeHTTPWebSocketListener))

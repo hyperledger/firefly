@@ -20,8 +20,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -31,14 +31,14 @@ var getContractInterface = &oapispec.Route{
 	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "interfaceId", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "interfaceId", Description: coremsgs.APIMessageTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchchildren", Example: "true", Description: i18n.MsgTBD, IsBool: true},
+		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},

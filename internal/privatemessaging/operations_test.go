@@ -193,7 +193,7 @@ func TestPrepareOperationBlobSendBadInput(t *testing.T) {
 	}
 
 	_, err := pm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationBlobSendNodeFail(t *testing.T) {
@@ -318,7 +318,7 @@ func TestPrepareOperationBatchSendBadInput(t *testing.T) {
 	}
 
 	_, err := pm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationBatchSendNodeFail(t *testing.T) {
