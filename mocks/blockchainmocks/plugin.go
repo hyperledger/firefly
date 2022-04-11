@@ -157,6 +157,29 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
+// NormalizeContractLocation provides a mock function with given fields: ctx, location
+func (_m *Plugin) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error) {
+	ret := _m.Called(ctx, location)
+
+	var r0 *fftypes.JSONAny
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) *fftypes.JSONAny); ok {
+		r0 = rf(ctx, location)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.JSONAny)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, location)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NormalizeSigningKey provides a mock function with given fields: ctx, keyRef
 func (_m *Plugin) NormalizeSigningKey(ctx context.Context, keyRef string) (string, error) {
 	ret := _m.Called(ctx, keyRef)

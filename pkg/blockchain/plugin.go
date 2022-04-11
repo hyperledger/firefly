@@ -69,6 +69,9 @@ type Plugin interface {
 
 	// GenerateFFI returns an FFI from a blockchain specific interface format e.g. an Ethereum ABI
 	GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
+
+	// NormalizeContractLocation validates and normalizes the formatting of the location JSON
+	NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

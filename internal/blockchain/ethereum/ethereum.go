@@ -616,9 +616,16 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	return output, nil
 }
 
-func (e *Ethereum) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
-	_, err = parseContractLocation(ctx, location)
-	return
+func (e *Ethereum) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	normalized, err := json.Marshal(parsed)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {

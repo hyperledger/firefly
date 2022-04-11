@@ -329,6 +329,12 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerU
 	api.ID = fftypes.NewUUID()
 	api.Namespace = ns
 
+	if api.Location != nil {
+		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, api.Location); err != nil {
+			return nil, err
+		}
+	}
+
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		existing, err := cm.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 		if existing != nil && err == nil {
@@ -459,6 +465,14 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
+	if listener.Name != "" {
+		if err := fftypes.ValidateFFNameField(ctx, listener.Name, "name"); err != nil {
+			return nil, err
+		}
+	}
+	if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, listener.Location); err != nil {
+		return nil, err
+	}
 
 	if listener.Options == nil {
 		listener.Options = cm.getDefaultContractListenerOptions()
@@ -468,9 +482,6 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		if listener.Name != "" {
-			if err := fftypes.ValidateFFNameField(ctx, listener.Name, "name"); err != nil {
-				return err
-			}
 			if existing, err := cm.database.GetContractListener(ctx, ns, listener.Name); err != nil {
 				return err
 			} else if existing != nil {
