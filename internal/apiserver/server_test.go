@@ -39,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/httpserver"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -74,8 +75,8 @@ func TestStartStopServer(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	apiConfigPrefix.Set(HTTPConfPort, 0)
-	adminConfigPrefix.Set(HTTPConfPort, 0)
+	apiConfigPrefix.Set(httpserver.HTTPConfPort, 0)
+	adminConfigPrefix.Set(httpserver.HTTPConfPort, 0)
 	config.Set(coreconfig.UIPath, "test")
 	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -93,7 +94,7 @@ func TestStartAPIFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	apiConfigPrefix.Set(HTTPConfAddress, "...://")
+	apiConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
@@ -107,7 +108,7 @@ func TestStartAdminFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	adminConfigPrefix.Set(HTTPConfAddress, "...://")
+	adminConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
@@ -124,7 +125,7 @@ func TestStartAdminWSHandler(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	adminConfigPrefix.Set(HTTPConfAddress, "...://")
+	adminConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.AdminEnabled, true)
 	as := NewAPIServer().(*apiServer)
 	mor := &orchestratormocks.Orchestrator{}
@@ -144,7 +145,7 @@ func TestStartMetricsFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	metricsConfigPrefix.Set(HTTPConfAddress, "...://")
+	metricsConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.MetricsEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
