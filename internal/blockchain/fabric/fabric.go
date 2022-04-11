@@ -324,6 +324,8 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			Output:         *payload,
 			Info:           msgJSON,
 			Timestamp:      fftypes.UnixTime(timestamp),
+			Location:       f.buildEventLocationString(msgJSON),
+			Signature:      "BatchPin",
 		},
 	}
 
@@ -332,6 +334,10 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		Type:  fftypes.VerifierTypeMSPIdentity,
 		Value: signer,
 	})
+}
+
+func (f *Fabric) buildEventLocationString(msgJSON fftypes.JSONObject) string {
+	return fmt.Sprintf("chaincode=%s", msgJSON.GetString("chaincodeId"))
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -365,6 +371,8 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			Output:         *payload,
 			Info:           msgJSON,
 			Timestamp:      fftypes.UnixTime(timestamp),
+			Location:       f.buildEventLocationString(msgJSON),
+			Signature:      name,
 		},
 	}
 
