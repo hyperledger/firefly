@@ -99,7 +99,7 @@ func (i *FFBigInt) Int64() int64 {
 	return (*big.Int)(i).Int64()
 }
 
-func (i *FFBigInt) UInt64() uint64 {
+func (i *FFBigInt) Uint64() uint64 {
 	if i == nil || !(*big.Int)(i).IsUint64() {
 		return 0
 	}
