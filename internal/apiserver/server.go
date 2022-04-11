@@ -46,6 +46,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/httpserver"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
 )
@@ -77,9 +78,9 @@ type apiServer struct {
 }
 
 func InitConfig() {
-	initHTTPConfPrefx(apiConfigPrefix, 5000)
-	initHTTPConfPrefx(adminConfigPrefix, 5001)
-	initHTTPConfPrefx(metricsConfigPrefix, 6000)
+	httpserver.InitHTTPConfPrefix(apiConfigPrefix, 5000)
+	httpserver.InitHTTPConfPrefix(adminConfigPrefix, 5001)
+	httpserver.InitHTTPConfPrefix(metricsConfigPrefix, 6000)
 	initMetricsConfPrefix(metricsConfigPrefix)
 }
 
@@ -106,27 +107,27 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	metricsErrChan := make(chan error)
 
 	if !o.IsPreInit() {
-		apiHTTPServer, err := newHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfigPrefix)
+		apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfigPrefix)
 		if err != nil {
 			return err
 		}
-		go apiHTTPServer.serveHTTP(ctx)
+		go apiHTTPServer.ServeHTTP(ctx)
 	}
 
 	if config.GetBool(coreconfig.AdminEnabled) {
-		adminHTTPServer, err := newHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfigPrefix)
+		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfigPrefix)
 		if err != nil {
 			return err
 		}
-		go adminHTTPServer.serveHTTP(ctx)
+		go adminHTTPServer.ServeHTTP(ctx)
 	}
 
 	if as.metricsEnabled {
-		metricsHTTPServer, err := newHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfigPrefix)
+		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfigPrefix)
 		if err != nil {
 			return err
 		}
-		go metricsHTTPServer.serveHTTP(ctx)
+		go metricsHTTPServer.ServeHTTP(ctx)
 	}
 
 	return as.waitForServerStop(httpErrChan, adminErrChan, metricsErrChan)
@@ -416,13 +417,13 @@ func (as *apiServer) swaggerUIHandler(url string) func(res http.ResponseWriter, 
 }
 
 func (as *apiServer) getPublicURL(conf config.Prefix, pathPrefix string) string {
-	publicURL := conf.GetString(HTTPConfPublicURL)
+	publicURL := conf.GetString(httpserver.HTTPConfPublicURL)
 	if publicURL == "" {
 		proto := "https"
-		if !conf.GetBool(HTTPConfTLSEnabled) {
+		if !conf.GetBool(httpserver.HTTPConfTLSEnabled) {
 			proto = "http"
 		}
-		publicURL = fmt.Sprintf("%s://%s:%s", proto, conf.GetString(HTTPConfAddress), conf.GetString(HTTPConfPort))
+		publicURL = fmt.Sprintf("%s://%s:%s", proto, conf.GetString(httpserver.HTTPConfAddress), conf.GetString(httpserver.HTTPConfPort))
 	}
 	if pathPrefix != "" {
 		publicURL += "/" + pathPrefix

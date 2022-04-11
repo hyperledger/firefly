@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package httpserver
 
 import (
 	"context"
@@ -58,7 +58,11 @@ const (
 	HTTPConfTLSKeyFile = "tls.keyFile"
 )
 
-type IServer interface {
+type HTTPServer interface {
+	ServeHTTP(ctx context.Context)
+}
+
+type GoHTTPServer interface {
 	Close() error
 	Serve(l net.Listener) error
 	ServeTLS(l net.Listener, certFile, keyFile string) error
@@ -67,7 +71,7 @@ type IServer interface {
 
 type httpServer struct {
 	name            string
-	s               IServer
+	s               GoHTTPServer
 	l               net.Listener
 	conf            config.Prefix
 	onClose         chan error
@@ -77,7 +81,7 @@ type httpServer struct {
 	shutdownTimeout time.Duration
 }
 
-func initHTTPConfPrefx(prefix config.Prefix, defaultPort int) {
+func InitHTTPConfPrefix(prefix config.Prefix, defaultPort int) {
 	prefix.AddKnownKey(HTTPConfAddress, "127.0.0.1")
 	prefix.AddKnownKey(HTTPConfPublicURL)
 	prefix.AddKnownKey(HTTPConfPort, defaultPort)
@@ -90,8 +94,8 @@ func initHTTPConfPrefx(prefix config.Prefix, defaultPort int) {
 	prefix.AddKnownKey(HTTPConfTLSKeyFile)
 }
 
-func newHTTPServer(ctx context.Context, name string, r *mux.Router, onClose chan error, conf config.Prefix) (hs *httpServer, err error) {
-	hs = &httpServer{
+func NewHTTPServer(ctx context.Context, name string, r *mux.Router, onClose chan error, conf config.Prefix) (is HTTPServer, err error) {
+	hs := &httpServer{
 		name:            name,
 		onClose:         onClose,
 		conf:            conf,
@@ -117,7 +121,7 @@ func (hs *httpServer) createListener(ctx context.Context) (net.Listener, error) 
 	return listener, err
 }
 
-func (hs *httpServer) createServer(ctx context.Context, r *mux.Router) (srv IServer, err error) {
+func (hs *httpServer) createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
 
 	// Support client auth
 	clientAuth := tls.NoClientCert
@@ -171,7 +175,7 @@ func (hs *httpServer) createServer(ctx context.Context, r *mux.Router) (srv ISer
 	return srv, nil
 }
 
-func (hs *httpServer) serveHTTP(ctx context.Context) {
+func (hs *httpServer) ServeHTTP(ctx context.Context) {
 	serverEnded := make(chan struct{})
 	go func() {
 		select {
