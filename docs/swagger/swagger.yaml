@@ -13793,8 +13793,11 @@ paths:
                         items:
                           description: The blockchain plugins on this node
                           properties:
-                            connection:
+                            name:
                               description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
                               type: string
                           type: object
                         type: array
@@ -13803,8 +13806,11 @@ paths:
                         items:
                           description: The data exchange plugins on this node
                           properties:
-                            connection:
+                            name:
                               description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
                               type: string
                           type: object
                         type: array
@@ -13813,8 +13819,24 @@ paths:
                         items:
                           description: The database plugins on this node
                           properties:
-                            connection:
+                            name:
                               description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      events:
+                        description: The event plugins on this node
+                        items:
+                          description: The event plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
                               type: string
                           type: object
                         type: array
@@ -13823,8 +13845,11 @@ paths:
                         items:
                           description: The identity plugins on this node
                           properties:
-                            connection:
+                            name:
                               description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
                               type: string
                           type: object
                         type: array
@@ -13833,8 +13858,11 @@ paths:
                         items:
                           description: The shared storage plugins on this node
                           properties:
-                            connection:
+                            name:
                               description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
                               type: string
                           type: object
                         type: array
@@ -13843,8 +13871,11 @@ paths:
                         items:
                           description: The token plugins on this node
                           properties:
-                            connection:
+                            name:
                               description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
                               type: string
                           type: object
                         type: array

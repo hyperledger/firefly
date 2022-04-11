@@ -50,6 +50,7 @@ type NodeStatusPlugins struct {
 	Blockchain    []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"blockchain"`
 	Database      []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"database"`
 	DataExchange  []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"dataExchange"`
+	Events        []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"events"`
 	Identity      []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"identity"`
 	SharedStorage []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"sharedStorage"`
 	Tokens        []*NodeStatusPlugin `ffstruct:"NodeStatusPlugins" json:"tokens"`
@@ -57,5 +58,6 @@ type NodeStatusPlugins struct {
 
 // NodeStatusPlugin is information about a plugin
 type NodeStatusPlugin struct {
-	Connection string `ffstruct:"NodeStatusPlugin" json:"connection"`
+	Name       string `ffstruct:"NodeStatusPlugin" json:"name,omitempty"`
+	PluginType string `ffstruct:"NodeStatusPlugin" json:"pluginType"`
 }

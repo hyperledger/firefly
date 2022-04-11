@@ -390,12 +390,14 @@ var (
 	NodeStatusPluginsBlockchain    = ffm("NodeStatusPlugins.blockchain", "The blockchain plugins on this node")
 	NodeStatusPluginsDatabase      = ffm("NodeStatusPlugins.database", "The database plugins on this node")
 	NodeStatusPluginsDataExchange  = ffm("NodeStatusPlugins.dataExchange", "The data exchange plugins on this node")
+	Events                         = ffm("NodeStatusPlugins.events", "The event plugins on this node")
 	NodeStatusPluginsIdentity      = ffm("NodeStatusPlugins.identity", "The identity plugins on this node")
 	NodeStatusPluginsSharedStorage = ffm("NodeStatusPlugins.sharedStorage", "The shared storage plugins on this node")
 	NodeStatusPluginsTokens        = ffm("NodeStatusPlugins.tokens", "The token plugins on this node")
 
 	// NodeStatusPlugin field descriptions
-	NodeStatusPlugin = ffm("NodeStatusPlugin.connection", "The name of the plugin")
+	NodeStatusPluginName = ffm("NodeStatusPlugin.name", "The name of the plugin")
+	NodeStatusPluginType = ffm("NodeStatusPlugin.pluginType", "The type of the plugin")
 
 	// BatchManagerStatus field descriptions
 	BatchManagerStatusProcessors = ffm("BatchManagerStatus.processors", "An array of currently active batch processors")

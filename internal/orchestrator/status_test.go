@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/config"
@@ -33,33 +34,45 @@ var (
 	pluginsResult = fftypes.NodeStatusPlugins{
 		Blockchain: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: "mock-bi",
+				PluginType: "mock-bi",
 			},
 		},
 		Database: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: "mock-di",
+				PluginType: "mock-di",
 			},
 		},
 		DataExchange: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: "mock-dx",
+				PluginType: "mock-dx",
+			},
+		},
+		Events: []*fftypes.NodeStatusPlugin{
+			{
+				PluginType: "mock-ei",
 			},
 		},
 		Identity: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: "mock-ii",
+				PluginType: "mock-ii",
 			},
 		},
 		SharedStorage: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: "mock-ps",
+				PluginType: "mock-ps",
 			},
 		},
 		Tokens: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: "token",
+				Name:       "token",
+				PluginType: "mock-tk",
 			},
+		},
+	}
+
+	mockEventPlugins = []*fftypes.NodeStatusPlugin{
+		{
+			PluginType: "mock-ei",
 		},
 	}
 )
@@ -98,6 +111,9 @@ func TestGetStatusRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
+
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
@@ -117,6 +133,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.Blockchain, status.Plugins.Blockchain)
 	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
 	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
+	assert.ElementsMatch(t, pluginsResult.Events, status.Plugins.Events)
 	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
@@ -154,6 +171,9 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	}, false, nil)
 	nmn := or.networkmap.(*networkmapmocks.Manager)
 	nmn.On("GetIdentityVerifiers", or.ctx, fftypes.SystemNamespace, orgID.String(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
 
 	_, err := or.GetStatus(or.ctx)
 	assert.Regexp(t, "pop", err)
@@ -194,6 +214,9 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 		}},
 	}, nil, nil)
 
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
+
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
@@ -220,6 +243,9 @@ func TestGetStatusUnregistered(t *testing.T) {
 
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -263,6 +289,9 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
+
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
@@ -280,6 +309,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.Blockchain, status.Plugins.Blockchain)
 	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
 	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
+	assert.ElementsMatch(t, pluginsResult.Events, status.Plugins.Events)
 	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
@@ -313,6 +343,9 @@ func TestGetStatusNodeError(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
+
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
 
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")

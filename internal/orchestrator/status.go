@@ -30,36 +30,38 @@ import (
 func (or *orchestrator) getPlugins() fftypes.NodeStatusPlugins {
 	// Tokens can have more than one name, so they must be iterated over
 	tokensArray := make([]*fftypes.NodeStatusPlugin, 0)
-	for name := range or.tokens {
+	for name, plugin := range or.tokens {
 		tokensArray = append(tokensArray, &fftypes.NodeStatusPlugin{
-			Connection: name,
+			Name:       name,
+			PluginType: plugin.Name(),
 		})
 	}
 
 	return fftypes.NodeStatusPlugins{
 		Blockchain: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: or.blockchain.Name(),
+				PluginType: or.blockchain.Name(),
 			},
 		},
 		Database: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: or.database.Name(),
+				PluginType: or.database.Name(),
 			},
 		},
 		DataExchange: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: or.dataexchange.Name(),
+				PluginType: or.dataexchange.Name(),
 			},
 		},
+		Events: or.events.GetPlugins(),
 		Identity: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: or.identityPlugin.Name(),
+				PluginType: or.identityPlugin.Name(),
 			},
 		},
 		SharedStorage: []*fftypes.NodeStatusPlugin{
 			{
-				Connection: or.sharedstorage.Name(),
+				PluginType: or.sharedstorage.Name(),
 			},
 		},
 		Tokens: tokensArray,
