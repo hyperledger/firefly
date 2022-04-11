@@ -223,3 +223,12 @@ func TestBigIntInt64(t *testing.T) {
 	n = NewFFBigInt(10)
 	assert.Equal(t, int64(10), n.Int64())
 }
+
+func TestBigIntUInt64(t *testing.T) {
+	var n *FFBigInt
+	assert.Equal(t, uint64(0), n.UInt64())
+	n = NewFFBigInt(10)
+	assert.Equal(t, uint64(10), n.UInt64())
+	n = NewFFBigInt(-1)
+	assert.Equal(t, uint64(0), n.UInt64())
+}
