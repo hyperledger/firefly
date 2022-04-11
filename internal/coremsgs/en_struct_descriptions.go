@@ -268,7 +268,7 @@ var (
 	ContractListenerEvent      = ffm("ContractListener.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
 	ContractListenerTopic      = ffm("ContractListener.topic", "A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need")
 	ContractListenerOptions    = ffm("ContractListener.options", "Options that control how the listener subscribes to events from the underlying blockchain")
-	ContractListenerEventID    = ffm("ContractListener.eventId", "When creating a listener from an existing FFI, this is the UUID of the event on that FFI that will be detected by this listener")
+	ContractListenerEventPath  = ffm("ContractListener.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
 
 	// ContractListenerOptions field descriptions
 	ContractListenerOptionsFirstEvent = ffm("ContractListenerOptions.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest'")

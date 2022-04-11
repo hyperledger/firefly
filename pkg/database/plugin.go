@@ -620,7 +620,7 @@ const (
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
 	CollectionContractAPIs      UUIDCollectionNS = "contractapis"
-	CollectionContractListeners UUIDCollectionNS = "contractsubscriptions"
+	CollectionContractListeners UUIDCollectionNS = "contractlisteners"
 	CollectionIdentities        UUIDCollectionNS = "identities"
 )
 

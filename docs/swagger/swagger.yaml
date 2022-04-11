@@ -3227,10 +3227,11 @@ paths:
                         type: object
                       type: array
                   type: object
-                eventId:
+                eventPath:
                   description: When creating a listener from an existing FFI, this
-                    is the UUID of the event on that FFI that will be detected by
-                    this listener
+                    is the pathname of the event on that FFI to be detected by this
+                    listener
+                  type: string
                 interface:
                   description: A reference to an existing FFI, containing pre-registered
                     type information for the event
