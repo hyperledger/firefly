@@ -61,11 +61,6 @@ type ContractAPI struct {
 	URLs      ContractURLs  `ffstruct:"ContractAPI" json:"urls" ffexcludeinput:"true"`
 }
 
-type ContractAPIWithInterface struct {
-	ContractAPI
-	Interface *FFI `ffstruct:"ContractAPI" json:"interface"`
-}
-
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateFFNameField(ctx, c.Namespace, "namespace"); err != nil {
 		return err

@@ -23,7 +23,6 @@ import (
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -45,15 +44,12 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 
 	routes := []*oapispec.Route{
 		{
-			Name:            "apiRoot",
-			Path:            "/",
+			Name:            "interface",
+			Path:            "interface", // must match a route defined in apiserver routes!
 			Method:          http.MethodGet,
 			JSONInputValue:  nil,
-			JSONOutputValue: func() interface{} { return &fftypes.ContractAPIWithInterface{} },
+			JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 			JSONOutputCodes: []int{http.StatusOK},
-			QueryParams: []*oapispec.QueryParam{
-				{Name: "fetchinterface", IsBool: true, Description: i18n.MsgTBD, Example: "true"},
-			},
 		},
 	}
 	for _, method := range ffi.Methods {
@@ -77,7 +73,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 func (og *ffiSwaggerGen) addMethodMetadata(routes []*oapispec.Route, method *fftypes.FFIMethod) []*oapispec.Route {
 	routes = append(routes, &oapispec.Route{
 		Name:            fmt.Sprintf("get_%s", method.Pathname),
-		Path:            fmt.Sprintf("methods/%s", method.Pathname), // must match a route defined in apiserver routes!
+		Path:            fmt.Sprintf("interface/methods/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:          http.MethodGet,
 		JSONOutputValue: func() interface{} { return &fftypes.FFIMethod{} },
 		JSONOutputCodes: []int{http.StatusOK},
@@ -88,7 +84,7 @@ func (og *ffiSwaggerGen) addMethodMetadata(routes []*oapispec.Route, method *fft
 func (og *ffiSwaggerGen) addEventMetadata(routes []*oapispec.Route, event *fftypes.FFIEvent) []*oapispec.Route {
 	routes = append(routes, &oapispec.Route{
 		Name:            fmt.Sprintf("get_%s", event.Pathname),
-		Path:            fmt.Sprintf("events/%s", event.Pathname), // must match a route defined in apiserver routes!
+		Path:            fmt.Sprintf("interface/events/%s", event.Pathname), // must match a route defined in apiserver routes!
 		Method:          http.MethodGet,
 		JSONOutputValue: func() interface{} { return &fftypes.FFIEvent{} },
 		JSONOutputCodes: []int{http.StatusOK},

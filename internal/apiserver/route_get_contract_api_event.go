@@ -27,7 +27,7 @@ import (
 
 var getContractAPIEvent = &oapispec.Route{
 	Name:   "getContractAPIEvent",
-	Path:   "namespaces/{ns}/apis/{apiName}/events/{eventPath}",
+	Path:   "namespaces/{ns}/apis/{apiName}/interface/events/{eventPath}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
