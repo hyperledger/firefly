@@ -484,23 +484,21 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 	}
 
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		// Namespace + Name must be unique
 		if listener.Name != "" {
 			if existing, err := cm.database.GetContractListener(ctx, ns, listener.Name); err != nil {
 				return err
 			} else if existing != nil {
-				return i18n.NewError(ctx, coremsgs.MsgContractListenerExists, ns, listener.Name)
-			}
-		}
-
-		if listener.Interface != nil {
-			if err := cm.resolveFFIReference(ctx, ns, listener.Interface); err != nil {
-				return err
+				return i18n.NewError(ctx, coremsgs.MsgContractListenerNameExists, ns, listener.Name)
 			}
 		}
 
 		if listener.Event == nil {
 			if listener.EventPath == "" || listener.Interface == nil {
 				return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
+			}
+			if err := cm.resolveFFIReference(ctx, ns, listener.Interface); err != nil {
+				return err
 			}
 			event, err := cm.database.GetFFIEvent(ctx, ns, listener.Interface.ID, listener.EventPath)
 			if err != nil {
@@ -512,6 +510,21 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 			listener.Event = &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			}
+		} else {
+			listener.Interface = nil
+		}
+
+		// Topic + Location + Signature must be unique
+		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
+		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
+		if existing, _, err := cm.database.GetContractListeners(ctx, fb.And(
+			fb.Eq("topic", listener.Topic),
+			fb.Eq("location", listener.Location),
+			fb.Eq("signature", listener.Signature),
+		)); err != nil {
+			return err
+		} else if len(existing) > 0 {
+			return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
 		}
 
 		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
