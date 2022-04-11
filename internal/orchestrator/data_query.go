@@ -20,9 +20,10 @@ import (
 	"context"
 	"database/sql/driver"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) error {
@@ -70,7 +71,7 @@ func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fft
 	}
 	msg, err := or.database.GetMessageByID(ctx, u)
 	if err == nil && msg == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return msg, err
 }
@@ -200,21 +201,21 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 	var txID *fftypes.UUID
 	if msg.Header.TxType == fftypes.TransactionTypeBatchPin {
 		if msg.BatchID == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBatchNotSet)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotSet)
 		}
 		batch, err := or.database.GetBatchByID(ctx, msg.BatchID)
 		if err != nil {
 			return nil, err
 		}
 		if batch == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBatchNotFound, msg.BatchID)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotFound, msg.BatchID)
 		}
 		txID = batch.TX.ID
 		if txID == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBatchTXNotSet, msg.BatchID)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBatchTXNotSet, msg.BatchID)
 		}
 	} else {
-		return nil, i18n.NewError(ctx, i18n.MsgNoTransaction)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNoTransaction)
 	}
 	return txID, nil
 }

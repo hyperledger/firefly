@@ -21,7 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -56,7 +57,7 @@ func (mm *metricsManager) Start() error {
 func NewMetricsManager(ctx context.Context) Manager {
 	mm := &metricsManager{
 		ctx:            ctx,
-		metricsEnabled: config.GetBool(config.MetricsEnabled),
+		metricsEnabled: config.GetBool(coreconfig.MetricsEnabled),
 		timeMap:        make(map[string]time.Time),
 	}
 

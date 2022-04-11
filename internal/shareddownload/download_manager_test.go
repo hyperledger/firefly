@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -39,9 +40,9 @@ import (
 )
 
 func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
-	config.Reset()
-	config.Set(config.DownloadWorkerCount, 1)
-	config.Set(config.DownloadRetryMaxAttempts, 0 /* bumps to 1 */)
+	coreconfig.Reset()
+	config.Set(coreconfig.DownloadWorkerCount, 1)
+	config.Set(coreconfig.DownloadRetryMaxAttempts, 0 /* bumps to 1 */)
 
 	mdi := &databasemocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}

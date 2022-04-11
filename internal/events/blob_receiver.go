@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type blobNotification struct {
@@ -64,14 +65,14 @@ func newBlobReceiver(ctx context.Context, ag *aggregator) *blobReceiver {
 		aggregator: ag,
 		database:   ag.database,
 		conf: blobReceiverConf{
-			workerCount:  config.GetInt(config.BlobReceiverWorkerCount),
-			batchTimeout: config.GetDuration(config.BlobReceiverWorkerBatchTimeout),
-			maxInserts:   config.GetInt(config.BlobReceiverWorkerBatchMaxInserts),
+			workerCount:  config.GetInt(coreconfig.BlobReceiverWorkerCount),
+			batchTimeout: config.GetDuration(coreconfig.BlobReceiverWorkerBatchTimeout),
+			maxInserts:   config.GetInt(coreconfig.BlobReceiverWorkerBatchMaxInserts),
 		},
 		retry: &retry.Retry{
-			InitialDelay: config.GetDuration(config.BlobReceiverRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.BlobReceiverRetryMaxDelay),
-			Factor:       config.GetFloat64(config.BlobReceiverRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.BlobReceiverRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.BlobReceiverRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.BlobReceiverRetryFactor),
 		},
 	}
 	br.ctx, br.cancelFunc = context.WithCancel(ctx)

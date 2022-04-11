@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,7 +36,7 @@ import (
 var utConfPrefix = config.NewPluginConfig("metrics")
 
 func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitter {
-	config.Reset()
+	coreconfig.Reset()
 
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}

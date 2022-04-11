@@ -19,8 +19,8 @@ package tokens
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 

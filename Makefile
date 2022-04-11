@@ -13,7 +13,7 @@ GOGC=30
 
 all: build test go-mod-tidy
 test: deps lint
-		$(VGO) test ./internal/... ./pkg/... ./cmd/... -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s
+		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./docs -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
@@ -90,8 +90,8 @@ clean:
 		rm -f *.so ${BINARY_NAME}
 deps:
 		$(VGO) get
-swagger:
-		$(VGO) test ./internal/apiserver -timeout=10s -tags swagger
+reference:
+		$(VGO) test ./internal/apiserver ./docs -timeout=10s -tags reference
 manifest:
 		./manifestgen.sh
 docker:

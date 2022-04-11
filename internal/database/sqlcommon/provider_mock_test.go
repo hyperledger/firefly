@@ -24,8 +24,9 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
@@ -46,7 +47,7 @@ type mockProvider struct {
 }
 
 func newMockProvider() *mockProvider {
-	config.Reset()
+	coreconfig.Reset()
 	mp := &mockProvider{
 		capabilities: &database.Capabilities{},
 		callbacks:    &databasemocks.Callbacks{},

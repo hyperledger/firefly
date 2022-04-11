@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // JSONObject is a holder of a hash, that can be used to correlate onchain data with off-chain data.
@@ -48,7 +48,7 @@ func (jd *JSONObject) Scan(src interface{}) error {
 		return json.Unmarshal(src, &jd)
 
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, jd)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, jd)
 	}
 
 }

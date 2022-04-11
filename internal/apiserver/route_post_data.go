@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -33,18 +33,18 @@ var postData = &oapispec.Route{
 	Path:   "namespaces/{ns}/data",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
 	},
 	QueryParams: nil,
 	FormParams: []*oapispec.FormParam{
-		{Name: "autometa", Description: i18n.MsgTBD},
-		{Name: "metadata", Description: i18n.MsgTBD},
-		{Name: "validator", Description: i18n.MsgTBD},
-		{Name: "datatype.name", Description: i18n.MsgTBD},
-		{Name: "datatype.version", Description: i18n.MsgTBD},
+		{Name: "autometa", Description: coremsgs.APIMessageTBD},
+		{Name: "metadata", Description: coremsgs.APIMessageTBD},
+		{Name: "validator", Description: coremsgs.APIMessageTBD},
+		{Name: "datatype.name", Description: coremsgs.APIMessageTBD},
+		{Name: "datatype.version", Description: coremsgs.APIMessageTBD},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.DataRefOrValue{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 	JSONOutputCodes: []int{http.StatusCreated},

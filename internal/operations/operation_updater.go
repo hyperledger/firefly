@@ -22,13 +22,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // OperationUpdate is dispatched asynchronously to perform an update.
@@ -75,15 +77,15 @@ func newOperationUpdater(ctx context.Context, di database.Plugin, txHelper txcom
 		database: di,
 		txHelper: txHelper,
 		conf: operationUpdaterConf{
-			workerCount:  config.GetInt(config.OpUpdateWorkerCount),
-			batchTimeout: config.GetDuration(config.OpUpdateWorkerBatchTimeout),
-			maxInserts:   config.GetInt(config.OpUpdateWorkerBatchMaxInserts),
-			queueLength:  config.GetInt(config.OpUpdateWorkerQueueLength),
+			workerCount:  config.GetInt(coreconfig.OpUpdateWorkerCount),
+			batchTimeout: config.GetDuration(coreconfig.OpUpdateWorkerBatchTimeout),
+			maxInserts:   config.GetInt(coreconfig.OpUpdateWorkerBatchMaxInserts),
+			queueLength:  config.GetInt(coreconfig.OpUpdateWorkerQueueLength),
 		},
 		retry: &retry.Retry{
-			InitialDelay: config.GetDuration(config.OpUpdateRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.OpUpdateRetryMaxDelay),
-			Factor:       config.GetFloat64(config.OpUpdateRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.OpUpdateRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.OpUpdateRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.OpUpdateRetryFactor),
 		},
 	}
 	ou.ctx, ou.cancelFunc = context.WithCancel(ctx)
@@ -326,7 +328,7 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 		}
 		if update.DXManifest != expectedManifest {
 			// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
-			mismatchErr := i18n.NewError(ctx, i18n.MsgManifestMismatch, fftypes.OpStatusSucceeded, update.DXManifest)
+			mismatchErr := i18n.NewError(ctx, coremsgs.MsgManifestMismatch, fftypes.OpStatusSucceeded, update.DXManifest)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
 			update.Status = fftypes.OpStatusFailed
@@ -337,7 +339,7 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 		expectedHash := op.Input.GetString("hash")
 		if update.DXHash != expectedHash {
 			// Log and map to failure for user to see that the receiver did not provide a matching hash
-			mismatchErr := i18n.NewError(ctx, i18n.MsgBlobHashMismatch, expectedHash, update.DXHash)
+			mismatchErr := i18n.NewError(ctx, coremsgs.MsgBlobHashMismatch, expectedHash, update.DXHash)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
 			update.Status = fftypes.OpStatusFailed

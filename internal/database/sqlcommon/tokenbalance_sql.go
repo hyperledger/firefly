@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -134,7 +135,7 @@ func (s *SQLCommon) tokenBalanceResult(ctx context.Context, row *sql.Rows) (*fft
 		&account.Updated,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenbalance")
 	}
 	return &account, nil
 }
@@ -216,7 +217,7 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 		var updated fftypes.FFTime
 		var seq int64
 		if err := rows.Scan(&account.Key, &updated, &seq); err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenbalance")
 		}
 		accounts = append(accounts, &account)
 	}
@@ -245,7 +246,7 @@ func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter
 		var updated fftypes.FFTime
 		var seq int64
 		if err := rows.Scan(&pool.Pool, &updated, &seq); err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenbalance")
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenbalance")
 		}
 		pools = append(pools, &pool)
 	}

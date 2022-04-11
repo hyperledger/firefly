@@ -45,7 +45,7 @@ func TestGetTransactionByID(t *testing.T) {
 func TestGetTransactionByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetTransactionByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetTransactionOperationsOk(t *testing.T) {
@@ -58,7 +58,7 @@ func TestGetTransactionOperationsOk(t *testing.T) {
 func TestGetTransactionOperationBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, _, err := or.GetTransactionOperations(context.Background(), "ns1", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetNamespaces(t *testing.T) {
@@ -83,7 +83,7 @@ func TestGetTransactions(t *testing.T) {
 func TestGetMessageByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetMessageByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetMessageByIDNoValuesOk(t *testing.T) {
@@ -233,7 +233,7 @@ func TestGetMessagesForDataBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).And()
 	_, _, err := or.GetMessagesForData(context.Background(), "!wrong", "!bad", f)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetMessageTransactionOk(t *testing.T) {
@@ -439,7 +439,7 @@ func TestGetBatchByID(t *testing.T) {
 func TestGetBatchByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetBatchByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetBatches(t *testing.T) {
@@ -463,7 +463,7 @@ func TestGetDataByID(t *testing.T) {
 func TestGetDataByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetDataByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetData(t *testing.T) {
@@ -487,7 +487,7 @@ func TestGetDatatypeByID(t *testing.T) {
 func TestGetDatatypeByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetDatatypeByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetDatatypeByName(t *testing.T) {
@@ -500,13 +500,13 @@ func TestGetDatatypeByName(t *testing.T) {
 func TestGetDatatypeByNameBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetDatatypeByName(context.Background(), "", "", "")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetDatatypeByNameBadName(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetDatatypeByName(context.Background(), "ns1", "", "")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetOperationByID(t *testing.T) {
@@ -520,7 +520,7 @@ func TestGetOperationByID(t *testing.T) {
 func TestGetOperationIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetOperationByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetEventByID(t *testing.T) {
@@ -534,7 +534,7 @@ func TestGetEventByID(t *testing.T) {
 func TestGetEventIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetEventByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetDatatypes(t *testing.T) {
@@ -686,7 +686,7 @@ func TestGetTransactionBlockchainEventsOk(t *testing.T) {
 func TestGetTransactionBlockchainEventsBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, _, err := or.GetTransactionBlockchainEvents(context.Background(), "ns1", "")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetPins(t *testing.T) {

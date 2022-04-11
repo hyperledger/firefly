@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -27,10 +27,12 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 const (
@@ -96,7 +98,7 @@ func newHTTPServer(ctx context.Context, name string, r *mux.Router, onClose chan
 		tlsEnabled:      conf.GetBool(HTTPConfTLSEnabled),
 		tlsCertFile:     conf.GetString(HTTPConfTLSCertFile),
 		tlsKeyFile:      conf.GetString(HTTPConfTLSKeyFile),
-		shutdownTimeout: config.GetDuration(config.APIShutdownTimeout),
+		shutdownTimeout: config.GetDuration(coreconfig.APIShutdownTimeout),
 	}
 	hs.l, err = hs.createListener(ctx)
 	if err == nil {
@@ -109,7 +111,7 @@ func (hs *httpServer) createListener(ctx context.Context) (net.Listener, error) 
 	listenAddr := fmt.Sprintf("%s:%d", hs.conf.GetString(HTTPConfAddress), hs.conf.GetUint(HTTPConfPort))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgAPIServerStartFailed, listenAddr)
 	}
 	log.L(ctx).Infof("%s listening on HTTP %s", hs.name, listener.Addr())
 	return listener, err
@@ -133,7 +135,7 @@ func (hs *httpServer) createServer(ctx context.Context, r *mux.Router) (srv ISer
 		if err == nil {
 			ok := rootCAs.AppendCertsFromPEM(caBytes)
 			if !ok {
-				err = i18n.NewError(ctx, i18n.MsgInvalidCAFile)
+				err = i18n.NewError(ctx, coremsgs.MsgInvalidCAFile)
 			}
 		}
 	} else {
@@ -141,7 +143,7 @@ func (hs *httpServer) createServer(ctx context.Context, r *mux.Router) (srv ISer
 	}
 
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgTLSConfigFailed)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgTLSConfigFailed)
 	}
 
 	srv = &http.Server{

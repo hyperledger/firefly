@@ -52,7 +52,7 @@ func TestSealEmptyTopicString(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, `FF10131.*header.topics\[0\]`, err)
+	assert.Regexp(t, `FF00140.*header.topics\[0\]`, err)
 }
 
 func TestSealBadTagString(t *testing.T) {
@@ -62,7 +62,7 @@ func TestSealBadTagString(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, `FF10131.*header.tag`, err)
+	assert.Regexp(t, `FF00140.*header.tag`, err)
 }
 
 func TestVerifyTXType(t *testing.T) {
@@ -85,7 +85,7 @@ func TestVerifyTXType(t *testing.T) {
 
 	msg.Header.TxType = TransactionTypeTokenPool
 	err = msg.Seal(context.Background())
-	assert.Regexp(t, "FF10343", err)
+	assert.Regexp(t, "FF00130", err)
 }
 
 func TestVerifyEmptyTopicString(t *testing.T) {
@@ -96,7 +96,7 @@ func TestVerifyEmptyTopicString(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, `FF10131.*header.topics\[0\]`, err)
+	assert.Regexp(t, `FF00140.*header.topics\[0\]`, err)
 }
 
 func TestVerifyBadTagString(t *testing.T) {
@@ -107,7 +107,7 @@ func TestVerifyBadTagString(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, `FF10131.*header.tag`, err)
+	assert.Regexp(t, `FF00140.*header.tag`, err)
 }
 
 func TestSealNilDataID(t *testing.T) {
@@ -120,7 +120,7 @@ func TestSealNilDataID(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, "FF10144.*0", err)
+	assert.Regexp(t, "FF00128.*0", err)
 }
 
 func TestVerifyNilDataHash(t *testing.T) {
@@ -133,7 +133,7 @@ func TestVerifyNilDataHash(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10144.*0", err)
+	assert.Regexp(t, "FF00128.*0", err)
 }
 
 func TestSeaDupDataID(t *testing.T) {
@@ -147,7 +147,7 @@ func TestSeaDupDataID(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, "FF10145.*1", err)
+	assert.Regexp(t, "FF00129.*1", err)
 }
 
 func TestVerifylDupDataHash(t *testing.T) {
@@ -164,7 +164,7 @@ func TestVerifylDupDataHash(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10145.*1", err)
+	assert.Regexp(t, "FF00129.*1", err)
 }
 
 func TestVerifyNilHashes(t *testing.T) {
@@ -174,7 +174,7 @@ func TestVerifyNilHashes(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10147", err)
+	assert.Regexp(t, "FF00131", err)
 }
 
 func TestVerifyNilMisMatchedHashes(t *testing.T) {
@@ -186,7 +186,7 @@ func TestVerifyNilMisMatchedHashes(t *testing.T) {
 		Hash: NewRandB32(),
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10146", err)
+	assert.Regexp(t, "FF00132", err)
 }
 
 func TestSealKnownMessage(t *testing.T) {

@@ -72,7 +72,7 @@ func TestGetOrganizationByNameBadName(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	_, err := nm.GetOrganizationByNameOrID(nm.ctx, "!bad")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetOrganizationByNameError(t *testing.T) {
@@ -127,7 +127,7 @@ func TestGetNodeByNameBadName(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	_, err := nm.GetNodeByNameOrID(nm.ctx, "!bad")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetNodeByNameError(t *testing.T) {
@@ -208,7 +208,7 @@ func TestGetIdentityByIDBadUUID(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	_, err := nm.GetIdentityByID(nm.ctx, "ns1", "bad")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetIdentityByIDWithVerifiers(t *testing.T) {
@@ -331,7 +331,7 @@ func TestGetVerifierByHashBadUUID(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	_, err := nm.GetVerifierByHash(nm.ctx, "ns1", "bad")
-	assert.Regexp(t, "FF10232", err)
+	assert.Regexp(t, "FF00107", err)
 }
 
 func TestGetVerifierByDIDOk(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -120,7 +120,7 @@ func (m *FFIParams) Scan(src interface{}) error {
 	case []byte:
 		return json.Unmarshal(src, &m)
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, m)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, m)
 	}
 }
 

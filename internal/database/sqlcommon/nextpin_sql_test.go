@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -161,7 +161,7 @@ func TestGetNextPinBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NextPinQueryFactory.NewFilter(context.Background()).Eq("context", map[bool]bool{true: false})
 	_, _, err := s.GetNextPins(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetNextPinReadMessageFail(t *testing.T) {
@@ -186,7 +186,7 @@ func TestNextPinUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.NextPinQueryFactory.NewUpdate(context.Background()).Set("context", map[bool]bool{true: false})
 	err := s.UpdateNextPin(context.Background(), 12345, u)
-	assert.Regexp(t, "FF10149.*context", err)
+	assert.Regexp(t, "FF00143.*context", err)
 }
 
 func TestNextPinUpdateFail(t *testing.T) {

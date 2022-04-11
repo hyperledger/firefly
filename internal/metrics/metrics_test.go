@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -48,7 +48,7 @@ var TokenTransfer = &fftypes.TokenTransfer{
 }
 
 func newTestMetricsManager(t *testing.T) (*metricsManager, func()) {
-	config.Reset()
+	coreconfig.Reset()
 	Clear()
 	Registry()
 	ctx, cancel := context.WithCancel(context.Background())

@@ -20,7 +20,7 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var (

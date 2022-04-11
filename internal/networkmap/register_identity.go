@@ -19,8 +19,9 @@ package networkmap
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
@@ -89,7 +90,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 		parentSigner = nil
 	} else {
 		if dto.Key == "" {
-			return nil, i18n.NewError(ctx, i18n.MsgBlockchainKeyNotSet)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
 		}
 		claimSigner = &fftypes.SignerRef{
 			Key: dto.Key,
