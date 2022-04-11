@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/batch"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -33,16 +33,17 @@ import (
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateMessaging, func()) {
-	config.Reset()
-	config.Set(config.NodeName, "node1")
-	config.Set(config.GroupCacheTTL, "1m")
-	config.Set(config.GroupCacheSize, "1m")
+	coreconfig.Reset()
+	config.Set(coreconfig.NodeName, "node1")
+	config.Set(coreconfig.GroupCacheTTL, "1m")
+	config.Set(coreconfig.GroupCacheSize, "1m")
 
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}

@@ -5,7 +5,7 @@ package identitymocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/internal/config"
+	config "github.com/hyperledger/firefly/pkg/config"
 
 	identity "github.com/hyperledger/firefly/pkg/identity"
 

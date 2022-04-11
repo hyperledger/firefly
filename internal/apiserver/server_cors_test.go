@@ -20,12 +20,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestServerCorsDisabled(t *testing.T) {
-	config.Reset()
-	config.Set(config.CorsEnabled, false)
+	coreconfig.Reset()
+	config.Set(coreconfig.CorsEnabled, false)
 	assert.Nil(t, wrapCorsIfEnabled(context.Background(), nil))
 }

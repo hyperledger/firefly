@@ -23,10 +23,10 @@ import (
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type streamManager struct {
@@ -59,7 +59,7 @@ func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventSt
 		SetResult(&streams).
 		Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return streams, nil
 }
@@ -80,7 +80,7 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string, bat
 		SetResult(&stream).
 		Post("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return &stream, nil
 }
@@ -101,7 +101,7 @@ func (s *streamManager) updateEventStream(ctx context.Context, topic string, bat
 		SetResult(&stream).
 		Patch("/eventstreams/" + eventStreamID)
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return &stream, nil
 }
@@ -129,7 +129,7 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 		SetResult(&subs).
 		Get("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return subs, nil
 }
@@ -155,7 +155,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		SetResult(&sub).
 		Post("/subscriptions")
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return &sub, nil
 }
@@ -165,7 +165,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 		SetContext(ctx).
 		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return nil
 }

@@ -71,7 +71,7 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	}
 
 	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)

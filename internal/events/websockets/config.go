@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,7 +16,7 @@
 
 package websockets
 
-import "github.com/hyperledger/firefly/internal/config"
+import "github.com/hyperledger/firefly/pkg/config"
 
 const (
 	bufferSizeDefault = "16Kb"

@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -56,8 +57,8 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeDescription, "Node 1")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeDescription, "Node 1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&fftypes.VerifierRef{
@@ -86,8 +87,8 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(config.OrgName, "")
-	config.Set(config.NodeDescription, "")
+	config.Set(coreconfig.OrgName, "")
+	config.Set(coreconfig.NodeDescription, "")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&fftypes.VerifierRef{
@@ -105,8 +106,8 @@ func TestRegisterNodeGetOwnerBlockchainKeyFail(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(config.OrgName, "")
-	config.Set(config.NodeDescription, "")
+	config.Set(coreconfig.OrgName, "")
+	config.Set(coreconfig.NodeDescription, "")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(nil, fmt.Errorf("pop"))

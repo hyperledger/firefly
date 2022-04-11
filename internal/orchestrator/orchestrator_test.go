@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
@@ -45,6 +45,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
@@ -80,7 +81,7 @@ type testOrchestrator struct {
 }
 
 func newTestOrchestrator() *testOrchestrator {
-	config.Reset()
+	coreconfig.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
 	tor := &testOrchestrator{
 		orchestrator: orchestrator{
@@ -148,7 +149,7 @@ func TestNewOrchestrator(t *testing.T) {
 
 func TestBadDatabasePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.DatabaseType, "wrong")
+	config.Set(coreconfig.DatabaseType, "wrong")
 	or.database = nil
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
@@ -157,7 +158,7 @@ func TestBadDatabasePlugin(t *testing.T) {
 
 func TestBadDatabaseInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.DatabaseType, "wrong")
+	config.Set(coreconfig.DatabaseType, "wrong")
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
@@ -166,7 +167,7 @@ func TestBadDatabaseInitFail(t *testing.T) {
 
 func TestBadDatabasePreInitMode(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.AdminPreinit, true)
+	config.Set(coreconfig.AdminPreinit, true)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -179,7 +180,7 @@ func TestBadDatabasePreInitMode(t *testing.T) {
 func TestBadIdentityPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
-	config.Set(config.IdentityType, "wrong")
+	config.Set(coreconfig.IdentityType, "wrong")
 	or.identityPlugin = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -199,7 +200,7 @@ func TestBadIdentityInitFail(t *testing.T) {
 
 func TestBadBlockchainPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.BlockchainType, "wrong")
+	config.Set(coreconfig.BlockchainType, "wrong")
 	or.blockchain = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -250,7 +251,7 @@ func TestBlockchainInitMergeConfigRecordsFail(t *testing.T) {
 
 func TestBadSharedStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.SharedStorageType, "wrong")
+	config.Set(coreconfig.SharedStorageType, "wrong")
 	or.sharedstorage = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -263,7 +264,7 @@ func TestBadSharedStoragePlugin(t *testing.T) {
 
 func TestBadSharedStoragePluginOldConfig(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.PublicStorageType, "wrong")
+	config.Set(coreconfig.PublicStorageType, "wrong")
 	or.sharedstorage = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -288,7 +289,7 @@ func TestBadSharedStorageInitFail(t *testing.T) {
 
 func TestBadDataExchangePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.DataexchangeType, "wrong")
+	config.Set(coreconfig.DataexchangeType, "wrong")
 	or.dataexchange = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -420,7 +421,7 @@ func TestBadTokensPluginInvalidName(t *testing.T) {
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10131.*'name'", err)
+	assert.Regexp(t, "FF00140.*'name'", err)
 }
 
 func TestBadTokensPluginNoType(t *testing.T) {
@@ -587,7 +588,7 @@ func TestInitOperationsComponentFail(t *testing.T) {
 }
 
 func TestStartBatchFail(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	or := newTestOrchestrator()
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	or.mbi.On("Start").Return(nil)
@@ -596,7 +597,7 @@ func TestStartBatchFail(t *testing.T) {
 }
 
 func TestStartTokensFail(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	or := newTestOrchestrator()
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
@@ -612,7 +613,7 @@ func TestStartTokensFail(t *testing.T) {
 }
 
 func TestStartStopOk(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	or := newTestOrchestrator()
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
@@ -641,12 +642,12 @@ func TestStartStopOk(t *testing.T) {
 
 func TestInitNamespacesBadName(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Reset()
-	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesPredefined, fftypes.JSONObjectArray{
 		{"name": "!Badness"},
 	})
 	err := or.initNamespaces(context.Background())
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestInitNamespacesGetFail(t *testing.T) {
@@ -675,19 +676,19 @@ func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
 
 func TestInitNamespacesDefaultMissing(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{})
+	config.Set(coreconfig.NamespacesPredefined, fftypes.JSONObjectArray{})
 	err := or.initNamespaces(context.Background())
 	assert.Regexp(t, "FF10166", err)
 }
 
 func TestInitNamespacesDupName(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{
+	config.Set(coreconfig.NamespacesPredefined, fftypes.JSONObjectArray{
 		{"name": "ns1"},
 		{"name": "ns2"},
 		{"name": "ns2"},
 	})
-	config.Set(config.NamespacesDefault, "ns1")
+	config.Set(coreconfig.NamespacesDefault, "ns1")
 	nsList, err := or.getPrefdefinedNamespaces(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, nsList, 3)

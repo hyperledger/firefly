@@ -69,7 +69,7 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenTransferByID(context.Background(), "ns1", "badUUID")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestMintTokensSuccess(t *testing.T) {
@@ -191,7 +191,7 @@ func TestMintTokenUnknownConnectorBadNamespace(t *testing.T) {
 	}
 
 	_, err := am.MintTokens(context.Background(), "", mint, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestMintTokenBadConnector(t *testing.T) {
@@ -342,7 +342,7 @@ func TestMintTokenUnknownPoolBadNamespace(t *testing.T) {
 	}
 
 	_, err := am.MintTokens(context.Background(), "", mint, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestMintTokensGetPoolsError(t *testing.T) {

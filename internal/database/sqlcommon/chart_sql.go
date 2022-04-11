@@ -22,10 +22,12 @@ import (
 	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection database.CollectionName) (tableName string, fieldMap map[string]string, err error) {
@@ -43,7 +45,7 @@ func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection d
 	case database.CollectionName(database.CollectionBlockchainEvents):
 		return "blockchainevents", blockchainEventFilterFieldMap, nil
 	default:
-		return "", nil, i18n.NewError(ctx, i18n.MsgUnsupportedCollection, collection)
+		return "", nil, i18n.NewError(ctx, coremsgs.MsgUnsupportedCollection, collection)
 	}
 }
 
@@ -58,7 +60,7 @@ func (s *SQLCommon) getSelectStatements(ns string, tableName string, intervals [
 					sq.Eq{"namespace": ns},
 				}).
 			OrderBy(timestampKey).
-			Limit(uint64(config.GetInt(config.DatabaseMaxChartRows))))
+			Limit(uint64(config.GetInt(coreconfig.DatabaseMaxChartRows))))
 	}
 
 	return queries
@@ -72,7 +74,7 @@ func (s *SQLCommon) histogramResult(ctx context.Context, tableName string, rows 
 			var timestamp string
 			err := rows.Scan(&timestamp)
 			if err != nil {
-				return nil, "", i18n.NewError(ctx, i18n.MsgDBReadErr, tableName)
+				return nil, "", i18n.NewError(ctx, coremsgs.MsgDBReadErr, tableName)
 			}
 			total++
 		}
@@ -85,7 +87,7 @@ func (s *SQLCommon) histogramResult(ctx context.Context, tableName string, rows 
 		var typeStr string
 		err := rows.Scan(&timestamp, &typeStr)
 		if err != nil {
-			return nil, "", i18n.NewError(ctx, i18n.MsgDBReadErr, tableName)
+			return nil, "", i18n.NewError(ctx, coremsgs.MsgDBReadErr, tableName)
 		}
 
 		if _, ok := typeMap[typeStr]; !ok {
@@ -143,7 +145,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 			Count:     total,
 			Timestamp: intervals[i].StartTime,
 			Types:     histTypes,
-			IsCapped:  total == config.GetString(config.DatabaseMaxChartRows),
+			IsCapped:  total == config.GetString(coreconfig.DatabaseMaxChartRows),
 		}
 
 		// If the bucket has types, add their counts

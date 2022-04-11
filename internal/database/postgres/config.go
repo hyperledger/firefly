@@ -17,8 +17,8 @@
 package postgres
 
 import (
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
+	"github.com/hyperledger/firefly/pkg/config"
 )
 
 const (

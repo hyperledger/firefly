@@ -22,9 +22,10 @@ import (
 	"io/ioutil"
 
 	"github.com/docker/go-units"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type downloadBatchData struct {
@@ -97,7 +98,7 @@ func (dm *downloadManager) PrepareOperation(ctx context.Context, op *fftypes.Ope
 		return opDownloadBlob(op, namespace, dataID, payloadRef), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -108,7 +109,7 @@ func (dm *downloadManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 	case downloadBlobData:
 		return dm.downloadBlob(ctx, data)
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
@@ -119,7 +120,7 @@ func (dm *downloadManager) downloadBatch(ctx context.Context, data downloadBatch
 	// Download into memory for batches
 	reader, err := dm.sharedstorage.DownloadData(ctx, data.PayloadRef)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, i18n.MsgDownloadSharedFailed, data.PayloadRef)
+		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
 	defer reader.Close()
 
@@ -128,10 +129,10 @@ func (dm *downloadManager) downloadBatch(ctx context.Context, data downloadBatch
 	limitedReader := io.LimitReader(reader, maxReadLimit)
 	batchBytes, err := ioutil.ReadAll(limitedReader)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, i18n.MsgDownloadSharedFailed, data.PayloadRef)
+		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
 	if len(batchBytes) == int(maxReadLimit) {
-		return nil, false, i18n.WrapError(ctx, err, i18n.MsgDownloadBatchMaxBytes, data.PayloadRef)
+		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadBatchMaxBytes, data.PayloadRef)
 	}
 
 	// Parse and store the batch
@@ -154,7 +155,7 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	// ... to data exchange
 	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, data.Namespace, *data.DataID, reader)
 	if err != nil {
-		return nil, false, i18n.WrapError(ctx, err, i18n.MsgDownloadSharedFailed, data.PayloadRef)
+		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
 	log.L(ctx).Infof("Transferred blob '%s' (%s) from shared storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(blobSize), 2), data.PayloadRef, dxPayloadRef)
 
