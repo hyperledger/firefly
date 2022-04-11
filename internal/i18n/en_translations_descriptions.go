@@ -229,7 +229,7 @@ var (
 
 	// FFIMethod field descriptions
 	FFIMethodID          = ffm("FFIMethod.id", "The UUID of the FFI method definition")
-	FFIMethodContract    = ffm("FFIMethod.contract", "The UUID of the FFI smart contract definition that this method is part of")
+	FFIMethodInterface   = ffm("FFIMethod.interface", "The UUID of the FFI smart contract definition that this method is part of")
 	FFIMethodName        = ffm("FFIMethod.name", "The name of the method")
 	FFIMethodNamespace   = ffm("FFIMethod.namespace", "The namespace of the FFI")
 	FFIMethodPathname    = ffm("FFIMethod.pathname", "The unique name allocated to this method within the FFI for use on URL paths. Supports contracts that have multiple method overrides with the same name")
@@ -239,7 +239,7 @@ var (
 
 	// FFIEvent field descriptions
 	FFIEventID          = ffm("FFIEvent.id", "The UUID of the FFI event definition")
-	FFIEventContract    = ffm("FFIEvent.contract", "The UUID of the FFI smart contract definition that this event is part of")
+	FFIEventInterface   = ffm("FFIEvent.interface", "The UUID of the FFI smart contract definition that this event is part of")
 	FFIEventName        = ffm("FFIEvent.name", "The name of the event")
 	FFIEventNamespace   = ffm("FFIEvent.namespace", "The namespace of the FFI")
 	FFIEventPathname    = ffm("FFIEvent.pathname", "The unique name allocated to this event within the FFI for use on URL paths. Supports contracts that have multiple event overrides with the same name")

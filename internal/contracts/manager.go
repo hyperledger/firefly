@@ -373,7 +373,7 @@ func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *
 
 	methodPathNames := map[string]bool{}
 	for _, method := range ffi.Methods {
-		method.Contract = ffi.ID
+		method.Interface = ffi.ID
 		method.Namespace = ffi.Namespace
 		method.Pathname = cm.uniquePathName(method.Name, methodPathNames)
 		if err := cm.validateFFIMethod(ctx, method); err != nil {
@@ -383,7 +383,7 @@ func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *
 
 	eventPathNames := map[string]bool{}
 	for _, event := range ffi.Events {
-		event.Contract = ffi.ID
+		event.Interface = ffi.ID
 		event.Namespace = ffi.Namespace
 		event.Pathname = cm.uniquePathName(event.Name, eventPathNames)
 		if err := cm.validateFFIEvent(ctx, &event.FFIEventDefinition); err != nil {

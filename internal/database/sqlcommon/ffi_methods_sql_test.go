@@ -39,7 +39,7 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	methodID := fftypes.NewUUID()
 	method := &fftypes.FFIMethod{
 		ID:          methodID,
-		Contract:    interfaceID,
+		Interface:   interfaceID,
 		Name:        "Set",
 		Namespace:   "ns",
 		Pathname:    "Set_1",
