@@ -577,6 +577,7 @@ func TestAddContractListenerInline(t *testing.T) {
 				},
 			},
 			Options: &fftypes.ContractListenerOptions{},
+			Topic:   "test-topic",
 		},
 	}
 
@@ -622,6 +623,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 		EventPath: "changed",
 	}
@@ -653,6 +655,7 @@ func TestAddContractListenerBadLocation(t *testing.T) {
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 		EventPath: "changed",
 	}
@@ -680,6 +683,7 @@ func TestAddContractListenerFFILookupFail(t *testing.T) {
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 		EventPath: "changed",
 	}
@@ -709,6 +713,7 @@ func TestAddContractListenerEventLookupFail(t *testing.T) {
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 		EventPath: "changed",
 	}
@@ -739,6 +744,7 @@ func TestAddContractListenerEventLookupNotFound(t *testing.T) {
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 		EventPath: "changed",
 	}
@@ -757,13 +763,13 @@ func TestAddContractListenerEventLookupNotFound(t *testing.T) {
 func TestAddContractListenerMissingEventOrID(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mdi := cm.database.(*databasemocks.Plugin)
 
 	sub := &fftypes.ContractListenerInput{
 		ContractListener: fftypes.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 	}
 
@@ -773,28 +779,18 @@ func TestAddContractListenerMissingEventOrID(t *testing.T) {
 	assert.Regexp(t, "FF10317", err)
 
 	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestAddContractListenerBadNamespace(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mdi := cm.database.(*databasemocks.Plugin)
-
 	sub := &fftypes.ContractListenerInput{}
 
 	_, err := cm.AddContractListener(context.Background(), "!bad", sub)
 	assert.Regexp(t, "FF00140.*'namespace'", err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestAddContractListenerBadName(t *testing.T) {
 	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mdi := cm.database.(*databasemocks.Plugin)
-
 	sub := &fftypes.ContractListenerInput{
 		ContractListener: fftypes.ContractListener{
 			Name: "!bad",
@@ -803,9 +799,16 @@ func TestAddContractListenerBadName(t *testing.T) {
 
 	_, err := cm.AddContractListener(context.Background(), "ns", sub)
 	assert.Regexp(t, "FF00140.*'name'", err)
+}
 
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
+func TestAddContractListenerMissingTopic(t *testing.T) {
+	cm := newTestContractManager()
+	sub := &fftypes.ContractListenerInput{
+		ContractListener: fftypes.ContractListener{},
+	}
+
+	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	assert.Regexp(t, "FF00140.*'topic'", err)
 }
 
 func TestAddContractListenerNameConflict(t *testing.T) {
@@ -819,6 +822,7 @@ func TestAddContractListenerNameConflict(t *testing.T) {
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 		EventPath: "changed",
 	}
@@ -844,6 +848,7 @@ func TestAddContractListenerNameError(t *testing.T) {
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Topic: "test-topic",
 		},
 		EventPath: "changed",
 	}
@@ -879,6 +884,7 @@ func TestAddContractListenerValidateFail(t *testing.T) {
 					},
 				},
 			},
+			Topic: "test-topic",
 		},
 	}
 
@@ -912,6 +918,7 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 					},
 				},
 			},
+			Topic: "test-topic",
 		},
 	}
 
@@ -946,6 +953,7 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 					},
 				},
 			},
+			Topic: "test-topic",
 		},
 	}
 

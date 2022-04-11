@@ -470,6 +470,9 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 			return nil, err
 		}
 	}
+	if err := fftypes.ValidateFFNameField(ctx, listener.Topic, "topic"); err != nil {
+		return nil, err
+	}
 	if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, listener.Location); err != nil {
 		return nil, err
 	}

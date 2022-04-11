@@ -622,6 +622,7 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},
+			Topic: "firefly-e2e",
 		},
 	}
 	var sub fftypes.ContractListener
@@ -640,6 +641,7 @@ func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference 
 		ContractListener: fftypes.ContractListener{
 			Location:  fftypes.JSONAnyPtr(location.String()),
 			Interface: ffiReference,
+			Topic:     "firefly-e2e",
 		},
 		EventPath: eventPath,
 	}
