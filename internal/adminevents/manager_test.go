@@ -28,8 +28,8 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +43,7 @@ func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, ws *webSock
 
 	clientPrefix := config.NewPluginConfig("ut.wsclient")
 	wsconfig.InitPrefix(clientPrefix)
-	clientPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	clientPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
 	wsConfig := wsconfig.GenerateConfigFromPrefix(clientPrefix)
 
 	wsc, err := wsclient.New(ae.ctx, wsConfig, nil, nil)
